@@ -5,12 +5,12 @@ osc -- opensuse-commander with svn like handling
 >>> At the moment, 'status' is highly inefficient.
 
 
-Please send patches or contact me to get write access:
-
-http://svn.poeml.de/svn/osc
-http://svn.poeml.de/viewcvs/osc/
+Please send patches to poeml@suse.de, or work directly on
+https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/
 
 
+INSTALLATION:
+Create a symlink 'osc' in your path pointing to osc.py.
 The program needs the package pyxml installed.
 
 For authentication, put your account data into your ~/.netrc file, like this
@@ -20,7 +20,7 @@ line:
 
 
 
-Usage examples:
+USAGE EXAMPLES:
 
 osc ls 				# list projects
 osc ls Apache 			# list packages in a project 
