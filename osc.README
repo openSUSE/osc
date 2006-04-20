@@ -1,0 +1,72 @@
+osc -- opensuse-commander with svn like handling
+
+>>> BUG: at the moment, 'up' overwrites files with
+         local modifications.
+>>> At the moment, 'status' is highly inefficient.
+
+
+Please send patches or contact me to get write access:
+
+http://svn.poeml.de/svn/osc
+http://svn.poeml.de/viewcvs/osc/
+
+
+The program needs the package pyxml installed.
+
+For authentication, put your account data into your ~/.netrc file, like this
+line:
+	machine api.opensuse.org login $login password $pass 
+
+
+
+
+Usage examples:
+
+osc ls 				# list projects
+osc ls Apache 			# list packages in a project 
+osc ls Apache subversion 	# list files of package of a project
+
+# check out 
+osc co Apache 			# entire project
+osc co Apache subversion	# a package
+osc co Apache subversion foo	# single file
+
+# update working copy
+osc up
+
+# check in
+osc ci				# current dir
+osc ci <dir>
+osc ci file1 file2 ...
+
+# show status
+osc st
+osc st <directory>
+
+# initialize a source directory to be a 
+# working copy of project <prj> package <pac>
+osc init <prj> <pac>
+
+# schedule file foo to be added / deleted
+osc add foo
+osc rm foo
+
+# add all unknown files and remove all missing files
+osc addremove
+
+# show diff
+osc diff [file]
+
+# show logfile (must be run from workingdir)
+osc log <platform> <arch>
+
+# show platforms
+osc platforms
+# show platforms used by project Apache
+osc platforms Apache
+
+# show various xml meta
+osc meta Apache
+osc meta Apache subversion
+osc id username
+
