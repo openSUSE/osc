@@ -210,7 +210,7 @@ def dgst(file):
     return s.digest()
 
 
-def get_file_status(prj, package, filename):
+def get_file_status(prj, package, filename, filelist=None):
     """
     status can be:
 
@@ -231,7 +231,10 @@ def get_file_status(prj, package, filename):
     exists = False
     exists_in_store = False
 
-    if filename in localmeta_get_filelist():
+    if not filelist:
+        filelist = localmeta_get_filelist()
+
+    if filename in filelist:
         known_by_meta = True
 
     if os.path.exists(filename):

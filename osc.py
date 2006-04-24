@@ -108,8 +108,9 @@ def main():
 
             os.chdir(wd)
 
+            filelist = localmeta_get_filelist()
             for filename in filenames:
-                s = get_file_status(project, package, filename)
+                s = get_file_status(project, package, filename, filelist=filelist)
                 #if not s.startswith(' '):
                 #    print s
                 print s
@@ -144,8 +145,10 @@ def main():
                         filenames.insert(0, i)
 
 
+
+            filelist = localmeta_get_filelist()
             for filename in filenames:
-                st = get_file_status(project, package, filename)
+                st = get_file_status(project, package, filename, filelist=filelist)
                 if st.startswith('?'):
                     localmeta_addfile(filename)
                     print 'A   ', filename
@@ -183,8 +186,9 @@ def main():
             files_to_send = []
             files_to_delete = []
 
+            filelist = localmeta_get_filelist()
             for filename in filenames:
-                st = get_file_status(project, package, filename)
+                st = get_file_status(project, package, filename, filelist=filelist)
                 if st.startswith('A') or st.startswith('M'):
                     files_to_send.append(filename)
                     print 'Sending        %s' % filename
@@ -233,6 +237,7 @@ def main():
                 #    if i not in filenames and i not in exclude_stuff:
                 #        filenames.insert(0, i)
 
+            olddir = os.getcwd()
             os.chdir(wd)
             os.chdir(store)
 
@@ -256,6 +261,7 @@ def main():
             f.write(''.join(show_package_meta(project, package)))
             f.close()
 
+            os.chdir(olddir)
                     
 
 
