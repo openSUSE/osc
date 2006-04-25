@@ -57,6 +57,10 @@ osc addremove
 # show diff
 osc diff [file]
 
+# show build results (xml)
+osc results
+osc results [platform]
+
 # show logfile (must be run from workingdir)
 osc log <platform> <arch>
 

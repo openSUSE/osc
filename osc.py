@@ -301,8 +301,11 @@ def main():
 
 
     elif cmd == 'results':
-        if len(sys.argv) > 4:
-            platform = sys.argv[4]
+        wd = os.curdir
+        package = store_read_package(wd)
+        project = store_read_project(wd)
+        if len(sys.argv) > 2:
+            platform = sys.argv[2]
             print ''.join(get_results(project, package, platform))
         else:
             for platform in get_platforms_of_project(project):
