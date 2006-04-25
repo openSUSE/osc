@@ -276,16 +276,17 @@ def main():
 
         for arg in args:
 
-            if os.path.isfile(arg):
-                wd = os.path.dirname(arg)
-                if not wd: wd = os.curdir
-                filenames = [ os.path.basename(arg) ]
+            olddir = os.getcwd()
+
+            wd = os.path.dirname(arg) or os.curdir
+            filename = arg
 
             os.chdir(wd)
 
-            for filename in filenames:
-                localmeta_removefile(filename)
-                print 'D    %s' % filename
+            localmeta_removefile(filename)
+            print 'D    %s' % filename
+
+            os.chdir(olddir)
 
 
     elif cmd == 'id':

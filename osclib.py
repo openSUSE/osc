@@ -222,7 +222,7 @@ def get_file_status(prj, package, filename, filelist=None):
       x       -            -        '?'
       x       -            x        'A'
       -       x            x        '!'
-      -       x            -        NOT DEFINED
+      -       x            -        'D' (when file in working copy is already deleted)
       -       -            x        NOT DEFINED
       -       -            -        NEVER REACHED
 
@@ -257,15 +257,13 @@ def get_file_status(prj, package, filename, filelist=None):
     elif not exists and exists_in_store and known_by_meta:
         state = '!'
     elif not exists and not exists_in_store and known_by_meta:
-        print 'not exists and not exists_in_store and known_by_meta'
+        print '%s: not exists and not exists_in_store and known_by_meta' % filename
         print 'this state is undefined!'
         sys.exit(1)
     elif not exists and exists_in_store and not known_by_meta:
-        print 'not exists and exists_in_store and not nown_by_meta'
-        print 'this state is undefined!'
-        sys.exit(1)
+        state = 'D'
     elif not exists and not exists_in_store and not known_by_meta:
-        print 'not exists and not exists_in_store and not nown_by_meta'
+        print '%s: not exists and not exists_in_store and not nown_by_meta' % filename
         print 'this code path should never be reached!'
         sys.exit(1)
         
