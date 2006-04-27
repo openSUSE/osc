@@ -119,6 +119,10 @@ def main():
     elif cmd == 'add':
         filenames = sys.argv[2:]
         for filename in filenames:
+            if not os.path.exists(filename):
+                print "file '%s' does not exist" % filename
+                sys.exit(1)
+        for filename in filenames:
             localmeta_addfile(filename)
             print 'A   ', filename
 
