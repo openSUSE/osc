@@ -5,6 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+__version__ = '0.2'
 
 import os
 import sys
@@ -77,12 +78,32 @@ def init_package_dir(project, package, dir):
     f.write(package + '\n')
     f.close
 
-    f = open('_meta', 'w')
-    f.write(''.join(show_package_meta(project, package)))
+    f = open('_files', 'w')
+    f.write(''.join(show_files_meta(project, package)))
+    f.close()
+
+    f = open('_osclib_version', 'w')
+    f.write(__version__ + '\n')
     f.close()
 
     return
 
+
+def check_store_version():
+    try:
+        v = open(os.path.join(store, '_osclib_version')).read().strip()
+    except:
+        v = ''
+
+    if v != __version__:
+        print 
+        print 'the osc metadata of your working copy'
+        print '   %s' % os.getcwd()
+        print 'has the wrong version (%s), should be %s' % (v, __version__)
+        print 'please do a fresh checkout'
+        print 
+        sys.exit(1)
+    
 
 def meta_get_packagelist(prj):
 
@@ -100,13 +121,13 @@ def meta_get_packagelist(prj):
 def meta_get_filelist(prj, package):
 
     reader = Sax2.Reader()
-    u = makeurl(['source', prj, package, '_meta'])
+    u = makeurl(['source', prj, package])
     f = urllib2.urlopen(u)
     doc = reader.fromStream(f)
 
     r = []
-    for i in doc.getElementsByTagName('file'):
-        r.append(i.getAttribute('filename'))
+    for i in doc.getElementsByTagName('entry'):
+        r.append(i.getAttribute('name'))
     return r
 
 
@@ -116,29 +137,29 @@ def localmeta_addfile(filename):
         return
 
     reader = Sax2.Reader()
-    f = open(os.path.join(store, '_meta')).read()
+    f = open(os.path.join(store, '_files')).read()
     doc = reader.fromString(f)
 
-    new = doc.createElement('file')
-    new.setAttribute('filetype', 'source')
-    new.setAttribute('filename', filename)
+    new = doc.createElement('entry')
+    #new.setAttribute('filetype', 'source')
+    new.setAttribute('name', filename)
     doc.documentElement.appendChild(new)
 
-    o = open(os.path.join(store, '_meta'), 'w')
+    o = open(os.path.join(store, '_files'), 'w')
     PrettyPrint(doc, stream=o)
     o.close()
     
 def localmeta_removefile(filename):
 
     reader = Sax2.Reader()
-    f = open(os.path.join(store, '_meta')).read()
+    f = open(os.path.join(store, '_files')).read()
     doc = reader.fromString(f)
 
-    for i in doc.getElementsByTagName('file'):
-        if i.getAttribute('filename') == filename:
+    for i in doc.getElementsByTagName('entry'):
+        if i.getAttribute('name') == filename:
             i.parentNode.removeChild(i)
 
-    o = open(os.path.join(store, '_meta'), 'w')
+    o = open(os.path.join(store, '_files'), 'w')
     PrettyPrint(doc, stream=o)
     o.close()
     
@@ -146,12 +167,12 @@ def localmeta_removefile(filename):
 def localmeta_get_filelist():
 
     reader = Sax2.Reader()
-    f = open(os.path.join(store, '_meta')).read()
+    f = open(os.path.join(store, '_files')).read()
     doc = reader.fromString(f)
 
     r = []
-    for i in doc.getElementsByTagName('file'):
-        r.append(i.getAttribute('filename'))
+    for i in doc.getElementsByTagName('entry'):
+        r.append(i.getAttribute('name'))
     return r
 
 
@@ -173,6 +194,10 @@ def show_project_meta(prj):
 
 def show_package_meta(prj, pac):
     f = urllib2.urlopen(makeurl(['source', prj, pac, '_meta']))
+    return f.readlines()
+
+def show_files_meta(prj, pac):
+    f = urllib2.urlopen(makeurl(['source', prj, pac]))
     return f.readlines()
 
 def get_user_id(user):
@@ -215,7 +240,7 @@ def get_file_status(prj, package, filename, filelist=None):
     status can be:
 
      file  storefile  file present  STATUS
-    exists  exists      in _meta
+    exists  exists      in _files
 
       x       x            -        'D'
       x       x            x        'M', if digest differs, else ' '
@@ -313,9 +338,7 @@ def del_source_file(prj, package, filename):
     import othermethods
     
     u = makeurl(['source', prj, package, filename])
-    # not implemented in the server yet... thus, we are cheating by only removing
-    # the file from _meta
-    #othermethods.delfile(u, filename, username, password)
+    othermethods.delfile(u, filename, username, password)
 
     wcfilename = os.path.join(store, filename)
     if os.path.exists(filename): os.unlink(filename)

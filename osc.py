@@ -5,7 +5,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-
 from osclib import *
 
 
@@ -42,6 +41,7 @@ def main():
             project = sys.argv[2]
             package = sys.argv[3]
             print ''.join(show_package_meta(project, package))
+            print ''.join(show_files_meta(project, package))
         elif len(sys.argv) == 3:
             project = sys.argv[2]
             print ''.join(show_project_meta(project))
@@ -107,6 +107,7 @@ def main():
                         filenames.insert(0, i)
 
             os.chdir(wd)
+            check_store_version()
 
             filelist = localmeta_get_filelist()
             for filename in filenames:
@@ -211,11 +212,7 @@ def main():
             for filename in files_to_delete:
                 del_source_file(project, package, filename)
             print
-            print 'Transmitting meta data ', 
-            put_source_file(project, package, os.path.join(store, '_meta'))
 
-            print
-                    
 
     elif cmd == 'up' or cmd == 'update':
 
@@ -234,7 +231,6 @@ def main():
                 wd = arg
                 package = store_read_package(wd)
                 project = store_read_project(wd)
-                filenames = meta_get_filelist(project, package)
 
                 ## add files which are not listed in _meta
                 #for i in os.listdir(arg):
@@ -243,9 +239,30 @@ def main():
 
             olddir = os.getcwd()
             os.chdir(wd)
+            check_store_version()
+
+            # save filelist before replacing the meta file
+            filenames = localmeta_get_filelist()
             os.chdir(store)
+            # update filelist
+            f = open('_files', 'w')
+            f.write(''.join(show_files_meta(project, package)))
+            f.close()
+
+            # which files do no longer exist upstream?
+            disappeared = []
+            upstream_files = meta_get_filelist(project, package)
+            for filename in filenames:
+                if filename not in upstream_files:
+                    disappeared.append(filename)
+                
 
             for filename in filenames:
+                if filename in disappeared:
+                    print 'D    %s' % filename
+                    os.unlink(filename)
+                    continue
+
                 get_source_file(project, package, filename)
                 wcfilename = os.path.join(os.pardir, os.path.basename(filename))
 
