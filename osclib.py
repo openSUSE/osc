@@ -399,10 +399,46 @@ def get_platforms_of_project(prj):
             r.append(entry.attrs[('', 'name')])
     return r
 
-def get_results(prj, package, platform):
+def show_results_meta(prj, package, platform):
     u = makeurl(['result', prj, platform, package, 'result'])
     f = urllib2.urlopen(u)
     return f.readlines()
+
+def get_results(prj, package, platform):
+    #print '----------------------------------------'
+    f = show_results_meta(prj, package, platform)
+
+    reader = Sax2.Reader()
+    doc = reader.fromString(''.join(f))
+
+    r = []
+    #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
+    result_line_templ = '%(rep)-15s %(arch)-10s %(status)s %(hint)s'
+
+    for i in doc.getElementsByTagName('packageresult'):
+        rmap = {}
+        rmap['hint'] = ''
+        rmap['prj'] = i.getAttribute('project')
+        rmap['pac'] = i.getAttribute('package')
+        rmap['rep'] = i.getAttribute('repository')
+
+        for ii in i.getElementsByTagName('archresult'):
+            rmap['arch'] = ii.getAttribute('arch')
+
+            for iii in ii.getElementsByTagName('status'):
+                rmap['status'] = iii.getAttribute('code')
+                if rmap['status'] == 'expansion error':
+                    for iiii in iii.getElementsByTagName('summary'):
+                        rmap['status'] += ':'
+                        rmap['hint'] = iiii.childNodes[0].data
+                if rmap['status'] == 'failed':
+                    rmap['status'] += ':'
+                    rmap['hint'] = '\'osc log %(rep)s %(arch)s\' -> ' % rmap + \
+                                    '(%s://%s' % (scheme, netloc) + \
+                                    '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log)' % rmap
+
+        r.append(result_line_templ % rmap)
+    return r
 
 def get_log(prj, package, platform, arch):
     u = makeurl(['result', prj, platform, package, arch, 'log'])

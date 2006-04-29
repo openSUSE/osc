@@ -321,16 +321,32 @@ def main():
 
 
 
-    elif cmd == 'results':
+    elif cmd == 'results_meta':
         wd = os.curdir
         package = store_read_package(wd)
         project = store_read_project(wd)
         if len(sys.argv) > 2:
             platform = sys.argv[2]
-            print ''.join(get_results(project, package, platform))
+            print ''.join(show_results_meta(project, package, platform))
         else:
             for platform in get_platforms_of_project(project):
-                print ''.join(get_results(project, package, platform))
+                print ''.join(show_results_meta(project, package, platform))
+                
+    elif cmd == 'results':
+        if len(sys.argv) > 3:
+            print 'getting results for more than one package is not supported'
+            print sys.exit(1)
+            
+        if len(sys.argv) == 3:
+            wd = sys.argv[2]
+        else:
+            wd = os.curdir
+        package = store_read_package(wd)
+        project = store_read_project(wd)
+
+        for platform in get_platforms_of_project(project):
+            print ''.join(get_results(project, package, platform))
+
                 
     elif cmd == 'log':
         wd = os.curdir
