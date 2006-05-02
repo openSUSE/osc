@@ -314,7 +314,8 @@ def main():
         print ''.join(get_user_id(sys.argv[2]))
 
     elif cmd == 'platforms':
-        if project:
+        if len(sys.argv) > 2:
+            project = sys.argv[2]
             print '\n'.join(get_platforms_of_project(project))
         else:
             print '\n'.join(get_platforms())
@@ -345,7 +346,7 @@ def main():
         project = store_read_project(wd)
 
         for platform in get_platforms_of_project(project):
-            print ''.join(get_results(project, package, platform))
+            print '\n'.join(get_results(project, package, platform))
 
                 
     elif cmd == 'log':

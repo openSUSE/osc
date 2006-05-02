@@ -10,9 +10,10 @@ __version__ = '0.2'
 import os
 import sys
 import urllib2
-from xml.utils import qp_xml
 import netrc
 from urlparse import urlunsplit
+import cElementTree as ET
+from cStringIO import StringIO
 
 # the needed entry in .netrc looks like this:
 # machine api.opensuse.org login your_login password your_pass
@@ -107,27 +108,27 @@ def check_store_version():
 
 def meta_get_packagelist(prj):
 
-    reader = Sax2.Reader()
     u = makeurl(['source', prj, '_meta'])
     f = urllib2.urlopen(u)
-    doc = reader.fromStream(f)
+
+    tree = ET.parse(f)
+    root = tree.getroot()
 
     r = []
-    for i in doc.getElementsByTagName('package'):
-        r.append(i.getAttribute('name'))
+    for node in root.findall('package'):
+        r.append(node.get('name'))
     return r
 
 
 def meta_get_filelist(prj, package):
 
-    reader = Sax2.Reader()
     u = makeurl(['source', prj, package])
     f = urllib2.urlopen(u)
-    doc = reader.fromStream(f)
+    tree = ET.parse(f)
 
     r = []
-    for i in doc.getElementsByTagName('entry'):
-        r.append(i.getAttribute('name'))
+    for node in tree.getroot():
+        r.append(node.get('name'))
     return r
 
 
@@ -166,25 +167,23 @@ def localmeta_removefile(filename):
 
 def localmeta_get_filelist():
 
-    reader = Sax2.Reader()
-    f = open(os.path.join(store, '_files')).read()
-    doc = reader.fromString(f)
+    tree = ET.parse(os.path.join(store, '_files'))
+    root = tree.getroot()
 
     r = []
-    for i in doc.getElementsByTagName('entry'):
-        r.append(i.getAttribute('name'))
+    for node in root.findall('entry'):
+        r.append(node.get('name'))
     return r
 
 
 def get_slash_source():
     u = makeurl(['source'])
-    f = urllib2.urlopen(u)
+    tree = ET.parse(urllib2.urlopen(u))
 
-    parser = qp_xml.Parser()
-    root = parser.parse(f)
     r = []
-    for entry in root.children:
-        r.append(entry.attrs[('', 'name')])
+    for node in tree.getroot():
+        r.append(node.get('name'))
+    r.sort()
     return r
 
 def show_project_meta(prj):
@@ -375,85 +374,82 @@ def checkout_package(project, package):
     os.chdir(olddir)
 
 
-
-
-
 def get_platforms():
     f = urllib2.urlopen(makeurl(['platform']))
-
-    parser = qp_xml.Parser()
-    root = parser.parse(f)
+    tree = ET.parse(f)
     r = []
-    for entry in root.children:
-        r.append(entry.attrs[('', 'name')])
+    for node in tree.getroot():
+        r.append(node.get('name'))
+    r.sort()
     return r
+
 
 def get_platforms_of_project(prj):
     f = show_project_meta(prj)
+    tree = ET.parse(StringIO(''.join(f)))
 
-    parser = qp_xml.Parser()
-    root = parser.parse('\n'.join(f))
     r = []
-    for entry in root.children:
-        if entry.name == 'repository':
-            r.append(entry.attrs[('', 'name')])
+    for node in tree.findall('repository'):
+        r.append(node.get('name'))
     return r
+
 
 def show_results_meta(prj, package, platform):
     u = makeurl(['result', prj, platform, package, 'result'])
     f = urllib2.urlopen(u)
     return f.readlines()
 
+
 def get_results(prj, package, platform):
     #print '----------------------------------------'
-    f = show_results_meta(prj, package, platform)
-
-    reader = Sax2.Reader()
-    doc = reader.fromString(''.join(f))
 
     r = []
     #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s %(hint)s'
 
-    for i in doc.getElementsByTagName('packageresult'):
-        rmap = {}
-        rmap['hint'] = ''
-        rmap['prj'] = i.getAttribute('project')
-        rmap['pac'] = i.getAttribute('package')
-        rmap['rep'] = i.getAttribute('repository')
+    f = show_results_meta(prj, package, platform)
+    tree = ET.parse(StringIO(''.join(f)))
 
-        for ii in i.getElementsByTagName('archresult'):
-            rmap['arch'] = ii.getAttribute('arch')
+    root = tree.getroot()
 
-            for iii in ii.getElementsByTagName('status'):
-                rmap['status'] = iii.getAttribute('code')
-                if rmap['status'] == 'expansion error':
-                    for iiii in iii.getElementsByTagName('summary'):
-                        rmap['status'] += ':'
-                        rmap['hint'] = iiii.childNodes[0].data
-                if rmap['status'] == 'failed':
-                    rmap['status'] += ':'
-                    rmap['hint'] = '\'osc log %(rep)s %(arch)s\' -> ' % rmap + \
-                                    '(%s://%s' % (scheme, netloc) + \
-                                    '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log)' % rmap
+    rmap = {}
+    rmap['hint'] = ''
+    rmap['prj'] = root.get('project')
+    rmap['pac'] = root.get('package')
+    rmap['rep'] = root.get('repository')
+
+    for node in root.findall('archresult'):
+        rmap['arch'] = node.get('arch')
+
+        statusnode =  node.find('status')
+        rmap['status'] = statusnode.get('code')
+
+        if rmap['status'] == 'expansion error':
+            rmap['status'] += ': ' + statusnode.find('summary').text
+
+        if rmap['status'] == 'failed':
+            rmap['status'] += ':'
+            rmap['hint'] = '\'osc log %(rep)s %(arch)s\' -> ' % rmap + \
+                            '(%s://%s' % (scheme, netloc) + \
+                            '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log)' % rmap
 
         r.append(result_line_templ % rmap)
     return r
+
 
 def get_log(prj, package, platform, arch):
     u = makeurl(['result', prj, platform, package, arch, 'log'])
     f = urllib2.urlopen(u)
     return f.readlines()
 
+
 def store_read_project(dir):
     p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
     return p
 
+
 def store_read_package(dir):
     p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     return p
-    #p = open(os.path.join(dir, store, '_meta')).readlines()[0]
-    #p = p.split('"')[1]
-    #return p
 
 
