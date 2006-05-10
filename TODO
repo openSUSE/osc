@@ -1,2 +1,14 @@
 - implement 'info' command
-- 'update': handle local modifications
+- implement 'mv' command
+
+update: handle local modifications
+
+checkin: 
+	- fix argument handling
+	- aggregate files to check in per directory
+	- handle error if PUT fails, so the change is not committed to
+	  localmeta	
+
+diff: use rev numbers in diff header lines
+
+
