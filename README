@@ -9,8 +9,24 @@ https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/pytho
 
 
 INSTALLATION:
-Create a symlink 'osc' in your path pointing to osc.py.
-The program needs the package pyxml installed.
+
+	python setup.py build
+	python setup.py install
+	# create a symlink 'osc' in your path pointing to osc.py.
+	ln -s osc-wrapper.py /usr/bin/osc
+
+Alternatively, you can directly use osc-wrapper.py from the source dir
+
+
+The program needs the following python packages installed (that's their names
+on SUSE anyway): 
+	pyxml 
+	python-elementtree
+
+
+
+
+CONFIGURATION:
 
 For authentication, put your account data into your ~/.netrc file, like this
 line:
