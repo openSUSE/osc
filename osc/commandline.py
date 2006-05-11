@@ -108,9 +108,8 @@ def main():
             filelist = localmeta_get_filelist()
             for filename in filenames:
                 s = get_file_status(project, package, filename, filelist=filelist)
-                #if not s.startswith(' '):
-                #    print s
-                print s
+                if not s.startswith(' '):
+                    print s
 
 
     elif cmd == 'add':
