@@ -61,7 +61,7 @@ def main():
             print ''.join(d)
                 
 
-    elif cmd == 'co':
+    elif cmd == 'co' or cmd == 'checkout':
 
         try: 
             project = sys.argv[2]
@@ -84,11 +84,7 @@ def main():
 
     elif cmd == 'st' or cmd == 'status':
 
-        if len(sys.argv) > 2:
-            args = sys.argv[2:]
-        else:
-            args = [ os.curdir ]
-        #print args
+        args = parseargs()
 
         for arg in args:
 
@@ -118,7 +114,12 @@ def main():
 
 
     elif cmd == 'add':
-        filenames = sys.argv[2:]
+        if len(sys.argv) < 3:
+            print '%s requires at least one argument' % cmd
+            sys.exit(1)
+
+        filenames = parseargs()
+
         for filename in filenames:
             if not os.path.exists(filename):
                 print "file '%s' does not exist" % filename
@@ -128,10 +129,7 @@ def main():
             print 'A   ', filename
 
     elif cmd == 'addremove':
-        if len(sys.argv) > 2:
-            args = sys.argv[2:]
-        else:
-            args = [ os.curdir ]
+        args = parseargs()
 
         for arg in args:
 
@@ -164,11 +162,7 @@ def main():
 
 
     elif cmd == 'ci' or cmd == 'checkin':
-        if len(sys.argv) > 2:
-            args = sys.argv[2:]
-        else:
-            args = [ os.curdir ]
-        #print args
+        args = parseargs()
 
         for arg in args:
 
@@ -216,11 +210,7 @@ def main():
 
     elif cmd == 'up' or cmd == 'update':
 
-        if len(sys.argv) > 2:
-            args = sys.argv[2:]
-        else:
-            args = [ os.curdir ]
-        #print args
+        args = parseargs()
 
         for arg in args:
 
@@ -289,11 +279,11 @@ def main():
             
 
     elif cmd == 'rm' or cmd == 'delete':
-        if len(sys.argv) > 2:
-            args = sys.argv[2:]
-        else:
+        if len(sys.argv) < 3:
             print '%s requires at least one argument' % cmd
             sys.exit(1)
+
+        args = parseargs()
 
         for arg in args:
 

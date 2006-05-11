@@ -31,6 +31,14 @@ store = '.osc'
 exclude_stuff = [store, '.svn', 'CVS']
 
 
+def parseargs():
+        if len(sys.argv) > 2:
+            args = sys.argv[2:]
+        else:
+            args = [ os.curdir ]
+        return args
+
+
 def makeurl(l):
     """given a list of path compoments, construct a complete URL"""
     return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
@@ -104,6 +112,7 @@ def check_store_version():
         print 'please do a fresh checkout'
         print 
         sys.exit(1)
+
     
 
 def meta_get_packagelist(prj):
@@ -310,16 +319,6 @@ def get_source_file_diff(prj, package, filename):
     return ''.join(d)
 
 
-#def put_source_file_and_meta(prj, package, filename):
-#    if filename == '_meta':
-#        put_source_file(prj, package, filename)
-#        return
-#
-#    get_source_file(prj, package, '_meta')
-#    localmeta_addfile(os.path.basename(filename))
-#    put_source_file(prj, package, filename)
-#    put_source_file(prj, package, '_meta')
-
 
 def put_source_file(prj, package, filename):
     import othermethods
@@ -327,11 +326,7 @@ def put_source_file(prj, package, filename):
     sys.stdout.write('.')
     u = makeurl(['source', prj, package, os.path.basename(filename)])
     othermethods.putfile(u, filename, username, password)
-    #f = urllib2.urlopen(u)
 
-    #o = open(filename, 'w')
-    #o.write(f.read())
-    #o.close()
 
 def del_source_file(prj, package, filename):
     import othermethods
@@ -405,7 +400,7 @@ def get_results(prj, package, platform):
 
     r = []
     #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
-    result_line_templ = '%(rep)-15s %(arch)-10s %(status)s %(hint)s'
+    result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
     f = show_results_meta(prj, package, platform)
     tree = ET.parse(StringIO(''.join(f)))
@@ -413,7 +408,6 @@ def get_results(prj, package, platform):
     root = tree.getroot()
 
     rmap = {}
-    rmap['hint'] = ''
     rmap['prj'] = root.get('project')
     rmap['pac'] = root.get('package')
     rmap['rep'] = root.get('repository')
@@ -428,10 +422,8 @@ def get_results(prj, package, platform):
             rmap['status'] += ': ' + statusnode.find('summary').text
 
         if rmap['status'] == 'failed':
-            rmap['status'] += ':'
-            rmap['hint'] = '\'osc log %(rep)s %(arch)s\' -> ' % rmap + \
-                            '(%s://%s' % (scheme, netloc) + \
-                            '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log)' % rmap
+            rmap['status'] += ': %s://%s' % (scheme, netloc) + \
+                '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log' % rmap
 
         r.append(result_line_templ % rmap)
     return r
