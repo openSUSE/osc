@@ -1,14 +1,27 @@
 - implement 'info' command
 - implement 'mv' command
+- implement 'trigger-rebuild'
 
 update: handle local modifications
 
 checkin: 
 	- fix argument handling
-	- aggregate files to check in per directory
 	- handle error if PUT fails, so the change is not committed to
 	  localmeta	
 
-diff: use rev numbers in diff header lines
 
+results: aggregate results of all packages in a project
+
+
+
+
+split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote)
+
+implement a package search / indexing
+
+edit user data
+  <watchlist>
+    <project name="ASCIIParadize"/>
+    <project name="crashtest"/>
+  </watchlist>
 

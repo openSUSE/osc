@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='osc',
-      version='0.2',
+      version='0.3',
       description='opensuse commander',
       author='Peter Poeml',
       author_email='poeml@suse.de',

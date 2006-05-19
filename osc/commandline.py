@@ -7,7 +7,6 @@
 
 from core import *
 
-
 def main():
 
     cmd = sys.argv[1]
@@ -47,18 +46,22 @@ def main():
             print ''.join(show_project_meta(project))
 
     elif cmd == 'diff':
-        wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        if len(sys.argv) > 2:
-            filename = sys.argv[2]
-        if filename:
-            print get_source_file_diff(project, package, filename)
-        else:
+        args = parseargs()
+        pacs = findpacs(args)
+
+        for p in pacs:
+            if p.todo == []:
+                for i in p.filenamelist:
+                    if p.status(i) == 'M':
+                        p.todo.append(i)
+
             d = []
-            for filename in meta_get_filelist(project, package):
-                d.append(get_source_file_diff(project, package, filename))
-            print ''.join(d)
+            for filename in p.todo:
+                d.append('Index: %s\n' % filename)
+                d.append('===================================================================\n')
+                d.append(get_source_file_diff(p.dir, filename, p.rev))
+            if d:
+                print ''.join(d)
                 
 
     elif cmd == 'co' or cmd == 'checkout':
@@ -85,31 +88,20 @@ def main():
     elif cmd == 'st' or cmd == 'status':
 
         args = parseargs()
+        pacs = findpacs(args)
 
-        for arg in args:
+        for p in pacs:
 
-            if os.path.isfile(arg):
-                wd = os.path.dirname(arg)
-                filenames = [ os.path.basename(arg) ]
-            elif os.path.isdir(arg):
-                wd = arg
-                package = store_read_package(wd)
-                project = store_read_project(wd)
-                filenames = meta_get_filelist(project, package)
+            # no files given as argument? Take all files in current dir
+            if not p.todo:
+                p.todo = p.filenamelist + p.filenamelist_unvers
 
-                # add files which are not listed in _meta
-                for i in os.listdir(arg):
-                    if i not in filenames and i not in exclude_stuff:
-                        filenames.insert(0, i)
-
-            os.chdir(wd)
-            check_store_version()
-
-            filelist = localmeta_get_filelist()
-            for filename in filenames:
-                s = get_file_status(project, package, filename, filelist=filelist)
-                if not s.startswith(' '):
-                    print s
+            for filename in p.todo:
+                s = p.status(filename)
+                if s == 'F':
+                    print statfrmt('!', filename)
+                elif s != ' ':
+                    print statfrmt(s, filename)
 
 
     elif cmd == 'add':
@@ -123,155 +115,122 @@ def main():
             if not os.path.exists(filename):
                 print "file '%s' does not exist" % filename
                 sys.exit(1)
-        for filename in filenames:
-            localmeta_addfile(filename)
-            print 'A   ', filename
+
+        pacs = findpacs(filenames)
+
+        for pac in pacs:
+            for filename in pac.todo:
+                if filename in exclude_stuff:
+                    continue
+
+                pac.addfile(filename)
+                print statfrmt('A', filename)
+
 
     elif cmd == 'addremove':
         args = parseargs()
+        pacs = findpacs(args)
+        for p in pacs:
 
-        for arg in args:
+            p.todo = p.filenamelist + p.filenamelist_unvers
 
-            if os.path.isfile(arg):
-                wd = os.path.dirname(arg)
-                filenames = [ os.path.basename(arg) ]
-            elif os.path.isdir(arg):
-                wd = arg
-                package = store_read_package(wd)
-                project = store_read_project(wd)
-                filenames = meta_get_filelist(project, package)
+            for filename in p.todo:
+                if filename in exclude_stuff:
+                    continue
+                state = p.status(filename)
+                if state == '?':
+                    p.addfile(filename)
+                    print statfrmt('A', filename)
+                elif state == '!':
+                    p.put_on_deletelist(filename)
+                    p.write_deletelist()
+                    os.unlink(os.path.join(p.storedir, filename))
+                    print statfrmt('D', filename)
 
-                # add files which are not listed in _meta
-                for i in os.listdir(arg):
-                    if i not in filenames and i not in exclude_stuff:
-                        filenames.insert(0, i)
-
-
-
-            filelist = localmeta_get_filelist()
-            for filename in filenames:
-                st = get_file_status(project, package, filename, filelist=filelist)
-                if st.startswith('?'):
-                    localmeta_addfile(filename)
-                    print 'A   ', filename
-                elif st.startswith('!'):
-                    print 'D   ', filename
-                    localmeta_removefile(filename)
 
 
 
     elif cmd == 'ci' or cmd == 'checkin':
+        init_basicauth()
+
         args = parseargs()
 
-        for arg in args:
+        pacs = findpacs(args)
 
-            if os.path.isfile(arg):
-                wd = os.path.dirname(arg)
-                filenames = [ os.path.basename(arg) ]
-            elif os.path.isdir(arg):
-                wd = arg
-                package = store_read_package(wd)
-                project = store_read_project(wd)
-                filenames = meta_get_filelist(project, package)
+        for p in pacs:
+            p.todo = p.filenamelist_unvers + p.filenamelist
 
-                # add files which are not listed in _meta
-                for i in os.listdir(arg):
-                    if i not in filenames and i not in exclude_stuff:
-                        filenames.insert(0, i)
-
-            os.chdir(wd)
-
-            files_to_send = []
-            files_to_delete = []
-
-            filelist = localmeta_get_filelist()
-            for filename in filenames:
-                st = get_file_status(project, package, filename, filelist=filelist)
-                if st.startswith('A') or st.startswith('M'):
-                    files_to_send.append(filename)
+            for filename in p.todo:
+                st = p.status(filename)
+                if st == 'A' or st == 'M':
+                    p.todo_send.append(filename)
                     print 'Sending        %s' % filename
-                elif st.startswith('D'):
-                    files_to_delete.append(filename)
+                elif st == 'D':
+                    p.todo_delete.append(filename)
                     print 'Deleting       %s' % filename
 
-            if not files_to_send and not files_to_delete:
-                print 'nothing to do'
-                sys.exit(0)
+            if not p.todo_send and not p.todo_delete:
+                print 'nothing to do for package %s' % p.name
+                continue
 
             print 'Transmitting file data ', 
-            for filename in files_to_send:
-                put_source_file(project, package, filename)
-                copy_file(filename, os.path.join(store, filename))
-            for filename in files_to_delete:
-                del_source_file(project, package, filename)
+            for filename in p.todo_send:
+                put_source_file(p.prjname, p.name, os.path.join(p.dir, filename))
+                #copy_file(filename, os.path.join(store, filename))
+            for filename in p.todo_delete:
+                del_source_file(p.prjname, p.name, filename)
+                p.to_be_deleted.remove(filename)
+
+            p.update_filesmeta()
+            p.write_deletelist()
             print
 
 
     elif cmd == 'up' or cmd == 'update':
 
         args = parseargs()
+        pacs = findpacs(args)
 
-        for arg in args:
-
-            if os.path.isfile(arg):
-                wd = os.path.dirname(arg)
-                filenames = [ os.path.basename(arg) ]
-            elif os.path.isdir(arg):
-                wd = arg
-                package = store_read_package(wd)
-                project = store_read_project(wd)
-
-                ## add files which are not listed in _meta
-                #for i in os.listdir(arg):
-                #    if i not in filenames and i not in exclude_stuff:
-                #        filenames.insert(0, i)
-
-            olddir = os.getcwd()
-            os.chdir(wd)
-            check_store_version()
+        for p in pacs:
 
             # save filelist before replacing the meta file
-            filenames = localmeta_get_filelist()
-            os.chdir(store)
-            # update filelist
-            f = open('_files', 'w')
-            f.write(''.join(show_files_meta(project, package)))
-            f.close()
+            saved_filenames = p.filenamelist
+            p.update_filesmeta()
+            p = Package(p.dir)
 
             # which files do no longer exist upstream?
             disappeared = []
-            upstream_files = meta_get_filelist(project, package)
-            for filename in filenames:
-                if filename not in upstream_files:
+            for filename in saved_filenames:
+                if filename not in p.filenamelist:
                     disappeared.append(filename)
                 
 
-            for filename in filenames:
+            for filename in saved_filenames:
                 if filename in disappeared:
-                    print 'D    %s' % filename
-                    os.unlink(filename)
+                    print statfrmt('D', filename)
+                    p.delfile(filename)
                     continue
 
-                get_source_file(project, package, filename)
-                wcfilename = os.path.join(os.pardir, os.path.basename(filename))
+            for filename in p.filenamelist:
 
-                if not os.path.exists(wcfilename):
-                    print 'A    %s' % filename
-                    copy_file(filename, wcfilename)
-
-                elif dgst(wcfilename) != dgst(filename):
-                    print 'U    %s' % filename
-                    copy_file(filename, wcfilename)
-
-                else:
+                state = p.status(filename)
+                if state == 'M':
+                    print 'file %s is locally modified... fixme' % filename
+                    p.updatefile(filename)
+                    print statfrmt('U', filename)
+                elif state == '!':
+                    p.updatefile(filename)
+                    print 'Restored \'%s\'' % filename
+                elif state == 'F':
+                    p.updatefile(filename)
+                    print statfrmt('A', filename)
+                elif state == ' ':
                     pass
 
-            # get current meta file
-            f = open('_meta', 'w')
-            f.write(''.join(show_package_meta(project, package)))
-            f.close()
 
-            os.chdir(olddir)
+            p.update_pacmeta()
+
+            print 'At revision %s.' % p.rev
                     
 
 
@@ -283,24 +242,25 @@ def main():
             sys.exit(1)
 
         args = parseargs()
+        pacs = findpacs(args)
 
-        for arg in args:
+        for p in pacs:
 
-            olddir = os.getcwd()
+            for filename in p.todo:
+                p.put_on_deletelist(filename)
+                p.write_deletelist()
+                try:
+                    os.unlink(os.path.join(p.dir, filename))
+                    os.unlink(os.path.join(p.storedir, filename))
+                except:
+                    pass
+                print statfrmt('D', filename)
 
-            wd = os.path.dirname(arg) or os.curdir
-            filename = arg
-
-            os.chdir(wd)
-
-            localmeta_removefile(filename)
-            print 'D    %s' % filename
-
-            os.chdir(olddir)
 
 
     elif cmd == 'id':
         print ''.join(get_user_id(sys.argv[2]))
+
 
     elif cmd == 'platforms':
         if len(sys.argv) > 2:
@@ -308,7 +268,6 @@ def main():
             print '\n'.join(get_platforms_of_project(project))
         else:
             print '\n'.join(get_platforms())
-
 
 
     elif cmd == 'results_meta':
@@ -321,6 +280,7 @@ def main():
         else:
             for platform in get_platforms_of_project(project):
                 print ''.join(show_results_meta(project, package, platform))
+
                 
     elif cmd == 'results':
         if len(sys.argv) > 3:
@@ -347,8 +307,18 @@ def main():
         arch = sys.argv[3]
         print ''.join(get_log(project, package, platform, arch))
 
+
+    elif cmd == 'hist' or cmd == 'history':
+        args = parseargs()
+        pacs = findpacs(args)
+
+        for p in pacs:
+            print ''.join(get_history(p.prjname, p.name))
+
+
     else:
         print "unknown command '%s'" % cmd
+
 
 if __name__ == '__main__':
     init_basicauth()

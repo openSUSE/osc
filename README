@@ -10,6 +10,10 @@ https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/pytho
 
 INSTALLATION:
 
+RPM packages are here (yum repository):
+http://repos.opensuse.org/opensuse/repositories/openSUSE:Tools/
+
+To install from svn, do
 	python setup.py build
 	python setup.py install
 	# create a symlink 'osc' in your path pointing to osc.py.
@@ -28,10 +32,8 @@ on SUSE anyway):
 
 CONFIGURATION:
 
-For authentication, put your account data into your ~/.netrc file, like this
-line:
-	machine api.opensuse.org login $login password $pass 
-
+osc uses authentication data if it finds it in .netrc, otherwise it will ask
+for username/password once, and store it in ~/.oscrc.
 
 
 
@@ -49,6 +51,7 @@ osc co Apache subversion foo	# single file
 # update working copy
 osc up
 osc up <directory>
+osc up * 			# from within a project dir, update all packages
 
 # check in
 osc ci				# current dir
@@ -58,20 +61,22 @@ osc ci file1 file2 ...
 # show status
 osc st
 osc st <directory>
+osc st file1 file2 ...
 
 # initialize a source directory to be a 
 # working copy of project <prj> package <pac>
 osc init <prj> <pac>
 
-# schedule file foo to be added / deleted
-osc add foo
-osc rm foo
+# schedule files foo to be added / deleted
+osc add file1 file2 ...
+osc rm file1 file2 ...
 
-# add all unknown files and remove all missing files
+# add all unknown files AND remove all missing files
 osc addremove
 
 # show diff
-osc diff [file]
+osc diff 			# current dir
+osc diff file1 file2 ...
 
 # show build results (xml)
 osc results
@@ -90,3 +95,26 @@ osc meta Apache
 osc meta Apache subversion
 osc id username
 
+
+
+
+HINT FOR W3M USERS
+
+Putting the following in the file ~/.w3m/passwd will make
+w3m know the credentials for the buildservice servers:
+
+"""
+host api.opensuse.org
+  port 80
+  realm Authentication required
+  login foo
+  password bar
+
+host build.opensuse.org
+  port 80
+  realm openSUSE Build Service
+  login foo
+  password bar
+"""
+
+chmod 0600 ~/.w3m/passwd
