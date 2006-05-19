@@ -600,8 +600,8 @@ def get_source_file_diff_upstream(prj, package, filename):
 def get_source_file_diff(dir, filename, rev):
     import difflib
 
-    file1 = os.path.join(dir, filename)
-    file2 = os.path.join(dir, store, filename)
+    file1 = os.path.join(dir, store, filename)  # stored original
+    file2 = os.path.join(dir, filename)         # working copy
 
     f1 = open(file1, 'r')
     f2 = open(file2, 'r')
