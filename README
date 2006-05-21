@@ -11,7 +11,7 @@ https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/pytho
 INSTALLATION:
 
 RPM packages are here (yum repository):
-http://repos.opensuse.org/opensuse/repositories/openSUSE:Tools/
+http://software.opensuse.org/download/repositories/openSUSE:Tools/
 
 To install from svn, do
 	python setup.py build
