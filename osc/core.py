@@ -682,9 +682,13 @@ def read_meta_from_spec(specfile):
 
 
 def get_user_id(user):
-    u = makeurl(['person', user])
-    f = urllib2.urlopen(u)
-    return f.readlines()
+    u = makeurl(['person', user.replace(' ', '+')])
+    try:
+        f = urllib2.urlopen(u)
+        return ''.join(f.readlines())
+    except urllib2.HTTPError:
+        print 'user \'%s\' not found' % user
+        return None
 
 
 def get_source_file(prj, package, filename, targetfilename=None):

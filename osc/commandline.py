@@ -299,7 +299,9 @@ def main():
 
 
     elif cmd == 'id':
-        print ''.join(get_user_id(sys.argv[2]))
+        r = get_user_id(sys.argv[2])
+        if r:
+            print ''.join(r)
 
 
     elif cmd == 'platforms':
