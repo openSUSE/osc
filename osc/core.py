@@ -58,8 +58,8 @@ class Package:
         for node in files_tree_root.findall('entry'):
             f = File(node.get('name'), 
                      node.get('md5'), 
-                     node.get('size'), 
-                     node.get('mtime'))
+                     int(node.get('size')), 
+                     int(node.get('mtime')))
             self.filelist.append(f)
             self.filenamelist.append(f.name)
 
@@ -103,7 +103,7 @@ class Package:
     def updatefile(self, n):
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
-        mtime = int(self.findfilebyname(n).mtime)
+        mtime = self.findfilebyname(n).mtime
 
         get_source_file(self.prjname, self.name, n, targetfilename=filename)
         os.utime(filename, (-1, mtime))
@@ -397,6 +397,7 @@ def init_package_dir(project, package, dir):
     f.write(__version__ + '\n')
     f.close()
 
+    os.chdir(os.pardir)
     return
 
 
@@ -639,8 +640,8 @@ def del_source_file(prj, package, filename):
 
 def make_dir(project, package):
     #print "creating directory '%s'" % project
-    print statfrmt('A', project)
     if not os.path.exists(project):
+        print statfrmt('A', project)
         os.mkdir(project)
         os.mkdir(os.path.join(project, store))
 
@@ -649,8 +650,8 @@ def make_dir(project, package):
         f.close()
 
     #print "creating directory '%s/%s'" % (project, package)
-    print statfrmt('A', '%s/%s' % (project, package))    
     if not os.path.exists(os.path.join(project, package)):
+        print statfrmt('A', '%s/%s' % (project, package))    
         os.mkdir(os.path.join(project, package))
         os.mkdir(os.path.join(project, package, store))
 
@@ -661,12 +662,12 @@ def checkout_package(project, package):
     olddir = os.getcwd()
 
     os.chdir(make_dir(project, package))
-    for filename in meta_get_filelist(project, package):
-        get_source_file(project, package, filename)
-        copy_file(filename, os.path.join(store, filename))
-        print 'A   ', os.path.join(project, package, filename)
-
     init_package_dir(project, package, store)
+    p = Package(os.curdir)
+
+    for filename in p.filenamelist:
+        p.updatefile(filename)
+        print 'A   ', os.path.join(project, package, filename)
 
     os.chdir(olddir)
 
