@@ -167,7 +167,10 @@ class Package:
 
     def write_deletelist(self):
         if len(self.to_be_deleted) == 0:
-            os.unlink(os.path.join(self.storedir, '_to_be_deleted'))
+            try:
+                os.unlink(os.path.join(self.storedir, '_to_be_deleted'))
+            except:
+                pass
         else:
             fname = os.path.join(self.storedir, '_to_be_deleted')
             f = open(fname, 'w')
