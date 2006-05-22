@@ -545,8 +545,8 @@ def check_store_version(dir):
         sys.exit(1)
 
     if v != __version__:
-        if v == '0.2':
-            # 0.2 is fine, no migration needed
+        if v == '0.2' or v == '0.3':
+            # version is fine, no migration needed
             f = open(versionfile, 'w')
             f.write(__version__ + '\n')
             f.close()
