@@ -189,6 +189,23 @@ def main():
     elif cmd == 'up' or cmd == 'update':
 
         args = parseargs()
+
+        for arg in args:
+
+            # when 'update' is run inside a project dir, it should...
+            if is_project_dir(arg):
+
+                prj = Project(arg)
+
+                # (a) update all packages
+                for i in prj.pacs_have:
+                    args.append(i)
+
+                # (b) fetch new packages
+                prj.checkout_missing_pacs()
+                args.remove(arg)
+
+
         pacs = findpacs(args)
 
         for p in pacs:
@@ -230,7 +247,7 @@ def main():
 
             p.update_pacmeta()
 
-            print 'At revision %s.' % p.rev
+            print ljust(p.name, 45), 'At revision %s.' % p.rev
                     
 
 

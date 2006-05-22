@@ -1,0 +1,13 @@
+0.4:
+- allow 'up' inside a project directory (will automatically pull in all new
+  packages)
+- checkout: preserve mtimes
+
+
+0.3:
+- use the new file metadata, which provides checksum, size and mtime
+- faster 'status', 'update', 'diff'
+- improve argument handling, now e.g. 'osc up *' is possible
+- on first usage, ask for username and password and store them in .oscrc
+  (.netrc can still be used)
+

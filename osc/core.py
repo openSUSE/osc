@@ -13,6 +13,7 @@ import urllib2
 from urlparse import urlunsplit
 import cElementTree as ET
 from cStringIO import StringIO
+from string import ljust
 
 
 from xml.dom.ext.reader import Sax2
@@ -35,6 +36,51 @@ class File:
         self.mtime = mtime
     def __str__(self):
         return self.name
+
+
+class Project:
+    """represent a project directory, holding packages"""
+    def __init__(self, dir):
+        self.dir = dir
+        if self.dir.startswith('/'):
+            self.absdir = dir
+        elif self.dir == os.curdir:
+            self.absdir = os.getcwd()
+        else:
+            self.absdir = os.path.join(os.getcwd(), dir)
+
+        self.name = store_read_project(self.dir)
+
+        self.pacs_available = meta_get_packagelist(self.name)
+
+        self.pacs_have = []
+        for i in os.listdir(self.dir):
+            if i in self.pacs_available: 
+                self.pacs_have.append(i)
+
+        self.pacs_missing = []
+        for i in self.pacs_available:
+            if i not in self.pacs_have:
+                self.pacs_missing.append(i)
+
+    def checkout_missing_pacs(self):
+        for pac in self.pacs_missing:
+            print 'checking out new package %s' % pac
+            olddir = os.getcwd()
+            os.chdir(os.pardir)
+            checkout_package(self.name, pac)
+            os.chdir(olddir)
+
+
+    def __str__(self):
+        r = []
+        r.append('*****************************************************')
+        r.append('Project %s (dir=%s, absdir=%s)' % (self.name, self.dir, self.absdir))
+        r.append('have pacs:\n%s' % ', '.join(self.pacs_have))
+        r.append('missing pacs:\n%s' % ', '.join(self.pacs_missing))
+        r.append('*****************************************************')
+        return '\n'.join(r)
+
 
 
 class Package:
@@ -205,6 +251,13 @@ rev: %s
 
         return r
 
+
+def is_project_dir(d):
+    if os.path.exists(os.path.join(d, store, '_project')) and not \
+       os.path.exists(os.path.join(d, store, '_package')):
+        return True
+    else:
+        return False
 
         
 def findpacs(files):
