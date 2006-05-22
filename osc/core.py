@@ -13,7 +13,6 @@ import urllib2
 from urlparse import urlunsplit
 import cElementTree as ET
 from cStringIO import StringIO
-from string import ljust
 
 
 from xml.dom.ext.reader import Sax2
@@ -102,6 +101,12 @@ class Package:
         self.filenamelist = []
         self.filelist = []
         for node in files_tree_root.findall('entry'):
+            try: 
+                int(node.get('size'))
+            except: 
+                print 'old _files metadata found.'
+                print 'run \'osc up\' after manually removing all "entry" lines from .osc/_files to upgrade.'
+                sys.exit(1)
             f = File(node.get('name'), 
                      node.get('md5'), 
                      int(node.get('size')), 
@@ -110,6 +115,7 @@ class Package:
             self.filenamelist.append(f.name)
 
         self.to_be_deleted = read_tobedeleted(self.dir)
+        self.in_conflict = read_inconflict(self.dir)
 
         self.todo = []
         self.todo_send = []
@@ -139,12 +145,45 @@ class Package:
         if n not in self.to_be_deleted:
             self.to_be_deleted.append(n)
 
+    def put_on_conflictlist(self, n):
+        if n not in self.in_conflict:
+            self.in_conflict.append(n)
+
+    def clear_from_conflictlist(self, n):
+        """delete an entry from the file, and remove the file if it would be empty"""
+        if n in self.in_conflict:
+
+            filename = os.path.join(self.dir, n)
+            storefilename = os.path.join(self.storedir, n)
+            myfilename = os.path.join(self.dir, n + '.mine')
+            upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+
+            os.unlink(myfilename)
+            os.rename(upfilename, storefilename)
+
+            self.in_conflict.remove(n)
+
+            self.write_deletelist()
+
     def write_deletelist(self):
-        fname = os.path.join(self.storedir, '_to_be_deleted')
-        f = open(fname, 'w')
-        f.write('\n'.join(self.to_be_deleted))
-        f.write('\n')
-        f.close()
+        if len(self.to_be_deleted) == 0:
+            os.unlink(os.path.join(self.storedir, '_to_be_deleted'))
+        else:
+            fname = os.path.join(self.storedir, '_to_be_deleted')
+            f = open(fname, 'w')
+            f.write('\n'.join(self.to_be_deleted))
+            f.write('\n')
+            f.close()
+
+    def write_conflictlist(self):
+        if len(self.in_conflict) == 0:
+            os.unlink(os.path.join(self.storedir, '_in_conflict'))
+        else:
+            fname = os.path.join(self.storedir, '_in_conflict')
+            f = open(fname, 'w')
+            f.write('\n'.join(self.in_conflict))
+            f.write('\n')
+            f.close()
 
     def updatefile(self, n):
         filename = os.path.join(self.dir, n)
@@ -156,6 +195,31 @@ class Package:
 
         copy_file(filename, storefilename)
         os.utime(storefilename, (-1, mtime))
+
+    def mergefile(self, n):
+        filename = os.path.join(self.dir, n)
+        storefilename = os.path.join(self.storedir, n)
+        myfilename = os.path.join(self.dir, n + '.mine')
+        upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+        os.rename(filename, myfilename)
+
+        get_source_file(self.prjname, self.name, n, targetfilename=upfilename)
+
+        ret = os.system('cd %s; diff3 -m -E %s %s %s > %s' \
+            % (self.dir, myfilename, storefilename, upfilename, filename))
+        if ret == 0:
+            # merge was successful... clean up
+            os.rename(upfilename, filename)
+            copy_file(filename, storefilename)
+            os.unlink(myfilename)
+            return 'M'
+        else:
+            # unsuccessful merge
+            self.in_conflict.append(n)
+            self.write_conflictlist()
+            return 'C'
+
+
 
     def update_filesmeta(self):
         meta = ''.join(show_files_meta(self.prjname, self.name))
@@ -182,7 +246,8 @@ class Package:
         exists  exists      in _files
 
           x       x            -        'A'
-          x       x            x        'M', if digest differs, else ' '
+          x       x            x        ' ' if digest differs: 'M'
+                                            and if in conflicts file: 'C'
           x       -            -        '?'
           x       -            x        'D' and listed in _to_be_deleted
           -       x            x        '!'
@@ -207,6 +272,8 @@ class Package:
             state = 'D'
         elif n in self.to_be_deleted:
             state = 'D'
+        elif n in self.in_conflict:
+            state = 'C'
         elif exists and exists_in_store and known_by_meta:
             #print self.findfilebyname(n)
             if dgst(os.path.join(self.dir, n)) != self.findfilebyname(n).md5:
@@ -286,6 +353,18 @@ def read_filemeta(dir):
 def read_tobedeleted(dir):
     r = []
     fname = os.path.join(dir, store, '_to_be_deleted')
+
+    if os.path.exists(fname):
+
+        for i in open(fname, 'r').readlines():
+            r.append(i.strip())
+
+    return r
+
+
+def read_inconflict(dir):
+    r = []
+    fname = os.path.join(dir, store, '_in_conflict')
 
     if os.path.exists(fname):
 

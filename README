@@ -1,8 +1,5 @@
 osc -- opensuse-commander with svn like handling
 
->>> BUG: at the moment, 'up' overwrites files with
-         local modifications.
-
 
 Please send patches to poeml@suse.de, or work directly on
 https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/

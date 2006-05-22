@@ -1,7 +1,11 @@
 0.4:
 - allow 'up' inside a project directory (will automatically pull in all new
-  packages)
+  packages). (For past checkouts, you may need to put the project name into 
+  $prjdir/.osc/_project yourself).
 - checkout: preserve mtimes
+- add diff3 merge support. Locally modified files are merged with upstream changes
+  if possible, and go into Conflict state if that fails.
+- add 'resolved' command to be used after manual merging.
 
 
 0.3:

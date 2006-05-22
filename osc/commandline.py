@@ -52,7 +52,8 @@ def main():
         for p in pacs:
             if p.todo == []:
                 for i in p.filenamelist:
-                    if p.status(i) == 'M':
+                    s = p.status(i)
+                    if s == 'M' or s == 'C':
                         p.todo.append(i)
 
             d = []
@@ -210,8 +211,12 @@ def main():
 
         for p in pacs:
 
-            # save filelist before replacing the meta file
+            # save filelist and (modified) status before replacing the meta file
             saved_filenames = p.filenamelist
+            saved_modifiedfiles = []
+            for i in p.filenamelist:
+                if p.status(i) == 'M':
+                    saved_modifiedfiles.append(i)
             p.update_filesmeta()
             p = Package(p.dir)
 
@@ -231,10 +236,13 @@ def main():
             for filename in p.filenamelist:
 
                 state = p.status(filename)
-                if state == 'M':
-                    print 'file %s is locally modified... fixme' % filename
+                if state == 'M' and filename in saved_modifiedfiles:
+                    print 'merging'
+                    status_after_merge = p.mergefile(filename)
+                    print statfrmt(status_after_merge, filename)
+                elif state == 'M':
                     p.updatefile(filename)
-                    print statfrmt('U', filename)
+                    print statfrmt('M', filename)
                 elif state == '!':
                     p.updatefile(filename)
                     print 'Restored \'%s\'' % filename
@@ -247,7 +255,8 @@ def main():
 
             p.update_pacmeta()
 
-            print ljust(p.name, 45), 'At revision %s.' % p.rev
+            #print ljust(p.name, 45), 'At revision %s.' % p.rev
+            print 'At revision %s.' % p.rev
                     
 
 
@@ -273,6 +282,20 @@ def main():
                     pass
                 print statfrmt('D', filename)
 
+
+    elif cmd == 'resolved':
+        if len(sys.argv) < 3:
+            print '%s requires at least one argument' % cmd
+            sys.exit(1)
+
+        args = parseargs()
+        pacs = findpacs(args)
+
+        for p in pacs:
+
+            for filename in p.todo:
+                print "Resolved conflicted state of '%s'" % filename
+                p.clear_from_conflictlist(filename)
 
 
     elif cmd == 'id':
