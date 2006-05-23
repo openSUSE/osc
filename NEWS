@@ -1,5 +1,7 @@
 0.5:
 - help :-)
+- add 'editmeta' subcommand: Edit project/package meta information, creating
+  new project or package if it doesn't exist. The user interface is $EDITOR
 - fix status letter for files merged on update (in analogy to svn , it is
   either G or U)
 - if an old _files listing without any metadata is found, don't bother the user
