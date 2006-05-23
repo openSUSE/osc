@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 import os
 import sys
@@ -375,12 +375,11 @@ def read_inconflict(dir):
     return r
 
 
-def parseargs():
-        if len(sys.argv) > 2:
-            args = sys.argv[2:]
+def parseargs(list_of_args):
+        if list_of_args:
+            return list_of_args
         else:
-            args = [ os.curdir ]
-        return args
+            return [ os.curdir ]
 
 
 def filedir_to_pac(f):
@@ -546,7 +545,7 @@ def check_store_version(dir):
         sys.exit(1)
 
     if v != __version__:
-        if v == '0.2' or v == '0.3':
+        if v == '0.2' or v == '0.3' or v == '0.4':
             # version is fine, no migration needed
             f = open(versionfile, 'w')
             f.write(__version__ + '\n')

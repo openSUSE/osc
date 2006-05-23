@@ -60,7 +60,7 @@ state, and conflicts are marked with special <<<<<<< and >>>>>>> lines.
 After manually resolving the problem, use
  osc resolved foo
 
-Upload change content, this does only work within package directories, but not in project directories currently.
+Upload change content
  osc ci				# current dir
  osc ci <dir>
  osc ci file1 file2 ...
@@ -73,7 +73,7 @@ Show the status (which files have been changed locally)
 Initialize a directory to be a working copy of an existing buildservice
 package. (This is the same as checking out a package and then copying sources
 into the directory. It does NOT create a new package.)
- osc init <prj> <pac>
+ osc init <prj> <pac>		# DEPRACATED
 
 Mark files to be added or removed on the next 'checkin'
  osc add file1 file2 ...

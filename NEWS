@@ -1,3 +1,12 @@
+0.5:
+- help :-)
+- fix status letter for files merged on update (in analogy to svn , it is
+  either G or U)
+- if an old _files listing without any metadata is found, don't bother the user
+  with it
+- make all subcommands properly importable functions
+
+
 0.4:
 - allow 'up' inside a project directory (will automatically pull in all new
   packages). (For past checkouts, you may need to put the project name into 
