@@ -161,7 +161,7 @@ class Package:
 
             self.in_conflict.remove(n)
 
-            self.write_deletelist()
+            self.write_conflictlist()
 
     def write_deletelist(self):
         if len(self.to_be_deleted) == 0:
