@@ -29,68 +29,80 @@ on SUSE anyway):
 
 CONFIGURATION:
 
-osc uses authentication data if it finds it in .netrc, otherwise it will ask
-for username/password once, and store it in ~/.oscrc.
+When you use it for the first time, it will ask you for your username and
+password, and store it in ~/.oscrc.
+
+If authentication data is found in .netrc, it will also be used.
 
 
 
 USAGE EXAMPLES:
 
-osc ls 				# list projects
-osc ls Apache 			# list packages in a project 
-osc ls Apache subversion 	# list files of package of a project
+To list existing content on the server
+ osc ls 				# list projects
+ osc ls Apache 			# list packages in a project 
+ osc ls Apache subversion 	# list files of package of a project
 
-# check out 
-osc co Apache 			# entire project
-osc co Apache subversion	# a package
-osc co Apache subversion foo	# single file
+Check out content
+ osc co Apache 			# entire project
+ osc co Apache subversion	# a package
+ osc co Apache subversion foo	# single file
 
-# update working copy
-osc up
-osc up <directory>
-osc up * 			# from within a project dir, update all packages
+Update a working copy
+ osc up
+ osc up [pac_dir]		# update a single package by its path
+ osc up * 			# from within a project dir, update all packages
+ osc up  			# from within a project dir, update all packages
+				   AND check out all newly added packages
 
-# check in
-osc ci				# current dir
-osc ci <dir>
-osc ci file1 file2 ...
+If an update can't be merged automatically, a file is in 'C' (conflict)
+state, and conflicts are marked with special <<<<<<< and >>>>>>> lines. 
+After manually resolving the problem, use
+ osc resolved foo
 
-# show status
-osc st
-osc st <directory>
-osc st file1 file2 ...
+Upload change content, this does only work within package directories, but not in project directories currently.
+ osc ci				# current dir
+ osc ci <dir>
+ osc ci file1 file2 ...
 
-# initialize a source directory to be a 
-# working copy of project <prj> package <pac>
-osc init <prj> <pac>
+Show the status (which files have been changed locally)
+ osc st
+ osc st <directory>
+ osc st file1 file2 ...
 
-# schedule files foo to be added / deleted
-osc add file1 file2 ...
-osc rm file1 file2 ...
+Initialize a directory to be a working copy of an existing buildservice
+package. (This is the same as checking out a package and then copying sources
+into the directory. It does NOT create a new package.)
+ osc init <prj> <pac>
 
-# add all unknown files AND remove all missing files
-osc addremove
+Mark files to be added or removed on the next 'checkin'
+ osc add file1 file2 ...
+ osc rm file1 file2 ...
 
-# show diff
-osc diff 			# current dir
-osc diff file1 file2 ...
+Adds all new files in local copy and removes all disappeared files.
+ osc addremove
 
-# show build results (xml)
-osc results
-osc results [platform]
+Generates a diff, to view the changes
+ osc diff 			# current dir
+ osc diff file1 file2 ...
 
-# show logfile (must be run from workingdir)
-osc log <platform> <arch>
+Shows the build results of the package
+ osc results
+ osc results [platform]
 
-# show platforms
-osc platforms
-# show platforms used by project Apache
-osc platforms Apache
+Shows the log file from a package (you need to be inside a package directory)
+ osc log <platform> <arch>
 
-# show various xml meta
-osc meta Apache
-osc meta Apache subversion
-osc id username
+Shows available platforms/build targets
+ osc platforms
+
+Shows the configured platforms/build targets of a project
+ osc platforms <project>
+
+Shows meta information
+ osc meta Apache
+ osc meta Apache subversion
+ osc id username
 
 
 
