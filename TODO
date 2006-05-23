@@ -10,6 +10,8 @@
     <project name="crashtest"/>
   </watchlist>
 
+diff: don't diff binary files
+
 
 checkin: 
 	- handle error if PUT fails, so the change is not committed to
