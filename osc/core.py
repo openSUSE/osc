@@ -102,15 +102,13 @@ class Package:
         self.filelist = []
         for node in files_tree_root.findall('entry'):
             try: 
-                int(node.get('size'))
+                f = File(node.get('name'), 
+                         node.get('md5'), 
+                         int(node.get('size')), 
+                         int(node.get('mtime')))
             except: 
-                print 'old _files metadata found.'
-                print 'run \'osc up\' after manually removing all "entry" lines from .osc/_files to upgrade.'
-                sys.exit(1)
-            f = File(node.get('name'), 
-                     node.get('md5'), 
-                     int(node.get('size')), 
-                     int(node.get('mtime')))
+                # okay, a very old version of _files, which didn't contain any metadata yet... 
+                f = File(node.get('name'), '', 0, 0)
             self.filelist.append(f)
             self.filenamelist.append(f.name)
 
@@ -895,4 +893,6 @@ def store_read_package(dir):
     p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     return p
 
+def get_osc_version():
+    return __version__
 
