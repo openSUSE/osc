@@ -70,11 +70,6 @@ Show the status (which files have been changed locally)
  osc st <directory>
  osc st file1 file2 ...
 
-Initialize a directory to be a working copy of an existing buildservice
-package. (This is the same as checking out a package and then copying sources
-into the directory. It does NOT create a new package.)
- osc init <prj> <pac>		# DEPRACATED
-
 Mark files to be added or removed on the next 'checkin'
  osc add file1 file2 ...
  osc rm file1 file2 ...
@@ -104,6 +99,10 @@ Shows meta information
  osc meta Apache subversion
  osc id username
 
+Edit meta information
+(Creates new package/project if it doesn't exist)
+ osc editmeta Apache
+ osc editmeta Apache subversion
 
 
 
