@@ -1,6 +1,14 @@
 - implement 'info' command
 - implement 'mv' command
 - implement 'trigger-rebuild'
+- implement a live build log
+- creation of new project
+- creation of new package
+- editing of user data
+  <watchlist>
+    <project name="ASCIIParadize"/>
+    <project name="crashtest"/>
+  </watchlist>
 
 
 checkin: 
@@ -17,9 +25,4 @@ split functionality that needs prj/pac as commandline arguments into a seperate 
 
 implement a package search / indexing
 
-edit user data
-  <watchlist>
-    <project name="ASCIIParadize"/>
-    <project name="crashtest"/>
-  </watchlist>
 
