@@ -213,7 +213,7 @@ class Package:
             os.rename(upfilename, filename)
             copy_file(filename, storefilename)
             os.unlink(myfilename)
-            return 'M'
+            return 'G'
         else:
             # unsuccessful merge
             self.in_conflict.append(n)

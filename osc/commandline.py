@@ -242,7 +242,7 @@ def main():
                     print statfrmt(status_after_merge, filename)
                 elif state == 'M':
                     p.updatefile(filename)
-                    print statfrmt('M', filename)
+                    print statfrmt('U', filename)
                 elif state == '!':
                     p.updatefile(filename)
                     print 'Restored \'%s\'' % filename
