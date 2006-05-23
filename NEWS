@@ -5,6 +5,7 @@
 - if an old _files listing without any metadata is found, don't bother the user
   with it
 - make all subcommands properly importable functions
+- bug in 'resolved' command fixed, which wouldn't clear the conflict state of a file
 
 
 0.4:
