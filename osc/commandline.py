@@ -334,7 +334,6 @@ usage: up
 
             state = p.status(filename)
             if state == 'M' and filename in saved_modifiedfiles:
-                print 'merging'
                 status_after_merge = p.mergefile(filename)
                 print statfrmt(status_after_merge, filename)
             elif state == 'M':
