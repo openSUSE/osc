@@ -25,6 +25,7 @@ Available subcommands:
     checkin (ci)
     checkout (co)
     diff
+    editmeta
     help
     history (hist)
     id
@@ -96,6 +97,29 @@ usage: meta Apache              # show meta of project 'Apache'
     elif len(args) == 1:
         project = args[0]
         print ''.join(show_project_meta(project))
+
+
+def editmeta(args):
+    """Edit project/package meta information
+If the named project or package does not exist, it will be created.
+
+usage: editmeta FooPrj              # edit meta of project 'FooPrj'
+       editmeta FooPrj barpackage   # edit meta of package 'barpackage'
+    """
+
+    if not args:
+        print 'missing argument'
+        print meta.func_doc
+        sys.exit(1)
+
+    if len(args) == 2:
+        project = args[0]
+        package = args[1]
+        edit_meta(project, package)
+
+    elif len(args) == 1:
+        project = args[0]
+        edit_meta(project, None)
 
 
 def diff(args):
@@ -536,6 +560,7 @@ cmd_dict = {
     'checkin':      checkin,
     'checkout':     checkout,
     'diff':         diff,
+    'editmeta':     editmeta,
     'help':         help,
     'history':      history,
     'id':           userid,         # <- small difference here
@@ -569,6 +594,10 @@ def main():
         args = None
 
     # run subcommand
+    if cmd not in cmd_dict:
+        print 'unknown command \'%s\'' % cmd
+        print "Type 'osc help' for usage."
+        sys.exit(1)
     cmd_dict[cmd](args)
 
 

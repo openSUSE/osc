@@ -26,6 +26,26 @@ store = '.osc'
 exclude_stuff = [store, '.svn', 'CVS']
 
 
+new_project_templ = """\
+<project name="NewProjectName">
+  <title>Short title of NewProject</title>
+  <description>This project aims at providing some foo and bar.
+
+It also does some weird stuff.
+</description>
+  <person role="maintainer" userid="%s" />
+</project>
+                        """
+
+new_package_templ = """\
+<package name="%s">
+  <title>Title of NewPackage</title>
+  <description>DESCIPTION</description>
+  <person role="maintainer" userid="%s"/>
+</package>
+"""
+
+
 class File:
     """represent a file, including its metadata"""
     def __init__(self, name, md5, size, mtime):
@@ -649,6 +669,49 @@ def show_project_meta(prj):
 def show_package_meta(prj, pac):
     f = urllib2.urlopen(makeurl(['source', prj, pac, '_meta']))
     return f.readlines()
+
+
+def edit_meta(prj, pac):
+    import othermethods
+    import tempfile
+
+    (f, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
+
+    if pac:
+        u = makeurl(['source', prj, pac, '_meta'])
+        try:
+            m = show_package_meta(prj, pac)
+        except urllib2.HTTPError, e:
+            if e.code == 404:
+                m = new_package_templ % (pac, username)
+
+    else:
+        u = makeurl(['source', prj, '_meta'])
+        try:
+            m = show_project_meta(prj)
+        except urllib2.HTTPError, e:
+            if e.code == 404:
+                m = new_project_templ % username
+
+    f = open(filename, 'w')
+    f.write(''.join(m))
+    f.close()
+
+    timestamp = os.stat(filename).st_mtime
+
+    editor = os.getenv('EDITOR', default='vim')
+    os.system('%s %s' % (editor, filename))
+
+    if os.stat(filename).st_mtime == timestamp:
+        print 'File unchanged. Not saving.'
+        os.unlink(filename)
+
+    else:
+        print 'Sending meta data...', 
+        othermethods.putfile(u, filename, username, password)
+        os.unlink(filename)
+        print 'Done.'
+
 
 
 def show_files_meta(prj, pac):
