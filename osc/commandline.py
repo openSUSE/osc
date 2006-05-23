@@ -338,6 +338,7 @@ usage: up
         for i in p.filenamelist:
             if p.status(i) == 'M':
                 saved_modifiedfiles.append(i)
+        oldp = p
         p.update_filesmeta()
         p = Package(p.dir)
 
@@ -357,7 +358,10 @@ usage: up
         for filename in p.filenamelist:
 
             state = p.status(filename)
-            if state == 'M' and filename in saved_modifiedfiles:
+            if p.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
+                # no merge necessary... local file is changed, but upstream isn't
+                pass
+            elif state == 'M' and filename in saved_modifiedfiles:
                 status_after_merge = p.mergefile(filename)
                 print statfrmt(status_after_merge, filename)
             elif state == 'M':

@@ -27,7 +27,7 @@ exclude_stuff = [store, '.svn', 'CVS']
 
 
 new_project_templ = """\
-<project name="NewProjectName">
+<project name="%s">
   <title>Short title of NewProject</title>
   <description>This project aims at providing some foo and bar.
 
@@ -691,7 +691,7 @@ def edit_meta(prj, pac):
             m = show_project_meta(prj)
         except urllib2.HTTPError, e:
             if e.code == 404:
-                m = new_project_templ % username
+                m = new_project_templ % (prj, username)
 
     f = open(filename, 'w')
     f.write(''.join(m))
