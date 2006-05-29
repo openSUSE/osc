@@ -9,8 +9,10 @@
     <project name="ASCIIParadize"/>
     <project name="crashtest"/>
   </watchlist>
+- editmeta: validate input
 
 diff: don't diff binary files
+update: don't try to merge binary files
 
 
 checkin: 
