@@ -1,3 +1,11 @@
+0.6:
+- diff bugfix: sometimes displayed diff against obsolete files
+- update bugfixes: fix update of working copy when adding a file from upstream
+  which is missing locally; fix update in directory with unmodified files:
+  don't try to merge if upstream file wasn't changed at all
+- add: make it faster
+
+
 0.5:
 - help :-)
 - add 'editmeta' subcommand: Edit project/package meta information, creating
