@@ -528,6 +528,7 @@ def init_basicauth():
     # create the AuthHandler
 
     opener = urllib2.build_opener(authhandler)
+    opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
 
     urllib2.install_opener(opener)
     # All calls to urllib2.urlopen will now use our handler
