@@ -13,6 +13,7 @@ import urllib2
 from urlparse import urlunsplit
 import cElementTree as ET
 from cStringIO import StringIO
+import shutil
 
 
 from xml.dom.ext.reader import Sax2
@@ -149,15 +150,17 @@ class Package:
 
     def addfile(self, n):
         st = os.stat(os.path.join(self.dir, n))
-        f = File(n, dgst(os.path.join(self.dir, n)), st[6], st[8])
+        f = File(n, None, st[6], st[8])
         self.filelist.append(f)
         self.filenamelist.append(n)
         self.filenamelist_unvers.remove(n) 
-        copy_file(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+        shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
         
-    def delfile(self, n):
-        os.unlink(os.path.join(self.dir, n))
-        os.unlink(os.path.join(self.storedir, n))
+    def delete_localfile(self, n):
+        try: os.unlink(os.path.join(self.dir, n))
+        except: pass
+        try: os.unlink(os.path.join(self.storedir, n))
+        except: pass
 
     def put_on_deletelist(self, n):
         if n not in self.to_be_deleted:
@@ -196,6 +199,22 @@ class Package:
             f.write('\n')
             f.close()
 
+    def delete_source_file(self, n):
+        import othermethods
+        
+        u = makeurl(['source', self.prjname, self.name, n])
+        othermethods.delfile(u, n, username, password)
+
+        self.delete_localfile(n)
+
+    def put_source_file(self, n):
+        import othermethods
+        
+        u = makeurl(['source', self.prjname, self.name, n])
+        othermethods.putfile(u, os.path.join(self.dir, n), username, password)
+
+        shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
             os.unlink(os.path.join(self.storedir, '_in_conflict'))
@@ -214,8 +233,7 @@ class Package:
         get_source_file(self.prjname, self.name, n, targetfilename=filename)
         os.utime(filename, (-1, mtime))
 
-        copy_file(filename, storefilename)
-        os.utime(storefilename, (-1, mtime))
+        shutil.copy2(filename, storefilename)
 
     def mergefile(self, n):
         filename = os.path.join(self.dir, n)
@@ -231,7 +249,7 @@ class Package:
         if ret == 0:
             # merge was successful... clean up
             os.rename(upfilename, filename)
-            copy_file(filename, storefilename)
+            shutil.copy2(filename, storefilename)
             os.unlink(myfilename)
             return 'G'
         else:
@@ -438,18 +456,6 @@ def statfrmt(statusletter, filename):
 def makeurl(l):
     """given a list of path compoments, construct a complete URL"""
     return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
-
-
-def copy_file(src, dst):
-    # fixme: preserve mtime by default?
-    s = open(src)
-    d = open(dst, 'w')
-    while 1:
-        buf = s.read(BUFSIZE)
-        if not buf: break
-        d.write(buf)
-    s.close()
-    d.close()
 
 
 def readauth():
@@ -816,25 +822,6 @@ def get_source_file_diff(dir, filename, rev):
     f2.close()
 
     return ''.join(d)
-
-
-def put_source_file(prj, package, filename):
-    import othermethods
-    
-    sys.stdout.write('.')
-    u = makeurl(['source', prj, package, os.path.basename(filename)])
-    othermethods.putfile(u, filename, username, password)
-
-
-def del_source_file(prj, package, filename):
-    import othermethods
-    
-    u = makeurl(['source', prj, package, filename])
-    othermethods.delfile(u, filename, username, password)
-
-    wcfilename = os.path.join(store, filename)
-    if os.path.exists(filename): os.unlink(filename)
-    if os.path.exists(wcfilename): os.unlink(wcfilename)
 
 
 def make_dir(project, package):

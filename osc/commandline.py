@@ -289,10 +289,10 @@ usage: ci                   # current dir
 
         print 'Transmitting file data ', 
         for filename in p.todo_send:
-            put_source_file(p.prjname, p.name, os.path.join(p.dir, filename))
-            #copy_file(filename, os.path.join(store, filename))
+            sys.stdout.write('.')
+            p.put_source_file(filename)
         for filename in p.todo_delete:
-            del_source_file(p.prjname, p.name, filename)
+            p.delete_source_file(filename)
             p.to_be_deleted.remove(filename)
 
         p.update_filesmeta()
@@ -352,7 +352,7 @@ usage: up
         for filename in saved_filenames:
             if filename in disappeared:
                 print statfrmt('D', filename)
-                p.delfile(filename)
+                p.delete_localfile(filename)
                 continue
 
         for filename in p.filenamelist:
