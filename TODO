@@ -1,6 +1,5 @@
 - implement 'info' command
 - implement 'mv' command
-- implement 'trigger-rebuild'
 - implement a live build log
 - creation of new project
 - creation of new package
@@ -10,6 +9,8 @@
     <project name="crashtest"/>
   </watchlist>
 - editmeta: validate input
+- updatepacmetafromspec -- is that useful? 
+  In which form would this be integrated best?
 
 diff: don't diff binary files
 update: don't try to merge binary files
@@ -21,6 +22,9 @@ checkin:
 
 
 results: aggregate results of all packages in a project
+-> packstatus: http://api.opensuse.org/result/KDE:KDE3/packstatus
+               http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
+               http://api.opensuse.org/result/KDE:KDE3/packstatus?summaryonly
 
 
 
