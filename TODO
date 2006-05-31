@@ -30,3 +30,9 @@ split functionality that needs prj/pac as commandline arguments into a seperate 
 implement a package search / indexing
 
 
+> BTW: Can I upload a src.rpm instead of a tarball also?
+no, because not all tools will be able to handle a src.rpm. And you will not
+be able to build non rpm packages from it.
+But someone could patch the commandline tool osc to import a src.rpm by
+extracting it (hint hint ;)
+

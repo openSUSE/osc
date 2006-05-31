@@ -39,6 +39,7 @@ Available subcommands:
     results_meta
     status (st)
     update (up)
+    updatepacmetafromspec
 
 """ % get_osc_version()
 
@@ -120,6 +121,21 @@ usage: editmeta FooPrj              # edit meta of project 'FooPrj'
     elif len(args) == 1:
         project = args[0]
         edit_meta(project, None)
+
+
+def updatepacmetafromspec(args):
+    """Update package meta information from a specfile
+
+usage: 1. updatepacmetafromspec                       # current dir
+       2. updatepacmetafromspec dir1 dir2 ...
+    """
+    args = parseargs(args)
+    pacs = findpacs(args)
+
+    for p in pacs:
+
+        p.read_meta_from_spec()
+        p.update_pac_meta()
 
 
 def diff(args):
@@ -563,6 +579,7 @@ cmd_dict = {
     'addremove':    addremove,
     'checkin':      checkin,
     'checkout':     checkout,
+    'updatepacmetafromspec':     updatepacmetafromspec,
     'diff':         diff,
     'editmeta':     editmeta,
     'help':         help,

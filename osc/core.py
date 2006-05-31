@@ -358,6 +358,66 @@ rev: %s
         return r
 
 
+    def read_meta_from_spec(self):
+        specfile = os.path.join(self.dir, self.name + '.spec')
+        name, summary, descr = read_meta_from_spec(specfile)
+
+        if name != self.name:
+            print 'name from spec does not match name of package... this is probably a problem'
+            sys.exit(1)
+        self.summary = summary
+        self.descr = descr
+
+
+    def update_pac_meta(self):
+        import othermethods
+        import tempfile
+
+        (f, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
+
+        try:
+            m = show_package_meta(self.prjname, self.name)
+        except urllib2.HTTPError, e:
+            if e.code == 404:
+                print 'package does not exist yet... creating it'
+                m = new_package_templ % (pac, username)
+            else:
+                print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
+                print e
+                sys.exit(1)
+
+        f = open(filename, 'w')
+        f.write(''.join(m))
+        f.close()
+
+        tree = ET.parse(filename)
+        tree.find('title').text = self.summary
+        tree.find('description').text = ''.join(self.descr)
+        tree.write(filename)
+
+        # FIXME: escape stuff for xml
+        print '*' * 36, 'old', '*' * 36
+        print ''.join(m)
+        print '*' * 36, 'new', '*' * 36
+        tree.write(sys.stdout)
+        print '*' * 72
+
+        # FIXME: for testing...
+        # open the new description in $EDITOR instead?
+        repl = raw_input('Write? (y/N) ')
+        if repl == 'y':
+            print 'Sending meta data...', 
+            u = makeurl(['source', self.prjname, self.name, '_meta'])
+            othermethods.putfile(u, filename, username, password)
+            print 'Done.'
+        else:
+            print 'discarding', filename
+
+        os.unlink(filename)
+
+
+
+
 def is_project_dir(d):
     if os.path.exists(os.path.join(d, store, '_project')) and not \
        os.path.exists(os.path.join(d, store, '_package')):
@@ -685,20 +745,30 @@ def edit_meta(prj, pac):
     (f, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
     if pac:
+        # package meta
         u = makeurl(['source', prj, pac, '_meta'])
         try:
             m = show_package_meta(prj, pac)
         except urllib2.HTTPError, e:
             if e.code == 404:
                 m = new_package_templ % (pac, username)
+            else:
+                print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
+                print e
+                sys.exit(1)
 
     else:
+        # project meta
         u = makeurl(['source', prj, '_meta'])
         try:
             m = show_project_meta(prj)
         except urllib2.HTTPError, e:
             if e.code == 404:
                 m = new_project_templ % (prj, username)
+            else:
+                print 'error getting package meta for project \'%s\':' % prj
+                print e
+                sys.exit(1)
 
     f = open(filename, 'w')
     f.write(''.join(m))
@@ -718,7 +788,6 @@ def edit_meta(prj, pac):
         othermethods.putfile(u, filename, username, password)
         os.unlink(filename)
         print 'Done.'
-
 
 
 def show_files_meta(prj, pac):
