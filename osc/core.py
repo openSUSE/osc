@@ -649,7 +649,17 @@ def check_store_version(dir):
 def meta_get_packagelist(prj):
 
     u = makeurl(['source', prj, '_meta'])
-    f = urllib2.urlopen(u)
+
+    try:
+        f = urllib2.urlopen(u)
+    except urllib2.HTTPError, e:
+        if e.code == 404:
+            print 'project \'%s\' does not exist' % prj
+            sys.exit(1)
+        else:
+            print e
+            print 'url: \'%s\'' % u
+            sys.exit(1)
 
     tree = ET.parse(f)
     root = tree.getroot()
@@ -977,7 +987,7 @@ def get_results(prj, package, platform):
         statusnode =  node.find('status')
         rmap['status'] = statusnode.get('code')
 
-        if rmap['status'] == 'expansion error':
+        if rmap['status'] in ['expansion error', 'broken']:
             rmap['status'] += ': ' + statusnode.find('summary').text
 
         if rmap['status'] == 'failed':
