@@ -179,7 +179,8 @@ class Package:
             myfilename = os.path.join(self.dir, n + '.mine')
             upfilename = os.path.join(self.dir, n + '.r' + self.rev)
 
-            os.unlink(myfilename)
+            try: os.unlink(myfilename)
+            except: pass
             os.rename(upfilename, storefilename)
 
             self.in_conflict.remove(n)

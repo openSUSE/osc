@@ -166,6 +166,25 @@ def diff(args):
 
 
             
+def repourls(args):
+    """repourls: shows URLs on which to access the .repos files
+
+usage: 1. repourls
+       2. repourls [dir1] [dir2] ...
+
+    """
+
+    args = parseargs(args)
+    pacs = findpacs(args)
+
+    url_tmpl = 'http://software.opensuse.org/download/%s/%s/%s.repo'
+    for p in pacs:
+        platforms = get_platforms_of_project(p.prjname)
+        for platform in platforms:
+            print url_tmpl % (p.prjname.replace(':', ':/'), platform, p.prjname)
+
+
+            
 def checkout(args):
     """checkout (co): Check out content from the server.
 
@@ -591,6 +610,7 @@ cmd_dict = {
     'meta':         meta,
     'platforms':    platforms,
     'delete':       delete,
+    'repourls':     repourls,
     'resolved':     resolved,
     'results':      results,
     'results_meta': results_meta,
