@@ -62,12 +62,7 @@ class Project:
     """represent a project directory, holding packages"""
     def __init__(self, dir):
         self.dir = dir
-        if self.dir.startswith('/'):
-            self.absdir = dir
-        elif self.dir == os.curdir:
-            self.absdir = os.getcwd()
-        else:
-            self.absdir = os.path.join(os.getcwd(), dir)
+        self.absdir = os.path.abspath(dir)
 
         self.name = store_read_project(self.dir)
 
@@ -107,6 +102,7 @@ class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
     def __init__(self, workingdir):
         self.dir = workingdir
+        self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.dir, store)
 
         check_store_version(self.dir)
@@ -211,7 +207,9 @@ class Package:
     def put_source_file(self, n):
         import othermethods
         
-        u = makeurl(['source', self.prjname, self.name, n])
+        # escaping '+' in the URL path (note: not in the URL query string) is 
+        # only a workaround for ruby on rails, which swallows it otherwise
+        u = makeurl(['source', self.prjname, self.name, n.replace('+', '%2B')])
         othermethods.putfile(u, os.path.join(self.dir, n), username, password)
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
@@ -804,6 +802,11 @@ def edit_meta(prj, pac):
 def show_files_meta(prj, pac):
     f = urllib2.urlopen(makeurl(['source', prj, pac]))
     return f.readlines()
+
+
+def show_upstream_rev(prj, pac):
+    m = show_files_meta(prj, pac)
+    return ET.parse(StringIO(''.join(m))).getroot().get('rev')
 
 
 def read_meta_from_spec(specfile):

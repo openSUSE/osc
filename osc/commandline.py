@@ -22,7 +22,7 @@ Available subcommands:
 
     add
     addremove
-    checkin (ci)
+    commit (checkin, ci)
     checkout (co)
     diff
     editmeta
@@ -293,7 +293,7 @@ usage: addremove
 
 
 def checkin(args):
-    """checkin (ci): Upload change content from your working copy to the repository
+    """commit (ci): Upload change content from your working copy to the repository
 
 usage: ci                   # current dir
        ci <dir>
@@ -307,6 +307,14 @@ usage: ci                   # current dir
     pacs = findpacs(args)
 
     for p in pacs:
+
+        # commit only if the upstream revision is the same as the working copy's
+        upstream_rev = show_upstream_rev(p.prjname, p.name)
+        if p.rev != upstream_rev:
+            print 'Working copy \'%s\' is out of date (rev %s vs rev %s).' % (p.absdir, p.rev, upstream_rev)
+            print 'Looks as if you need to update it first.'
+            sys.exit(1)
+
         p.todo = p.filenamelist_unvers + p.filenamelist
 
         for filename in p.todo:
@@ -583,7 +591,7 @@ usage: help [SUBCOMMAND...]
 
 
 def resolve_cmd_alias(cmd):
-    if cmd == 'ci': return 'checkin'
+    if cmd in ['commit', 'ci']: return 'checkin'
     if cmd == 'co': return 'checkout'
     if cmd == 'st': return 'status'
     if cmd == 'up': return 'update'
