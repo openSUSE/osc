@@ -12,7 +12,6 @@
 - updatepacmetafromspec -- is that useful? 
   In which form would this be integrated best?
 
-diff: don't diff binary files
 update: don't try to merge binary files
 
 
@@ -39,4 +38,15 @@ no, because not all tools will be able to handle a src.rpm. And you will not
 be able to build non rpm packages from it.
 But someone could patch the commandline tool osc to import a src.rpm by
 extracting it (hint hint ;)
+
+
+17:24 <darix> und wie waere ein osc link src_project src_package
+              [local_package] ?:p
+or: "linkpac"?
+just create a _link file with the content
+	<link project='exim' package='exim'/>
+
+
+16:20 < abauer> DuDE: <person><watchlist><project name="blub"/></watchlist></person>
+
 
