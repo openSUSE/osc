@@ -1,3 +1,21 @@
+since 0.6:
+
+- add 'rebuildpac' command
+- add 'repourls' subcommand
+- don't diff binary files
+- add a preliminary 'updatepacmetafromspec' subcommand, which takes package
+  metadata from a specfile
+- fix profiling wrapper
+- set User-agent
+- bugfixes: 
+  - fix handling of filenames with '+' signs
+  - make 'resolved' more robust
+  - fix merge on 'update' if called from another directory
+  - display reason for build status is 'broken'
+  - handle HTTP error codes != 404 when reading metadata in edit_meta()
+  - handle 'project not found' error in show_project_meta()
+
+
 0.6:
 - diff bugfix: sometimes displayed diff against obsolete files
 - update bugfixes: fix update of working copy when adding a file from upstream
