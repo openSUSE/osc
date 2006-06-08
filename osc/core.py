@@ -175,9 +175,13 @@ class Package:
             myfilename = os.path.join(self.dir, n + '.mine')
             upfilename = os.path.join(self.dir, n + '.r' + self.rev)
 
-            try: os.unlink(myfilename)
-            except: pass
-            os.rename(upfilename, storefilename)
+            try:
+                os.unlink(myfilename)
+                # the working copy may be updated, so the .r* ending may be obsolete...
+                # then we don't care
+                os.unlink(upfilename)
+            except: 
+                pass
 
             self.in_conflict.remove(n)
 
@@ -243,8 +247,8 @@ class Package:
 
         get_source_file(self.prjname, self.name, n, targetfilename=upfilename)
 
-        ret = os.system('cd %s; diff3 -m -E %s %s %s > %s' \
-            % (self.dir, myfilename, storefilename, upfilename, filename))
+        ret = os.system('diff3 -m -E %s %s %s > %s' \
+            % (myfilename, storefilename, upfilename, filename))
         if ret == 0:
             # merge was successful... clean up
             os.rename(upfilename, filename)
@@ -845,8 +849,7 @@ def get_user_id(user):
 
 
 def get_source_file(prj, package, filename, targetfilename=None):
-    u = makeurl(['source', prj, package, filename])
-    #print 'checking out', u
+    u = makeurl(['source', prj, package, filename.replace('+', '%2B')])
     f = urllib2.urlopen(u)
 
     o = open(targetfilename or filename, 'w')
@@ -872,19 +875,11 @@ def dgst(file):
     return s.hexdigest()
 
 
-def get_source_file_diff_upstream(prj, package, filename):
-    url = makeurl(['source', prj, package, filename])
-    f = urllib2.urlopen(url)
-
-    localfile = open(filename, 'r')
-
-    import difflib
-    #print url
-    d = difflib.unified_diff(f.readlines(), localfile.readlines(), fromfile = url, tofile = filename)
-
-    localfile.close()
-
-    return ''.join(d)
+def binary(s):
+    """return true if a string is binary data using diff's heuristic"""
+    if s and '\0' in s[:4096]:
+        return True
+    return False
 
 
 def get_source_file_diff(dir, filename, rev):
@@ -896,11 +891,18 @@ def get_source_file_diff(dir, filename, rev):
     f1 = open(file1, 'r')
     f2 = open(file2, 'r')
 
-    d = difflib.unified_diff(\
-        f1.readlines(), \
-        f2.readlines(), \
-        fromfile = '%s     (revision %s)' % (filename, rev), \
-        tofile = '%s     (working copy)' % filename)
+    s1 = f1.read()
+    s2 = f2.read()
+
+    if binary(s1) or binary (s2):
+        d = ['Binary file %s has changed\n' % filename]
+
+    else:
+        d = difflib.unified_diff(\
+            s1.splitlines(1), \
+            s2.splitlines(1), \
+            fromfile = '%s     (revision %s)' % (filename, rev), \
+            tofile = '%s     (working copy)' % filename)
 
     f1.close()
     f2.close()
@@ -1014,6 +1016,13 @@ def get_history(prj, package):
     u = makeurl(['package', prj, package, 'history'])
     print u
     f = urllib2.urlopen(u)
+    return f.readlines()
+
+
+def cmd_rebuild(prj, package):
+    u = makeurl(['source', prj, package, '?cmd=rebuild'])
+    # adding data to the request makes it a POST
+    f = urllib2.urlopen(u, data=' ')
     return f.readlines()
 
 

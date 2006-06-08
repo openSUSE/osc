@@ -33,6 +33,7 @@ Available subcommands:
     ls
     meta
     platforms
+    rebuildpac
     remove (del, delete, rm)
     resolved
     results
@@ -572,6 +573,18 @@ usage: history <pacdir>
         print ''.join(get_history(p.prjname, p.name))
 
 
+def rebuildpac(args):
+    """rebuildpac: Triggers a package rebuild for all repositories/architectures of the package
+
+usage: rebuildpac <pacdir>
+    """ 
+    args = parseargs(args)
+    pacs = findpacs(args)
+
+    for p in pacs:
+        print ''.join(cmd_rebuild(p.prjname, p.name))
+
+
 def help(args):
     """help: Describe the usage of this program or its subcommands.
 
@@ -622,6 +635,7 @@ cmd_dict = {
     'resolved':     resolved,
     'results':      results,
     'results_meta': results_meta,
+    'rebuildpac':   rebuildpac,
     'status':       status,
     'update':       update,
 }
