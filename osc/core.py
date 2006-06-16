@@ -1004,10 +1004,10 @@ def get_results(prj, package, platform):
     return r
 
 
-def get_log(prj, package, platform, arch):
-    u = makeurl(['result', prj, platform, package, arch, 'log'])
+def get_log(prj, package, platform, arch, offset):
+    u = makeurl(['result', prj, platform, package, arch, 'log?nostream=1&start=%s' % offset])
     f = urllib2.urlopen(u)
-    return f.readlines()
+    return f.read()
 
 
 def get_history(prj, package):

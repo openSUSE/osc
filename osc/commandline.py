@@ -558,7 +558,13 @@ usage: log <platform> <arch>
 
     platform = args[0]
     arch = args[1]
-    print ''.join(get_log(project, package, platform, arch))
+    offset = 0
+    while True:
+        log_chunk = get_log(project, package, platform, arch, offset)
+        if len(log_chunk) == 0:
+            break
+        offset += len(log_chunk)
+        print log_chunk.strip()
 
 
 def history(args):
