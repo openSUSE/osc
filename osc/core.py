@@ -146,7 +146,7 @@ class Package:
 
     def addfile(self, n):
         st = os.stat(os.path.join(self.dir, n))
-        f = File(n, None, st[6], st[8])
+        f = File(n, None, st.st_size, st.st_mtime)
         self.filelist.append(f)
         self.filenamelist.append(n)
         self.filenamelist_unvers.remove(n) 
@@ -787,12 +787,12 @@ def edit_meta(prj, pac):
     f.write(''.join(m))
     f.close()
 
-    timestamp = os.stat(filename).st_mtime
+    timestamp = os.path.getmtime(filename)
 
     editor = os.getenv('EDITOR', default='vim')
     os.system('%s %s' % (editor, filename))
 
-    if os.stat(filename).st_mtime == timestamp:
+    if os.path.getmtime(filename) == timestamp:
         print 'File unchanged. Not saving.'
         os.unlink(filename)
 
