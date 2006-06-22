@@ -1,8 +1,10 @@
 since 0.6:
 
+- add support for streaming the build log (thanks to Christoph Thiel)
 - add 'rebuildpac' command
 - add 'repourls' subcommand
 - don't diff binary files
+- don't try to merge binary files
 - add a preliminary 'updatepacmetafromspec' subcommand, which takes package
   metadata from a specfile
 - fix profiling wrapper
