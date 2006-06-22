@@ -247,21 +247,32 @@ class Package:
         upfilename = os.path.join(self.dir, n + '.r' + self.rev)
         os.rename(filename, myfilename)
 
+        mtime = self.findfilebyname(n).mtime
         get_source_file(self.prjname, self.name, n, targetfilename=upfilename)
+        os.utime(upfilename, (-1, mtime))
 
-        ret = os.system('diff3 -m -E %s %s %s > %s' \
-            % (myfilename, storefilename, upfilename, filename))
-        if ret == 0:
-            # merge was successful... clean up
-            os.rename(upfilename, filename)
-            shutil.copy2(filename, storefilename)
-            os.unlink(myfilename)
-            return 'G'
+        if binary_file(myfilename) or binary_file(upfilename):
+                # don't try merging
+                shutil.copy2(upfilename, filename)
+                shutil.copy2(upfilename, storefilename)
+                self.in_conflict.append(n)
+                self.write_conflictlist()
+                return 'C'
         else:
-            # unsuccessful merge
-            self.in_conflict.append(n)
-            self.write_conflictlist()
-            return 'C'
+            # try merging
+            ret = os.system('diff3 -m -E %s %s %s > %s' \
+                % (myfilename, storefilename, upfilename, filename))
+            if ret == 0:
+                # merge was successful... clean up
+                os.rename(upfilename, filename)
+                shutil.copy2(filename, storefilename)
+                os.unlink(myfilename)
+                return 'G'
+            else:
+                # unsuccessful merge
+                self.in_conflict.append(n)
+                self.write_conflictlist()
+                return 'C'
 
 
 
@@ -884,6 +895,11 @@ def binary(s):
     return False
 
 
+def binary_file(fn):
+    """read 4096 bytes from a file named fn, and call binary() on the data"""
+    return binary(open(fn, 'r').read(4096))
+
+
 def get_source_file_diff(dir, filename, rev):
     import difflib
 
@@ -891,10 +907,12 @@ def get_source_file_diff(dir, filename, rev):
     file2 = os.path.join(dir, filename)         # working copy
 
     f1 = open(file1, 'r')
-    f2 = open(file2, 'r')
-
     s1 = f1.read()
+    f1.close()
+
+    f2 = open(file2, 'r')
     s2 = f2.read()
+    f2.close()
 
     if binary(s1) or binary (s2):
         d = ['Binary file %s has changed\n' % filename]
@@ -905,9 +923,6 @@ def get_source_file_diff(dir, filename, rev):
             s2.splitlines(1), \
             fromfile = '%s     (revision %s)' % (filename, rev), \
             tofile = '%s     (working copy)' % filename)
-
-    f1.close()
-    f2.close()
 
     return ''.join(d)
 
