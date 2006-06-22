@@ -1,8 +1,9 @@
+- split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote)
+
 - implement 'info' command
 - implement 'mv' command
-- implement a live build log
-- creation of new project
-- creation of new package
+- creation of new project (workaround: editmeta <newprj>)
+- creation of new package (workaround: editmeta prj <newpac>)
 - editing of user data
   <watchlist>
     <project name="ASCIIParadize"/>
@@ -11,8 +12,7 @@
 - editmeta: validate input
 - updatepacmetafromspec -- is that useful? 
   In which form would this be integrated best?
-
-update: don't try to merge binary files
+  -> it doesn't cope with subpackages as well as I initially thought
 
 
 checkin: 
@@ -27,8 +27,6 @@ results: aggregate results of all packages in a project
 
 
 
-
-split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote)
 
 implement a package search / indexing
 
@@ -47,6 +45,24 @@ just create a _link file with the content
 	<link project='exim' package='exim'/>
 
 
-16:20 < abauer> DuDE: <person><watchlist><project name="blub"/></watchlist></person>
 
+<darix> ich hab nen vorschlag fuer osc
+<darix> sagen wir ich leg ein server:mail/foo123 an
+<darix> dann waere es cool sowas zu koennen wie
+<darix> osc importfromspec server:mail foo123
+
+
+
+
+bug:
+ % osc rm subversion.de.po.bz2 subversion.nb.po.bz2
+D    subversion.de.po.bz2
+D    subversion.nb.po.bz2
+poeml@aust ~/pac/opensuse/Subversion/subversion
+ % osc ci subversion.de.po.bz2 subversion.nb.po.bz2
+Sending        subversion.changes
+Deleting       subversion.de.po.bz2
+Deleting       subversion.nb.po.bz2
+Sending        subversion.viewcvs.conf
+Transmitting file data ..
 
