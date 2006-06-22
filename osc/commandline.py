@@ -50,7 +50,7 @@ def init(args):
 package. (This is the same as checking out a package and then copying sources
 into the directory. It does NOT create a new package.)
 
-usage: init <prj> <pac>
+usage: osc init <prj> <pac>
     """
 
     project = args[0]
@@ -62,7 +62,7 @@ usage: init <prj> <pac>
 def ls(args):
     """ls (list): List existing content on the server
 
-usage: ls                         # list projects
+usage: osc ls                         # list projects
        ls Apache                  # list packages in a project
        ls Apache subversion       # list files of package of a project
     """
@@ -81,8 +81,8 @@ usage: ls                         # list projects
 def meta(args):
     """Shows meta information
 
-usage: meta Apache              # show meta of project 'Apache'
-       meta Apache subversion   # show meta of package 'subversion'
+usage: osc meta Apache              # show meta of project 'Apache'
+       osc meta Apache subversion   # show meta of package 'subversion'
     """
 
     if not args:
@@ -105,8 +105,8 @@ def editmeta(args):
     """Edit project/package meta information
 If the named project or package does not exist, it will be created.
 
-usage: editmeta FooPrj              # edit meta of project 'FooPrj'
-       editmeta FooPrj barpackage   # edit meta of package 'barpackage'
+usage: osc editmeta FooPrj              # edit meta of project 'FooPrj'
+       osc editmeta FooPrj barpackage   # edit meta of package 'barpackage'
     """
 
     if not args:
@@ -127,8 +127,8 @@ usage: editmeta FooPrj              # edit meta of project 'FooPrj'
 def updatepacmetafromspec(args):
     """Update package meta information from a specfile
 
-usage: 1. updatepacmetafromspec                       # current dir
-       2. updatepacmetafromspec dir1 dir2 ...
+usage: 1. osc updatepacmetafromspec                       # current dir
+       2. osc updatepacmetafromspec dir1 dir2 ...
     """
     args = parseargs(args)
     pacs = findpacs(args)
@@ -170,8 +170,8 @@ def diff(args):
 def repourls(args):
     """repourls: shows URLs on which to access the .repos files
 
-usage: 1. repourls
-       2. repourls [dir1] [dir2] ...
+usage: 1. osc repourls
+       2. osc repourls [dir1] [dir2] ...
 
     """
 
@@ -189,9 +189,9 @@ usage: 1. repourls
 def checkout(args):
     """checkout (co): Check out content from the server.
 
-usage: co Apache                    # entire project
-       co Apache subversion         # a package
-       co Apache subversion foo     # single file -> to current dir
+usage: osc co Apache                    # entire project
+       osc co Apache subversion         # a package
+       osc co Apache subversion foo     # single file -> to current dir
     """
 
     project = package = filename = None
@@ -216,9 +216,9 @@ usage: co Apache                    # entire project
 
 def status(args):
     """Show the status (which files have been changed locally)
-usage: st
-       st <directory>
-       st file1 file2 ...
+usage: osc st
+       osc st <directory>
+       osc st file1 file2 ...
     """
 
     args = parseargs(args)
@@ -241,7 +241,7 @@ usage: st
 def add(args):
     """Mark files to be added upon next 'checkin'
 
-usage: add file1 file2 ...
+usage: osc add file1 file2 ...
     """
 
     if not args:
@@ -269,7 +269,7 @@ usage: add file1 file2 ...
 def addremove(args):
     """addremove: Adds all new files in local copy and removes all disappeared files.
 
-usage: addremove
+usage: osc addremove
     """
 
     args = parseargs(args)
@@ -296,9 +296,9 @@ usage: addremove
 def checkin(args):
     """commit (ci): Upload change content from your working copy to the repository
 
-usage: ci                   # current dir
-       ci <dir>
-       ci file1 file2 ...
+usage: osc ci                   # current dir
+       osc ci <dir>
+       osc ci file1 file2 ...
     """
 
     init_basicauth()
@@ -347,10 +347,10 @@ usage: ci                   # current dir
 def update(args):
     """Update a working copy
 
-usage: up
-       up [pac_dir]         # update a single package by its path
-       up *                 # from within a project dir, update all packages
-       up                   # from within a project dir, update all packages
+usage: osc up
+       osc up [pac_dir]         # update a single package by its path
+       osc up *                 # from within a project dir, update all packages
+       osc up                   # from within a project dir, update all packages
                                AND check out all newly added packages
     """
 
@@ -432,7 +432,7 @@ usage: up
 def delete(args):
     """rm (remove, del, delete): Mark files to be deleted upon next 'checkin'
 
-usage: rm file1 file2 ...
+usage: osc rm file1 file2 ...
     """
 
     if not args:
@@ -460,7 +460,7 @@ def resolved(args):
 state, and conflicts are marked with special <<<<<<< and >>>>>>> lines. 
 After manually resolving the problem, use
 
-usage: resolved <filename>
+usage: osc resolved <filename>
 """
 
     if not args:
@@ -480,7 +480,7 @@ usage: resolved <filename>
 def userid(args):
     """id:  show metadata about user <userid>
 
-usage: id <userid>
+usage: osc id <userid>
     """
 
     if not args:
@@ -495,10 +495,10 @@ usage: id <userid>
 def platforms(args):
     """platforms: Shows platforms
 
-usage 1. platforms
+usage 1. osc platforms
             Shows available platforms/build targets
 
-      2. platforms <project>
+      2. osc platforms <project>
             Shows the configured platforms/build targets of a project
     """
 
@@ -512,7 +512,7 @@ usage 1. platforms
 def results_meta(args):
     """Shows the build results of the package in raw XML
 
-usage: results_meta [platform]
+usage: osc results_meta [platform]
     """
     wd = os.curdir
     package = store_read_package(wd)
@@ -528,8 +528,8 @@ usage: results_meta [platform]
 def results(args):
     """Shows the build results of a package
 
-usage: 1. results                   # package = current dir
-       2. results <packagedir>
+usage: 1. osc results                   # package = current dir
+       2. osc results <packagedir>
     """
 
     if args and len(args) > 1:
@@ -550,7 +550,10 @@ usage: 1. results                   # package = current dir
 def log(args):
     """log: Shows the log file from a package (you need to be inside a package directory)
 
-usage: log <platform> <arch>
+usage: osc log <platform> <arch>
+
+To find out <platform> and <arch>, you can use 'osc results'
+
     """
     wd = os.curdir
     package = store_read_package(wd)
@@ -570,7 +573,7 @@ usage: log <platform> <arch>
 def history(args):
     """history: Shows the build history of a package (NOT IMPLEMENTED YET)
 
-usage: history <pacdir>
+usage: osc history <pacdir>
     """
     args = parseargs(args)
     pacs = findpacs(args)
@@ -582,7 +585,7 @@ usage: history <pacdir>
 def rebuildpac(args):
     """rebuildpac: Triggers a package rebuild for all repositories/architectures of the package
 
-usage: rebuildpac <pacdir>
+usage: osc rebuildpac <pacdir>
     """ 
     args = parseargs(args)
     pacs = findpacs(args)
@@ -594,7 +597,7 @@ usage: rebuildpac <pacdir>
 def help(args):
     """help: Describe the usage of this program or its subcommands.
 
-usage: help [SUBCOMMAND...]
+usage: osc help [SUBCOMMAND...]
     """
     if args:
         cmd = resolve_cmd_alias(args[0])

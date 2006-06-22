@@ -40,8 +40,10 @@ It also does some weird stuff.
 
 new_package_templ = """\
 <package name="%s">
-  <title>Title of NewPackage</title>
-  <description>DESCIPTION</description>
+  <title>Title of New Package</title>
+  <description>LONG DESCRIPTION 
+GOES 
+HERE</description>
   <person role="maintainer" userid="%s"/>
 </package>
 """
