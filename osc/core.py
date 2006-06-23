@@ -29,22 +29,75 @@ exclude_stuff = [store, '.svn', 'CVS']
 
 new_project_templ = """\
 <project name="%s">
+
   <title>Short title of NewProject</title>
+
   <description>This project aims at providing some foo and bar.
 
 It also does some weird stuff.
 </description>
+
   <person role="maintainer" userid="%s" />
+
+<!-- remove this comment to enable one or more build targets
+
+  <repository name="SUSE_Linux_Factory">
+    <path project="SUSE:Factory" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="SUSE_Linux_10.1">
+    <path project="SUSE:SL-10.1" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="SUSE_Linux_10.0">
+    <path project="SUSE:SL-10.0" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="SUSE_Linux_9.3">
+    <path project="SUSE:SL-9.3" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="Fedora_Core_5">
+    <path project="Fedora:Core5" repository="standard" />
+    <arch>i586</arch>
+  </repository>
+  <repository name="SUSE_SLES-9">
+    <path project="SUSE:SLES-9" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+-->
+ 
 </project>
                         """
 
 new_package_templ = """\
 <package name="%s">
+
   <title>Title of New Package</title>
+
   <description>LONG DESCRIPTION 
 GOES 
-HERE</description>
+HERE
+  </description>
+
   <person role="maintainer" userid="%s"/>
+
+
+<!-- 
+  use on of the examples below to disable building of this package 
+  on a certain architecture, in a certain repository, 
+  or a combination thereof:
+  
+  <disable arch="x86_64"/>
+  <disable repository="SUSE_SLES-9"/>
+  <disable repository="SUSE_SLES-9" arch="x86_64"/>
+
+-->
+
 </package>
 """
 
