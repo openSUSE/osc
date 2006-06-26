@@ -136,13 +136,7 @@ usage: 1. osc updatepacmetafromspec                       # current dir
     for p in pacs:
 
         p.read_meta_from_spec()
-        #p.update_pac_meta()
-        print p.name
-        print '*'*100
-        print ''.join(p.summary)
-        print '*'*100
-        print ''.join(p.descr)
-
+        p.update_pac_meta()
 
 
 def diff(args):
