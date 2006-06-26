@@ -16,9 +16,6 @@ from cStringIO import StringIO
 import shutil
 
 
-from xml.dom.ext.reader import Sax2
-from xml.dom.ext import PrettyPrint
-
 netloc = 'api.opensuse.org'
 scheme = 'http'
 
@@ -123,15 +120,9 @@ class Project:
 
         self.pacs_available = meta_get_packagelist(self.name)
 
-        self.pacs_have = []
-        for i in os.listdir(self.dir):
-            if i in self.pacs_available: 
-                self.pacs_have.append(i)
+        self.pacs_have = [ i for i in os.listdir(self.dir) if i in self.pacs_available ]
 
-        self.pacs_missing = []
-        for i in self.pacs_available:
-            if i not in self.pacs_have:
-                self.pacs_missing.append(i)
+        self.pacs_missing = [ i for i in self.pacs_available if i not in self.pacs_have ]
 
     def checkout_missing_pacs(self):
         for pac in self.pacs_missing:
@@ -192,12 +183,9 @@ class Package:
         self.todo_delete = []
 
         # gather unversioned files (the ones not listed in _meta)
-        self.filenamelist_unvers = []
-        for i in os.listdir(self.dir):
-            if i in exclude_stuff:
-                continue
-            if not i in self.filenamelist:
-                self.filenamelist_unvers.append(i) 
+        self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
+                                     if i not in exclude_stuff
+                                     if i not in self.filenamelist ]
 
     def addfile(self, n):
         st = os.stat(os.path.join(self.dir, n))
@@ -523,9 +511,7 @@ def read_tobedeleted(dir):
     fname = os.path.join(dir, store, '_to_be_deleted')
 
     if os.path.exists(fname):
-
-        for i in open(fname, 'r').readlines():
-            r.append(i.strip())
+        r = [ line.strip() for line in open(fname) ]
 
     return r
 
@@ -535,9 +521,7 @@ def read_inconflict(dir):
     fname = os.path.join(dir, store, '_in_conflict')
 
     if os.path.exists(fname):
-
-        for i in open(fname, 'r').readlines():
-            r.append(i.strip())
+        r = [ line.strip() for line in open(fname) ]
 
     return r
 
@@ -733,78 +717,23 @@ def meta_get_packagelist(prj):
     tree = ET.parse(f)
     root = tree.getroot()
 
-    r = []
-    for node in root.findall('package'):
-        r.append(node.get('name'))
-    return r
+    return [ node.get('name') for node in root.findall('package') ]
 
 
 def meta_get_filelist(prj, package):
 
     u = makeurl(['source', prj, package])
     f = urllib2.urlopen(u)
-    tree = ET.parse(f)
+    root = ET.parse(f).getroot()
 
-    r = []
-    for node in tree.getroot():
-        r.append(node.get('name'))
-    return r
-
-
-def localmeta_addfile(filename):
-
-    if filename in localmeta_get_filelist():
-        return
-
-    reader = Sax2.Reader()
-    f = open(os.path.join(store, '_files')).read()
-    doc = reader.fromString(f)
-
-    new = doc.createElement('entry')
-    #new.setAttribute('filetype', 'source')
-    new.setAttribute('name', filename)
-    doc.documentElement.appendChild(new)
-
-    o = open(os.path.join(store, '_files'), 'w')
-    PrettyPrint(doc, stream=o)
-    o.close()
-
-    
-def localmeta_removefile(filename):
-
-    reader = Sax2.Reader()
-    f = open(os.path.join(store, '_files')).read()
-    doc = reader.fromString(f)
-
-    for i in doc.getElementsByTagName('entry'):
-        if i.getAttribute('name') == filename:
-            i.parentNode.removeChild(i)
-
-    o = open(os.path.join(store, '_files'), 'w')
-    PrettyPrint(doc, stream=o)
-    o.close()
-    
-
-def localmeta_get_filelist():
-
-    tree = ET.parse(os.path.join(store, '_files'))
-    root = tree.getroot()
-
-    r = []
-    for node in root.findall('entry'):
-        r.append(node.get('name'))
-    return r
+    return [ node.get('name') for node in root ]
 
 
 def get_slash_source():
     u = makeurl(['source'])
-    tree = ET.parse(urllib2.urlopen(u))
+    root = ET.parse(urllib2.urlopen(u)).getroot()
 
-    r = []
-    for node in tree.getroot():
-        r.append(node.get('name'))
-    r.sort()
-    return r
+    return sorted([ node.get('name') for node in root ])
 
 
 def show_project_meta(prj):
@@ -881,25 +810,29 @@ def show_upstream_rev(prj, pac):
 
 def read_meta_from_spec(specfile):
     """read Name, Summary and %description from spec file"""
-    in_descr = False
-    descr = []
 
     if not os.path.isfile(specfile):
         print 'file \'%s\' is not a readable file' % specfile
         return None
 
-    for line in open(specfile, 'r'):
+    lines = open(specfile).readlines()
+
+    for line in lines:
         if line.startswith('Name:'):
             name = line.split(':')[1].strip()
+            break
+        
+    for line in lines:
         if line.startswith('Summary:'):
             summary = line.split(':')[1].strip()
-        if line.startswith('%description'):
-            in_descr = True
-            continue
-        if in_descr and line.startswith('%'):
             break
-        if in_descr:
-            descr.append(line)
+
+    descr = []
+    start = lines.index('%description\n') + 1
+    for line in lines[start:]:
+        if line.startswith('%'):
+            break
+        descr.append(line)
     
     return name, summary, descr
 
@@ -1017,9 +950,7 @@ def checkout_package(project, package):
 def get_platforms():
     f = urllib2.urlopen(makeurl(['platform']))
     tree = ET.parse(f)
-    r = []
-    for node in tree.getroot():
-        r.append(node.get('name'))
+    r = [ node.get('name') for node in tree.getroot() ]
     r.sort()
     return r
 
@@ -1028,9 +959,7 @@ def get_platforms_of_project(prj):
     f = show_project_meta(prj)
     tree = ET.parse(StringIO(''.join(f)))
 
-    r = []
-    for node in tree.findall('repository'):
-        r.append(node.get('name'))
+    r = [ node.get('name') for node in tree.findall('repository')]
     return r
 
 
@@ -1091,9 +1020,18 @@ def get_history(prj, package):
 
 def cmd_rebuild(prj, package):
     u = makeurl(['source', prj, package, '?cmd=rebuild'])
-    # adding data to the request makes it a POST
-    f = urllib2.urlopen(u, data=' ')
-    return f.readlines()
+    try:
+        # adding data to the request makes it a POST
+        f = urllib2.urlopen(u, data=' ')
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
+        print >>sys.stderr, u
+        print >>sys.stderr, e
+        sys.exit(1)
+
+    root = ET.parse(f).getroot()
+    #code = root.get('code')
+    return root.find('summary').text
 
 
 def store_read_project(dir):

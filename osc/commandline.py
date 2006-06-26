@@ -136,7 +136,13 @@ usage: 1. osc updatepacmetafromspec                       # current dir
     for p in pacs:
 
         p.read_meta_from_spec()
-        p.update_pac_meta()
+        #p.update_pac_meta()
+        print p.name
+        print '*'*100
+        print ''.join(p.summary)
+        print '*'*100
+        print ''.join(p.descr)
+
 
 
 def diff(args):
@@ -364,8 +370,7 @@ usage: osc up
             prj = Project(arg)
 
             # (a) update all packages
-            for i in prj.pacs_have:
-                args.append(i)
+            args += prj.pacs_have
 
             # (b) fetch new packages
             prj.checkout_missing_pacs()
@@ -378,19 +383,14 @@ usage: osc up
 
         # save filelist and (modified) status before replacing the meta file
         saved_filenames = p.filenamelist
-        saved_modifiedfiles = []
-        for i in p.filenamelist:
-            if p.status(i) == 'M':
-                saved_modifiedfiles.append(i)
+        saved_modifiedfiles = [ f for f in p.filenamelist if p.status(f) == 'M' ]
+
         oldp = p
         p.update_filesmeta()
         p = Package(p.dir)
 
         # which files do no longer exist upstream?
-        disappeared = []
-        for filename in saved_filenames:
-            if filename not in p.filenamelist:
-                disappeared.append(filename)
+        disappeared = [ f for f in saved_filenames if f not in p.filenamelist ]
             
 
         for filename in saved_filenames:
@@ -591,7 +591,7 @@ usage: osc rebuildpac <pacdir>
     pacs = findpacs(args)
 
     for p in pacs:
-        print ''.join(cmd_rebuild(p.prjname, p.name))
+        print p.name + ':', cmd_rebuild(p.prjname, p.name)
 
 
 def help(args):

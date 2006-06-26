@@ -19,10 +19,8 @@ To install from svn, do
 Alternatively, you can directly use osc-wrapper.py from the source dir
 
 
-The program needs the following python packages installed (that's their names
-on SUSE anyway): 
-	pyxml 
-	python-elementtree
+The program needs the cElementTree python module installed. On SUSE, the respective
+package is called python-elementtree.
 
 
 
@@ -85,8 +83,14 @@ Shows the build results of the package
  osc results
  osc results [platform]
 
-Shows the log file from a package (you need to be inside a package directory)
+Shows the log file of a package (you need to be inside a package directory)
  osc log <platform> <arch>
+
+Shows the URLs of .repo files which are packages sources for Yum/YaST/smart
+ osc repourls [dir]
+
+Triggers a package rebuild for all repositories/architectures of a package
+ osc rebuildpac [dir]
 
 Shows available platforms/build targets
  osc platforms
@@ -103,6 +107,9 @@ Edit meta information
 (Creates new package/project if it doesn't exist)
  osc editmeta Apache
  osc editmeta Apache subversion
+
+Update package meta data with metadata taken from spec file
+ osc updatepacmetafromspec <dir>
 
 
 
