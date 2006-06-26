@@ -1,5 +1,7 @@
 since 0.6:
 
+- remove requirement on pyxml package
+- editmeta: add examples for package/project templates
 - add support for streaming the build log (thanks to Christoph Thiel)
 - add 'rebuildpac' command
 - add 'repourls' subcommand
