@@ -66,3 +66,30 @@ Deleting       subversion.nb.po.bz2
 Sending        subversion.viewcvs.conf
 Transmitting file data ..
 
+01:20 < darix> DuDE: http://rafb.net/paste/results/hUjH7v14.html
+01:21 < darix> that happens if the log is not accessible atm
+
+02:26 <darix> Transmitting file data ..Traceback (most recent call last):
+02:26 <darix>   File "/usr/bin/osc", line 10, in ?
+02:26 <darix>     commandline.main()
+02:26 <darix>   File "/usr/lib/python2.4/site-packages/osc/commandline.py", line 667, in main
+02:26 <darix>     cmd_dict[cmd](args)
+02:26 <darix>   File "/usr/lib/python2.4/site-packages/osc/commandline.py", line 340, in checkin
+02:26 <darix>     p.to_be_deleted.remove(filename)
+02:26 <darix> ValueError: list.remove(x): x not in list
+
+
+osc repos server:search:ui :
+  <repository name="SUSE_Linux_10.1">
+    <path project="server:search" repository="SUSE_Linux_10.1" />
+    <path project="KDE:KDE4" repository="SUSE_Linux_10.1" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="SUSE_Factory">
+    <path project="server:search" repository="SUSE_Factory" />
+    <path project="KDE:KDE4" repository="SUSE_Factory" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+

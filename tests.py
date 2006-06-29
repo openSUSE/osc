@@ -38,6 +38,19 @@ class TestOsc(unittest.TestCase):
     <host></host>
     <port></port>
   </rpm_backend>
+  <watchlist>
+    <project name="server:mail"/>
+    <project name="frox"/>
+    <project name="home:cthiel1"/>
+    <project name="server:php"/>
+    <project name="Apache"/>
+    <project name="server:httpd-trunk"/>
+    <project name="server:isc-dhcp"/>
+    <project name="Subversion"/>
+    <project name="Tidy"/>
+    <project name="validators"/>
+    <project name="zsh"/>
+  </watchlist>
 </person>
 
 """

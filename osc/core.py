@@ -10,6 +10,7 @@ __version__ = '0.6'
 import os
 import sys
 import urllib2
+from urllib import pathname2url, quote_plus
 from urlparse import urlunsplit
 import cElementTree as ET
 from cStringIO import StringIO
@@ -246,7 +247,7 @@ class Package:
     def delete_source_file(self, n):
         import othermethods
         
-        u = makeurl(['source', self.prjname, self.name, n])
+        u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
         othermethods.delfile(u, n, username, password)
 
         self.delete_localfile(n)
@@ -256,7 +257,7 @@ class Package:
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
-        u = makeurl(['source', self.prjname, self.name, n.replace('+', '%2B')])
+        u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
         othermethods.putfile(u, os.path.join(self.dir, n), username, password)
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
@@ -838,7 +839,7 @@ def read_meta_from_spec(specfile):
 
 
 def get_user_id(user):
-    u = makeurl(['person', user.replace(' ', '+')])
+    u = makeurl(['person', quote_plus(user)])
     try:
         f = urllib2.urlopen(u)
         return ''.join(f.readlines())
@@ -848,7 +849,7 @@ def get_user_id(user):
 
 
 def get_source_file(prj, package, filename, targetfilename=None):
-    u = makeurl(['source', prj, package, filename.replace('+', '%2B')])
+    u = makeurl(['source', prj, package, pathname2url(filename)])
     f = urllib2.urlopen(u)
 
     o = open(targetfilename or filename, 'w')
