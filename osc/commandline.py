@@ -556,12 +556,15 @@ To find out <platform> and <arch>, you can use 'osc results'
     platform = args[0]
     arch = args[1]
     offset = 0
-    while True:
-        log_chunk = get_log(project, package, platform, arch, offset)
-        if len(log_chunk) == 0:
-            break
-        offset += len(log_chunk)
-        print log_chunk.strip()
+    try:
+        while True:
+            log_chunk = get_log(project, package, platform, arch, offset)
+            if len(log_chunk) == 0:
+                break
+            offset += len(log_chunk)
+            print log_chunk.strip()
+    except KeyboardInterrupt:
+        pass
 
 
 def history(args):
