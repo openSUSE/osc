@@ -19,29 +19,6 @@ on the directories.  If no arguments are supplied to such a
 command, it recurses on the current directory (inclusive) by default.
 
 Available subcommands:
-
-    add
-    addremove
-    commit (checkin, ci)
-    checkout (co)
-    diff
-    editmeta
-    help
-    history (hist)
-    id
-    log
-    ls
-    meta
-    platforms
-    rebuildpac
-    remove (del, delete, rm)
-    resolved
-    results
-    results_meta
-    status (st)
-    update (up)
-    updatepacmetafromspec
-
 """ % get_osc_version()
 
 
@@ -293,7 +270,7 @@ usage: osc addremove
 
 
 
-def checkin(args):
+def commit(args):
     """commit (ci): Upload change content from your working copy to the repository
 
 usage: osc ci                   # current dir
@@ -597,54 +574,58 @@ def help(args):
 usage: osc help [SUBCOMMAND...]
     """
     if args:
-        cmd = resolve_cmd_alias(args[0])
+        cmd = args[0]
+        for i in cmd_dict.keys():
+            if cmd in cmd_dict[i]:
+                cmd = i
+                break
 
         try:
-            print cmd_dict[cmd].func_doc
+            print cmd.func_doc
 
-        except KeyError:
+        except AttributeError, KeyError:
             print 'unknown command \'%s\'' % cmd
             sys.exit(1)
     else:
         print usage_general
+        lines = []
+        for i in cmd_dict.keys():
+            line = '    ' + (i.__name__)
+            if len(cmd_dict[i]) > 1:
+                line += ' (%s)' % ', '.join(cmd_dict[i][1:])
+            lines.append(line)
+        lines.sort()
+        lines.append('')
+        print '\n'.join(lines)
 
 
-def resolve_cmd_alias(cmd):
-    if cmd in ['commit', 'ci']: return 'checkin'
-    if cmd == 'co': return 'checkout'
-    if cmd == 'st': return 'status'
-    if cmd == 'up': return 'update'
-    if cmd == 'list': return 'ls'
-    if cmd == 'hist': return 'history'
-    if cmd in ['del', 'remove', 'rm']: return 'delete'
-    return cmd
-    
 
 cmd_dict = {
-    'add':          add,
-    'addremove':    addremove,
-    'checkin':      checkin,
-    'checkout':     checkout,
-    'updatepacmetafromspec':     updatepacmetafromspec,
-    'diff':         diff,
-    'editmeta':     editmeta,
-    'help':         help,
-    'history':      history,
-    'id':           userid,         # <- small difference here
-    'init':         init,           # depracated
-    'log':          log,
-    'ls':           ls,
-    'meta':         meta,
-    'platforms':    platforms,
-    'delete':       delete,
-    'repourls':     repourls,
-    'resolved':     resolved,
-    'results':      results,
-    'results_meta': results_meta,
-    'rebuildpac':   rebuildpac,
-    'status':       status,
-    'update':       update,
+    add:            ['add'],
+    addremove:      ['addremove'],
+    commit:         ['commit', 'ci', 'checkin'],
+    checkout:       ['checkout', 'co'],
+    updatepacmetafromspec:       ['updatepacmetafromspec'],
+    diff:           ['diff'],
+    editmeta:       ['editmeta'],
+    help:           ['help'],
+    history:        ['history', 'hist'],
+    userid:         ['id'],         # <- small difference here
+    init:           ['init'],           # depracated
+    log:            ['log'],
+    ls:             ['ls', 'list'],
+    meta:           ['meta'],
+    platforms:      ['platforms'],
+    delete:         ['delete', 'del', 'rm', 'remove'],
+    repourls:       ['repourls'],
+    resolved:       ['resolved'],
+    results:        ['results'],
+    results_meta:   ['results_meta'],
+    rebuildpac:     ['rebuildpac'],
+    status:         ['status', 'st'],
+    update:         ['update', 'up'],
 }
+
 
 def main():
     """handling of commandline arguments, and dispatching to subcommands"""
@@ -654,7 +635,7 @@ def main():
         print "Type 'osc help' for usage."
         sys.exit(0)
 
-    cmd = resolve_cmd_alias(sys.argv[1])
+    cmd = sys.argv[1]
 
     # more arguments?
     if len(sys.argv) > 2:
@@ -662,12 +643,16 @@ def main():
     else:
         args = None
 
+    for i in cmd_dict.keys():
+        if cmd in cmd_dict[i]:
+            cmd = i
+        
     # run subcommand
     if cmd not in cmd_dict:
         print 'unknown command \'%s\'' % cmd
         print "Type 'osc help' for usage."
         sys.exit(1)
-    cmd_dict[cmd](args)
+    cmd(args)
 
 
 if __name__ == '__main__':
