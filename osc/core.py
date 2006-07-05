@@ -724,26 +724,49 @@ def meta_get_packagelist(prj):
 def meta_get_filelist(prj, package):
 
     u = makeurl(['source', prj, package])
-    f = urllib2.urlopen(u)
+
+    try:
+        f = urllib2.urlopen(u)
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'error getting filelist for project \'%s\' package \'%s\'' % (prj, pac)
+        print >>sys.stderr, e
+        sys.exit(1)
+
     root = ET.parse(f).getroot()
 
     return [ node.get('name') for node in root ]
 
 
+
 def get_slash_source():
     u = makeurl(['source'])
-    root = ET.parse(urllib2.urlopen(u)).getroot()
+    try:
+        root = ET.parse(urllib2.urlopen(u)).getroot()
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'error getting /source'
+        print >>sys.stderr, e
+        sys.exit(1)
 
     return sorted([ node.get('name') for node in root ])
 
 
 def show_project_meta(prj):
-    f = urllib2.urlopen(makeurl(['source', prj, '_meta']))
+    try:
+        f = urllib2.urlopen(makeurl(['source', prj, '_meta']))
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'error getting meta for project \'%s\'' % prj
+        print >>sys.stderr, e
+        sys.exit(1)
     return f.readlines()
 
 
 def show_package_meta(prj, pac):
-    f = urllib2.urlopen(makeurl(['source', prj, pac, '_meta']))
+    try:
+        f = urllib2.urlopen(makeurl(['source', prj, pac, '_meta']))
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
+        print >>sys.stderr, e
+        sys.exit(1)
     return f.readlines()
 
 
