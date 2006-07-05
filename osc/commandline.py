@@ -544,6 +544,52 @@ To find out <platform> and <arch>, you can use 'osc results'
         pass
 
 
+def buildinfo(args):
+    """buildinfo: Shows the buildinfo which is used in building a package (you need to be inside a package directory)
+
+usage: osc buildinfo <platform> <arch>
+    """
+    wd = os.curdir
+    package = store_read_package(wd)
+    project = store_read_project(wd)
+
+    platform = args[0]
+    arch = args[1]
+    print ''.join(get_buildinfo(project, package, platform, arch))
+
+
+def buildconfig(args):
+    """buildconfig: Shows the buildconfig which is used in building a package (you need to be inside a package directory)
+
+usage: osc buildconfig <platform> <arch>
+    """
+    wd = os.curdir
+    package = store_read_package(wd)
+    project = store_read_project(wd)
+
+    platform = args[0]
+    arch = args[1]
+    print ''.join(get_buildconfig(project, package, platform, arch))
+
+
+def repos(args):
+    """repos: Shows the repositories which are defined for a package
+
+usage: 1. osc repos                   # package = current dir
+       2. osc repos <packagedir>
+    """
+    args = parseargs(args)
+    pacs = findpacs(args)
+
+    for p in pacs:
+        #print p.name + ':', cmd_rebuild(p.prjname, p.name)
+
+        #print ''.join(get_buildinfo(project, package, platform, arch))
+        for platform in get_repos_of_project(p.prjname):
+            print platform
+            #print '\n'.join(get_results(project, package, platform))
+
+
 def history(args):
     """history: Shows the build history of a package (NOT IMPLEMENTED YET)
 
@@ -603,6 +649,8 @@ usage: osc help [SUBCOMMAND...]
 cmd_dict = {
     add:            ['add'],
     addremove:      ['addremove'],
+    buildconfig:    ['buildconfig'],
+    buildinfo:      ['buildinfo'],
     commit:         ['commit', 'ci', 'checkin'],
     checkout:       ['checkout', 'co'],
     updatepacmetafromspec:       ['updatepacmetafromspec'],
@@ -617,6 +665,7 @@ cmd_dict = {
     meta:           ['meta'],
     platforms:      ['platforms'],
     delete:         ['delete', 'del', 'rm', 'remove'],
+    repos:          ['repos'],
     repourls:       ['repourls'],
     resolved:       ['resolved'],
     results:        ['results'],

@@ -964,6 +964,18 @@ def get_platforms_of_project(prj):
     return r
 
 
+def get_repos_of_project(prj):
+    f = show_project_meta(prj)
+    tree = ET.parse(StringIO(''.join(f)))
+
+    repo_line_templ = '%-15s %-10s'
+    r = []
+    for node in tree.findall('repository'):
+        for node2 in node.findall('arch'):
+            r.append(repo_line_templ % (node.get('name'), node2.text))
+    return r
+
+
 def show_results_meta(prj, package, platform):
     u = makeurl(['result', prj, platform, package, 'result'])
     f = urllib2.urlopen(u)
@@ -1006,6 +1018,20 @@ def get_results(prj, package, platform):
 
 def get_log(prj, package, platform, arch, offset):
     u = makeurl(['result', prj, platform, package, arch, 'log?nostream=1&start=%s' % offset])
+    f = urllib2.urlopen(u)
+    return f.read()
+
+
+def get_buildinfo(prj, package, platform, arch):
+    # http://api.opensuse.org/rpm/Subversion/Apache_SuSE_Linux_10.1/i586/subversion/buildinfo
+    u = makeurl(['rpm', prj, platform, arch, package, 'buildinfo'])
+    f = urllib2.urlopen(u)
+    return f.read()
+
+
+def get_buildconfig(prj, package, platform, arch):
+    # http://api.opensuse.org/rpm/<proj>/<repo>/_repository/<arch>/_buildconfig
+    u = makeurl(['rpm', prj, platform, '_repository', arch, '_buildconfig'])
     f = urllib2.urlopen(u)
     return f.read()
 
