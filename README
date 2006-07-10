@@ -8,7 +8,7 @@ https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/pytho
 INSTALLATION:
 
 RPM packages are here (yum repository):
-http://software.opensuse.org/download/repositories/openSUSE:Tools/
+http://software.opensuse.org/download/openSUSE:/Tools/
 
 To install from svn, do
 	python setup.py build
@@ -17,11 +17,11 @@ To install from svn, do
 	ln -s osc-wrapper.py /usr/bin/osc
 
 Alternatively, you can directly use osc-wrapper.py from the source dir
+(which is easier if you develop on osc).
 
 
-The program needs the cElementTree python module installed. On SUSE, the respective
-package is called python-elementtree.
-
+The program needs the cElementTree python module installed. On SUSE, the
+respective package is called python-elementtree.
 
 
 
@@ -35,6 +35,7 @@ If authentication data is found in .netrc, it will also be used.
 
 
 USAGE EXAMPLES:
+(online at http://en.opensuse.org/Build_Service/CLI )
 
 To list existing content on the server
  osc ls 				# list projects
