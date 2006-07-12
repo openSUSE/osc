@@ -572,6 +572,20 @@ def makeurl(l):
     return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
 
 
+def urlopen(url):
+    """wrapper around urllib2.urlopen for error handling"""
+
+    try:
+        fd = urllib2.urlopen(url)
+
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'Error: can\'t get \'%s\'' % url
+        print >>sys.stderr, e
+        sys.exit(1)
+
+    return fd
+
+
 def readauth():
     """look for the credentials. If there aren't any, ask and store them"""
 
@@ -823,7 +837,7 @@ def edit_meta(prj, pac):
 
 
 def show_files_meta(prj, pac):
-    f = urllib2.urlopen(makeurl(['source', prj, pac]))
+    f = urlopen(makeurl(['source', prj, pac]))
     return f.readlines()
 
 
@@ -873,7 +887,7 @@ def get_user_id(user):
 
 def get_source_file(prj, package, filename, targetfilename=None):
     u = makeurl(['source', prj, package, pathname2url(filename)])
-    f = urllib2.urlopen(u)
+    f = urlopen(u)
 
     o = open(targetfilename or filename, 'w')
     while 1:
@@ -972,7 +986,7 @@ def checkout_package(project, package):
 
 
 def get_platforms():
-    f = urllib2.urlopen(makeurl(['platform']))
+    f = urlopen(makeurl(['platform']))
     tree = ET.parse(f)
     r = [ node.get('name') for node in tree.getroot() ]
     r.sort()
@@ -1001,7 +1015,7 @@ def get_repos_of_project(prj):
 
 def show_results_meta(prj, package, platform):
     u = makeurl(['result', prj, platform, package, 'result'])
-    f = urllib2.urlopen(u)
+    f = urlopen(u)
     return f.readlines()
 
 
@@ -1041,21 +1055,21 @@ def get_results(prj, package, platform):
 
 def get_log(prj, package, platform, arch, offset):
     u = makeurl(['result', prj, platform, package, arch, 'log?nostream=1&start=%s' % offset])
-    f = urllib2.urlopen(u)
+    f = urlopen(u)
     return f.read()
 
 
 def get_buildinfo(prj, package, platform, arch):
     # http://api.opensuse.org/rpm/Subversion/Apache_SuSE_Linux_10.1/i586/subversion/buildinfo
     u = makeurl(['rpm', prj, platform, arch, package, 'buildinfo'])
-    f = urllib2.urlopen(u)
+    f = urlopen(u)
     return f.read()
 
 
 def get_buildconfig(prj, package, platform, arch):
     # http://api.opensuse.org/rpm/<proj>/<repo>/_repository/<arch>/_buildconfig
     u = makeurl(['rpm', prj, platform, '_repository', arch, '_buildconfig'])
-    f = urllib2.urlopen(u)
+    f = urlopen(u)
     return f.read()
 
 
@@ -1064,7 +1078,7 @@ def get_history(prj, package):
     # http://api.opensuse.org/package/Apache/apache2/history ?
     u = makeurl(['package', prj, package, 'history'])
     print u
-    f = urllib2.urlopen(u)
+    f = urlopen(u)
     return f.readlines()
 
 

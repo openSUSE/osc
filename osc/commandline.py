@@ -545,7 +545,8 @@ To find out <platform> and <arch>, you can use 'osc results'
 
 
 def buildinfo(args):
-    """buildinfo: Shows the buildinfo which is used in building a package (you need to be inside a package directory)
+    """buildinfo: Shows the build "info" which is used in building a package 
+You need to call the command inside a package directory.
 
 usage: osc buildinfo <platform> <arch>
     """
@@ -553,13 +554,23 @@ usage: osc buildinfo <platform> <arch>
     package = store_read_package(wd)
     project = store_read_project(wd)
 
+    if args is None or len(args) < 2:
+        print 'missing argument'
+        print buildinfo.func_doc
+        print 'Valid arguments for this package are:'
+        print 
+        repos(None)
+        print
+        sys.exit(1)
+        
     platform = args[0]
     arch = args[1]
     print ''.join(get_buildinfo(project, package, platform, arch))
 
 
 def buildconfig(args):
-    """buildconfig: Shows the buildconfig which is used in building a package (you need to be inside a package directory)
+    """buildconfig: Shows the build configuration which is used in building a package
+You need to call the command inside a package directory.
 
 usage: osc buildconfig <platform> <arch>
     """
@@ -567,6 +578,15 @@ usage: osc buildconfig <platform> <arch>
     package = store_read_package(wd)
     project = store_read_project(wd)
 
+    if args is None or len(args) < 2:
+        print 'missing argument'
+        print buildconfig.func_doc
+        print 'Valid arguments for this package are:'
+        print 
+        repos(None)
+        print
+        sys.exit(1)
+        
     platform = args[0]
     arch = args[1]
     print ''.join(get_buildconfig(project, package, platform, arch))
@@ -582,12 +602,9 @@ usage: 1. osc repos                   # package = current dir
     pacs = findpacs(args)
 
     for p in pacs:
-        #print p.name + ':', cmd_rebuild(p.prjname, p.name)
 
-        #print ''.join(get_buildinfo(project, package, platform, arch))
         for platform in get_repos_of_project(p.prjname):
             print platform
-            #print '\n'.join(get_results(project, package, platform))
 
 
 def history(args):
