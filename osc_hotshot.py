@@ -10,8 +10,8 @@ from osc.core import init_basicauth
 
 if __name__ == '__main__':
 
-    (o, filename) = tempfile.mkstemp(prefix = 'osc_profiledata_', dir = '/dev/shm')
-    del o
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc_profiledata_', dir = '/dev/shm')
+    f = os.fdopen(fd)
 
     try:
 
@@ -30,4 +30,5 @@ if __name__ == '__main__':
         del stats
 
     finally:
+        f.close()
         os.unlink(filename)
