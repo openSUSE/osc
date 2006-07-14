@@ -113,6 +113,12 @@ Update package meta data with metadata taken from spec file
  osc updatepacmetafromspec <dir>
 
 
+There are other commands, which you may not need (they may be useful in scripts):
+ osc repos
+ osc buildconfig
+ osc buildinfo
+
+
 
 HINT FOR W3M USERS
 

@@ -607,6 +607,28 @@ usage: 1. osc repos                   # package = current dir
             print platform
 
 
+def build(args):
+    """build: build a package _locally_
+You need to call the command inside a package directory.
+
+usage: osc build <platform> <arch> <specfile>
+    """
+
+    if args is None or len(args) < 3:
+        print 'missing argument'
+        print build.func_doc
+        print 'Valid arguments are:'
+        print 
+        repos(None)
+        print
+        sys.exit(1)
+
+    import osc.build
+    osc.build.main(sys.argv[1:])
+
+        
+
+
 def history(args):
     """history: Shows the build history of a package (NOT IMPLEMENTED YET)
 
@@ -662,10 +684,12 @@ usage: osc help [SUBCOMMAND...]
         print '\n'.join(lines)
 
 
-
+# all commands and aliases are defined here
+# a function with the respective name is assumed to exist
 cmd_dict = {
     add:            ['add'],
     addremove:      ['addremove'],
+    build:          ['build'],
     buildconfig:    ['buildconfig'],
     buildinfo:      ['buildinfo'],
     commit:         ['commit', 'ci', 'checkin'],

@@ -1,5 +1,11 @@
-since 0.6:
+since 0.7:
+...
 
+
+0.7:
+- initial support for local builds (subcommand 'build')
+- better error handling
+- new subcommands buildconfig, buildinfo, repos
 - remove requirement on pyxml package
 - editmeta: add examples for package/project templates
 - add support for streaming the build log (thanks to Christoph Thiel)
