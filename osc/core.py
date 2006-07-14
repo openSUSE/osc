@@ -604,7 +604,7 @@ def readauth():
         username, account, password = info.authenticators(netloc)
         return username, password
 
-    except (IOError, TypeError):
+    except (IOError, TypeError, netrc.NetrcParseError):
         pass
 
     #
