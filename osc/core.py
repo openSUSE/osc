@@ -431,7 +431,7 @@ rev: %s
         import othermethods
         import tempfile
 
-        (f, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
+        (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
         try:
             m = show_package_meta(self.prjname, self.name)
@@ -444,7 +444,7 @@ rev: %s
                 print e
                 sys.exit(1)
 
-        f = open(filename, 'w')
+        f = os.fdopen(fd, 'w')
         f.write(''.join(m))
         f.close()
 
@@ -788,7 +788,7 @@ def edit_meta(prj, pac):
     import othermethods
     import tempfile
 
-    (f, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
     if pac:
         # package meta
@@ -816,7 +816,7 @@ def edit_meta(prj, pac):
                 print e
                 sys.exit(1)
 
-    f = open(filename, 'w')
+    f = os.fdopen(fd, 'w')
     f.write(''.join(m))
     f.close()
 
