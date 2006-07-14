@@ -347,16 +347,18 @@ def main(argv):
     print cmd
     os.system(cmd)
 
-    pacdirlink = os.readlink(os.path.join(config['build-root'], '.build.packages'))
-    pacdir = os.path.join(config['build-root'] + pacdirlink)
+    pacdirlink = os.path.join(config['build-root'], '.build.packages')
+    if os.path.exists(pacdirlink):
+        pacdirlink = os.readlink(pacdirlink)
+        pacdir = os.path.join(config['build-root'] + pacdirlink)
 
-    if os.path.exists(pacdir):
-        (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
+        if os.path.exists(pacdir):
+            (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
 
-        print
-        #print 'built source packages:'
-        if s_built: print s_built
-        #print 'built binary packages:'
-        print b_built
+            print
+            #print 'built source packages:'
+            if s_built: print s_built
+            #print 'built binary packages:'
+            print b_built
 
 
