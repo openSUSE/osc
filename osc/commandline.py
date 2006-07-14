@@ -611,11 +611,22 @@ def build(args):
     """build: build a package _locally_
 You need to call the command inside a package directory.
 
-usage: osc build <platform> <arch> <specfile> [--clean|--noinit]
+usage: 1. osc build <platform> <arch> <specfile> [--clean|--noinit]
+       2. BUILD_DIST=... osc build <specfile> [--clean|--noinit]
+
+where BUILD_DIST equals <platform>-<arch>
 
     """
 
-    if args is None or len(args) < 3:
+    builddist = os.getenv('BUILD_DIST')
+    if builddist:
+        #sys.argv[4] = sys.argv[1]
+        hyphen = builddist.rfind('-')
+        sys.argv.insert(2, builddist[hyphen+1:])
+        sys.argv.insert(2, builddist[:hyphen])
+        print sys.argv
+
+    elif args is None or len(args) < 3:
         print 'missing argument'
         print build.func_doc
         print 'Valid arguments are:'
