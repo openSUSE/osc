@@ -14,6 +14,7 @@ import cElementTree as ET
 from tempfile import NamedTemporaryFile
 from osc.fetch import *
 
+APISRV = 'api.opensuse.org'
 
 DEFAULTS = { 'packagecachedir': '/var/tmp/osbuild-packagecache',
              'su-wrapper': 'su -c',
@@ -177,10 +178,41 @@ def get_build_conf():
 
     conffile = os.path.expanduser('~/.oscrc')
     if not os.path.exists(conffile):
-        print >>sys.stderr, 'Error:'
-        print >>sys.stderr, 'You need to create ~/.oscrc.'
-        print >>sys.stderr, 'Running the osc command will do this for you.'
-        sys.exit(1)
+        import netrc
+
+        try:
+            info = netrc.netrc()
+            username, account, password = info.authenticators(APISRV)
+
+        except (IOError, TypeError, netrc.NetrcParseError):
+            print >>sys.stderr, 'Error:'
+            print >>sys.stderr, 'You need to create ~/.oscrc.'
+            print >>sys.stderr, 'Running the osc command will do this for you.'
+            sys.exit(1)
+
+        cf = open(conffile, 'w')
+        os.chmod(conffile, 0600)
+        print 'creating', conffile
+        cf.write("""
+
+[general]
+
+# Downloaded packages are cached here. Must be writable by you.
+#packagecachedir: /var/tmp/osbuild-packagecache
+
+# Wrapper to call build as root (sudo, su -, ...)
+#su-wrapper: su -c
+
+# rootdir to setup the chroot environment
+#build-root: /var/tmp/build-root
+
+
+[%s]
+user: %s
+pass: %s
+""" % (APISRV, username, password))
+        cf.close()
+
 
     config = ConfigParser.ConfigParser(DEFAULTS)
     config.read(conffile)
