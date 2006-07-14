@@ -611,7 +611,8 @@ def build(args):
     """build: build a package _locally_
 You need to call the command inside a package directory.
 
-usage: osc build <platform> <arch> <specfile>
+usage: osc build <platform> <arch> <specfile> [--clean|--noinit]
+
     """
 
     if args is None or len(args) < 3:
