@@ -85,7 +85,12 @@ class Fetcher:
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
         if not os.path.exists(dir):
-            os.makedirs(dir, mode=0755)
+            try:
+                os.makedirs(dir, mode=0755)
+            except OSError, e:
+                print 'packagecachedir is not writable for you?'
+                print e
+                sys.exit(1)
 
 
     def run(self, buildinfo):
