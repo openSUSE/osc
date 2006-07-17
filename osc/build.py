@@ -228,7 +228,7 @@ pass: %s
         auth_dict[host] = dict(config.items(host))
 
 
-    config = dict(config.items('general'))
+    config = dict(config.items('general', raw=1))
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'BUILD_ROOT']:
@@ -239,6 +239,10 @@ pass: %s
             if config.has_key(var):
                 print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
             config[var] = val
+
+    # transform 'url1, url2, url3' form into a list
+    if type(config['urllist']) == str:
+        config['urllist'] = [ i.strip() for i in config['urllist'].split(',') ]
 
     return config, auth_dict
 
