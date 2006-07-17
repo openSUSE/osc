@@ -608,20 +608,19 @@ usage: 1. osc repos                   # package = current dir
 
 
 def build(args):
-    """build: build a package _locally_
+    """build: build a package on your local machine
 You need to call the command inside a package directory.
 
 usage: 1. osc build <platform> <arch> <specfile> [--clean|--noinit]
        2. BUILD_DIST=... osc build <specfile> [--clean|--noinit]
-
-where BUILD_DIST equals <platform>-<arch>
+          where BUILD_DIST equals <platform>-<arch>
 
 
 You may want to configure sudo with option  NOPASSWD for /usr/bin/build
 and set su-wrapper to 'sudo' in .oscrc.
-
-
     """
+
+    import osc.build
 
     builddist = os.getenv('BUILD_DIST')
     if builddist:
@@ -635,12 +634,19 @@ and set su-wrapper to 'sudo' in .oscrc.
         print 'missing argument'
         print build.func_doc
         print 'Valid arguments are:'
+        print 'you have to choose a repo to build on'
+        print 'possible repositories are:'
         print 
-        repos(None)
-        print
+        (i, o) = os.popen4(['osc', 'repos'])
+        i.close()
+
+        for line in o.readlines():
+            a = line.split()[1] # arch
+            if a == osc.build.hostarch or \
+               a in osc.build.can_also_build.get(osc.build.hostarch, []):
+                print line.strip()
         sys.exit(1)
 
-    import osc.build
     osc.build.main(sys.argv[1:])
 
         

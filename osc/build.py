@@ -265,18 +265,6 @@ def main(argv):
     global config
     config, auth = get_build_conf()
 
-    if len(argv) < 2:
-        print 'you have to choose a repo to build on'
-        print 'possible repositories are:'
-
-        (i, o) = os.popen4(['osc', 'repos'])
-        i.close()
-
-        for line in o.readlines():
-            if line.split()[1] == hostarch or line.split()[1] in can_also_build[hostarch]:
-                print line.strip()
-        sys.exit(1)
-        
     repo = argv[1]
     arch = argv[2]
     spec = argv[3]
