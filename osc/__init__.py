@@ -1,1 +1,1 @@
-__all__ = ['core', 'commandline', 'othermethods']
+__all__ = ['core', 'commandline', 'othermethods', 'build', 'fetch', 'meter']
