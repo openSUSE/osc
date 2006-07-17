@@ -634,7 +634,22 @@ You will be asked for them below, and they will be stored in
 
     fd = open(conffile, 'w')
     os.chmod(conffile, 0600)
-    print >>fd, '[%s]\nuser: %s\npass: %s' % (netloc, username, password)
+    print >>fd, """[general]
+
+# Downloaded packages are cached here. Must be writable by you.
+#packagecachedir: /var/tmp/osbuild-packagecache
+
+# Wrapper to call build as root (sudo, su -, ...)
+#su-wrapper: su -c
+
+# rootdir to setup the chroot environment
+#build-root: /var/tmp/build-root
+
+    
+[%s]
+user: %s
+pass: %s
+""" % (netloc, username, password)
     fd.close()
         
     return username, password
