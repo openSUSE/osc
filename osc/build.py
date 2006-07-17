@@ -69,6 +69,7 @@ can_also_build = {
              's390x': ['s390'],
             }
 
+# real arch of this machine
 hostarch = os.uname()[4]
 if hostarch == 'i686': # FIXME
     hostarch = 'i586'
@@ -335,8 +336,15 @@ def main(argv):
         tmpl = '%s %s'
     cmd = tmpl % (config['su-wrapper'], cmd)
         
+    # real arch of this machine 
+    # vs.
+    # arch we are supposed to build for
     if hostarch != bi.buildarch:
-        cmd = change_personality[bi.buildarch] + ' ' + cmd
+
+        # change personality, if needed
+        if bi.buildarch in can_also_build.get(hostarch, []):
+            cmd = change_personality[bi.buildarch] + ' ' + cmd
+
 
     print cmd
     os.system(cmd)
