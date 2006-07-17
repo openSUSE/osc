@@ -119,6 +119,10 @@ There are other commands, which you may not need (they may be useful in scripts)
  osc buildinfo
 
 
+Locally build a package (see 'osc help build' for more info):
+ osc build <repo> <arch> specfile [--clean|--noinit]
+
+
 
 HINT FOR W3M USERS
 

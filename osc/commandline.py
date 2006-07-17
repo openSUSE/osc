@@ -616,6 +616,11 @@ usage: 1. osc build <platform> <arch> <specfile> [--clean|--noinit]
 
 where BUILD_DIST equals <platform>-<arch>
 
+
+You may want to configure sudo with option  NOPASSWD for /usr/bin/build
+and set su-wrapper to 'sudo' in .oscrc.
+
+
     """
 
     builddist = os.getenv('BUILD_DIST')
