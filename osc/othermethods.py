@@ -21,7 +21,7 @@ BLOCKSIZE=1024
 
 def delfile(url, file, username, password):
 
-    auth_string = base64.encodestring('%s:%s' % (username, password)) 
+    auth_string = base64.encodestring('%s:%s' % (username, password)).strip()
 
     u = urlparse.urlparse(url)
     host = u[1]
@@ -47,7 +47,7 @@ def putfile(url, file, username, password):
 
     size = os.stat(file)[6] 
 
-    auth_string = base64.encodestring('%s:%s' % (username, password)) 
+    auth_string = base64.encodestring('%s:%s' % (username, password)).strip()
 
     u = urlparse.urlparse(url)
     host = u[1]
