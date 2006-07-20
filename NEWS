@@ -1,6 +1,8 @@
 since 0.7:
 ...
 
+- fixed issue with uploading files when an intercepting web proxy was in between osc and the api server
+- fixed creation of new packages/projects
 
 0.7:
 - initial support for local builds (subcommand 'build')

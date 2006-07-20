@@ -434,7 +434,8 @@ rev: %s
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
         try:
-            m = show_package_meta(self.prjname, self.name)
+            u = makeurl(['source', self.prjname, self.name, '_meta'])
+            m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
                 print 'package does not exist yet... creating it'
@@ -809,7 +810,7 @@ def edit_meta(prj, pac):
         # package meta
         u = makeurl(['source', prj, pac, '_meta'])
         try:
-            m = show_package_meta(prj, pac)
+            m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
                 m = new_package_templ % (pac, username)
@@ -822,7 +823,7 @@ def edit_meta(prj, pac):
         # project meta
         u = makeurl(['source', prj, '_meta'])
         try:
-            m = show_project_meta(prj)
+            m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
                 m = new_project_templ % (prj, username)

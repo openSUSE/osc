@@ -64,6 +64,7 @@ usage: osc meta Apache              # show meta of project 'Apache'
 
     if not args:
         print 'missing argument'
+        print
         print meta.func_doc
         sys.exit(1)
 
@@ -88,6 +89,7 @@ usage: osc editmeta FooPrj              # edit meta of project 'FooPrj'
 
     if not args:
         print 'missing argument'
+        print
         print meta.func_doc
         sys.exit(1)
 
@@ -556,6 +558,7 @@ usage: osc buildinfo <platform> <arch>
 
     if args is None or len(args) < 2:
         print 'missing argument'
+        print
         print buildinfo.func_doc
         print 'Valid arguments for this package are:'
         print 
@@ -580,6 +583,7 @@ usage: osc buildconfig <platform> <arch>
 
     if args is None or len(args) < 2:
         print 'missing argument'
+        print
         print buildconfig.func_doc
         print 'Valid arguments for this package are:'
         print 
@@ -632,6 +636,7 @@ and set su-wrapper to 'sudo' in .oscrc.
 
     elif args is None or len(args) < 3:
         print 'missing argument'
+        print
         print build.func_doc
         print 'Valid arguments are:'
         print 'you have to choose a repo to build on'
