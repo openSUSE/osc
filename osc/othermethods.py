@@ -17,7 +17,7 @@ import base64
 import os 
 import urlparse
 
-BLOCKSIZE=1024
+BLOCKSIZE=4096
 
 def delfile(url, file, username, password):
 
@@ -36,16 +36,21 @@ def delfile(url, file, username, password):
 
     reply, msg, headers = conn.getreply() 
 
-    if reply == 200:
-        #print 'done'
-        pass
-    else:
+    if reply != 200:
         print 'error deleting %s' % file
         print 'upload-DELETE reply=', reply, ' msg=', msg, 'headers=', headers
 
-def putfile(url, file, username, password):
 
-    size = os.stat(file)[6] 
+def putfile(url, username, password, file=None, strbuf=None):
+
+    if file == None and strbuf == None:
+        print >>sys.stderr, 'putfile requires either a filename or a string buffer'
+        sys.exit(1)
+
+    if strbuf:
+        size = len(strbuf)
+    else:
+        size = os.stat(file)[6] 
 
     auth_string = base64.encodestring('%s:%s' % (username, password)).strip()
 
@@ -61,26 +66,26 @@ def putfile(url, file, username, password):
     conn.putheader('Authorization', 'Basic %s' % auth_string) 
     conn.endheaders() 
 
-    fp = open(file, 'rb') 
-    n = 0 
-    while 1: 
-        buf = fp.read(BLOCKSIZE) 
-        n+=1 
-        if n % 10 == 0: 
-            #print 'upload-sending blocknum=', n 
-            #print '.',
-            pass
+    if strbuf:
+        conn.send(strbuf)
+    else:
+        fp = open(file, 'rb') 
+        n = 0 
+        while 1: 
+            buf = fp.read(BLOCKSIZE) 
+            n+=1 
+            if n % 10 == 0: 
+                #print 'upload-sending blocknum=', n 
+                #print '.',
+                pass
 
-        if not buf: break 
-        conn.send(buf) 
-    fp.close() 
+            if not buf: break 
+            conn.send(buf) 
+        fp.close() 
 
     reply, msg, headers = conn.getreply() 
 
-    if reply == 200:
-        pass
-        #print 'done'
-    else:
+    if reply != 200:
         print 'error uploading %s' % file
         print 'upload-PUT reply=', reply, ' msg=', msg, 'headers=', headers
 

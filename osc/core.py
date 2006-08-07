@@ -258,7 +258,7 @@ class Package:
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
         u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
-        othermethods.putfile(u, os.path.join(self.dir, n), username, password)
+        othermethods.putfile(u, username, password, file = os.path.join(self.dir, n))
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
@@ -427,7 +427,7 @@ rev: %s
         self.descr = descr
 
 
-    def update_pac_meta(self):
+    def update_pac_meta(self, template=new_package_templ):
         import othermethods
         import tempfile
 
@@ -439,7 +439,7 @@ rev: %s
         except urllib2.HTTPError, e:
             if e.code == 404:
                 print 'package does not exist yet... creating it'
-                m = new_package_templ % (pac, username)
+                m = template % (pac, username)
             else:
                 print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
                 print e
@@ -467,7 +467,7 @@ rev: %s
         if repl == 'y':
             print 'Sending meta data...', 
             u = makeurl(['source', self.prjname, self.name, '_meta'])
-            othermethods.putfile(u, filename, username, password)
+            othermethods.putfile(u, username, password, file=filename)
             print 'Done.'
         else:
             print 'discarding', filename
@@ -732,7 +732,7 @@ def check_store_version(dir):
 
 def meta_get_packagelist(prj):
 
-    u = makeurl(['source', prj, '_meta'])
+    u = makeurl(['source', prj])
 
     try:
         f = urllib2.urlopen(u)
@@ -748,7 +748,7 @@ def meta_get_packagelist(prj):
     tree = ET.parse(f)
     root = tree.getroot()
 
-    return [ node.get('name') for node in root.findall('package') ]
+    return [ node.get('name') for node in root.findall('entry') ]
 
 
 def meta_get_filelist(prj, package):
@@ -800,7 +800,7 @@ def show_package_meta(prj, pac):
     return f.readlines()
 
 
-def edit_meta(prj, pac):
+def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
     import othermethods
     import tempfile
 
@@ -813,7 +813,7 @@ def edit_meta(prj, pac):
             m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
-                m = new_package_templ % (pac, username)
+                m = template % (pac, username)
             else:
                 print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
                 print e
@@ -841,13 +841,13 @@ def edit_meta(prj, pac):
     editor = os.getenv('EDITOR', default='vim')
     os.system('%s %s' % (editor, filename))
 
-    if os.path.getmtime(filename) == timestamp:
+    if change_is_required == True and os.path.getmtime(filename) == timestamp:
         print 'File unchanged. Not saving.'
         os.unlink(filename)
 
     else:
         print 'Sending meta data...', 
-        othermethods.putfile(u, filename, username, password)
+        othermethods.putfile(u, username, password, file=filename)
         os.unlink(filename)
         print 'Done.'
 
@@ -999,6 +999,55 @@ def checkout_package(project, package):
         print 'A   ', os.path.join(project, package, filename)
 
     os.chdir(olddir)
+
+
+def link_pac(src_project, src_package, dst_project, dst_package):
+    """
+    create a linked package
+     - "src" is the original package
+     - "dst" is the "link" package that we are creating here
+    """
+
+    import othermethods
+    import tempfile
+
+
+    src_meta = show_package_meta(src_project, src_package)
+
+    # replace package name and username
+    # using a string buffer
+    # and create the package
+    tree = ET.parse(StringIO(''.join(src_meta)))
+    root = tree.getroot()
+    root.set('name', '%s')
+    tree.find('person').set('userid', '%s')
+    buf = StringIO()
+    tree.write(buf)
+    src_meta = buf.getvalue()
+
+
+    edit_meta(dst_project, dst_package, template=src_meta, change_is_required=False)
+
+    # create the _link file
+    # but first, make sure not to overwrite an existing one
+    if '_link' in meta_get_filelist(dst_project, dst_package):
+        print
+        print '_link file already exists...! Aborting'
+        sys.exit(1)
+
+    print 'Creating _link...',
+    link_template = """\
+<link project="%s" package="%s">
+<patches>
+  <!-- <apply name="patch" /> -->
+  <!-- <topadd>%%define build_with_feature_x 1</topadd> -->
+</patches>
+</link>
+""" % (src_project, src_package)
+
+    u = makeurl(['source', dst_project, dst_package, '_link'])
+    othermethods.putfile(u, username, password, strbuf = link_template)
+    print 'Done.'
 
 
 def get_platforms():

@@ -103,6 +103,39 @@ usage: osc editmeta FooPrj              # edit meta of project 'FooPrj'
         edit_meta(project, None)
 
 
+def linkpac(args):
+    """"Link" a package to another package -- possibly cross-project.
+
+usage: osc linkpac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+
+The DESTPAC name is optional; the source packages' name will be used if
+DESTPAC is omitted.
+
+Afterwards, you will want to 'co DESTPRJ DESTPAC' and edit _link and/or add patches.
+
+    """
+
+    if not args or len(args) < 3:
+        print 'missing argument'
+        print
+        print linkpac.func_doc
+        sys.exit(1)
+
+
+    src_project = args[0]
+    src_package = args[1]
+    dst_project = args[2]
+    if len(args) > 3:
+        dst_package = args[3]
+    else:
+        dst_package = src_package
+
+    if src_project == dst_project and src_package == dst_package:
+        print 'error: source and destination are the same'
+        sys.exit(1)
+    link_pac(src_project, src_package, dst_project, dst_package)
+
+
 def updatepacmetafromspec(args):
     """Update package meta information from a specfile
 
@@ -727,6 +760,7 @@ cmd_dict = {
     editmeta:       ['editmeta'],
     help:           ['help'],
     history:        ['history', 'hist'],
+    linkpac:        ['linkpac'],
     userid:         ['id'],         # <- small difference here
     init:           ['init'],           # depracated
     log:            ['log'],
