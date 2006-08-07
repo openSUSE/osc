@@ -1,6 +1,8 @@
 since 0.7:
 ...
 
+- added 'linkpac' subcommand
+- adapt to API changes
 - fixed issue with uploading files when an intercepting web proxy was in between osc and the api server
 - fixed creation of new packages/projects
 
@@ -11,7 +13,7 @@ since 0.7:
 - remove requirement on pyxml package
 - editmeta: add examples for package/project templates
 - add support for streaming the build log (thanks to Christoph Thiel)
-- add 'rebuildpac' command
+- add 'rebuildpac' subcommand
 - add 'repourls' subcommand
 - don't diff binary files
 - don't try to merge binary files
