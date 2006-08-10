@@ -106,3 +106,7 @@ osc repos server:search:ui :
     <arch>i586</arch>
   </repository>
 
+
+16:59 < kesselborn> for var in ['OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR', 'BUILD_ROOT']
+16:59 < kesselborn> Du hast OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', vergessen
+
