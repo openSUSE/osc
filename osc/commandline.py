@@ -111,7 +111,12 @@ usage: osc linkpac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
 The DESTPAC name is optional; the source packages' name will be used if
 DESTPAC is omitted.
 
-Afterwards, you will want to 'co DESTPRJ DESTPAC' and edit _link and/or add patches.
+Afterwards, you will want to 'checkout DESTPRJ DESTPAC'.
+
+To add a patch, add the patch as file and add it to the _link file.
+You can also specify text which will be inserted at the top of the spec file.
+
+See the examples in the _link file.
 
     """
 
@@ -689,18 +694,29 @@ and set su-wrapper to 'sudo' in .oscrc.
 
         
 
+def buildhistory(args):
+    """buildhistory (buildhist): Shows the build history of a package
 
-def history(args):
-    """history: Shows the build history of a package (NOT IMPLEMENTED YET)
-
-usage: osc history <pacdir>
+usage: osc buildhistory <platform> <arch>
     """
-    args = parseargs(args)
-    pacs = findpacs(args)
 
-    for p in pacs:
-        print ''.join(get_history(p.prjname, p.name))
+    wd = os.curdir
+    package = store_read_package(wd)
+    project = store_read_project(wd)
 
+    if args is None or len(args) < 2:
+        print 'missing argument'
+        print
+        print buildhistory.func_doc
+        print 'Valid arguments for this package are:'
+        print 
+        repos(None)
+        print
+        sys.exit(1)
+        
+    platform = args[0]
+    arch = args[1]
+    print ''.join(get_buildhistory(project, package, platform, arch))
 
 def rebuildpac(args):
     """rebuildpac: Triggers a package rebuild for all repositories/architectures of the package
@@ -759,7 +775,7 @@ cmd_dict = {
     diff:           ['diff'],
     editmeta:       ['editmeta'],
     help:           ['help'],
-    history:        ['history', 'hist'],
+    buildhistory:   ['buildhistory', 'buildhist'],
     linkpac:        ['linkpac'],
     userid:         ['id'],         # <- small difference here
     init:           ['init'],           # depracated

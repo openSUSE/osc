@@ -22,7 +22,7 @@ scheme = 'http'
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, '.svn', 'CVS']
+exclude_stuff = [store, '.svn', 'CVS', '.git']
 
 
 new_project_templ = """\
@@ -1138,11 +1138,8 @@ def get_buildconfig(prj, package, platform, arch):
     return f.read()
 
 
-def get_history(prj, package):
-    # http://api.opensuse.org/rpm/Apache/factory/i586/apache2/history ?
-    # http://api.opensuse.org/package/Apache/apache2/history ?
-    u = makeurl(['package', prj, package, 'history'])
-    print u
+def get_buildhistory(prj, package, platform, arch):
+    u = makeurl(['rpm', prj, platform, arch, package, 'history'])
     f = urlopen(u)
     return f.readlines()
 
