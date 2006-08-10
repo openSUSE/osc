@@ -67,6 +67,18 @@ Deleting       subversion.nb.po.bz2
 Sending        subversion.viewcvs.conf
 Transmitting file data ..
 
+
+15:47 < kesselborn> DuDE: beim osc local build: müssen die config vars gesetzt sein, wenn man env vars gesetzt hat?
+15:48 < DuDE> kesselborn: hm, weiss ich gerade gar nicht
+15:48 < kesselborn> ja, scheint so
+15:48 < kesselborn> ok
+15:48 < kesselborn> aber er nimmt dann die env vas
+15:48 < kesselborn> vars
+15:50 < DuDE> kesselborn: hm, das sollte ich aendern
+
+
+17:30 < DuDE> jbl_: at the moment there is only exclude_stuff = [store, '.svn', 'CVS'], it should be extended to use globs
+
 01:20 < darix> DuDE: http://rafb.net/paste/results/hUjH7v14.html
 01:21 < darix> that happens if the log is not accessible atm
 
