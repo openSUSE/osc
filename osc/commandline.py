@@ -141,6 +141,24 @@ See the examples in the _link file.
     link_pac(src_project, src_package, dst_project, dst_package)
 
 
+def deletepac(args):
+    """deletepac: Delete a package on the server.
+
+usage: osc deletepac <prj> <pac>
+    """
+
+    if not args or len(args) < 2:
+        print 'missing argument'
+        print
+        print deletepac.func_doc
+        sys.exit(1)
+
+    project = args[0]
+    package = args[1]
+
+    delete_package(project, package)
+
+
 def updatepacmetafromspec(args):
     """Update package meta information from a specfile
 
@@ -772,6 +790,7 @@ cmd_dict = {
     commit:         ['commit', 'ci', 'checkin'],
     checkout:       ['checkout', 'co'],
     updatepacmetafromspec:       ['updatepacmetafromspec'],
+    deletepac:      ['deletepac'],
     diff:           ['diff'],
     editmeta:       ['editmeta'],
     help:           ['help'],

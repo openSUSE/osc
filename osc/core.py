@@ -1050,6 +1050,13 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     print 'Done.'
 
 
+def delete_package(prj, pac):
+    import othermethods
+    
+    u = makeurl(['source', prj, pac])
+    othermethods.delfile(u, pac, username, password)
+
+
 def get_platforms():
     f = urlopen(makeurl(['platform']))
     tree = ET.parse(f)
@@ -1168,6 +1175,7 @@ def store_read_project(dir):
 def store_read_package(dir):
     p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     return p
+
 
 def get_osc_version():
     return __version__
