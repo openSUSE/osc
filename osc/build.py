@@ -234,7 +234,7 @@ pass: %s
     config = dict(config.items('general', raw=1))
 
     # make it possible to override configuration of the rc file
-    for var in ['OSC_PACKAGECACHEDIR', 'BUILD_ROOT']:
+    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'BUILD_ROOT']: 
         val = os.getenv(var)
         if val:
             if var.startswith('OSC_'): var = var[4:]
