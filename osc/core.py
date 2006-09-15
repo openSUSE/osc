@@ -573,11 +573,12 @@ def makeurl(l):
     return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
 
 
-def urlopen(url):
+def urlopen(url, data=None):
     """wrapper around urllib2.urlopen for error handling"""
 
     try:
-        fd = urllib2.urlopen(url)
+        # adding data to the request makes it a POST
+        fd = urllib2.urlopen(url, data=data)
 
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'Error: can\'t get \'%s\'' % url
@@ -1131,10 +1132,10 @@ def get_log(prj, package, platform, arch, offset):
     return f.read()
 
 
-def get_buildinfo(prj, package, platform, arch):
+def get_buildinfo(prj, package, platform, arch, specfile=None):
     # http://api.opensuse.org/rpm/Subversion/Apache_SuSE_Linux_10.1/i586/subversion/buildinfo
     u = makeurl(['rpm', prj, platform, arch, package, 'buildinfo'])
-    f = urlopen(u)
+    f = urlopen(u, data=specfile)
     return f.read()
 
 

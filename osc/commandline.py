@@ -635,9 +635,18 @@ To find out <platform> and <arch>, you can use 'osc results'
 
 def buildinfo(args):
     """buildinfo: Shows the build "info" which is used in building a package 
-You need to call the command inside a package directory.
+This command is mostly used internally by the 'build' command.
+It needs to be called inside a package directory.
 
-usage: osc buildinfo <platform> <arch>
+usage: osc buildinfo <platform> <arch> [specfile]
+
+The [specfile] argument is optional. <specfile> is a local specfile which is
+sent to the server, and the buildinfo will be based on it.
+If the argument is not supplied, the buildinfo is derived from the specfile
+which is currently in the package.
+
+The returned data is XML and contains a list of the packages used in building, 
+their source, and the expanded BuildRequires.
     """
     wd = os.curdir
     package = store_read_package(wd)
@@ -655,14 +664,28 @@ usage: osc buildinfo <platform> <arch>
         
     platform = args[0]
     arch = args[1]
-    print ''.join(get_buildinfo(project, package, platform, arch))
+
+    # were we given a specfile (third argument)?
+    try:
+        spec = open(args[2]).read()
+    except IndexError:
+        spec = None
+    except IOError, e:
+        sys.exit(e)
+
+    print ''.join(get_buildinfo(project, package, platform, arch, specfile=spec))
 
 
 def buildconfig(args):
     """buildconfig: Shows the build configuration which is used in building a package
-You need to call the command inside a package directory.
+This command is mostly used internally by the 'build' command.
+It needs to be called inside a package directory.
 
 usage: osc buildconfig <platform> <arch>
+
+The returned data is the project-wide build configuration in a format which is
+directly readable by the build script. It contains RPM macros and BuildRequires
+expansions, for example.
     """
     wd = os.curdir
     package = store_read_package(wd)

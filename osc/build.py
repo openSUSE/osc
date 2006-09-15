@@ -279,7 +279,7 @@ def main(argv):
 
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
-    os.system('osc buildinfo %s %s > %s' % (repo, arch, bi_file.name))
+    os.system('osc buildinfo %s %s %s > %s' % (repo, arch, spec, bi_file.name))
     bi = Buildinfo(bi_file.name)
 
 
