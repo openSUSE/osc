@@ -3,6 +3,8 @@ since 0.8:
 
 0.8:
 - build: use configuration from *local* specfile (e.g. BuildRequires)
+- build: let envvars OSC_SU_WRAPPER and OSC_BUILD_ROOT override config 
+- build: allow 'dynamical' build-root setting by using %(repo)s and %(arch)s
 - add 'createpac/editpac' and 'createprj/editprj' subcommands which
   are similar to 'editmeta' but should be more logical to find
 - added 'deletepac' subcommand

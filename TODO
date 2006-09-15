@@ -38,18 +38,16 @@ But someone could patch the commandline tool osc to import a src.rpm by
 extracting it (hint hint ;)
 
 
-17:24 <darix> und wie waere ein osc link src_project src_package
-              [local_package] ?:p
-or: "linkpac"?
-just create a _link file with the content
-	<link project='exim' package='exim'/>
-
 
 
 <darix> ich hab nen vorschlag fuer osc
 <darix> sagen wir ich leg ein server:mail/foo123 an
 <darix> dann waere es cool sowas zu koennen wie
 <darix> osc importfromspec server:mail foo123
+This can actually be done by
+	osc createpac server:mail foo123
+followed by
+	cd foo123; osc init server:mail foo123
 
 
 
@@ -78,8 +76,7 @@ Transmitting file data ..
 
 17:30 < DuDE> jbl_: at the moment there is only exclude_stuff = [store, '.svn', 'CVS'], it should be extended to use globs
 
-01:20 < darix> DuDE: http://rafb.net/paste/results/hUjH7v14.html
-01:21 < darix> that happens if the log is not accessible atm
+
 
 02:26 <darix> Transmitting file data ..Traceback (most recent call last):
 02:26 <darix>   File "/usr/bin/osc", line 10, in ?
@@ -106,8 +103,6 @@ osc repos server:search:ui :
   </repository>
 
 
-16:59 < kesselborn> for var in ['OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR', 'BUILD_ROOT']
-16:59 < kesselborn> Du hast OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', vergessen
 
 
  # osc build SUSE_Factory i586 xorg-x11-libX11.spec                                                                                          
@@ -120,6 +115,7 @@ BUILD_DIST must *not* be set! Could you add this information to the
 curl -d " " -n "http://api.opensuse.org/source/server:php/php5_hardened?cmd=rebuild&arch=i586&repo=SUSE_Linux_10.0"
 
 
+http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:06 <darix> kurz zeit ueber 1-2 osc feature request zu reden die ich grade bekommen habe?
 15:06 <DuDE_> ja
 15:06 <darix> ok
