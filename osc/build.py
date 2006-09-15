@@ -47,6 +47,7 @@ Make sure that you have a [general] section in %%s:
 #su-wrapper: %(su-wrapper)s
 
 # rootdir to setup the chroot environment
+# can contain %%(repo)s and/or %%(arch)s for replacement
 #build-root: %(build-root)s
 
 
@@ -205,6 +206,7 @@ def get_build_conf():
 #su-wrapper: su -c
 
 # rootdir to setup the chroot environment
+# can contain %%(repo)s and/or %%(arch)s for replacement
 #build-root: /var/tmp/build-root
 
 
@@ -324,7 +326,7 @@ def main(argv):
 
     cmd = '%s --root=%s --rpmlist=%s --dist=%s %s %s' \
                  % (config['build-cmd'],
-                    config['build-root'], 
+                    config['build-root'] % {'repo': repo, 'arch': arch}, 
                     rpmlist.name, 
                     bc_file.name, 
                     spec, 
