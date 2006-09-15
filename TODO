@@ -110,3 +110,32 @@ osc repos server:search:ui :
 16:59 < kesselborn> for var in ['OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR', 'BUILD_ROOT']
 16:59 < kesselborn> Du hast OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', vergessen
 
+curl -d " " -n "http://api.opensuse.org/source/server:php/php5_hardened?cmd=rebuild&arch=i586&repo=SUSE_Linux_10.0"
+
+
+15:06 <darix> kurz zeit ueber 1-2 osc feature request zu reden die ich grade bekommen habe?
+15:06 <DuDE_> ja
+15:06 <darix> ok
+15:06 <darix> das 1. ist
+15:06 <darix> osc listpackages [<project>]
+15:06 <DuDE_> als Alias?
+15:07 <darix> osc listpackages [<project>] [<package>]
+15:07 <darix> es soll die gebauten sachen listen
+15:07 <DuDE_> ach so, rpms
+15:07 <darix> quasi alle rpms/debs die da sind
+15:07 <darix> und dann
+15:07 <DuDE_> mit Pfad/URL?
+15:07 <DuDE_> also praktisch den Link auf software.opesuse.org?
+15:07 <darix> osc getpackage [<project>] [<package>] [<rpm>]+
+15:07 <darix> nein
+15:07 <darix> im zweifel ueber API saugen
+15:08 <DuDE_> hm, waere noetig, falls ein Projekt noch nicht durchgebaut hat
+15:08 <darix> jau
+15:08 <darix> richi wuerde sich wirklich drueber freuen
+15:08 <darix> ich weiss dass es ueber die api vom backend geht
+15:09 <darix> ich weiss nur nicht ob api alles durchreicht
+15:09 <darix> und leider hab ich schon ein paar sachen im api code gefunden
+15:09 <darix> der falsch mit dem backend spricht :/
+15:09 <DuDE_> ja, macht osc build auch so, eigentlich, allerdings weiss es dann die noetigen Datein aus dem buildinfo (version, release)
+15:09 <darix> man kann auf dem backend alle rpms listen lassen
+
