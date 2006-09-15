@@ -273,6 +273,7 @@ def main(argv):
     spec = argv[3]
     buildargs = []
     buildargs += argv[4:]
+    config['build-root'] = config['build-root'] % {'repo': repo, 'arch': arch}
 
     if not os.path.exists(spec):
         print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
@@ -330,7 +331,7 @@ def main(argv):
 
     cmd = '%s --root=%s --rpmlist=%s --dist=%s %s %s' \
                  % (config['build-cmd'],
-                    config['build-root'] % {'repo': repo, 'arch': arch}, 
+                    config['build-root'],
                     rpmlist.name, 
                     bc_file.name, 
                     spec, 
