@@ -2,8 +2,6 @@
 
 - implement 'info' command
 - implement 'mv' command
-- creation of new project (workaround: editmeta <newprj>)
-- creation of new package (workaround: editmeta prj <newpac>)
 - editing of user data
   <watchlist>
     <project name="ASCIIParadize"/>
@@ -14,6 +12,7 @@
   In which form would this be integrated best?
 - clean up the way how a .oscrc template is being added: at the moment, there
   are two places doing this
+- implement a 'copypac' command, which copies a package into another project
 
 
 checkin: 
@@ -109,6 +108,14 @@ osc repos server:search:ui :
 
 16:59 < kesselborn> for var in ['OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR', 'BUILD_ROOT']
 16:59 < kesselborn> Du hast OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', vergessen
+
+
+ # osc build SUSE_Factory i586 xorg-x11-libX11.spec                                                                                          
+> ['/usr/bin/osc', 'build', 'i38', 'i386', 'SUSE_Factory', 'i586', 'xorg-x11-libX11.spec']                                                    
+> Error: specfile 'SUSE_Factory' does not exist.                                                                                              
+BUILD_DIST must *not* be set! Could you add this information to the
+'osc help build' text?
+
 
 curl -d " " -n "http://api.opensuse.org/source/server:php/php5_hardened?cmd=rebuild&arch=i586&repo=SUSE_Linux_10.0"
 

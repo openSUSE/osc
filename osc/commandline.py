@@ -79,6 +79,37 @@ usage: osc meta Apache              # show meta of project 'Apache'
         print ''.join(show_project_meta(project))
 
 
+def editpac(args):
+    """editpac (createpac): Edit package meta information
+If the named package does not exist, it will be created.
+
+usage: osc createpac <prj> <pac>
+       osc editpac <prj> <pac>
+    """
+
+    if not args or len(args) != 2:
+        sys.exit('missing argument\n\n%s\n' % editpac.func_doc)
+
+    project = args[0]
+    package = args[1]
+    edit_meta(project, package)
+
+
+def editprj(args):
+    """editprj (createprj): Edit project meta information
+If the named project does not exist, it will be created.
+
+usage: osc createprj <prj>
+       osc editprj <prj>
+    """
+
+    if not args or len(args) != 1:
+        sys.exit('missing argument\n\n%s\n' % editprj.func_doc)
+
+    project = args[0]
+    edit_meta(project, None)
+
+
 def editmeta(args):
     """Edit project/package meta information
 If the named project or package does not exist, it will be created.
@@ -90,7 +121,7 @@ usage: osc editmeta FooPrj              # edit meta of project 'FooPrj'
     if not args:
         print 'missing argument'
         print
-        print meta.func_doc
+        print editmeta.func_doc
         sys.exit(1)
 
     if len(args) == 2:
@@ -793,6 +824,8 @@ cmd_dict = {
     deletepac:      ['deletepac'],
     diff:           ['diff'],
     editmeta:       ['editmeta'],
+    editpac:        ['editpac', 'createpac'],
+    editprj:        ['editprj', 'createprj'],
     help:           ['help'],
     buildhistory:   ['buildhistory', 'buildhist'],
     linkpac:        ['linkpac'],
