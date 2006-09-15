@@ -758,7 +758,7 @@ def meta_get_filelist(prj, package):
     try:
         f = urllib2.urlopen(u)
     except urllib2.HTTPError, e:
-        print >>sys.stderr, 'error getting filelist for project \'%s\' package \'%s\'' % (prj, pac)
+        print >>sys.stderr, 'error getting filelist for project \'%s\' package \'%s\'' % (prj, package)
         print >>sys.stderr, e
         sys.exit(1)
 
