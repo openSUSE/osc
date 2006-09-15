@@ -1,9 +1,18 @@
-since 0.7:
+since 0.8:
 ...
 
+0.8:
+- build: use configuration from *local* specfile (e.g. BuildRequires)
+- add 'createpac/editpac' and 'createprj/editprj' subcommands which
+  are similar to 'editmeta' but should be more logical to find
+- added 'deletepac' subcommand
+- added 'buildhistory' subcommand (formerly 'history'). This only
+  gives out raw xml at this time
 - added 'linkpac' subcommand
+- added ".git" to the excluded files
 - adapt to API changes
-- fixed issue with uploading files when an intercepting web proxy was in between osc and the api server
+- fixed issue with uploading files when an intercepting web proxy was
+  in between osc and the api server
 - fixed creation of new packages/projects
 
 0.7:
