@@ -281,7 +281,10 @@ def main(argv):
 
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
-    os.system('osc buildinfo %s %s %s > %s' % (repo, arch, spec, bi_file.name))
+    rc = os.system('osc buildinfo %s %s %s > %s' % (repo, arch, spec, bi_file.name))
+    if rc:
+        print >>sys.stderr, 'wrong repo/arch?'
+        sys.exit(rc)
     bi = Buildinfo(bi_file.name)
 
 
@@ -317,7 +320,8 @@ def main(argv):
 
     print 'Getting buildconfig from server'
     bc_file = NamedTemporaryFile(prefix='buildconfig.', dir = '/tmp')
-    os.system('osc buildconfig %s %s > %s' % (repo, arch, bc_file.name))
+    rc = os.system('osc buildconfig %s %s > %s' % (repo, arch, bc_file.name))
+    if rc: sys.exit(rc)
 
 
     print 'Running build'
@@ -349,7 +353,8 @@ def main(argv):
 
 
     print cmd
-    os.system(cmd)
+    rc = os.system(cmd)
+    if rc: sys.exit(rc)
 
     pacdirlink = os.path.join(config['build-root'], '.build.packages')
     if os.path.exists(pacdirlink):
