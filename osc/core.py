@@ -783,20 +783,27 @@ def get_slash_source():
 
 def show_project_meta(prj):
     try:
-        f = urllib2.urlopen(makeurl(['source', prj, '_meta']))
+        url = makeurl(['source', prj, '_meta'])
+        f = urllib2.urlopen(url)
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'error getting meta for project \'%s\'' % prj
         print >>sys.stderr, e
+        if e.code == 500:
+            print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
         sys.exit(1)
+
     return f.readlines()
 
 
 def show_package_meta(prj, pac):
     try:
-        f = urllib2.urlopen(makeurl(['source', prj, pac, '_meta']))
+        url = makeurl(['source', prj, pac, '_meta'])
+        f = urllib2.urlopen(url)
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         print >>sys.stderr, e
+        if e.code == 500:
+            print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
         sys.exit(1)
     return f.readlines()
 
