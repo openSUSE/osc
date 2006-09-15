@@ -360,7 +360,7 @@ def main(argv):
     pacdirlink = os.path.join(config['build-root'], '.build.packages')
     if os.path.exists(pacdirlink):
         pacdirlink = os.readlink(pacdirlink)
-        pacdir = os.path.join(config['build-root'] + pacdirlink)
+        pacdir = os.path.join(config['build-root'], pacdirlink)
 
         if os.path.exists(pacdir):
             (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
