@@ -583,6 +583,8 @@ def urlopen(url, data=None):
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'Error: can\'t get \'%s\'' % url
         print >>sys.stderr, e
+        if e.code == 500:
+            print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
         sys.exit(1)
 
     return fd
