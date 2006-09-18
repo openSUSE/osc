@@ -640,8 +640,8 @@ It needs to be called inside a package directory.
 
 usage: osc buildinfo <platform> <arch> [specfile]
 
-The [specfile] argument is optional. <specfile> is a local specfile which is
-sent to the server, and the buildinfo will be based on it.
+The [specfile] argument is optional. <specfile> is a local specfile (or .dsc
+file) which is sent to the server, and the buildinfo will be based on it.
 If the argument is not supplied, the buildinfo is derived from the specfile
 which is currently in the package.
 
