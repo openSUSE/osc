@@ -1,5 +1,9 @@
 since 0.8:
-...
+- add 'copypac' subcommand, to copy a complete package to a new package, possibly cross-project
+- don't die if user tries to 'add' a file which is already versioned
+- don't die if 'addremove' encounters directories
+- urlopen(): for server return code 500, print out the reply body
+- be fair, and also mention dsc files
 
 0.8:
 - build: use configuration from *local* specfile (e.g. BuildRequires)

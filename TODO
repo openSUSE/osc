@@ -12,7 +12,6 @@
   In which form would this be integrated best?
 - clean up the way how a .oscrc template is being added: at the moment, there
   are two places doing this
-- implement a 'copypac' command, which copies a package into another project
 
 
 checkin: 
@@ -78,15 +77,6 @@ Transmitting file data ..
 
 
 
-02:26 <darix> Transmitting file data ..Traceback (most recent call last):
-02:26 <darix>   File "/usr/bin/osc", line 10, in ?
-02:26 <darix>     commandline.main()
-02:26 <darix>   File "/usr/lib/python2.4/site-packages/osc/commandline.py", line 667, in main
-02:26 <darix>     cmd_dict[cmd](args)
-02:26 <darix>   File "/usr/lib/python2.4/site-packages/osc/commandline.py", line 340, in checkin
-02:26 <darix>     p.to_be_deleted.remove(filename)
-02:26 <darix> ValueError: list.remove(x): x not in list
-
 
 osc repos server:search:ui :
   <repository name="SUSE_Linux_10.1">
@@ -113,6 +103,20 @@ BUILD_DIST must *not* be set! Could you add this information to the
 
 
 curl -d " " -n "http://api.opensuse.org/source/server:php/php5_hardened?cmd=rebuild&arch=i586&repo=SUSE_Linux_10.0"
+you can retrigger per repo/arch already:
+
+curl -d " " -n \
+"http://api.opensuse.org/source/{project}/{pkg}?cmd=rebuild&repo={repo}&arch={arch}"
+-n == netrc or use:
+-u/--user <user[:password]> Set server user and password
+repo and arch are optional.
+
+so those 3 are valid:
+
+"http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&repo=SUSE_Factory"
+"http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&arch=i586"
+"http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&repo=SUSE_Factory&arch=i586"
+
 
 
 http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
