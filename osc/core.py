@@ -1060,6 +1060,45 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     print 'Done.'
 
 
+def copy_pac(src_project, src_package, dst_project, dst_package):
+    """
+    create a copy of a package
+    """
+
+    import othermethods
+    import tempfile
+
+    src_meta = show_package_meta(src_project, src_package)
+
+    # replace project and package name
+    # using a string buffer
+    # and create the package
+    tree = ET.parse(StringIO(''.join(src_meta)))
+    root = tree.getroot()
+    root.set('name', dst_package)
+    root.set('project', dst_project)
+    buf = StringIO()
+    tree.write(buf)
+    src_meta = buf.getvalue()
+
+    print 'Sending meta data...'
+    u = makeurl(['source', dst_project, dst_package, '_meta'])
+    othermethods.putfile(u, username, password, strbuf=src_meta)
+
+    # copy one file after the other
+    print 'Copying files...'
+    tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir = '/tmp')
+    os.chdir(tmpdir)
+    for n in meta_get_filelist(src_project, src_package):
+        print '  ', n
+        get_source_file(src_project, src_package, n, targetfilename=n)
+        u = makeurl(['source', dst_project, dst_package, pathname2url(n)])
+        othermethods.putfile(u, username, password, file = n)
+        os.unlink(n)
+    print 'Done.'
+    os.rmdir(tmpdir)
+
+
 def delete_package(prj, pac):
     import othermethods
     

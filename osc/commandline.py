@@ -167,9 +167,38 @@ See the examples in the _link file.
         dst_package = src_package
 
     if src_project == dst_project and src_package == dst_package:
-        print 'error: source and destination are the same'
-        sys.exit(1)
+        sys.exit('osc: error: source and destination are the same')
     link_pac(src_project, src_package, dst_project, dst_package)
+
+
+def copypac(args):
+    """"Copy" a package, possibly cross-project.
+
+usage: osc copypac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+
+The DESTPAC name is optional; the source packages' name will be used if
+DESTPAC is omitted.
+
+    """
+
+    if not args or len(args) < 3:
+        print 'missing argument'
+        print
+        print copypac.func_doc
+        sys.exit(1)
+
+
+    src_project = args[0]
+    src_package = args[1]
+    dst_project = args[2]
+    if len(args) > 3:
+        dst_package = args[3]
+    else:
+        dst_package = src_package
+
+    if src_project == dst_project and src_package == dst_package:
+        sys.exit('osc: error: source and destination are the same')
+    copy_pac(src_project, src_package, dst_project, dst_package)
 
 
 def deletepac(args):
@@ -327,6 +356,9 @@ usage: osc add file1 file2 ...
         for filename in pac.todo:
             if filename in exclude_stuff:
                 continue
+            if filename in pac.filenamelist:
+                print 'osc: warning: \'%s\' is already under version control' % filename
+                continue
 
             pac.addfile(filename)
             print statfrmt('A', filename)
@@ -346,6 +378,8 @@ usage: osc addremove
 
         for filename in p.todo:
             if filename in exclude_stuff:
+                continue
+            if os.path.isdir(filename):
                 continue
             state = p.status(filename)
             if state == '?':
@@ -848,6 +882,7 @@ cmd_dict = {
     diff:           ['diff'],
     editmeta:       ['editmeta'],
     editpac:        ['editpac', 'createpac'],
+    copypac:        ['copypac'],
     editprj:        ['editprj', 'createprj'],
     help:           ['help'],
     buildhistory:   ['buildhistory', 'buildhist'],
