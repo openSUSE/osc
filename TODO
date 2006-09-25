@@ -19,12 +19,6 @@ checkin:
 	  localmeta	
 
 
-results: aggregate results of all packages in a project
--> packstatus: http://api.opensuse.org/result/KDE:KDE3/packstatus
-               http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
-               http://api.opensuse.org/result/KDE:KDE3/packstatus?summaryonly
-
-
 
 
 implement a package search / indexing
@@ -94,6 +88,10 @@ osc repos server:search:ui :
 
 
 
+# shorter forms of the packstatus... useful for anything?
+#http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
+#http://api.opensuse.org/result/KDE:KDE3/packstatus?summaryonly
+
 
  # osc build SUSE_Factory i586 xorg-x11-libX11.spec                                                                                          
 > ['/usr/bin/osc', 'build', 'i38', 'i386', 'SUSE_Factory', 'i586', 'xorg-x11-libX11.spec']                                                    
@@ -101,23 +99,6 @@ osc repos server:search:ui :
 BUILD_DIST must *not* be set! Could you add this information to the
 'osc help build' text?
 
-
-curl -d " " -n "http://api.opensuse.org/source/server:php/php5_hardened?cmd=rebuild&arch=i586&repo=SUSE_Linux_10.0"
-you can retrigger per repo/arch already:
-
-curl -d " " -n \
-"http://api.opensuse.org/source/{project}/{pkg}?cmd=rebuild&repo={repo}&arch={arch}"
--n == netrc or use:
--u/--user <user[:password]> Set server user and password
-repo and arch are optional.
-
-so those 3 are valid:
-
-"http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&repo=SUSE_Factory"
-"http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&arch=i586"
-"http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&repo=SUSE_Factory&arch=i586"
-
-osc rebuildpac [project [package]] [arch=arch] [repos]
 
 
 http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
