@@ -100,6 +100,17 @@ HERE
 """
 
 
+buildstatus_symbols = {'succeeded':       '.',
+                       'disabled':        ' ',
+                       'expansion error': 'E',
+                       'failed':          'F',
+                       'broken':          'B',
+                       'blocked':         'b',
+                       'building':        '%',
+                       'scheduled':       's',
+}
+
+
 class File:
     """represent a file, including its metadata"""
     def __init__(self, name, md5, size, mtime):
@@ -1106,6 +1117,13 @@ def delete_package(prj, pac):
     othermethods.delfile(u, pac, username, password)
 
 
+def delete_project(prj):
+    import othermethods
+    
+    u = makeurl(['source', prj])
+    othermethods.delfile(u, prj, username, password)
+
+
 def get_platforms():
     f = urlopen(makeurl(['platform']))
     tree = ET.parse(f)
@@ -1136,6 +1154,12 @@ def get_repos_of_project(prj):
 
 def show_results_meta(prj, package, platform):
     u = makeurl(['result', prj, platform, package, 'result'])
+    f = urlopen(u)
+    return f.readlines()
+
+
+def show_prj_results_meta(prj):
+    u = makeurl(['result', prj, 'packstatus'])
     f = urlopen(u)
     return f.readlines()
 
@@ -1174,6 +1198,58 @@ def get_results(prj, package, platform):
     return r
 
 
+def get_prj_results(prj):
+    #print '----------------------------------------'
+
+    r = []
+    #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
+    result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
+
+    f = show_prj_results_meta(prj)
+    tree = ET.parse(StringIO(''.join(f)))
+    root = tree.getroot()
+
+    pacs = []
+    for node in root.find('packstatuslist'):
+        pacs.append(node.get('name'))
+
+    offset = 0
+    for pac in pacs:
+        r.append(' |' * offset + ' ' + pac)
+        offset += 1
+
+    target = {}
+    for node in root.findall('packstatuslist'):
+        target['repo'] = node.get('repository')
+        target['arch'] = node.get('arch')
+
+        status = {}
+        for pacnode in node.findall('packstatus'):
+            try:
+                status[pacnode.get('name')] = buildstatus_symbols[pacnode.get('status')]
+            except:
+                print 'osc: warn: unknown status \'%s\'...' % pacnode.get('status')
+                print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
+                status[pacnode.get('name')] = '?'
+
+        line = []
+        line.append(' ')
+        for pac in pacs:
+            line.append(status[pac])
+            line.append(' ')
+        line.append(' %s %s' % (target['repo'], target['arch']))
+        line = ''.join(line)
+
+        r.append(line)
+
+    r.append('')
+    r.append(' Legend:')
+    for i, j in buildstatus_symbols.items():
+        r.append('  %s %s' % (j, i))
+
+    return r
+
+
 def get_log(prj, package, platform, arch, offset):
     u = makeurl(['result', prj, platform, package, arch, 'log?nostream=1&start=%s' % offset])
     f = urlopen(u)
@@ -1195,13 +1271,35 @@ def get_buildconfig(prj, package, platform, arch):
 
 
 def get_buildhistory(prj, package, platform, arch):
+    import time
+
     u = makeurl(['rpm', prj, platform, arch, package, 'history'])
     f = urlopen(u)
-    return f.readlines()
+    root = ET.parse(f).getroot()
+
+    r = []
+    for node in root.findall('entry'):
+        rev = int(node.get('rev'))
+        srcmd5 = node.get('srcmd5') 
+        versrel = node.get('versrel') 
+        bcnt = int(node.get('bcnt'))
+        t = time.gmtime(int(node.get('time')))
+        t = time.strftime('%Y-%m-%d %H:%M:%S', t)
+
+        r.append('%s   %s %6d   %2d   %s' % (t, srcmd5, rev, bcnt, versrel))
+
+    r.insert(0, 'time                  srcmd5                              rev  bcnt  vers-rel')
+
+    return r
 
 
-def cmd_rebuild(prj, package):
-    u = makeurl(['source', prj, package, '?cmd=rebuild'])
+def cmd_rebuild(prj, package, repo, arch):
+    cmd = '?cmd=rebuild'
+    if repo:
+        cmd += '&repo=%s' % repo
+    if arch:
+        cmd += '&arch=%s' % arch
+    u = makeurl(['source', prj, package, cmd])
     try:
         # adding data to the request makes it a POST
         f = urllib2.urlopen(u, data=' ')

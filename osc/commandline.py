@@ -219,6 +219,28 @@ usage: osc deletepac <prj> <pac>
     delete_package(project, package)
 
 
+def deleteprj(args):
+    """deleteprj: Delete a project on the server.
+
+usage: osc deleteprj <prj>
+
+As a safety measure, project must be empty (i.e., you first need to delete all
+packages first).
+    """
+
+    if not args or len(args) < 1:
+        print 'missing argument'
+        print
+        print deleteprj.func_doc
+        sys.exit(1)
+
+    project = args[0]
+
+    if meta_get_packagelist(project) != []:
+        sys.exit('project must be empty before deleting it.')
+    delete_project(project)
+
+
 def updatepacmetafromspec(args):
     """Update package meta information from a specfile
 
@@ -641,6 +663,30 @@ usage: 1. osc results                   # package = current dir
         print '\n'.join(get_results(project, package, platform))
 
             
+def prjresults(args):
+    """Shows the aggregated build results of an entire project
+
+usage: 1. osc prjresults                   # package = current dir
+       2. osc prjresults <packagedir>
+    """
+
+    if args and len(args) > 1:
+        print 'getting results for more than one project is not supported'
+        print sys.exit(1)
+        
+    if args:
+        wd = args[0]
+    else:
+        wd = os.curdir
+
+    try:
+        project = store_read_project(wd)
+    except:
+        sys.exit('\'%s\' is not an osc project directory' % wd)
+
+    print '\n'.join(get_prj_results(project))
+
+            
 def log(args):
     """log: Shows the log file from a package (you need to be inside a package directory)
 
@@ -649,6 +695,13 @@ usage: osc log <platform> <arch>
 To find out <platform> and <arch>, you can use 'osc results'
 
     """
+
+    if not args or len(args) != 2:
+        print 'missing argument'
+        print
+        print log.func_doc
+        sys.exit(1)
+
     wd = os.curdir
     package = store_read_package(wd)
     project = store_read_project(wd)
@@ -822,18 +875,30 @@ usage: osc buildhistory <platform> <arch>
         
     platform = args[0]
     arch = args[1]
-    print ''.join(get_buildhistory(project, package, platform, arch))
+    print '\n'.join(get_buildhistory(project, package, platform, arch))
 
 def rebuildpac(args):
     """rebuildpac: Triggers a package rebuild for all repositories/architectures of the package
 
-usage: osc rebuildpac <pacdir>
+usage: osc rebuildpac <project> <package> [<repo> [<arch>]]
     """ 
-    args = parseargs(args)
-    pacs = findpacs(args)
 
-    for p in pacs:
-        print p.name + ':', cmd_rebuild(p.prjname, p.name)
+    if args is None or len(args) < 2:
+        print 'missing argument'
+        print
+        print rebuildpac.func_doc
+        sys.exit(1)
+        
+
+    repo = arch = None
+    project = args[0]
+    package = args[1]
+    if len(args) > 2:
+        repo = args[2]
+    if len(args) > 3:
+        arch = args[3]
+
+    print package + ':', cmd_rebuild(project, package, repo, arch)
 
 
 def help(args):
@@ -879,6 +944,7 @@ cmd_dict = {
     checkout:       ['checkout', 'co'],
     updatepacmetafromspec:       ['updatepacmetafromspec'],
     deletepac:      ['deletepac'],
+    deleteprj:      ['deleteprj'],
     diff:           ['diff'],
     editmeta:       ['editmeta'],
     editpac:        ['editpac', 'createpac'],
@@ -898,6 +964,7 @@ cmd_dict = {
     repourls:       ['repourls'],
     resolved:       ['resolved'],
     results:        ['results'],
+    prjresults:     ['prjresults'],
     results_meta:   ['results_meta'],
     rebuildpac:     ['rebuildpac'],
     status:         ['status', 'st'],

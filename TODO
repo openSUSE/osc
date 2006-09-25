@@ -117,6 +117,7 @@ so those 3 are valid:
 "http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&arch=i586"
 "http://api.opensuse.org/source/ruby/ruby?cmd=rebuild&repo=SUSE_Factory&arch=i586"
 
+osc rebuildpac [project [package]] [arch=arch] [repos]
 
 
 http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
