@@ -80,7 +80,15 @@ def putfile(url, username, password, file=None, strbuf=None):
                 pass
 
             if not buf: break 
-            conn.send(buf) 
+
+            try:
+                conn.send(buf)
+            except:
+                print
+                print 'ERROR uploading %s' % file
+                print
+                os._exit(1)
+
         fp.close() 
 
     reply, msg, headers = conn.getreply() 
