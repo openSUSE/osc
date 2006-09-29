@@ -91,7 +91,7 @@ class TestOsc(unittest.TestCase):
     def testMetaPac(self):
         self.out, self.err = runosc('meta Apache apache2')
         self.assertEqual(self.err, '')
-        self.assert_('<package name="apache2">' in self.out)
+        self.assert_('<package name="apache2" project="Apache">' in self.out)
 
 
 #####################################################################
@@ -180,12 +180,18 @@ Transmitting file data
         self.out, self.err = runosc('add foo2')
         self.out, self.err = runosc('st')
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, '?    onlyinwc\nA    foo2\n')
+        self.assertEqual(self.out, 'A    foo2\n?    onlyinwc\n')
 
-        # status with directory as argument
+        # status with an absolute directory as argument
         self.out, self.err = runosc('st %s' % os.getcwd())
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, '?    onlyinwc\nA    foo2\n')
+        self.assertEqual(self.out, 'A    %s/foo2\n?    %s/onlyinwc\n' % (os.getcwd(), os.getcwd()))
+
+        # status with a relative directory as argument
+        reldir = os.path.basename(os.getcwd())
+        self.out, self.err = runosc('st ../%s' % reldir)
+        self.assertEqual(self.err, '')
+        self.assertEqual(self.out, 'A    ../%s/foo2\n?    ../%s/onlyinwc\n' % (reldir, reldir))
 
         # check in a single argument
         self.out, self.err = runosc('ci foo2')

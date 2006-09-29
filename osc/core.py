@@ -496,6 +496,14 @@ def is_project_dir(d):
         return False
 
         
+def is_package_dir(d):
+    if os.path.exists(os.path.join(d, store, '_project')) and \
+       os.path.exists(os.path.join(d, store, '_package')):
+        return True
+    else:
+        return False
+
+        
 def findpacs(files):
     pacs = []
     for f in files:
@@ -577,6 +585,14 @@ def filedir_to_pac(f):
 
 def statfrmt(statusletter, filename):
     return '%s    %s' % (statusletter, filename)
+
+
+def pathjoin(a, *p):
+    """Join two or more pathname components, inserting '/' as needed. Cut leading ./"""
+    path = os.path.join(a, *p)
+    if path.startswith('./'):
+        path = path[2:]
+    return path
 
 
 def makeurl(l):

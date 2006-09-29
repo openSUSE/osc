@@ -339,7 +339,21 @@ usage: osc st
     """
 
     args = parseargs(args)
-    pacs = findpacs(args)
+
+    pacpaths = []
+    for arg in args:
+        # when 'status' is run inside a project dir, it should
+        # stat all packages existing in the wc
+        if is_project_dir(arg):
+            prj = Project(arg)
+            pacpaths += [arg + '/' + n for n in prj.pacs_have]
+        elif is_package_dir(arg):
+            pacpaths.append(arg)
+        else:
+            sys.exit('osc: error: %s is neither a project or a package directory' % arg)
+        
+
+    pacs = findpacs(pacpaths)
 
     for p in pacs:
 
@@ -350,9 +364,9 @@ usage: osc st
         for filename in p.todo:
             s = p.status(filename)
             if s == 'F':
-                print statfrmt('!', filename)
+                print statfrmt('!', pathjoin(p.dir, filename))
             elif s != ' ':
-                print statfrmt(s, filename)
+                print statfrmt(s, pathjoin(p.dir, filename))
 
 
 def add(args):
