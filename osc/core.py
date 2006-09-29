@@ -1213,36 +1213,40 @@ def get_prj_results(prj):
     for node in root.find('packstatuslist'):
         pacs.append(node.get('name'))
 
-    offset = 0
-    for pac in pacs:
-        r.append(' |' * offset + ' ' + pac)
-        offset += 1
 
-    target = {}
-    for node in root.findall('packstatuslist'):
-        target['repo'] = node.get('repository')
-        target['arch'] = node.get('arch')
+    max_pacs = 40
+    for startpac in range(0, len(pacs), max_pacs):
+        offset = 0
+        for pac in pacs[startpac:startpac+max_pacs]:
+            r.append(' |' * offset + ' ' + pac)
+            offset += 1
 
-        status = {}
-        for pacnode in node.findall('packstatus'):
-            try:
-                status[pacnode.get('name')] = buildstatus_symbols[pacnode.get('status')]
-            except:
-                print 'osc: warn: unknown status \'%s\'...' % pacnode.get('status')
-                print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
-                status[pacnode.get('name')] = '?'
+        target = {}
+        for node in root.findall('packstatuslist'):
+            target['repo'] = node.get('repository')
+            target['arch'] = node.get('arch')
 
-        line = []
-        line.append(' ')
-        for pac in pacs:
-            line.append(status[pac])
+            status = {}
+            for pacnode in node.findall('packstatus'):
+                try:
+                    status[pacnode.get('name')] = buildstatus_symbols[pacnode.get('status')]
+                except:
+                    print 'osc: warn: unknown status \'%s\'...' % pacnode.get('status')
+                    print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
+                    status[pacnode.get('name')] = '?'
+
+            line = []
             line.append(' ')
-        line.append(' %s %s' % (target['repo'], target['arch']))
-        line = ''.join(line)
+            for pac in pacs[startpac:startpac+max_pacs]:
+                line.append(status[pac])
+                line.append(' ')
+            line.append(' %s %s' % (target['repo'], target['arch']))
+            line = ''.join(line)
 
-        r.append(line)
+            r.append(line)
 
-    r.append('')
+        r.append('')
+
     r.append(' Legend:')
     for i, j in buildstatus_symbols.items():
         r.append('  %s %s' % (j, i))
