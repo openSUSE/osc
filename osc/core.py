@@ -22,7 +22,7 @@ scheme = 'http'
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, '.svn', 'CVS', '.git']
+exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~']
 
 
 new_project_templ = """\
@@ -159,6 +159,7 @@ class Project:
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
     def __init__(self, workingdir):
+        import fnmatch
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.dir, store)
@@ -194,9 +195,12 @@ class Package:
         self.todo_send = []
         self.todo_delete = []
 
-        # gather unversioned files (the ones not listed in _meta)
+        # gather unversioned files, but ignore some stuff
+        self.excluded = [ i for i in os.listdir(self.dir) 
+                          for j in exclude_stuff 
+                          if fnmatch.fnmatch(i, j) ]
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
-                                     if i not in exclude_stuff
+                                     if i not in self.excluded
                                      if i not in self.filenamelist ]
 
     def addfile(self, n):
@@ -507,9 +511,6 @@ def is_package_dir(d):
 def findpacs(files):
     pacs = []
     for f in files:
-        if f in exclude_stuff:
-            break
-
         p = filedir_to_pac(f)
         known = None
         for i in pacs:

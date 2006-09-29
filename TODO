@@ -68,8 +68,6 @@ Transmitting file data ..
 15:50 < DuDE> kesselborn: hm, das sollte ich aendern
 
 
-17:30 < DuDE> jbl_: at the moment there is only exclude_stuff = [store, '.svn', 'CVS'], it should be extended to use globs
-
 
 
 

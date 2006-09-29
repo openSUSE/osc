@@ -187,11 +187,16 @@ Transmitting file data
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, 'A    %s/foo2\n?    %s/onlyinwc\n' % (os.getcwd(), os.getcwd()))
 
-        # status with a relative directory as argument
-        reldir = os.path.basename(os.getcwd())
-        self.out, self.err = runosc('st ../%s' % reldir)
+        # status with an absolute directory as argument
+        self.out, self.err = runosc('st %s' % os.getcwd())
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, 'A    ../%s/foo2\n?    ../%s/onlyinwc\n' % (reldir, reldir))
+        self.assertEqual(self.out, 'A    %s/foo2\n?    %s/onlyinwc\n' % (os.getcwd(), os.getcwd()))
+
+        # status with a single file as argument
+        reldir = os.path.basename(os.getcwd())
+        self.out, self.err = runosc('st foo2')
+        self.assertEqual(self.err, '')
+        self.assertEqual(self.out, 'A    foo2\n')
 
         # check in a single argument
         self.out, self.err = runosc('ci foo2')

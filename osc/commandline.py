@@ -349,6 +349,8 @@ usage: osc st
             pacpaths += [arg + '/' + n for n in prj.pacs_have]
         elif is_package_dir(arg):
             pacpaths.append(arg)
+        elif os.path.isfile(arg):
+            pacpaths.append(arg)
         else:
             sys.exit('osc: error: %s is neither a project or a package directory' % arg)
         
@@ -362,6 +364,8 @@ usage: osc st
             p.todo = p.filenamelist + p.filenamelist_unvers
 
         for filename in p.todo:
+            if filename in p.excluded:
+                continue
             s = p.status(filename)
             if s == 'F':
                 print statfrmt('!', pathjoin(p.dir, filename))
@@ -390,7 +394,7 @@ usage: osc add file1 file2 ...
 
     for pac in pacs:
         for filename in pac.todo:
-            if filename in exclude_stuff:
+            if filename in pac.excluded:
                 continue
             if filename in pac.filenamelist:
                 print 'osc: warning: \'%s\' is already under version control' % filename
@@ -413,8 +417,6 @@ usage: osc addremove
         p.todo = p.filenamelist + p.filenamelist_unvers
 
         for filename in p.todo:
-            if filename in exclude_stuff:
-                continue
             if os.path.isdir(filename):
                 continue
             state = p.status(filename)
