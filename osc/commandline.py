@@ -877,6 +877,7 @@ usage: osc buildhistory <platform> <arch>
     arch = args[1]
     print '\n'.join(get_buildhistory(project, package, platform, arch))
 
+
 def rebuildpac(args):
     """rebuildpac: Triggers a package rebuild for all repositories/architectures of the package
 
