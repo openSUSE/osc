@@ -9,52 +9,11 @@
 
 import os
 import sys
-import ConfigParser
 import cElementTree as ET
 from tempfile import NamedTemporaryFile
 from osc.fetch import *
+import osc.conf
 
-APISRV = 'api.opensuse.org'
-
-DEFAULTS = { 'packagecachedir': '/var/tmp/osbuild-packagecache',
-             'su-wrapper': 'su -c',
-             'build-cmd': '/usr/bin/build',
-             'build-root': '/var/tmp/build-root',
-
-             # default list of download URLs, which will be tried in order
-             'urllist': [
-                # the normal repo server, redirecting to mirrors
-                'http://software.opensuse.org/download/%(project)s/%(repository)s/%(arch)s/%(filename)s',
-                # direct access to "full" tree
-                'http://api.opensuse.org/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s',
-              ],
-}
-
-
-
-text_config_incomplete = """
-
-Your configuration is not complete.
-Make sure that you have a [general] section in %%s:
-(You can copy&paste it. Some commented defaults are shown.)
-
-[general]
-
-# Downloaded packages are cached here. Must be writable by you.
-#packagecachedir: %(packagecachedir)s
-
-# Wrapper to call build as root (sudo, su -, ...)
-#su-wrapper: %(su-wrapper)s
-
-# rootdir to setup the chroot environment
-# can contain %%(repo)s and/or %%(arch)s for replacement
-#build-root: %(build-root)s
-
-
-Note:
-Configuration can be overridden by envvars, e.g. 
-OSC_SU_WRAPPER overrides the setting of su-wrapper.
-""" % DEFAULTS
 
 change_personality = {
             'i686': 'linux32',
@@ -81,7 +40,14 @@ class Buildinfo:
 
     def __init__(self, filename):
 
-        tree = ET.parse(filename)
+        print filename
+        try:
+            tree = ET.parse(filename)
+        except:
+            print 'could not parse the buildconfig:'
+            print open(filename).read()
+            sys.exit(1)
+
         root = tree.getroot()
 
         if root.find('error') != None:
@@ -174,82 +140,6 @@ class Pac:
 
 
 
-
-def get_build_conf():
-    auth_dict = { } # to hold multiple usernames and passwords
-
-    conffile = os.path.expanduser('~/.oscrc')
-    if not os.path.exists(conffile):
-        import netrc
-
-        try:
-            info = netrc.netrc()
-            username, account, password = info.authenticators(APISRV)
-
-        except (IOError, TypeError, netrc.NetrcParseError):
-            print >>sys.stderr, 'Error:'
-            print >>sys.stderr, 'You need to create ~/.oscrc.'
-            print >>sys.stderr, 'Running the osc command will do this for you.'
-            sys.exit(1)
-
-        cf = open(conffile, 'w')
-        os.chmod(conffile, 0600)
-        print 'creating', conffile
-        cf.write("""
-
-[general]
-
-# Downloaded packages are cached here. Must be writable by you.
-#packagecachedir: /var/tmp/osbuild-packagecache
-
-# Wrapper to call build as root (sudo, su -, ...)
-#su-wrapper: su -c
-
-# rootdir to setup the chroot environment
-# can contain %%(repo)s and/or %%(arch)s for replacement
-#build-root: /var/tmp/build-root
-
-
-[%s]
-user: %s
-pass: %s
-""" % (APISRV, username, password))
-        cf.close()
-
-
-    config = ConfigParser.ConfigParser(DEFAULTS)
-    config.read(conffile)
-
-
-    if not config.has_section('general'):
-        # FIXME: it might be sufficient to just assume defaults?
-        print >>sys.stderr, text_config_incomplete % conffile
-        sys.exit(1)
-
-
-    for host in [ x for x in config.sections() if x != 'general' ]:
-        auth_dict[host] = dict(config.items(host))
-
-
-    config = dict(config.items('general', raw=1))
-
-    # make it possible to override configuration of the rc file
-    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
-        val = os.getenv(var)
-        if val:
-            if var.startswith('OSC_'): var = var[4:]
-            var = var.lower().replace('_', '-')
-            if config.has_key(var):
-                print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
-            config[var] = val
-
-    # transform 'url1, url2, url3' form into a list
-    if type(config['urllist']) == str:
-        config['urllist'] = [ i.strip() for i in config['urllist'].split(',') ]
-
-    return config, auth_dict
-
-
 def get_built_files(pacdir, pactype):
     if pactype == 'rpm':
         b_built = os.popen('find %s -name *.rpm' \
@@ -265,20 +155,29 @@ def get_built_files(pacdir, pactype):
 
 def main(argv):
 
-    global config
-    config, auth = get_build_conf()
+    from conf import config
 
     repo = argv[1]
     arch = argv[2]
     spec = argv[3]
     buildargs = []
     buildargs += argv[4:]
+
+    # make it possible to override configuration of the rc file
+    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
+        val = os.getenv(var)
+        if val:
+            if var.startswith('OSC_'): var = var[4:]
+            var = var.lower().replace('_', '-')
+            if config.has_key(var):
+                print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
+            config[var] = val
+
+
     config['build-root'] = config['build-root'] % {'repo': repo, 'arch': arch}
 
     if not os.path.exists(spec):
-        print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
-        sys.exit(1)
-
+        sys.exit('Error: specfile \'%s\' does not exist.' % spec)
 
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
@@ -292,7 +191,7 @@ def main(argv):
     print 'Updating cache of required packages'
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = config['urllist'],
-                      auth_dict = auth)
+                      auth_dict = config['auth_dict'])
     # now update the package cache
     fetcher.run(bi)
 

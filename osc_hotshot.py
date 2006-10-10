@@ -5,7 +5,6 @@ import tempfile
 import os, sys
 
 from osc import commandline
-from osc.core import init_basicauth
 
 
 if __name__ == '__main__':
@@ -17,7 +16,6 @@ if __name__ == '__main__':
 
         prof = hotshot.Profile(filename)
         
-        init_basicauth()
         prof.runcall(commandline.main)
         print 'run complete. analyzing.'
         prof.close()

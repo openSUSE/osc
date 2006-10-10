@@ -7,7 +7,7 @@
 
 
 from core import *
-
+import conf
 
 usage_general = """\
 usage: osc <subcommand> [options] [args]
@@ -45,7 +45,7 @@ usage: osc ls                         # list projects
     """
 
     if not args:
-        print '\n'.join(get_slash_source())
+        print '\n'.join(meta_get_project_list())
     elif len(args) == 1:
         project = args[0]
         print '\n'.join(meta_get_packagelist(project))
@@ -439,10 +439,7 @@ usage: osc ci                   # current dir
        osc ci file1 file2 ...
     """
 
-    init_basicauth()
-
     args = parseargs(args)
-
     pacs = findpacs(args)
 
     for p in pacs:
@@ -835,6 +832,12 @@ usage: 1. osc build <platform> <arch> <specfile> [--clean|--noinit]
 
 You may want to configure sudo with option  NOPASSWD for /usr/bin/build
 and set su-wrapper to 'sudo' in .oscrc.
+
+Note: 
+Configuration can be overridden by envvars, e.g.  
+OSC_SU_WRAPPER overrides the setting of su-wrapper. 
+BUILD_DIST or OSC_BUILD_DIST overrides the build target.
+BUILD_ROOT or OSC_BUILD_ROOT overrides the build-root.
     """
 
     import osc.build
@@ -895,9 +898,17 @@ usage: osc buildhistory <platform> <arch>
 
 
 def rebuildpac(args):
-    """rebuildpac: Triggers a package rebuild for all repositories/architectures of the package
+    """rebuildpac: Causes a package to be rebuilt
 
 usage: osc rebuildpac <project> <package> [<repo> [<arch>]]
+
+With the optional <repo> and <arch> arguments, the rebuild can be limited
+to a certain repository or architecture.
+
+Note that it is normally NOT needed to kick off rebuilds like this, because
+they principally happen in a fully automatic way, triggered by source
+check-ins. In particular, the order in which packages are built is handled
+by the build service.
     """ 
 
     if args is None or len(args) < 2:
@@ -992,6 +1003,8 @@ cmd_dict = {
 def main():
     """handling of commandline arguments, and dispatching to subcommands"""
 
+    conf.get_config()
+
     # which subcommand?
     if len(sys.argv) < 2:
         print "Type 'osc help' for usage."
@@ -1018,6 +1031,7 @@ def main():
 
 
 if __name__ == '__main__':
-    init_basicauth()
+    import sys, os.path
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     main()
 

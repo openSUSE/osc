@@ -15,14 +15,12 @@ from urlparse import urlunsplit
 import cElementTree as ET
 from cStringIO import StringIO
 import shutil
+import conf
 
-
-netloc = 'api.opensuse.org'
-scheme = 'http'
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~']
+exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~', '.*.swp']
 
 
 new_project_templ = """\
@@ -263,7 +261,7 @@ class Package:
         import othermethods
         
         u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
-        othermethods.delfile(u, n, username, password)
+        othermethods.delfile(u, n, conf.config['user'], conf.config['pass'])
 
         self.delete_localfile(n)
 
@@ -273,9 +271,10 @@ class Package:
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
         u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
-        othermethods.putfile(u, username, password, file = os.path.join(self.dir, n))
+        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file = os.path.join(self.dir, n))
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
@@ -454,7 +453,7 @@ rev: %s
         except urllib2.HTTPError, e:
             if e.code == 404:
                 print 'package does not exist yet... creating it'
-                m = template % (pac, username)
+                m = template % (pac, conf.config['user'])
             else:
                 print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
                 print e
@@ -482,7 +481,7 @@ rev: %s
         if repl == 'y':
             print 'Sending meta data...', 
             u = makeurl(['source', self.prjname, self.name, '_meta'])
-            othermethods.putfile(u, username, password, file=filename)
+            othermethods.putfile(u, conf.config['user'], conf.config['pass'], file=filename)
             print 'Done.'
         else:
             print 'discarding', filename
@@ -598,7 +597,7 @@ def pathjoin(a, *p):
 
 def makeurl(l):
     """given a list of path compoments, construct a complete URL"""
-    return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
+    return urlunsplit((conf.config['scheme'], conf.config['apisrv'], '/'.join(l), '', ''))               
 
 
 def urlopen(url, data=None):
@@ -616,100 +615,6 @@ def urlopen(url, data=None):
         sys.exit(1)
 
     return fd
-
-
-def readauth():
-    """look for the credentials. If there aren't any, ask and store them"""
-
-    #
-    # try .netrc first
-    #
-
-    # the needed entry in .netrc looks like this:
-    # machine api.opensuse.org login your_login password your_pass
-    # but it is not able for credentials containing spaces
-    import netrc
-    global username, password
-
-    try:
-        info = netrc.netrc()
-        username, account, password = info.authenticators(netloc)
-        return username, password
-
-    except (IOError, TypeError, netrc.NetrcParseError):
-        pass
-
-    #
-    # try .oscrc next
-    #
-    import ConfigParser
-    conffile = os.path.expanduser('~/.oscrc')
-    if os.path.exists(conffile):
-        config = ConfigParser.ConfigParser()
-        config.read(conffile)
-        username = config.get(netloc, 'user')
-        password = config.get(netloc, 'pass')
-        return username, password
-
-    #
-    # create .oscrc
-    #
-    import getpass
-    print >>sys.stderr, \
-"""your user account / password are not configured yet.
-You will be asked for them below, and they will be stored in
-%s for later use.
-""" % conffile
-
-    username = raw_input('Username: ')
-    password = getpass.getpass()
-
-    fd = open(conffile, 'w')
-    os.chmod(conffile, 0600)
-    print >>fd, """[general]
-
-# Downloaded packages are cached here. Must be writable by you.
-#packagecachedir: /var/tmp/osbuild-packagecache
-
-# Wrapper to call build as root (sudo, su -, ...)
-#su-wrapper: su -c
-
-# rootdir to setup the chroot environment
-#build-root: /var/tmp/build-root
-
-    
-[%s]
-user: %s
-pass: %s
-""" % (netloc, username, password)
-    fd.close()
-        
-    return username, password
-        
-
-
-def init_basicauth():
-
-    username, password = readauth()
-
-    passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-    # this creates a password manager
-    passmgr.add_password(None, netloc, username, password)
-    # because we have put None at the start it will always
-    # use this username/password combination for  urls
-    # for which `netloc` is a super-url
-
-    authhandler = urllib2.HTTPBasicAuthHandler(passmgr)
-    # create the AuthHandler
-
-    opener = urllib2.build_opener(authhandler)
-    opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
-
-    urllib2.install_opener(opener)
-    # All calls to urllib2.urlopen will now use our handler
-    # Make sure not to include the protocol in with the URL, or
-    # HTTPPasswordMgrWithDefaultRealm will be very confused.
-    # You must (of course) use it when fetching the page though.
 
 
 def init_package_dir(project, package, dir):
@@ -764,64 +669,29 @@ def check_store_version(dir):
 def meta_get_packagelist(prj):
 
     u = makeurl(['source', prj])
-
-    try:
-        f = urllib2.urlopen(u)
-    except urllib2.HTTPError, e:
-        if e.code == 404:
-            print 'project \'%s\' does not exist' % prj
-            sys.exit(1)
-        else:
-            print e
-            print 'url: \'%s\'' % u
-            sys.exit(1)
-
-    tree = ET.parse(f)
-    root = tree.getroot()
-
+    f = urlopen(u)
+    root = ET.parse(f).getroot()
     return [ node.get('name') for node in root.findall('entry') ]
 
 
 def meta_get_filelist(prj, package):
 
     u = makeurl(['source', prj, package])
-
-    try:
-        f = urllib2.urlopen(u)
-    except urllib2.HTTPError, e:
-        print >>sys.stderr, 'error getting filelist for project \'%s\' package \'%s\'' % (prj, package)
-        print >>sys.stderr, e
-        sys.exit(1)
-
+    f = urlopen(u)
     root = ET.parse(f).getroot()
-
     return [ node.get('name') for node in root ]
 
 
-
-def get_slash_source():
+def meta_get_project_list():
     u = makeurl(['source'])
-    try:
-        root = ET.parse(urllib2.urlopen(u)).getroot()
-    except urllib2.HTTPError, e:
-        print >>sys.stderr, 'error getting /source'
-        print >>sys.stderr, e
-        sys.exit(1)
-
+    f = urlopen(u)
+    root = ET.parse(f).getroot()
     return sorted([ node.get('name') for node in root ])
 
 
 def show_project_meta(prj):
-    try:
-        url = makeurl(['source', prj, '_meta'])
-        f = urllib2.urlopen(url)
-    except urllib2.HTTPError, e:
-        print >>sys.stderr, 'error getting meta for project \'%s\'' % prj
-        print >>sys.stderr, e
-        if e.code == 500:
-            print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
-        sys.exit(1)
-
+    url = makeurl(['source', prj, '_meta'])
+    f = urlopen(url)
     return f.readlines()
 
 
@@ -851,7 +721,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
             m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
-                m = template % (pac, username)
+                m = template % (pac, conf.config['username'])
             else:
                 print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
                 print e
@@ -864,7 +734,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
             m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
-                m = new_project_templ % (prj, username)
+                m = new_project_templ % (prj, conf.config['username'])
             else:
                 print 'error getting package meta for project \'%s\':' % prj
                 print e
@@ -885,7 +755,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
 
     else:
         print 'Sending meta data...', 
-        othermethods.putfile(u, username, password, file=filename)
+        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file=filename)
         os.unlink(filename)
         print 'Done.'
 
@@ -1084,7 +954,7 @@ def link_pac(src_project, src_package, dst_project, dst_package):
 """ % (src_project, src_package)
 
     u = makeurl(['source', dst_project, dst_package, '_link'])
-    othermethods.putfile(u, username, password, strbuf = link_template)
+    othermethods.putfile(u, conf.config['user'], conf.config['pass'], strbuf = link_template)
     print 'Done.'
 
 
@@ -1111,7 +981,7 @@ def copy_pac(src_project, src_package, dst_project, dst_package):
 
     print 'Sending meta data...'
     u = makeurl(['source', dst_project, dst_package, '_meta'])
-    othermethods.putfile(u, username, password, strbuf=src_meta)
+    othermethods.putfile(u, conf.config['user'], conf.config['pass'], strbuf=src_meta)
 
     # copy one file after the other
     print 'Copying files...'
@@ -1121,7 +991,7 @@ def copy_pac(src_project, src_package, dst_project, dst_package):
         print '  ', n
         get_source_file(src_project, src_package, n, targetfilename=n)
         u = makeurl(['source', dst_project, dst_package, pathname2url(n)])
-        othermethods.putfile(u, username, password, file = n)
+        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file = n)
         os.unlink(n)
     print 'Done.'
     os.rmdir(tmpdir)
@@ -1131,14 +1001,14 @@ def delete_package(prj, pac):
     import othermethods
     
     u = makeurl(['source', prj, pac])
-    othermethods.delfile(u, pac, username, password)
+    othermethods.delfile(u, pac, conf.config['username'], conf.config['pass'])
 
 
 def delete_project(prj):
     import othermethods
     
     u = makeurl(['source', prj])
-    othermethods.delfile(u, prj, username, password)
+    othermethods.delfile(u, prj, conf.config['username'], conf.config['pass'])
 
 
 def get_platforms():
@@ -1208,7 +1078,7 @@ def get_results(prj, package, platform):
             rmap['status'] += ': ' + statusnode.find('summary').text
 
         if rmap['status'] == 'failed':
-            rmap['status'] += ': %s://%s' % (scheme, netloc) + \
+            rmap['status'] += ': %s://%s' % (conf.config['scheme'], conf.config['apisrv']) + \
                 '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log' % rmap
 
         r.append(result_line_templ % rmap)
@@ -1304,7 +1174,7 @@ def get_buildhistory(prj, package, platform, arch):
         srcmd5 = node.get('srcmd5') 
         versrel = node.get('versrel') 
         bcnt = int(node.get('bcnt'))
-        t = time.gmtime(int(node.get('time')))
+        t = time.localtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
         r.append('%s   %s %6d   %2d   %s' % (t, srcmd5, rev, bcnt, versrel))
@@ -1323,7 +1193,7 @@ def cmd_rebuild(prj, package, repo, arch):
     u = makeurl(['source', prj, package, cmd])
     try:
         # adding data to the request makes it a POST
-        f = urllib2.urlopen(u, data=' ')
+        f = urllib2.urlopen(u, data='')
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
         print >>sys.stderr, u
