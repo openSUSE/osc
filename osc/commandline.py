@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2006 Peter Poeml.  All rights reserved.
+# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
@@ -132,6 +132,20 @@ usage: osc editmeta FooPrj              # edit meta of project 'FooPrj'
     elif len(args) == 1:
         project = args[0]
         edit_meta(project, None)
+
+
+def edituser(args):
+    """edituser: Edit user meta information
+usage: osc edituser <user>
+
+If the named user id does not exist, it will be created.
+    """
+
+    if not args or len(args) != 1:
+        user = conf.config['user']
+    else:
+        user = args[0]
+    edit_user_meta(user)
 
 
 def linkpac(args):
@@ -473,6 +487,8 @@ usage: osc ci                   # current dir
         for filename in p.todo_delete:
             p.delete_source_file(filename)
             p.to_be_deleted.remove(filename)
+        if conf.config['do_commits'] == '1':
+            p.commit(msg='MESSAGE')
 
         p.update_filesmeta()
         p.write_deletelist()
@@ -606,17 +622,17 @@ usage: osc resolved <filename>
             p.clear_from_conflictlist(filename)
 
 
-def userid(args):
-    """id:  show metadata about user <userid>
+def usermeta(args):
+    """usermeta:  show metadata about user <userid>
 
-usage: osc id <userid>
+usage: osc usermeta <userid>
     """
 
     if not args:
         print 'this command requires at least one argument'
         sys.exit(1)
 
-    r = get_user_id(args[0])
+    r = get_user_meta(args[0])
     if r:
         print ''.join(r)
 
@@ -842,6 +858,9 @@ BUILD_ROOT or OSC_BUILD_ROOT overrides the build-root.
 
     import osc.build
 
+    if not os.path.exists('/usr/lib/build/debsort'):
+        sys.exit('Error: you need build.rpm with version 2006.6.14 or newer.\nSee http://software.opensuse.org/download/openSUSE:/Tools/')
+
     builddist = os.getenv('BUILD_DIST')
     if builddist:
         #sys.argv[4] = sys.argv[1]
@@ -981,7 +1000,8 @@ cmd_dict = {
     help:           ['help'],
     buildhistory:   ['buildhistory', 'buildhist'],
     linkpac:        ['linkpac'],
-    userid:         ['id'],         # <- small difference here
+    usermeta:       ['usermeta'],
+    edituser:       ['edituser'],
     init:           ['init'],           # depracated
     log:            ['log'],
     ls:             ['ls', 'list'],

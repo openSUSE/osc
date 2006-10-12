@@ -4,7 +4,6 @@ import os, sys, time
 import unittest
 import shutil
 
-from osc.core import init_basicauth
 from osc import commandline
 
 PRJ = 'home:poeml'
@@ -25,11 +24,11 @@ class TestOsc(unittest.TestCase):
 
 #####################################################################
 
-    def testId(self):
+    def testUsermeta(self):
         expect = """<person>
   <login>poeml</login>
   <email>poeml@suse.de</email>
-  <realname>Dr. Peter Peoml</realname>
+  <realname>Dr. Peter Poeml</realname>
   <source_backend>
     <host></host>
     <port></port>
@@ -50,12 +49,14 @@ class TestOsc(unittest.TestCase):
     <project name="Tidy"/>
     <project name="validators"/>
     <project name="zsh"/>
+    <project name="home:poeml"/>
+    <project name="Apache:Modules"/>
   </watchlist>
 </person>
 
 """
 
-        self.out, self.err = runosc('id poeml')
+        self.out, self.err = runosc('usermeta poeml')
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, expect)
 
@@ -91,7 +92,7 @@ class TestOsc(unittest.TestCase):
     def testMetaPac(self):
         self.out, self.err = runosc('meta Apache apache2')
         self.assertEqual(self.err, '')
-        self.assert_('<package name="apache2" project="Apache">' in self.out)
+        self.assert_('<package project="Apache" name="apache2">' in self.out)
 
 
 #####################################################################
@@ -250,8 +251,6 @@ def touch(filename):
 
 
 if __name__ == '__main__':
-
-    init_basicauth()
 
     #unittest.main()
     oldpwd = os.getcwd()

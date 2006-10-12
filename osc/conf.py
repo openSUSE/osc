@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2006 Peter Poeml.  All rights reserved.
+# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
@@ -56,6 +56,9 @@ DEFAULTS = { 'apisrv': 'api.opensuse.org',
                 # direct access to "full" tree
                 'http://api.opensuse.org/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s',
               ],
+
+             # switched off for now (testing)
+             'do_commits': '0',
 }
 
 new_conf_template = """

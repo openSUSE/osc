@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2006 Peter Poeml.  All rights reserved.
+# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
@@ -16,100 +16,81 @@ import httplib
 import base64 
 import os 
 import urlparse
+from osc.core import __version__
 
 BLOCKSIZE=4096
 
-def delfile(url, file, username, password):
+def request(method, url, username, password, file=None, strbuf=None):
+    """call with method = (PUT|DELETE)"""
 
-    auth_string = base64.encodestring('%s:%s' % (username, password)).strip()
 
-    u = urlparse.urlparse(url)
-    host = u[1]
-    path = u[2]
+    if method == 'PUT':
+        if file == None and strbuf == None:
+            print >>sys.stderr, 'putting a file requires either a filename or a string buffer'
+            sys.exit(1)
+        if strbuf:
+            size = len(strbuf)
+        else:
+            size = os.path.getsize(file)
 
-    conn = httplib.HTTP(host) 
-    conn.putrequest('DELETE', '%s' % path) 
+    scheme, host, path, params, query, fragment = urlparse.urlparse(url)
+    if query:
+        path += '?' + query
+
+    if scheme == 'https':
+        conn = httplib.HTTPS(host) 
+    elif scheme == 'http':
+        conn = httplib.HTTP(host) 
+    else:
+        sys.exit('unknown scheme %s' % scheme)
+
+    # Headers
+    conn.putrequest(method, '%s' % path) 
     conn.putheader('Host', host)
+    conn.putheader('User-agent', 'osc/%s' % __version__)
+    auth_string = base64.encodestring('%s:%s' % (username, password)).strip()
     conn.putheader('Authorization', 'Basic %s' % auth_string) 
+    if method == 'PUT':
+        conn.putheader('Content-Type', 'text/plain') 
+        conn.putheader('Content-Length', str(size)) 
     conn.endheaders() 
 
+    # Body
+    if method == 'PUT':
+        if strbuf:
+            conn.send(strbuf)
+        else:
+            fp = open(file, 'rb') 
+            #n = 0 
+            while 1: 
+                buf = fp.read(BLOCKSIZE) 
+                #n+=1 
+                #if n % 10 == 0: 
+                #    print 'upload-sending blocknum=', n 
+                #    print '.',
+
+                if not buf: break 
+
+                try:
+                    conn.send(buf)
+                except:
+                    sys.exit('ERROR uploading %s' % file)
+            fp.close() 
 
     reply, msg, headers = conn.getreply() 
 
     if reply != 200:
-        print 'error deleting %s' % file
-        print 'upload-DELETE reply=', reply, ' msg=', msg, 'headers=', headers
+        print >>sys.stderr, 'Error: can\'t %s \'%s\'' % (method, url)
+        print >>sys.stderr, 'reply:', reply
+        print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nheaders:\n%s\nresponse:\n%s' % (url, headers, msg)
+
+
+
+def delfile(url, file, username, password):
+    return request('DELETE', url, username, password, file=file)
 
 
 def putfile(url, username, password, file=None, strbuf=None):
-
-    if file == None and strbuf == None:
-        print >>sys.stderr, 'putfile requires either a filename or a string buffer'
-        sys.exit(1)
-
-    if strbuf:
-        size = len(strbuf)
-    else:
-        size = os.stat(file)[6] 
-
-    auth_string = base64.encodestring('%s:%s' % (username, password)).strip()
-
-    u = urlparse.urlparse(url)
-    host = u[1]
-    path = u[2]
-
-    conn = httplib.HTTP(host) 
-    conn.putrequest('PUT', '%s' % path) 
-    conn.putheader('Host', host)
-    conn.putheader('Content-Type', 'text/plain') 
-    conn.putheader('Content-Length', str(size)) 
-    conn.putheader('Authorization', 'Basic %s' % auth_string) 
-    conn.endheaders() 
-
-    if strbuf:
-        conn.send(strbuf)
-    else:
-        fp = open(file, 'rb') 
-        n = 0 
-        while 1: 
-            buf = fp.read(BLOCKSIZE) 
-            n+=1 
-            if n % 10 == 0: 
-                #print 'upload-sending blocknum=', n 
-                #print '.',
-                pass
-
-            if not buf: break 
-
-            try:
-                conn.send(buf)
-            except:
-                print
-                print 'ERROR uploading %s' % file
-                print
-                os._exit(1)
-
-        fp.close() 
-
-    reply, msg, headers = conn.getreply() 
-
-    if reply != 200:
-        print 'error uploading %s' % file
-        print 'upload-PUT reply=', reply, ' msg=', msg, 'headers=', headers
+    return request('PUT', url, username, password, file=file, strbuf=strbuf)
 
 
-def main():
-    import sys 
-
-    username = 'yourusername' 
-    password = 'yourpassword' 
-    file = sys.argv[1]
-    url = 'http://api.opensuse.org/source/exim/exim/%s' % os.path.basename(file)
-    
-    putfile(url, file, username, password)
-
-    delfile(url, file, username, password)
-
-
-if __name__ == '__main__':
-    main()

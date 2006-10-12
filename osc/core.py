@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2006 Peter Poeml.  All rights reserved.
+# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
@@ -97,6 +97,24 @@ HERE
 </package>
 """
 
+new_user_template = """\
+<person>
+  <login>%(user)s</login>
+  <email>PUT_EMAIL_ADDRESS_HERE</email>
+  <realname>PUT_REAL_NAME_HERE</realname>
+  <source_backend>
+    <host></host>
+    <port></port>
+  </source_backend>
+  <rpm_backend>
+    <host></host>
+    <port></port>
+  </rpm_backend>
+  <watchlist>
+    <project name="home:%(user)s"/>
+  </watchlist>
+</person>
+"""
 
 buildstatus_symbols = {'succeeded':       '.',
                        'disabled':        ' ',
@@ -271,10 +289,22 @@ class Package:
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
         u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
+        if conf.config['do_commits'] == '1':
+            u += '?rev=upload'
         othermethods.putfile(u, conf.config['user'], conf.config['pass'], file = os.path.join(self.dir, n))
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
+    def commit(self, msg=''):
+        import othermethods
+        
+        u = makeurl(['source', self.prjname, self.name])
+        u += '?cmd=commit&rev=upload'
+        u += '&user=%s' % conf.config['user']
+        u += '&comment=%s' % quote_plus(msg)
+        #print u
+        f = urlopen(u, data='')
+        #print f.read()
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
@@ -721,7 +751,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
             m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
-                m = template % (pac, conf.config['username'])
+                m = template % (pac, conf.config['user'])
             else:
                 print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
                 print e
@@ -734,7 +764,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
             m = urllib2.urlopen(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
-                m = new_project_templ % (prj, conf.config['username'])
+                m = new_project_templ % (prj, conf.config['user'])
             else:
                 print 'error getting package meta for project \'%s\':' % prj
                 print e
@@ -744,6 +774,42 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
     f.write(''.join(m))
     f.close()
 
+    timestamp = os.path.getmtime(filename)
+
+    editor = os.getenv('EDITOR', default='vim')
+    os.system('%s %s' % (editor, filename))
+
+    if change_is_required == True and os.path.getmtime(filename) == timestamp:
+        print 'File unchanged. Not saving.'
+        os.unlink(filename)
+
+    else:
+        print 'Sending meta data...', 
+        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file=filename)
+        os.unlink(filename)
+        print 'Done.'
+
+
+def edit_user_meta(user, change_is_required=True):
+    import othermethods
+    import tempfile
+
+    u = makeurl(['person', quote_plus(user)])
+
+    try:
+        m = urllib2.urlopen(u).readlines() 
+    except urllib2.HTTPError, e:
+        if e.code == 404:
+            m = new_user_template % { 'user': user }
+        else:
+            print 'error getting metadata for user \'%s\':' % user
+            print e
+            sys.exit(1)
+
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc_edituser.', suffix = '.xml', dir = '/tmp')
+    f = os.fdopen(fd, 'w')
+    f.write(''.join(m))
+    f.close()
     timestamp = os.path.getmtime(filename)
 
     editor = os.getenv('EDITOR', default='vim')
@@ -799,7 +865,7 @@ def read_meta_from_spec(specfile):
     return name, summary, descr
 
 
-def get_user_id(user):
+def get_user_meta(user):
     u = makeurl(['person', quote_plus(user)])
     try:
         f = urllib2.urlopen(u)
@@ -1001,14 +1067,14 @@ def delete_package(prj, pac):
     import othermethods
     
     u = makeurl(['source', prj, pac])
-    othermethods.delfile(u, pac, conf.config['username'], conf.config['pass'])
+    othermethods.delfile(u, pac, conf.config['user'], conf.config['pass'])
 
 
 def delete_project(prj):
     import othermethods
     
     u = makeurl(['source', prj])
-    othermethods.delfile(u, prj, conf.config['username'], conf.config['pass'])
+    othermethods.delfile(u, prj, conf.config['user'], conf.config['pass'])
 
 
 def get_platforms():

@@ -2,17 +2,10 @@
 
 - implement 'info' command
 - implement 'mv' command
-- editing of user data
-  <watchlist>
-    <project name="ASCIIParadize"/>
-    <project name="crashtest"/>
-  </watchlist>
 - editmeta: the API will return a 500 if the xml is broken... the document
   could be presented for editing again in that case
 - updatepacmetafromspec -- is that useful? 
   In which form would this be integrated best?
-- clean up the way how a .oscrc template is being added: at the moment, there
-  are two places doing this
 
 
 checkin: 
