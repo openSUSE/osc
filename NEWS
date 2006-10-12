@@ -1,5 +1,14 @@
-since 0.8:
+0.9:
+- "iChain-ready" (works with API server now using iChain authentication)
+- add runtime check for build.rpm version, so the rpm package dependency is
+  no longer required
+- add 'edituser' command for editing the metadata of a user account. It tries
+  to create a user if it doesn't exist yet. A new command 'usermeta' replaces
+  'id' respectively 'userid'.
+- rewrite configuration handling. Now the API server can be set in .oscrc
+- ignore '.gitignore', '.pc', '*~' (now using filename matching [#208969]
 - fix 'status' to work with project directories as arguments
+- fix 'status <filename>'
 - 'rebuildpac' now accepts additional repo and arch argument. Note:
   the syntax has changed.
 - add 'prjresults' command to display aggregated build status over
@@ -11,7 +20,6 @@ since 0.8:
 - don't die if user tries to 'add' a file which is already versioned
 - don't die if 'addremove' encounters directories
 - urlopen(): for server return code 500, print out the reply body
-
 
 0.8:
 - build: use configuration from *local* specfile (e.g. BuildRequires)
