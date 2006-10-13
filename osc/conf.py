@@ -18,7 +18,7 @@ After reading the config, urllib2 is initialized.
 The configuration dictionary could look like this:
 
 {'apisrv': 'api.opensuse.org',
- 'scheme': 'http',
+ 'scheme': 'https',
  'user': 'poeml',
  'pass': 'secret',
  'auth_dict': {'api.opensuse.org': {'user': 'poeml', 'pass': 'secret'},

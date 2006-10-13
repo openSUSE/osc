@@ -14,6 +14,7 @@ PUT methods.
 
 import httplib 
 import base64 
+import sys 
 import os 
 import urlparse
 from osc.core import __version__
