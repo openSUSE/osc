@@ -339,10 +339,15 @@ usage: osc co Apache                    # entire project
     elif package:
         checkout_package(project, package)
 
-    else:
+    elif project:
         # all packages
         for package in meta_get_packagelist(project):
             checkout_package(project, package)
+    else:
+        print 'missing argument'
+        print
+        print checkout.func_doc
+        sys.exit(1)
 
 
 def status(args):
