@@ -65,6 +65,7 @@ It also does some weird stuff.
     <path project="SUSE:SLES-9" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
+  </repository>
 -->
  
 </project>
@@ -89,8 +90,8 @@ HERE
   or a combination thereof:
   
   <disable arch="x86_64"/>
-  <disable repository="SUSE_SLES-9"/>
-  <disable repository="SUSE_SLES-9" arch="x86_64"/>
+  <disable repository="SUSE_SLE-10"/>
+  <disable repository="SUSE_SLE-10" arch="x86_64"/>
 
 -->
 
