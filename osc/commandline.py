@@ -18,6 +18,11 @@ Most subcommands take file and/or directory arguments, recursing
 on the directories.  If no arguments are supplied to such a
 command, it recurses on the current directory (inclusive) by default.
 
+Please see also:
+* http://en.opensuse.org/Build_Service_Tutorial
+* http://en.opensuse.org/Build_Service/CLI
+
+
 Available subcommands:
 """ % get_osc_version()
 
