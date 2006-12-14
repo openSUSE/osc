@@ -7,6 +7,7 @@
 - updatepacmetafromspec -- is that useful? 
   In which form would this be integrated best?
 
+- add a versioned dependency on the API of the server, so it can be recognized when a new client is needed
 
 checkin: 
 	- handle error if PUT fails, so the change is not committed to
@@ -79,6 +80,10 @@ osc repos server:search:ui :
   </repository>
 
 
+
+
+possible configuration for local package source:
+urllist: file:///var/tmp/osbuild-packagecache/oscbuild/SUSE_Linux_10.1/ppc, file:///media/sda15/full-ppc/noarch/%(name)s.rpm, file:///media/sda15/full-ppc/ppc/%(name)s.rpm
 
 # shorter forms of the packstatus... useful for anything?
 #http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
