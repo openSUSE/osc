@@ -51,7 +51,7 @@ class Buildinfo:
         root = tree.getroot()
 
         if root.find('error') != None:
-            sys.stderr.write('buildinfo is borken... it says:\n')
+            sys.stderr.write('buildinfo is broken... it says:\n')
             error = root.find('error').text
             sys.stderr.write(error + '\n')
             sys.exit(1)
