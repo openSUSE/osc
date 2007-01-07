@@ -1025,7 +1025,7 @@ cmd_dict = {
     prjresults:     ['prjresults'],
     results_meta:   ['results_meta'],
     rebuildpac:     ['rebuildpac'],
-    status:         ['status', 'st'],
+    status:         ['status', 'stat', 'st'],
     update:         ['update', 'up'],
 }
 
