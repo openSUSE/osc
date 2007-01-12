@@ -6,13 +6,25 @@
   could be presented for editing again in that case
 - updatepacmetafromspec -- is that useful? 
   In which form would this be integrated best?
+- use urllib.urlencode for parameter encoding
+- _real_ SSL support, with certificate verification
+- zsh completion, or even bash
+- support #norootforbuild (or is it supported? do we just need to enforce it, like the bs does?)
+  -> --norootforbuild als 'build' OPtion
+- add option to disable gpg key checking?
+- add support for adding tags to packages?
+- prefer-rpms support for osc build
+- plugin-ize subcommand implementation
+  - look at Susannes extensions
 
-- add a versioned dependency on the API of the server, so it can be recognized when a new client is needed
 
 checkin: 
 	- handle error if PUT fails, so the change is not committed to
 	  localmeta	
 
+
+- changelog handling
+  (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
 
 
 
@@ -81,10 +93,6 @@ osc repos server:search:ui :
 
 
 
-
-possible configuration for local package source:
-urllist: file:///var/tmp/osbuild-packagecache/oscbuild/SUSE_Linux_10.1/ppc, file:///media/sda15/full-ppc/noarch/%(name)s.rpm, file:///media/sda15/full-ppc/ppc/%(name)s.rpm
-
 # shorter forms of the packstatus... useful for anything?
 #http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
 #http://api.opensuse.org/result/KDE:KDE3/packstatus?summaryonly
@@ -127,4 +135,60 @@ http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:09 <darix> der falsch mit dem backend spricht :/
 15:09 <DuDE_> ja, macht osc build auch so, eigentlich, allerdings weiss es dann die noetigen Datein aus dem buildinfo (version, release)
 15:09 <darix> man kann auf dem backend alle rpms listen lassen
+
+
+ % osc addremove
+A    .swp
+
+
+Right now, a package must exist in the bs so that it can be built
+locally. But this is a bug in osc which I'm going to fix at some point
+in time.
+
+
+editmeta:
+Ah, or rather osc _thought_ it was unmodified because it uses a simple 
+timestamp to compare the file with. This is basically suitable for 
+humans editing, because they need more than a second... I can change
+that to a real comparison. Meanwhile, you can add a small sleep ;)
+
+On the other hand, it would be even nicer if there would be a facility 
+that wouldn't require you to work around with an EDITOR script at all. 
+Noted in the todo.
+
+
+copypac:
+put the current release number into the spec file before sending it
+
+show request body of 400 responses (bad request)
+
+
+geht print self.USAGE % self.__dict__ ?
+
+if import cElememtTree fails, use elementtree
+if that fails, point to home:cthiel1 repository (or devel:languages:python)
+
+
+two merge issues:
+
+1)
+when updating, the file should be copied to store even if merge fails. this would prevent
+that, after manual merging and osc resolve, one still sees the upstream changes in osc diff.
+
+2)
+check the following:
+if I mark a file as "to be added" ("A"), and someone else alread adds (and
+commits) the file in between, and I update -- will I get it marked as "D" after update??
+D    apr_dbd_mysql.c
+M    libapr-util1.spec
+
+
+build command:
+> "You need to call the command inside a package directory, which should be a
+> buildsystem checkout. (Local modifications are fine.)"
+
+
+
+buildinfo aenderungen:
+preinstall="1" runscripts="1"
 

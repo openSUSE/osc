@@ -1,3 +1,10 @@
+since 0.9:
+
+- core: added class "metadata" (merge from Susannes /branches/froh/reponator/)
+- added command alias 'stat' for 'status', like in svn
+- improved documentation/examples (Lars + Susanne)
+- print usage info if 'co' is called without arguments
+
 0.9:
 - "iChain-ready" (works with API server now using iChain authentication)
 - add runtime check for build.rpm version, so the rpm package dependency is
