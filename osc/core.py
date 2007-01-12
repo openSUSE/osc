@@ -738,58 +738,72 @@ def show_package_meta(prj, pac):
         sys.exit(1)
     return f.readlines()
 
+class metafile:
+    """metafile that can be manipulated and is stored back after manipulation."""
+    def __init__(self, prj, pac, template=new_package_templ, change_is_required=True):
+        import othermethods
+        import tempfile
 
+        self.change_is_required = change_is_required
+
+        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
+
+        
+        if pac:
+            # package meta
+            self.url = makeurl(['source', prj, pac, '_meta'])
+            try:
+                m = urllib2.urlopen(self.url).readlines() 
+            except urllib2.HTTPError, e:
+                if e.code == 404:
+                    m = template % (pac, conf.config['user'])
+                else:
+                    print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
+                    print e
+                    sys.exit(1)
+
+        else:
+            # project meta
+            self.url = makeurl(['source', prj, '_meta'])
+            try:
+                m = urllib2.urlopen(self.url).readlines()
+            # when testing this offline:
+            #except urllib2.URLError, e:
+            #    m = new_project_templ % (prj, conf.config['user'])
+            except urllib2.HTTPError, e:
+                if e.code == 404:
+                    m = new_project_templ % (prj, conf.config['user'])
+                else:
+                    print 'error getting package meta for project \'%s\':' % prj
+                    print e
+                    sys.exit(1)
+
+        f = os.fdopen(fd, 'w')
+        f.write(''.join(m))
+        f.close()
+
+        self.timestamp = os.path.getmtime(self.filename)
+
+    def sync(self):
+        import othermethods
+        if self.change_is_required == True and os.path.getmtime(self.filename) == self.timestamp:
+            print 'File unchanged. Not saving.'
+            os.unlink(self.filename)
+
+        else:
+            print 'Sending meta data...', 
+            othermethods.putfile(self.url, conf.config['user'], conf.config['pass'], file=self.filename)
+            os.unlink(self.filename)
+            print 'Done.'
+    
 def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
-    import othermethods
-    import tempfile
-
-    (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
-
-    if pac:
-        # package meta
-        u = makeurl(['source', prj, pac, '_meta'])
-        try:
-            m = urllib2.urlopen(u).readlines() 
-        except urllib2.HTTPError, e:
-            if e.code == 404:
-                m = template % (pac, conf.config['user'])
-            else:
-                print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
-                print e
-                sys.exit(1)
-
-    else:
-        # project meta
-        u = makeurl(['source', prj, '_meta'])
-        try:
-            m = urllib2.urlopen(u).readlines() 
-        except urllib2.HTTPError, e:
-            if e.code == 404:
-                m = new_project_templ % (prj, conf.config['user'])
-            else:
-                print 'error getting package meta for project \'%s\':' % prj
-                print e
-                sys.exit(1)
-
-    f = os.fdopen(fd, 'w')
-    f.write(''.join(m))
-    f.close()
-
-    timestamp = os.path.getmtime(filename)
+    f=metafile(prj, pac, template, change_is_required)
 
     editor = os.getenv('EDITOR', default='vim')
-    os.system('%s %s' % (editor, filename))
+    os.system('%s %s' % (editor, f.filename))
 
-    if change_is_required == True and os.path.getmtime(filename) == timestamp:
-        print 'File unchanged. Not saving.'
-        os.unlink(filename)
-
-    else:
-        print 'Sending meta data...', 
-        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file=filename)
-        os.unlink(filename)
-        print 'Done.'
-
+    if change_is_required == True:
+        f.sync()
 
 def edit_user_meta(user, change_is_required=True):
     import othermethods
