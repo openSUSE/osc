@@ -74,10 +74,12 @@ new_conf_template = """
 # can contain %%(repo)s and/or %%(arch)s for replacement
 #build-root = %(build-root)s
 
-# use this API server
+# use this API server (hostname[:port])
 # (it needs a section [%(apisrv)s] with the credentials)
 #apisrv = %(apisrv)s
 
+# use this protocol to access the API server (http or https)
+#scheme = https
     
 [%(apisrv)s]
 user = %(user)s
@@ -161,11 +163,12 @@ def get_config():
             config['user'] = raw_input('Username: ')
             config['pass'] = getpass.getpass()
 
-        print >>sys.stderr, 'Created osc configuration file %s.\n' % conffile
+        print >>sys.stderr, 'Creating osc configuration file %s ...' % conffile
         fd = open(conffile, 'w')
         os.chmod(conffile, 0600)
         fd.write(new_conf_template % config)
         fd.close()
+        print >>sys.stderr, 'done.'
         #print >>sys.stderr, ('Now re-run the command.')
         #sys.exit(0)
 
