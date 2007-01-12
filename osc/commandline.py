@@ -1012,7 +1012,7 @@ cmd_dict = {
     linkpac:        ['linkpac'],
     usermeta:       ['usermeta'],
     edituser:       ['edituser'],
-    init:           ['init'],           # depracated
+    init:           ['init'],           # deprecated
     log:            ['log'],
     ls:             ['ls', 'list'],
     meta:           ['meta'],
