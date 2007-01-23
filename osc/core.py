@@ -347,19 +347,30 @@ class Package:
                 return 'C'
         else:
             # try merging
-            ret = os.system('diff3 -m -E %s %s %s > %s' \
-                % (myfilename, storefilename, upfilename, filename))
+            # diff3 OPTIONS... MINE OLDER YOURS
+            merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
+            # we would rather use the subprocess module, but it is not availablebefore 2.4
+            ret = os.system(merge_cmd) / 256
+            
+            #   "An exit status of 0 means `diff3' was successful, 1 means some
+            #   conflicts were found, and 2 means trouble."
             if ret == 0:
                 # merge was successful... clean up
-                os.rename(upfilename, filename)
-                shutil.copy2(filename, storefilename)
+                shutil.copy2(upfilename, storefilename)
+                os.unlink(upfilename)
                 os.unlink(myfilename)
                 return 'G'
-            else:
+            elif ret == 1:
                 # unsuccessful merge
+                shutil.copy2(upfilename, storefilename)
                 self.in_conflict.append(n)
                 self.write_conflictlist()
                 return 'C'
+            else:
+                print >>sys.stderr, '\ndiff3 got in trouble... exit code:', ret
+                print >>sys.stderr, 'the command line was:'
+                print >>sys.stderr, merge_cmd
+                sys.exit(1)
 
 
 

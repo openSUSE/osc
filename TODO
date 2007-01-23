@@ -169,11 +169,7 @@ if import cElememtTree fails, use elementtree
 if that fails, point to home:cthiel1 repository (or devel:languages:python)
 
 
-two merge issues:
-
-1)
-when updating, the file should be copied to store even if merge fails. this would prevent
-that, after manual merging and osc resolve, one still sees the upstream changes in osc diff.
+a merge issue:
 
 2)
 check the following:
