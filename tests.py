@@ -92,7 +92,7 @@ class TestOsc(unittest.TestCase):
     def testMetaPac(self):
         self.out, self.err = runosc('meta Apache apache2')
         self.assertEqual(self.err, '')
-        self.assert_('<package project="Apache" name="apache2">' in self.out)
+        self.assert_('<package name="apache2" project="Apache">' in self.out)
 
 
 #####################################################################
@@ -107,7 +107,7 @@ class TestOsc(unittest.TestCase):
     def testPlatformsPac(self):
         self.out, self.err = runosc('platforms Apache')
         self.assertEqual(self.err, '')
-        self.assert_('SUSE_Linux_Factory' in self.out)
+        self.assert_('openSUSE_Factory' in self.out)
 
 
 #####################################################################
@@ -181,17 +181,17 @@ Transmitting file data
         self.out, self.err = runosc('add foo2')
         self.out, self.err = runosc('st')
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, 'A    foo2\n?    onlyinwc\n')
+        self.assertEqual(self.out, '?    onlyinwc\nA    foo2\n')
 
         # status with an absolute directory as argument
         self.out, self.err = runosc('st %s' % os.getcwd())
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, 'A    %s/foo2\n?    %s/onlyinwc\n' % (os.getcwd(), os.getcwd()))
+        self.assertEqual(self.out, '?    %s/onlyinwc\nA    %s/foo2\n' % (os.getcwd(), os.getcwd()))
 
         # status with an absolute directory as argument
         self.out, self.err = runosc('st %s' % os.getcwd())
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, 'A    %s/foo2\n?    %s/onlyinwc\n' % (os.getcwd(), os.getcwd()))
+        self.assertEqual(self.out, '?    %s/onlyinwc\nA    %s/foo2\n' % (os.getcwd(), os.getcwd()))
 
         # status with a single file as argument
         reldir = os.path.basename(os.getcwd())

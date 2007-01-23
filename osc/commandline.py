@@ -386,15 +386,27 @@ usage: osc st
         # no files given as argument? Take all files in current dir
         if not p.todo:
             p.todo = p.filenamelist + p.filenamelist_unvers
+        p.todo.sort()
 
+        lines = []
         for filename in p.todo:
             if filename in p.excluded:
                 continue
             s = p.status(filename)
             if s == 'F':
-                print statfrmt('!', pathjoin(p.dir, filename))
+                lines.append(statfrmt('!', pathjoin(p.dir, filename)))
             elif s != ' ':
-                print statfrmt(s, pathjoin(p.dir, filename))
+                lines.append(statfrmt(s, pathjoin(p.dir, filename)))
+            # for -v (later)
+            #else:
+            #    lines.append(statfrmt(s, pathjoin(p.dir, filename)))
+
+        # arrange the lines in order: unknown files first
+        # filenames are already sorted
+        lines = [line for line in lines if line[0] == '?'] \
+              + [line for line in lines if line[0] != '?']
+        if lines:
+            print '\n'.join(lines)
 
 
 def add(args):
