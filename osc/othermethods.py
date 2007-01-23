@@ -44,6 +44,7 @@ def request(method, url, username, password, file=None, strbuf=None):
         conn = httplib.HTTP(host) 
     else:
         sys.exit('unknown scheme %s' % scheme)
+    #conn.set_debuglevel(10)
 
     # Headers
     conn.putrequest(method, '%s' % path) 
@@ -85,6 +86,7 @@ def request(method, url, username, password, file=None, strbuf=None):
         print >>sys.stderr, 'reply:', reply
         print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nheaders:\n%s\nresponse:\n%s' % (url, headers, msg)
 
+    #print ''.join(conn.file.read())
 
 
 def delfile(url, file, username, password):
