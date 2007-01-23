@@ -1,5 +1,9 @@
 since 0.9:
-
+- fix important bug, which could lead to overwriting local modifications when
+  upstream changes are merged in
+- if a merge fails, the store copy must be updated neverthelesss
+- fix testsuite and add testcase for successful merging
+- sort output of 'status' (unknown files first, filenames alphabetically)
 - core: added class "metadata" (merge from Susannes /branches/froh/reponator/)
 - added command alias 'stat' for 'status', like in svn
 - improved documentation/examples (Lars + Susanne)
