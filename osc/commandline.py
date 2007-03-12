@@ -286,6 +286,7 @@ def diff(args):
     args = parseargs(args)
     pacs = findpacs(args)
 
+    difference_found = False
     for p in pacs:
         if p.todo == []:
             for i in p.filenamelist:
@@ -300,6 +301,10 @@ def diff(args):
             d.append(get_source_file_diff(p.dir, filename, p.rev))
         if d:
             print ''.join(d)
+            difference_found = True
+
+    if difference_found:
+        sys.exit(1)
 
 
             
