@@ -1135,8 +1135,8 @@ def get_repos_of_project(prj):
     return r
 
 
-def show_results_meta(prj, package, platform):
-    u = makeurl(['result', prj, platform, package, 'result'])
+def show_results_meta(prj, package):
+    u = makeurl(['build', prj, '_result?view=status&package=%s' % package])
     f = urlopen(u)
     return f.readlines()
 
@@ -1147,31 +1147,26 @@ def show_prj_results_meta(prj):
     return f.readlines()
 
 
-def get_results(prj, package, platform):
-    #print '----------------------------------------'
-
+def get_results(prj, package):
     r = []
-    #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
-    f = show_results_meta(prj, package, platform)
+    f = show_results_meta(prj, package)
     tree = ET.parse(StringIO(''.join(f)))
-
     root = tree.getroot()
 
-    rmap = {}
-    rmap['prj'] = root.get('project')
-    rmap['pac'] = root.get('package')
-    rmap['rep'] = root.get('repository')
-
-    for node in root.findall('archresult'):
+    for node in root.findall('result'):
+        rmap = {}
+        rmap['prj'] = prj
+        rmap['pac'] = package
+        rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
 
         statusnode =  node.find('status')
         rmap['status'] = statusnode.get('code')
 
         if rmap['status'] in ['expansion error', 'broken']:
-            rmap['status'] += ': ' + statusnode.find('summary').text
+            rmap['status'] += ': ' + statusnode.find('details').text
 
         if rmap['status'] == 'failed':
             rmap['status'] += ': %s://%s' % (conf.config['scheme'], conf.config['apisrv']) + \
@@ -1179,7 +1174,6 @@ def get_results(prj, package, platform):
 
         r.append(result_line_templ % rmap)
     return r
-
 
 def get_prj_results(prj):
     #print '----------------------------------------'

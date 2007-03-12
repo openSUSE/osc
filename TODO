@@ -97,9 +97,6 @@ osc repos server:search:ui :
 #http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
 #http://api.opensuse.org/result/KDE:KDE3/packstatus?summaryonly
 
-results seems very slow, it presumably does more network accesses than necessary
-it shouldn't take more time than prjresults
-
 
  # osc build SUSE_Factory i586 xorg-x11-libX11.spec                                                                                          
 > ['/usr/bin/osc', 'build', 'i38', 'i386', 'SUSE_Factory', 'i586', 'xorg-x11-libX11.spec']                                                    
@@ -165,9 +162,6 @@ show request body of 400 responses (bad request)
 
 geht print self.USAGE % self.__dict__ ?
 
-if import cElememtTree fails, use elementtree
-if that fails, point to home:cthiel1 repository (or devel:languages:python)
-
 
 a merge issue:
 
@@ -187,4 +181,23 @@ build command:
 
 buildinfo aenderungen:
 preinstall="1" runscripts="1"
+
+
+when can this happen?
+ % osc up
+checking out new package t
+A    home:poeml/t
+A    home:poeml/t/foo
+At revision 16.
+At revision 9.
+D    bar1
+Traceback (most recent call last):
+  File "/suse/poeml/bin/osc", line 7, in ?
+    commandline.main()
+  File "/suse/poeml/osc-stable/osc/commandline.py", line 1072, in main
+    cmd(args)
+  File "/suse/poeml/osc-stable/osc/commandline.py", line 572, in update
+    if state == 'M' and p.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
+AttributeError: 'NoneType' object has no attribute 'md5'
+[1]    11871 exit 1     osc up
 

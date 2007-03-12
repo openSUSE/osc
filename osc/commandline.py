@@ -684,17 +684,12 @@ usage 1. osc platforms
 def results_meta(args):
     """Shows the build results of the package in raw XML
 
-usage: osc results_meta [platform]
+usage: osc results_meta
     """
     wd = os.curdir
     package = store_read_package(wd)
     project = store_read_project(wd)
-    if args:
-        platform = args[0]
-        print ''.join(show_results_meta(project, package, platform))
-    else:
-        for platform in get_platforms_of_project(project):
-            print ''.join(show_results_meta(project, package, platform))
+    print ''.join(show_results_meta(project, package))
 
             
 def results(args):
@@ -712,11 +707,14 @@ usage: 1. osc results                   # package = current dir
         wd = args[0]
     else:
         wd = os.curdir
-    package = store_read_package(wd)
-    project = store_read_project(wd)
 
-    for platform in get_platforms_of_project(project):
-        print '\n'.join(get_results(project, package, platform))
+    try:
+        package = store_read_package(wd)
+        project = store_read_project(wd)
+    except:
+        sys.exit('\'%s\' is not an osc package directory' % wd)
+
+    print '\n'.join(get_results(project, package))
 
             
 def prjresults(args):
@@ -738,7 +736,7 @@ usage: 1. osc prjresults                   # package = current dir
     try:
         project = store_read_project(wd)
     except:
-        sys.exit('\'%s\' is not an osc project directory' % wd)
+        sys.exit('\'%s\' is neither an osc project or package directory' % wd)
 
     print '\n'.join(get_prj_results(project))
 
