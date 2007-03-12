@@ -9,10 +9,13 @@
 
 import os
 import sys
-import cElementTree as ET
 from tempfile import NamedTemporaryFile
 from osc.fetch import *
 import osc.conf
+try:
+    from xml.etree import cElementTree as ET
+except ImportError:
+    import cElementTree as ET
 
 
 change_personality = {
