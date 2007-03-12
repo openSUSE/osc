@@ -12,10 +12,14 @@ import sys
 import urllib2
 from urllib import pathname2url, quote_plus
 from urlparse import urlunsplit
-import cElementTree as ET
 from cStringIO import StringIO
 import shutil
 import conf
+try:
+    from xml.etree import cElementTree as ET
+except ImportError:
+    import cElementTree as ET
+
 
 
 BUFSIZE = 1024*1024
