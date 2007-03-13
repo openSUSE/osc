@@ -1136,13 +1136,13 @@ def get_repos_of_project(prj):
 
 
 def show_results_meta(prj, package):
-    u = makeurl(['build', prj, '_result?view=status&package=%s' % package])
+    u = makeurl(['build', prj, '_result?package=%s' % package])
     f = urlopen(u)
     return f.readlines()
 
 
 def show_prj_results_meta(prj):
-    u = makeurl(['result', prj, 'packstatus'])
+    u = makeurl(['build', prj, '_result'])
     f = urlopen(u)
     return f.readlines()
 
@@ -1187,8 +1187,8 @@ def get_prj_results(prj):
     root = tree.getroot()
 
     pacs = []
-    for node in root.find('packstatuslist'):
-        pacs.append(node.get('name'))
+    for node in root.find('result'):
+        pacs.append(node.get('package'))
 
 
     max_pacs = 40
@@ -1199,18 +1199,18 @@ def get_prj_results(prj):
             offset += 1
 
         target = {}
-        for node in root.findall('packstatuslist'):
+        for node in root.findall('result'):
             target['repo'] = node.get('repository')
             target['arch'] = node.get('arch')
 
             status = {}
-            for pacnode in node.findall('packstatus'):
+            for pacnode in node.findall('status'):
                 try:
-                    status[pacnode.get('name')] = buildstatus_symbols[pacnode.get('status')]
+                    status[pacnode.get('package')] = buildstatus_symbols[pacnode.get('code')]
                 except:
-                    print 'osc: warn: unknown status \'%s\'...' % pacnode.get('status')
+                    print 'osc: warn: unknown status \'%s\'...' % pacnode.get('code')
                     print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
-                    status[pacnode.get('name')] = '?'
+                    status[pacnode.get('package')] = '?'
 
             line = []
             line.append(' ')
