@@ -232,10 +232,12 @@ class Package:
         self.filenamelist_unvers.remove(n) 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
         
+    def delete_storefile(self, n):
+        try: os.unlink(os.path.join(self.storedir, n))
+        except: pass
+
     def delete_localfile(self, n):
         try: os.unlink(os.path.join(self.dir, n))
-        except: pass
-        try: os.unlink(os.path.join(self.storedir, n))
         except: pass
 
     def put_on_deletelist(self, n):
@@ -287,6 +289,7 @@ class Package:
         othermethods.delfile(u, n, conf.config['user'], conf.config['pass'])
 
         self.delete_localfile(n)
+        self.delete_storefile(n)
 
     def put_source_file(self, n):
         import othermethods

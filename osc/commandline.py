@@ -568,7 +568,10 @@ usage: osc up
         for filename in saved_filenames:
             if filename in disappeared:
                 print statfrmt('D', filename)
-                p.delete_localfile(filename)
+                # keep file if it has local modifications
+                if oldp.status(filename) == ' ':
+                    p.delete_localfile(filename)
+                p.delete_storefile(filename)
                 continue
 
         for filename in p.filenamelist:

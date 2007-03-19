@@ -203,6 +203,47 @@ class TestOsc(unittest.TestCase):
 
     #####################################################################
 
+    def testUpdateLocalMod(self):
+
+        wc1 = os.path.join(BASEDIR, TESTPACDIR)
+        wc2 = os.path.join(BASEDIR, 'otherwc')
+
+        checkout_and_clean(self)
+
+        # in wc1, create and check in two files
+        touch('f1')
+        touch('f2')
+        runosc('add f1 f2')
+        runosc('ci')
+
+
+        # create second working copy, and do a local modification
+        mkdir(wc2)
+        chdir(wc2)
+        runosc('init %s %s' % (PRJ, PAC))
+        runosc('up')
+        open('f2', 'w').write('foo')
+
+        # from wc1, delete the files
+        chdir(wc1)
+        runosc('rm f1 f2')
+        runosc('ci')
+
+        # in wc2, update
+        # f1 should be deleted
+        # f2 should be kept
+        chdir(wc2)
+        self.out, self.err = runosc('up')
+        self.assertEqual(self.err, '')
+        self.assertEqual(remove_revid(self.out), 'D    f1\nD    f2\nAt revision XX.\n')
+
+        self.out, self.err = runosc('st')
+        self.assertEqual(self.err, '')
+        self.assertEqual(self.out, '?    f2\n')
+
+
+    #####################################################################
+
     def testCoPrj(self):
         self.out, self.err = runosc('co %s' % PRJ)
         self.assertEqual(self.err, '')
