@@ -18,6 +18,9 @@
   - look at Susannes extensions
 
 
+> osc up should not delete removed files, when they have been modified 
+> locally.
+
 checkin: 
 	- handle error if PUT fails, so the change is not committed to
 	  localmeta	
