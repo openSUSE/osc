@@ -59,14 +59,6 @@ class TestOsc(unittest.TestCase):
   <login>poeml</login>
   <email>poeml@suse.de</email>
   <realname>Dr. Peter Poeml</realname>
-  <source_backend>
-    <host></host>
-    <port></port>
-  </source_backend>
-  <rpm_backend>
-    <host></host>
-    <port></port>
-  </rpm_backend>
   <watchlist>
     <project name="server:mail"/>
     <project name="frox"/>
@@ -122,7 +114,7 @@ class TestOsc(unittest.TestCase):
     def testMetaPac(self):
         self.out, self.err = runosc('meta Apache apache2')
         self.assertEqual(self.err, '')
-        self.assert_('<package name="apache2" project="Apache">' in self.out)
+        self.assert_('<package project="Apache" name="apache2">' in self.out)
 
 
     #####################################################################
