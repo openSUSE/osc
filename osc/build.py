@@ -231,7 +231,7 @@ def main(argv):
 
     buildargs = ' '.join(buildargs)
 
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s %s' \
+    cmd = '%s --root=%s --norootforbuild --rpmlist=%s --dist=%s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
                     rpmlist.name, 

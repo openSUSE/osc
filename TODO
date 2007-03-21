@@ -9,8 +9,6 @@
 - use urllib.urlencode for parameter encoding
 - _real_ SSL support, with certificate verification
 - zsh completion, or even bash
-- support #norootforbuild (or is it supported? do we just need to enforce it, like the bs does?)
-  -> --norootforbuild als 'build' OPtion
 - add option to disable gpg key checking?
 - add support for adding tags to packages?
 - prefer-rpms support for osc build
