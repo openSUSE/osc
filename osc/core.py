@@ -1139,7 +1139,7 @@ def get_repos_of_project(prj):
 
 
 def show_results_meta(prj, package):
-    u = makeurl(['build', prj, '_result?package=%s' % package])
+    u = makeurl(['build', prj, '_result?package=%s' % pathname2url(package)])
     f = urlopen(u)
     return f.readlines()
 
@@ -1192,7 +1192,7 @@ def get_prj_results(prj):
     pacs = []
     for node in root.find('result'):
         pacs.append(node.get('package'))
-
+    pacs.sort()
 
     max_pacs = 40
     for startpac in range(0, len(pacs), max_pacs):
