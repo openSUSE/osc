@@ -54,7 +54,7 @@ class Buildinfo:
         root = tree.getroot()
 
         if root.find('error') != None:
-            sys.stderr.write('buildinfo is broken... it says:\n')
+            sys.stderr.write('buildinfo is borken... it says:\n')
             error = root.find('error').text
             sys.stderr.write(error + '\n')
             sys.exit(1)
@@ -78,19 +78,21 @@ class Buildinfo:
                     node.get('project'),
                     node.get('repository'),
                     node.get('arch'),
+                    node.get('preinstall'),
+                    node.get('runscripts'),
                     self.buildarch,       # buildarch is used only for the URL to access the full tree...
                     self.pacsuffix)
             self.deps.append(p)
 
-        self.pdeps = []
-        for node in root.findall('pdep'):
-            self.pdeps.append(node.text)
+        self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
+        self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
 
 
 
 class Pac:
     """represent a package to be downloaded"""
-    def __init__(self, name, version, release, project, repository, arch, buildarch, pacsuffix):
+    def __init__(self, name, version, release, project, repository, arch, 
+                 preinstall, runscripts, buildarch, pacsuffix):
 
         self.name = name
         self.version = version
@@ -98,6 +100,8 @@ class Pac:
         self.arch = arch
         self.project = project
         self.repository = repository
+        self.preinstall = preinstall
+        self.runscripts = runscripts
         self.buildarch = buildarch
         self.pacsuffix = pacsuffix
 
@@ -109,6 +113,8 @@ class Pac:
         self.mp['arch'] = self.arch
         self.mp['project'] = self.project
         self.mp['repository'] = self.repository
+        self.mp['preinstall'] = self.preinstall
+        self.mp['runscripts'] = self.runscripts
         self.mp['buildarch'] = self.buildarch
         self.mp['pacsuffix'] = self.pacsuffix
 
@@ -212,7 +218,8 @@ def main(argv):
 
     buildconf = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
 
-    buildconf.append('preinstall: ' + ' '.join(bi.pdeps) + '\n')
+    buildconf.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
+    buildconf.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
     rpmlist = NamedTemporaryFile(prefix='rpmlist.', dir = '/tmp')
     rpmlist.writelines(buildconf)
