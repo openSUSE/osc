@@ -553,6 +553,8 @@ usage: osc up
 
     for p in pacs:
 
+        if len(pacs) > 1:
+            print "Updating %s" % p.name
         # save filelist and (modified) status before replacing the meta file
         saved_filenames = p.filenamelist
         saved_modifiedfiles = [ f for f in p.filenamelist if p.status(f) == 'M' ]
