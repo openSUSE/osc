@@ -21,10 +21,10 @@ Alternatively, you can directly use osc-wrapper.py from the source dir
 
 
 The program needs the cElementTree python module installed. On SUSE, the
-respective package is called python-elementtree. For local building, you
-will need python-urlgrabber in addition. Those are standard package on SUSE
-Linux since a while. If your version is too old, you can find
-python-elementtree and python-urlgrabber here:
+respective package is called python-elementtree (before 10.2: python-xml). 
+For local building, you will need python-urlgrabber in addition. Those are
+standard package on SUSE Linux since a while. If your version is too old, you
+can find python-elementtree and python-urlgrabber here:
 http://software.opensuse.org/download/devel:/languages:/python/
 
 
