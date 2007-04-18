@@ -14,6 +14,8 @@
 - prefer-rpms support for osc build
 - plugin-ize subcommand implementation
   - look at Susannes extensions
+- add --clean/--noinit to osc build help output
+- https://api.opensuse.org/build/GNOME:UNSTABLE?cmd=rebuild&code=failed
 - Allow the package owners/users to signal an abort build.
   Message-ID: <20070214120205.GA9629@suse.de>
 - implement wipe command
@@ -105,7 +107,7 @@ osc repos server:search:ui :
 > Error: specfile 'SUSE_Factory' does not exist.                                                                                              
 BUILD_DIST must *not* be set! Could you add this information to the
 'osc help build' text?
- -> possibly kill BUILD_ROOT/BUILD_DIST support altogether?
+ -> possibly kill BUILD_ROOT/BUILD_DIST support altogether? or make its use configurable.
 
 
 
@@ -256,4 +258,24 @@ Traceback (most recent call last):
     if state == 'M' and p.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
 AttributeError: 'NoneType' object has no attribute 'md5'
 [1]    11871 exit 1     osc up
+
+
+21:05 <darix> ping
+21:30 <DuDE_> pong
+21:31 <darix> osc updatepac... sollte nicht fehlschlagen wenn das rpm anders heisst als das package verzeichnis
+21:31 <darix> :p
+
+
+
+18:48 <darix> darix@hydrogen:~/osc/server:http/GeoIP> osc results
+18:48 <darix> Traceback (most recent call last):
+18:48 <darix>   File "/usr/bin/osc", line 7, in <module>
+18:48 <darix>     commandline.main()
+18:48 <darix>   File "/usr/lib64/python2.5/site-packages/osc/commandline.py", line 1077, in main
+18:48 <darix>     cmd(args)
+18:48 <darix>   File "/usr/lib64/python2.5/site-packages/osc/commandline.py", line 719, in results
+18:48 <darix>     print '\n'.join(get_results(project, package))
+18:48 <darix>   File "/usr/lib64/python2.5/site-packages/osc/core.py", line 1169, in get_results
+18:48 <darix>     rmap['status'] += ': ' + statusnode.find('details').text
+18:48 <darix> AttributeError: 'NoneType' object has no attribute 'text'
 
