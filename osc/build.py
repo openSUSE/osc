@@ -43,7 +43,6 @@ class Buildinfo:
 
     def __init__(self, filename):
 
-        print filename
         try:
             tree = ET.parse(filename)
         except:
