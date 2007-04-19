@@ -58,6 +58,7 @@ DEFAULTS = { 'apisrv': 'api.opensuse.org',
               ],
 
              'http_debug': '0',
+             'cookiejar': '~/.osc_cookiejar',
 
              # switched off for now (testing)
              'do_commits': '0',
@@ -108,12 +109,16 @@ Make sure that it has a [general] section.
 
 """
 
+cookiejar = None
 
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
 
     from osc.core import __version__
-    import urllib2
+    import os, urllib2
+    import cookielib
+
+    global cookiejar
 
     if config['http_debug'] == '1':
         # brute force
@@ -124,7 +129,19 @@ def init_basicauth(config):
     authhandler = urllib2.HTTPBasicAuthHandler( \
         urllib2.HTTPPasswordMgrWithDefaultRealm())
 
-    opener = urllib2.build_opener(authhandler)
+    cookie_file = os.path.expanduser(config['cookiejar'])
+    cookiejar = cookielib.LWPCookieJar(cookie_file)
+    try: 
+        cookiejar.load(ignore_discard=True)
+    except IOError:
+        try:
+            open(cookie_file, 'w').close()
+            os.chmod(cookie_file, 0600)
+        except:
+            #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
+            cookiejar = cookielib.CookieJar()
+
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
     urllib2.install_opener(opener)
 
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]

@@ -674,6 +674,9 @@ def http_request(method, url, data=None, file=None):
 
     fd = urllib2.urlopen(req, data=data)
 
+    if hasattr(conf.cookiejar, 'save'):
+        conf.cookiejar.save(ignore_discard=True)
+
     if filefd: filefd.close()
     return fd
 
