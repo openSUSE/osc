@@ -57,6 +57,8 @@ DEFAULTS = { 'apisrv': 'api.opensuse.org',
                 'http://api.opensuse.org/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s',
               ],
 
+             'http_debug': '0',
+
              # switched off for now (testing)
              'do_commits': '0',
 }
@@ -82,6 +84,9 @@ new_conf_template = """
 # use this protocol to access the API server (http or https)
 #scheme = https
     
+# show HTTP traffic useful for debugging 
+# http_debug = 1
+    
 [%(apisrv)s]
 user = %(user)s
 pass = %(pass)s
@@ -106,28 +111,27 @@ Make sure that it has a [general] section.
 
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
-    import urllib2
+
     from osc.core import __version__
+    import urllib2
 
-    passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-    # this creates a password manager
-    passmgr.add_password(None, config['apisrv'], config['user'], config['pass'])
-    # because we have put None at the start it will always
-    # use this username/password combination for  urls
-    # for which `apisrv` is a super-url
+    if config['http_debug'] == '1':
+        # brute force
+        def urllib2_debug_init(self, debuglevel=0):
+            self._debuglevel = 1
+        urllib2.AbstractHTTPHandler.__init__ = urllib2_debug_init
 
-    authhandler = urllib2.HTTPBasicAuthHandler(passmgr)
-    # create the AuthHandler
+    authhandler = urllib2.HTTPBasicAuthHandler( \
+        urllib2.HTTPPasswordMgrWithDefaultRealm())
 
     opener = urllib2.build_opener(authhandler)
+    urllib2.install_opener(opener)
+
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
 
-    urllib2.install_opener(opener)
-    # All calls to urllib2.urlopen will now use our handler
-    # Make sure not to include the protocol in with the URL, or
-    # HTTPPasswordMgrWithDefaultRealm will be very confused.
-    # You must (of course) use it when fetching the page though.
-
+    # with None as first argument, it will always use this username/password
+    # combination for urls for which arg2 (apisrv) is a super-url
+    authhandler.add_password(None, config['apisrv'], config['user'], config['pass'])
 
 
 def get_config():

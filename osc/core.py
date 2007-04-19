@@ -283,35 +283,32 @@ class Package:
             f.close()
 
     def delete_source_file(self, n):
-        import othermethods
         
         u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
-        othermethods.delfile(u, n, conf.config['user'], conf.config['pass'])
+        http_DELETE(u)
 
         self.delete_localfile(n)
         self.delete_storefile(n)
 
     def put_source_file(self, n):
-        import othermethods
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
         u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
         if conf.config['do_commits'] == '1':
             u += '?rev=upload'
-        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file = os.path.join(self.dir, n))
+        http_PUT(u, file = os.path.join(self.dir, n))
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def commit(self, msg=''):
-        import othermethods
         
         u = makeurl(['source', self.prjname, self.name])
         u += '?cmd=commit&rev=upload'
         u += '&user=%s' % conf.config['user']
         u += '&comment=%s' % quote_plus(msg)
         #print u
-        f = urlopen(u, data='')
+        f = http_POST(u)
         #print f.read()
 
     def write_conflictlist(self):
@@ -491,14 +488,13 @@ rev: %s
 
 
     def update_pac_meta(self, template=new_package_templ):
-        import othermethods
         import tempfile
 
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
         try:
             u = makeurl(['source', self.prjname, self.name, '_meta'])
-            m = urllib2.urlopen(u).readlines() 
+            m = http_GET(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
                 print 'package does not exist yet... creating it'
@@ -530,7 +526,7 @@ rev: %s
         if repl == 'y':
             print 'Sending meta data...', 
             u = makeurl(['source', self.prjname, self.name, '_meta'])
-            othermethods.putfile(u, conf.config['user'], conf.config['pass'], file=filename)
+            http_PUT(u, file=filename)
             print 'Done.'
         else:
             print 'discarding', filename
@@ -649,12 +645,47 @@ def makeurl(l):
     return urlunsplit((conf.config['scheme'], conf.config['apisrv'], '/'.join(l), '', ''))               
 
 
+def http_request(method, url, data=None, file=None):
+    """wrapper around urllib2.urlopen for error handling,
+    and to support additional (PUT, DELETE) methods"""
+
+    if conf.config['http_debug'] == '1':
+        print 
+        print
+        print '--', method, url
+
+    if method == 'POST' and not file and not data:
+        # adding data to an urllib2 request transforms it into a POST
+        data = ''
+        
+    if file and not data:
+        # might need to override HTTPConnection.send() to deal with large amounts
+        # of data, or simpler, mmap the file
+        data = open(file).read()
+
+    req = urllib2.Request(url)
+    req.get_method = lambda: method
+
+    fd = urllib2.urlopen(req, data=data)
+    return fd
+
+
+def http_GET(*args, **kwargs):    return http_request('GET', *args, **kwargs)
+def http_POST(*args, **kwargs):   return http_request('POST', *args, **kwargs)
+def http_PUT(*args, **kwargs):    return http_request('PUT', *args, **kwargs)
+def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
+
+
 def urlopen(url, data=None):
     """wrapper around urllib2.urlopen for error handling"""
+    print 'core.urlopen() is deprecated -- use http_GET et al.'
 
     try:
         # adding data to the request makes it a POST
-        fd = urllib2.urlopen(url, data=data)
+        if not data:
+            fd = http_GET(url)
+        else:
+            fd = http_POST(url, data=data)
 
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'Error: can\'t get \'%s\'' % url
@@ -718,7 +749,7 @@ def check_store_version(dir):
 def meta_get_packagelist(prj):
 
     u = makeurl(['source', prj])
-    f = urlopen(u)
+    f = http_GET(u)
     root = ET.parse(f).getroot()
     return [ node.get('name') for node in root.findall('entry') ]
 
@@ -726,28 +757,28 @@ def meta_get_packagelist(prj):
 def meta_get_filelist(prj, package):
 
     u = makeurl(['source', prj, package])
-    f = urlopen(u)
+    f = http_GET(u)
     root = ET.parse(f).getroot()
     return [ node.get('name') for node in root ]
 
 
 def meta_get_project_list():
     u = makeurl(['source'])
-    f = urlopen(u)
+    f = http_GET(u)
     root = ET.parse(f).getroot()
     return sorted([ node.get('name') for node in root ])
 
 
 def show_project_meta(prj):
     url = makeurl(['source', prj, '_meta'])
-    f = urlopen(url)
+    f = http_GET(url)
     return f.readlines()
 
 
 def show_package_meta(prj, pac):
     try:
         url = makeurl(['source', prj, pac, '_meta'])
-        f = urllib2.urlopen(url)
+        f = http_GET(url)
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         print >>sys.stderr, e
@@ -759,7 +790,6 @@ def show_package_meta(prj, pac):
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
     def __init__(self, prj, pac, template=new_package_templ, change_is_required=True):
-        import othermethods
         import tempfile
 
         self.change_is_required = change_is_required
@@ -771,7 +801,7 @@ class metafile:
             # package meta
             self.url = makeurl(['source', prj, pac, '_meta'])
             try:
-                m = urllib2.urlopen(self.url).readlines() 
+                m = http_GET(self.url).readlines() 
             except urllib2.HTTPError, e:
                 if e.code == 404:
                     m = template % (pac, conf.config['user'])
@@ -784,7 +814,7 @@ class metafile:
             # project meta
             self.url = makeurl(['source', prj, '_meta'])
             try:
-                m = urllib2.urlopen(self.url).readlines()
+                m = http_GET(self.url).readlines()
             # when testing this offline:
             #except urllib2.URLError, e:
             #    m = new_project_templ % (prj, conf.config['user'])
@@ -803,14 +833,13 @@ class metafile:
         self.timestamp = os.path.getmtime(self.filename)
 
     def sync(self):
-        import othermethods
         if self.change_is_required == True and os.path.getmtime(self.filename) == self.timestamp:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
 
         else:
             print 'Sending meta data...', 
-            othermethods.putfile(self.url, conf.config['user'], conf.config['pass'], file=self.filename)
+            http_PUT(self.url, file=self.filename)
             os.unlink(self.filename)
             print 'Done.'
     
@@ -824,13 +853,12 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
         f.sync()
 
 def edit_user_meta(user, change_is_required=True):
-    import othermethods
     import tempfile
 
     u = makeurl(['person', quote_plus(user)])
 
     try:
-        m = urllib2.urlopen(u).readlines() 
+        m = http_GET(u).readlines() 
     except urllib2.HTTPError, e:
         if e.code == 404:
             m = new_user_template % { 'user': user }
@@ -854,13 +882,13 @@ def edit_user_meta(user, change_is_required=True):
 
     else:
         print 'Sending meta data...', 
-        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file=filename)
+        http_PUT(u, file=filename)
         os.unlink(filename)
         print 'Done.'
 
 
 def show_files_meta(prj, pac):
-    f = urlopen(makeurl(['source', prj, pac]))
+    f = http_GET(makeurl(['source', prj, pac]))
     return f.readlines()
 
 
@@ -901,7 +929,7 @@ def read_meta_from_spec(specfile):
 def get_user_meta(user):
     u = makeurl(['person', quote_plus(user)])
     try:
-        f = urllib2.urlopen(u)
+        f = http_GET(u)
         return ''.join(f.readlines())
     except urllib2.HTTPError:
         print 'user \'%s\' not found' % user
@@ -910,7 +938,7 @@ def get_user_meta(user):
 
 def get_source_file(prj, package, filename, targetfilename=None):
     u = makeurl(['source', prj, package, pathname2url(filename)])
-    f = urlopen(u)
+    f = http_GET(u)
 
     o = open(targetfilename or filename, 'w')
     while 1:
@@ -1015,7 +1043,6 @@ def link_pac(src_project, src_package, dst_project, dst_package):
      - "dst" is the "link" package that we are creating here
     """
 
-    import othermethods
     import tempfile
 
 
@@ -1053,7 +1080,7 @@ def link_pac(src_project, src_package, dst_project, dst_package):
 """ % (src_project, src_package)
 
     u = makeurl(['source', dst_project, dst_package, '_link'])
-    othermethods.putfile(u, conf.config['user'], conf.config['pass'], strbuf = link_template)
+    http_PUT(u, data=link_template)
     print 'Done.'
 
 
@@ -1062,7 +1089,6 @@ def copy_pac(src_project, src_package, dst_project, dst_package):
     create a copy of a package
     """
 
-    import othermethods
     import tempfile
 
     src_meta = show_package_meta(src_project, src_package)
@@ -1080,7 +1106,7 @@ def copy_pac(src_project, src_package, dst_project, dst_package):
 
     print 'Sending meta data...'
     u = makeurl(['source', dst_project, dst_package, '_meta'])
-    othermethods.putfile(u, conf.config['user'], conf.config['pass'], strbuf=src_meta)
+    http_PUT(u, data=src_meta)
 
     # copy one file after the other
     print 'Copying files...'
@@ -1090,28 +1116,25 @@ def copy_pac(src_project, src_package, dst_project, dst_package):
         print '  ', n
         get_source_file(src_project, src_package, n, targetfilename=n)
         u = makeurl(['source', dst_project, dst_package, pathname2url(n)])
-        othermethods.putfile(u, conf.config['user'], conf.config['pass'], file = n)
+        http_PUT(u, file = n)
         os.unlink(n)
     print 'Done.'
     os.rmdir(tmpdir)
 
 
 def delete_package(prj, pac):
-    import othermethods
     
     u = makeurl(['source', prj, pac])
-    othermethods.delfile(u, pac, conf.config['user'], conf.config['pass'])
+    http_DELETE(u)
 
 
 def delete_project(prj):
-    import othermethods
     
-    u = makeurl(['source', prj])
-    othermethods.delfile(u, prj, conf.config['user'], conf.config['pass'])
+    http_DELETE(u)
 
 
 def get_platforms():
-    f = urlopen(makeurl(['platform']))
+    f = http_GET(makeurl(['platform']))
     tree = ET.parse(f)
     r = [ node.get('name') for node in tree.getroot() ]
     r.sort()
@@ -1140,13 +1163,13 @@ def get_repos_of_project(prj):
 
 def show_results_meta(prj, package):
     u = makeurl(['build', prj, '_result?package=%s' % pathname2url(package)])
-    f = urlopen(u)
+    f = http_GET(u)
     return f.readlines()
 
 
 def show_prj_results_meta(prj):
     u = makeurl(['build', prj, '_result'])
-    f = urlopen(u)
+    f = http_GET(u)
     return f.readlines()
 
 
@@ -1236,21 +1259,21 @@ def get_prj_results(prj):
 
 def get_log(prj, package, platform, arch, offset):
     u = makeurl(['result', prj, platform, package, arch, 'log?nostream=1&start=%s' % offset])
-    f = urlopen(u)
+    f = http_GET(u)
     return f.read()
 
 
 def get_buildinfo(prj, package, platform, arch, specfile=None):
     # http://api.opensuse.org/rpm/Subversion/Apache_SuSE_Linux_10.1/i586/subversion/buildinfo
     u = makeurl(['rpm', prj, platform, arch, package, 'buildinfo'])
-    f = urlopen(u, data=specfile)
+    f = http_POST(u, data=specfile)
     return f.read()
 
 
 def get_buildconfig(prj, package, platform, arch):
     # http://api.opensuse.org/rpm/<proj>/<repo>/_repository/<arch>/_buildconfig
     u = makeurl(['rpm', prj, platform, '_repository', arch, '_buildconfig'])
-    f = urlopen(u)
+    f = http_GET(u)
     return f.read()
 
 
@@ -1258,7 +1281,7 @@ def get_buildhistory(prj, package, platform, arch):
     import time
 
     u = makeurl(['rpm', prj, platform, arch, package, 'history'])
-    f = urlopen(u)
+    f = http_GET(u)
     root = ET.parse(f).getroot()
 
     r = []
@@ -1286,7 +1309,7 @@ def cmd_rebuild(prj, package, repo, arch):
     u = makeurl(['source', prj, package, cmd])
     try:
         # adding data to the request makes it a POST
-        f = urllib2.urlopen(u, data='')
+        f = http_POST(u)
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
         print >>sys.stderr, u
