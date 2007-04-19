@@ -649,6 +649,8 @@ def http_request(method, url, data=None, file=None):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
 
+    filefd = None
+
     if conf.config['http_debug'] == '1':
         print 
         print
@@ -658,15 +660,21 @@ def http_request(method, url, data=None, file=None):
         # adding data to an urllib2 request transforms it into a POST
         data = ''
         
-    if file and not data:
-        # might need to override HTTPConnection.send() to deal with large amounts
-        # of data, or simpler, mmap the file
-        data = open(file).read()
-
     req = urllib2.Request(url)
     req.get_method = lambda: method
 
+    if file and not data:
+        size = os.path.getsize(file)
+        if size < 1024*512:
+            data = open(file).read()
+        else:
+            import mmap
+            filefd = open(file, 'r+')
+            data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
+
     fd = urllib2.urlopen(req, data=data)
+
+    if filefd: filefd.close()
     return fd
 
 
