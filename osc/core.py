@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.9'
+__version__ = '0.95'
 
 import os
 import sys
@@ -605,25 +605,12 @@ def filedir_to_pac(f):
         wd = f
         p = Package(wd)
 
-    elif os.path.isfile(f):
-        wd = os.path.dirname(f)
-        if wd == '':
-            wd = os.curdir
-        p = Package(wd)
-        p.todo = [ os.path.basename(f) ]
-
     else:
         wd = os.path.dirname(f)
         if wd == '':
             wd = os.curdir
         p = Package(wd)
         p.todo = [ os.path.basename(f) ]
-        
-
-    #else:
-    #    print 
-    #    print 'error: %s is neither a valid file or directory' % f
-    #    sys.exit(1)
 
     return p
 
@@ -651,7 +638,7 @@ def http_request(method, url, data=None, file=None):
 
     filefd = None
 
-    if conf.config['http_debug'] == '1':
+    if conf.config['http_debug']:
         print 
         print
         print '--', method, url
@@ -743,7 +730,7 @@ def check_store_version(dir):
         sys.exit(1)
 
     if v != __version__:
-        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8']:
+        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9']:
             # version is fine, no migration needed
             f = open(versionfile, 'w')
             f.write(__version__ + '\n')
@@ -1141,6 +1128,7 @@ def delete_package(prj, pac):
 
 def delete_project(prj):
     
+    u = makeurl(['source', prj])
     http_DELETE(u)
 
 
@@ -1212,7 +1200,7 @@ def get_results(prj, package):
         r.append(result_line_templ % rmap)
     return r
 
-def get_prj_results(prj):
+def get_prj_results(prj, show_legend=False):
     #print '----------------------------------------'
 
     r = []
@@ -1261,9 +1249,10 @@ def get_prj_results(prj):
 
         r.append('')
 
-    r.append(' Legend:')
-    for i, j in buildstatus_symbols.items():
-        r.append('  %s %s' % (j, i))
+    if show_legend:
+        r.append(' Legend:')
+        for i, j in buildstatus_symbols.items():
+            r.append('  %s %s' % (j, i))
 
     return r
 
@@ -1277,7 +1266,10 @@ def get_log(prj, package, platform, arch, offset):
 def get_buildinfo(prj, package, platform, arch, specfile=None):
     # http://api.opensuse.org/rpm/Subversion/Apache_SuSE_Linux_10.1/i586/subversion/buildinfo
     u = makeurl(['rpm', prj, platform, arch, package, 'buildinfo'])
-    f = http_POST(u, data=specfile)
+    if specfile:
+        f = http_POST(u, data=specfile)
+    else:
+        f = http_GET(u)
     return f.read()
 
 
@@ -1311,15 +1303,20 @@ def get_buildhistory(prj, package, platform, arch):
     return r
 
 
-def cmd_rebuild(prj, package, repo, arch):
-    cmd = '?cmd=rebuild'
+def cmd_rebuild(prj, package, repo, arch, code=None):
+    cmd = prj
+    cmd += '?cmd=rebuild'
+    if package:
+        cmd += '&package=%s' % package
     if repo:
         cmd += '&repo=%s' % repo
     if arch:
         cmd += '&arch=%s' % arch
-    u = makeurl(['source', prj, package, cmd])
+    if code:
+        cmd += '&code=%s' % code
+
+    u = makeurl(['build', cmd])
     try:
-        # adding data to the request makes it a POST
         f = http_POST(u)
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
@@ -1328,8 +1325,7 @@ def cmd_rebuild(prj, package, repo, arch):
         sys.exit(1)
 
     root = ET.parse(f).getroot()
-    #code = root.get('code')
-    return root.find('summary').text
+    return root.get('code')
 
 
 def store_read_project(dir):

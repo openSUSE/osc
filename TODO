@@ -14,8 +14,6 @@
 - prefer-rpms support for osc build
 - plugin-ize subcommand implementation
   - look at Susannes extensions
-- add --clean/--noinit to osc build help output
-- https://api.opensuse.org/build/GNOME:UNSTABLE?cmd=rebuild&code=failed
 - Allow the package owners/users to signal an abort build.
   Message-ID: <20070214120205.GA9629@suse.de>
 - implement wipe command
@@ -165,8 +163,6 @@ put the current release number into the spec file before sending it
 show request body of 400 responses (bad request)
 
 
-geht print self.USAGE % self.__dict__ ?
-
 
 a merge issues:
 if I mark a file as "to be added" ("A"), and someone else alread adds (and
@@ -174,10 +170,6 @@ commits) the file in between, and I update -- will I get it marked as "D" after 
 D    apr_dbd_mysql.c
 M    libapr-util1.spec
 
-
-build command:
-> "You need to call the command inside a package directory, which should be a
-> buildsystem checkout. (Local modifications are fine.)"
 
 
 in the unusual event that a log file should be there (due to status "building"), but there is none, fail gracefully.
@@ -199,8 +191,6 @@ Traceback (most recent call last):
     for node in root.find('packstatuslist'):
 TypeError: 'NoneType' object is not iterable
 
-put the prjresults Legend into the help text instead of showing it each time? 
-also, we could add the option to configure it away
 
 
 19:08 < Beineri> DuDE: can you add an option to "up" which moves instead overwriting a file if it has changed in the repository?

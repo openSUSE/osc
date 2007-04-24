@@ -63,6 +63,7 @@ DEFAULTS = { 'apisrv': 'api.opensuse.org',
              # switched off for now (testing)
              'do_commits': '0',
 }
+boolean_opts = ['http_debug', 'do_commits']
 
 new_conf_template = """
 [general]
@@ -120,7 +121,7 @@ def init_basicauth(config):
 
     global cookiejar
 
-    if config['http_debug'] == '1':
+    if config['http_debug']:
         # brute force
         def urllib2_debug_init(self, debuglevel=0):
             self._debuglevel = 1
@@ -215,6 +216,15 @@ def get_config():
 
     config = dict(cp.items('general', raw=1))
 
+    for i in boolean_opts:
+        try:
+            if int(config.get(i)):
+                config[i] = True
+            else:
+                config[i] = False
+        except:
+            sys.exit('option %s requires an integer value' % i)
+
     # transform 'url1, url2, url3' form into a list
     if type(config['urllist']) == str:
         config['urllist'] = [ i.strip() for i in config['urllist'].split(',') ]
@@ -226,6 +236,4 @@ def get_config():
     config['user'] = config['auth_dict'][config['apisrv']]['user']
     config['pass'] = config['auth_dict'][config['apisrv']]['pass']
 
-    # finally, initialize urllib2 for to use the credentials for Basic Authentication
-    init_basicauth(config)
 
