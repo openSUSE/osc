@@ -37,8 +37,6 @@ since 0.95:
   setup, by using the new <bdep> preinstall and runscripts attributes
 - update: when updating, don't delete files with local modifications
 - let the diff subcommand return 1 if differences were found
-
-since 0.9:
 - fix important bug, which could lead to overwriting local modifications when
   upstream changes are merged in
 - if a merge fails, the store copy must be updated neverthelesss
