@@ -448,8 +448,8 @@ class Package:
         elif not exists and exists_in_store and not known_by_meta:
             state = 'D'
         elif not exists and not exists_in_store and not known_by_meta:
-            print '%s: not exists and not exists_in_store and not nown_by_meta' % n
-            print 'this code path should never be reached!'
+            print >>sys.stderr, '%s: not exists and not exists_in_store and not nown_by_meta' % n
+            print >>sys.stderr, 'this code path should never be reached!'
             sys.exit(1)
         
         return state
@@ -481,7 +481,7 @@ rev: %s
         name, summary, descr = read_meta_from_spec(specfile)
 
         if name != self.name:
-            print 'name from spec does not match name of package... this is probably a problem'
+            print >>sys.stderr, 'name from spec does not match name of package... this is probably a problem'
             sys.exit(1)
         self.summary = summary
         self.descr = descr
@@ -500,8 +500,8 @@ rev: %s
                 print 'package does not exist yet... creating it'
                 m = template % (pac, conf.config['user'])
             else:
-                print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
-                print e
+                print >>sys.stderr, 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
+                print >>sys.stderr, e
                 sys.exit(1)
 
         f = os.fdopen(fd, 'w')
@@ -726,7 +726,7 @@ def check_store_version(dir):
         v = ''
 
     if v == '':
-        print 'error: "%s" is not an osc working copy' % dir
+        print >>sys.stderr, 'error: "%s" is not an osc working copy' % dir
         sys.exit(1)
 
     if v != __version__:
@@ -736,11 +736,11 @@ def check_store_version(dir):
             f.write(__version__ + '\n')
             f.close()
             return 
-        print 
-        print 'the osc metadata of your working copy "%s"' % dir
-        print 'has the wrong version (%s), should be %s' % (v, __version__)
-        print 'please do a fresh checkout'
-        print 
+        print >>sys.stderr
+        print >>sys.stderr, 'the osc metadata of your working copy "%s"' % dir
+        print >>sys.stderr, 'has the wrong version (%s), should be %s' % (v, __version__)
+        print >>sys.stderr, 'please do a fresh checkout'
+        print >>sys.stderr
         sys.exit(1)
     
 
@@ -804,8 +804,8 @@ class metafile:
                 if e.code == 404:
                     m = template % (pac, conf.config['user'])
                 else:
-                    print 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
-                    print e
+                    print >>sys.stderr, 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
+                    print >>sys.stderr, e
                     sys.exit(1)
 
         else:
@@ -820,8 +820,8 @@ class metafile:
                 if e.code == 404:
                     m = new_project_templ % (prj, conf.config['user'])
                 else:
-                    print 'error getting package meta for project \'%s\':' % prj
-                    print e
+                    print >>sys.stderr, 'error getting package meta for project \'%s\':' % prj
+                    print >>sys.stderr, e
                     sys.exit(1)
 
         f = os.fdopen(fd, 'w')
@@ -861,8 +861,8 @@ def edit_user_meta(user, change_is_required=True):
         if e.code == 404:
             m = new_user_template % { 'user': user }
         else:
-            print 'error getting metadata for user \'%s\':' % user
-            print e
+            print >>sys.stderr, 'error getting metadata for user \'%s\':' % user
+            print >>sys.stderr, e
             sys.exit(1)
 
     (fd, filename) = tempfile.mkstemp(prefix = 'osc_edituser.', suffix = '.xml', dir = '/tmp')
@@ -1063,8 +1063,8 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     # create the _link file
     # but first, make sure not to overwrite an existing one
     if '_link' in meta_get_filelist(dst_project, dst_package):
-        print
-        print '_link file already exists...! Aborting'
+        print >>sys.stderr
+        print >>sys.stderr, '_link file already exists...! Aborting'
         sys.exit(1)
 
     print 'Creating _link...',

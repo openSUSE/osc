@@ -88,8 +88,8 @@ class Fetcher:
             try:
                 os.makedirs(dir, mode=0755)
             except OSError, e:
-                print 'packagecachedir is not writable for you?'
-                print e
+                print >>sys.stderr, 'packagecachedir is not writable for you?'
+                print >>sys.stderr, e
                 sys.exit(1)
 
 

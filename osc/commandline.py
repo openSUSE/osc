@@ -73,7 +73,8 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
         if len(args) != 2:
-            sys.exit('Must provide project and package name.')
+            print >>sys.stderr, 'Must provide project and package name.'
+            return 2
 
         project = args[0]
         package = args[1]
@@ -118,7 +119,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'meta'])
             return 2
 
@@ -173,7 +174,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'editmeta'])
             return 2
 
@@ -225,7 +226,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args or len(args) < 3:
-            print 'Incorrect number of argument.'
+            print >>sys.stderr, 'Incorrect number of argument.'
             self.do_help(['foo', 'linkpac'])
             return 2
 
@@ -238,7 +239,8 @@ class Osc(cmdln.Cmdln):
             dst_package = src_package
 
         if src_project == dst_project and src_package == dst_package:
-            sys.exit('osc: error: source and destination are the same')
+            print >>sys.stderr, 'Error: source and destination are the same.'
+            return 1
         link_pac(src_project, src_package, dst_project, dst_package)
 
 
@@ -256,7 +258,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args or len(args) < 3:
-            print 'Incorrect number of argument.'
+            print >>sys.stderr, 'Incorrect number of argument.'
             self.do_help(['foo', 'copypac'])
             return 2
 
@@ -269,7 +271,8 @@ class Osc(cmdln.Cmdln):
             dst_package = src_package
 
         if src_project == dst_project and src_package == dst_package:
-            sys.exit('osc: error: source and destination are the same')
+            print >>sys.stderr, 'Error: source and destination are the same.'
+            return 1
         copy_pac(src_project, src_package, dst_project, dst_package)
 
 
@@ -297,7 +300,8 @@ class Osc(cmdln.Cmdln):
         """
 
         if meta_get_packagelist(project) != []:
-            sys.exit('Project contains packages. It must be empty before deleting it.')
+            print >>sys.stderr, 'Project contains packages. It must be empty before deleting it.'
+            return 1
         delete_project(project)
 
 
@@ -353,7 +357,7 @@ class Osc(cmdln.Cmdln):
                 difference_found = True
 
         if difference_found:
-            sys.exit(1)
+            return 1
 
 
                 
@@ -416,7 +420,7 @@ class Osc(cmdln.Cmdln):
             for package in meta_get_packagelist(project):
                 checkout_package(project, package)
         else:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'checkout'])
             return 2
 
@@ -464,7 +468,8 @@ class Osc(cmdln.Cmdln):
             elif os.path.isfile(arg):
                 pacpaths.append(arg)
             else:
-                sys.exit('osc: error: %s is neither a project or a package directory' % arg)
+                print >>sys.stderr, 'osc: error: %s is neither a project or a package directory' % arg
+                return 1
             
 
         pacs = findpacs(pacpaths)
@@ -503,7 +508,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'add'])
             return 2
 
@@ -511,8 +516,8 @@ class Osc(cmdln.Cmdln):
 
         for filename in filenames:
             if not os.path.exists(filename):
-                print "file '%s' does not exist" % filename
-                sys.exit(1)
+                print >>sys.stderr, "file '%s' does not exist" % filename
+                return 1
 
         pacs = findpacs(filenames)
 
@@ -521,7 +526,7 @@ class Osc(cmdln.Cmdln):
                 if filename in pac.excluded:
                     continue
                 if filename in pac.filenamelist:
-                    print 'osc: warning: \'%s\' is already under version control' % filename
+                    print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
                     continue
 
                 pac.addfile(filename)
@@ -585,9 +590,10 @@ class Osc(cmdln.Cmdln):
             # commit only if the upstream revision is the same as the working copy's
             upstream_rev = show_upstream_rev(p.prjname, p.name)
             if p.rev != upstream_rev:
-                print 'Working copy \'%s\' is out of date (rev %s vs rev %s).' % (p.absdir, p.rev, upstream_rev)
-                print 'Looks as if you need to update it first.'
-                sys.exit(1)
+                print >>sys.stderr, 'Working copy \'%s\' is out of date (rev %s vs rev %s).' \
+                    % (p.absdir, p.rev, upstream_rev)
+                print >>sys.stderr, 'Looks as if you need to update it first.'
+                return 1
 
             if not p.todo:
                 p.todo = p.filenamelist_unvers + p.filenamelist
@@ -728,7 +734,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'delete'])
             return 2
 
@@ -768,7 +774,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'resolved'])
             return 2
 
@@ -843,7 +849,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if args and len(args) > 1:
-            print 'getting results for more than one package is not supported'
+            print >>sys.stderr, 'getting results for more than one package is not supported'
             self.do_help(['foo', 'results'])
             return 2
             
@@ -856,7 +862,8 @@ class Osc(cmdln.Cmdln):
             package = store_read_package(wd)
             project = store_read_project(wd)
         except:
-            sys.exit('\'%s\' is not an osc package directory' % wd)
+            print >>sys.stderr, '\'%s\' is not an osc package directory' % wd
+            return 1
 
         print '\n'.join(get_results(project, package))
 
@@ -879,7 +886,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if args and len(args) > 1:
-            print 'getting results for more than one project is not supported'
+            print >>sys.stderr, 'getting results for more than one project is not supported'
             return 2
             
         if args:
@@ -890,7 +897,7 @@ class Osc(cmdln.Cmdln):
         try:
             project = store_read_project(wd)
         except:
-            print '\'%s\' is neither an osc project or package directory' % wd
+            print >>sys.stderr, '\'%s\' is neither an osc project or package directory' % wd
             return 1
 
         print '\n'.join(get_prj_results(project, show_legend=opts.legend))
@@ -955,7 +962,8 @@ class Osc(cmdln.Cmdln):
         project = store_read_project(wd)
 
         if args is None or len(args) < 2:
-            print 'Missing argument. Valid arguments for this package are:'
+            print >>sys.stderr, 'Missing argument.'
+            print 'Valid arguments for this package are:'
             print 
             self.do_repos(None, None)
             print
@@ -970,7 +978,8 @@ class Osc(cmdln.Cmdln):
         except IndexError:
             spec = None
         except IOError, e:
-            sys.exit(e)
+            print >>sys.stderr, e
+            return 1
 
         print ''.join(get_buildinfo(project, package, platform, arch, specfile=spec))
 
@@ -1066,17 +1075,18 @@ class Osc(cmdln.Cmdln):
 
         builddist = os.getenv('BUILD_DIST')
         if builddist:
-            #sys.argv[4] = sys.argv[1]
+            #args[3] = args[0]
             hyphen = builddist.rfind('-')
-            sys.argv.insert(2, builddist[hyphen+1:])
-            sys.argv.insert(2, builddist[:hyphen])
+            args.insert(1, builddist[hyphen+1:])
+            args.insert(1, builddist[:hyphen])
             print sys.argv
 
         elif len(args) >= 2 and len(args) < 3:
-            print 'Missing argument: build description (spec of dsc file)'
+            print >>sys.stderr, 'Missing argument: build description (spec of dsc file)'
             return 2
         elif len(args) < 2:
             print
+            print >>sys.stderr, 'Missing argument.'
             print 'Valid arguments are:'
             print 'you have to choose a repo to build on'
             print 'possible repositories on this machine are:'
@@ -1142,7 +1152,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if len(args) < 1:
-            print 'Missing argument.'
+            print >>sys.stderr, 'Missing argument.'
             #self.do_help(['foo', 'rebuildpac'])
             return 2
 

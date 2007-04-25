@@ -47,8 +47,8 @@ class Buildinfo:
         try:
             tree = ET.parse(filename)
         except:
-            print 'could not parse the buildconfig:'
-            print open(filename).read()
+            print >>sys.stderr, 'could not parse the buildconfig:'
+            print >>sys.stderr, open(filename).read()
             sys.exit(1)
 
         root = tree.getroot()
