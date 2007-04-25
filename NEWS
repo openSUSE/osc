@@ -1,3 +1,43 @@
+since 0.95:
+- osc is now easier to work with when using alternative API servers. The
+  configured server can be overriden with -A <url> on the commandline. 
+  "apisrv" in the config takes a URL now, so the variable "scheme" which was
+  needed in addition before becomes obsolete. For backward compatibility, a
+  hostname (and scheme variable) are accepted like before. Likewise, the auth
+  sections in the config take a URL now, or a hostname:port to keep old config
+  working. HTTP or HTTPS scheme is determined from the URL. Credentials must be
+  configured in .oscrc.
+- build: use actual api server in urllist for downloading, instead of hardcoded
+  api.opensuse.org [#265211].
+
+
+0.95:
+- rewrite the internal HTTP handling
+  - save and reuse HTTP server cookies, which can speed up HTTP requests up about
+    5 times in an iChain setup
+  - adding http_GET/POST/PUT/DELETE() functions, which dispatch to
+    http_request(), and use them everywhere
+  - removing othermethods.py 
+  - keeping urlopen(), in case it is used from externally, but have it print out
+    a "depracated" message
+  - finally, global option -H enables HTTP traffic debugging
+- implement "rebuild all failed packages", via --failed option in rebuildpac
+  subcommand
+- status -v shows all files, including unmodified ones
+- suppress the legend in prjresults by default (show with -l)
+- --version shows the program version number
+- fix the commit subcommand's argument handling. The following works correctly
+  now: osc ci ../test/onlyinwc `pwd` fstab ../test/f2 
+- fix the download progress meter to work with small terminals [#266989]
+- update: when updating multiple packages, print each package name
+- make 'results' subcommand many times faster, by making only a single request
+- prjresults: sort package names
+- build: run with --norootforbuild, thereby defaulting to build as abuild user
+- build: fix (harmless) errors showing up in the build log during buildsystem
+  setup, by using the new <bdep> preinstall and runscripts attributes
+- update: when updating, don't delete files with local modifications
+- let the diff subcommand return 1 if differences were found
+
 since 0.9:
 - fix important bug, which could lead to overwriting local modifications when
   upstream changes are merged in
