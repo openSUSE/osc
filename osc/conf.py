@@ -149,7 +149,8 @@ def init_basicauth(config):
 
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler.add_password(None, config['apisrv'], config['user'], config['pass'])
+    for host, auth in config['auth_dict'].iteritems():
+        authhandler.add_password(None, host, auth['user'], auth['pass'])
 
 
 def get_config():
