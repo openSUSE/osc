@@ -53,7 +53,7 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
                 # the normal repo server, redirecting to mirrors
                 'http://software.opensuse.org/download/%(project)s/%(repository)s/%(arch)s/%(filename)s',
                 # direct access to "full" tree
-                'http://api.opensuse.org/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s',
+                '%(scheme)s://%(apisrv)s/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s',
               ],
 
              'http_debug': '0',

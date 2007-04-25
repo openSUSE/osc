@@ -17,6 +17,7 @@ try:
 except ImportError:
     import cElementTree as ET
 
+from conf import config
 
 change_personality = {
             'i686': 'linux32',
@@ -117,6 +118,9 @@ class Pac:
         self.mp['buildarch'] = self.buildarch
         self.mp['pacsuffix'] = self.pacsuffix
 
+        self.mp['scheme'] = config['scheme']
+        self.mp['apisrv'] = config['apisrv']
+
         self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
 
         self.mp['filename'] = self.filename
@@ -161,15 +165,16 @@ def get_built_files(pacdir, pactype):
     return s_built, b_built
 
 
-def main(argv):
+def main(opts, argv):
 
-    from conf import config
-
-    repo = argv[1]
-    arch = argv[2]
-    spec = argv[3]
+    repo = argv[0]
+    arch = argv[1]
+    spec = argv[2]
     buildargs = []
-    buildargs += argv[4:]
+    if opts.clean:
+        buildargs.append('--clean')
+    if opts.noinit:
+        buildargs.append('--noinit')
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 

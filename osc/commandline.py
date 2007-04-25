@@ -1095,7 +1095,7 @@ class Osc(cmdln.Cmdln):
                     print line.strip()
             return 1
 
-        osc.build.main(sys.argv[1:])
+        osc.build.main(opts, args)
 
             
 
