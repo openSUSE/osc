@@ -41,27 +41,22 @@ class Osc(cmdln.Cmdln):
                       default=conf.config['http_debug'],
                       help='debug HTTP traffic')
         self.optparser.add_option('-A', '--apisrv', dest='apisrv',
-                      default=conf.config['apisrv'],
-                      metavar='host',
-                      help='use HOST as API server')
-        self.optparser.add_option('-S', '--scheme', dest='scheme',
-                      default=conf.config['scheme'],
-                      metavar='(http|https)',
-                      help='use this protocol (default: %s)' % conf.config['scheme'])
+                      metavar='URL',
+                      help='specify URL to access API server at')
 
         (self.global_opts, self.myargs) = self.optparser.parse_args()
 
         # XXX version is printed twice otherwise...
         self.optparser.version = ''
 
-
+        # merge commandline options into the config
         conf.config['http_debug'] = self.global_opts.http_debug
-        conf.config['apisrv'] = self.global_opts.apisrv
-        conf.config['scheme'] = self.global_opts.scheme
+        if self.global_opts.apisrv:
+            conf.config['scheme'], conf.config['apisrv'] = \
+                conf.parse_apisrv_url(conf.config['scheme'], self.global_opts.apisrv)
 
         # finally, initialize urllib2 for to use the credentials for Basic Authentication
         conf.init_basicauth(conf.config)
-
 
 
     def do_init(self, subcmd, opts, *args):

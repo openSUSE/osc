@@ -17,8 +17,7 @@ After reading the config, urllib2 is initialized.
 
 The configuration dictionary could look like this:
 
-{'apisrv': 'api.opensuse.org',
- 'scheme': 'http',
+{'apisrv': 'https://api.opensuse.org/',
  'user': 'poeml',
  'pass': 'secret',
  'auth_dict': {'api.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
@@ -40,7 +39,7 @@ import ConfigParser
 # it will hold the parsed configuration
 config = { }
 
-DEFAULTS = { 'apisrv': 'api.opensuse.org',
+DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'scheme': 'https',
              'user': 'your_username',
              'pass': 'your_password',
@@ -68,6 +67,10 @@ boolean_opts = ['http_debug', 'do_commits']
 new_conf_template = """
 [general]
 
+# URL to access API server, e.g. %(apisrv)s
+# you also need a section [%(apisrv)s] with the credentials
+#apisrv = %(apisrv)s
+
 # Downloaded packages are cached here. Must be writable by you.
 #packagecachedir = %(packagecachedir)s
 
@@ -79,15 +82,8 @@ new_conf_template = """
 # /srv/oscbuild/%%(repo)s-%%(arch)s
 #build-root = %(build-root)s
 
-# use this API server (hostname[:port])
-# (it needs a section [%(apisrv)s] with the credentials)
-#apisrv = %(apisrv)s
-
-# use this protocol to access the API server (http or https)
-#scheme = https
-    
 # show HTTP traffic useful for debugging 
-# http_debug = 1
+#http_debug = 1
     
 [%(apisrv)s]
 user = %(user)s
@@ -111,6 +107,13 @@ Make sure that it has a [general] section.
 """
 
 cookiejar = None
+
+def parse_apisrv_url(scheme, apisrv):
+    import urlparse
+    if apisrv.startswith('http://') or apisrv.startswith('https://'):
+        return urlparse.urlsplit(apisrv)[0:2]
+    else:
+        return scheme, apisrv
 
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
@@ -175,8 +178,10 @@ def get_config():
         # note that it is not suited for credentials containing spaces
         import netrc
         try:
+            # FIXME: apisrv is a URL now
+            netrc_host = parse_apisrv_url(None, DEFAULTS['apisrv'])[1]
             config['user'], account, config['pass'] = \
-                    netrc.netrc().authenticators(DEFAULTS['apisrv'])
+                    netrc.netrc().authenticators(netrc_host)
             print >>sys.stderr, 'Read credentials from %s.' % os.path.expanduser('~/.netrc')
         except (IOError, TypeError, netrc.NetrcParseError):
             #
@@ -208,14 +213,10 @@ def get_config():
         print >>sys.stderr, new_conf_template % DEFAULTS
         sys.exit(1)
 
-    # holds multiple usernames and passwords
-    # it is used by urlgrabber's mirror fetcher
-    auth_dict = { } 
-    for host in [ x for x in cp.sections() if x != 'general' ]:
-        auth_dict[host] = { 'user': cp.get(host, 'user'), 
-                            'pass': cp.get(host, 'pass') }
-
     config = dict(cp.items('general', raw=1))
+
+    config['scheme'], config['apisrv'] = \
+        parse_apisrv_url(config['scheme'], config['apisrv'])
 
     for i in boolean_opts:
         try:
@@ -230,11 +231,14 @@ def get_config():
     if type(config['urllist']) == str:
         config['urllist'] = [ i.strip() for i in config['urllist'].split(',') ]
 
+    # holds multiple usernames and passwords
+    auth_dict = { } 
+    for url in [ x for x in cp.sections() if x != 'general' ]:
+        dummy, host = \
+            parse_apisrv_url(config['scheme'], url)
+        auth_dict[host] = { 'user': cp.get(url, 'user'), 
+                            'pass': cp.get(url, 'pass') }
+
     # add the auth data we collected to the config dict
     config['auth_dict'] = auth_dict
-
-    # for easier access to the api server's credentials, copy them to the "top":
-    config['user'] = config['auth_dict'][config['apisrv']]['user']
-    config['pass'] = config['auth_dict'][config['apisrv']]['pass']
-
 
