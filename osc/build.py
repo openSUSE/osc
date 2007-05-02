@@ -87,6 +87,18 @@ class Buildinfo:
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
 
+    def has_dep(self, name):
+        for i in self.deps:
+            if i.name == name:
+                return True
+        return False
+
+    def remove_dep(self, name):
+        for i in self.deps:
+            if i.name == name:
+                self.deps.remove(i)
+                return True
+        return False
 
 
 class Pac:
@@ -150,6 +162,9 @@ class Pac:
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return "%s" % self.name
+
 
 
 def get_built_files(pacdir, pactype):
@@ -165,16 +180,48 @@ def get_built_files(pacdir, pactype):
     return s_built, b_built
 
 
+def get_prefer_pacs(dirs, wanted_arch):
+    # XXX learn how to do the same for Debian packages
+    import glob
+    paths = []
+    for dir in dirs:
+        paths += glob.glob(os.path.join(dir, '*.rpm'))
+    prefer_pacs = []
+
+    for path in paths:
+        if path.endswith('src.rpm'):
+            continue
+        if path.find('-debuginfo-') > 0:
+            continue
+        arch, name = os.popen('rpm -qp --qf "%%{arch} %%{name}\\n" %s' \
+                       % path).read().split()
+        # instead of this assumption, we should probably rather take the
+        # requested arch for this package from buildinfo
+        # also, it will ignore i686 packages, how to handle those?
+        if arch == wanted_arch or arch == 'noarch':
+            prefer_pacs.append((name, path))
+
+    return dict(prefer_pacs)
+
+
 def main(opts, argv):
 
     repo = argv[0]
     arch = argv[1]
     spec = argv[2]
+
     buildargs = []
     if opts.clean:
         buildargs.append('--clean')
     if opts.noinit:
         buildargs.append('--noinit')
+    buildargs = ' '.join(buildargs)
+
+
+    if not os.path.exists(spec):
+        print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
+        return 1
+
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
@@ -189,9 +236,6 @@ def main(opts, argv):
 
     config['build-root'] = config['build-root'] % {'repo': repo, 'arch': arch}
 
-    if not os.path.exists(spec):
-        sys.exit('Error: specfile \'%s\' does not exist.' % spec)
-
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
     rc = os.system('osc buildinfo %s %s %s > %s' % (repo, arch, spec, bi_file.name))
@@ -200,14 +244,32 @@ def main(opts, argv):
         sys.exit(rc)
     bi = Buildinfo(bi_file.name)
 
+    rpmlist_prefers = []
+    if opts.prefer_pacs:
+        print 'Evaluating preferred packages'
+        # the resulting dict will also contain packages which are not on the install list
+        # but they won't be installed
+        prefer_pacs = get_prefer_pacs(opts.prefer_pacs, bi.buildarch)
+
+        for name, path in prefer_pacs.iteritems():
+            if bi.has_dep(name):
+                    # We remove a preferred package from the buildinfo, so that the
+                    # fetcher doesn't take care about them.
+                    # Instead, we put it in a list which is appended to the rpmlist later.
+                    # At the same time, this will make sure that these packages are
+                    # not verified.
+                    bi.remove_dep(name)
+                    rpmlist_prefers.append((name, path))
+                    print ' - %s (%s)' % (name, path)
+                    continue
 
     print 'Updating cache of required packages'
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = config['urllist'],
                       auth_dict = config['auth_dict'])
+
     # now update the package cache
     fetcher.run(bi)
-
 
     if bi.pacsuffix == 'rpm':
         """don't know how to verify .deb packages. They are verified on install
@@ -217,18 +279,18 @@ def main(opts, argv):
         print 'Verifying integrity of cached packages'
         verify_pacs([ i.fullfilename for i in bi.deps ])
 
-
     print 'Writing build configuration'
 
-    buildconf = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
+    rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
+    rpmlist += [ '%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers ]
 
-    buildconf.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
-    buildconf.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
+    rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
+    rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
-    rpmlist = NamedTemporaryFile(prefix='rpmlist.', dir = '/tmp')
-    rpmlist.writelines(buildconf)
-    rpmlist.flush()
-    os.fsync(rpmlist)
+    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = '/tmp')
+    rpmlist_file.writelines(rpmlist)
+    rpmlist_file.flush()
+    os.fsync(rpmlist_file)
 
 
 
@@ -240,12 +302,10 @@ def main(opts, argv):
 
     print 'Running build'
 
-    buildargs = ' '.join(buildargs)
-
     cmd = '%s --root=%s --norootforbuild --rpmlist=%s --dist=%s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
-                    rpmlist.name, 
+                    rpmlist_file.name, 
                     bc_file.name, 
                     spec, 
                     buildargs)
@@ -279,9 +339,8 @@ def main(opts, argv):
             (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
 
             print
-            #print 'built source packages:'
             if s_built: print s_built
-            #print 'built binary packages:'
+            print
             print b_built
 
 

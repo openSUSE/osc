@@ -1,5 +1,7 @@
 - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
 
+- memorize used the api server on checkout
+  - implmement switch command
 - implement 'info' command
 - implement 'mv' command
 - editmeta: the API will return a 500 if the xml is broken... the document
@@ -11,7 +13,6 @@
 - zsh completion, or even bash
 - add option to disable gpg key checking?
 - add support for adding tags to packages?
-- prefer-rpms support for osc build
 - plugin-ize subcommand implementation
   - look at Susannes extensions
 - Allow the package owners/users to signal an abort build.

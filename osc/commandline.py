@@ -1034,6 +1034,8 @@ class Osc(cmdln.Cmdln):
                   help='Delete old build root before initializing it')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
+    @cmdln.option('-p', '--prefer-pacs', metavar='DIR', action='append',
+                  help='Prefer packages from this directory when installing the build-root')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -1048,13 +1050,12 @@ class Osc(cmdln.Cmdln):
         if present. You may want to set su-wrapper = 'sudo' in .oscrc, and
         configure sudo with option NOPASSWD for /usr/bin/build.
 
-        If neither --clean nor --noinit is given,
-
-
+        If neither --clean nor --noinit is given, build will reuse an existing
+        build-root again, removing unneeded packages and add missing ones. This
+        is usually the fastest option.
 
         usage: 
             osc build [OPTS] PLATFORM ARCH BUILD_DESCR
-
         ${cmd_option_list}
         """
         # Note: 
@@ -1105,7 +1106,13 @@ class Osc(cmdln.Cmdln):
                     print line.strip()
             return 1
 
-        osc.build.main(opts, args)
+        if opts.prefer_pacs:
+            for d in opts.prefer_pacs:
+                if not os.path.isdir(d):
+                    print >> sys.stderr, 'Preferred package location \'%s\' is not a directory' % d
+                    return 1
+
+        return osc.build.main(opts, args)
 
             
 
