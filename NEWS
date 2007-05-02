@@ -1,4 +1,7 @@
 since 0.95:
+- build: implement --prefer-pacs option
+- applied patch from Michael Marek, fixing all places where error
+  messages were printed to stdout instead of stderr. [#239404]
 - osc is now easier to work with when using alternative API servers. The
   configured server can be overriden with -A <url> on the commandline. 
   "apisrv" in the config takes a URL now, so the variable "scheme" which was
