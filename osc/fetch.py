@@ -154,13 +154,15 @@ def verify_pacs(pac_list):
 
                 print >>sys.stderr, """
 - If the key is missing, install it first.
-  For example, do the following as root:
+  For example, do the following:
     gpg --keyserver pgp.mit.edu --recv-keys %(name)s
-    gpg --armor --export %(name)s > /root/keyfile-%(name)s
-    rpm --import /root/keyfile-%(name)s
+    gpg --armor --export %(name)s > %(dir)s/keyfile-%(name)s
+  and, as root:
+    rpm --import %(dir)s/keyfile-%(name)s
 
   Then, just start the build again.
-""" % {'name': missing_key}
+""" % {'name': missing_key, 
+       'dir': os.path.expanduser('~')}
 
             else:
                 print >>sys.stderr, """
