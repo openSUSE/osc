@@ -71,8 +71,8 @@ class TestOsc(unittest.TestCase):
     <project name="Tidy"/>
     <project name="validators"/>
     <project name="zsh"/>
-    <project name="home:poeml"/>
     <project name="Apache:Modules"/>
+    <project name="home:poeml"/>
   </watchlist>
 </person>
 
@@ -262,8 +262,8 @@ class TestOsc(unittest.TestCase):
         # check in a file
         # give an error if it doesn't exist
         self.out, self.err = runosc('add foo1')
-        self.assertEqual(self.err, '')
-        self.assertEqual(self.out, 'file \'foo1\' does not exist\n')
+        self.assertEqual(self.err, 'file \'foo1\' does not exist\n')
+        self.assertEqual(self.out, '')
 
         touch('foo1')
         self.out, self.err = runosc('add foo1')
