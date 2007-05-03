@@ -1,5 +1,5 @@
 since 0.95:
-- build: implement --prefer-pacs option
+- build: implement --prefer-pkgs and --keep-pkgs option
 - applied patch from Michael Marek, fixing all places where error
   messages were printed to stdout instead of stderr. [#239404]
 - osc is now easier to work with when using alternative API servers. The

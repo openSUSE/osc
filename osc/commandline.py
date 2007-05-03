@@ -1034,8 +1034,10 @@ class Osc(cmdln.Cmdln):
                   help='Delete old build root before initializing it')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
-    @cmdln.option('-p', '--prefer-pacs', metavar='DIR', action='append',
+    @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
+    @cmdln.option('-k', '--keep-pkgs', metavar='DIR', 
+                  help='Save built packages into this directory')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -1106,11 +1108,16 @@ class Osc(cmdln.Cmdln):
                     print line.strip()
             return 1
 
-        if opts.prefer_pacs:
-            for d in opts.prefer_pacs:
+        if opts.prefer_pkgs:
+            for d in opts.prefer_pkgs:
                 if not os.path.isdir(d):
                     print >> sys.stderr, 'Preferred package location \'%s\' is not a directory' % d
                     return 1
+
+        if opts.keep_pkgs:
+            if not os.path.isdir(opts.keep_pkgs):
+                print >> sys.stderr, 'Preferred save location \'%s\' is not a directory' % opts.keep_pkgs
+                return 1
 
         return osc.build.main(opts, args)
 

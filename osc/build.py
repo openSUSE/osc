@@ -180,13 +180,13 @@ def get_built_files(pacdir, pactype):
     return s_built, b_built
 
 
-def get_prefer_pacs(dirs, wanted_arch):
+def get_prefer_pkgs(dirs, wanted_arch):
     # XXX learn how to do the same for Debian packages
     import glob
     paths = []
     for dir in dirs:
         paths += glob.glob(os.path.join(dir, '*.rpm'))
-    prefer_pacs = []
+    prefer_pkgs = []
 
     for path in paths:
         if path.endswith('src.rpm'):
@@ -199,9 +199,9 @@ def get_prefer_pacs(dirs, wanted_arch):
         # requested arch for this package from buildinfo
         # also, it will ignore i686 packages, how to handle those?
         if arch == wanted_arch or arch == 'noarch':
-            prefer_pacs.append((name, path))
+            prefer_pkgs.append((name, path))
 
-    return dict(prefer_pacs)
+    return dict(prefer_pkgs)
 
 
 def main(opts, argv):
@@ -245,13 +245,13 @@ def main(opts, argv):
     bi = Buildinfo(bi_file.name)
 
     rpmlist_prefers = []
-    if opts.prefer_pacs:
+    if opts.prefer_pkgs:
         print 'Evaluating preferred packages'
         # the resulting dict will also contain packages which are not on the install list
         # but they won't be installed
-        prefer_pacs = get_prefer_pacs(opts.prefer_pacs, bi.buildarch)
+        prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, bi.buildarch)
 
-        for name, path in prefer_pacs.iteritems():
+        for name, path in prefer_pkgs.iteritems():
             if bi.has_dep(name):
                     # We remove a preferred package from the buildinfo, so that the
                     # fetcher doesn't take care about them.
@@ -342,5 +342,10 @@ def main(opts, argv):
             if s_built: print s_built
             print
             print b_built
+
+            if opts.keep_pkgs:
+                for i in b_built.splitlines():
+                    import shutil
+                    shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
 
 

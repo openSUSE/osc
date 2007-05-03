@@ -19,6 +19,7 @@
   Message-ID: <20070214120205.GA9629@suse.de>
 - implement wipe command
 - implement editing of project configuration (alrady works in api & backend)
+- build: --extra-pkgs ... buildinfo -> &add=...&add=...
 
 
 checkin: 
@@ -270,3 +271,16 @@ AttributeError: 'NoneType' object has no attribute 'md5'
 18:48 <darix>     rmap['status'] += ': ' + statusnode.find('details').text
 18:48 <darix> AttributeError: 'NoneType' object has no attribute 'text'
 
+
+21:49 < darix> DuDE: osc editmeta
+21:49 < darix> the template is stupid
+21:49 < darix> it now has "your_name" as project maintainer
+21:50 < darix> that requires you to edit the line everytime when creating a new package
+21:50 < DuDE> hm, can't find that
+21:50 < DuDE> is that the exact string?
+21:52 < DuDE> ah, I find your_username
+21:52 < darix> DuDE: http://rafb.net/p/TgxmfB83.txt
+21:54 < DuDE> I think that was filled in the past
+21:54 < DuDE> since the user account data is now stored in the config per api server, the (in the config) global user/passwd is no longer used otherwise, so it shows the default
+
+-> hits also in edit_user()
