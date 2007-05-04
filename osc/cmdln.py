@@ -1123,6 +1123,13 @@ class Cmdln(RawCmdln):
                         msg[2] = msg[2].replace("arguments", "argument")
                     msg[3] = int(msg[3]) - 3
                     msg = ''.join(map(str, msg))
+
+                    # To debug errors which involve calling functions with
+                    # wrong number of arguments, uncomment the following line.
+                    # Otherwise, all errors of this kind are presented as
+                    # "incorrect usage" to the user:
+                    #raise
+
                     raise CmdlnUserError(msg)
                 else:
                     raise
