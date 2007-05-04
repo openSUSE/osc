@@ -1,4 +1,16 @@
-since 0.95:
+since 0.96:
+[...]
+
+0.96:
+- following suggestions by Christian Boltz and Michal Marek, osc now memorizes
+  where a working copy was checked out from, saving the api server url to
+  .osc/_apiurl. 
+- implement 'info' subcommand
+- use new api routes in all places
+- buildhistory works again
+- copypac: implement package copy from one buildservice instance to another
+  (--to-apiurl option)
+- the results subcommand now handles multiple <working copy> arguments
 - build: implement --prefer-pkgs and --keep-pkgs option
 - applied patch from Michael Marek, fixing all places where error
   messages were printed to stdout instead of stderr. [#239404]
