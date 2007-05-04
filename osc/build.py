@@ -193,7 +193,7 @@ def get_prefer_pkgs(dirs, wanted_arch):
             continue
         if path.find('-debuginfo-') > 0:
             continue
-        arch, name = os.popen('rpm -qp --qf "%%{arch} %%{name}\\n" %s' \
+        arch, name = os.popen('rpm -qp --nosignature --nodigest --qf "%%{arch} %%{name}\\n" %s' \
                        % path).read().split()
         # instead of this assumption, we should probably rather take the
         # requested arch for this package from buildinfo
