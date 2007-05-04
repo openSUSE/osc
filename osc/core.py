@@ -5,13 +5,13 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.95'
+__version__ = '0.96'
 
 import os
 import sys
 import urllib2
 from urllib import pathname2url, quote_plus
-from urlparse import urlunsplit
+from urlparse import urlsplit, urlunsplit
 from cStringIO import StringIO
 import shutil
 import conf
@@ -89,7 +89,7 @@ HERE
 
 
 <!-- 
-  use on of the examples below to disable building of this package 
+  use one of the examples below to disable building of this package 
   on a certain architecture, in a certain repository, 
   or a combination thereof:
   
@@ -121,6 +121,13 @@ new_user_template = """\
 </person>
 """
 
+info_templ = """\
+Path: %s
+API URL: %s
+Repository UUID: %s
+Revision: %s
+"""
+
 buildstatus_symbols = {'succeeded':       '.',
                        'disabled':        ' ',
                        'expansion error': 'E',
@@ -150,8 +157,9 @@ class Project:
         self.absdir = os.path.abspath(dir)
 
         self.name = store_read_project(self.dir)
+        self.apiurl = store_read_apiurl(self.dir)
 
-        self.pacs_available = meta_get_packagelist(self.name)
+        self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
 
         self.pacs_have = [ i for i in os.listdir(self.dir) if i in self.pacs_available ]
 
@@ -162,7 +170,7 @@ class Project:
             print 'checking out new package %s' % pac
             olddir = os.getcwd()
             os.chdir(os.pardir)
-            checkout_package(self.name, pac)
+            checkout_package(self.apiurl, self.name, pac)
             os.chdir(olddir)
 
 
@@ -189,11 +197,13 @@ class Package:
 
         self.prjname = store_read_project(self.dir)
         self.name = store_read_package(self.dir)
+        self.apiurl = store_read_apiurl(self.dir)
 
         files_tree = read_filemeta(self.dir)
         files_tree_root = files_tree.getroot()
 
         self.rev = files_tree_root.get('rev')
+        self.srcmd5 = files_tree_root.get('srcmd5')
 
         self.filenamelist = []
         self.filelist = []
@@ -223,6 +233,9 @@ class Package:
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
                                      if i not in self.excluded
                                      if i not in self.filenamelist ]
+
+    def info(self):
+        return info_templ % (self.dir, self.apiurl, self.srcmd5, self.rev)
 
     def addfile(self, n):
         st = os.stat(os.path.join(self.dir, n))
@@ -284,7 +297,7 @@ class Package:
 
     def delete_source_file(self, n):
         
-        u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)])
         http_DELETE(u)
 
         self.delete_localfile(n)
@@ -294,7 +307,7 @@ class Package:
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
-        u = makeurl(['source', self.prjname, self.name, pathname2url(n)])
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)])
         if conf.config['do_commits'] == '1':
             u += '?rev=upload'
         http_PUT(u, file = os.path.join(self.dir, n))
@@ -303,7 +316,7 @@ class Package:
 
     def commit(self, msg=''):
         
-        u = makeurl(['source', self.prjname, self.name])
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name])
         u += '?cmd=commit&rev=upload'
         u += '&user=%s' % conf.config['user']
         u += '&comment=%s' % quote_plus(msg)
@@ -326,7 +339,7 @@ class Package:
         storefilename = os.path.join(self.storedir, n)
         mtime = self.findfilebyname(n).mtime
 
-        get_source_file(self.prjname, self.name, n, targetfilename=filename)
+        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename)
         os.utime(filename, (-1, mtime))
 
         shutil.copy2(filename, storefilename)
@@ -339,7 +352,7 @@ class Package:
         os.rename(filename, myfilename)
 
         mtime = self.findfilebyname(n).mtime
-        get_source_file(self.prjname, self.name, n, targetfilename=upfilename)
+        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=upfilename)
         os.utime(upfilename, (-1, mtime))
 
         if binary_file(myfilename) or binary_file(upfilename):
@@ -379,13 +392,13 @@ class Package:
 
 
     def update_filesmeta(self):
-        meta = ''.join(show_files_meta(self.prjname, self.name))
+        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name))
         f = open(os.path.join(self.storedir, '_files'), 'w')
         f.write(meta)
         f.close()
         
     def update_pacmeta(self):
-        meta = ''.join(show_package_meta(self.prjname, self.name))
+        meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
         f = open(os.path.join(self.storedir, '_meta'), 'w')
         f.write(meta)
         f.close()
@@ -493,7 +506,7 @@ rev: %s
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
         try:
-            u = makeurl(['source', self.prjname, self.name, '_meta'])
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
             m = http_GET(u).readlines() 
         except urllib2.HTTPError, e:
             if e.code == 404:
@@ -525,7 +538,7 @@ rev: %s
         repl = raw_input('Write? (y/N) ')
         if repl == 'y':
             print 'Sending meta data...', 
-            u = makeurl(['source', self.prjname, self.name, '_meta'])
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
             http_PUT(u, file=filename)
             print 'Done.'
         else:
@@ -537,19 +550,13 @@ rev: %s
 
 
 def is_project_dir(d):
-    if os.path.exists(os.path.join(d, store, '_project')) and not \
-       os.path.exists(os.path.join(d, store, '_package')):
-        return True
-    else:
-        return False
+    return os.path.exists(os.path.join(d, store, '_project')) and not \
+           os.path.exists(os.path.join(d, store, '_package'))
 
         
 def is_package_dir(d):
-    if os.path.exists(os.path.join(d, store, '_project')) and \
-       os.path.exists(os.path.join(d, store, '_package')):
-        return True
-    else:
-        return False
+    return os.path.exists(os.path.join(d, store, '_project')) and \
+           os.path.exists(os.path.join(d, store, '_package'))
 
         
 def findpacs(files):
@@ -627,9 +634,13 @@ def pathjoin(a, *p):
     return path
 
 
-def makeurl(l):
+def makeurl(baseurl, l):
     """given a list of path compoments, construct a complete URL"""
-    return urlunsplit((conf.config['scheme'], conf.config['apisrv'], '/'.join(l), '', ''))               
+
+    #print 'makeurl:', baseurl, l
+
+    scheme, netloc = urlsplit(baseurl)[0:2]
+    return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
 
 
 def http_request(method, url, data=None, file=None):
@@ -695,7 +706,7 @@ def urlopen(url, data=None):
     return fd
 
 
-def init_package_dir(project, package, dir):
+def init_package_dir(apiurl, project, package, dir):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -707,12 +718,14 @@ def init_package_dir(project, package, dir):
     f.close
 
     f = open('_files', 'w')
-    f.write(''.join(show_files_meta(project, package)))
+    f.write(''.join(show_files_meta(apiurl, project, package)))
     f.close()
 
     f = open('_osclib_version', 'w')
     f.write(__version__ + '\n')
     f.close()
+
+    store_write_apiurl(os.path.pardir, apiurl)
 
     os.chdir(os.pardir)
     return
@@ -730,7 +743,7 @@ def check_store_version(dir):
         sys.exit(1)
 
     if v != __version__:
-        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9']:
+        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95']:
             # version is fine, no migration needed
             f = open(versionfile, 'w')
             f.write(__version__ + '\n')
@@ -744,38 +757,38 @@ def check_store_version(dir):
         sys.exit(1)
     
 
-def meta_get_packagelist(prj):
+def meta_get_packagelist(apiurl, prj):
 
-    u = makeurl(['source', prj])
+    u = makeurl(apiurl, ['source', prj])
     f = http_GET(u)
     root = ET.parse(f).getroot()
     return [ node.get('name') for node in root.findall('entry') ]
 
 
-def meta_get_filelist(prj, package):
+def meta_get_filelist(apiurl, prj, package):
 
-    u = makeurl(['source', prj, package])
+    u = makeurl(apiurl, ['source', prj, package])
     f = http_GET(u)
     root = ET.parse(f).getroot()
     return [ node.get('name') for node in root ]
 
 
-def meta_get_project_list():
-    u = makeurl(['source'])
+def meta_get_project_list(apiurl):
+    u = makeurl(apiurl, ['source'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
     return sorted([ node.get('name') for node in root ])
 
 
-def show_project_meta(prj):
-    url = makeurl(['source', prj, '_meta'])
+def show_project_meta(apiurl, prj):
+    url = makeurl(apiurl, ['source', prj, '_meta'])
     f = http_GET(url)
     return f.readlines()
 
 
-def show_package_meta(prj, pac):
+def show_package_meta(apiurl, prj, pac):
     try:
-        url = makeurl(['source', prj, pac, '_meta'])
+        url = makeurl(apiurl, ['source', prj, pac, '_meta'])
         f = http_GET(url)
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
@@ -784,6 +797,7 @@ def show_package_meta(prj, pac):
             print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
         sys.exit(1)
     return f.readlines()
+
 
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
@@ -797,7 +811,7 @@ class metafile:
         
         if pac:
             # package meta
-            self.url = makeurl(['source', prj, pac, '_meta'])
+            self.url = makeurl(conf.config['apiurl'], ['source', prj, pac, '_meta'])
             try:
                 m = http_GET(self.url).readlines() 
             except urllib2.HTTPError, e:
@@ -810,7 +824,7 @@ class metafile:
 
         else:
             # project meta
-            self.url = makeurl(['source', prj, '_meta'])
+            self.url = makeurl(conf.config['apiurl'], ['source', prj, '_meta'])
             try:
                 m = http_GET(self.url).readlines()
             # when testing this offline:
@@ -853,7 +867,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
 def edit_user_meta(user, change_is_required=True):
     import tempfile
 
-    u = makeurl(['person', quote_plus(user)])
+    u = makeurl(conf.config['apiurl'], ['person', quote_plus(user)])
 
     try:
         m = http_GET(u).readlines() 
@@ -885,13 +899,13 @@ def edit_user_meta(user, change_is_required=True):
         print 'Done.'
 
 
-def show_files_meta(prj, pac):
-    f = http_GET(makeurl(['source', prj, pac]))
+def show_files_meta(apiurl, prj, pac):
+    f = http_GET(makeurl(apiurl, ['source', prj, pac]))
     return f.readlines()
 
 
-def show_upstream_rev(prj, pac):
-    m = show_files_meta(prj, pac)
+def show_upstream_rev(apiurl, prj, pac):
+    m = show_files_meta(apiurl, prj, pac)
     return ET.parse(StringIO(''.join(m))).getroot().get('rev')
 
 
@@ -924,8 +938,8 @@ def read_meta_from_spec(specfile):
     return name, summary, descr
 
 
-def get_user_meta(user):
-    u = makeurl(['person', quote_plus(user)])
+def get_user_meta(apiurl, user):
+    u = makeurl(apiurl, ['person', quote_plus(user)])
     try:
         f = http_GET(u)
         return ''.join(f.readlines())
@@ -934,8 +948,8 @@ def get_user_meta(user):
         return None
 
 
-def get_source_file(prj, package, filename, targetfilename=None):
-    u = makeurl(['source', prj, package, pathname2url(filename)])
+def get_source_file(apiurl, prj, package, filename, targetfilename=None):
+    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)])
     f = http_GET(u)
 
     o = open(targetfilename or filename, 'w')
@@ -1000,16 +1014,15 @@ def get_source_file_diff(dir, filename, rev):
     return ''.join(d)
 
 
-def make_dir(project, package):
+def make_dir(apiurl, project, package):
     #print "creating directory '%s'" % project
     if not os.path.exists(project):
         print statfrmt('A', project)
         os.mkdir(project)
         os.mkdir(os.path.join(project, store))
 
-        f = open(os.path.join(project, store, '_project'), 'w')
-        f.write(project + '\n')
-        f.close()
+        store_write_project(project, project)
+        store_write_apiurl(project, apiurl)
 
     #print "creating directory '%s/%s'" % (project, package)
     if not os.path.exists(os.path.join(project, package)):
@@ -1020,11 +1033,11 @@ def make_dir(project, package):
     return(os.path.join(project, package))
 
 
-def checkout_package(project, package):
+def checkout_package(apiurl, project, package):
     olddir = os.getcwd()
 
-    os.chdir(make_dir(project, package))
-    init_package_dir(project, package, store)
+    os.chdir(make_dir(apiurl, project, package))
+    init_package_dir(apiurl, project, package, store)
     p = Package(os.curdir)
 
     for filename in p.filenamelist:
@@ -1044,7 +1057,7 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     import tempfile
 
 
-    src_meta = show_package_meta(src_project, src_package)
+    src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
 
     # replace package name and username
     # using a string buffer
@@ -1062,7 +1075,7 @@ def link_pac(src_project, src_package, dst_project, dst_package):
 
     # create the _link file
     # but first, make sure not to overwrite an existing one
-    if '_link' in meta_get_filelist(dst_project, dst_package):
+    if '_link' in meta_get_filelist(conf.config['apiurl'], dst_project, dst_package):
         print >>sys.stderr
         print >>sys.stderr, '_link file already exists...! Aborting'
         sys.exit(1)
@@ -1077,19 +1090,20 @@ def link_pac(src_project, src_package, dst_project, dst_package):
 </link>
 """ % (src_project, src_package)
 
-    u = makeurl(['source', dst_project, dst_package, '_link'])
+    u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
     print 'Done.'
 
 
-def copy_pac(src_project, src_package, dst_project, dst_package):
+def copy_pac(src_apiurl, src_project, src_package, 
+             dst_apiurl, dst_project, dst_package):
     """
     create a copy of a package
     """
 
     import tempfile
 
-    src_meta = show_package_meta(src_project, src_package)
+    src_meta = show_package_meta(src_apiurl, src_project, src_package)
 
     # replace project and package name
     # using a string buffer
@@ -1103,53 +1117,53 @@ def copy_pac(src_project, src_package, dst_project, dst_package):
     src_meta = buf.getvalue()
 
     print 'Sending meta data...'
-    u = makeurl(['source', dst_project, dst_package, '_meta'])
+    u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
     http_PUT(u, data=src_meta)
 
     # copy one file after the other
     print 'Copying files...'
     tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir = '/tmp')
     os.chdir(tmpdir)
-    for n in meta_get_filelist(src_project, src_package):
+    for n in meta_get_filelist(src_apiurl, src_project, src_package):
         print '  ', n
-        get_source_file(src_project, src_package, n, targetfilename=n)
-        u = makeurl(['source', dst_project, dst_package, pathname2url(n)])
+        get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n)
+        u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)])
         http_PUT(u, file = n)
         os.unlink(n)
     print 'Done.'
     os.rmdir(tmpdir)
 
 
-def delete_package(prj, pac):
+def delete_package(apiurl, prj, pac):
     
-    u = makeurl(['source', prj, pac])
+    u = makeurl(apiurl, ['source', prj, pac])
     http_DELETE(u)
 
 
-def delete_project(prj):
+def delete_project(apiurl, prj):
     
-    u = makeurl(['source', prj])
+    u = makeurl(apiurl, ['source', prj])
     http_DELETE(u)
 
 
-def get_platforms():
-    f = http_GET(makeurl(['platform']))
+def get_platforms(apiurl):
+    f = http_GET(makeurl(apiurl, ['platform']))
     tree = ET.parse(f)
     r = [ node.get('name') for node in tree.getroot() ]
     r.sort()
     return r
 
 
-def get_platforms_of_project(prj):
-    f = show_project_meta(prj)
+def get_platforms_of_project(apiurl, prj):
+    f = show_project_meta(apiurl, prj)
     tree = ET.parse(StringIO(''.join(f)))
 
     r = [ node.get('name') for node in tree.findall('repository')]
     return r
 
 
-def get_repos_of_project(prj):
-    f = show_project_meta(prj)
+def get_repos_of_project(apiurl, prj):
+    f = show_project_meta(apiurl, prj)
     tree = ET.parse(StringIO(''.join(f)))
 
     repo_line_templ = '%-15s %-10s'
@@ -1160,23 +1174,23 @@ def get_repos_of_project(prj):
     return r
 
 
-def show_results_meta(prj, package):
-    u = makeurl(['build', prj, '_result?package=%s' % pathname2url(package)])
+def show_results_meta(apiurl, prj, package):
+    u = makeurl(apiurl, ['build', prj, '_result?package=%s' % pathname2url(package)])
     f = http_GET(u)
     return f.readlines()
 
 
-def show_prj_results_meta(prj):
-    u = makeurl(['build', prj, '_result'])
+def show_prj_results_meta(apiurl, prj):
+    u = makeurl(apiurl, ['build', prj, '_result'])
     f = http_GET(u)
     return f.readlines()
 
 
-def get_results(prj, package):
+def get_results(apiurl, prj, package):
     r = []
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
-    f = show_results_meta(prj, package)
+    f = show_results_meta(apiurl, prj, package)
     tree = ET.parse(StringIO(''.join(f)))
     root = tree.getroot()
 
@@ -1200,14 +1214,14 @@ def get_results(prj, package):
         r.append(result_line_templ % rmap)
     return r
 
-def get_prj_results(prj, show_legend=False):
+def get_prj_results(apiurl, prj, show_legend=False):
     #print '----------------------------------------'
 
     r = []
     #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
-    f = show_prj_results_meta(prj)
+    f = show_prj_results_meta(apiurl, prj)
     tree = ET.parse(StringIO(''.join(f)))
     root = tree.getroot()
 
@@ -1257,15 +1271,14 @@ def get_prj_results(prj, show_legend=False):
     return r
 
 
-def get_log(prj, package, platform, arch, offset):
-    u = makeurl(['result', prj, platform, package, arch, 'log?nostream=1&start=%s' % offset])
+def get_log(apiurl, prj, package, platform, arch, offset):
+    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log?nostream=1&start=%s' % offset])
     f = http_GET(u)
     return f.read()
 
 
-def get_buildinfo(prj, package, platform, arch, specfile=None):
-    # http://api.opensuse.org/rpm/Subversion/Apache_SuSE_Linux_10.1/i586/subversion/buildinfo
-    u = makeurl(['rpm', prj, platform, arch, package, 'buildinfo'])
+def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None):
+    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_buildinfo'])
     if specfile:
         f = http_POST(u, data=specfile)
     else:
@@ -1273,17 +1286,15 @@ def get_buildinfo(prj, package, platform, arch, specfile=None):
     return f.read()
 
 
-def get_buildconfig(prj, package, platform, arch):
-    # http://api.opensuse.org/rpm/<proj>/<repo>/_repository/<arch>/_buildconfig
-    u = makeurl(['rpm', prj, platform, '_repository', arch, '_buildconfig'])
+def get_buildconfig(apiurl, prj, package, platform, arch):
+    u = makeurl(apiurl, ['build', prj, platform, '_buildconfig'])
     f = http_GET(u)
     return f.read()
 
 
-def get_buildhistory(prj, package, platform, arch):
+def get_buildhistory(apiurl, prj, package, platform, arch):
     import time
-
-    u = makeurl(['rpm', prj, platform, arch, package, 'history'])
+    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_history'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
@@ -1303,7 +1314,7 @@ def get_buildhistory(prj, package, platform, arch):
     return r
 
 
-def cmd_rebuild(prj, package, repo, arch, code=None):
+def cmd_rebuild(apiurl, prj, package, repo, arch, code=None):
     cmd = prj
     cmd += '?cmd=rebuild'
     if package:
@@ -1315,7 +1326,7 @@ def cmd_rebuild(prj, package, repo, arch, code=None):
     if code:
         cmd += '&code=%s' % code
 
-    u = makeurl(['build', cmd])
+    u = makeurl(apiurl, ['build', cmd])
     try:
         f = http_POST(u)
     except urllib2.HTTPError, e:
@@ -1337,6 +1348,22 @@ def store_read_package(dir):
     p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     return p
 
+def store_read_apiurl(dir):
+    fname = os.path.join(dir, store, '_apiurl')
+    try:
+        apiurl = open(fname).readlines()[0].strip()
+    except:
+        apiurl = conf.config['scheme'] + '://' + conf.config['apisrv']
+        #store_write_apiurl(dir, apiurl)
+    return apiurl
+
+def store_write_project(dir, project):
+    fname = os.path.join(dir, store, '_project')
+    open(fname, 'w').write(project + '\n')
+
+def store_write_apiurl(dir, apiurl):
+    fname = os.path.join(dir, store, '_apiurl')
+    open(fname, 'w').write(apiurl + '\n')
 
 def get_osc_version():
     return __version__

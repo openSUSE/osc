@@ -54,6 +54,7 @@ class Osc(cmdln.Cmdln):
         if self.global_opts.apisrv:
             conf.config['scheme'], conf.config['apisrv'] = \
                 conf.parse_apisrv_url(conf.config['scheme'], self.global_opts.apisrv)
+        conf.config['apiurl'] = conf.config['scheme'] + '://' + conf.config['apisrv']
 
         # finally, initialize urllib2 for to use the credentials for Basic Authentication
         conf.init_basicauth(conf.config)
@@ -78,7 +79,7 @@ class Osc(cmdln.Cmdln):
 
         project = args[0]
         package = args[1]
-        init_package_dir(project, package, os.path.curdir)
+        init_package_dir(conf.config['apiurl'], project, package, os.path.curdir)
         print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
 
@@ -98,14 +99,14 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print '\n'.join(meta_get_project_list())
+            print '\n'.join(meta_get_project_list(conf.config['apiurl']))
         elif len(args) == 1:
             project = args[0]
-            print '\n'.join(meta_get_packagelist(project))
+            print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
         elif len(args) == 2:
             project = args[0]
             package = args[1]
-            print '\n'.join(meta_get_filelist(project, package))
+            print '\n'.join(meta_get_filelist(conf.config['apiurl'], project, package))
 
 
     def do_meta(self, subcmd, opts, *args):
@@ -126,12 +127,12 @@ class Osc(cmdln.Cmdln):
         if len(args) == 2:
             project = args[0]
             package = args[1]
-            print ''.join(show_package_meta(project, package))
-            print ''.join(show_files_meta(project, package))
+            print ''.join(show_package_meta(conf.config['apiurl'], project, package))
+            print ''.join(show_files_meta(conf.config['apiurl'], project, package))
 
         elif len(args) == 1:
             project = args[0]
-            print ''.join(show_project_meta(project))
+            print ''.join(show_project_meta(conf.config['apiurl'], project))
 
 
     @cmdln.alias("createpac")
@@ -244,6 +245,8 @@ class Osc(cmdln.Cmdln):
         link_pac(src_project, src_package, dst_project, dst_package)
 
 
+    @cmdln.option('-t', '--to-apiurl', metavar='URL',
+                        help='URL of destination api server. Default is the source api server.')
     def do_copypac(self, subcmd, opts, *args):
         """${cmd_name}: Copy a package
 
@@ -270,10 +273,19 @@ class Osc(cmdln.Cmdln):
         else:
             dst_package = src_package
 
-        if src_project == dst_project and src_package == dst_package:
+        src_apiurl = conf.config['apiurl']
+        if opts.to_apiurl:
+            dst_apiurl = opts.to_apiurl
+        else:
+            dst_apiurl = src_apiurl
+
+        if src_project == dst_project and \
+           src_package == dst_package and \
+           src_apiurl == dst_apiurl:
             print >>sys.stderr, 'Error: source and destination are the same.'
             return 1
-        copy_pac(src_project, src_package, dst_project, dst_package)
+        copy_pac(src_apiurl, src_project, src_package, 
+                 dst_apiurl, dst_project, dst_package)
 
 
     def do_deletepac(self, subcmd, opts, project, package):
@@ -286,7 +298,7 @@ class Osc(cmdln.Cmdln):
         project = args[0]
         package = args[1]
 
-        delete_package(project, package)
+        delete_package(conf.config['apisrv'], project, package)
 
 
     def do_deleteprj(self, subcmd, opts, project):
@@ -299,10 +311,10 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        if meta_get_packagelist(project) != []:
+        if meta_get_packagelist(conf.config['apisrv'], project) != []:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it.'
             return 1
-        delete_project(project)
+        delete_project(conf.config['apisrv'], project)
 
 
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
@@ -378,7 +390,7 @@ class Osc(cmdln.Cmdln):
 
         url_tmpl = 'http://software.opensuse.org/download/%s/%s/%s.repo'
         for p in pacs:
-            platforms = get_platforms_of_project(p.prjname)
+            platforms = get_platforms_of_project(p.apiurl, p.prjname)
             for platform in platforms:
                 print url_tmpl % (p.prjname.replace(':', ':/'), platform, p.prjname)
 
@@ -410,15 +422,15 @@ class Osc(cmdln.Cmdln):
             pass
 
         if filename:
-            get_source_file(project, package, filename)
+            get_source_file(conf.config['apiurl'], project, package, filename)
 
         elif package:
-            checkout_package(project, package)
+            checkout_package(conf.config['apiurl'], project, package)
 
         elif project:
             # all packages
-            for package in meta_get_packagelist(project):
-                checkout_package(project, package)
+            for package in meta_get_packagelist(conf.config['apiurl'], project):
+                checkout_package(conf.config['apiurl'], project, package)
         else:
             print >>sys.stderr, 'Missing argument.'
             self.do_help(['foo', 'checkout'])
@@ -588,7 +600,7 @@ class Osc(cmdln.Cmdln):
         for p in pacs:
 
             # commit only if the upstream revision is the same as the working copy's
-            upstream_rev = show_upstream_rev(p.prjname, p.name)
+            upstream_rev = show_upstream_rev(p.apiurl, p.prjname, p.name)
             if p.rev != upstream_rev:
                 print >>sys.stderr, 'Working copy \'%s\' is out of date (rev %s vs rev %s).' \
                     % (p.absdir, p.rev, upstream_rev)
@@ -797,7 +809,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        r = get_user_meta(name)
+        r = get_user_meta(conf.config['apiurl'], name)
         if r:
             print ''.join(r)
 
@@ -818,25 +830,27 @@ class Osc(cmdln.Cmdln):
 
         if args:
             project = args[0]
-            print '\n'.join(get_platforms_of_project(project))
+            print '\n'.join(get_platforms_of_project(conf.config['apiurl'], project))
         else:
-            print '\n'.join(get_platforms())
+            print '\n'.join(get_platforms(conf.config['apiurl']))
 
 
-    def do_results_meta(self, subcmd, opts):
+    def do_results_meta(self, subcmd, opts, *args):
         """${cmd_name}: Shows raw build results of a package
 
         Shows the build results of the package in raw XML.
-        Must be run in a package directory.
+
+        ARG, if specified, is the working copy of a package.
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
-        wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        print ''.join(show_results_meta(project, package))
+        args = parseargs(args)
+        pacs = findpacs(args)
+
+        for pac in pacs:
+            print ''.join(show_results_meta(pac.apiurl, pac.prjname, pac.name))
 
                 
     def do_results(self, subcmd, opts, *args):
@@ -848,24 +862,15 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        if args and len(args) > 1:
-            print >>sys.stderr, 'getting results for more than one package is not supported'
-            self.do_help(['foo', 'results'])
-            return 2
-            
-        if args:
-            wd = args[0]
-        else:
-            wd = os.curdir
-
         try:
-            package = store_read_package(wd)
-            project = store_read_project(wd)
+            args = parseargs(args)
+            pacs = findpacs(args)
         except:
             print >>sys.stderr, '\'%s\' is not an osc package directory' % wd
             return 1
 
-        print '\n'.join(get_results(project, package))
+        for pac in pacs:
+            print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name))
 
                 
     @cmdln.option('-l', '--legend', action='store_true',
@@ -896,11 +901,12 @@ class Osc(cmdln.Cmdln):
 
         try:
             project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
         except:
             print >>sys.stderr, '\'%s\' is neither an osc project or package directory' % wd
             return 1
 
-        print '\n'.join(get_prj_results(project, show_legend=opts.legend))
+        print '\n'.join(get_prj_results(apiurl, project, show_legend=opts.legend))
 
                 
     def do_log(self, subcmd, opts, platform, arch):
@@ -920,11 +926,12 @@ class Osc(cmdln.Cmdln):
         wd = os.curdir
         package = store_read_package(wd)
         project = store_read_project(wd)
+        apiurl = store_read_apiurl(wd)
 
         offset = 0
         try:
             while True:
-                log_chunk = get_log(project, package, platform, arch, offset)
+                log_chunk = get_log(apiurl, project, package, platform, arch, offset)
                 if len(log_chunk) == 0:
                     break
                 offset += len(log_chunk)
@@ -960,6 +967,7 @@ class Osc(cmdln.Cmdln):
         wd = os.curdir
         package = store_read_package(wd)
         project = store_read_project(wd)
+        apiurl = store_read_apiurl(wd)
 
         if args is None or len(args) < 2:
             print >>sys.stderr, 'Missing argument.'
@@ -981,7 +989,7 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, e
             return 1
 
-        print ''.join(get_buildinfo(project, package, platform, arch, specfile=spec))
+        print ''.join(get_buildinfo(apiurl, project, package, platform, arch, specfile=spec))
 
 
     def do_buildconfig(self, subcmd, opts, platform, arch):
@@ -1005,8 +1013,9 @@ class Osc(cmdln.Cmdln):
         wd = os.curdir
         package = store_read_package(wd)
         project = store_read_project(wd)
+        apiurl = store_read_apiurl(wd)
 
-        print ''.join(get_buildconfig(project, package, platform, arch))
+        print ''.join(get_buildconfig(apiurl, project, package, platform, arch))
 
 
     def do_repos(self, subcmd, opts, *args):
@@ -1026,7 +1035,7 @@ class Osc(cmdln.Cmdln):
 
         for p in pacs:
 
-            for platform in get_repos_of_project(p.prjname):
+            for platform in get_repos_of_project(p.apiurl, p.prjname):
                 print platform
 
 
@@ -1137,8 +1146,9 @@ class Osc(cmdln.Cmdln):
         wd = os.curdir
         package = store_read_package(wd)
         project = store_read_project(wd)
+        apiurl = store_read_apiurl(wd)
 
-        print '\n'.join(get_buildhistory(project, package, platform, arch))
+        print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch))
 
 
     @cmdln.option('-f', '--failed', action='store_true',
@@ -1182,8 +1192,25 @@ class Osc(cmdln.Cmdln):
         if opts.failed:
             code = 'failed'
 
-        print cmd_rebuild(project, package, repo, arch, code)
+        print cmd_rebuild(conf.config['apiurl'], project, package, repo, arch, code)
 
+
+    def do_info(self, subcmd, opts, *args):
+        """${cmd_name}: Print information about a working copy
+
+        Print information about each ARG (default: '.')
+        ARG is a working-copy path.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        args = parseargs(args)
+        pacs = findpacs(args)
+
+
+        for p in pacs:
+            print p.info()
 
 
 if __name__ == '__main__':
