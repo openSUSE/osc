@@ -298,7 +298,7 @@ class Osc(cmdln.Cmdln):
         project = args[0]
         package = args[1]
 
-        delete_package(conf.config['apisrv'], project, package)
+        delete_package(conf.config['apiurl'], project, package)
 
 
     def do_deleteprj(self, subcmd, opts, project):
@@ -311,10 +311,10 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        if meta_get_packagelist(conf.config['apisrv'], project) != []:
+        if meta_get_packagelist(conf.config['apiurl'], project) != []:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it.'
             return 1
-        delete_project(conf.config['apisrv'], project)
+        delete_project(conf.config['apiurl'], project)
 
 
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
