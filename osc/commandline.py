@@ -295,9 +295,6 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        project = args[0]
-        package = args[1]
-
         delete_package(conf.config['apiurl'], project, package)
 
 
