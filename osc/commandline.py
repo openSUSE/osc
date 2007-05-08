@@ -304,6 +304,9 @@ class Osc(cmdln.Cmdln):
         As a safety measure, project must be empty (i.e., you first need to delete all
         packages first).
 
+        NOTE: This command is not implemented yet. Please mail
+        admin@opensuse.org in order to get projects deleted.
+
         ${cmd_usage}
         ${cmd_option_list}
         """
@@ -311,7 +314,11 @@ class Osc(cmdln.Cmdln):
         if meta_get_packagelist(conf.config['apiurl'], project) != []:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it.'
             return 1
-        delete_project(conf.config['apiurl'], project)
+
+        #delete_project(conf.config['apiurl'], project)
+        print >>sys.stderr, 'Deleting projects is not yet implemented.'
+        print >>sys.stderr, 'Please send a request to opensuse-buildservice@opensuse.org'
+        print >>sys.stderr, 'or admin@opensuse.org.'
 
 
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
