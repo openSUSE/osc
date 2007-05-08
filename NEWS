@@ -1,5 +1,8 @@
 since 0.96:
-[...]
+- don't try to delete projects, as long it is not implemented in the backend
+- use new API route for downloading binaries also in configured URLs
+- make deletepac work again
+
 
 0.96:
 - following suggestions by Christian Boltz and Michal Marek, osc now memorizes
