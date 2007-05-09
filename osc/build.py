@@ -11,6 +11,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 from osc.fetch import *
+from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package
 import osc.conf
 try:
     from xml.etree import cElementTree as ET
@@ -238,10 +239,21 @@ def main(opts, argv):
 
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
-    rc = os.system('osc buildinfo %s %s %s > %s' % (repo, arch, spec, bi_file.name))
-    if rc:
+    try:
+        bi_text = ''.join(get_buildinfo(store_read_apiurl(os.curdir), 
+                                        store_read_project(os.curdir), 
+                                        store_read_package(os.curdir), 
+                                        repo, 
+                                        arch, 
+                                        specfile=spec, 
+                                        addlist=opts.extra_pkgs))
+
+    except:
         print >>sys.stderr, 'wrong repo/arch?'
-        sys.exit(rc)
+        sys.exit(1)
+    bi_file.write(bi_text)
+    bi_file.flush()
+
     bi = Buildinfo(bi_file.name)
 
     rpmlist_prefers = []

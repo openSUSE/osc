@@ -944,6 +944,8 @@ class Osc(cmdln.Cmdln):
             pass
 
 
+    @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
+                  help='Add this package when computing the buildinfo')
     def do_buildinfo(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build info
 
@@ -993,7 +995,10 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, e
             return 1
 
-        print ''.join(get_buildinfo(apiurl, project, package, platform, arch, specfile=spec))
+        print ''.join(get_buildinfo(apiurl, 
+                                    project, package, platform, arch, 
+                                    specfile=spec, 
+                                    addlist=opts.extra_pkgs))
 
 
     def do_buildconfig(self, subcmd, opts, platform, arch):
@@ -1051,6 +1056,8 @@ class Osc(cmdln.Cmdln):
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR', 
                   help='Save built packages into this directory')
+    @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
+                  help='Add this package when installing the build-root')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 

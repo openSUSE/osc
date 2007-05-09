@@ -307,19 +307,22 @@ class Package:
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)])
+        query = []
         if conf.config['do_commits'] == '1':
-            u += '?rev=upload'
+            query.append('rev=upload')
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_PUT(u, file = os.path.join(self.dir, n))
 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def commit(self, msg=''):
         
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name])
-        u += '?cmd=commit&rev=upload'
-        u += '&user=%s' % conf.config['user']
-        u += '&comment=%s' % quote_plus(msg)
+        query = []
+        query.append('cmd=commit')
+        query.append('rev=upload')
+        query.append('user=%s' % conf.config['user'])
+        query.append('comment=%s' % quote_plus(msg))
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
         #print u
         f = http_POST(u)
         #print f.read()
@@ -634,13 +637,13 @@ def pathjoin(a, *p):
     return path
 
 
-def makeurl(baseurl, l):
+def makeurl(baseurl, l, query=[]):
     """given a list of path compoments, construct a complete URL"""
 
-    #print 'makeurl:', baseurl, l
+    #print 'makeurl:', baseurl, l, query
 
     scheme, netloc = urlsplit(baseurl)[0:2]
-    return urlunsplit((scheme, netloc, '/'.join(l), '', ''))               
+    return urlunsplit((scheme, netloc, '/'.join(l), '&'.join(query), ''))               
 
 
 def http_request(method, url, data=None, file=None):
@@ -687,6 +690,7 @@ def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 
 def urlopen(url, data=None):
     """wrapper around urllib2.urlopen for error handling"""
+
     print 'core.urlopen() is deprecated -- use http_GET et al.'
 
     try:
@@ -1277,8 +1281,14 @@ def get_log(apiurl, prj, package, platform, arch, offset):
     return f.read()
 
 
-def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None):
-    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_buildinfo'])
+def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None, addlist=None):
+    query = []
+    if addlist:
+        for i in addlist:
+            query.append('add=%s' % quote_plus(i))
+
+    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_buildinfo'], query=query)
+
     if specfile:
         f = http_POST(u, data=specfile)
     else:
@@ -1315,18 +1325,18 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
 
 
 def cmd_rebuild(apiurl, prj, package, repo, arch, code=None):
-    cmd = prj
-    cmd += '?cmd=rebuild'
+    query = []
+    query.append('cmd=rebuild')
     if package:
-        cmd += '&package=%s' % package
+        query.append('package=%s' % quote_plus(package))
     if repo:
-        cmd += '&repo=%s' % repo
+        query.append('repo=%s' % quote_plus(repo))
     if arch:
-        cmd += '&arch=%s' % arch
+        query.append('arch=%s' % quote_plus(arch))
     if code:
-        cmd += '&code=%s' % code
+        query.append('code=%s' % quote_plus(code))
 
-    u = makeurl(apiurl, ['build', cmd])
+    u = makeurl(apiurl, ['build', prj], query=query)
     try:
         f = http_POST(u)
     except urllib2.HTTPError, e:
