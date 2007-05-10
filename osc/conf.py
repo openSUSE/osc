@@ -19,7 +19,6 @@ The configuration dictionary could look like this:
 
 {'apisrv': 'https://api.opensuse.org/',
  'user': 'poeml',
- 'pass': 'secret',
  'auth_dict': {'api.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
                'apitest.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
                'foo.opensuse.org': {'user': 'foo', 'pass': 'foo'}},
@@ -42,7 +41,6 @@ config = { }
 DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'scheme': 'https',
              'user': 'your_username',
-             'pass': 'your_password',
              'packagecachedir': '/var/tmp/osbuild-packagecache',
              'su-wrapper': 'su -c',
              'build-cmd': '/usr/bin/build',
@@ -178,7 +176,7 @@ def get_config():
         # note that it is not suited for credentials containing spaces
         import netrc
         try:
-            # FIXME: apisrv is a URL now
+            # XXX: apisrv is a URL now, thus requiring the "scheme" setting if https is to be used
             netrc_host = parse_apisrv_url(None, DEFAULTS['apisrv'])[1]
             config['user'], account, config['pass'] = \
                     netrc.netrc().authenticators(netrc_host)

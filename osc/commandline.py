@@ -56,6 +56,10 @@ class Osc(cmdln.Cmdln):
                 conf.parse_apisrv_url(conf.config['scheme'], self.global_opts.apisrv)
         conf.config['apiurl'] = conf.config['scheme'] + '://' + conf.config['apisrv']
 
+        # XXX unless config['user'] goes away (and is replaced with a handy function, or 
+        # config becomes an object, even better), set the global 'user' here as well:
+        conf.config['user'] = conf.config['auth_dict'][conf.config['apisrv']]['user']
+
         # finally, initialize urllib2 for to use the credentials for Basic Authentication
         conf.init_basicauth(conf.config)
 
