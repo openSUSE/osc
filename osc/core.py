@@ -107,14 +107,6 @@ new_user_template = """\
   <login>%(user)s</login>
   <email>PUT_EMAIL_ADDRESS_HERE</email>
   <realname>PUT_REAL_NAME_HERE</realname>
-  <source_backend>
-    <host></host>
-    <port></port>
-  </source_backend>
-  <rpm_backend>
-    <host></host>
-    <port></port>
-  </rpm_backend>
   <watchlist>
     <project name="home:%(user)s"/>
   </watchlist>
