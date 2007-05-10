@@ -1,4 +1,6 @@
 since 0.96:
+- build: implement -x/--extra-pkgs option (passed to backend and included in buildinfo result)
+- make filling out of username in templates work again
 - don't try to delete projects, as long it is not implemented in the backend
 - use new API route for downloading binaries also in configured URLs
 - make deletepac work again
