@@ -245,7 +245,7 @@ def main(opts, argv):
                                         store_read_package(os.curdir), 
                                         repo, 
                                         arch, 
-                                        specfile=spec, 
+                                        specfile=open(spec).read(), 
                                         addlist=opts.extra_pkgs))
 
     except:
