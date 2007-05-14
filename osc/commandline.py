@@ -1062,6 +1062,10 @@ class Osc(cmdln.Cmdln):
                   help='Save built packages into this directory')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
+    @cmdln.option('--userootforbuild', action='store_true',
+                  help='Run build as root. The default is to build as '
+                  'unprivileged user. Note that a line "# norootforbuild" '
+                  'in the spec file will invalidate this option.')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 

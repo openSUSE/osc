@@ -212,6 +212,8 @@ def main(opts, argv):
     spec = argv[2]
 
     buildargs = []
+    if not opts.userootforbuild:
+        buildargs.append('--norootforbuild')
     if opts.clean:
         buildargs.append('--clean')
     if opts.noinit:
@@ -314,7 +316,7 @@ def main(opts, argv):
 
     print 'Running build'
 
-    cmd = '%s --root=%s --norootforbuild --rpmlist=%s --dist=%s %s %s' \
+    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
                     rpmlist_file.name, 
