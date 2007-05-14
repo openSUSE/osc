@@ -1322,7 +1322,7 @@ def cmd_rebuild(apiurl, prj, package, repo, arch, code=None):
     if package:
         query.append('package=%s' % quote_plus(package))
     if repo:
-        query.append('repo=%s' % quote_plus(repo))
+        query.append('repository=%s' % quote_plus(repo))
     if arch:
         query.append('arch=%s' % quote_plus(arch))
     if code:
