@@ -870,12 +870,8 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        try:
-            args = parseargs(args)
-            pacs = findpacs(args)
-        except:
-            print >>sys.stderr, '\'%s\' is not an osc package directory' % wd
-            return 1
+        args = parseargs(args)
+        pacs = findpacs(args)
 
         for pac in pacs:
             print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name))
