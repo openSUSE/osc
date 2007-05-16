@@ -19,6 +19,7 @@ BASEDIR = os.path.join(os.getcwd(), 't')
 PRJ = 'home:poeml'
 PAC = 'test'
 TESTPACDIR = os.path.join(PRJ, PAC)
+startdir = os.getcwd()
 
 
 def remove_revid(s):
@@ -346,6 +347,51 @@ Transmitting file data .
 
 
 
+    #####################################################################
+
+    # test commandline options
+
+    def testCmdOptVersion(self):
+        self.out, self.err = runosc('--version')
+        self.assertEqual(self.err, '')
+        from osc.core import get_osc_version
+        self.assertEqual(self.out, '%s\n' % get_osc_version())
+
+    def testCmdOptHelp(self):
+        self.out, self.err = runosc('--help')
+        self.assertEqual(self.err, '')
+        self.assert_('OpenSUSE build service' in self.out)
+        self.assert_('additional information' in self.out)
+
+    def testCmdOptHelpCmd(self):
+        self.out, self.err = runosc('help')
+        self.assertEqual(self.err, '')
+        self.assert_('OpenSUSE build service' in self.out)
+        self.assert_('additional information' in self.out)
+
+    # a global option
+    def testCmdOptHelpOpt(self):
+        self.out, self.err = runosc('help')
+        self.assertEqual(self.err, '')
+        self.assert_('-H, --http-debug' in self.out)
+
+    # a subcommand option
+    def testCmdOptHelpBuild(self):
+        self.out, self.err = runosc('help build')
+        self.assertEqual(self.err, '')
+        self.assert_('build: Build a package' in self.out)
+        self.assert_('--clean' in self.out)
+
+    def testCmdOptDebugLs(self):
+        self.out, self.err = runosc('-H ls')
+        self.assertEqual(self.err, '')
+        self.assert_("send: 'GET /source" in self.out)
+
+    def testCmdOptApiOption(self):
+        self.out, self.err = runosc('-A https://api.opensuse.org -H ls')
+        self.assertEqual(self.err, '')
+        self.assert_("reply: 'HTTP/1.1 200 OK" in self.out)
+
 
 
 
@@ -373,6 +419,5 @@ def touch(filename):
 if __name__ == '__main__':
 
     #unittest.main()
-    startdir = os.getcwd()
     suite = unittest.makeSuite(TestOsc)
     unittest.TextTestRunner(verbosity=2).run(suite)
