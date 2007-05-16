@@ -148,3 +148,14 @@ host build.opensuse.org
 """
 
 chmod 0600 ~/.w3m/passwd
+
+
+NOTES about the testsuite
+
+It requires editing tests.py, for a user account / project to work with.
+I use my own project (home:poeml) for testing.
+Tests can be run as ./tests.py
+or, more powerful, with nosetests:
+  nosetests --exe
+To run a single test, you can use:
+  nosetests --exe tests:TestOsc.testCmdOptVersion
