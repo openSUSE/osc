@@ -12,7 +12,6 @@ import conf
 
 
 class Osc(cmdln.Cmdln):
-
     """usage:
         osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
         osc help SUBCOMMAND
@@ -28,32 +27,34 @@ class Osc(cmdln.Cmdln):
     """
     name = 'osc'
 
+
     def __init__(self, *args, **kwargs):
         cmdln.Cmdln.__init__(self, *args, **kwargs)
         cmdln.Cmdln.do_help.aliases.append('h')
 
         conf.get_config()
 
-        # set up and parse options before subcommand
-        self.optparser = cmdln.CmdlnOptionParser(self,
-                                                version=get_osc_version())
-        self.optparser.add_option('-H', '--http-debug', action='store_true',
+
+    def get_optparser(self):
+        """this is the parser for "global" options (not specific to subcommand)"""
+
+        optparser = cmdln.CmdlnOptionParser(self, version=get_osc_version())
+        optparser.add_option('-H', '--http-debug', action='store_true',
                       default=conf.config['http_debug'],
                       help='debug HTTP traffic')
-        self.optparser.add_option('-A', '--apisrv', dest='apisrv',
+        optparser.add_option('-A', '--apisrv', dest='apisrv',
                       metavar='URL',
                       help='specify URL to access API server at')
+        return optparser
 
-        (self.global_opts, self.myargs) = self.optparser.parse_args()
 
-        # XXX version is printed twice otherwise...
-        self.optparser.version = ''
+    def postoptparse(self):
+        """merge commandline options into the config"""
 
-        # merge commandline options into the config
-        conf.config['http_debug'] = self.global_opts.http_debug
-        if self.global_opts.apisrv:
+        conf.config['http_debug'] = self.options.http_debug
+        if self.options.apisrv:
             conf.config['scheme'], conf.config['apisrv'] = \
-                conf.parse_apisrv_url(conf.config['scheme'], self.global_opts.apisrv)
+                conf.parse_apisrv_url(conf.config['scheme'], self.options.apisrv)
         conf.config['apiurl'] = conf.config['scheme'] + '://' + conf.config['apisrv']
 
         # XXX unless config['user'] goes away (and is replaced with a handy function, or 

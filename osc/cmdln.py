@@ -35,8 +35,8 @@ See the README.txt or <http://trentm.com/projects/cmdln/> for more
 details.
 """
 
-__revision__ = "$Id: cmdln.py 1087 2006-05-11 00:04:28Z trentm $"
-__version_info__ = (0, 8, 2)
+__revision__ = "$Id: cmdln.py 1666 2007-05-09 03:13:03Z trentm $"
+__version_info__ = (1, 0, 0)
 __version__ = '.'.join(map(str, __version_info__))
 
 import os
@@ -122,6 +122,7 @@ class RawCmdln(cmd.Cmd):
     """
     name = None      # if unset, defaults basename(sys.argv[0])
     prompt = None    # if unset, defaults to self.name+"> "
+    version = None   # if set, default top-level options include --version
 
     # Default messages for some 'help' command error cases.
     # They are interpolated with one arg: the command.
@@ -172,7 +173,31 @@ class RawCmdln(cmd.Cmd):
         self.completekey = completekey
         self.cmdlooping = False
 
-    def main(self, argv=None, optparser=_NOT_SPECIFIED, loop=LOOP_NEVER):
+    def get_optparser(self):
+        """Hook for subclasses to set the option parser for the
+        top-level command/shell.
+
+        This option parser is used retrieved and used by `.main()' to
+        handle top-level options.
+
+        The default implements a single '-h|--help' option. Sub-classes
+        can return None to have no options at the top-level. Typically
+        an instance of CmdlnOptionParser should be returned.
+        """
+        version = (self.version is not None 
+                    and "%s %s" % (self._name_str, self.version)
+                    or None)
+        return CmdlnOptionParser(self, version=version)
+
+    def postoptparse(self):
+        """Hook method executed just after `.main()' parses top-level
+        options.
+
+        When called `self.values' holds the results of the option parse.
+        """
+        pass
+
+    def main(self, argv=None, loop=LOOP_NEVER):
         """A possible mainline handler for a script, like so:
 
             import cmdln
@@ -192,13 +217,6 @@ class RawCmdln(cmd.Cmd):
                 It must be a sequence, where the first element is the
                 command name and subsequent elements the args for that
                 command.
-            "optparser" (optional) is a cmdln.CmdlnOptionParser instance
-                to process top-level options.  If left unspecified,
-                option parsing is done with a default option list: -h,
-                --help.  None can be given to disable top-level option
-                processing. If option processing is done, the 'options'
-                attribute is set to the resulting `optparse.Values`
-                instance.
             "loop" (optional, default LOOP_NEVER) is a constant
                 indicating if a command loop should be started (i.e. an
                 interactive shell). Valid values (constants on this module):
@@ -212,11 +230,8 @@ class RawCmdln(cmd.Cmd):
             argv = sys.argv
         else:
             argv = argv[:] # don't modify caller's list
-        optparser = self.optparser
-        if optparser is _NOT_SPECIFIED:
-            optparser = CmdlnOptionParser(self)
-        self.optparser = optparser
 
+        self.optparser = self.get_optparser()
         if self.optparser: # i.e. optparser=None means don't process for opts
             try:
                 self.options, args = self.optparser.parse_args(argv[1:])
@@ -226,10 +241,11 @@ class RawCmdln(cmd.Cmd):
                 self.stderr.write(self._str(msg))
                 self.stderr.flush()
                 return 1
-            if self.options.stop:
+            except StopOptionProcessing, ex:
                 return 0
         else:
             self.options, args = None, argv[1:]
+        self.postoptparse()
 
         if loop == LOOP_ALWAYS:
             if args:
@@ -828,6 +844,8 @@ class RawCmdln(cmd.Cmd):
     def _do_EOF(self, argv):
         # Default EOF handler
         # Note: an actual EOF is redirected to this command.
+        #TODO: separate name for this. Currently it is available from
+        #      command-line. Is that okay?
         self.stdout.write('\n')
         self.stdout.flush()
         self.stop = True
@@ -846,36 +864,25 @@ class RawCmdln(cmd.Cmd):
 # See the class _OptionParserEx docstring for details.
 #
 
-class StopProcessing(Exception):
+class StopOptionProcessing(Exception):
     """Indicate that option *and argument* processing should stop
-    cleanly.  This is not an error condition. It is similar in spirit to
-    StopIteration. This is raised by the default "help" and "version"
-    option actions and can be raised by custom option callbacks too.
+    cleanly. This is not an error condition. It is similar in spirit to
+    StopIteration. This is raised by _OptionParserEx's default "help"
+    and "version" option actions and can be raised by custom option
+    callbacks too.
     
-    A new boolean "stop" attribute on the optparse.Values instance
-    returned by parser.parse_args() indicates if StopProcessing was
-    encountered. Hence the typical CmdlnOptionParser usage is:
+    Hence the typical CmdlnOptionParser (a subclass of _OptionParserEx)
+    usage is:
 
         parser = CmdlnOptionParser(mycmd)
         parser.add_option("-f", "--force", dest="force")
         ...
-        parser.parse_args()
-        #XXX This is wrong: doesn't match current impl.
-        if parser.stop: # normal termination, "--help" was probably given
+        try:
+            opts, args = parser.parse_args()
+        except StopOptionProcessing:
+            # normal termination, "--help" was probably given
             sys.exit(0)
     """
-
-class _OptionEx(optparse.Option):
-    def take_action(self, action, dest, opt, value, values, parser):
-        if action == "help":
-            parser.print_help()
-            raise StopProcessing
-        elif action == "version":
-            parser.print_version()
-            raise StopProcessing
-        else:
-            return optparse.Option.take_action(self, action, dest, opt,
-                                               value, values, parser)
 
 class _OptionParserEx(optparse.OptionParser):
     """An optparse.OptionParser that uses exceptions instead of sys.exit.
@@ -884,10 +891,9 @@ class _OptionParserEx(optparse.OptionParser):
     as follows:
     - Correct (IMO) the default OptionParser error handling to never
       sys.exit(). Instead OptParseError exceptions are passed through.
-    - Add the StopProcessing exception (a la StopIteration) to
-      indicate normal termination of option processing. Add the "stop"
-      boolean attribute to Values returned by .parse_args(). See
-      StopProcessing's docstring for details.
+    - Add the StopOptionProcessing exception (a la StopIteration) to
+      indicate normal termination of option processing.
+      See StopOptionProcessing's docstring for details.
 
     I'd also like to see the following in the core optparse.py, perhaps
     as a RawOptionParser which would serve as a base class for the more
@@ -899,62 +905,17 @@ class _OptionParserEx(optparse.OptionParser):
         optparser.add_option("--version", action="version")
       These are good practices, just not valid defaults if they can
       get in the way.
-    - Something like the clear separation of user-error vs.
-      programmer-error in CmdlnOptionParser would be good: a new
-      OptParseUserError or something.
     """
-    #TODO: deal with older Python 2.3 optparse differences
-    def __init__(self, **kwargs):
-        if "option_class" in kwargs:
-            raise optparse.OptParseError(
-                "cannot specify 'option_class' on _OptionParserEx")
-        kwargs["option_class"] = _OptionEx
-        optparse.OptionParser.__init__(self, **kwargs)
-
     def error(self, msg):
         raise optparse.OptParseError(msg)
 
     def exit(self, status=0, msg=None):
-        # Proposed transition code would use deprecation warning.
-        #import warnings
-        #warnings.warn("OptionParser.exit() is deprecated")
-        raise optparse.OptParseError("_OptionParserEx.exit() is obsolete")
-
-    def parse_args(self, args=None, values=None):
-        """Override parse_args to properly handle StopProcessing.
-
-        Also changed: don't catch OptParseError's raised by
-        ._process_args() because we would just change them back to
-        exceptions in .error() anyway.
-        """
-        rargs = self._get_args(args)
-        if values is None:
-            values = self.get_default_values()
-
-        # for convenience of callbacks:
-        self.rargs = rargs
-        self.largs = largs = []
-        self.values = values
-
-        #TODO:
-        # - Should 'stop' be changed to a third return arg instead of
-        #   attr on Values? I think so, yes.
-        try:
-            self._process_args(largs, rargs, values)
-        except (optparse.BadOptionError, optparse.OptionValueError), ex:
-            self.error(ex.msg)
-        except StopProcessing:
-            values.stop = True
+        if status == 0:
+            raise StopOptionProcessing(msg)
         else:
-            values.stop = False
-        args = largs + rargs
-        return self.check_values(values, args)
+            #TODO: don't lose status info here
+            raise optparse.OptParseError(msg)
 
-    def add_option(self, *args, **kwargs):
-        opt = optparse.OptionParser.add_option(self, *args, **kwargs)
-        if opt.dest == "stop":
-            raise optparse.OptionConflictError(
-                "option dest value of 'stop' is reserved")
 
 
 #---- optparse.py-based option processing support
@@ -989,7 +950,7 @@ class CmdlnOptionParser(_OptionParserEx):
 
 class SubCmdOptionParser(_OptionParserEx):
     def set_cmdln_info(self, cmdln, subcmd):
-        """Called by CmdlnOpt to pass relevant info about itself needed
+        """Called by Cmdln to pass relevant info about itself needed
         for print_help().
         """
         self.cmdln = cmdln
@@ -1022,11 +983,6 @@ def option(*args, **kwargs):
     return decorate
 
 
-#TODO: Could name these RawCmdln and Cmdln, the latter with optparse
-#      integration.
-#      Then *always* have an optparser (even empty)?
-#      TODO: check/test this *always* have an optparser case, even if
-#      no decorator is provided.
 class Cmdln(RawCmdln):
     """An improved (on cmd.Cmd) framework for building multi-subcommand
     scripts (think "svn" & "cvs") and simple shells (think "pdb" and
@@ -1079,6 +1035,8 @@ class Cmdln(RawCmdln):
                 for arg in args:
                     bar(arg)
 
+        TODO: explain that "*args" can be other signatures as well.
+
         The `cmdln.option` decorator corresponds to an `add_option()`
         method call on an `optparse.OptionParser` instance.
 
@@ -1101,8 +1059,11 @@ class Cmdln(RawCmdln):
                 optparser = handler.im_func.optparser = SubCmdOptionParser()
             assert isinstance(optparser, SubCmdOptionParser)
             optparser.set_cmdln_info(self, argv[0])
-            opts, args = optparser.parse_args(argv[1:])
-            if opts.stop:
+            try:
+                opts, args = optparser.parse_args(argv[1:])
+            except StopOptionProcessing:
+                #TODO: this doesn't really fly for a replacement of
+                #      optparse.py behaviour, does it?
                 return 0 # Normal command termination
 
             try:
@@ -1114,6 +1075,14 @@ class Cmdln(RawCmdln):
                 #   do_foo() takes exactly 5 arguments (6 given)
                 # Raise CmdlnUserError for these with a suitably
                 # massaged error message.
+                import sys
+                tb = sys.exc_info()[2] # the traceback object
+                if tb.tb_next is not None:
+                    # If the traceback is more than one level deep, then the
+                    # TypeError do *not* happen on the "handler(...)" call
+                    # above. In that we don't want to handle it specially
+                    # here: it would falsely mask deeper code errors.
+                    raise
                 msg = ex.args[0]
                 match = _INCORRECT_NUM_ARGS_RE.search(msg)
                 if match:
@@ -1123,13 +1092,6 @@ class Cmdln(RawCmdln):
                         msg[2] = msg[2].replace("arguments", "argument")
                     msg[3] = int(msg[3]) - 3
                     msg = ''.join(map(str, msg))
-
-                    # To debug errors which involve calling functions with
-                    # wrong number of arguments, uncomment the following line.
-                    # Otherwise, all errors of this kind are presented as
-                    # "incorrect usage" to the user:
-                    #raise
-
                     raise CmdlnUserError(msg)
                 else:
                     raise
