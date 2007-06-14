@@ -1007,6 +1007,14 @@ def get_source_file_diff(dir, filename, rev):
             fromfile = '%s     (revision %s)' % (filename, rev), \
             tofile = '%s     (working copy)' % filename)
 
+        # if file doesn't end with newline, we need to append one in the diff result
+        d = list(d)
+        for i, line in enumerate(d):
+            if not line.endswith('\n'):
+                d[i] += '\n\\ No newline at end of file'
+                if i+1 != len(d):
+                    d[i] += '\n'
+
     return ''.join(d)
 
 
