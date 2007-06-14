@@ -1208,7 +1208,7 @@ class Osc(cmdln.Cmdln):
         if opts.failed:
             code = 'failed'
 
-        print cmd_rebuild(conf.config['apiurl'], project, package, repo, arch, code)
+        print rebuild(conf.config['apiurl'], project, package, repo, arch, code)
 
 
     def do_info(self, subcmd, opts, *args):
@@ -1227,6 +1227,60 @@ class Osc(cmdln.Cmdln):
 
         for p in pacs:
             print p.info()
+
+
+    @cmdln.option('-a', '--arch', metavar='ARCH',
+                        help='Abort builds for a specific architecture')
+    @cmdln.option('-r', '--repo', metavar='REPO',
+                        help='Abort builds for a specific repository')
+    def do_abortbuild(self, subcmd, opts, *args):
+        """${cmd_name}: Aborts the build of a certain project/package
+        
+        With the optional argument <package> you can specify a certain package
+        otherwise all builds in the project will be cancelled.
+        
+        usage: 
+            osc abortbuild [OPTS] PROJECT [PACKAGE]
+        ${cmd_option_list}
+        """
+
+        if len(args) < 1:
+            print >>sys.stderr, 'Missing <project> argument'
+            return 2
+
+        if len(args) == 2:
+            package = args[1]
+        else:
+            package = None
+
+        print abortbuild(conf.config['apiurl'], args[0], package, opts.arch, opts.repo)
+
+
+    @cmdln.option('-a', '--arch', metavar='ARCH',
+                        help='Delete all binary package for a specific architecture')
+    @cmdln.option('-r', '--repo', metavar='REPO',
+                        help='Delete all binary packages for a specific repository')
+    def do_wipebinaries(self, subcmd, opts, *args):
+        """${cmd_name}: Delete all binary packages of a certain project/package
+
+        With the optional arguement <package> you can specify a certain package
+        otherwise all binary packages in the project will be deleted.
+
+        usage: 
+            osc wipebinaries [OPTS] PROJECT [PACKAGE]
+        ${cmd_option_list}
+        """
+        
+        if len(args) < 1:
+            print >>sys.stderr, 'Missing <project> argument'
+            return 2
+        
+        if len(args) == 2:
+            package = args[1]
+        else:
+            package = None
+        
+        print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,6 @@
 since 0.96:
+- new wipebinaries and abortbuild commands, by courtesy of Marcus Huewe
+- improved metadata error condition handling (thanks to Marcus Huewe)
 - build: add --userootforbuild option
 - build: implement -x/--extra-pkgs option (passed to backend and included in buildinfo result)
 - make filling out of username in templates work again

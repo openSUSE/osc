@@ -844,21 +844,43 @@ class metafile:
         if self.change_is_required == True and os.path.getmtime(self.filename) == self.timestamp:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
+            return
 
-        else:
-            print 'Sending meta data...', 
+        try:
+            print 'Sending meta data...'
             http_PUT(self.url, file=self.filename)
             os.unlink(self.filename)
             print 'Done.'
+            return
+        except urllib2.HTTPError, e:
+            # internal server error (probably the xml file is incorrect)
+            if e.code == 500:
+                print >>sys.stderr, 'cannot save meta data - probably your xml file is incorrect'
+                print >>sys.stderr, e
+                # this may be unhelpful... because it may just print a big blob of uninteresting
+                # ichain html and javascript... however it could potentially be useful if the orign
+                # server returns an information body
+                #print >>sys.stderr, e.read()
+                return False
+            else:
+                print >> sys.stderr, 'cannot save meta data - an unexpected error occured'
+                return False
     
 def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
     f=metafile(prj, pac, template, change_is_required)
 
     editor = os.getenv('EDITOR', default='vim')
-    os.system('%s %s' % (editor, f.filename))
-
-    if change_is_required == True:
-        f.sync()
+    while 1:
+        os.system('%s %s' % (editor, f.filename))
+        if change_is_required == True:
+            if not f.sync():
+                input = raw_input('Try again? (yY = Yes - nN = No): ')
+                if input != 'y' and input != 'Y':
+                    break
+            else:
+                break
+        else:
+            break
 
 def edit_user_meta(user, change_is_required=True):
     import tempfile
@@ -1324,7 +1346,7 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
     return r
 
 
-def cmd_rebuild(apiurl, prj, package, repo, arch, code=None):
+def rebuild(apiurl, prj, package, repo, arch, code=None):
     query = []
     query.append('cmd=rebuild')
     if package:
@@ -1378,3 +1400,59 @@ def store_write_apiurl(dir, apiurl):
 def get_osc_version():
     return __version__
 
+
+def abortbuild(apiurl, project, package=None, arch=None, repo=None):
+    query = []
+    query.append('cmd=abortbuild')
+    if package:
+        query.append('package=%s' % quote_plus(package))
+    if arch:
+        query.append('arch=%s' % quote_plus(arch))
+    if repo:
+        query.append('repository=%s' % quote_plus(repo))
+    u = makeurl(apiurl, ['build', project], query)
+    try:
+        f = http_POST(u)
+    except urllib2.HTTPError, e:
+        err_str = 'abortion failed for project %s' % project
+        if package:
+            err_str += ' package %s' % package
+        if arch:
+            err_str += ' arch %s' % arch
+        if repo:
+            err_str += ' repo %s' % repo
+        print >> sys.stderr, err_str
+        print >> sys.stderr, u
+        print >> sys.stderr, e
+        sys.exit(1)
+    root = ET.parse(f).getroot()
+    return root.get('code')
+
+
+def wipebinaries(apiurl, project, package=None, arch=None, repo=None):
+    query = []
+    query.append('cmd=wipe')
+    if package:
+        query.append('package=%s' % quote_plus(package))
+    if arch:
+        query.append('arch=%s' % quote_plus(arch))
+    if repo:
+        query.append('repository=%s' % quote_plus(repo))
+
+    u = makeurl(apiurl, ['build', project], query)
+    try:
+        f = http_POST(u)
+    except urllib2.HTTPError, e:
+        err_str = 'wipe binary rpms failed for project %s' % project
+        if package:
+            err_str += ' package %s' % package
+        if arch:
+            err_str += ' arch %s' % arch
+        if repo:
+            err_str += ' repository %s' % repo
+        print >> sys.stderr, err_str
+        print >> sys.stderr, u
+        print >> sys.stderr, e
+        sys.exit(1)
+    root = ET.parse(f).getroot()
+    return root.get('code')
