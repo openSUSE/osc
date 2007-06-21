@@ -65,7 +65,7 @@ class Osc(cmdln.Cmdln):
         conf.init_basicauth(conf.config)
 
 
-    def do_init(self, subcmd, opts, *args):
+    def do_init(self, subcmd, opts, project, package):
         """${cmd_name}: Initialize a directory as working copy 
 
         Initialize a directory to be a working copy of an
@@ -75,15 +75,11 @@ class Osc(cmdln.Cmdln):
         package and then copying sources into the directory. It does NOT create
         a new package. To create a package, use createpac.)
 
-        ${cmd_usage}
+        usage: 
+            osc init PRJ PAC
         ${cmd_option_list}
         """
-        if len(args) != 2:
-            print >>sys.stderr, 'Must provide project and package name.'
-            return 2
 
-        project = args[0]
-        package = args[1]
         init_package_dir(conf.config['apiurl'], project, package, os.path.curdir)
         print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
