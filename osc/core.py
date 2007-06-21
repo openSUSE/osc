@@ -656,6 +656,11 @@ def http_request(method, url, data=None, file=None):
     req = urllib2.Request(url)
     req.get_method = lambda: method
 
+    # POST requests are application/x-www-form-urlencoded per default
+    # since we change the request into PUT, we also need to adjust the content type header
+    if method == 'PUT':
+        req.add_header('Content-Type', 'application/octet-stream')
+
     if file and not data:
         size = os.path.getsize(file)
         if size < 1024*512:
