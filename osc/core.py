@@ -849,14 +849,14 @@ class metafile:
         if self.change_is_required == True and os.path.getmtime(self.filename) == self.timestamp:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
-            return
+            return True
 
         try:
             print 'Sending meta data...'
             http_PUT(self.url, file=self.filename)
             os.unlink(self.filename)
             print 'Done.'
-            return
+            return True
         except urllib2.HTTPError, e:
             # internal server error (probably the xml file is incorrect)
             if e.code == 500:
