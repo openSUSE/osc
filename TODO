@@ -1,25 +1,16 @@
 - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
 
-- memorize used the api server on checkout
-  - implmement switch command
-- implement 'info' command
+- implmement (svn-like) switch command
 - implement 'mv' command
-- editmeta: the API will return a 500 if the xml is broken... the document
-  could be presented for editing again in that case
 - updatepacmetafromspec -- is that useful? 
   In which form would this be integrated best?
 - use urllib.urlencode for parameter encoding
 - _real_ SSL support, with certificate verification
-- zsh completion, or even bash
+- adjust zsh completion to work with cmdln.py implementation
 - add option to disable gpg key checking?
 - add support for adding tags to packages?
-- plugin-ize subcommand implementation
-  - look at Susannes extensions
-- Allow the package owners/users to signal an abort build.
-  Message-ID: <20070214120205.GA9629@suse.de>
-- implement wipe command
-- implement editing of project configuration (alrady works in api & backend)
-- build: --extra-pkgs ... buildinfo -> &add=...&add=...
+- write howto for plugin-izing subcommand implementation
+- implement editing of project configuration (already works in api & backend)
 
 
 checkin: 
@@ -258,29 +249,3 @@ AttributeError: 'NoneType' object has no attribute 'md5'
 21:31 <darix> :p
 
 
-
-18:48 <darix> darix@hydrogen:~/osc/server:http/GeoIP> osc results
-18:48 <darix> Traceback (most recent call last):
-18:48 <darix>   File "/usr/bin/osc", line 7, in <module>
-18:48 <darix>     commandline.main()
-18:48 <darix>   File "/usr/lib64/python2.5/site-packages/osc/commandline.py", line 1077, in main
-18:48 <darix>     cmd(args)
-18:48 <darix>   File "/usr/lib64/python2.5/site-packages/osc/commandline.py", line 719, in results
-18:48 <darix>     print '\n'.join(get_results(project, package))
-18:48 <darix>   File "/usr/lib64/python2.5/site-packages/osc/core.py", line 1169, in get_results
-18:48 <darix>     rmap['status'] += ': ' + statusnode.find('details').text
-18:48 <darix> AttributeError: 'NoneType' object has no attribute 'text'
-
-
-21:49 < darix> DuDE: osc editmeta
-21:49 < darix> the template is stupid
-21:49 < darix> it now has "your_name" as project maintainer
-21:50 < darix> that requires you to edit the line everytime when creating a new package
-21:50 < DuDE> hm, can't find that
-21:50 < DuDE> is that the exact string?
-21:52 < DuDE> ah, I find your_username
-21:52 < darix> DuDE: http://rafb.net/p/TgxmfB83.txt
-21:54 < DuDE> I think that was filled in the past
-21:54 < DuDE> since the user account data is now stored in the config per api server, the (in the config) global user/passwd is no longer used otherwise, so it shows the default
-
--> hits also in edit_user()
