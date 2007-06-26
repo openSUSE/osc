@@ -73,7 +73,7 @@ It also does some weird stuff.
 -->
  
 </project>
-                        """
+"""
 
 new_package_templ = """\
 <package name="%s">
@@ -542,6 +542,18 @@ rev: %s
         os.unlink(filename)
 
 
+def shorttime(t):
+    """format time as Apr 02 18:19
+    or                Apr 02  2005
+    depending on whether it is in the current year
+    """
+    import time
+
+    if time.localtime()[0] == time.localtime(t)[0]:
+        # same year
+        return time.strftime('%b %d %H:%M',time.localtime(t))
+    else:
+        return time.strftime('%b %d  %Y',time.localtime(t))
 
 
 def is_project_dir(d):
@@ -554,6 +566,16 @@ def is_package_dir(d):
            os.path.exists(os.path.join(d, store, '_package'))
 
         
+def slash_split(l):
+    """Split command line arguments like 'foo/bar' into 'foo' 'bar'.
+    This is handy to allow copy/paste a project/package combination in this form.
+    """
+    r = []
+    for i in l:
+        r += i.split('/')
+    return r
+
+
 def findpacs(files):
     pacs = []
     for f in files:
@@ -766,12 +788,28 @@ def meta_get_packagelist(apiurl, prj):
     return [ node.get('name') for node in root.findall('entry') ]
 
 
-def meta_get_filelist(apiurl, prj, package):
+def meta_get_filelist(apiurl, prj, package, verbose=False):
+    """return a list of file names,
+    or a list File() instances if verbose=True"""
 
     u = makeurl(apiurl, ['source', prj, package])
     f = http_GET(u)
     root = ET.parse(f).getroot()
-    return [ node.get('name') for node in root ]
+
+    if not verbose:
+        return [ node.get('name') for node in root ]
+
+    else:
+        l = []
+        rev = int(root.get('rev'))
+        for node in root:
+            f = File(node.get('name'), 
+                     node.get('md5'), 
+                     int(node.get('size')), 
+                     int(node.get('mtime')))
+            f.rev = rev
+            l.append(f)
+        return l
 
 
 def meta_get_project_list(apiurl):
@@ -783,6 +821,12 @@ def meta_get_project_list(apiurl):
 
 def show_project_meta(apiurl, prj):
     url = makeurl(apiurl, ['source', prj, '_meta'])
+    f = http_GET(url)
+    return f.readlines()
+
+
+def show_project_conf(apiurl, prj):
+    url = makeurl(apiurl, ['source', prj, '_config'])
     f = http_GET(url)
     return f.readlines()
 
@@ -871,6 +915,20 @@ class metafile:
                 print >> sys.stderr, 'cannot save meta data - an unexpected error occured'
                 return False
     
+#metatypes = { 'prj':     { 'url': ['source', prj, '_meta'],
+#                           'template': new_project_templ,
+#                         },
+#              'pkg':     { 'url'     : ['source', prj, pac, '_meta'],
+#                           'template': new_package_templ,
+#                         },
+#              'prjconf': { 'url': ['source', prj, '_config'], 
+#                           'template': None,
+#                         },
+#              'user':    { 'url': ['person', quote_plus(user)],
+#                           'template': new_user_template,
+#                         },
+#            }
+
 def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
     f=metafile(prj, pac, template, change_is_required)
 
@@ -886,6 +944,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
                 break
         else:
             break
+
 
 def edit_user_meta(user, change_is_required=True):
     import tempfile
@@ -1100,7 +1159,6 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     buf = StringIO()
     tree.write(buf)
     src_meta = buf.getvalue()
-
 
     edit_meta(dst_project, dst_package, template=src_meta, change_is_required=False)
 

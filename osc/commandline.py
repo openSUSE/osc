@@ -85,29 +85,51 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.alias('ls')
-    #@cmdln.option('-l', '--long', action='store_true',
-    #                    help='print extra information')
+    @cmdln.option('-v', '--verbose', action='store_true',
+                        help='print extra information')
     def do_list(self, subcmd, opts, *args):
         """${cmd_name}: List existing content on the server
 
         Examples:
            ls                         # list all projects
            ls Apache                  # list packages in a project
-           ls Apache subversion       # list files of package of a project
+           ls Apache apache2          # list files of package of a project
+           ls -v Apache apache2       # verbosely list files of package of a project
+
+        With --verbose, the following fields will be shown for each item:
+           MD5 hash of file
+           Revision number of the last commit
+           Size (in bytes)
+           Date and time of the last commit
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         if not args:
             print '\n'.join(meta_get_project_list(conf.config['apiurl']))
+
         elif len(args) == 1:
             project = args[0]
+            if opts.verbose:
+                sys.exit('The verbose option is not implemented for projects.')
             print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
+
         elif len(args) == 2:
             project = args[0]
             package = args[1]
-            print '\n'.join(meta_get_filelist(conf.config['apiurl'], project, package))
+            l = meta_get_filelist(conf.config['apiurl'], 
+                                  project, 
+                                  package,
+                                  verbose=opts.verbose)
+            if opts.verbose:
+                for i in l:
+                    print '%s %7d %9d %s %s' \
+                        % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name)
+            else:
+                print '\n'.join(l)
 
 
     def do_meta(self, subcmd, opts, *args):
@@ -168,16 +190,18 @@ class Osc(cmdln.Cmdln):
         If the named project or package does not exist, it will be created.
 
         Examples: 
-           osc editmeta FooPrj              # edit meta of project 'FooPrj'
-           osc editmeta FooPrj barpackage   # edit meta of package 'barpackage'
+           osc editmeta Apache              # edit meta of project 'Apache'
+           osc editmeta Apache apache2      # edit meta of package 'apache2'
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         if not args:
             print >>sys.stderr, 'Missing argument.'
-            self.do_help(['foo', 'editmeta'])
+            self.do_help([None, 'editmeta'])
             return 2
 
         if len(args) == 2:
@@ -227,9 +251,11 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         if not args or len(args) < 3:
             print >>sys.stderr, 'Incorrect number of argument.'
-            self.do_help(['foo', 'linkpac'])
+            self.do_help([None, 'linkpac'])
             return 2
 
         src_project = args[0]
@@ -251,7 +277,8 @@ class Osc(cmdln.Cmdln):
     def do_copypac(self, subcmd, opts, *args):
         """${cmd_name}: Copy a package
 
-        A client-side copy implementation. It can be cross-project.
+        A client-side copy implementation. It can be done cross-project, or even 
+        across buildservice instances, if the -t option is used.
 
         The DESTPAC name is optional; the source packages' name will be used if
         DESTPAC is omitted.
@@ -261,9 +288,11 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         if not args or len(args) < 3:
             print >>sys.stderr, 'Incorrect number of argument.'
-            self.do_help(['foo', 'copypac'])
+            self.do_help([None, 'copypac'])
             return 2
 
         src_project = args[0]
@@ -410,14 +439,15 @@ class Osc(cmdln.Cmdln):
 
         examples:
             osc co Apache                    # entire project
-            osc co Apache subversion         # a package
-            osc co Apache subversion foo     # single file -> to current dir
+            osc co Apache apache2            # a package
+            osc co Apache apache2 foo        # single file -> to current dir
 
         usage: 
             osc co PROJECT [PACKAGE] [FILE]
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
         project = package = filename = None
         try: 
             project = args[0]
@@ -438,7 +468,7 @@ class Osc(cmdln.Cmdln):
                 checkout_package(conf.config['apiurl'], project, package)
         else:
             print >>sys.stderr, 'Missing argument.'
-            self.do_help(['foo', 'checkout'])
+            self.do_help([None, 'checkout'])
             return 2
 
 
@@ -526,7 +556,7 @@ class Osc(cmdln.Cmdln):
 
         if not args:
             print >>sys.stderr, 'Missing argument.'
-            self.do_help(['foo', 'add'])
+            self.do_help([None, 'add'])
             return 2
 
         filenames = parseargs(args)
@@ -752,7 +782,7 @@ class Osc(cmdln.Cmdln):
 
         if not args:
             print >>sys.stderr, 'Missing argument.'
-            self.do_help(['foo', 'delete'])
+            self.do_help([None, 'delete'])
             return 2
 
         args = parseargs(args)
@@ -792,7 +822,7 @@ class Osc(cmdln.Cmdln):
 
         if not args:
             print >>sys.stderr, 'Missing argument.'
-            self.do_help(['foo', 'resolved'])
+            self.do_help([None, 'resolved'])
             return 2
 
         args = parseargs(args)
@@ -1187,9 +1217,11 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         if len(args) < 1:
             print >>sys.stderr, 'Missing argument.'
-            #self.do_help(['foo', 'rebuildpac'])
+            #self.do_help([None, 'rebuildpac'])
             return 2
 
         package = repo = arch = code = None
@@ -1267,6 +1299,8 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
         
+        args = slash_split(args)
+
         if len(args) < 1:
             print >>sys.stderr, 'Missing <project> argument'
             return 2
