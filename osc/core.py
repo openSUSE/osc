@@ -24,7 +24,7 @@ except ImportError:
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~', '.*.swp']
+exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~', '.*.swp', '.swp']
 
 
 new_project_templ = """\
