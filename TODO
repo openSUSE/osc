@@ -1,106 +1,67 @@
-- split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
 
-- implmement (svn-like) switch command
-- implement 'mv' command
-- updatepacmetafromspec -- is that useful? 
-  In which form would this be integrated best?
-- use urllib.urlencode for parameter encoding
-- _real_ SSL support, with certificate verification
-- adjust zsh completion to work with cmdln.py implementation
-- add option to disable gpg key checking?
-- add support for adding tags to packages?
-- write howto for plugin-izing subcommand implementation
-- implement editing of project configuration (already works in api & backend)
+MAJOR:
 
+  - new meta command, replacing usermeta, edituser, editprj, editmeta, ...       [2]
+  (poeml has started to work on this one)
+    - See http://lists.opensuse.org/opensuse-buildservice/2007-05/msg00202.html
+      and the two followups.
+    - thereby, implement editing of project configuration (already works in api & backend)
 
-checkin: 
-	- handle error if PUT fails, so the change is not committed to
-	  localmeta	
+  - commit message handling, and source revision handling. This affects the commands
+    co, up, log, ci, diff. (Checking out or diffing against old revivions,
+    committing with commit messages, and reviewing the commit log)
 
+  - changelog handling (equivalent of Novell-internal 'vc' tool, I guess)
+    (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
 
-- changelog handling
-  (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
+  
+NORMAL:
 
-
-
-implement a package search / indexing
-
-
-> BTW: Can I upload a src.rpm instead of a tarball also?
-no, because not all tools will be able to handle a src.rpm. And you will not
-be able to build non rpm packages from it.
-But someone could patch the commandline tool osc to import a src.rpm by
-extracting it (hint hint ;)
-
-
-
-
-<darix> ich hab nen vorschlag fuer osc
-<darix> sagen wir ich leg ein server:mail/foo123 an
-<darix> dann waere es cool sowas zu koennen wie
-<darix> osc importfromspec server:mail foo123
-This can actually be done by
-	osc createpac server:mail foo123
-followed by
-	cd foo123; osc init server:mail foo123
+  - add support for local build of packages which do not exist / have not been
+    created yet in the buildservice
+  - write howto for plugin-izing subcommand implementation
+  - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
+  - status: implement -u option as in svn          [3]
+  - implement (svn-like) switch command
+  - implement 'mv' command
+  - use urllib.urlencode for parameter encoding (or check if this is the case already?)
+  - _real_ SSL support, with certificate verification
+  - copypac: put the current release number into the spec file before sending it
+  - kill BUILD_ROOT/BUILD_DIST support (or make it configurable? It tends to
+    cause confusion if accidentally set. Only useful inside Novell anyway.)
+  - show request body of 400 responses (bad request)
+  - commit: check if errors during PUT are handled sensibly, so the change is
+    not committed to localmeta	
 
 
+MINOR: 
+
+  - new command: osc listbinaries [<project>] [<package>]
+    listing the built package, either as URLs or just the filenames?        	[1]
+  - new command: osc getbinaries [<project>] [<package>] [<rpm>]+           	[1]
+  - add option to disable gpg key checking?
+  - adjust zsh completion to work with cmdln.py implementation
 
 
-bug:
- % osc rm subversion.de.po.bz2 subversion.nb.po.bz2
-D    subversion.de.po.bz2
-D    subversion.nb.po.bz2
-poeml@aust ~/pac/opensuse/Subversion/subversion
- % osc ci subversion.de.po.bz2 subversion.nb.po.bz2
-Sending        subversion.changes
-Deleting       subversion.de.po.bz2
-Deleting       subversion.nb.po.bz2
-Sending        subversion.viewcvs.conf
-Transmitting file data ..
+OPTIONAL:
 
-
-15:47 < kesselborn> DuDE: beim osc local build: müssen die config vars gesetzt sein, wenn man env vars gesetzt hat?
-15:48 < DuDE> kesselborn: hm, weiss ich gerade gar nicht
-15:48 < kesselborn> ja, scheint so
-15:48 < kesselborn> ok
-15:48 < kesselborn> aber er nimmt dann die env vas
-15:48 < kesselborn> vars
-15:50 < DuDE> kesselborn: hm, das sollte ich aendern
+  - add support for importing a src.rpm, extracting it and make it a package 
+      Something similar can be done by
+      	osc createpac foo-project foo123
+      followed by
+      	cd foo123; osc init foo-project foo123
+  - add support for adding tags to packages?
+  - add support for package search
 
 
 
 
 
-osc repos server:search:ui :
-  <repository name="SUSE_Linux_10.1">
-    <path project="server:search" repository="SUSE_Linux_10.1" />
-    <path project="KDE:KDE4" repository="SUSE_Linux_10.1" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="SUSE_Factory">
-    <path project="server:search" repository="SUSE_Factory" />
-    <path project="KDE:KDE4" repository="SUSE_Factory" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
 
 
 
-# shorter forms of the packstatus... useful for anything?
-#http://api.opensuse.org/result/KDE:KDE3/packstatus?summary
-#http://api.opensuse.org/result/KDE:KDE3/packstatus?summaryonly
 
-
- # osc build SUSE_Factory i586 xorg-x11-libX11.spec                                                                                          
-> ['/usr/bin/osc', 'build', 'i38', 'i386', 'SUSE_Factory', 'i586', 'xorg-x11-libX11.spec']                                                    
-> Error: specfile 'SUSE_Factory' does not exist.                                                                                              
-BUILD_DIST must *not* be set! Could you add this information to the
-'osc help build' text?
- -> possibly kill BUILD_ROOT/BUILD_DIST support altogether? or make its use configurable.
-
-
+[1]
 
 http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:06 <darix> kurz zeit ueber 1-2 osc feature request zu reden die ich grade bekommen habe?
@@ -130,14 +91,9 @@ http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:09 <darix> man kann auf dem backend alle rpms listen lassen
 
 
- % osc addremove
-A    .swp
 
 
-Right now, a package must exist in the bs so that it can be built
-locally. But this is a bug in osc which I'm going to fix at some point
-in time.
-
+[2]
 
 editmeta:
 Ah, or rather osc _thought_ it was unmodified because it uses a simple 
@@ -150,41 +106,11 @@ that wouldn't require you to work around with an EDITOR script at all.
 Noted in the todo.
 
 
-copypac:
-put the current release number into the spec file before sending it
-
-show request body of 400 responses (bad request)
 
 
 
-a merge issues:
-if I mark a file as "to be added" ("A"), and someone else alread adds (and
-commits) the file in between, and I update -- will I get it marked as "D" after update??
-D    apr_dbd_mysql.c
-M    libapr-util1.spec
 
-
-
-in the unusual event that a log file should be there (due to status "building"), but there is none, fail gracefully.
- % osc log openSUSE_10.2 i586
-Error: can't get 'https://api.opensuse.org/result/X11:xfce/openSUSE_10.2/xfprint/i586/log?nostream=1&start=0'
-HTTP Error 404: Not Found
-
-
-with no repos defined:
- % osc prjresults
-Traceback (most recent call last):
-  File "/usr/bin/osc", line 7, in <module>
-    commandline.main()
-  File "/usr/lib/python2.5/site-packages/osc/commandline.py", line 1072, in main
-    cmd(args)
-  File "/usr/lib/python2.5/site-packages/osc/commandline.py", line 738, in prjresults
-    print '\n'.join(get_prj_results(project))
-  File "/usr/lib/python2.5/site-packages/osc/core.py", line 1192, in get_prj_results
-    for node in root.find('packstatuslist'):
-TypeError: 'NoneType' object is not iterable
-
-
+[3]
 
 19:08 < Beineri> DuDE: can you add an option to "up" which moves instead overwriting a file if it has changed in the repository?
 19:08 < darix> Beineri: moves?
@@ -242,10 +168,5 @@ Traceback (most recent call last):
 AttributeError: 'NoneType' object has no attribute 'md5'
 [1]    11871 exit 1     osc up
 
-
-21:05 <darix> ping
-21:30 <DuDE_> pong
-21:31 <darix> osc updatepac... sollte nicht fehlschlagen wenn das rpm anders heisst als das package verzeichnis
-21:31 <darix> :p
 
 
