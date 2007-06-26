@@ -129,7 +129,9 @@ def verify_pacs(pac_list):
        """
 
 
-
+    if not pac_list:
+        return
+        
     # we can use os.popen4 because we don't care about the return value.
     # we check the output anyway, and rpm always writes to stdout.
     (i, o) = os.popen4(['/bin/rpm', '-K'] + pac_list)
