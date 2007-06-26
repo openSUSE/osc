@@ -996,7 +996,7 @@ def read_meta_from_spec(specfile):
 
     if not os.path.isfile(specfile):
         print 'file \'%s\' is not a readable file' % specfile
-        return None
+        return (None, None, None)
 
     lines = open(specfile).readlines()
 
