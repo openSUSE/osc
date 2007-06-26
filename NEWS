@@ -1,4 +1,6 @@
 since 0.96:
+- ls: add verbose option to print extra information for packages
+- for all server-side commands, allow arguments "foo/bar" instead of "foo bar"
 - new wipebinaries and abortbuild commands, by courtesy of Marcus Huewe
 - improved metadata error condition handling (thanks to Marcus Huewe)
 - build: add --userootforbuild option
