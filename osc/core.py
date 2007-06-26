@@ -1315,6 +1315,8 @@ def get_prj_results(apiurl, prj, show_legend=False):
     root = tree.getroot()
 
     pacs = []
+    if not root.find('result'):
+        return []
     for node in root.find('result'):
         pacs.append(node.get('package'))
     pacs.sort()
