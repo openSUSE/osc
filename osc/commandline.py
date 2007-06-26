@@ -967,6 +967,11 @@ class Osc(cmdln.Cmdln):
                     break
                 offset += len(log_chunk)
                 print log_chunk.strip()
+
+        except urllib2.HTTPError, e:
+            print >>sys.stderr, 'Can\'t get logfile'
+            print >>sys.stderr, e
+
         except KeyboardInterrupt:
             pass
 
