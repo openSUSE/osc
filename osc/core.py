@@ -943,6 +943,7 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
             else:
                 break
         else:
+            f.sync()
             break
 
 
@@ -1155,6 +1156,7 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     tree = ET.parse(StringIO(''.join(src_meta)))
     root = tree.getroot()
     root.set('name', '%s')
+    root.set('project', dst_project)
     tree.find('person').set('userid', '%s')
     buf = StringIO()
     tree.write(buf)
