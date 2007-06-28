@@ -14,6 +14,8 @@ MAJOR:
   - changelog handling (equivalent of Novell-internal 'vc' tool, I guess)
     (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
 
+  - think about how to locally build "linked" packages
+
   
 NORMAL:
 
