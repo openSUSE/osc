@@ -1320,7 +1320,14 @@ class Osc(cmdln.Cmdln):
         print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo)
 
 
-if __name__ == '__main__':
-    osc = Osc()
-    sys.exit(osc.main())
+
+    # load subcommands plugged-in locally
+    plugin_dirs = ['/var/lib/osc-plugins', os.path.expanduser('~/.osc-plugins')]
+    for plugin_dir in plugin_dirs:
+        if os.path.isdir(plugin_dir):
+            for extfile in os.listdir(plugin_dir):
+                if not extfile.endswith('.py'):
+                    continue
+                exec open(os.path.join(plugin_dir, extfile))
+
 
