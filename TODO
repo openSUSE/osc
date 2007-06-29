@@ -11,6 +11,16 @@ MAJOR:
     co, up, log, ci, diff. (Checking out or diffing against old revivions,
     committing with commit messages, and reviewing the commit log)
 
+     - Extending the diff command to take an -rREV argument and show the diff 
+       of the working copy to that revision
+     - and take -rREV:REV as argument and show the diff between those two 
+       (server-side) revisions
+     
+     - Extending the checkout command to accept -rREV to check out a specific
+       revision
+     - possibly extend the update command to accept -rREV as well
+
+
   - changelog handling (equivalent of Novell-internal 'vc' tool, I guess)
     (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
 
