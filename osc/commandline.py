@@ -791,6 +791,8 @@ class Osc(cmdln.Cmdln):
         for p in pacs:
 
             for filename in p.todo:
+                if filename not in p.filenamelist:
+                    sys.exit('\'%s\' is not under version control' % filename)
                 p.put_on_deletelist(filename)
                 p.write_deletelist()
                 try:
