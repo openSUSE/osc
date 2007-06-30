@@ -351,6 +351,8 @@ class Osc(cmdln.Cmdln):
         print >>sys.stderr, 'or admin@opensuse.org.'
 
 
+    @cmdln.option('', '--specfile', metavar='FILE',
+                      help='Path to specfile. (if you pass more than working copy this option is ignored)')
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
         """${cmd_name}: Update package meta information from a specfile
 
@@ -361,11 +363,14 @@ class Osc(cmdln.Cmdln):
         """
 
         args = parseargs(args)
+        if opts.specfile and (len(args) == 1):
+            specfile = opts.specfile
+        else:
+            specfile = None
         pacs = findpacs(args)
-
         for p in pacs:
 
-            p.read_meta_from_spec()
+            p.read_meta_from_spec(specfile)
             p.update_pac_meta()
 
 

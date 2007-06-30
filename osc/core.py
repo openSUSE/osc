@@ -484,15 +484,19 @@ rev: %s
         return r
 
 
-    def read_meta_from_spec(self):
-        specfile = os.path.join(self.dir, self.name + '.spec')
-        name, summary, descr = read_meta_from_spec(specfile)
-
-        if name != self.name:
-            print >>sys.stderr, 'name from spec does not match name of package... this is probably a problem'
+    def read_meta_from_spec(self, spec = None):
+        if spec:
+            specfile = spec
+        else:
+            specfile = os.path.join(self.dir, self.name + '.spec')
+        summary, descr = read_meta_from_spec(specfile)
+        
+        if not summary and not descr:
+            print >>sys.stderr, 'aborting'
             sys.exit(1)
-        self.summary = summary
-        self.descr = descr
+        else:
+            self.summary = summary
+            self.descr = descr
 
 
     def update_pac_meta(self, template=new_package_templ):
@@ -997,7 +1001,7 @@ def read_meta_from_spec(specfile):
 
     if not os.path.isfile(specfile):
         print 'file \'%s\' is not a readable file' % specfile
-        return (None, None, None)
+        return (None, None)
 
     lines = open(specfile).readlines()
 
@@ -1005,20 +1009,28 @@ def read_meta_from_spec(specfile):
         if line.startswith('Name:'):
             name = line.split(':')[1].strip()
             break
-        
+   
+    summary = None
     for line in lines:
         if line.startswith('Summary:'):
             summary = line.split(':')[1].strip()
             break
+    if summary == None:
+        print 'cannot find \'Summary:\' tag'
+        return (None, None)
 
     descr = []
-    start = lines.index('%description\n') + 1
+    try:
+        start = lines.index('%description\n') + 1
+    except ValueError:
+        print 'cannot find %description'
+        return (None, None)
     for line in lines[start:]:
         if line.startswith('%'):
             break
         descr.append(line)
     
-    return name, summary, descr
+    return (summary, descr)
 
 
 def get_user_meta(apiurl, user):
