@@ -197,6 +197,7 @@ class TestOsc(unittest.TestCase):
              blaues
              Haus
              geht aus
+            \\ No newline at end of file
             """)
         self.assertEqual(remove_revid(self.out), expected)
 
