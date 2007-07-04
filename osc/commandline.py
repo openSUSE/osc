@@ -375,6 +375,12 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.alias('di')
+    @cmdln.option('-r', '--revision', metavar='rev1[:rev2]',
+                        help='If rev1 is specified it will compare your working copy against '
+                             'the revision (rev1) on the server. '
+                             'If rev1 and rev2 are specified it will compare rev1 against rev2'
+                             '(changes in your working copy are ignored in this case).\n'
+                             'NOTE: if more than 1 package is specified --revision will be ignored!')
     def do_diff(self, subcmd, opts, *args):
         """${cmd_name}: Generates a diff
 
@@ -389,28 +395,95 @@ class Osc(cmdln.Cmdln):
 
         args = parseargs(args)
         pacs = findpacs(args)
-
+        
         difference_found = False
-        for p in pacs:
-            if p.todo == []:
-                for i in p.filenamelist:
-                    s = p.status(i)
-                    if s == 'M' or s == 'C':
-                        p.todo.append(i)
+        d = []
+        
+        rev1, rev2 = parseRevisionOption(opts.revision)
+        pac = pacs[0]
+        
+        if rev1 and rev2 and (len(pacs) == 1):
+            # this is currently not implemented
+            print >>sys.stderr, 'this feature isn\'t implemented yet'
+            sys.exit(1)
+        elif rev1 and (pac.rev != rev1) and (len(pacs) == 1):
+            # make a temp dir for checking out the project
+            import tempfile
+            tmpdir = tempfile.mkdtemp(rev1, pac.name, '/tmp')
+            curdir = os.getcwd()
+            os.chdir(tmpdir)
+            init_package_dir(conf.config['apiurl'], pac.prjname, pac.name, tmpdir, rev1)
+            os.chdir(curdir)
+            tmppac = Package(tmpdir)
 
-            d = []
-            for filename in p.todo:
-                d.append('Index: %s\n' % filename)
+            changed_files = []
+            added_files = []
+            removed_files = []
+            if pac.todo:
+                for file in pac.todo:
+                    if file in tmppac.filenamelist:
+                        if dgst(os.path.join(pac.dir, file)) != tmppac.findfilebyname(file).md5:
+                            changed_files.append(file)
+                    else:
+                        added_files.append(file)
+            else:           
+                changed_files, added_files, removed_files = pac.comparePac(tmppac)
+           
+            for file in changed_files:
+                tmppac.updatefile(file, rev1)
+                d.append('Index: %s\n' % file)
                 d.append('===================================================================\n')
-                d.append(get_source_file_diff(p.dir, filename, p.rev))
-            if d:
-                print ''.join(d)
-                difference_found = True
+                d.append(get_source_file_diff(pac.dir, file, rev1, file, tmppac.dir))
+                tmppac.delete_localfile(file)
+                tmppac.delete_storefile(file)
+
+            # this tempfile is used as a dummy file for difflib
+            (fd, filename) = tempfile.mkstemp(dir=tmppac.storedir)
+
+            for file in added_files:
+                d.append('Index: %s\n' % file)
+                d.append('===================================================================\n')
+                d.append(get_source_file_diff(pac.dir, file, rev1, \
+                                              os.path.basename(filename), \
+                                              tmppac.storedir, file))
+        
+            for file in removed_files:
+                tmppac.updatefile(file, rev1)
+                d.append('Index: %s\n' % file)
+                d.append('===================================================================\n')
+                d.append(get_source_file_diff(tmppac.storedir, \
+                                              os.path.basename(filename), \
+                                              rev1, file, tmppac.dir, file))
+                tmppac.delete_localfile(file)
+                tmppac.delete_storefile(file)
+
+            # clean up 
+            os.unlink(filename)
+            for dir, dirnames, files in os.walk(tmppac.storedir):
+                for file in files:
+                    os.unlink(os.path.join(dir, file))
+            os.rmdir(tmppac.storedir)
+            os.rmdir(tmppac.dir)
+        else:
+            for p in pacs:
+                if p.todo == []:
+                    for i in p.filenamelist:
+                        s = p.status(i)
+                        if s == 'M' or s == 'C':
+                            p.todo.append(i)
+
+                for filename in p.todo:
+                    d.append('Index: %s\n' % filename)
+                    d.append('===================================================================\n')
+                    d.append(get_source_file_diff(p.dir, filename, p.rev))
+
+        
+        if d:
+            print ''.join(d)
+            difference_found = True
 
         if difference_found:
             return 1
-
-
                 
     def do_repourls(self, subcmd, opts, *args):
         """${cmd_name}: shows URLs of .repo files 
@@ -434,7 +507,9 @@ class Osc(cmdln.Cmdln):
                 print url_tmpl % (p.prjname.replace(':', ':/'), platform, p.prjname)
 
 
-                
+
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='checkout the specified revision')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: check out content from the repository
@@ -461,11 +536,13 @@ class Osc(cmdln.Cmdln):
         except: 
             pass
 
+        rev, dummy = parseRevisionOption(opts.revision)
+
         if filename:
-            get_source_file(conf.config['apiurl'], project, package, filename)
+            get_source_file(conf.config['apiurl'], project, package, filename, revision=rev)
 
         elif package:
-            checkout_package(conf.config['apiurl'], project, package)
+            checkout_package(conf.config['apiurl'], project, package, rev)
 
         elif project:
             # all packages
@@ -678,6 +755,10 @@ class Osc(cmdln.Cmdln):
             print
 
 
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='update to specified revision (this option will be ignored '
+                             'if you are going to update the complete project or more than '
+                             'one package)')
     @cmdln.alias('up')
     def do_update(self, subcmd, opts, *args):
         """${cmd_name}: Update a working copy
@@ -719,6 +800,11 @@ class Osc(cmdln.Cmdln):
 
         pacs = findpacs(args)
 
+        if opts.revision and ( len(args) == 1):
+            rev, dummy = parseRevisionOption(opts.revision)
+        else:
+            rev = None
+
         for p in pacs:
 
             if len(pacs) > 1:
@@ -728,7 +814,7 @@ class Osc(cmdln.Cmdln):
             saved_modifiedfiles = [ f for f in p.filenamelist if p.status(f) == 'M' ]
 
             oldp = p
-            p.update_filesmeta()
+            p.update_filesmeta(rev)
             p = Package(p.dir)
 
             # which files do no longer exist upstream?
@@ -754,13 +840,13 @@ class Osc(cmdln.Cmdln):
                     status_after_merge = p.mergefile(filename)
                     print statfrmt(status_after_merge, filename)
                 elif state == 'M':
-                    p.updatefile(filename)
+                    p.updatefile(filename, rev)
                     print statfrmt('U', filename)
                 elif state == '!':
-                    p.updatefile(filename)
+                    p.updatefile(filename, rev)
                     print 'Restored \'%s\'' % filename
                 elif state == 'F':
-                    p.updatefile(filename)
+                    p.updatefile(filename, rev)
                     print statfrmt('A', filename)
                 elif state == ' ':
                     pass

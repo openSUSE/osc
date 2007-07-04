@@ -329,12 +329,12 @@ class Package:
             f.write('\n')
             f.close()
 
-    def updatefile(self, n):
+    def updatefile(self, n, revision):
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
         mtime = self.findfilebyname(n).mtime
 
-        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename)
+        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename, revision=revision)
         os.utime(filename, (-1, mtime))
 
         shutil.copy2(filename, storefilename)
@@ -386,8 +386,8 @@ class Package:
 
 
 
-    def update_filesmeta(self):
-        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name))
+    def update_filesmeta(self, revision=None):
+        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision))
         f = open(os.path.join(self.storedir, '_files'), 'w')
         f.write(meta)
         f.close()
@@ -462,6 +462,30 @@ class Package:
         
         return state
 
+    def comparePac(self, pac):
+        """
+        This method compares the local filelist with
+        the filelist of the passed package to see which files
+        were added, removed and changed.
+        """
+        
+        changed_files = []
+        added_files = []
+        removed_files = []
+
+        for file in self.filenamelist:
+            if not file in self.to_be_deleted:
+                if file in pac.filenamelist:
+                    if dgst(file) != pac.findfilebyname(file).md5:
+                        changed_files.append(file)
+                else:
+                    added_files.append(file)
+
+        for file in pac.filenamelist:
+            if (not file in self.filenamelist) or (file in self.to_be_deleted):
+                removed_files.append(file)
+
+        return changed_files, added_files, removed_files
 
     def merge(self, otherpac):
         self.todo += otherpac.todo
@@ -733,7 +757,7 @@ def urlopen(url, data=None):
     return fd
 
 
-def init_package_dir(apiurl, project, package, dir):
+def init_package_dir(apiurl, project, package, dir, revision=None):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -745,7 +769,7 @@ def init_package_dir(apiurl, project, package, dir):
     f.close
 
     f = open('_files', 'w')
-    f.write(''.join(show_files_meta(apiurl, project, package)))
+    f.write(''.join(show_files_meta(apiurl, project, package, revision)))
     f.close()
 
     f = open('_osclib_version', 'w')
@@ -986,8 +1010,11 @@ def edit_user_meta(user, change_is_required=True):
         print 'Done.'
 
 
-def show_files_meta(apiurl, prj, pac):
-    f = http_GET(makeurl(apiurl, ['source', prj, pac]))
+def show_files_meta(apiurl, prj, pac, revision=None):
+    query = []
+    if revision:
+        query.append('rev=%s' % revision)
+    f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
     return f.readlines()
 
 
@@ -1043,8 +1070,13 @@ def get_user_meta(apiurl, user):
         return None
 
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None):
-    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)])
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision = None):
+    query = []
+    if revision:
+        query.append('rev=%s' % quote_plus(revision))
+
+    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
+    # print 'url: %s' % u
     f = http_GET(u)
 
     o = open(targetfilename or filename, 'w')
@@ -1082,10 +1114,26 @@ def binary_file(fn):
     return binary(open(fn, 'r').read(4096))
 
 
-def get_source_file_diff(dir, filename, rev):
+def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, origfilename = None):
+    """
+    This methods diffs oldfilename against filename (so filename will
+    be shown as the new file).
+    The variable origfilename is used if filename and oldfilename differ
+    in their names (for instance if a tempfile is used for filename etc.)
+    """
+
     import difflib
 
-    file1 = os.path.join(dir, store, filename)  # stored original
+    if not oldfilename:
+        oldfilename = filename
+
+    if not olddir:
+        olddir = os.path.join(dir, store)
+
+    if not origfilename:
+        origfilename = filename
+    
+    file1 = os.path.join(olddir, oldfilename)   # old/stored original
     file2 = os.path.join(dir, filename)         # working copy
 
     f1 = open(file1, 'r')
@@ -1097,14 +1145,14 @@ def get_source_file_diff(dir, filename, rev):
     f2.close()
 
     if binary(s1) or binary (s2):
-        d = ['Binary file %s has changed\n' % filename]
+        d = ['Binary file %s has changed\n' % origfilename]
 
     else:
         d = difflib.unified_diff(\
             s1.splitlines(1), \
             s2.splitlines(1), \
-            fromfile = '%s     (revision %s)' % (filename, rev), \
-            tofile = '%s     (working copy)' % filename)
+            fromfile = '%s     (revision %s)' % (origfilename, rev), \
+            tofile = '%s     (working copy)' % origfilename)
 
         # if file doesn't end with newline, we need to append one in the diff result
         d = list(d)
@@ -1136,15 +1184,15 @@ def make_dir(apiurl, project, package):
     return(os.path.join(project, package))
 
 
-def checkout_package(apiurl, project, package):
+def checkout_package(apiurl, project, package, revision=None):
     olddir = os.getcwd()
 
     os.chdir(make_dir(apiurl, project, package))
-    init_package_dir(apiurl, project, package, store)
+    init_package_dir(apiurl, project, package, store, revision)
     p = Package(os.curdir)
 
     for filename in p.filenamelist:
-        p.updatefile(filename)
+        p.updatefile(filename, revision)
         print 'A   ', os.path.join(project, package, filename)
 
     os.chdir(olddir)
@@ -1535,3 +1583,27 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None):
         sys.exit(1)
     root = ET.parse(f).getroot()
     return root.get('code')
+
+def parseRevisionOption(string):
+    """
+    retrun a tuple which contains the revisions
+    """
+
+    if string:
+        if ':' in string:
+            splitted_rev = string.split(':')
+            try:
+                for i in splitted_rev:
+                    int(i)
+                return splitted_rev
+            except ValueError:
+                print >>sys.stderr, 'your revision \'%s\' will be ignored' % string
+                return None, None
+        else:
+            if string.isdigit():
+                return string, None
+            else:
+                print >>sys.stderr, 'your revision \'%s\' will be ignored' % string
+                return None, None
+    else:
+        return None, None
