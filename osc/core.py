@@ -521,10 +521,25 @@ rev: %s
 
 
     def read_meta_from_spec(self, spec = None):
+        import glob
         if spec:
             specfile = spec
         else:
-            specfile = os.path.join(self.dir, self.name + '.spec')
+            # scan for spec files
+            speclist = glob.glob(os.path.join(self.dir, '*.spec'))
+            if len(speclist) == 1:
+                specfile = speclist[0]
+            elif len(speclist) > 1:
+                print 'the following specfiles were found:'
+                for file in speclist:
+                    print file
+                print 'please specify one with --specfile'
+                sys.exit(1)
+            else:
+                print 'no specfile was found - please specify one ' \
+                      'with --specfile'
+                sys.exit(1)     
+
         summary, descr = read_meta_from_spec(specfile)
         
         if not summary and not descr:
@@ -1598,7 +1613,7 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None):
 
 def parseRevisionOption(string):
     """
-    retrun a tuple which contains the revisions
+    returns a tuple which contains the revisions
     """
 
     if string:

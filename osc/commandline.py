@@ -509,7 +509,9 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
-                        help='checkout the specified revision')
+                        help='checkout the specified revision. '
+                             'NOTE: if you checkout the complete project '
+                             'this option is ignored!')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: check out content from the repository
