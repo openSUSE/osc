@@ -39,10 +39,26 @@ It also does some weird stuff.
 
   <person role="maintainer" userid="%s" />
 
+<!-- remove this block to publish your packages on the mirrors -->
+  <publish>
+    <disable />
+  </publish>
+  <build>
+    <enable />
+  </build>
+  <debuginfo>
+    <disable />
+  </debuginfo>
+
 <!-- remove this comment to enable one or more build targets
 
   <repository name="SUSE_Linux_Factory">
     <path project="SUSE:Factory" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="SUSE_Linux_10.2">
+    <path project="SUSE:SL-10.2" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
@@ -56,17 +72,13 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="SUSE_Linux_9.3">
-    <path project="SUSE:SL-9.3" repository="standard" />
+  <repository name="Fedora_7">
+    <path project="Fedora:7" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="Fedora_Core_5">
-    <path project="Fedora:Core5" repository="standard" />
-    <arch>i586</arch>
-  </repository>
-  <repository name="SUSE_SLES-9">
-    <path project="SUSE:SLES-9" repository="standard" />
+  <repository name="SLE_10">
+    <path project="SUSE:SLE-10:SDK" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
