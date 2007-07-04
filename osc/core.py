@@ -52,8 +52,8 @@ It also does some weird stuff.
 
 <!-- remove this comment to enable one or more build targets
 
-  <repository name="SUSE_Linux_Factory">
-    <path project="SUSE:Factory" repository="standard" />
+  <repository name="openSUSE_Factory">
+    <path project="openSUSE:Factory" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
