@@ -1232,9 +1232,6 @@ def link_pac(src_project, src_package, dst_project, dst_package):
      - "dst" is the "link" package that we are creating here
     """
 
-    import tempfile
-
-
     src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
 
     # replace package name and username
@@ -1300,7 +1297,7 @@ def copy_pac(src_apiurl, src_project, src_package,
 
     # copy one file after the other
     print 'Copying files...'
-    tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir = '/tmp')
+    tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir='/tmp')
     os.chdir(tmpdir)
     for n in meta_get_filelist(src_apiurl, src_project, src_package):
         print '  ', n
