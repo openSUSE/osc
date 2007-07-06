@@ -1640,7 +1640,14 @@ def checkRevision(prj, pac, revision):
     """
     check if revision is valid revision
     """
-    if int(revision) > int(show_upstream_rev(conf.config['apiurl'], prj, pac)):
+    try:
+        if int(revision) > int(show_upstream_rev(conf.config['apiurl'], prj, pac)):
+            return False
+        else:
+            return True
+    except ValueError, ee:
+        print >>sys.stderr, ee
         return False
-    else:
-        return True
+    except TypeError, ee:
+        print >>sys.stderr, ee
+        return False
