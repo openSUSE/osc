@@ -407,6 +407,9 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, 'this feature isn\'t implemented yet'
             sys.exit(1)
         elif rev1 and (pac.rev != rev1) and (len(pacs) == 1):
+            if not checkRevision(pac.prjname, pac.name, rev1):
+                print >>sys.stderr, 'Revision \'%s\' does not exist' % rev1
+                sys.exit(1)
             # make a temp dir for checking out the project
             import tempfile
             tmpdir = tempfile.mkdtemp(rev1, pac.name, '/tmp')
@@ -539,6 +542,10 @@ class Osc(cmdln.Cmdln):
             pass
 
         rev, dummy = parseRevisionOption(opts.revision)
+
+        if not checkRevision(project, package, rev):
+            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            sys.exit(1)
 
         if filename:
             get_source_file(conf.config['apiurl'], project, package, filename, revision=rev)
@@ -807,6 +814,9 @@ class Osc(cmdln.Cmdln):
 
         if opts.revision and ( len(args) == 1):
             rev, dummy = parseRevisionOption(opts.revision)
+            if not checkRevision(pacs[0].prjname, pacs[0].name, rev):
+                print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+                sys.exit(1)
         else:
             rev = None
 

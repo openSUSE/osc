@@ -1635,3 +1635,12 @@ def parseRevisionOption(string):
                 return None, None
     else:
         return None, None
+
+def checkRevision(prj, pac, revision):
+    """
+    check if revision is valid revision
+    """
+    if int(revision) > int(show_upstream_rev(conf.config['apiurl'], prj, pac)):
+        return False
+    else:
+        return True
