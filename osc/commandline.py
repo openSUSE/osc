@@ -684,6 +684,9 @@ class Osc(cmdln.Cmdln):
             for filename in p.todo:
                 if os.path.isdir(filename):
                     continue
+                # ignore foo.rXX, foo.mine for files which are in 'C' state
+                if os.path.splitext(filename)[0] in p.in_conflict:
+                    continue
                 state = p.status(filename)
                 if state == '?':
                     p.addfile(filename)
