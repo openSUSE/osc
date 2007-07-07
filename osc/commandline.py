@@ -543,7 +543,7 @@ class Osc(cmdln.Cmdln):
 
         rev, dummy = parseRevisionOption(opts.revision)
 
-        if not checkRevision(project, package, rev):
+        if rev and not checkRevision(project, package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 

@@ -1645,9 +1645,5 @@ def checkRevision(prj, pac, revision):
             return False
         else:
             return True
-    except ValueError, ee:
-        print >>sys.stderr, ee
-        return False
-    except TypeError, ee:
-        print >>sys.stderr, ee
+    except (ValueError, TypeError):
         return False
