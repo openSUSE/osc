@@ -1,4 +1,19 @@
-since 0.96:
+since 0.97:
+[...]
+
+
+0.97:
+- added initial revision handling:
+    - extended "osc co prj pac" to checkout a specific revision of pac
+    - extended "osc up" to update to a specific revision
+    - extended "osc diff" to diff the working copy against a
+      specific revision on the server. NOTE: comparing two
+      server-side revisions (osc diff -r 11:12) is currently
+      not supported!
+- load subcommands from /var/lib/osc-plugins/ or ~/.osc-plugins/
+- updatepacmetafromspec scans for spec files automatically. Added --specfile option to updatepacmetafromspec.
+- wipebinaries: allow to wipe all binaries of packages for which the build is disabled
+- addremove: ignore foo.rXX, foo.mine for files which are in 'C' state
 - ls: add verbose option to print extra information for packages
 - for all server-side commands, allow arguments "foo/bar" instead of "foo bar"
 - new wipebinaries and abortbuild commands, by courtesy of Marcus Huewe
