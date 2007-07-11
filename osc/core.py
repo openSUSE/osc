@@ -1051,13 +1051,17 @@ def show_upstream_rev(apiurl, prj, pac):
 
 
 def read_meta_from_spec(specfile):
+    import codecs, locale
     """read Name, Summary and %description from spec file"""
 
     if not os.path.isfile(specfile):
         print 'file \'%s\' is not a readable file' % specfile
         return (None, None)
 
-    lines = open(specfile).readlines()
+    try:
+        lines = codecs.open(specfile, 'r', locale.getpreferredencoding()).readlines()
+    except UnicodeDecodeError:
+        lines = open(specfile).readlines()
 
     for line in lines:
         if line.startswith('Name:'):
