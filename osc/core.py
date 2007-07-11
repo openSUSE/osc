@@ -312,7 +312,7 @@ class Package:
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
         query = []
-        if conf.config['do_commits'] == '1':
+        if conf.config['do_commits']:
             query.append('rev=upload')
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_PUT(u, file = os.path.join(self.dir, n))
@@ -1501,6 +1501,37 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
     return r
 
 
+def get_commitlog(apiurl, prj, package):
+    import time
+    u = makeurl(apiurl, ['source', prj, package, '_history'])
+    f = http_GET(u)
+    root = ET.parse(f).getroot()
+
+    r = []
+    revisions = root.findall('revision')
+    revisions.reverse()
+    for node in revisions:
+        rev = int(node.get('rev'))
+        #vrev = int(node.get('vrev')) # what is the meaning of vrev?
+        srcmd5 = node.find('srcmd5').text
+        version = node.find('version').text
+        user = node.find('user').text
+        try:
+            comment = node.find('comment').text
+        except:
+            comment = '<no message>'
+        t = time.localtime(int(node.find('time').text))
+        t = time.strftime('%Y-%m-%d %H:%M:%S', t)
+
+        s = '-' * 76 + \
+            '\nr%s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version) + \
+            '\n' + comment
+        r.append(s)
+
+    r.append('-' * 76)
+    return r
+
+
 def rebuild(apiurl, prj, package, repo, arch, code=None):
     query = []
     query.append('cmd=rebuild')
@@ -1615,6 +1646,7 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None, build_disa
         sys.exit(1)
     root = ET.parse(f).getroot()
     return root.get('code')
+
 
 def parseRevisionOption(string):
     """

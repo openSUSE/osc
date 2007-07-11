@@ -708,6 +708,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.alias('ci')
     @cmdln.alias('checkin')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify log message TEXT')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -759,8 +761,9 @@ class Osc(cmdln.Cmdln):
             for filename in p.todo_delete:
                 p.delete_source_file(filename)
                 p.to_be_deleted.remove(filename)
-            if conf.config['do_commits'] == '1':
-                p.commit(msg='MESSAGE')
+            if conf.config['do_commits']:
+                print '[committing]'
+                p.commit(msg=opts.message)
 
             p.update_filesmeta()
             p.write_deletelist()
@@ -1048,7 +1051,8 @@ class Osc(cmdln.Cmdln):
         print '\n'.join(get_prj_results(apiurl, project, show_legend=opts.legend))
 
                 
-    def do_log(self, subcmd, opts, platform, arch):
+    @cmdln.alias('bl')
+    def do_buildlog(self, subcmd, opts, platform, arch):
         """${cmd_name}: Shows the build log of a package
 
         Shows the log file of the build of a package. Can be used to follow the
@@ -1304,6 +1308,21 @@ class Osc(cmdln.Cmdln):
         apiurl = store_read_apiurl(wd)
 
         print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch))
+
+
+    def do_log(self, subcmd, opts):
+        """${cmd_name}: Shows the commit log of a package
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        wd = os.curdir
+        package = store_read_package(wd)
+        project = store_read_project(wd)
+        apiurl = store_read_apiurl(wd)
+
+        print '\n'.join(get_commitlog(apiurl, project, package))
 
 
     @cmdln.option('-f', '--failed', action='store_true',
