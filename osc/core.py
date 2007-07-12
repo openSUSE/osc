@@ -1501,7 +1501,7 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
     return r
 
 
-def get_commitlog(apiurl, prj, package):
+def get_commitlog(apiurl, prj, package, revision):
     import time
     u = makeurl(apiurl, ['source', prj, package, '_history'])
     f = http_GET(u)
@@ -1511,8 +1511,14 @@ def get_commitlog(apiurl, prj, package):
     revisions = root.findall('revision')
     revisions.reverse()
     for node in revisions:
-        rev = int(node.get('rev'))
-        #vrev = int(node.get('vrev')) # what is the meaning of vrev?
+        try:
+            rev = int(node.get('rev'))
+            #vrev = int(node.get('vrev')) # what is the meaning of vrev?
+            if revision and rev != int(revision):
+                continue
+        except ValueError:
+            # this part should _never_ be reached but...
+            return [ 'an unexpected error occured - please file a bug' ]
         srcmd5 = node.find('srcmd5').text
         version = node.find('version').text
         user = node.find('user').text
@@ -1558,12 +1564,21 @@ def rebuild(apiurl, prj, package, repo, arch, code=None):
 
 
 def store_read_project(dir):
-    p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
+    try:
+        p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
+    except IOError:
+        print >>sys.stderr, 'error: \'%s\' is not an osc project dir ' \
+                            'or working copy' % dir
+        sys.exit(1)                         
     return p
 
 
 def store_read_package(dir):
-    p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
+    try:
+        p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
+    except IOError:
+        print >>sys.stderr, 'error: \'%s\' is not an osc working copy' % dir
+        sys.exit(1)
     return p
 
 def store_read_apiurl(dir):
@@ -1677,7 +1692,8 @@ def checkRevision(prj, pac, revision):
     check if revision is valid revision
     """
     try:
-        if int(revision) > int(show_upstream_rev(conf.config['apiurl'], prj, pac)):
+        if int(revision) > int(show_upstream_rev(conf.config['apiurl'], prj, pac)) \
+           or int(revision) <= 0:
             return False
         else:
             return True

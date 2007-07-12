@@ -1310,6 +1310,8 @@ class Osc(cmdln.Cmdln):
         print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch))
 
 
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='show log of the specified revision')
     def do_log(self, subcmd, opts):
         """${cmd_name}: Shows the commit log of a package
 
@@ -1321,8 +1323,12 @@ class Osc(cmdln.Cmdln):
         package = store_read_package(wd)
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
+        rev, dummy = parseRevisionOption(opts.revision)
+        if rev and not checkRevision(project, package, rev):
+            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            sys.exit(1)
 
-        print '\n'.join(get_commitlog(apiurl, project, package))
+        print '\n'.join(get_commitlog(apiurl, project, package, rev))
 
 
     @cmdln.option('-f', '--failed', action='store_true',
