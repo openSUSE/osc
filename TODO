@@ -27,6 +27,8 @@ MAJOR:
     (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
 
   - think about how to locally build "linked" packages
+    http://lists4.opensuse.org/opensuse-buildservice/2007-07/msg00043.html
+    https://bugzilla.novell.com/show_bug.cgi?id=212565
 
   
 NORMAL:
@@ -46,6 +48,10 @@ NORMAL:
   - show request body of 400 responses (bad request)
   - commit: check if errors during PUT are handled sensibly, so the change is
     not committed to localmeta	
+  - store password base64 hashed, so it is not directly visible in plaintext
+    when opening .oscrc and someone is looking over the shoulder
+    - use http://code.google.com/p/iniparse/ instead of ConfigParser, with
+      write capability, for the change
 
 
 MINOR: 
