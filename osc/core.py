@@ -329,7 +329,9 @@ class Package:
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
         #print u
         f = http_POST(u)
-        #print f.read()
+        root = ET.parse(f).getroot()
+        rev = int(root.get('rev'))
+        return rev
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
@@ -1502,7 +1504,7 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
 
 
 def get_commitlog(apiurl, prj, package, revision):
-    import time
+    import time, locale
     u = makeurl(apiurl, ['source', prj, package, '_history'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
@@ -1523,7 +1525,7 @@ def get_commitlog(apiurl, prj, package, revision):
         version = node.find('version').text
         user = node.find('user').text
         try:
-            comment = node.find('comment').text
+            comment = node.find('comment').text.encode(locale.getpreferredencoding(), 'replace')
         except:
             comment = '<no message>'
         t = time.localtime(int(node.find('time').text))

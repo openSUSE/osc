@@ -710,6 +710,8 @@ class Osc(cmdln.Cmdln):
     @cmdln.alias('checkin')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
+    @cmdln.option('-F', '--file', metavar='FILE',
+                  help='read log message from FILE')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -729,6 +731,17 @@ class Osc(cmdln.Cmdln):
         pacs = findpacs(args)
 
         for p in pacs:
+
+            if conf.config['do_commits']:
+                if opts.message:
+                    msg = opts.message
+                elif opts.file:
+                    try:
+                        msg = open(opts.file).read()
+                    except:
+                        sys.exit('could not open file \'%s\'.' % opts.file)
+                else:
+                    msg = ''
 
             # commit only if the upstream revision is the same as the working copy's
             upstream_rev = show_upstream_rev(p.apiurl, p.prjname, p.name)
@@ -762,12 +775,12 @@ class Osc(cmdln.Cmdln):
                 p.delete_source_file(filename)
                 p.to_be_deleted.remove(filename)
             if conf.config['do_commits']:
-                print '[committing]'
-                p.commit(msg=opts.message)
+                p.rev = p.commit(msg=msg)
+                print
+                print 'Committed revision %s.' % p.rev
 
             p.update_filesmeta()
             p.write_deletelist()
-            print
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
