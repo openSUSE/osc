@@ -132,102 +132,163 @@ class Osc(cmdln.Cmdln):
                 print '\n'.join(l)
 
 
+    @cmdln.option('-e', '--edit', action='store_true',
+                        help='edit metadata')
+    @cmdln.option('-F', '--file', metavar='FILE',
+                        help='File to read metadata from. \'-\' denotes standard input. '
+                        'Per default, the program specified by the environmental variable EDITOR '
+                        'is run on a temporary file.')
     def do_meta(self, subcmd, opts, *args):
-        """${cmd_name}: Shows meta information
+        """${cmd_name}: Show meta information, or edit it
+
+        meta: Shows build service metadata of type <prj|pkg|prjconf|user>.
         
-        examples: osc meta Apache              # show meta of project 'Apache'
-                  osc meta Apache subversion   # show meta of package 'subversion'
 
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        if not args:
-            print >>sys.stderr, 'Missing argument.'
-            self.do_help(['foo', 'meta'])
-            return 2
-
-        if len(args) == 2:
-            project = args[0]
-            package = args[1]
-            print ''.join(show_package_meta(conf.config['apiurl'], project, package))
-            print ''.join(show_files_meta(conf.config['apiurl'], project, package))
-
-        elif len(args) == 1:
-            project = args[0]
-            print ''.join(show_project_meta(conf.config['apiurl'], project))
-
-
-    @cmdln.alias("createpac")
-    def do_editpac(self, subcmd, opts, project, package):
-        """${cmd_name}: Create package or edit package metadata
-
-        If the named package does not exist, it will be created.
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        edit_meta(project, package)
-
-
-    @cmdln.alias('createprj')
-    def do_editprj(self, subcmd, opts, project):
-        """${cmd_name}: Create project or edit project metadata
-
-        If the named project does not exist, it will be created.
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        edit_meta(project, None)
-
-
-    def do_editmeta(self, subcmd, opts, *args):
-        """${cmd_name}: Edit project/package meta information
-
-        If the named project or package does not exist, it will be created.
-
-        Examples: 
-           osc editmeta Apache              # edit meta of project 'Apache'
-           osc editmeta Apache apache2      # edit meta of package 'apache2'
-
-        ${cmd_usage}
+        usage:
+            osc meta <prj|pkg|prjconf|user> [-e|--edit [-f|--file] [-c|--create]] ARGS...
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
-        if not args:
-            print >>sys.stderr, 'Missing argument.'
-            self.do_help([None, 'editmeta'])
+        if not args or args[0] not in metatypes.keys():
+            print >>sys.stderr, 'Unknown meta type. Choose one of %s.' % ', '.join(metatypes)
             return 2
 
-        if len(args) == 2:
-            project = args[0]
-            package = args[1]
-            edit_meta(project, package)
+        cmd = args[0]
+        del args[0]
 
-        elif len(args) == 1:
-            project = args[0]
-            edit_meta(project, None)
-
-
-    def do_edituser(self, subcmd, opts, *args):
-        """${cmd_name}: Edit user meta information
-
-        If the named user id does not exist, it will be created.
-        
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        if not args or len(args) != 1:
-            user = conf.config['user']
+        if cmd == 'pkg':
+            required_args = 2
         else:
+            required_args = 1
+        if len(args) < required_args:
+            print >>sys.stderr, 'Too few arguments.'
+            return 2
+        if len(args) > required_args:
+            print >>sys.stderr, 'Too many arguments.'
+            return 2
+
+        # prj
+        if cmd == 'prj':
+            project = args[0]
+            if not opts.edit:
+                sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
+            else:
+                print 'XXX editing prj'
+                edit_meta(metatype='prj', 
+                          path_args = quote_plus(project),
+                          template_args = (project, conf.config['user']))
+
+        # pkg
+        elif cmd == 'pkg':
+            project, package = args[0:2]
+            if not opts.edit:
+                sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
+            else:
+                print 'XXX editing pac'
+                edit_meta(metatype='pkg', 
+                          path_args = (quote_plus(project), quote_plus(package)),
+                          template_args = (package, conf.config['user']))
+
+        # prjconf
+        elif cmd == 'prjconf':
+            project = args[0]
+            if not opts.edit:
+                sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
+            else:
+                print 'XXX editing prj'
+                edit_meta(metatype='prjconf', 
+                          path_args = quote_plus(project),
+                          template_args = None)
+
+        # user
+        elif cmd == 'user':
             user = args[0]
-        edit_user_meta(user)
+            if not opts.edit:
+                r = get_user_meta(conf.config['apiurl'], user)
+                if r:
+                    sys.stdout.write(''.join(r))
+            else:
+                print 'XXX editing user'
+                edit_meta(metatype='user', 
+                          path_args = (quote_plus(user)),
+                          template_args = (user, user))
+
+
+
+
+
+#    @cmdln.alias("createpac")
+#    def do_editpac(self, subcmd, opts, project, package):
+#        """${cmd_name}: Create package or edit package metadata
+#
+#        If the named package does not exist, it will be created.
+#
+#        ${cmd_usage}
+#        ${cmd_option_list}
+#        """
+#
+#        edit_meta(project, package)
+
+
+#    @cmdln.alias('createprj')
+#    def do_editprj(self, subcmd, opts, project):
+#        """${cmd_name}: Create project or edit project metadata
+#
+#        If the named project does not exist, it will be created.
+#
+#        ${cmd_usage}
+#        ${cmd_option_list}
+#        """
+#
+#        edit_meta(project, None)
+
+
+#    def do_editmeta(self, subcmd, opts, *args):
+#        """${cmd_name}: Edit project/package meta information
+#
+#        If the named project or package does not exist, it will be created.
+#
+#        Examples: 
+#           osc editmeta Apache              # edit meta of project 'Apache'
+#           osc editmeta Apache apache2      # edit meta of package 'apache2'
+#
+#        ${cmd_usage}
+#        ${cmd_option_list}
+#        """
+#
+#        args = slash_split(args)
+#
+#        if not args:
+#            print >>sys.stderr, 'Missing argument.'
+#            self.do_help([None, 'editmeta'])
+#            return 2
+#
+#        if len(args) == 2:
+#            project = args[0]
+#            package = args[1]
+#            edit_meta(project, package)
+#
+#        elif len(args) == 1:
+#            project = args[0]
+#            edit_meta(project, None)
+
+
+#    def do_edituser(self, subcmd, opts, *args):
+#        """${cmd_name}: Edit user meta information
+#
+#        If the named user id does not exist, it will be created.
+#        
+#        ${cmd_usage}
+#        ${cmd_option_list}
+#        """
+#
+#        if not args or len(args) != 1:
+#            user = conf.config['user']
+#        else:
+#            user = args[0]
+#        edit_user_meta(user)
 
 
     def do_linkpac(self, subcmd, opts, *args):
@@ -959,18 +1020,18 @@ class Osc(cmdln.Cmdln):
                 p.clear_from_conflictlist(filename)
 
 
-    def do_usermeta(self, subcmd, opts, name):
-        """${cmd_name}: Shows user metadata 
-        
-        Shows metadata about the buildservice user with the id NAME.
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        r = get_user_meta(conf.config['apiurl'], name)
-        if r:
-            print ''.join(r)
+#    def do_usermeta(self, subcmd, opts, name):
+#        """${cmd_name}: Shows user metadata 
+#        
+#        Shows metadata about the buildservice user with the id NAME.
+#
+#        ${cmd_usage}
+#        ${cmd_option_list}
+#        """
+#
+#        r = get_user_meta(conf.config['apiurl'], name)
+#        if r:
+#            print ''.join(r)
 
 
     def do_platforms(self, subcmd, opts, *args):

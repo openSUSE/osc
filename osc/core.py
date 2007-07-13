@@ -116,11 +116,11 @@ HERE
 
 new_user_template = """\
 <person>
-  <login>%(user)s</login>
+  <login>%s</login>
   <email>PUT_EMAIL_ADDRESS_HERE</email>
   <realname>PUT_REAL_NAME_HERE</realname>
   <watchlist>
-    <project name="home:%(user)s"/>
+    <project name="home:%s"/>
   </watchlist>
 </person>
 """
@@ -552,7 +552,7 @@ rev: %s
             self.descr = descr
 
 
-    def update_pac_meta(self, template=new_package_templ):
+    def update_pac_meta(self, template=new_package_templ): # n.b.: not the same as Package.update_pacmeta
         import tempfile
 
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
@@ -903,51 +903,37 @@ def show_package_meta(apiurl, prj, pac):
 
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
-    def __init__(self, prj, pac, template=new_package_templ, change_is_required=True):
+    def __init__(self, metatype, path, template, change_is_required=True):
         import tempfile
 
         self.change_is_required = change_is_required
 
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
-        
-        if pac:
-            # package meta
-            self.url = makeurl(conf.config['apiurl'], ['source', prj, pac, '_meta'])
-            try:
-                m = http_GET(self.url).readlines() 
-            except urllib2.HTTPError, e:
-                if e.code == 404:
-                    m = template % (pac, conf.config['user'])
-                else:
-                    print >>sys.stderr, 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
-                    print >>sys.stderr, e
-                    sys.exit(1)
-
-        else:
-            # project meta
-            self.url = makeurl(conf.config['apiurl'], ['source', prj, '_meta'])
-            try:
-                m = http_GET(self.url).readlines()
-            # when testing this offline:
-            #except urllib2.URLError, e:
-            #    m = new_project_templ % (prj, conf.config['user'])
-            except urllib2.HTTPError, e:
-                if e.code == 404:
-                    m = new_project_templ % (prj, conf.config['user'])
-                else:
-                    print >>sys.stderr, 'error getting package meta for project \'%s\':' % prj
-                    print >>sys.stderr, e
-                    sys.exit(1)
+        self.url = makeurl(conf.config['apiurl'], [path])
+        try:
+            m = http_GET(self.url).readlines() 
+        # when testing this offline:   <-- what did I mean with that??
+        #except urllib2.URLError, e:
+        #    m = template
+        except urllib2.HTTPError, e:
+            if e.code == 404:
+                m = template
+            else:
+                print >>sys.stderr, 'error getting metadata for type \'%s\', path \'%s\':' \
+                                     % (metatype, self.url)
+                print >>sys.stderr, e
+                sys.exit(1)
 
         f = os.fdopen(fd, 'w')
         f.write(''.join(m))
         f.close()
 
-        self.timestamp = os.path.getmtime(self.filename)
+        self.hash_orig = dgst(self.filename)
 
     def sync(self):
-        if self.change_is_required == True and os.path.getmtime(self.filename) == self.timestamp:
+        hash = dgst(self.filename)
+        if self.change_is_required == True and hash == self.hash_orig:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
             return True
@@ -972,22 +958,31 @@ class metafile:
                 print >> sys.stderr, 'cannot save meta data - an unexpected error occured'
                 return False
     
-#metatypes = { 'prj':     { 'url': ['source', prj, '_meta'],
-#                           'template': new_project_templ,
-#                         },
-#              'pkg':     { 'url'     : ['source', prj, pac, '_meta'],
-#                           'template': new_package_templ,
-#                         },
-#              'prjconf': { 'url': ['source', prj, '_config'], 
-#                           'template': None,
-#                         },
-#              'user':    { 'url': ['person', quote_plus(user)],
-#                           'template': new_user_template,
-#                         },
-#            }
 
-def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
-    f=metafile(prj, pac, template, change_is_required)
+# different types of metadata
+metatypes = { 'prj':     { 'path': 'source/%s/_meta',
+                           'template': new_project_templ,
+                         },
+              'pkg':     { 'path'     : 'source/%s/%s/_meta',
+                           'template': new_package_templ,
+                         },
+              'prjconf': { 'path': 'source/%s/_config',
+                           'template': '',
+                         },
+              'user':    { 'path': 'person/%s',
+                           'template': new_user_template,
+                         },
+            }
+
+def edit_meta(metatype, path_args, template_args, change_is_required=True):
+    path = metatypes[metatype]['path']
+    template = metatypes[metatype]['template']
+    if path_args:
+        path = path % path_args
+    if template_args:
+        template = template % template_args
+
+    f=metafile(metatype, path, template, change_is_required)
 
     editor = os.getenv('EDITOR', default='vim')
     while 1:
@@ -1002,41 +997,6 @@ def edit_meta(prj, pac, template=new_package_templ, change_is_required=True):
         else:
             f.sync()
             break
-
-
-def edit_user_meta(user, change_is_required=True):
-    import tempfile
-
-    u = makeurl(conf.config['apiurl'], ['person', quote_plus(user)])
-
-    try:
-        m = http_GET(u).readlines() 
-    except urllib2.HTTPError, e:
-        if e.code == 404:
-            m = new_user_template % { 'user': user }
-        else:
-            print >>sys.stderr, 'error getting metadata for user \'%s\':' % user
-            print >>sys.stderr, e
-            sys.exit(1)
-
-    (fd, filename) = tempfile.mkstemp(prefix = 'osc_edituser.', suffix = '.xml', dir = '/tmp')
-    f = os.fdopen(fd, 'w')
-    f.write(''.join(m))
-    f.close()
-    timestamp = os.path.getmtime(filename)
-
-    editor = os.getenv('EDITOR', default='vim')
-    os.system('%s %s' % (editor, filename))
-
-    if change_is_required == True and os.path.getmtime(filename) == timestamp:
-        print 'File unchanged. Not saving.'
-        os.unlink(filename)
-
-    else:
-        print 'Sending meta data...', 
-        http_PUT(u, file=filename)
-        os.unlink(filename)
-        print 'Done.'
 
 
 def show_files_meta(apiurl, prj, pac, revision=None):
@@ -1133,6 +1093,7 @@ def dgst(file):
         if not buf: break
         s.update(buf)
     return s.hexdigest()
+    f.close()
 
 
 def binary(s):
