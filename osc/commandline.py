@@ -1505,7 +1505,7 @@ class Osc(cmdln.Cmdln):
     def do_wipebinaries(self, subcmd, opts, *args):
         """${cmd_name}: Delete all binary packages of a certain project/package
 
-        With the optional arguement <package> you can specify a certain package
+        With the optional argument <package> you can specify a certain package
         otherwise all binary packages in the project will be deleted.
 
         usage: 
@@ -1527,6 +1527,70 @@ class Osc(cmdln.Cmdln):
         print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, opts.build_disabled)
 
 
+    @cmdln.option('-e', '--enable-exact', action='store_true',
+                        help='show only exact matches')
+    @cmdln.option('--package', action='store_true',
+                        help='search for a package')
+    @cmdln.option('--project', action='store_true',
+                        help='search for a project')
+    @cmdln.option('--title', action='store_true',
+                        help='search for matches in the \'title\' element')
+    @cmdln.option('--description', action='store_true',
+                        help='search for matches in the \'description\' element')
+    @cmdln.option('-v', '--verbose', action='store_true',
+                        help='show more information')
+    def do_search(self, subcmd, opts, *args):
+        """${cmd_name}: search for a project and/or package.
+
+        If no option is specified osc will search for projects and
+        packages which contains the \'search term\' in their name,
+        title or description.
+
+        usage:
+            osc search \'search term\' <options>
+        ${cmd_option_list}
+        """
+
+        if len(args) > 1:
+            print >>sys.stderr, 'too many arguments'
+            sys.exit(1)
+        elif len(args) < 1:
+            print >>sys.stderr, 'too few arguments'
+            sys.exit(1)
+
+        search_list = []
+        search_for = []
+        if opts.title:
+            search_list.append('title')
+        if opts.description:
+            search_list.append('description')
+        if opts.package:
+            search_list.append('@name')
+            search_for.append('package')
+        if opts.project:
+            search_list.append('@name')
+            search_for.append('project')
+
+        if not search_list:
+            search_list = ['title', 'description', '@name']
+        if not search_for:
+            search_for = [ 'project', 'package' ]
+        for kind in search_for:
+            result = search(conf.config['apiurl'], set(search_list), kind, args[0], opts.verbose, opts.enable_exact)
+            if result:
+                if kind == 'package':
+                    headline = [ '# Package', '# Project' ]
+                else:
+                    headline = [ '# Project' ]
+                if opts.verbose:
+                    headline.append('# Title')
+                if len(search_for) > 1:
+                    print '#' * 68
+                print 'matches for \'%s\' in %ss:\n' % (args[0], kind)
+                for row in build_table(len(headline), result, headline, 2):
+                    print row
+            else:
+               print 'No matches found for \'%s\' in %ss' % (args[0], kind)
 
     # load subcommands plugged-in locally
     plugin_dirs = ['/var/lib/osc-plugins', os.path.expanduser('~/.osc-plugins')]

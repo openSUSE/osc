@@ -1662,3 +1662,98 @@ def checkRevision(prj, pac, revision):
             return True
     except (ValueError, TypeError):
         return False
+
+def build_xpath_predicate(search_list, search_term, exact_matches):
+    """
+    Builds and returns a xpath predicate
+    """
+
+    predicate = ['[']
+    for i, elem in enumerate(search_list):
+        if i > 0 and i < len(search_list):
+            predicate.append(' or ')
+        if exact_matches:
+            predicate.append('%s=\'%s\'' % (elem, search_term))
+        else:
+            predicate.append('contains(%s, \'%s\')' % (elem, search_term))
+    predicate.append(']')
+    return predicate
+
+def build_table(col_num, data = [], headline = [], width=1):
+    """
+    This method builds a simple table.
+    Example1: build_table(2, ['foo', 'bar', 'suse', 'osc'], ['col1', 'col2'], 2)
+        col1  col2
+        foo   bar
+        suse  osc
+    """
+
+    longest_col = []
+    for i in range(col_num):
+        longest_col.append(0)
+    if headline:
+        data[0:0] = headline
+    # find longest entry in each column
+    i = 0
+    for itm in data:
+        if longest_col[i] < len(itm):
+            longest_col[i] = len(itm)
+        if i == col_num - 1:
+            i = 0
+        else:
+            i += 1
+    # calculate length for each column
+    for i, row in enumerate(longest_col):
+        longest_col[i] = row + width
+    # build rows   
+    row = []
+    table = []
+    i = 0
+    for itm in data:
+        if i % col_num == 0:
+            if row:
+                table.append(''.join(row))
+            i = 0
+            row = [itm.ljust(longest_col[i])]
+        else:
+            # there is no need to justify the entries of the last column
+            if i == col_num -1:
+                row.append(itm)
+            else:
+                row.append(itm.ljust(longest_col[i]))
+        i += 1
+    table.append(''.join(row))
+    return table
+
+def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False):
+    """
+    Perform a search for 'search_term'. A list which contains the
+    results will be returned on success otherwise 'None'. If 'verbose' is true
+    and the title-tag-text (<title>TEXT</title>) is longer than 60 chars it'll we
+    truncated.
+    """
+
+    predicate = build_xpath_predicate(search_list, search_term, exact_matches)
+    u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus(''.join(predicate))])
+    f = http_GET(u)
+    root = ET.parse(f).getroot()
+    result = []
+    for node in root.findall(kind):
+        # TODO: clarify if we need to check if node.get() returns 'None'.
+        #       If it returns 'None' something is broken anyway...
+        if kind == 'package':
+            project = node.get('project')
+            package = node.get('name')
+            result.append(package)
+        else:
+            project = node.get('name')
+        result.append(project)
+        if verbose:
+            title = node.findtext('title').strip()
+            if len(title) > 60:
+                title = title[:61] + '...'
+            result.append(title)
+    if result:
+        return result
+    else:
+        return None
