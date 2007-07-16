@@ -159,7 +159,6 @@ class Pac:
         for url in urllist:
             self.urllist.append(url % self.mp)
 
-
     def __str__(self):
         return self.name
 
