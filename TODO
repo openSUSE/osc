@@ -1,12 +1,6 @@
 
 MAJOR:
 
-  - new meta command, replacing usermeta, edituser, editprj, editmeta, ...       [2]
-  (poeml has started to work on this one)
-    - See http://lists.opensuse.org/opensuse-buildservice/2007-05/msg00202.html
-      and the two followups.
-    - thereby, implement editing of project configuration (already works in api & backend)
-
   - commit message handling, and source revision handling. This affects the commands
     co, up, log, ci, diff. (Checking out or diffing against old revivions,
     committing with commit messages, and reviewing the commit log)
@@ -35,6 +29,8 @@ NORMAL:
 
   - add support for local build of packages which do not exist / have not been
     created yet in the buildservice
+  - add switches to the meta command for easy adding of other maintainers 
+    (like 'osc meta prj --add-maintainer foo')
   - write howto for plugin-izing subcommand implementation
   - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
   - status: implement -u option as in svn          [3]

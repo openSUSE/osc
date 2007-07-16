@@ -904,30 +904,16 @@ def show_package_meta(apiurl, prj, pac):
 
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
-    def __init__(self, metatype, path, template, change_is_required=True):
+    def __init__(self, url, input, change_is_required=False):
         import tempfile
 
+        self.url = url
         self.change_is_required = change_is_required
 
-        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
-
-        self.url = makeurl(conf.config['apiurl'], [path])
-        try:
-            m = http_GET(self.url).readlines() 
-        # when testing this offline:   <-- what did I mean with that??
-        #except urllib2.URLError, e:
-        #    m = template
-        except urllib2.HTTPError, e:
-            if e.code == 404:
-                m = template
-            else:
-                print >>sys.stderr, 'error getting metadata for type \'%s\', path \'%s\':' \
-                                     % (metatype, self.url)
-                print >>sys.stderr, e
-                sys.exit(1)
+        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = '.xml', dir = '/tmp')
 
         f = os.fdopen(fd, 'w')
-        f.write(''.join(m))
+        f.write(''.join(input))
         f.close()
 
         self.hash_orig = dgst(self.filename)
@@ -976,29 +962,57 @@ metatypes = { 'prj':     { 'path': 'source/%s/_meta',
                          },
             }
 
-def edit_meta(metatype, path_args, template_args, change_is_required=True):
+def edit_meta(metatype, 
+              path_args=None, 
+              data=None, 
+              template_args=None, 
+              edit=False,
+              change_is_required=False):
+
+    if metatype not in metatypes.keys():
+        sys.exit('unknown metatype %s' % metatype)
+
     path = metatypes[metatype]['path']
-    template = metatypes[metatype]['template']
     if path_args:
         path = path % path_args
-    if template_args:
-        template = template % template_args
 
-    f=metafile(metatype, path, template, change_is_required)
+    url = makeurl(conf.config['apiurl'], [path])
 
-    editor = os.getenv('EDITOR', default='vim')
-    while 1:
-        os.system('%s %s' % (editor, f.filename))
-        if change_is_required == True:
-            if not f.sync():
-                input = raw_input('Try again? (yY = Yes - nN = No): ')
-                if input != 'y' and input != 'Y':
+    if not data:
+        try:
+            data = http_GET(url).readlines() 
+        except urllib2.HTTPError, e:
+            if e.code == 404:
+                data = metatypes[metatype]['template']
+                if template_args:
+                    data = data % template_args
+            else:
+                print >>sys.stderr, 'error getting metadata for type \'%s\' at URL \'%s\':' \
+                                     % (metatype, url)
+                print >>sys.stderr, e
+                sys.exit(1)
+
+    if edit:
+        change_is_required = True
+
+    f=metafile(url, data, change_is_required)
+
+    if edit:
+        editor = os.getenv('EDITOR', default='vim')
+        while 1:
+            os.system('%s %s' % (editor, f.filename))
+            if change_is_required == True:
+                if not f.sync():
+                    input = raw_input('Try again? (yY = Yes - nN = No): ')
+                    if input != 'y' and input != 'Y':
+                        break
+                else:
                     break
             else:
+                f.sync()
                 break
-        else:
-            f.sync()
-            break
+    else:
+        f.sync()
 
 
 def show_files_meta(apiurl, prj, pac, revision=None):
@@ -1215,7 +1229,11 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     tree.write(buf)
     src_meta = buf.getvalue()
 
-    edit_meta(dst_project, dst_package, template=src_meta, change_is_required=False)
+    #edit_meta(dst_project, dst_package, template=src_meta)
+    edit_meta('pkg', 
+              input=src_meta, 
+              path_args=(dst_project, dst_package), 
+              template_args=(dst_package, conf.config['user']))
 
     # create the _link file
     # but first, make sure not to overwrite an existing one

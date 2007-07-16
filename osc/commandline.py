@@ -132,11 +132,11 @@ class Osc(cmdln.Cmdln):
                 print '\n'.join(l)
 
 
-    @cmdln.option('-e', '--edit', action='store_true',
-                        help='edit metadata')
     @cmdln.option('-F', '--file', metavar='FILE',
                         help='read metadata from FILE, instead of opening an editor. '
                         '\'-\' denotes standard input. ')
+    @cmdln.option('-e', '--edit', action='store_true',
+                        help='edit metadata')
     def do_meta(self, subcmd, opts, *args):
         """${cmd_name}: Show meta information, or edit it
 
@@ -154,14 +154,17 @@ class Osc(cmdln.Cmdln):
         With the --edit switch, the metadata can be edited. Per default, osc
         opens the program specified by the environmental variable EDITOR with a
         temporary file. Alternatively, content to be saved can be supplied via
-        the --file switch.
+        the --file switch. If the argument is '-', input is taken from stdin:
+        osc meta prjconf home:poeml | sed ... | osc meta prjconf home:poeml -F -
 
         The --create switch is subject to discussion and not implemented. The
         current behaviour is to create a non-existing resource implicitely, if
         while it is edited.
 
         usage:
-            osc meta <prj|pkg|prjconf|user> [-e|--edit [-f|--file] [-c|--create]] ARGS...
+            osc meta <prj|pkg|prjconf|user> ARGS...
+            osc meta <prj|pkg|prjconf|user> -e|--edit [-c|--create] ARGS...
+            osc meta <prj|pkg|prjconf|user> -F|--file ARGS...
         ${cmd_option_list}
         """
 
@@ -185,51 +188,106 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, 'Too many arguments.'
             return 2
 
-        # prj
+        # specific arguments
         if cmd == 'prj':
             project = args[0]
-            if not opts.edit:
-                sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
-            else:
-                edit_meta(metatype='prj', 
-                          path_args = quote_plus(project),
-                          template_args = (project, conf.config['user']))
-
-        # pkg
         elif cmd == 'pkg':
             project, package = args[0:2]
-            if not opts.edit:
-                sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
-            else:
-                edit_meta(metatype='pkg', 
-                          path_args = (quote_plus(project), quote_plus(package)),
-                          template_args = (package, conf.config['user']))
-
-        # prjconf
         elif cmd == 'prjconf':
             project = args[0]
-            if not opts.edit:
-                sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
-            else:
-                edit_meta(metatype='prjconf', 
-                          path_args = quote_plus(project),
-                          template_args = None)
-
-        # user
         elif cmd == 'user':
             user = args[0]
-            if not opts.edit:
+
+        # show 
+        if not opts.edit:
+            if cmd == 'prj':
+                sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
+            elif cmd == 'pkg':
+                sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
+            elif cmd == 'prjconf':
+                sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
+            elif cmd == 'user':
                 r = get_user_meta(conf.config['apiurl'], user)
                 if r:
                     sys.stdout.write(''.join(r))
-            else:
+
+        # edit
+        if opts.edit and not opts.file:
+            if cmd == 'prj':
+                edit_meta(metatype='prj', 
+                          edit=True,
+                          path_args=quote_plus(project),
+                          template_args=(project, conf.config['user']))
+            elif cmd == 'pkg':
+                edit_meta(metatype='pkg', 
+                          edit=True,
+                          path_args=(quote_plus(project), quote_plus(package)),
+                          template_args=(package, conf.config['user']))
+            elif cmd == 'prjconf':
+                edit_meta(metatype='prjconf', 
+                          edit=True,
+                          path_args=quote_plus(project),
+                          template_args=None)
+            elif cmd == 'user':
                 edit_meta(metatype='user', 
-                          path_args = (quote_plus(user)),
-                          template_args = (user, user))
+                          edit=True,
+                          path_args=(quote_plus(user)),
+                          template_args=(user, user))
+
+        # upload file
+        if opts.file:
+
+            if opts.file == '-':
+                f = sys.stdin.read()
+            else:
+                try:
+                    f = open(opts.file).read()
+                except:
+                    sys.exit('could not open file \'%s\'.' % opts.file)
+
+            if cmd == 'prj':
+                edit_meta(metatype='prj', 
+                          data=f,
+                          edit=opts.edit,
+                          path_args=quote_plus(project))
+            elif cmd == 'pkg':
+                edit_meta(metatype='pkg', 
+                          data=f,
+                          edit=opts.edit,
+                          path_args=(quote_plus(project), quote_plus(package)))
+            elif cmd == 'prjconf':
+                edit_meta(metatype='prjconf', 
+                          data=f,
+                          edit=opts.edit,
+                          path_args=quote_plus(project))
+            elif cmd == 'user':
+                edit_meta(metatype='user', 
+                          data=f,
+                          edit=opts.edit,
+                          path_args=(quote_plus(user)))
 
 
 
+    # editmeta and its aliases are all depracated
+    @cmdln.alias("editprj")
+    @cmdln.alias("createprj")
+    @cmdln.alias("editpac")
+    @cmdln.alias("createpac")
+    @cmdln.alias("edituser")
+    @cmdln.alias("usermeta")
+    def do_editmeta(self, subcmd, opts, *args):
+        """${cmd_name}: 
+        
+        Obsolete command to edit metadata. Use 'meta' now.
 
+        See the help output of 'meta'.
+
+        """
+
+        print >>sys.stderr, 'This command is obsolete. Use \'osc meta <metatype> ...\'.'
+        print >>sys.stderr, 'See \'osc help meta\'.'
+        #self.do_help([None, 'meta'])
+        return 2
 
 #    @cmdln.alias("createpac")
 #    def do_editpac(self, subcmd, opts, project, package):
@@ -255,52 +313,6 @@ class Osc(cmdln.Cmdln):
 #        """
 #
 #        edit_meta(project, None)
-
-
-#    def do_editmeta(self, subcmd, opts, *args):
-#        """${cmd_name}: Edit project/package meta information
-#
-#        If the named project or package does not exist, it will be created.
-#
-#        Examples: 
-#           osc editmeta Apache              # edit meta of project 'Apache'
-#           osc editmeta Apache apache2      # edit meta of package 'apache2'
-#
-#        ${cmd_usage}
-#        ${cmd_option_list}
-#        """
-#
-#        args = slash_split(args)
-#
-#        if not args:
-#            print >>sys.stderr, 'Missing argument.'
-#            self.do_help([None, 'editmeta'])
-#            return 2
-#
-#        if len(args) == 2:
-#            project = args[0]
-#            package = args[1]
-#            edit_meta(project, package)
-#
-#        elif len(args) == 1:
-#            project = args[0]
-#            edit_meta(project, None)
-
-
-#    def do_edituser(self, subcmd, opts, *args):
-#        """${cmd_name}: Edit user meta information
-#
-#        If the named user id does not exist, it will be created.
-#        
-#        ${cmd_usage}
-#        ${cmd_option_list}
-#        """
-#
-#        if not args or len(args) != 1:
-#            user = conf.config['user']
-#        else:
-#            user = args[0]
-#        edit_user_meta(user)
 
 
     def do_linkpac(self, subcmd, opts, *args):
@@ -1030,20 +1042,6 @@ class Osc(cmdln.Cmdln):
             for filename in p.todo:
                 print 'Resolved conflicted state of "%s"' % filename
                 p.clear_from_conflictlist(filename)
-
-
-#    def do_usermeta(self, subcmd, opts, name):
-#        """${cmd_name}: Shows user metadata 
-#        
-#        Shows metadata about the buildservice user with the id NAME.
-#
-#        ${cmd_usage}
-#        ${cmd_option_list}
-#        """
-#
-#        r = get_user_meta(conf.config['apiurl'], name)
-#        if r:
-#            print ''.join(r)
 
 
     def do_platforms(self, subcmd, opts, *args):
