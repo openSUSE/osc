@@ -8,7 +8,7 @@ https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/pytho
 INSTALLATION:
 
 RPM packages are here (yum repository):
-http://software.opensuse.org/download/openSUSE:/Tools/
+http://download.opensuse.org/repositories/openSUSE:/Tools/
 
 To install from svn, do
 	python setup.py build
@@ -25,7 +25,7 @@ respective package is called python-elementtree (before 10.2: python-xml).
 For local building, you will need python-urlgrabber in addition. Those are
 standard package on SUSE Linux since a while. If your version is too old, you
 can find python-elementtree and python-urlgrabber here:
-http://software.opensuse.org/download/devel:/languages:/python/
+http://download.opensuse.org/repositories/devel:/languages:/python/
 
 
 

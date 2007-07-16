@@ -26,7 +26,7 @@ The configuration dictionary could look like this:
  'build-root': '/abuild/oscbuild-%(repo)s-%(arch)s',
  'packagecachedir': '/var/cache/osbuild',
  'su-wrapper': 'sudo',
- 'urllist': ['http://software.opensuse.org/download/%(project)s/%(repository)s/%(arch)s/%(filename)s',
+ 'urllist': ['http://download.opensuse.org/repositories/%(project)s/%(repository)s/%(arch)s/%(filename)s',
              'http://api.opensuse.org/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s'],
  }
 
@@ -49,7 +49,7 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              # default list of download URLs, which will be tried in order
              'urllist': [
                 # the normal repo server, redirecting to mirrors
-                'http://software.opensuse.org/download/%(project)s/%(repository)s/%(arch)s/%(filename)s',
+                'http://download.opensuse.org/repositories/%(project)s/%(repository)s/%(arch)s/%(filename)s',
                 # direct access to "full" tree
                 '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/_repository/%(name)s',
               ],

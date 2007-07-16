@@ -553,7 +553,7 @@ class Osc(cmdln.Cmdln):
         """${cmd_name}: shows URLs of .repo files 
 
         Shows URLs on which to access the project .repos files (yum-style
-        metadata) on software.opensuse.org.
+        metadata) on download.opensuse.org.
 
         ARG, if specified, is a package working copy.
 
@@ -564,7 +564,7 @@ class Osc(cmdln.Cmdln):
         args = parseargs(args)
         pacs = findpacs(args)
 
-        url_tmpl = 'http://software.opensuse.org/download/%s/%s/%s.repo'
+        url_tmpl = 'http://download.opensuse.org/repositories/%s/%s/%s.repo'
         for p in pacs:
             platforms = get_platforms_of_project(p.apiurl, p.prjname)
             for platform in platforms:
@@ -1315,7 +1315,7 @@ class Osc(cmdln.Cmdln):
 
         if not os.path.exists('/usr/lib/build/debtransform'):
             sys.stderr.write('Error: you need build.rpm with version 2006.6.14 or newer.\n')
-            sys.stderr.write('See http://software.opensuse.org/download/openSUSE:/Tools/\n')
+            sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
             return 1
 
         builddist = os.getenv('BUILD_DIST')
