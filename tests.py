@@ -76,10 +76,9 @@ class TestOsc(unittest.TestCase):
     <project name="home:poeml"/>
   </watchlist>
 </person>
-
 """
 
-        self.out, self.err = runosc('usermeta poeml')
+        self.out, self.err = runosc('meta user poeml')
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, expect)
 
@@ -107,13 +106,13 @@ class TestOsc(unittest.TestCase):
     #####################################################################
 
     def testMetaPrj(self):
-        self.out, self.err = runosc('meta Apache')
+        self.out, self.err = runosc('meta prj Apache')
         self.assertEqual(self.err, '')
         self.assert_('<project name="Apache">' in self.out)
 
 
     def testMetaPac(self):
-        self.out, self.err = runosc('meta Apache apache2')
+        self.out, self.err = runosc('meta pkg Apache apache2')
         self.assertEqual(self.err, '')
         self.assert_('<package project="Apache" name="apache2">' in self.out)
 
@@ -274,8 +273,9 @@ class TestOsc(unittest.TestCase):
 
         self.out, self.err = runosc('ci')
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, """Sending        foo1
+        self.assertEqual(remove_revid(self.out), """Sending        foo1
 Transmitting file data .
+Committed revision XX.
 """)
 
 
@@ -286,8 +286,9 @@ Transmitting file data .
 
         self.out, self.err = runosc('ci')
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, """Deleting       foo1
+        self.assertEqual(remove_revid(self.out), """Deleting       foo1
 Transmitting file data 
+Committed revision XX.
 """)
 
 
@@ -322,8 +323,9 @@ Transmitting file data
         # check in a single argument
         self.out, self.err = runosc('ci foo2')
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, """Sending        foo2
+        self.assertEqual(remove_revid(self.out), """Sending        foo2
 Transmitting file data .
+Committed revision XX.
 """)
 
         # clean up
@@ -341,9 +343,10 @@ Transmitting file data .
         self.assertEqual(self.out, 'D    foo2\nA    bar1\n')
         self.out, self.err = runosc('ci')
         self.assertEqual(self.err, '')
-        self.assertEqual(self.out, """Sending        bar1
+        self.assertEqual(remove_revid(self.out), """Sending        bar1
 Deleting       foo2
 Transmitting file data .
+Committed revision XX.
 """)
 
 
