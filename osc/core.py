@@ -933,8 +933,13 @@ class metafile:
             return True
         except urllib2.HTTPError, e:
             # internal server error (probably the xml file is incorrect)
+            if e.code == 400:
+                print >>sys.stderr, 'Cannot save meta data.'
+                print >>sys.stderr, e
+                print >>sys.stderr, e.read()
+                return False
             if e.code == 500:
-                print >>sys.stderr, 'cannot save meta data - probably your xml file is incorrect'
+                print >>sys.stderr, 'Cannot save meta data. Unknown error.'
                 print >>sys.stderr, e
                 # this may be unhelpful... because it may just print a big blob of uninteresting
                 # ichain html and javascript... however it could potentially be useful if the orign
@@ -1222,18 +1227,16 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     # and create the package
     tree = ET.parse(StringIO(''.join(src_meta)))
     root = tree.getroot()
-    root.set('name', '%s')
+    root.set('name', dst_package)
     root.set('project', dst_project)
-    tree.find('person').set('userid', '%s')
+    tree.find('person').set('userid', conf.config['user'])
     buf = StringIO()
     tree.write(buf)
     src_meta = buf.getvalue()
 
-    #edit_meta(dst_project, dst_package, template=src_meta)
-    edit_meta('pkg', 
-              input=src_meta, 
+    edit_meta('pkg',
               path_args=(dst_project, dst_package), 
-              template_args=(dst_package, conf.config['user']))
+              data=src_meta)
 
     # create the _link file
     # but first, make sure not to overwrite an existing one

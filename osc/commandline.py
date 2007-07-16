@@ -815,6 +815,12 @@ class Osc(cmdln.Cmdln):
         args = parseargs(args)
         pacs = findpacs(args)
 
+        # this is experimental in that it enables a different way of uploading files
+        # see osc.core.Package.put_source_file()
+        # I assume that if -m is used, we want to commit this way.
+        if opts.message: 
+            conf.config['do_commits'] = True
+
         for p in pacs:
 
             if conf.config['do_commits']:
