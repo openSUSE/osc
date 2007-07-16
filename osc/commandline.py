@@ -135,14 +135,23 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-e', '--edit', action='store_true',
                         help='edit metadata')
     @cmdln.option('-F', '--file', metavar='FILE',
-                        help='File to read metadata from. \'-\' denotes standard input. '
-                        'Per default, the program specified by the environmental variable EDITOR '
-                        'is run on a temporary file.')
+                        help='read metadata from FILE, instead of opening an editor. '
+                        '\'-\' denotes standard input. ')
     def do_meta(self, subcmd, opts, *args):
         """${cmd_name}: Show meta information, or edit it
 
-        meta: Shows build service metadata of type <prj|pkg|prjconf|user>.
-        
+        Show or edit build service metadata of type <prj|pkg|prjconf|user>.
+
+        This command displays metadata on buildservice objects like projects,
+        packages, or users. The type of metadata is specified by the word after
+        "meta", like e.g. "meta prj".
+
+        With the --edit switch, the metadata can be edited. Per default, osc
+        opens the program specified by the environmental variable EDITOR with a
+        temporary file. Alternatively, content to be saved can be supplied via
+        the --file switch.
+
+        The --create switch is subject to discussion and not implemented.
 
         usage:
             osc meta <prj|pkg|prjconf|user> [-e|--edit [-f|--file] [-c|--create]] ARGS...
