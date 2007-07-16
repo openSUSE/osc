@@ -146,12 +146,19 @@ class Osc(cmdln.Cmdln):
         packages, or users. The type of metadata is specified by the word after
         "meta", like e.g. "meta prj".
 
+        prj denotes metadata of a buildservice project.
+        prjconf denotes the (build) configuration of a project.
+        pkg denotes metadata of a buildservice package.
+        user denotes the metadata of a user.
+
         With the --edit switch, the metadata can be edited. Per default, osc
         opens the program specified by the environmental variable EDITOR with a
         temporary file. Alternatively, content to be saved can be supplied via
         the --file switch.
 
-        The --create switch is subject to discussion and not implemented.
+        The --create switch is subject to discussion and not implemented. The
+        current behaviour is to create a non-existing resource implicitely, if
+        while it is edited.
 
         usage:
             osc meta <prj|pkg|prjconf|user> [-e|--edit [-f|--file] [-c|--create]] ARGS...
@@ -184,7 +191,6 @@ class Osc(cmdln.Cmdln):
             if not opts.edit:
                 sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
             else:
-                print 'XXX editing prj'
                 edit_meta(metatype='prj', 
                           path_args = quote_plus(project),
                           template_args = (project, conf.config['user']))
@@ -195,7 +201,6 @@ class Osc(cmdln.Cmdln):
             if not opts.edit:
                 sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
             else:
-                print 'XXX editing pac'
                 edit_meta(metatype='pkg', 
                           path_args = (quote_plus(project), quote_plus(package)),
                           template_args = (package, conf.config['user']))
@@ -206,7 +211,6 @@ class Osc(cmdln.Cmdln):
             if not opts.edit:
                 sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
             else:
-                print 'XXX editing prj'
                 edit_meta(metatype='prjconf', 
                           path_args = quote_plus(project),
                           template_args = None)
@@ -219,7 +223,6 @@ class Osc(cmdln.Cmdln):
                 if r:
                     sys.stdout.write(''.join(r))
             else:
-                print 'XXX editing user'
                 edit_meta(metatype='user', 
                           path_args = (quote_plus(user)),
                           template_args = (user, user))
@@ -441,7 +444,7 @@ class Osc(cmdln.Cmdln):
         for p in pacs:
 
             p.read_meta_from_spec(specfile)
-            p.update_pac_meta()
+            p.update_package_meta()
 
 
     @cmdln.alias('di')
@@ -849,7 +852,7 @@ class Osc(cmdln.Cmdln):
                 print
                 print 'Committed revision %s.' % p.rev
 
-            p.update_filesmeta()
+            p.update_local_filesmeta()
             p.write_deletelist()
 
 
@@ -915,7 +918,7 @@ class Osc(cmdln.Cmdln):
             saved_modifiedfiles = [ f for f in p.filenamelist if p.status(f) == 'M' ]
 
             oldp = p
-            p.update_filesmeta(rev)
+            p.update_local_filesmeta(rev)
             p = Package(p.dir)
 
             # which files do no longer exist upstream?
@@ -953,7 +956,7 @@ class Osc(cmdln.Cmdln):
                     pass
 
 
-            p.update_pacmeta()
+            p.update_local_pacmeta()
 
             #print ljust(p.name, 45), 'At revision %s.' % p.rev
             print 'At revision %s.' % p.rev

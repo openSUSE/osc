@@ -400,13 +400,21 @@ class Package:
 
 
 
-    def update_filesmeta(self, revision=None):
+    def update_local_filesmeta(self, revision=None):
+        """
+        Update the local _files file in the store.
+        It is replaced with the version pulled from upstream.
+        """
         meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision))
         f = open(os.path.join(self.storedir, '_files'), 'w')
         f.write(meta)
         f.close()
         
-    def update_pacmeta(self):
+    def update_local_pacmeta(self):
+        """
+        Update the local _meta file in the store.
+        It is replaced with the version pulled from upstream.
+        """
         meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
         f = open(os.path.join(self.storedir, '_meta'), 'w')
         f.write(meta)
@@ -552,25 +560,18 @@ rev: %s
             self.descr = descr
 
 
-    def update_pac_meta(self, template=new_package_templ): # n.b.: not the same as Package.update_pacmeta
-        import tempfile
+    def update_package_meta(self):
+        """
+        for the updatepacmetafromspec subcommand
+        """
 
+        import tempfile
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
 
-        try:
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
-            m = http_GET(u).readlines() 
-        except urllib2.HTTPError, e:
-            if e.code == 404:
-                print 'package does not exist yet... creating it'
-                m = template % (pac, conf.config['user'])
-            else:
-                print >>sys.stderr, 'error getting package meta for project \'%s\' package \'%s\':' % (prj, pac)
-                print >>sys.stderr, e
-                sys.exit(1)
+        m = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
 
         f = os.fdopen(fd, 'w')
-        f.write(''.join(m))
+        f.write(m)
         f.close()
 
         tree = ET.parse(filename)
@@ -580,7 +581,7 @@ rev: %s
 
         # FIXME: escape stuff for xml
         print '*' * 36, 'old', '*' * 36
-        print ''.join(m)
+        print m
         print '*' * 36, 'new', '*' * 36
         tree.write(sys.stdout)
         print '*' * 72
@@ -952,7 +953,8 @@ class metafile:
                 # this may be unhelpful... because it may just print a big blob of uninteresting
                 # ichain html and javascript... however it could potentially be useful if the orign
                 # server returns an information body
-                #print >>sys.stderr, e.read()
+                if conf.config['http_debug']:
+                    print >>sys.stderr, e.read()
                 return False
             else:
                 print >> sys.stderr, 'cannot save meta data - an unexpected error occured'
