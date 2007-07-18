@@ -57,8 +57,8 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="SUSE_Linux_10.2">
-    <path project="SUSE:SL-10.2" repository="standard" />
+ <repository name="openSUSE_10.2">
+    <path project="openSUSE:10.2" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
