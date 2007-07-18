@@ -859,13 +859,13 @@ class Osc(cmdln.Cmdln):
                 continue
 
             print 'Transmitting file data ', 
+            for filename in p.todo_delete:
+                p.delete_source_file(filename)
+                p.to_be_deleted.remove(filename)
             for filename in p.todo_send:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 p.put_source_file(filename)
-            for filename in p.todo_delete:
-                p.delete_source_file(filename)
-                p.to_be_deleted.remove(filename)
             if conf.config['do_commits']:
                 p.rev = p.commit(msg=msg)
                 print
