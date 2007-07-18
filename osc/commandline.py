@@ -861,6 +861,7 @@ class Osc(cmdln.Cmdln):
             print 'Transmitting file data ', 
             for filename in p.todo_send:
                 sys.stdout.write('.')
+                sys.stdout.flush()
                 p.put_source_file(filename)
             for filename in p.todo_delete:
                 p.delete_source_file(filename)
