@@ -207,12 +207,11 @@ class Osc(cmdln.Cmdln):
             project = args[0]
             if len(args) > 1:
                 pattern = args[1]
-                pattern += '.xml'
             else:
                 pattern = None
-            # enforce pattern argument if needed
-            if opts.edit or opts.file:
-                sys.exit('a pattern file argument is required.')
+                # enforce pattern argument if needed
+                if opts.edit or opts.file:
+                    sys.exit('a pattern file argument is required.')
 
         # show 
         if not opts.edit and not opts.file:
