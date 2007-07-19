@@ -140,7 +140,7 @@ class Osc(cmdln.Cmdln):
     def do_meta(self, subcmd, opts, *args):
         """${cmd_name}: Show meta information, or edit it
 
-        Show or edit build service metadata of type <prj|pkg|prjconf|user>.
+        Show or edit build service metadata of type <prj|pkg|prjconf|user|pattern>.
 
         This command displays metadata on buildservice objects like projects,
         packages, or users. The type of metadata is specified by the word after
@@ -177,14 +177,16 @@ class Osc(cmdln.Cmdln):
         cmd = args[0]
         del args[0]
 
-        if cmd == 'pkg':
-            required_args = 2
+        if cmd in ['pkg']:
+            min_args, max_args = 2, 2
+        elif cmd in ['pattern']:
+            min_args, max_args = 1, 2
         else:
-            required_args = 1
-        if len(args) < required_args:
+            min_args, max_args = 1, 1
+        if len(args) < min_args:
             print >>sys.stderr, 'Too few arguments.'
             return 2
-        if len(args) > required_args:
+        if len(args) > max_args:
             print >>sys.stderr, 'Too many arguments.'
             return 2
 
@@ -197,9 +199,19 @@ class Osc(cmdln.Cmdln):
             project = args[0]
         elif cmd == 'user':
             user = args[0]
+        elif cmd == 'pattern':
+            project = args[0]
+            if len(args) > 1:
+                pattern = args[1]
+                pattern += '.xml'
+            else:
+                pattern = None
+            # enforce pattern argument if needed
+            if opts.edit or opts.file:
+                sys.exit('a pattern file argument is required.')
 
         # show 
-        if not opts.edit:
+        if not opts.edit and not opts.file:
             if cmd == 'prj':
                 sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
             elif cmd == 'pkg':
@@ -210,6 +222,15 @@ class Osc(cmdln.Cmdln):
                 r = get_user_meta(conf.config['apiurl'], user)
                 if r:
                     sys.stdout.write(''.join(r))
+            elif cmd == 'pattern':
+                if pattern:
+                    r = show_pattern_meta(conf.config['apiurl'], project, pattern)
+                    if r:
+                        sys.stdout.write(''.join(r))
+                else:
+                    r = show_pattern_metalist(conf.config['apiurl'], project)
+                    if r:
+                        sys.stdout.write('\n'.join(r) + '\n')
 
         # edit
         if opts.edit and not opts.file:
@@ -233,6 +254,11 @@ class Osc(cmdln.Cmdln):
                           edit=True,
                           path_args=(quote_plus(user)),
                           template_args=(user, user))
+            elif cmd == 'pattern':
+                edit_meta(metatype='pattern', 
+                          edit=True,
+                          path_args=(project, pattern),
+                          template_args=None)
 
         # upload file
         if opts.file:
@@ -265,6 +291,11 @@ class Osc(cmdln.Cmdln):
                           data=f,
                           edit=opts.edit,
                           path_args=(quote_plus(user)))
+            elif cmd == 'pattern':
+                edit_meta(metatype='pattern', 
+                          data=f,
+                          edit=opts.edit,
+                          path_args=(project, pattern))
 
 
 

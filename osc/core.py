@@ -132,6 +132,13 @@ Repository UUID: %s
 Revision: %s
 """
 
+new_pattern_template = """\
+<!-- See http://svn.opensuse.org/svn/zypp/trunk/libzypp/zypp/parser/yum/schema/patterns.rng -->
+
+<pattern>
+</pattern>
+"""
+
 buildstatus_symbols = {'succeeded':       '.',
                        'disabled':        ' ',
                        'expansion error': 'E',
@@ -902,6 +909,27 @@ def show_package_meta(apiurl, prj, pac):
     return f.readlines()
 
 
+def show_pattern_metalist(apiurl, prj):
+    url = makeurl(apiurl, ['source', prj, '_pattern'])
+    f = http_GET(url)
+    tree = ET.parse(f)
+    r = [ node.get('name') for node in tree.getroot() ]
+    r = [ os.path.splitext(i)[0] for i in r ]
+    r.sort()
+    return r
+
+
+def show_pattern_meta(apiurl, prj, pattern):
+    url = makeurl(apiurl, ['source', prj, '_pattern', pattern])
+    try:
+        f = http_GET(url)
+    except urllib2.HTTPError, e:
+        print >>sys.stderr, 'error getting pattern \'%s\' for project \'%s\'' % (pattern, prj)
+        print >>sys.stderr, e
+        sys.exit(1)
+    return f.readlines()
+
+
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
     def __init__(self, url, input, change_is_required=False):
@@ -964,6 +992,9 @@ metatypes = { 'prj':     { 'path': 'source/%s/_meta',
                          },
               'user':    { 'path': 'person/%s',
                            'template': new_user_template,
+                         },
+              'pattern': { 'path': 'source/%s/_pattern/%s',
+                           'template': new_pattern_template,
                          },
             }
 
