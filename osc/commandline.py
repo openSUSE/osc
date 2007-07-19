@@ -1366,7 +1366,7 @@ class Osc(cmdln.Cmdln):
         import osc.build
 
         if not os.path.exists('/usr/lib/build/debtransform'):
-            sys.stderr.write('Error: you need build.rpm with version 2006.6.14 or newer.\n')
+            sys.stderr.write('Error: you need build.rpm with version 2007.3.12 or newer.\n')
             sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
             return 1
 
