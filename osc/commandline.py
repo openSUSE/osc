@@ -150,6 +150,10 @@ class Osc(cmdln.Cmdln):
         prjconf denotes the (build) configuration of a project.
         pkg denotes metadata of a buildservice package.
         user denotes the metadata of a user.
+        pattern denotes installation patterns defined for a project.
+
+        To list patterns, use 'osc meta pattern PRJ'. An additional argument
+        will be the pattern file to view or edit.
 
         With the --edit switch, the metadata can be edited. Per default, osc
         opens the program specified by the environmental variable EDITOR with a
@@ -162,9 +166,9 @@ class Osc(cmdln.Cmdln):
         while it is edited.
 
         usage:
-            osc meta <prj|pkg|prjconf|user> ARGS...
-            osc meta <prj|pkg|prjconf|user> -e|--edit [-c|--create] ARGS...
-            osc meta <prj|pkg|prjconf|user> -F|--file ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern> ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern> -e|--edit [-c|--create] ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern> -F|--file ARGS...
         ${cmd_option_list}
         """
 
