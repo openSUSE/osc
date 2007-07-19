@@ -914,7 +914,6 @@ def show_pattern_metalist(apiurl, prj):
     f = http_GET(url)
     tree = ET.parse(f)
     r = [ node.get('name') for node in tree.getroot() ]
-    r = [ os.path.splitext(i)[0] for i in r ]
     r.sort()
     return r
 

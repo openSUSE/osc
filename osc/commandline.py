@@ -137,6 +137,8 @@ class Osc(cmdln.Cmdln):
                         '\'-\' denotes standard input. ')
     @cmdln.option('-e', '--edit', action='store_true',
                         help='edit metadata')
+    @cmdln.option('--delete', action='store_true',
+                        help='delete a pattern file')
     def do_meta(self, subcmd, opts, *args):
         """${cmd_name}: Show meta information, or edit it
 
@@ -169,6 +171,7 @@ class Osc(cmdln.Cmdln):
             osc meta <prj|pkg|prjconf|user|pattern> ARGS...
             osc meta <prj|pkg|prjconf|user|pattern> -e|--edit [-c|--create] ARGS...
             osc meta <prj|pkg|prjconf|user|pattern> -F|--file ARGS...
+            osc meta pattern --delete PRJ PATTERN
         ${cmd_option_list}
         """
 
@@ -214,7 +217,7 @@ class Osc(cmdln.Cmdln):
                     sys.exit('a pattern file argument is required.')
 
         # show 
-        if not opts.edit and not opts.file:
+        if not opts.edit and not opts.file and not opts.delete:
             if cmd == 'prj':
                 sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
             elif cmd == 'pkg':
@@ -299,6 +302,16 @@ class Osc(cmdln.Cmdln):
                           data=f,
                           edit=opts.edit,
                           path_args=(project, pattern))
+
+
+        # delete
+        if opts.delete:
+            path = metatypes[cmd]['path']
+            if cmd == 'pattern':
+                path = path % (project, pattern)
+                u = makeurl(conf.config['apiurl'], [path])
+            else:
+                sys.exit('The --delete switch is only for pattern metadata.')
 
 
 
@@ -438,7 +451,7 @@ class Osc(cmdln.Cmdln):
 
 
     def do_deletepac(self, subcmd, opts, project, package):
-        """${cmd_name}: Delete a packge on the repository server
+        """${cmd_name}: Delete a package on the repository server
 
         ${cmd_usage}
         ${cmd_option_list}
