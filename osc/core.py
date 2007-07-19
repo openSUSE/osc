@@ -1367,7 +1367,11 @@ def get_results(apiurl, prj, package):
         rmap['arch'] = node.get('arch')
 
         statusnode =  node.find('status')
-        rmap['status'] = statusnode.get('code')
+        try:
+            rmap['status'] = statusnode.get('code')
+        except:
+            # code can be missing when package is too new:
+            return {}
 
         if rmap['status'] in ['expansion error', 'broken']:
             rmap['status'] += ': ' + statusnode.find('details').text
