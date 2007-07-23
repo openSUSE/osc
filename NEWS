@@ -3,6 +3,7 @@ since 0.97:
 - added initial search support
 - new meta command, replacing editmeta, editprj, createprj,
   editpac, createpac, edituser
+- allow editing patterns (osc meta pattern -e) 
 - show helpful xml error messages if broken metadata is uploaded
 - implementing a log command to review the commit log
 - renamed previous "log" command to "buildlog" (short: bl)
