@@ -776,7 +776,6 @@ class Osc(cmdln.Cmdln):
             osc add FILE [FILE...]
         ${cmd_option_list}
         """
-
         if not args:
             print >>sys.stderr, 'Missing argument.'
             self.do_help([None, 'add'])
@@ -1656,6 +1655,89 @@ class Osc(cmdln.Cmdln):
             else:
                print 'No matches found for \'%s\' in %ss' % (args[0], kind)
 
+    @cmdln.option('-p', '--project', metavar='project',
+                        help='specify a project name')
+    @cmdln.option('-n', '--name', metavar='name',
+                        help='specify a package name')
+    @cmdln.option('-t', '--title', metavar='title',
+                        help='set a title')
+    @cmdln.option('-d', '--description', metavar='description',
+                        help='set the description of the package')
+    def do_importsrcpkg(self, subcmd, opts, *args):
+        """${cmd_name}: import a new package from a src.rpm
+
+        A new package dir will be created inside the project dir
+        (if no project is specified and the current working dir is a
+        project dir the package will be created in this project). If
+        the package does not exist on the server it will be created
+        too otherwise the meta data of the existing package will be
+        updated (<title /> and <description />).
+        The src.rpm will be extracted into the package dir.
+
+        usage:
+            osc importsrcpkg /path/to/src.rpm <options>
+        ${cmd_option_list}
+        """
+        import glob
+
+        if len(args) < 1:
+            print >>sys.stderr, 'too few arguments'
+            sys.exit(1)
+        elif len(args) > 1:
+            print >>sys.stderr, 'too many arguments'
+            sys.exit(1)
+        else:
+            srpm = os.path.abspath(args[0])
+
+        if opts.project:
+            project_dir = opts.project
+        else:
+            project_dir = os.getcwd()
+
+        if not is_project_dir(project_dir):
+            print >>sys.stderr, 'project dir \'%s\' does not exist' % project
+            sys.exit(1)
+        else:
+            project = store_read_project(project_dir)
+
+        if not opts.name or not opts.description or not opts.title:
+            title, pac, descr = ( v for k, v in \
+                data_from_srcrpm(srpm, 'Name:', 'Summary:', '%description').iteritems() )
+
+        if opts.title:
+            title = opts.title
+        if opts.name:
+            pac = opts.name
+        if opts.description:
+            descr = opts.description
+        
+        if not os.path.exists(os.path.join(project_dir, pac)):
+            os.mkdir(os.path.join(project_dir, pac))
+            os.chdir(os.path.join(project_dir, pac))
+            data = meta_exists(metatype='pkg',
+                               path_args=(quote_plus(project), quote_plus(pac)),
+                               template_args=(pac, conf.config['user']))
+            if data:
+                data = ET.fromstring(''.join(data))
+                data.find('title').text = title
+                data.find('description').text = ''.join(descr)
+                data = ET.tostring(data)
+            else:
+                print >>sys.stderr, 'error - cannot get meta data'
+                sys.exit(1)
+            edit_meta(metatype='pkg',
+                      path_args=(quote_plus(project), quote_plus(pac)),
+                      data = data)
+            init_package_dir(conf.config['apiurl'], project, pac, os.path.join(project, pac))
+            unpack_srcrpm(srpm, os.getcwd())
+            print 'Adding files to working copy...'
+            self.do_add(None, {}, *glob.glob('*'))
+        else:
+            print >>sys.stderr, 'error - package already exists'
+            sys.exit(1)
+
+        print 'Package \'%s\' imported successfully' % pac
+        
     # load subcommands plugged-in locally
     plugin_dirs = ['/var/lib/osc-plugins', os.path.expanduser('~/.osc-plugins')]
     for plugin_dir in plugin_dirs:

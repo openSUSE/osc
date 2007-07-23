@@ -557,14 +557,9 @@ rev: %s
                       'with --specfile'
                 sys.exit(1)     
 
-        summary, descr = read_meta_from_spec(specfile)
-        
-        if not summary and not descr:
-            print >>sys.stderr, 'aborting'
-            sys.exit(1)
-        else:
-            self.summary = summary
-            self.descr = descr
+        data = read_meta_from_spec(specfile, 'Summary:', '%description')
+        self.summary = data['Summary:']
+        self.descr = data['%description']
 
 
     def update_package_meta(self):
@@ -997,6 +992,40 @@ metatypes = { 'prj':     { 'path': 'source/%s/_meta',
                          },
             }
 
+def meta_exists(metatype,
+                path_args=None,
+                template_args=None,
+                create_new=True):
+
+    data = None
+    url = make_meta_url(metatype, path_args)
+    try:
+        data = http_GET(url).readlines()
+    except urllib2.HTTPError, e:
+        if e.code == 404:
+            if create_new:
+                data = metatypes[metatype]['template']
+                if template_args:
+                    data = data % template_args
+        else:
+            print >>sys.stderr, 'error getting metadata for type \'%s\' at URL \'%s\':' \
+                                % (metatype, url)
+    if data:
+        return data
+    else:
+        return None
+
+def make_meta_url(metatype, path_args=None):
+    if metatype not in metatypes.keys():
+        sys.exit('unknown metatype %s' % metatype)
+    path = metatypes[metatype]['path']
+
+    if path_args:
+        path = path % path_args
+
+    return makeurl(conf.config['apiurl'], [path])
+
+
 def edit_meta(metatype, 
               path_args=None, 
               data=None, 
@@ -1004,32 +1033,16 @@ def edit_meta(metatype,
               edit=False,
               change_is_required=False):
 
-    if metatype not in metatypes.keys():
-        sys.exit('unknown metatype %s' % metatype)
-
-    path = metatypes[metatype]['path']
-    if path_args:
-        path = path % path_args
-
-    url = makeurl(conf.config['apiurl'], [path])
-
     if not data:
-        try:
-            data = http_GET(url).readlines() 
-        except urllib2.HTTPError, e:
-            if e.code == 404:
-                data = metatypes[metatype]['template']
-                if template_args:
-                    data = data % template_args
-            else:
-                print >>sys.stderr, 'error getting metadata for type \'%s\' at URL \'%s\':' \
-                                     % (metatype, url)
-                print >>sys.stderr, e
-                sys.exit(1)
+        data = meta_exists(metatype,
+                           path_args,
+                           template_args,
+                           create_new=True)
 
     if edit:
         change_is_required = True
 
+    url = make_meta_url(metatype, path_args)
     f=metafile(url, data, change_is_required)
 
     if edit:
@@ -1063,45 +1076,62 @@ def show_upstream_rev(apiurl, prj, pac):
     return ET.parse(StringIO(''.join(m))).getroot().get('rev')
 
 
-def read_meta_from_spec(specfile):
+def read_meta_from_spec(specfile, *args):
     import codecs, locale
-    """read Name, Summary and %description from spec file"""
+    """
+    Read tags and sections from spec file. To read out
+    a tag the passed argument must end with a colon. To
+    read out a section the passed argument must start with
+    a '%'.
+    This method returns a dictionary which contains the
+    requested data.
+    """
 
     if not os.path.isfile(specfile):
         print 'file \'%s\' is not a readable file' % specfile
-        return (None, None)
+        sys.exit(1)
 
     try:
         lines = codecs.open(specfile, 'r', locale.getpreferredencoding()).readlines()
     except UnicodeDecodeError:
         lines = open(specfile).readlines()
 
-    for line in lines:
-        if line.startswith('Name:'):
-            name = line.split(':')[1].strip()
-            break
-   
-    summary = None
-    for line in lines:
-        if line.startswith('Summary:'):
-            summary = line.split(':')[1].strip()
-            break
-    if summary == None:
-        print 'cannot find \'Summary:\' tag'
-        return (None, None)
+    tags = []
+    sections = []
+    spec_data = {}
 
-    descr = []
-    try:
-        start = lines.index('%description\n') + 1
-    except ValueError:
-        print 'cannot find %description'
-        return (None, None)
-    for line in lines[start:]:
-        if line.startswith('%'):
-            break
-        descr.append(line)
-    
-    return (summary, descr)
+    for itm in args:
+        if itm.endswith(':'):
+            tags.append(itm)
+        elif itm.startswith('%'):
+            sections.append(itm)
+        else:
+            print >>sys.stderr, 'error - \'%s\' is not a tag nor a section' % itm
+            sys.exit(1)
+
+    for tag in tags:
+        for line in lines:
+            if line.startswith(tag):
+                spec_data[tag] = line.split(':')[1].strip()
+                break
+        if not spec_data.has_key(tag):
+            print >>sys.stderr, 'error - tag \'%s\' does not exist' % tag
+            sys.exit(1)
+
+    for section in sections:
+        try:
+            start = lines.index(section + '\n') + 1
+        except ValueError:
+            print >>sys.stderr, 'error - section \'%s\' does not exist' % section
+            sys.exit(1)
+        data = []
+        for line in lines[start:]:
+            if line.startswith('%'):
+                break
+            data.append(line)
+        spec_data[section] = data
+
+    return spec_data
 
 
 def get_user_meta(apiurl, user):
@@ -1814,3 +1844,117 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
         return result
     else:
         return None
+
+def delete_tmpdir(tmpdir):
+    """
+    This method deletes a tempdir. This tempdir
+    must be located under /tmp/$DIR. If "tmpdir" is not
+    a valid tempdir it'll return False. If os.unlink() / os.rmdir()
+    throws an exception we will return False too - otherwise
+    True.
+    """
+
+    # small security checks
+    if os.path.islink(tmpdir):
+        return False
+    elif os.path.abspath(tmpdir) == '/':
+        return False
+    
+    head, tail = os.path.split(tmpdir)
+    if not head.startswith('/tmp') or not tail:
+        return False
+
+    if not os.path.isdir(tmpdir):
+        return False
+
+    for dirpath, dirnames, filenames in os.walk(tmpdir, topdown=False):
+        for file in filenames:
+            try:
+                os.unlink(os.path.join(dirpath, file))
+            except:
+                return False
+        for dirname in dirnames:
+            try:
+                os.rmdir(os.path.join(dirpath, dirname))
+            except:
+                return False
+    try:
+        os.rmdir(tmpdir)
+    except:
+        return False
+    return True
+
+def unpack_srcrpm(srpm, dir, *files):
+    """
+    This method unpacks the passed srpm into the
+    passed dir. If arguments are passed to the \'files\' tuple
+    only this files will be unpacked.
+    """
+    if not is_srcrpm(srpm):
+        print >>sys.stderr, 'error - \'%s\' is not a source rpm.' % srpm
+        sys.exit(1)
+    curdir = os.getcwd()
+    if not os.path.isdir(dir):
+        dir = curdir
+    else:
+        os.chdir(dir)
+    cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
+    ret = os.system(cmd)
+    if ret != 0:
+        print >>sys.stderr, 'error \'%s\' - cannot extract \'%s\'' % (ret, srpm)
+        sys.exit(1)
+    os.chdir(curdir)
+
+# TODO: is there an easy way to read the 'Name:' directly
+#       from the RPM? (we can't use the rpm lead because this
+#       would also contains the version number and is limited to 65 bytes)
+def data_from_srcrpm(srpm, *rpmdata):
+    """
+    This method reads spec file tags and sections
+    from a src.rpm
+    """
+    import tempfile
+    import glob
+
+    tmpdir = tempfile.mkdtemp(prefix='osc', dir='/tmp')
+    try:
+        unpack_srcrpm(srpm, tmpdir, '*.spec')
+        speclist = glob.glob(os.path.join(tmpdir, '*.spec'))
+        if len(speclist) == 1:
+            data = read_meta_from_spec(os.path.join(tmpdir, speclist[0]), *rpmdata)
+        else:
+            print >>sys.stderr, 'error - cannot read package information from source ' \
+                                'rpm (please specify the required data with --title, --name, ' \
+                                '--description'
+            sys.exit(1)
+    finally:
+        delete_tmpdir(tmpdir)
+    return data
+
+def is_rpm(f):
+    """check if the named file is an RPM package"""
+    try:                                                                                                                                
+        h = open(f).read(4)
+    except:
+        return False
+
+    if h == '\xed\xab\xee\xdb':
+        return True
+    else:
+        return False
+
+def is_srcrpm(f):
+    """check if the named file is a source RPM"""
+
+    if not is_rpm(f):
+        return False
+
+    try:
+        h = open(f).read(8)
+    except:
+        return False
+
+    if h[7] == '\x01':
+        return True
+    else:
+        return False   
