@@ -1360,15 +1360,31 @@ def copy_pac(src_apiurl, src_project, src_package,
 
 
 def delete_package(apiurl, prj, pac):
-    
     u = makeurl(apiurl, ['source', prj, pac])
-    http_DELETE(u)
+    try:
+        http_DELETE(u)
+    except urllib2.HTTPError, e:
+        if e.code == 404:
+            print >>sys.stderr, 'Package \'%s\' does not exist' % pac
+            sys.exit(1)
+        else:
+            print >>sys.stderr, 'an unexpected error occured while deleting ' \
+                                '\'%s\'' % pac
+            sys.exit(1)            
 
 
 def delete_project(apiurl, prj):
-    
     u = makeurl(apiurl, ['source', prj])
-    http_DELETE(u)
+    try:
+        http_DELETE(u)
+    except urllib2.HTTPError, e:
+        if e.code == 404:
+            print >>sys.stderr, 'Package \'%s\' does not exist' % pac
+            sys.exit(1)
+        else:
+            print >>sys.stderr, 'an unexpected error occured while deleting ' \
+                                '\'%s\'' % pac
+            sys.exit(1)
 
 
 def get_platforms(apiurl):
