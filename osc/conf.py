@@ -225,6 +225,8 @@ def get_config():
         except:
             sys.exit('option %s requires an integer value' % i)
 
+    packagecachedir = os.path.expanduser(config['packagecachedir'])
+
     # transform 'url1, url2, url3' form into a list
     if type(config['urllist']) == str:
         config['urllist'] = [ i.strip() for i in config['urllist'].split(',') ]
