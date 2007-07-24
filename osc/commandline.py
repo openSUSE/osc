@@ -916,6 +916,8 @@ class Osc(cmdln.Cmdln):
                 p.rev = p.commit(msg=msg)
                 print
                 print 'Committed revision %s.' % p.rev
+            else:
+                print
 
             p.update_local_filesmeta()
             p.write_deletelist()
