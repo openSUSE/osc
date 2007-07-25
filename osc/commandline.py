@@ -1657,6 +1657,7 @@ class Osc(cmdln.Cmdln):
             else:
                print 'No matches found for \'%s\' in %ss' % (args[0], kind)
 
+
     @cmdln.option('-p', '--project', metavar='project',
                         help='specify a project name')
     @cmdln.option('-n', '--name', metavar='name',
@@ -1739,6 +1740,72 @@ class Osc(cmdln.Cmdln):
             sys.exit(1)
 
         print 'Package \'%s\' imported successfully' % pac
+
+    @cmdln.option('-m', '--method', default='GET', metavar='HTTP_METHOD',
+                        help='specify HTTP method to use (GET|PUT|DELETE|POST)')
+    @cmdln.option('-d', '--data', default=None, metavar='STRING',
+                        help='specify string data for e.g. POST')
+    @cmdln.option('-f', '--file', default=None, metavar='FILE',
+                        help='specify filename for e.g. PUT or DELETE')
+    def do_req(self, subcmd, opts, url):
+        """${cmd_name}: Issue an arbitrary request to the API
+
+        Useful for testing.
+
+        URL can be specified either partially (only the path component), or fully
+        with URL scheme and hostname ('http://...').
+
+        Note the global -A and -H options (see osc help).
+
+        Examples:
+          osc req /source/home:poeml
+          osc req -m PUT -f /etc/fstab source/home:poeml/test5/myfstab
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        if not opts.method in ['GET', 'PUT', 'POST', 'DELETE']:
+            sys.exit('unknown method %s' % opts.method)
+
+        if not url.startswith('http'):
+            if not url.startswith('/'):
+                url = '/' + url
+            url = conf.config['apiurl'] + url
+
+        try:
+            r = http_request(opts.method, 
+                             url, 
+                             data=opts.data, 
+                             file=opts.file) 
+
+        except urllib2.HTTPError, e:
+            if e.code == 400:
+                print >>sys.stderr, e
+                print >>sys.stderr, e.read()
+                sys.exit(1)
+            if e.code == 500:
+                print >>sys.stderr, e
+                # this may be unhelpful... because it may just print a big blob of uninteresting
+                # ichain html and javascript... however it could potentially be useful if the orign
+                # server returns an information body
+                if conf.config['http_debug']:
+                    print >>sys.stderr, e.read()
+                sys.exit(1)
+            else:
+                sys.exit('unexpected error')
+
+        try:
+            out = r.read()
+        except:
+            sys.exit('failed to read from file object')
+
+        sys.stdout.write(out)
+
+
+
+# fini!
+###############################################################################
         
     # load subcommands plugged-in locally
     plugin_dirs = ['/var/lib/osc-plugins', os.path.expanduser('~/.osc-plugins')]
