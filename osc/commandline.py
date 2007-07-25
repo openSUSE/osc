@@ -1677,10 +1677,19 @@ class Osc(cmdln.Cmdln):
         updated (<title /> and <description />).
         The src.rpm will be extracted into the package dir.
 
+        SRPM is the path of the src.rpm in the local filesystem,
+        or an URL.
+
         ${cmd_usage}
         ${cmd_option_list}
         """
         import glob
+
+        if '://' in srpm:
+            print 'trying to fetch', srpm
+            import urlgrabber
+            urlgrabber.urlgrab(srpm)
+            srpm = os.path.basename(srpm)
 
         srpm = os.path.abspath(srpm)
 
