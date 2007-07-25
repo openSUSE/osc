@@ -1666,7 +1666,7 @@ class Osc(cmdln.Cmdln):
                         help='set a title')
     @cmdln.option('-d', '--description', metavar='description',
                         help='set the description of the package')
-    def do_importsrcpkg(self, subcmd, opts, *args):
+    def do_importsrcpkg(self, subcmd, opts, srpm):
         """${cmd_name}: import a new package from a src.rpm
 
         A new package dir will be created inside the project dir
@@ -1677,20 +1677,12 @@ class Osc(cmdln.Cmdln):
         updated (<title /> and <description />).
         The src.rpm will be extracted into the package dir.
 
-        usage:
-            osc importsrcpkg /path/to/src.rpm <options>
+        ${cmd_usage}
         ${cmd_option_list}
         """
         import glob
 
-        if len(args) < 1:
-            print >>sys.stderr, 'too few arguments'
-            sys.exit(1)
-        elif len(args) > 1:
-            print >>sys.stderr, 'too many arguments'
-            sys.exit(1)
-        else:
-            srpm = os.path.abspath(args[0])
+        srpm = os.path.abspath(srpm)
 
         if opts.project:
             project_dir = opts.project
@@ -1740,6 +1732,7 @@ class Osc(cmdln.Cmdln):
             sys.exit(1)
 
         print 'Package \'%s\' imported successfully' % pac
+
 
     @cmdln.option('-m', '--method', default='GET', metavar='HTTP_METHOD',
                         help='specify HTTP method to use (GET|PUT|DELETE|POST)')
