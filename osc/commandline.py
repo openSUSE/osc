@@ -1704,9 +1704,11 @@ class Osc(cmdln.Cmdln):
         else:
             project = store_read_project(project_dir)
 
-        if not opts.name or not opts.description or not opts.title:
-            title, pac, descr = ( v for k, v in \
-                data_from_srcrpm(srpm, 'Name:', 'Summary:', '%description').iteritems() )
+        rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
+        if rpm_data:
+            title, pac, descr = ( v for k, v in rpm_data.iteritems() )
+        else:
+            title = pac = descr = ''
 
         if opts.title:
             title = opts.title
@@ -1715,6 +1717,12 @@ class Osc(cmdln.Cmdln):
         if opts.description:
             descr = opts.description
         
+        # title and description can be empty
+        if not pac:
+            print >>sys.stderr, 'please specify a package name with the \'--name\' option. ' \
+                                'The automatic detection failed'
+            sys.exit(1)
+
         if not os.path.exists(os.path.join(project_dir, pac)):
             os.mkdir(os.path.join(project_dir, pac))
             os.chdir(os.path.join(project_dir, pac))

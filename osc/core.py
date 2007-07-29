@@ -1921,31 +1921,49 @@ def unpack_srcrpm(srpm, dir, *files):
         sys.exit(1)
     os.chdir(curdir)
 
-# TODO: is there an easy way to read the 'Name:' directly
-#       from the RPM? (we can't use the rpm lead because this
-#       would also contains the version number and is limited to 65 bytes)
-def data_from_srcrpm(srpm, *rpmdata):
+def tag_to_rpmpy(tag):
     """
-    This method reads spec file tags and sections
-    from a src.rpm
+    maps a spec file tag/section to a valid
+    rpm-python RPMTAG
     """
-    import tempfile
-    import glob
 
-    tmpdir = tempfile.mkdtemp(prefix='osc', dir='/tmp')
     try:
-        unpack_srcrpm(srpm, tmpdir, '*.spec')
-        speclist = glob.glob(os.path.join(tmpdir, '*.spec'))
-        if len(speclist) == 1:
-            data = read_meta_from_spec(os.path.join(tmpdir, speclist[0]), *rpmdata)
+        import rpm
+        tags = { 'Name:' : rpm.RPMTAG_NAME,
+                 'Summary:' : rpm.RPMTAG_SUMMARY,
+                 '%description' : rpm.RPMTAG_DESCRIPTION
+               }
+        if tag in tags.keys():
+            return tags[tag]
         else:
-            print >>sys.stderr, 'error - cannot read package information from source ' \
-                                'rpm (please specify the required data with --title, --name, ' \
-                                '--description'
-            sys.exit(1)
-    finally:
-        delete_tmpdir(tmpdir)
-    return data
+            return None
+    except ImportError:
+        return None
+
+def data_from_rpm(rpm_file, *rpmdata):
+    """
+    This method reads the given rpmdata
+    from a rpm.
+    """
+
+    try:
+        import rpm
+        ts = rpm.TransactionSet()
+        file = open(rpm_file, 'r')
+        header = ts.hdrFromFdno(file.fileno())
+        file.close()
+        data = {}
+        for itm in rpmdata:
+            rpmpy = tag_to_rpmpy(itm)
+            if rpmpy:
+                data[itm] = header[rpmpy]
+            else:
+                print >>sys.stderr, 'invalid data \'%s\'' % itm
+                sys.exit(1)
+        return data
+    except ImportError:
+        print >>sys.stderr, 'warning: rpm-python not found'
+        return None
 
 def is_rpm(f):
     """check if the named file is an RPM package"""
