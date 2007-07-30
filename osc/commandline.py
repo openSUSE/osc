@@ -1626,7 +1626,7 @@ class Osc(cmdln.Cmdln):
                         help='set the description of the package')
     @cmdln.option('',   '--delete-old-files', action='store_true',
                         help='delete existing files from the server')
-    @cmdln.option('',   '--disable-commit', action='store_true',
+    @cmdln.option('-c',   '--commit', action='store_true',
                         help='do not commit the new files')
     def do_importsrcpkg(self, subcmd, opts, srpm):
         """${cmd_name}: import a new package from a src.rpm
@@ -1707,12 +1707,12 @@ class Osc(cmdln.Cmdln):
             init_package_dir(conf.config['apiurl'], project, pac, os.path.join(project, pac))
             unpack_srcrpm(srpm, os.getcwd())
             p = Package(os.getcwd())
-            if len(p.filenamelist) == 0 and not opts.disable_commit:
+            if len(p.filenamelist) == 0 and opts.commit:
                 # TODO: moving this into the Package class
                 print 'Adding files to working copy...'
                 self.do_add(None, None, *glob.glob('*'))
                 p.commit()
-            elif not opts.disable_commit and opts.delete_old_files:
+            elif opts.commit and opts.delete_old_files:
                 delete_server_files(conf.config['apiurl'], project, pac, p.filenamelist)
                 p.update_local_filesmeta()
                 # TODO: moving this into the Package class
@@ -1721,10 +1721,8 @@ class Osc(cmdln.Cmdln):
                 p.update_datastructs()
                 p.commit()
             else:
-                print 'The package \'%s\' already exists on the server or the ' \
-                      '\'--disable-commit\' switch was used. Please commit ' \
-                      'this working copy manually or use the ' \
-                      '\'--delete-old-files\' option.' % pac
+                print 'No files were committed to the server. Please ' \
+                      'commit them manually.'
                 print 'Package \'%s\' only imported locally' % pac
                 sys.exit(1)
         else:
