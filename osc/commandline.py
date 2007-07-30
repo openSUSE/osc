@@ -868,7 +868,6 @@ class Osc(cmdln.Cmdln):
             conf.config['do_commits'] = True
 
         for p in pacs:
-
             if conf.config['do_commits']:
                 if opts.message:
                     msg = opts.message
@@ -879,48 +878,7 @@ class Osc(cmdln.Cmdln):
                         sys.exit('could not open file \'%s\'.' % opts.file)
                 else:
                     msg = ''
-
-            # commit only if the upstream revision is the same as the working copy's
-            upstream_rev = show_upstream_rev(p.apiurl, p.prjname, p.name)
-            if p.rev != upstream_rev:
-                print >>sys.stderr, 'Working copy \'%s\' is out of date (rev %s vs rev %s).' \
-                    % (p.absdir, p.rev, upstream_rev)
-                print >>sys.stderr, 'Looks as if you need to update it first.'
-                return 1
-
-            if not p.todo:
-                p.todo = p.filenamelist_unvers + p.filenamelist
-
-            for filename in p.todo:
-                st = p.status(filename)
-                if st == 'A' or st == 'M':
-                    p.todo_send.append(filename)
-                    print 'Sending        %s' % filename
-                elif st == 'D':
-                    p.todo_delete.append(filename)
-                    print 'Deleting       %s' % filename
-
-            if not p.todo_send and not p.todo_delete:
-                print 'nothing to do for package %s' % p.name
-                continue
-
-            print 'Transmitting file data ', 
-            for filename in p.todo_delete:
-                p.delete_source_file(filename)
-                p.to_be_deleted.remove(filename)
-            for filename in p.todo_send:
-                sys.stdout.write('.')
-                sys.stdout.flush()
-                p.put_source_file(filename)
-            if conf.config['do_commits']:
-                p.rev = p.commit(msg=msg)
-                print
-                print 'Committed revision %s.' % p.rev
-            else:
-                print
-
-            p.update_local_filesmeta()
-            p.write_deletelist()
+            p.commit(msg)
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -1666,6 +1624,10 @@ class Osc(cmdln.Cmdln):
                         help='set a title')
     @cmdln.option('-d', '--description', metavar='description',
                         help='set the description of the package')
+    @cmdln.option('',   '--delete-old-files', action='store_true',
+                        help='delete existing files from the server')
+    @cmdln.option('',   '--disable-commit', action='store_true',
+                        help='do not commit the new files')
     def do_importsrcpkg(self, subcmd, opts, srpm):
         """${cmd_name}: import a new package from a src.rpm
 
@@ -1675,7 +1637,9 @@ class Osc(cmdln.Cmdln):
         the package does not exist on the server it will be created
         too otherwise the meta data of the existing package will be
         updated (<title /> and <description />).
-        The src.rpm will be extracted into the package dir.
+        The src.rpm will be extracted into the package dir. If the
+        --disable-commit switch is not used all changes will be
+        committed.
 
         SRPM is the path of the src.rpm in the local filesystem,
         or an URL.
@@ -1742,8 +1706,27 @@ class Osc(cmdln.Cmdln):
                       data = data)
             init_package_dir(conf.config['apiurl'], project, pac, os.path.join(project, pac))
             unpack_srcrpm(srpm, os.getcwd())
-            print 'Adding files to working copy...'
-            self.do_add(None, {}, *glob.glob('*'))
+            p = Package(os.getcwd())
+            if len(p.filenamelist) == 0 and not opts.disable_commit:
+                # TODO: moving this into the Package class
+                print 'Adding files to working copy...'
+                self.do_add(None, None, *glob.glob('*'))
+                p.commit()
+            elif not opts.disable_commit and opts.delete_old_files:
+                delete_server_files(conf.config['apiurl'], project, pac, p.filenamelist)
+                p.update_local_filesmeta()
+                # TODO: moving this into the Package class
+                print 'Adding files to working copy...'
+                self.do_add(None, None, *glob.glob('*'))
+                p.update_datastructs()
+                p.commit()
+            else:
+                print 'The package \'%s\' already exists on the server or the ' \
+                      '\'--disable-commit\' switch was used. Please commit ' \
+                      'this working copy manually or use the ' \
+                      '\'--delete-old-files\' option.' % pac
+                print 'Package \'%s\' only imported locally' % pac
+                sys.exit(1)
         else:
             print >>sys.stderr, 'error - package already exists'
             sys.exit(1)

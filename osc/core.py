@@ -199,7 +199,6 @@ class Project:
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
     def __init__(self, workingdir):
-        import fnmatch
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.dir, store)
@@ -210,40 +209,11 @@ class Package:
         self.name = store_read_package(self.dir)
         self.apiurl = store_read_apiurl(self.dir)
 
-        files_tree = read_filemeta(self.dir)
-        files_tree_root = files_tree.getroot()
-
-        self.rev = files_tree_root.get('rev')
-        self.srcmd5 = files_tree_root.get('srcmd5')
-
-        self.filenamelist = []
-        self.filelist = []
-        for node in files_tree_root.findall('entry'):
-            try: 
-                f = File(node.get('name'), 
-                         node.get('md5'), 
-                         int(node.get('size')), 
-                         int(node.get('mtime')))
-            except: 
-                # okay, a very old version of _files, which didn't contain any metadata yet... 
-                f = File(node.get('name'), '', 0, 0)
-            self.filelist.append(f)
-            self.filenamelist.append(f.name)
-
-        self.to_be_deleted = read_tobedeleted(self.dir)
-        self.in_conflict = read_inconflict(self.dir)
+        self.update_datastructs()
 
         self.todo = []
         self.todo_send = []
         self.todo_delete = []
-
-        # gather unversioned files, but ignore some stuff
-        self.excluded = [ i for i in os.listdir(self.dir) 
-                          for j in exclude_stuff 
-                          if fnmatch.fnmatch(i, j) ]
-        self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
-                                     if i not in self.excluded
-                                     if i not in self.filenamelist ]
 
     def info(self):
         return info_templ % (self.dir, self.apiurl, self.srcmd5, self.rev)
@@ -327,18 +297,57 @@ class Package:
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def commit(self, msg=''):
-        
-        query = []
-        query.append('cmd=commit')
-        query.append('rev=upload')
-        query.append('user=%s' % conf.config['user'])
-        query.append('comment=%s' % quote_plus(msg))
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-        #print u
-        f = http_POST(u)
-        root = ET.parse(f).getroot()
-        rev = int(root.get('rev'))
-        return rev
+        # commit only if the upstream revision is the same as the working copy's
+        upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
+        if self.rev != upstream_rev:
+            print >>sys.stderr, 'Working copy \'%s\' is out of date (rev %s vs rev %s).' \
+                                % (self.absdir, self.rev, upstream_rev)
+            print >>sys.stderr, 'Looks as if you need to update it first.'
+            sys.exit(1)
+
+        if not self.todo:
+            self.todo = self.filenamelist_unvers + self.filenamelist
+
+        for filename in self.todo:
+            st = self.status(filename)
+            if st == 'A' or st == 'M':
+                self.todo_send.append(filename)
+                print 'Sending        %s' % filename
+            elif st == 'D':
+                self.todo_delete.append(filename)
+                print 'Deleting       %s' % filename
+
+        if not self.todo_send and not self.todo_delete:
+            print 'nothing to do for package %s' % self.name
+            sys.exit(1)
+
+        print 'Transmitting file data ', 
+        for filename in self.todo_delete:
+            self.delete_source_file(filename)
+            self.to_be_deleted.remove(filename)
+        for filename in self.todo_send:
+            sys.stdout.write('.')
+            sys.stdout.flush()
+            self.put_source_file(filename)
+        # all source files are committed - now comes the log
+        if conf.config['do_commits']:
+            query = []
+            query.append('cmd=commit')
+            query.append('rev=upload')
+            query.append('user=%s' % conf.config['user'])
+            query.append('comment=%s' % quote_plus(msg))
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
+            #print u
+            f = http_POST(u)
+            root = ET.parse(f).getroot()
+            self.rev = int(root.get('rev'))
+            print
+            print 'Committed revision %s.' % self.rev
+        else:
+            print
+
+        self.update_local_filesmeta()
+        self.write_deletelist()
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
@@ -416,7 +425,45 @@ class Package:
         f = open(os.path.join(self.storedir, '_files'), 'w')
         f.write(meta)
         f.close()
-        
+
+    def update_datastructs(self):
+        """
+        Update the internal data structures if the local _files
+        file has changed (e.g. update_local_filesmeta() has been
+        called).
+        """
+        import fnmatch
+        files_tree = read_filemeta(self.dir)
+        files_tree_root = files_tree.getroot()
+
+        self.rev = files_tree_root.get('rev')
+        self.srcmd5 = files_tree_root.get('srcmd5')
+
+        self.filenamelist = []
+        self.filelist = []
+        for node in files_tree_root.findall('entry'):
+            try: 
+                f = File(node.get('name'), 
+                         node.get('md5'), 
+                         int(node.get('size')), 
+                         int(node.get('mtime')))
+            except: 
+                # okay, a very old version of _files, which didn't contain any metadata yet... 
+                f = File(node.get('name'), '', 0, 0)
+            self.filelist.append(f)
+            self.filenamelist.append(f.name)
+
+        self.to_be_deleted = read_tobedeleted(self.dir)
+        self.in_conflict = read_inconflict(self.dir)
+
+        # gather unversioned files, but ignore some stuff
+        self.excluded = [ i for i in os.listdir(self.dir) 
+                          for j in exclude_stuff 
+                          if fnmatch.fnmatch(i, j) ]
+        self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
+                                     if i not in self.excluded
+                                     if i not in self.filenamelist ]
+
     def update_local_pacmeta(self):
         """
         Update the local _meta file in the store.
@@ -1992,3 +2039,19 @@ def is_srcrpm(f):
         return True
     else:
         return False   
+
+def delete_server_files(apiurl, prj, pac, files):
+    """
+    This method deletes the given filelist on the
+    server. No local data will be touched.
+    """
+
+    for file in files:
+        try:
+            u = makeurl(apiurl, ['source', prj, pac, file])
+            http_DELETE(u)
+        except:
+            # we do not handle all exceptions here - we need another solution
+            # see bug #280034
+            print >>sys.stderr, 'error while deleting file \'%s\'' % file
+            sys.exit(1)
