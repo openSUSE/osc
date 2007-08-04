@@ -1057,10 +1057,7 @@ def meta_exists(metatype,
         else:
             print >>sys.stderr, 'error getting metadata for type \'%s\' at URL \'%s\':' \
                                 % (metatype, url)
-    if data:
-        return data
-    else:
-        return None
+    return data
 
 def make_meta_url(metatype, path_args=None):
     if metatype not in metatypes.keys():
