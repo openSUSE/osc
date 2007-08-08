@@ -868,6 +868,7 @@ class Osc(cmdln.Cmdln):
             conf.config['do_commits'] = True
 
         for p in pacs:
+            msg = ''
             if conf.config['do_commits']:
                 if opts.message:
                     msg = opts.message
@@ -876,8 +877,6 @@ class Osc(cmdln.Cmdln):
                         msg = open(opts.file).read()
                     except:
                         sys.exit('could not open file \'%s\'.' % opts.file)
-                else:
-                    msg = ''
             p.commit(msg)
 
 
