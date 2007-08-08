@@ -1627,7 +1627,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('',   '--delete-old-files', action='store_true',
                         help='delete existing files from the server')
     @cmdln.option('-c',   '--commit', action='store_true',
-                        help='do not commit the new files')
+                        help='commit the new files')
     def do_importsrcpkg(self, subcmd, opts, srpm):
         """${cmd_name}: import a new package from a src.rpm
 
@@ -1726,7 +1726,7 @@ class Osc(cmdln.Cmdln):
                 print 'Package \'%s\' only imported locally' % pac
                 sys.exit(1)
         else:
-            print >>sys.stderr, 'error - package already exists'
+            print >>sys.stderr, 'error - local package already exists'
             sys.exit(1)
 
         print 'Package \'%s\' imported successfully' % pac
