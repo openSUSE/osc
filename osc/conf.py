@@ -122,6 +122,15 @@ def init_basicauth(config):
 
     global cookiejar
 
+    # HTTPS proxy is not supported by urllib2. It only leads to an error
+    # or, at best, a warning.
+    # https://bugzilla.novell.com/show_bug.cgi?id=214983
+    # https://bugzilla.novell.com/show_bug.cgi?id=298378
+    if 'https_proxy' in os.environ:
+        del os.environ['https_proxy']
+    if 'HTTPS_PROXY' in os.environ:
+        del os.environ['HTTPS_PROXY']
+
     if config['http_debug']:
         # brute force
         def urllib2_debug_init(self, debuglevel=0):
