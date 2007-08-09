@@ -1549,6 +1549,8 @@ class Osc(cmdln.Cmdln):
         print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, opts.build_disabled)
 
 
+    @cmdln.option('--repos-baseurl', action='store_true',
+                        help='show base URLs of download repositories')
     @cmdln.option('-e', '--enable-exact', action='store_true',
                         help='show only exact matches')
     @cmdln.option('--package', action='store_true',
@@ -1598,7 +1600,7 @@ class Osc(cmdln.Cmdln):
         if not search_for:
             search_for = [ 'project', 'package' ]
         for kind in search_for:
-            result = search(conf.config['apiurl'], set(search_list), kind, args[0], opts.verbose, opts.enable_exact)
+            result = search(conf.config['apiurl'], set(search_list), kind, args[0], opts.verbose, opts.enable_exact, opts.repos_baseurl)
             if result:
                 if kind == 'package':
                     headline = [ '# Package', '# Project' ]
@@ -1606,6 +1608,8 @@ class Osc(cmdln.Cmdln):
                     headline = [ '# Project' ]
                 if opts.verbose:
                     headline.append('# Title')
+                if opts.repos_baseurl:
+                    headline.append('# URL')
                 if len(search_for) > 1:
                     print '#' * 68
                 print 'matches for \'%s\' in %ss:\n' % (args[0], kind)

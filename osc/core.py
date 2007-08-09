@@ -1872,7 +1872,7 @@ def build_table(col_num, data = [], headline = [], width=1):
     table.append(''.join(row))
     return table
 
-def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False):
+def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False):
     """
     Perform a search for 'search_term'. A list which contains the
     results will be returned on success otherwise 'None'. If 'verbose' is true
@@ -1900,6 +1900,8 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
             if len(title) > 60:
                 title = title[:61] + '...'
             result.append(title)
+        if repos_baseurl:
+            result.append('http://download.opensuse.org/repositories/%s/' % project.replace(':', ':/'))
     if result:
         return result
     else:
