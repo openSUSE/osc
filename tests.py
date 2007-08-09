@@ -325,7 +325,7 @@ class TestOsc(unittest.TestCase):
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, 'A    foo1\n')
 
-        self.out, self.err = runosc('ci')
+        self.out, self.err = runosc('ci -m msg')
         self.assertEqual(self.err, '')
         self.assertEqual(remove_revid(self.out), """Sending        foo1
 Transmitting file data .
@@ -338,7 +338,7 @@ Committed revision XX.
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, 'D    foo1\n')
 
-        self.out, self.err = runosc('ci')
+        self.out, self.err = runosc('ci -m msg')
         self.assertEqual(self.err, '')
         self.assertEqual(remove_revid(self.out), """Deleting       foo1
 Transmitting file data 
@@ -375,7 +375,7 @@ Committed revision XX.
         self.assertEqual(self.out, 'A    foo2\n')
 
         # check in a single argument
-        self.out, self.err = runosc('ci foo2')
+        self.out, self.err = runosc('ci -m msg foo2')
         self.assertEqual(self.err, '')
         self.assertEqual(remove_revid(self.out), """Sending        foo2
 Transmitting file data .
@@ -400,8 +400,8 @@ Committed revision XX.
         self.assertEqual(remove_revid(self.out), """Sending        bar1
 Deleting       foo2
 Transmitting file data .
-Committed revision XX.
 """)
+#Committed revision XX.
 
 
 
