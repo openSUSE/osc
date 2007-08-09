@@ -27,7 +27,7 @@ def remove_revid(s):
 
 
 def checkout_and_clean(self):
-    """check out the package and delete all files
+    """check out the package and delete all files.
     leave behind the empty package dir"""
     runosc('co %s %s' % (PRJ, PAC))
     chdir(TESTPACDIR)
@@ -130,6 +130,60 @@ class TestOsc(unittest.TestCase):
         self.out, self.err = runosc('platforms Apache')
         self.assertEqual(self.err, '')
         self.assert_('openSUSE_Factory' in self.out)
+
+
+    #####################################################################
+
+    def testCommitMsg(self):
+        """also tests the info and log commands"""
+
+        checkout_and_clean(self)
+
+        # ci -F
+
+        touch('foo')
+        runosc('add foo')
+        open('msgfile', 'w').write('message from file')
+
+        self.out, self.err = runosc('ci -F msgfile')
+        self.assertEqual(self.err, '')
+
+        self.out, self.err = runosc('info')
+        self.assertEqual(self.err, '')
+        self.assert_('Path: .\n' in self.out)
+        self.assert_('Repository UUID' in self.out)
+        self.assert_('Revision' in self.out)
+
+        lastrev = self.out[self.out.find('Revision') + 10 :].strip()
+
+        self.out, self.err = runosc('log -r %s' % lastrev)
+        self.assertEqual(self.err, '')
+        cl = self.out.splitlines()
+        self.assertEqual(len(cl), 5)
+        self.assert_(cl[1].startswith('r%s | poeml | ' % lastrev))
+        self.assertEqual(cl[2], '')
+        self.assertEqual(cl[3], 'message from file')
+
+        # ci -m
+
+        touch('bar')
+        runosc('add bar')
+        self.out, self.err = runosc('ci -m "message from commandline"')
+        self.assertEqual(self.err, '')
+
+        self.out, self.err = runosc('info')
+        self.assertEqual(self.err, '')
+        lastrev = self.out[self.out.find('Revision') + 10 :].strip()
+
+        self.out, self.err = runosc('log -r %s' % lastrev)
+        self.assertEqual(self.err, '')
+        cl = self.out.splitlines()
+        self.assertEqual(len(cl), 5)
+        self.assert_(cl[1].startswith('r%s | poeml | ' % lastrev))
+        self.assertEqual(cl[2], '')
+        self.assertEqual(cl[3], 'message from commandline')
+
+
 
 
     #####################################################################
