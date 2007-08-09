@@ -163,13 +163,17 @@ class Osc(cmdln.Cmdln):
         the --file switch. If the argument is '-', input is taken from stdin:
         osc meta prjconf home:poeml | sed ... | osc meta prjconf home:poeml -F -
 
-        The --create switch is subject to discussion and not implemented. The
-        current behaviour is to create a non-existing resource implicitely, if
-        while it is edited.
+        When trying to edit a non-existing resource, it is created implicitely.
 
-        usage:
+
+        Examples:
+            osc meta prj PRJ
+            osc meta pkg PRJ PKG
+            osc meta pkg PRJ PKG -e
+
+        Usage:
             osc meta <prj|pkg|prjconf|user|pattern> ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> -e|--edit [-c|--create] ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern> -e|--edit ARGS...
             osc meta <prj|pkg|prjconf|user|pattern> -F|--file ARGS...
             osc meta pattern --delete PRJ PATTERN
         ${cmd_option_list}
