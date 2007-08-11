@@ -1096,7 +1096,7 @@ class Osc(cmdln.Cmdln):
         pacs = findpacs(args)
 
         for pac in pacs:
-            print ''.join(show_results_meta(pac.apiurl, pac.prjname, pac.name))
+            print ''.join(show_results_meta(pac.apiurl, pac.prjname, package=pac.name))
 
                 
     def do_results(self, subcmd, opts, *args):

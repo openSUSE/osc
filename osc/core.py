@@ -1459,8 +1459,11 @@ def get_repos_of_project(apiurl, prj):
     return r
 
 
-def show_results_meta(apiurl, prj, package):
-    u = makeurl(apiurl, ['build', prj, '_result?package=%s' % pathname2url(package)])
+def show_results_meta(apiurl, prj, package=None):
+    query = []
+    if package:
+        query.append('package=%s' % pathname2url(package))
+    u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
 
@@ -1475,7 +1478,7 @@ def get_results(apiurl, prj, package):
     r = []
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
-    f = show_results_meta(apiurl, prj, package)
+    f = show_results_meta(apiurl, prj, package=package)
     tree = ET.parse(StringIO(''.join(f)))
     root = tree.getroot()
 
