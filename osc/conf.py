@@ -56,11 +56,8 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
 
              'http_debug': '0',
              'cookiejar': '~/.osc_cookiejar',
-
-             # switched off for now (testing)
-             'do_commits': '0',
 }
-boolean_opts = ['http_debug', 'do_commits']
+boolean_opts = ['http_debug']
 
 new_conf_template = """
 [general]

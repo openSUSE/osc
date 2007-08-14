@@ -400,8 +400,8 @@ Committed revision XX.
         self.assertEqual(remove_revid(self.out), """Sending        bar1
 Deleting       foo2
 Transmitting file data .
+Committed revision XX.
 """)
-#Committed revision XX.
 
 
 

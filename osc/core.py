@@ -288,9 +288,7 @@ class Package:
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
-        query = []
-        if conf.config['do_commits']:
-            query.append('rev=upload')
+        query = ['rev=upload']
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_PUT(u, file = os.path.join(self.dir, n))
 
@@ -330,21 +328,18 @@ class Package:
             sys.stdout.flush()
             self.put_source_file(filename)
         # all source files are committed - now comes the log
-        if conf.config['do_commits']:
-            query = []
-            query.append('cmd=commit')
-            query.append('rev=upload')
-            query.append('user=%s' % conf.config['user'])
-            query.append('comment=%s' % quote_plus(msg))
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-            #print u
-            f = http_POST(u)
-            root = ET.parse(f).getroot()
-            self.rev = int(root.get('rev'))
-            print
-            print 'Committed revision %s.' % self.rev
-        else:
-            print
+        query = []
+        query.append('cmd=commit')
+        query.append('rev=upload')
+        query.append('user=%s' % conf.config['user'])
+        query.append('comment=%s' % quote_plus(msg))
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
+        #print u
+        f = http_POST(u)
+        root = ET.parse(f).getroot()
+        self.rev = int(root.get('rev'))
+        print
+        print 'Committed revision %s.' % self.rev
 
         self.update_local_filesmeta()
         self.write_deletelist()
