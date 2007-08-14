@@ -1,19 +1,14 @@
-since 0.97:
+0.98:
 
-- added initial search support
-- new meta command, replacing editmeta, editprj, createprj,
-  editpac, createpac, edituser
-- allow editing patterns (osc meta pattern -e) 
-- show helpful xml error messages if broken metadata is uploaded
+- new importfromsrcpkg command, to import a package src.rpm from file or URL
+- new req command, to issue arbitrary requests to the API
+- initial support for commit messages (ci -m/-F)
 - implementing a log command to review the commit log
 - renamed previous "log" command to "buildlog" (short: bl)
-- initial support for commit messages (ci -m/-F)
-    NOTE: if -m is used, osc uses a different mode of uploading 
-    files and commit them, namely the way which is currently
-    documented in the api. So far, osc was uploading each file 
-    separately through the old backward compatible way. This way
-    of committing can also be forced with do_commits = 1 in
-    .oscrc.
+- new meta command, replacing editmeta, editprj, createprj,
+  editpac, createpac, edituser, pattern
+- added search support
+- show helpful xml error messages if broken metadata is uploaded
 
 
 0.97:

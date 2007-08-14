@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.97'
+__version__ = '0.98'
 
 import os
 import sys
@@ -868,7 +868,7 @@ def check_store_version(dir):
         sys.exit(1)
 
     if v != __version__:
-        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96']:
+        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96', '0.97']:
             # version is fine, no migration needed
             f = open(versionfile, 'w')
             f.write(__version__ + '\n')
