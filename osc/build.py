@@ -217,6 +217,8 @@ def main(opts, argv):
         buildargs.append('--clean')
     if opts.noinit:
         buildargs.append('--noinit')
+    if opts.changelog:
+        buildargs.append('--changelog')
     buildargs = ' '.join(buildargs)
 
 

@@ -1287,6 +1287,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('--clean', action='store_true',
                   help='Delete old build root before initializing it')
+    @cmdln.option('--changelog', action='store_true',
+                  help='Force update of package changelog from a changes file')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
