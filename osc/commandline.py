@@ -1341,11 +1341,16 @@ class Osc(cmdln.Cmdln):
 
         builddist = os.getenv('BUILD_DIST')
         if builddist:
-            #args[3] = args[0]
             hyphen = builddist.rfind('-')
-            args.insert(1, builddist[hyphen+1:])
-            args.insert(1, builddist[:hyphen])
-            print sys.argv
+            if len(args) == 1:
+                args = (builddist[:hyphen], builddist[hyphen+1:], args[0])
+            elif len(args) == 0:
+                print >>sys.stderr, 'Missing argument: build description (spec of dsc file)'
+                return 2
+            else:
+                print >>sys.stderr, 'Too many arguments'
+                return 2
+            # print sys.argv
 
         elif len(args) >= 2 and len(args) < 3:
             print >>sys.stderr, 'Missing argument: build description (spec of dsc file)'
