@@ -1454,6 +1454,16 @@ def get_repos_of_project(apiurl, prj):
     return r
 
 
+def get_binarylist(apiurl, prj, repo, arch, package=None):
+    if not package:
+        package = '_repository'
+    u = makeurl(apiurl, ['build', prj, repo, arch, package])
+    f = http_GET(u)
+    tree = ET.parse(StringIO(''.join(f)))
+    r = [ node.get('filename') for node in tree.findall('binary')]
+    return r
+
+
 def show_results_meta(apiurl, prj, package=None):
     query = []
     if package:
