@@ -9,6 +9,8 @@ MAJOR:
     http://lists4.opensuse.org/opensuse-buildservice/2007-07/msg00043.html
     https://bugzilla.novell.com/show_bug.cgi?id=212565
 
+  - improve usage of the library from externally [2]
+
   
 NORMAL:
 
@@ -85,6 +87,23 @@ http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:09 <darix> man kann auf dem backend alle rpms listen lassen
 
 
+
+[2]
+> The initialisation isn't as intuitive as it could be, however:
+> 
+> conf.get_config()
+> conf.config['apiurl'] = conf.config['scheme'] + '://' + conf.config['apisrv']
+> conf.config['user'] = conf.config['auth_dict'][conf.config['apisrv']]['user']
+> conf.init_basicauth(conf.config)
+> 
+> It would be nicer if there was one function to call, eg:
+> 
+> conf.init(apisrv=None)
+> 
+> where the default api server will be used if apisrv is None.
+>
+> Some simple examples in the documentation would help those looking to learn 
+> the library as well.
 
 
 
