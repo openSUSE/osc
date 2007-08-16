@@ -1,24 +1,9 @@
 
 MAJOR:
 
-  - commit message handling, and source revision handling. This affects the commands
-    co, up, log, ci, diff. (Checking out or diffing against old revivions,
-    committing with commit messages, and reviewing the commit log)
-
-     - Extending the diff command to take an -rREV argument and show the diff 
-       of the working copy to that revision
-     - and take -rREV:REV as argument and show the diff between those two 
-       (server-side) revisions
-     
-     - Extending the checkout command to accept -rREV to check out a specific
-       revision
-     - possibly extend the update command to accept -rREV as well
-
-     - rename "log" subcommand to e.g. "buildlog", and make new "log"
-       subcommand for commit logs
-
   - changelog handling (equivalent of Novell-internal 'vc' tool, I guess)
     (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
+    see http://lists.opensuse.org/opensuse-buildservice/2007-08/msg00170.html
 
   - think about how to locally build "linked" packages
     http://lists4.opensuse.org/opensuse-buildservice/2007-07/msg00043.html
@@ -27,11 +12,13 @@ MAJOR:
   
 NORMAL:
 
+  - Extending the diff command to take -rREV:REV as argument and show the
+  diff between those two (server-side) revisions
   - add support for local build of packages which do not exist / have not been
     created yet in the buildservice
   - add switches to the meta command for easy adding of other maintainers 
     (like 'osc meta prj --add-maintainer foo')
-  - write howto for plugin-izing subcommand implementation
+  - write howto for plugin-izing subcommand implementation (see examples on mailing list)
   - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
   - status: implement -u option as in svn          [3]
   - implement (svn-like) switch command
@@ -39,35 +26,26 @@ NORMAL:
   - use urllib.urlencode for parameter encoding (or check if this is the case already?)
   - _real_ SSL support, with certificate verification
   - copypac: put the current release number into the spec file before sending it
-  - kill BUILD_ROOT/BUILD_DIST support (or make it configurable? It tends to
-    cause confusion if accidentally set. Only useful inside Novell anyway.)
-  - show request body of 400 responses (bad request)
   - commit: check if errors during PUT are handled sensibly, so the change is
     not committed to localmeta	
   - store password base64 hashed, so it is not directly visible in plaintext
     when opening .oscrc and someone is looking over the shoulder
     - use http://code.google.com/p/iniparse/ instead of ConfigParser, with
       write capability, for the change
-
+  - add switch to commit to change repository options, like to e.g. disable publishing?
 
 MINOR: 
 
   - new command: osc listbinaries [<project>] [<package>]
     listing the built package, either as URLs or just the filenames?        	[1]
   - new command: osc getbinaries [<project>] [<package>] [<rpm>]+           	[1]
+    -> see incarnations of obs_mirror_project, in particular James Oakleys 
+       obs_mirror_project.py
   - add option to disable gpg key checking?
   - adjust zsh completion to work with cmdln.py implementation
-
-
-OPTIONAL:
-
-  - add support for importing a src.rpm, extracting it and make it a package 
-      Something similar can be done by
-      	osc createpac foo-project foo123
-      followed by
-      	cd foo123; osc init foo-project foo123
   - add support for adding tags to packages?
-  - add support for package search
+
+
 
 
 
@@ -105,21 +83,6 @@ http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:09 <darix> der falsch mit dem backend spricht :/
 15:09 <DuDE_> ja, macht osc build auch so, eigentlich, allerdings weiss es dann die noetigen Datein aus dem buildinfo (version, release)
 15:09 <darix> man kann auf dem backend alle rpms listen lassen
-
-
-
-
-[2]
-
-editmeta:
-Ah, or rather osc _thought_ it was unmodified because it uses a simple 
-timestamp to compare the file with. This is basically suitable for 
-humans editing, because they need more than a second... I can change
-that to a real comparison. Meanwhile, you can add a small sleep ;)
-
-On the other hand, it would be even nicer if there would be a facility 
-that wouldn't require you to work around with an EDITOR script at all. 
-Noted in the todo.
 
 
 
