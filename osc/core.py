@@ -1199,6 +1199,45 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
     o.close()
 
 
+def get_binary_file(apiurl, prj, repo, arch, 
+                    filename, targetfilename=None, 
+                    package=None,
+                    progress_meter=False):
+
+    where = package or '_repository'
+    u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
+
+    if progress_meter:
+        sys.stdout.write("Downloading %s [  0%%]" % filename)
+        sys.stdout.flush()
+
+    f = http_GET(u)
+    binsize = int(f.headers['content-length'])
+
+    import tempfile
+    (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc', dir = '/tmp')
+
+    o = os.fdopen(fd, 'w')
+
+    downloaded = 0
+    while 1:
+        #buf = f.read(BUFSIZE)
+        buf = f.read(16384)
+        if not buf: break
+        o.write(buf)
+        downloaded += len(buf)
+        if progress_meter:
+            completion = str(int((float(downloaded)/binsize)*100))
+            sys.stdout.write('%s%*s%%]' % ('\b'*5, 3, completion))
+            sys.stdout.flush()
+    o.close()
+
+    if progress_meter:
+        sys.stdout.write('\n')
+
+    shutil.move(tmpfilename, targetfilename or filename)
+
+
 def dgst(file):
 
     #if not os.path.exists(file):

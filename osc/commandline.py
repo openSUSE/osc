@@ -85,16 +85,27 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.alias('ls')
+    @cmdln.option('-a', '--arch', metavar='ARCH',
+                        help='specify architecture')
+    @cmdln.option('-r', '--repo', metavar='REPO',
+                        help='specify repository')
+    @cmdln.option('-b', '--binaries', action='store_true',
+                        help='list built binaries, instead of sources')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='print extra information')
     def do_list(self, subcmd, opts, *args):
         """${cmd_name}: List existing content on the server
 
+        This command is used to list sources, or binaries (when used with the
+        --binaries option). To use the --binary option, --repo and --arch are
+        also required.
+
         Examples:
            ls                         # list all projects
            ls Apache                  # list packages in a project
-           ls Apache apache2          # list files of package of a project
-           ls -v Apache apache2       # verbosely list files of package of a project
+           ls -b Apache               # list all binaries of a project
+           ls Apache apache2          # list source files of package of a project
+           ls -v Apache apache2       # verbosely list source files of package 
 
         With --verbose, the following fields will be shown for each item:
            MD5 hash of file
@@ -108,28 +119,55 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
-        if not args:
-            print '\n'.join(meta_get_project_list(conf.config['apiurl']))
-
-        elif len(args) == 1:
+        if len(args) == 1:
             project = args[0]
-            if opts.verbose:
-                sys.exit('The verbose option is not implemented for projects.')
-            print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
-
         elif len(args) == 2:
             project = args[0]
             package = args[1]
-            l = meta_get_filelist(conf.config['apiurl'], 
-                                  project, 
-                                  package,
-                                  verbose=opts.verbose)
-            if opts.verbose:
-                for i in l:
-                    print '%s %7d %9d %s %s' \
-                        % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name)
-            else:
-                print '\n'.join(l)
+
+        if opts.binaries and (not opts.repo or not opts.arch):
+            sys.exit('missing options:\n'
+                     '-r <repo> -a <arch>\n'
+                     'list repositories with:\n'
+                     '\'osc platforms %s\'' %project)
+
+        # list binaries
+        if opts.binaries:
+            if not args:
+                sys.exit('there are no binaries to list above project level.')
+
+            elif len(args) == 1:
+                #if opts.verbose:
+                #    sys.exit('The verbose option is not implemented for projects.')
+                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch)
+                print '\n'.join(r)
+
+            elif len(args) == 2:
+                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch, package=package)
+                print '\n'.join(r)
+
+        # list sources
+        elif not opts.binaries:
+            if not args:
+                print '\n'.join(meta_get_project_list(conf.config['apiurl']))
+
+            elif len(args) == 1:
+                if opts.verbose:
+                    sys.exit('The verbose option is not implemented for projects.')
+
+                print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
+
+            elif len(args) == 2:
+                l = meta_get_filelist(conf.config['apiurl'], 
+                                      project, 
+                                      package,
+                                      verbose=opts.verbose)
+                if opts.verbose:
+                    for i in l:
+                        print '%s %7d %9d %s %s' \
+                            % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name)
+                else:
+                    print '\n'.join(l)
 
 
     @cmdln.option('-F', '--file', metavar='FILE',
@@ -1778,11 +1816,11 @@ class Osc(cmdln.Cmdln):
                              file=opts.file) 
 
         except urllib2.HTTPError, e:
-            if e.code == 400:
+            if e.code in [400, 404]:
                 print >>sys.stderr, e
                 print >>sys.stderr, e.read()
                 sys.exit(1)
-            if e.code == 500:
+            elif e.code == 500:
                 print >>sys.stderr, e
                 # this may be unhelpful... because it may just print a big blob of uninteresting
                 # ichain html and javascript... however it could potentially be useful if the orign
