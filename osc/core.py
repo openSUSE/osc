@@ -623,7 +623,6 @@ rev: %s
         tree.find('description').text = ''.join(self.descr)
         tree.write(filename)
 
-        # FIXME: escape stuff for xml
         print '*' * 36, 'old', '*' * 36
         print m
         print '*' * 36, 'new', '*' * 36
@@ -1455,12 +1454,19 @@ def get_repos_of_project(apiurl, prj):
 
 
 def get_binarylist(apiurl, prj, repo, arch, package=None):
-    if not package:
-        package = '_repository'
-    u = makeurl(apiurl, ['build', prj, repo, arch, package])
+    what = package or '_repository'
+    u = makeurl(apiurl, ['build', prj, repo, arch, what])
     f = http_GET(u)
-    tree = ET.parse(StringIO(''.join(f)))
+    tree = ET.parse(f)
     r = [ node.get('filename') for node in tree.findall('binary')]
+    return r
+
+
+def get_binarylist_published(apiurl, prj, repo, arch):
+    u = makeurl(apiurl, ['published', prj, repo, arch])
+    f = http_GET(u)
+    tree = ET.parse(f)
+    r = [ node.get('name') for node in tree.findall('entry')]
     return r
 
 
