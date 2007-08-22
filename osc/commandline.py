@@ -32,37 +32,28 @@ class Osc(cmdln.Cmdln):
         cmdln.Cmdln.__init__(self, *args, **kwargs)
         cmdln.Cmdln.do_help.aliases.append('h')
 
-        conf.get_config()
-
 
     def get_optparser(self):
         """this is the parser for "global" options (not specific to subcommand)"""
 
         optparser = cmdln.CmdlnOptionParser(self, version=get_osc_version())
         optparser.add_option('-H', '--http-debug', action='store_true',
-                      default=conf.config['http_debug'],
                       help='debug HTTP traffic')
         optparser.add_option('-A', '--apisrv', dest='apisrv',
                       metavar='URL',
                       help='specify URL to access API server at')
+        optparser.add_option('-c', '--config', dest='conffile',
+                      metavar='FILE',
+                      help='specify alternate configuration file')
         return optparser
 
 
     def postoptparse(self):
         """merge commandline options into the config"""
 
-        conf.config['http_debug'] = self.options.http_debug
-        if self.options.apisrv:
-            conf.config['scheme'], conf.config['apisrv'] = \
-                conf.parse_apisrv_url(conf.config['scheme'], self.options.apisrv)
-        conf.config['apiurl'] = conf.config['scheme'] + '://' + conf.config['apisrv']
-
-        # XXX unless config['user'] goes away (and is replaced with a handy function, or 
-        # config becomes an object, even better), set the global 'user' here as well:
-        conf.config['user'] = conf.config['auth_dict'][conf.config['apisrv']]['user']
-
-        # finally, initialize urllib2 for to use the credentials for Basic Authentication
-        conf.init_basicauth(conf.config)
+        conf.get_config(override_conffile = self.options.conffile,
+                        override_http_debug = self.options.http_debug,
+                        override_apisrv = self.options.apisrv)
 
 
     def do_init(self, subcmd, opts, project, package):

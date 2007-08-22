@@ -160,13 +160,15 @@ def init_basicauth(config):
         authhandler.add_password(None, host, auth['user'], auth['pass'])
 
 
-def get_config():
+def get_config(override_conffile = None, 
+               override_http_debug = None, 
+               override_apisrv = None):
     """do the actual work (see module documentation)"""
     import os
     import sys
     global config
 
-    conffile = os.environ.get('OSC_CONFIG', '~/.oscrc')
+    conffile = override_conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
     conffile = os.path.expanduser(conffile)
 
     if not os.path.exists(conffile):
@@ -248,4 +250,21 @@ def get_config():
 
     # add the auth data we collected to the config dict
     config['auth_dict'] = auth_dict
+
+    # override values which we were called with
+    if override_http_debug: 
+        config['http_debug'] = override_http_debug
+    if override_apisrv:
+        config['scheme'], config['apisrv'] = \
+            parse_apisrv_url(config['scheme'], override_apisrv)
+
+    # to make the mess complete, set up the more convenient api url which we'll rather use
+    config['apiurl'] = config['scheme'] + '://' + config['apisrv']
+
+    # XXX unless config['user'] goes away (and is replaced with a handy function, or 
+    # config becomes an object, even better), set the global 'user' here as well:
+    config['user'] = config['auth_dict'][config['apisrv']]['user']
+
+    # finally, initialize urllib2 for to use the credentials for Basic Authentication
+    init_basicauth(config)
 
