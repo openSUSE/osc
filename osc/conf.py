@@ -166,7 +166,8 @@ def get_config():
     import sys
     global config
 
-    conffile = os.path.expanduser('~/.oscrc')
+    conffile = os.environ.get('OSC_CONFIG', '~/.oscrc')
+    conffile = os.path.expanduser(conffile)
 
     if not os.path.exists(conffile):
 
