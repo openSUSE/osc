@@ -1699,7 +1699,7 @@ class Osc(cmdln.Cmdln):
             project_dir = os.getcwd()
 
         if not is_project_dir(project_dir):
-            print >>sys.stderr, 'project dir \'%s\' does not exist' % project
+            print >>sys.stderr, 'project dir \'%s\' does not exist' % opts.project
             sys.exit(1)
         else:
             project = store_read_project(project_dir)
