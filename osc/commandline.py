@@ -1830,6 +1830,43 @@ class Osc(cmdln.Cmdln):
         sys.stdout.write(out)
 
 
+    @cmdln.option('-e', '--email', action='store_true',
+                  help='show email addresses instead of user names')
+    def do_maintainer(self, subcmd, opts, *args):
+        """${cmd_name}: Show maintainers of a project/package
+    
+        To be used like this:
+    
+            osc maintainer PRJ
+        or 
+            osc maintainer PRJ PKG
+    
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+    
+        if len(args) == 1:
+            m = show_project_meta(conf.config['apiurl'], args[0])
+        elif len(args) == 2:
+            m = show_package_meta(conf.config['apiurl'], args[0], args[1])
+        else:
+            sys.exit('wrong argument count')
+    
+        maintainers = []
+    
+        tree = ET.parse(StringIO(''.join(m)))
+        for person in tree.findall('person'):
+            maintainers.append(person.get('userid'))
+    
+        if not opts.email:
+            print ', '.join(maintainers)
+        else:
+            emails = []
+            for maintainer in maintainers:
+                emails.append(get_user_email(conf.config['apiurl'], maintainer))
+            print ', '.join(emails)
+
+
 
 # fini!
 ###############################################################################
