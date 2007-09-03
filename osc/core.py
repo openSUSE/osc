@@ -1182,6 +1182,17 @@ def get_user_meta(apiurl, user):
         return None
 
 
+def get_user_email(apiurl, user):
+    u = makeurl(apiurl, ['person', quote_plus(user)])
+    try:
+        f = http_GET(u)
+        root = ET.parse(f).getroot()
+        return root.find('email').text
+    except urllib2.HTTPError:
+        print 'user \'%s\' not found' % user
+        return None
+
+
 def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision = None):
     query = []
     if revision:
