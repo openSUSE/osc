@@ -9,8 +9,6 @@ MAJOR:
     http://lists4.opensuse.org/opensuse-buildservice/2007-07/msg00043.html
     https://bugzilla.novell.com/show_bug.cgi?id=212565
 
-  - improve usage of the library from externally [2]
-
   
 NORMAL:
 
@@ -40,9 +38,15 @@ MINOR:
 
   - new command: osc listbinaries [<project>] [<package>]
     listing the built package, either as URLs or just the filenames?        	[1]
+    there is ls -b:
+     % osc ls -b home:poeml scapy -r openSUSE_Factory -a x86_64
+    scapy-1.0.4-12.13.noarch.rpm
+    scapy-1.0.4-12.13.src.rpm
+    but it works packagewise. A project wide binary listing would also be cool
   - new command: osc getbinaries [<project>] [<package>] [<rpm>]+           	[1]
     -> see incarnations of obs_mirror_project, in particular James Oakleys 
        obs_mirror_project.py
+    this can peruse the new get_binarylist() and get_binary_file() functions
   - add option to disable gpg key checking?
   - adjust zsh completion to work with cmdln.py implementation
   - add support for adding tags to packages?
@@ -85,26 +89,6 @@ http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 15:09 <darix> der falsch mit dem backend spricht :/
 15:09 <DuDE_> ja, macht osc build auch so, eigentlich, allerdings weiss es dann die noetigen Datein aus dem buildinfo (version, release)
 15:09 <darix> man kann auf dem backend alle rpms listen lassen
-
-
-
-[2]
-> The initialisation isn't as intuitive as it could be, however:
-> 
-> conf.get_config()
-> conf.config['apiurl'] = conf.config['scheme'] + '://' + conf.config['apisrv']
-> conf.config['user'] = conf.config['auth_dict'][conf.config['apisrv']]['user']
-> conf.init_basicauth(conf.config)
-> 
-> It would be nicer if there was one function to call, eg:
-> 
-> conf.init(apisrv=None)
-> 
-> where the default api server will be used if apisrv is None.
->
-> Some simple examples in the documentation would help those looking to learn 
-> the library as well.
-
 
 
 
