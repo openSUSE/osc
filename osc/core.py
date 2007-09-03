@@ -1182,14 +1182,25 @@ def get_user_meta(apiurl, user):
         return None
 
 
-def get_user_email(apiurl, user):
-    u = makeurl(apiurl, ['person', quote_plus(user)])
-    try:
-        f = http_GET(u)
-        root = ET.parse(f).getroot()
-        return root.find('email').text
-    except urllib2.HTTPError:
-        print 'user \'%s\' not found' % user
+def get_user_data(apiurl, user, *tags):
+    """get specified tags from the user meta"""
+    meta = get_user_meta(apiurl, user)
+    data = []
+    if meta != None:
+        root = ET.fromstring(meta)
+        for tag in tags:
+            try:
+                if root.find(tag).text != None:
+                    data.append(root.find(tag).text)
+                else:
+                    # tag is empty
+                    data.append('-')
+            except AttributeError:
+                # this part is reached if the tags tuple contains an invalid tag
+                print 'The xml file for user \'%s\' seems to be broken' % user
+                return None
+        return data
+    else:
         return None
 
 

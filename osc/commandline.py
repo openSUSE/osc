@@ -1833,6 +1833,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-e', '--email', action='store_true',
                   help='show email addresses instead of user names')
+    @cmdln.option('-v', '--verbose', action='store_true',
+                  help='show more information')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
     
@@ -1859,13 +1861,24 @@ class Osc(cmdln.Cmdln):
         for person in tree.findall('person'):
             maintainers.append(person.get('userid'))
     
-        if not opts.email:
-            print ', '.join(maintainers)
-        else:
+        if opts.email:
             emails = []
             for maintainer in maintainers:
-                emails.append(get_user_email(conf.config['apiurl'], maintainer))
+                user = get_user_data(conf.config['apiurl'], maintainer, 'email')
+                if user != None:
+                    emails.append(''.join(user))
             print ', '.join(emails)
+        elif opts.verbose:
+            userdata = []
+            for maintainer in maintainers:
+                user = get_user_data(conf.config['apiurl'], maintainer, 'realname', 'login', 'email')
+                if user != None:
+                    for itm in user:
+                        userdata.append(itm)
+            for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
+                print row
+        else:
+            print ', '.join(maintainers)
 
 
 
