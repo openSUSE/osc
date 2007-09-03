@@ -1,5 +1,8 @@
 0.98:
 
+- new maintainer command, to list the maintainers of a project or package
+- ls: add -b option to list binaries
+- make osc library simpler to use from external scripts
 - new importfromsrcpkg command, to import a package src.rpm from file or URL
 - new req command, to issue arbitrary requests to the API
 - initial support for commit messages (ci -m/-F)
