@@ -23,7 +23,7 @@ def join_url(self, base_url, rel_url):
 
 
 class Fetcher:
-    def __init__(self, cachedir = '/tmp', auth_dict = {}, urllist = []):
+    def __init__(self, cachedir = '/tmp', auth_dict = {}, urllist = [], http_debug = False):
 
         __version__ = '0.1'
         __user_agent__ = 'osbuild/%s' % __version__
@@ -37,6 +37,7 @@ class Fetcher:
 
         self.cachedir = cachedir
         self.urllist = urllist
+        self.http_debug = http_debug
 
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         for host in auth_dict.keys():
@@ -66,6 +67,12 @@ class Fetcher:
 
         MirrorGroup._join_url = join_url
         mg = MirrorGroup(self.gr, pac.urllist)
+
+        if self.http_debug:
+            print
+            print 'URLs to try for package \'%s\':' % pac
+            print '\n'.join(pac.urllist)
+            print
 
         try:
             # it returns the filename
