@@ -1835,23 +1835,31 @@ class Osc(cmdln.Cmdln):
                   help='show email addresses instead of user names')
     @cmdln.option('-v', '--verbose', action='store_true',
                   help='show more information')
+    @cmdln.option('-a', '--add', metavar='user',
+                  help='add a new maintainer')
+    @cmdln.option('-d', '--delete', metavar='user',
+                  help='delete a maintainer from a project or package')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
     
         To be used like this:
     
-            osc maintainer PRJ
+            osc maintainer PRJ <options>
         or 
-            osc maintainer PRJ PKG
+            osc maintainer PRJ PKG <options>
     
         ${cmd_usage}
         ${cmd_option_list}
         """
     
+        pac = None
         if len(args) == 1:
             m = show_project_meta(conf.config['apiurl'], args[0])
+            prj = args[0]
         elif len(args) == 2:
             m = show_package_meta(conf.config['apiurl'], args[0], args[1])
+            prj = args[0]
+            pac = args[1]
         else:
             sys.exit('wrong argument count')
     
@@ -1877,6 +1885,10 @@ class Osc(cmdln.Cmdln):
                         userdata.append(itm)
             for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
                 print row
+        elif opts.add:
+            addMaintainer(conf.config['apiurl'], prj, pac, opts.add)
+        elif opts.delete:
+            delMaintainer(conf.config['apiurl'], prj, pac, opts.delete)
         else:
             print ', '.join(maintainers)
 

@@ -2129,3 +2129,61 @@ def delete_server_files(apiurl, prj, pac, files):
             # see bug #280034
             print >>sys.stderr, 'error while deleting file \'%s\'' % file
             sys.exit(1)
+
+def addMaintainer(apiurl, prj, pac, user):
+    """ add a new maintainer to a package or project """
+    path = quote_plus(prj),
+    kind = 'prj'
+    if pac:
+        path = path + (quote_plus(pac),)
+        kind = 'pkg'
+    data = meta_exists(metatype=kind,
+                       path_args=path,
+                       template_args=None,
+                       create_new=False)
+                       
+    if data and get_user_meta(apiurl, user) != None:
+        tree = ET.fromstring(''.join(data))
+        found = False
+        for person in tree.getiterator('person'):
+            if person.get('userid') == user:
+                found = True
+                print "user already exists"
+                break
+        if not found:
+            # the xml has a fixed structure
+            tree.insert(2, ET.Element('person', role='maintainer', userid=user))
+            print 'user \'%s\' added to \'%s\'' % (user, pac or prj)
+            edit_meta(metatype=kind,
+                      path_args=path,
+                      data=ET.tostring(tree))
+    else:
+        print "osc: an error occured"
+
+def delMaintainer(apiurl, prj, pac, user):
+    """ delete a maintainer from a package or project """
+    path = quote_plus(prj), 
+    kind = 'prj'
+    if pac:
+        path = path + (quote_plus(pac), )
+        kind = 'pkg'
+    data = meta_exists(metatype=kind,
+                       path_args=path,
+                       template_args=None,
+                       create_new=False)
+    if data:
+        tree = ET.fromstring(''.join(data))
+        found = False
+        for person in tree.getiterator('person'):
+            if person.get('userid') == user:
+                tree.remove(person)
+                found = True
+                print "user \'%s\' removed" % user
+        if found:
+            edit_meta(metatype=kind,
+                      path_args=path,
+                      data=ET.tostring(tree))
+        else:
+            print "user \'%s\' not found in \'%s\'" % (user, pac or prj)
+    else:
+        print "an error occured"
