@@ -493,27 +493,27 @@ class Osc(cmdln.Cmdln):
         delete_package(conf.config['apiurl'], project, package)
 
 
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='deletes a project and its packages')
     def do_deleteprj(self, subcmd, opts, project):
         """${cmd_name}: Delete a project on the repository server
 
-        As a safety measure, project must be empty (i.e., you first need to delete all
-        packages first).
+        As a safety measure, project must be empty (i.e., you need to delete all
+        packages first). If you are sure that you want to remove this project and all
+        its packages use \'--force\' switch.
 
-        NOTE: This command is not implemented yet. Please mail
-        admin@opensuse.org in order to get projects deleted.
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
-        if meta_get_packagelist(conf.config['apiurl'], project) != []:
-            print >>sys.stderr, 'Project contains packages. It must be empty before deleting it.'
-            return 1
-
-        #delete_project(conf.config['apiurl'], project)
-        print >>sys.stderr, 'Deleting projects is not yet implemented.'
-        print >>sys.stderr, 'Please send a request to opensuse-buildservice@opensuse.org'
-        print >>sys.stderr, 'or admin@opensuse.org.'
+        if len(meta_get_packagelist(conf.config['apiurl'], project)) >= 1 and not opts.force:
+            print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
+                                'If you are sure that you want to remove this project and all its ' \
+                                'packages use the \'--force\' switch'
+            sys.exit(1)
+        else:
+            delete_project(conf.config['apiurl'], project)
 
 
     @cmdln.option('', '--specfile', metavar='FILE',
