@@ -27,6 +27,8 @@ NORMAL:
   - use urllib.urlencode for parameter encoding (or check if this is the case already?)
   - _real_ SSL support, with certificate verification
   - copypac: put the current release number into the spec file before sending it
+    - for this, it is required to scan all current binaries, pick the highest release number 
+      and put it into the spec file... otherwise clients won't regard the copied package as newer
   - commit: check if errors during PUT are handled sensibly, so the change is
     not committed to localmeta	
   - store password base64 hashed, so it is not directly visible in plaintext
@@ -151,5 +153,36 @@ Traceback (most recent call last):
 AttributeError: 'NoneType' object has no attribute 'md5'
 [1]    11871 exit 1     osc up
 
+
+
+
+ % osc importsrcpkg  -n apache2-mod_memcache /tmp/apache-mod_memcache-0.1.0-2mdv2008.0.src.rpm       
+warning: rpmts_HdrFromFdno: Header V3 DSA signature: NOKEY, key ID 26752624
+Traceback (most recent call last):
+  File "/suse/poeml/bin/osc", line 10, in ?
+    sys.exit( osc.main() )
+  File "/suse/poeml/osc/osc/cmdln.py", line 256, in main
+    return self.cmd(args)
+  File "/suse/poeml/osc/osc/cmdln.py", line 279, in cmd
+    retval = self.onecmd(argv)
+  File "/suse/poeml/osc/osc/cmdln.py", line 395, in onecmd
+    return self._dispatch_cmd(handler, argv)
+  File "/suse/poeml/osc/osc/cmdln.py", line 1070, in _dispatch_cmd
+    return handler(argv[0], opts, *args)
+  File "/suse/poeml/osc/osc/commandline.py", line 1714, in do_importsrcpkg
+    rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
+  File "/suse/poeml/osc/osc/core.py", line 2128, in data_from_rpm
+    header = ts.hdrFromFdno(file.fileno())
+_rpm.error: public key not available
+
+
+15:16 < DuDE> mt: Projekte anlegen geht nur, wenn es ein Subprojekt ist von einem Projekt wo Du Schreibrechte hast
+15:16 < mt> DuDE: wofür?
+15:16 < DuDE> mt: dass jeder einfach so top-level-Projekte anlegen kann, war einmal. Chaos-Reduzierung
+15:17 < DuDE> mt: ueblich ist heutzutage ein Request auf opensuse-buildservice@
+15:18 < DuDE> mt: kannst Du das gleiche mal eben mit osc -H probieren? Mich wuerde mal interessieren, ob da eine sinnvollere Meldung im Body mitkommt
+15:19 < DuDE> mt: mit -H muesste osc den Response-Body anzeigen. Meist ist der unerwuenscht, weil er typischerweise dank iChain hauptsaechlich Javascript-Schlonz enthaelt.
+15:19 < mt> DuDE: reply: 'HTTP/1.1 403 Forbidden\r\n'
+15:20 < DuDE> mt: das ist gut, dann sollte osc kein "try again" anbieten, sondern die Meldung rueberbringen
 
 
