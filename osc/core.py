@@ -1815,7 +1815,7 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
     return root.get('code')
 
 
-def wipebinaries(apiurl, project, package=None, arch=None, repo=None, build_disabled=None):
+def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
     query = []
     query.append('cmd=wipe')
     if package:
@@ -1824,8 +1824,8 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None, build_disa
         query.append('arch=%s' % quote_plus(arch))
     if repo:
         query.append('repository=%s' % quote_plus(repo))
-    if build_disabled:
-        query.append('code=disabled')
+    if code:
+        query.append('code=%s' % quote_plus(code))
 
     u = makeurl(apiurl, ['build', project], query)
     try:
@@ -1838,8 +1838,8 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None, build_disa
             err_str += ' arch %s' % arch
         if repo:
             err_str += ' repository %s' % repo
-        if build_disabled:
-            err_str += ' code=disabled'
+        if code:
+            err_str += ' code=%s' % code
         print >> sys.stderr, err_str
         print >> sys.stderr, u
         print >> sys.stderr, e

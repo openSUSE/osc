@@ -1558,6 +1558,10 @@ class Osc(cmdln.Cmdln):
                         help='Delete all binary packages for a specific repository')
     @cmdln.option('--build-disabled', action='store_true',
                         help='Delete all binaries of packages for which the build is disabled')
+    @cmdln.option('--build-failed', action='store_true',
+                        help='Delete all binaries of packages for which the build failed')
+    @cmdln.option('--broken', action='store_true',
+                        help='Delete all binaries of packages for which the package source is bad')
     def do_wipebinaries(self, subcmd, opts, *args):
         """${cmd_name}: Delete all binary packages of a certain project/package
 
@@ -1579,8 +1583,21 @@ class Osc(cmdln.Cmdln):
             package = args[1]
         else:
             package = None
-        
-        print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, opts.build_disabled)
+
+        codes = []
+        if opts.build_disabled:
+            codes.append('disabled')
+        if opts.build_failed:
+            codes.append('failed')
+        if opts.broken:
+            codes.append('broken')
+
+        if len(codes) == 0:
+            codes.append(None)
+
+        # make a new request for each code= parameter
+        for code in codes:
+            print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, code)
 
 
     @cmdln.option('--repos-baseurl', action='store_true',
