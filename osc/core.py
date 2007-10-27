@@ -1361,6 +1361,11 @@ def make_dir(apiurl, project, package):
 def checkout_package(apiurl, project, package, revision=None):
     olddir = os.getcwd()
 
+    path = (quote_plus(project), quote_plus(package))
+    if meta_exists(metatype='pkg', path_args=path, create_new=False) == None:
+        print >>sys.stderr, 'error 404 - package or package does not exist'
+        sys.exit(1)
+ 
     os.chdir(make_dir(apiurl, project, package))
     init_package_dir(apiurl, project, package, store, revision)
     p = Package(os.curdir)
