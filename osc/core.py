@@ -1423,6 +1423,50 @@ def link_pac(src_project, src_package, dst_project, dst_package):
     http_PUT(u, data=link_template)
     print 'Done.'
 
+def aggregate_pac(src_project, src_package, dst_project, dst_package):
+    """
+    aggregate package
+     - "src" is the original package
+     - "dst" is the "aggregate" package that we are creating here
+    """
+
+    src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
+
+    # replace package name and username
+    # using a string buffer
+    # and create the package
+    tree = ET.parse(StringIO(''.join(src_meta)))
+    root = tree.getroot()
+    root.set('name', dst_package)
+    root.set('project', dst_project)
+    tree.find('person').set('userid', conf.config['user'])
+    buf = StringIO()
+    tree.write(buf)
+    src_meta = buf.getvalue()
+
+    edit_meta('pkg',
+              path_args=(dst_project, dst_package), 
+              data=src_meta)
+
+    # create the _aggregate file
+    # but first, make sure not to overwrite an existing one
+    if '_aggregate' in meta_get_filelist(conf.config['apiurl'], dst_project, dst_package):
+        print >>sys.stderr
+        print >>sys.stderr, '_aggregate file already exists...! Aborting'
+        sys.exit(1)
+
+    print 'Creating _aggregate...',
+    aggregate_template = """\
+<aggregatelist>
+  <aggregate project="%s">
+    <package>%s</package>
+  </aggregate>
+</aggregatelist>
+""" % (src_project, src_package)
+
+    u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_aggregate'])
+    http_PUT(u, data=aggregate_template)
+    print 'Done.'
 
 def copy_pac(src_apiurl, src_project, src_package, 
              dst_apiurl, dst_project, dst_package):
@@ -1625,6 +1669,8 @@ def get_prj_results(apiurl, prj, show_legend=False):
             line = []
             line.append(' ')
             for pac in pacs[startpac:startpac+max_pacs]:
+                if not status.has_key(pac):     # for newly added packages, status may be missing
+                    status[pac] = '?'
                 line.append(status[pac])
                 line.append(' ')
             line.append(' %s %s' % (target['repo'], target['arch']))

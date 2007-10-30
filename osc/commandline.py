@@ -436,6 +436,36 @@ class Osc(cmdln.Cmdln):
             return 1
         link_pac(src_project, src_package, dst_project, dst_package)
 
+    def do_aggregatepac(self, subcmd, opts, *args):
+        """${cmd_name}: "Aggregate" a package to another package
+        
+        The DESTPAC name is optional; the source packages' name will be used if
+        DESTPAC is omitted.
+
+        usage: 
+            osc aggregatepac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        if not args or len(args) < 3:
+            print >>sys.stderr, 'Incorrect number of argument.'
+            self.do_help([None, 'aggregatepac'])
+            return 2
+
+        src_project = args[0]
+        src_package = args[1]
+        dst_project = args[2]
+        if len(args) > 3:
+            dst_package = args[3]
+        else:
+            dst_package = src_package
+
+        if src_project == dst_project and src_package == dst_package:
+            print >>sys.stderr, 'Error: source and destination are the same.'
+            return 1
+        aggregate_pac(src_project, src_package, dst_project, dst_package)
 
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
