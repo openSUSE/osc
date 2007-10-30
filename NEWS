@@ -1,5 +1,6 @@
 0.99:
 
+- aggregatepac: new command, similar to linkpac. Patch from Pavol Rusnak.
 - wipebinaries: added --build-failed and --broken [#335498]
 - deleteprj: enabled this command, as the backend now supports it
 - maintainer:
