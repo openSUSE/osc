@@ -1,3 +1,15 @@
+0.99:
+
+- wipebinaries: added --build-failed and --broken [#335498]
+- deleteprj: enabled this command, as the backend now supports it
+- maintainer:
+  - added --verbose option
+  - added functionality to add/remove users from a project/package
+- print the list of URL to try, when in HTTP debug mode
+- build: allow to use lbuild, a compatible replacement for build
+- do not create dirs for non-existing packages during checkout [#259711]
+
+
 0.98:
 
 - new maintainer command, to list the maintainers of a project or package
