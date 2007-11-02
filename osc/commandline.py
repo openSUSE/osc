@@ -1940,7 +1940,40 @@ class Osc(cmdln.Cmdln):
             print ', '.join(maintainers)
 
 
+    def do_cat(self, subcmd, opts, *args):
+        """${cmd_name}: print file on the standard output
 
+        Examples:
+            osc cat project package file
+            osc cat project/package/file
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        if len(args) != 3:
+            print >>sys.stderr, 'error - incorrect number of arguments'
+            sys.exit(1)
+        import tempfile
+        (fd, filename) = tempfile.mkstemp(prefix = 'osc_%s.' % args[2], dir = '/tmp')
+        get_source_file(conf.config['apiurl'], args[0], args[1], args[2], targetfilename=filename)
+        if binary(os.read(fd, 4098)):
+            print >>sys.stderr, 'error - cannot display binary file \'%s\'' % args[2]
+        else:
+            print '### Beginning of file: \'%s\' ###' % filename
+            while True:
+                buf = os.read(fd, BUFSIZE)
+                if not buf:
+                    break
+                else:
+                    print buf
+            print '### End of file ###'
+        try:
+            os.close(fd)
+            os.unlink(filename)
+        except:
+            pass
 # fini!
 ###############################################################################
         
