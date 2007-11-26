@@ -591,98 +591,14 @@ class Osc(cmdln.Cmdln):
         args = parseargs(args)
         pacs = findpacs(args)
         
-        difference_found = False
-        d = []
-        
         rev1, rev2 = parseRevisionOption(opts.revision)
-        pac = pacs[0]
-        
-        if rev1 and rev2 and (len(pacs) == 1):
-            # this is currently not implemented
-            print >>sys.stderr, 'this feature isn\'t implemented yet'
-            sys.exit(1)
-        elif rev1 and (pac.rev != rev1) and (len(pacs) == 1):
-            if not checkRevision(pac.prjname, pac.name, rev1):
-                print >>sys.stderr, 'Revision \'%s\' does not exist' % rev1
-                sys.exit(1)
-            # make a temp dir for checking out the project
-            import tempfile
-            tmpdir = tempfile.mkdtemp(rev1, pac.name, '/tmp')
-            curdir = os.getcwd()
-            os.chdir(tmpdir)
-            init_package_dir(conf.config['apiurl'], pac.prjname, pac.name, tmpdir, rev1)
-            os.chdir(curdir)
-            tmppac = Package(tmpdir)
+        diff = ''
+        for pac in pacs:
+            diff += ''.join(make_diff(pac, rev1))
+        if len(diff) > 0:
+            print diff
 
-            changed_files = []
-            added_files = []
-            removed_files = []
-            if pac.todo:
-                for file in pac.todo:
-                    if file in tmppac.filenamelist:
-                        if dgst(os.path.join(pac.dir, file)) != tmppac.findfilebyname(file).md5:
-                            changed_files.append(file)
-                    else:
-                        added_files.append(file)
-            else:           
-                changed_files, added_files, removed_files = pac.comparePac(tmppac)
-           
-            for file in changed_files:
-                tmppac.updatefile(file, rev1)
-                d.append('Index: %s\n' % file)
-                d.append('===================================================================\n')
-                d.append(get_source_file_diff(pac.dir, file, rev1, file, tmppac.dir))
-                tmppac.delete_localfile(file)
-                tmppac.delete_storefile(file)
 
-            # this tempfile is used as a dummy file for difflib
-            (fd, filename) = tempfile.mkstemp(dir=tmppac.storedir)
-
-            for file in added_files:
-                d.append('Index: %s\n' % file)
-                d.append('===================================================================\n')
-                d.append(get_source_file_diff(pac.dir, file, rev1, \
-                                              os.path.basename(filename), \
-                                              tmppac.storedir, file))
-        
-            for file in removed_files:
-                tmppac.updatefile(file, rev1)
-                d.append('Index: %s\n' % file)
-                d.append('===================================================================\n')
-                d.append(get_source_file_diff(tmppac.storedir, \
-                                              os.path.basename(filename), \
-                                              rev1, file, tmppac.dir, file))
-                tmppac.delete_localfile(file)
-                tmppac.delete_storefile(file)
-
-            # clean up 
-            os.unlink(filename)
-            for dir, dirnames, files in os.walk(tmppac.storedir):
-                for file in files:
-                    os.unlink(os.path.join(dir, file))
-            os.rmdir(tmppac.storedir)
-            os.rmdir(tmppac.dir)
-        else:
-            for p in pacs:
-                if p.todo == []:
-                    for i in p.filenamelist:
-                        s = p.status(i)
-                        if s == 'M' or s == 'C':
-                            p.todo.append(i)
-
-                for filename in p.todo:
-                    d.append('Index: %s\n' % filename)
-                    d.append('===================================================================\n')
-                    d.append(get_source_file_diff(p.dir, filename, p.rev))
-
-        
-        if d:
-            print ''.join(d)
-            difference_found = True
-
-        if difference_found:
-            return 1
-                
     def do_repourls(self, subcmd, opts, *args):
         """${cmd_name}: shows URLs of .repo files 
 

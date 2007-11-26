@@ -201,7 +201,7 @@ class Package:
     def __init__(self, workingdir):
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
-        self.storedir = os.path.join(self.dir, store)
+        self.storedir = os.path.join(self.absdir, store)
 
         check_store_version(self.dir)
 
@@ -498,7 +498,7 @@ class Package:
         exists_in_store = False
         if n in self.filenamelist:
             known_by_meta = True
-        if os.path.exists(os.path.join(self.dir, n)):
+        if os.path.exists(os.path.join(self.absdir, n)):
             exists = True
         if os.path.exists(os.path.join(self.storedir, n)):
             exists_in_store = True
@@ -512,7 +512,7 @@ class Package:
             state = 'C'
         elif exists and exists_in_store and known_by_meta:
             #print self.findfilebyname(n)
-            if dgst(os.path.join(self.dir, n)) != self.findfilebyname(n).md5:
+            if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
                 state = 'M'
             else:
                 state = ' '
@@ -1306,7 +1306,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 
     if not origfilename:
         origfilename = filename
-    
+
     file1 = os.path.join(olddir, oldfilename)   # old/stored original
     file2 = os.path.join(dir, filename)         # working copy
 
@@ -1338,6 +1338,100 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 
     return ''.join(d)
 
+def make_diff(wc, revision):
+    import tempfile
+    changed_files = []
+    added_files = []
+    removed_files = []
+    cmp_pac = None
+    diff_hdr = 'Index: %s\n'
+    diff_hdr += '===================================================================\n'
+    if not revision:
+        # normal diff
+        for file in wc.filenamelist+wc.filenamelist_unvers:
+            state = wc.status(file)
+            if state == 'M' or state == 'C':
+                changed_files.append(file)
+            elif state == 'A':
+                added_files.append(file)
+            elif state == 'D':
+                removed_files.append(file)
+    else:
+        olddir = os.getcwd()
+        tmpdir  = tempfile.mkdtemp(revision, wc.name, '/tmp')
+        os.chdir(tmpdir)
+        init_package_dir(conf.config['apiurl'], wc.prjname, wc.name, tmpdir, revision)
+        cmp_pac = Package(tmpdir)
+        if wc.todo:
+            for file in wc.todo:
+                if file in cmp_pac.filenamelist:
+                    changed_files.append(file)
+                # behave like svn
+                #else:
+                #    added_files.append(file)
+        else:
+            for file in wc.filenamelist+wc.filenamelist_unvers:
+                state = wc.status(file)
+                if wc.status(file) == 'A' and (not file in cmp_pac.filenamelist):
+                    added_files.append(file)
+                elif file in cmp_pac.filenamelist and wc.status(file) == 'D':
+                    removed_files.append(file)
+                elif wc.status(file) == ' ' and not file in cmp_pac.filenamelist:
+                    added_files.append(file)
+                elif file in cmp_pac.filenamelist and state != 'A' and state != '?':
+                    if dgst(os.path.join(wc.absdir, file)) != cmp_pac.findfilebyname(file).md5:
+                        changed_files.append(file)
+            for file in cmp_pac.filenamelist:
+                if not file in wc.filenamelist:
+                    removed_files.append(file)
+
+    diff = []
+    for file in changed_files:
+        diff.append(diff_hdr % file)
+        if cmp_pac == None:
+            diff.append(get_source_file_diff(wc.absdir, file, wc.rev))
+        else:
+            cmp_pac.updatefile(file, revision)
+            diff.append(get_source_file_diff(wc.absdir, file, revision, file,
+                                             cmp_pac.absdir, file))
+    (fd, tmpfile) = tempfile.mkstemp(dir='/tmp')
+    for file in added_files:
+        diff.append(diff_hdr % file)
+        if cmp_pac == None:
+            diff.append(get_source_file_diff(wc.absdir, file, wc.rev, os.path.basename(tmpfile),
+                                             os.path.dirname(tmpfile), file))
+        else:
+            diff.append(get_source_file_diff(wc.absdir, file, revision, os.path.basename(tmpfile),
+                                             os.path.dirname(tmpfile), file))
+
+    # FIXME: this is ugly but it cannot be avoided atm
+    #        if a file is deleted via "osc rm file" we should keep the storefile.
+    tmp_pac = None
+    if cmp_pac == None:
+        olddir = os.getcwd()
+        tmpdir  = tempfile.mkdtemp(dir='/tmp')
+        os.chdir(tmpdir)
+        init_package_dir(conf.config['apiurl'], wc.prjname, wc.name, tmpdir, wc.rev)
+        tmp_pac = Package(tmpdir)
+        os.chdir(olddir)
+
+    for file in removed_files:
+        diff.append(diff_hdr % file)
+        if cmp_pac == None:
+            tmp_pac.updatefile(file, tmp_pac.rev)
+            diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
+                                             wc.rev, file, tmp_pac.storedir, file))
+        else:
+            cmp_pac.updatefile(file, revision)
+            diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
+                                             revision, file, cmp_pac.storedir, file))
+
+    os.chdir(olddir)
+    if cmp_pac != None:
+        delete_tmpdir(cmp_pac.absdir)
+    if tmp_pac != None:
+        delete_tmpdir(tmp_pac.absdir)
+    return diff
 
 def make_dir(apiurl, project, package):
     #print "creating directory '%s'" % project
