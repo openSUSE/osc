@@ -665,6 +665,12 @@ class Osc(cmdln.Cmdln):
             checkout_package(conf.config['apiurl'], project, package, rev)
 
         elif project:
+            if not os.path.exists(project):
+                init_project_dir(conf.config['apiurl'], project, project)
+                print statfrmt('A', project)
+            else:
+                print >>sys.stderr, 'osc: project \'%s\' already exists' % project
+                sys.exit(1)
             # all packages
             for package in meta_get_packagelist(conf.config['apiurl'], project):
                 checkout_package(conf.config['apiurl'], project, package)

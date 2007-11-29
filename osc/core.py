@@ -829,6 +829,13 @@ def urlopen(url, data=None):
 
     return fd
 
+def init_project_dir(apiurl, dir, project):
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+        os.mkdir(os.path.join(dir, store))
+
+    store_write_project(dir, project)
+    store_write_apiurl(dir, apiurl)
 
 def init_package_dir(apiurl, project, package, dir, revision=None):
     if not os.path.isdir(store):
@@ -1437,11 +1444,7 @@ def make_dir(apiurl, project, package):
     #print "creating directory '%s'" % project
     if not os.path.exists(project):
         print statfrmt('A', project)
-        os.mkdir(project)
-        os.mkdir(os.path.join(project, store))
-
-        store_write_project(project, project)
-        store_write_apiurl(project, apiurl)
+        init_project_dir(apiurl, project, project)
 
     #print "creating directory '%s/%s'" % (project, package)
     if not os.path.exists(os.path.join(project, package)):
