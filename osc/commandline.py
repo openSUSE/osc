@@ -599,6 +599,33 @@ class Osc(cmdln.Cmdln):
             print diff
 
 
+    @cmdln.option('--oldprj', metavar='OLDPRJ',
+                  help='project to diff against')
+    @cmdln.option('--oldpkg', metavar='OLDPKG',
+                  help='package to diff against')
+    @cmdln.option('-r', '--revision', metavar='N[:M]',
+                  help='revision id, where N = old revision and M = new revision')
+    def do_rdiff(self, subcmd, opts, new_project, new_package):
+        """${cmd_name}: server-side "pretty" diff of two packages
+
+        Note that this command doesn't reply a normal diff which can be applied as patch.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        old_revision = None
+        new_revision = None
+        if opts.revision:
+            old_revision, new_revision = parseRevisionOption(opts.revision)
+
+        rdiff = pretty_diff(conf.config['apiurl'],
+                            opts.oldprj, opts.oldpkg, old_revision,
+                            new_project, new_package, new_revision)
+
+        print rdiff
+
+
     def do_repourls(self, subcmd, opts, *args):
         """${cmd_name}: shows URLs of .repo files 
 
