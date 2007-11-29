@@ -600,15 +600,21 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.option('--oldprj', metavar='OLDPRJ',
-                  help='project to diff against')
+                  help='project to compare against')
     @cmdln.option('--oldpkg', metavar='OLDPKG',
-                  help='package to diff against')
+                  help='package to compare against')
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
     def do_rdiff(self, subcmd, opts, new_project, new_package):
         """${cmd_name}: server-side "pretty" diff of two packages
 
-        Note that this command doesn't reply a normal diff which can be applied as patch.
+        If neither OLDPRJ nor OLDPKG are specified, the diff is against the
+        last revision, thus showing the latest change.
+
+        Note that this command doesn't reply a "normal" diff which can be
+        applied as patch, but a pretty diff, which also compares the content of
+        tarballs.
+
 
         ${cmd_usage}
         ${cmd_option_list}
