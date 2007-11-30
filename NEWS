@@ -1,3 +1,14 @@
+since 0.99:
+
+- rdiff: new command for server-side diffs between arbitrary packages
+- cat: new command to print a file on the standard output
+- diff: reworked functionality to show newly added files, and behaving more
+  like svn when doing diff against a certain revision
+- bugfix in {link,aggregate,copy}_pac (<person> elements)
+- checkout an empty project instead of doing nothing
+- fix prjresults for newly added packages, where build status is missing
+
+
 0.99:
 
 - aggregatepac: new command, similar to linkpac. Patch from Pavol Rusnak.
