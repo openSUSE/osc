@@ -1913,7 +1913,7 @@ class Osc(cmdln.Cmdln):
         import tempfile
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_%s.' % args[2], dir = '/tmp')
         get_source_file(conf.config['apiurl'], args[0], args[1], args[2], targetfilename=filename)
-        if binary(os.read(fd, 4098)):
+        if binary_file(filename):
             print >>sys.stderr, 'error - cannot display binary file \'%s\'' % args[2]
         else:
             print '### Beginning of file: \'%s\' ###' % filename
