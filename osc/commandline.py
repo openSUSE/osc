@@ -606,7 +606,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
     def do_rdiff(self, subcmd, opts, new_project, new_package):
-        """${cmd_name}: server-side "pretty" diff of two packages
+        """${cmd_name}: Server-side "pretty" diff of two packages
 
         If neither OLDPRJ nor OLDPKG are specified, the diff is against the
         last revision, thus showing the latest change.
@@ -633,7 +633,7 @@ class Osc(cmdln.Cmdln):
 
 
     def do_repourls(self, subcmd, opts, *args):
-        """${cmd_name}: shows URLs of .repo files 
+        """${cmd_name}: Shows URLs of .repo files 
 
         Shows URLs on which to access the project .repos files (yum-style
         metadata) on download.opensuse.org.
@@ -661,7 +661,7 @@ class Osc(cmdln.Cmdln):
                              'this option is ignored!')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
-        """${cmd_name}: check out content from the repository
+        """${cmd_name}: Check out content from the repository
         
         Check out content from the repository server, creating a local working
         copy.
@@ -1600,7 +1600,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
     def do_search(self, subcmd, opts, *args):
-        """${cmd_name}: search for a project and/or package.
+        """${cmd_name}: Search for a project and/or package.
 
         If no option is specified osc will search for projects and
         packages which contains the \'search term\' in their name,
@@ -1668,7 +1668,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-c',   '--commit', action='store_true',
                         help='commit the new files')
     def do_importsrcpkg(self, subcmd, opts, srpm):
-        """${cmd_name}: import a new package from a src.rpm
+        """${cmd_name}: Import a new package from a src.rpm
 
         A new package dir will be created inside the project dir
         (if no project is specified and the current working dir is a
@@ -1896,7 +1896,7 @@ class Osc(cmdln.Cmdln):
 
 
     def do_cat(self, subcmd, opts, *args):
-        """${cmd_name}: print file on the standard output
+        """${cmd_name}: Output the content of a file to standard output
 
         Examples:
             osc cat project package file
@@ -1910,22 +1910,19 @@ class Osc(cmdln.Cmdln):
         if len(args) != 3:
             print >>sys.stderr, 'error - incorrect number of arguments'
             sys.exit(1)
+
         import tempfile
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_%s.' % args[2], dir = '/tmp')
+
         get_source_file(conf.config['apiurl'], args[0], args[1], args[2], targetfilename=filename)
+
         if binary_file(filename):
             print >>sys.stderr, 'error - cannot display binary file \'%s\'' % args[2]
         else:
-            print '### Beginning of file: \'%s\' ###' % filename
-            while True:
-                buf = os.read(fd, BUFSIZE)
-                if not buf:
-                    break
-                else:
-                    print buf
-            print '### End of file ###'
+            for line in open(filename):
+                print line
+
         try:
-            os.close(fd)
             os.unlink(filename)
         except:
             pass
