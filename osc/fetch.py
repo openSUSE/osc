@@ -141,7 +141,16 @@ def verify_pacs(pac_list):
         
     # we can use os.popen4 because we don't care about the return value.
     # we check the output anyway, and rpm always writes to stdout.
+
+    # save locale first (we rely on English rpm output here)
+    saved_LC_ALL = os.environ.get('LC_ALL')
+    os.environ['LC_ALL'] = 'en_EN'
+
     (i, o) = os.popen4(['/bin/rpm', '-K'] + pac_list)
+
+    # restore locale
+    if saved_LC_ALL: os.environ['LC_ALL'] = saved_LC_ALL;
+    else: os.environ.pop('LC_ALL')
 
     i.close()
 
