@@ -1920,7 +1920,7 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, 'error - cannot display binary file \'%s\'' % args[2]
         else:
             for line in open(filename):
-                print line
+                print line.rstrip('\n')
 
         try:
             os.unlink(filename)
