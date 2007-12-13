@@ -1353,16 +1353,30 @@ def make_diff(wc, revision):
     cmp_pac = None
     diff_hdr = 'Index: %s\n'
     diff_hdr += '===================================================================\n'
+    diff = []
     if not revision:
         # normal diff
-        for file in wc.filenamelist+wc.filenamelist_unvers:
-            state = wc.status(file)
-            if state == 'M' or state == 'C':
-                changed_files.append(file)
-            elif state == 'A':
-                added_files.append(file)
-            elif state == 'D':
-                removed_files.append(file)
+        if wc.todo:
+            for file in wc.todo:
+                if file in wc.filenamelist+wc.filenamelist_unvers:
+                    state = wc.status(file)
+                    if state == 'A':
+                        added_files.append(file)
+                    elif state == 'D':
+                        removed_files.append(file)
+                    elif state == 'M' or state == 'C':
+                        changed_files.append(file)
+                else:
+                    diff.append('osc: \'%s\' is not under version control' % file)
+        else:
+            for file in wc.filenamelist+wc.filenamelist_unvers:
+                state = wc.status(file)
+                if state == 'M' or state == 'C':
+                    changed_files.append(file)
+                elif state == 'A':
+                    added_files.append(file)
+                elif state == 'D':
+                    removed_files.append(file)
     else:
         olddir = os.getcwd()
         tmpdir  = tempfile.mkdtemp(revision, wc.name, '/tmp')
@@ -1372,18 +1386,20 @@ def make_diff(wc, revision):
         if wc.todo:
             for file in wc.todo:
                 if file in cmp_pac.filenamelist:
-                    changed_files.append(file)
-                # behave like svn
-                #else:
-                #    added_files.append(file)
+                    if file in wc.filenamelist:
+                        changed_files.append(file)
+                    else:
+                        diff.append('osc: \'%s\' is not under version control' % file)
+                else:
+                    diff.append('osc: unable to find \'%s\' in revision %s' % (file, cmp_pac.rev))
         else:
             for file in wc.filenamelist+wc.filenamelist_unvers:
                 state = wc.status(file)
-                if wc.status(file) == 'A' and (not file in cmp_pac.filenamelist):
+                if state == 'A' and (not file in cmp_pac.filenamelist):
                     added_files.append(file)
-                elif file in cmp_pac.filenamelist and wc.status(file) == 'D':
+                elif file in cmp_pac.filenamelist and state == 'D':
                     removed_files.append(file)
-                elif wc.status(file) == ' ' and not file in cmp_pac.filenamelist:
+                elif state == ' ' and not file in cmp_pac.filenamelist:
                     added_files.append(file)
                 elif file in cmp_pac.filenamelist and state != 'A' and state != '?':
                     if dgst(os.path.join(wc.absdir, file)) != cmp_pac.findfilebyname(file).md5:
@@ -1391,8 +1407,8 @@ def make_diff(wc, revision):
             for file in cmp_pac.filenamelist:
                 if not file in wc.filenamelist:
                     removed_files.append(file)
+            removed_files = set(removed_files)
 
-    diff = []
     for file in changed_files:
         diff.append(diff_hdr % file)
         if cmp_pac == None:
