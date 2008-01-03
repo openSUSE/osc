@@ -1178,21 +1178,31 @@ class Osc(cmdln.Cmdln):
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
 
-        offset = 0
-        try:
-            while True:
-                log_chunk = get_log(apiurl, project, package, platform, arch, offset)
-                if len(log_chunk) == 0:
-                    break
-                offset += len(log_chunk)
-                print log_chunk.strip()
+        print_buildlog(apiurl, project, package, platform, arch)
 
-        except urllib2.HTTPError, e:
-            print >>sys.stderr, 'Can\'t get logfile'
-            print >>sys.stderr, e
 
-        except KeyboardInterrupt:
-            pass
+    @cmdln.alias('rbl')
+    def do_remotebuildlog(self, subcmd, opts, *args):
+        """${cmd_name}: Shows the build log of a package
+
+        Shows the log file of the build of a package. Can be used to follow the
+        log while it is being written.
+
+        usage:
+            osc remotebuildlog project package platform arch
+            or
+            osc remotebuildlog project/package/platform/arch
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+        if len(args) < 4:
+            print >>sys.stderr, "too few arguments"
+            sys.exit(1)
+        elif len(args) > 4:
+            print >>sys.stderr, "too many arguments"
+            sys.exit(1)
+
+        print_buildlog(conf.config['apiurl'], *args)
 
 
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
