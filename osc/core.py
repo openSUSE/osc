@@ -1673,11 +1673,9 @@ def get_repos_of_project(apiurl, prj):
     tree = ET.parse(StringIO(''.join(f)))
 
     repo_line_templ = '%-15s %-10s'
-    r = []
     for node in tree.findall('repository'):
         for node2 in node.findall('arch'):
-            r.append(repo_line_templ % (node.get('name'), node2.text))
-    return r
+            yield repo_line_templ % (node.get('name'), node2.text)
 
 
 def get_binarylist(apiurl, prj, repo, arch, package=None):

@@ -11,7 +11,7 @@ import os
 import sys
 from tempfile import NamedTemporaryFile
 from osc.fetch import *
-from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package
+from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig
 import osc.conf
 try:
     from xml.etree import cElementTree as ET
@@ -221,6 +221,13 @@ def main(opts, argv):
         buildargs.append('--changelog')
     buildargs = ' '.join(buildargs)
 
+    prj = store_read_project(os.curdir)
+    pac = store_read_package(os.curdir)
+    if opts.local_package:
+        pac = '_repository'
+    if opts.alternative_project:
+        prj = opts.alternative_project
+        pac = '_repository'
 
     if not os.path.exists(spec):
         print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
@@ -244,16 +251,29 @@ def main(opts, argv):
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
     try:
         bi_text = ''.join(get_buildinfo(store_read_apiurl(os.curdir), 
-                                        store_read_project(os.curdir), 
-                                        store_read_package(os.curdir), 
+                                        prj,
+                                        pac,
                                         repo, 
                                         arch, 
                                         specfile=open(spec).read(), 
                                         addlist=opts.extra_pkgs))
-
-    except:
-        print >>sys.stderr, 'wrong repo/arch?'
-        sys.exit(1)
+    except urllib2.HTTPError, e:
+        if e.code == 404:
+        # check what caused the 404
+            if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
+                           template_args=None, create_new=False):
+                if meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
+                               template_args=None, create_new=False) or pac == '_repository':
+                    print >>sys.stderr, 'wrong repo/arch?'
+                    sys.exit(1)
+                else:
+                    print >>sys.stderr, 'The package \'%s\' does not exists - please ' \
+                                        'rerun with \'--local-package\'' % pac
+                    sys.exit(1)
+            else:
+                print >>sys.stderr, 'The project \'%s\' does not exists - please ' \
+                                    'rerun with \'--alternative-project <alternative_project>\'' % prj
+                sys.exit(1)
     bi_file.write(bi_text)
     bi_file.flush()
 
@@ -268,15 +288,15 @@ def main(opts, argv):
 
         for name, path in prefer_pkgs.iteritems():
             if bi.has_dep(name):
-                    # We remove a preferred package from the buildinfo, so that the
-                    # fetcher doesn't take care about them.
-                    # Instead, we put it in a list which is appended to the rpmlist later.
-                    # At the same time, this will make sure that these packages are
-                    # not verified.
-                    bi.remove_dep(name)
-                    rpmlist_prefers.append((name, path))
-                    print ' - %s (%s)' % (name, path)
-                    continue
+                # We remove a preferred package from the buildinfo, so that the
+                # fetcher doesn't take care about them.
+                # Instead, we put it in a list which is appended to the rpmlist later.
+                # At the same time, this will make sure that these packages are
+                # not verified.
+                bi.remove_dep(name)
+                rpmlist_prefers.append((name, path))
+                print ' - %s (%s)' % (name, path)
+                continue
 
     print 'Updating cache of required packages'
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
@@ -312,8 +332,8 @@ def main(opts, argv):
 
     print 'Getting buildconfig from server'
     bc_file = NamedTemporaryFile(prefix='buildconfig.', dir = '/tmp')
-    rc = os.system('osc buildconfig %s %s > %s' % (repo, arch, bc_file.name))
-    if rc: sys.exit(rc)
+    bc_file.write(get_buildconfig(store_read_apiurl(os.curdir), prj, pac, repo, arch))
+    bc_file.flush()
 
 
     print 'Running build'

@@ -1304,7 +1304,6 @@ class Osc(cmdln.Cmdln):
         pacs = findpacs(args)
 
         for p in pacs:
-
             for platform in get_repos_of_project(p.apiurl, p.prjname):
                 print platform
 
@@ -1325,6 +1324,10 @@ class Osc(cmdln.Cmdln):
                   help='Run build as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
                   'in the spec file will invalidate this option.')
+    @cmdln.option('', '--local-package', action='store_true',
+                  help='build a package which does not exist on the server')
+    @cmdln.option('', '--alternative-project', metavar='PROJECT',
+                  help='specify the build target project')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -1342,6 +1345,13 @@ class Osc(cmdln.Cmdln):
         If neither --clean nor --noinit is given, build will reuse an existing
         build-root again, removing unneeded packages and add missing ones. This
         is usually the fastest option.
+
+        If the package doesn't exist on the server please use the --local-package
+        option.
+        If the project of the package doesn't exist on the server please use the
+        --alternative-project <alternative-project> option:
+        Example:
+            osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
         usage: 
             osc build [OPTS] PLATFORM ARCH BUILD_DESCR
@@ -1387,18 +1397,12 @@ class Osc(cmdln.Cmdln):
             print 'you have to choose a repo to build on'
             print 'possible repositories on this machine are:'
             print 
-            # here, we can't simply use self.do_repos(None, None), because it doesn't
-            # _return_ the stuff, but prints right to stdout... in the future,
-            # it would be good to make all commands return their output, but
-            # better make them generators then
-            (i, o) = os.popen4(['osc', 'repos'])
-            i.close()
-
-            for line in o.readlines():
-                a = line.split()[1] # arch
-                if a == osc.build.hostarch or \
-                   a in osc.build.can_also_build.get(osc.build.hostarch, []):
-                    print line.strip()
+            for platform in get_repos_of_project(store_read_apiurl(os.curdir),
+                                                 store_read_project(os.curdir)):
+                arch = platform.split()[1] # arch
+                if arch == osc.build.hostarch or \
+                   arch in osc.build.can_also_build.get(osc.build.hostarch, []):
+                    print platform.strip()
             return 1
 
         if opts.prefer_pkgs:
