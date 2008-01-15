@@ -1909,6 +1909,8 @@ class Osc(cmdln.Cmdln):
             print ', '.join(maintainers)
 
 
+    @cmdln.option('-r', '--revision', metavar='rev',
+                  help='print out the specified revision')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
 
@@ -1924,11 +1926,13 @@ class Osc(cmdln.Cmdln):
         if len(args) != 3:
             print >>sys.stderr, 'error - incorrect number of arguments'
             sys.exit(1)
+        rev, dummy = parseRevisionOption(opts.revision)
 
         import tempfile
         (fd, filename) = tempfile.mkstemp(prefix = 'osc_%s.' % args[2], dir = '/tmp')
 
-        get_source_file(conf.config['apiurl'], args[0], args[1], args[2], targetfilename=filename)
+        get_source_file(conf.config['apiurl'], args[0], args[1], args[2],
+                        targetfilename=filename, revision=rev)
 
         if binary_file(filename):
             print >>sys.stderr, 'error - cannot display binary file \'%s\'' % args[2]
