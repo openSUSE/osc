@@ -719,7 +719,7 @@ def read_inconflict(dir):
 
 def parseargs(list_of_args):
         if list_of_args:
-            return list_of_args
+            return list(list_of_args)
         else:
             return [ os.curdir ]
 
