@@ -699,8 +699,12 @@ class Osc(cmdln.Cmdln):
 
         elif project:
             if not os.path.exists(project):
-                init_project_dir(conf.config['apiurl'], project, project)
-                print statfrmt('A', project)
+                if meta_exists(metatype='prj', path_args=quote_plus(project), create_new=False):
+                    init_project_dir(conf.config['apiurl'], project, project)
+                    print statfrmt('A', project)
+                else:
+                    print >>sys.stderr, 'osc: project \'%s\' does not exist on the server' % project
+                    sys.exit(1)
             else:
                 print >>sys.stderr, 'osc: project \'%s\' already exists' % project
                 sys.exit(1)
