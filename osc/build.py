@@ -169,12 +169,12 @@ class Pac:
 
 def get_built_files(pacdir, pactype):
     if pactype == 'rpm':
-        b_built = os.popen('find %s -name *.rpm' \
+        b_built = os.popen('find %s -name \*.rpm' \
                     % os.path.join(pacdir, 'RPMS')).read().strip()
-        s_built = os.popen('find %s -name *.rpm' \
+        s_built = os.popen('find %s -name \*.rpm' \
                     % os.path.join(pacdir, 'SRPMS')).read().strip()
     else:
-        b_built = os.popen('find %s -name *.deb' \
+        b_built = os.popen('find %s -name \*.deb' \
                     % os.path.join(pacdir, 'DEBS')).read().strip()
         s_built = None
     return s_built, b_built
