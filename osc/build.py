@@ -43,7 +43,7 @@ if hostarch == 'i686': # FIXME
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
-    def __init__(self, filename):
+    def __init__(self, filename, apiurl=config['apiurl']):
 
         try:
             tree = ET.parse(filename)
@@ -58,6 +58,14 @@ class Buildinfo:
             sys.stderr.write('buildinfo is broken... it says:\n')
             error = root.find('error').text
             sys.stderr.write(error + '\n')
+            sys.exit(1)
+
+        if apiurl.startswith('https://') or apiurl.startswith('http://'):
+            import urlparse
+            scheme, netloc, path = urlparse.urlsplit(apiurl)[0:3]
+            apisrv = netloc+path
+        else:
+            print >>sys.stderr, 'invalid protocol for the apiurl: \'%s\'' % apiurl
             sys.exit(1)
 
         # are we building  .rpm or .deb?
@@ -82,7 +90,9 @@ class Buildinfo:
                     node.get('preinstall'),
                     node.get('runscripts'),
                     self.buildarch,       # buildarch is used only for the URL to access the full tree...
-                    self.pacsuffix)
+                    self.pacsuffix,
+                    scheme,
+                    apisrv)
             self.deps.append(p)
 
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
@@ -105,7 +115,7 @@ class Buildinfo:
 class Pac:
     """represent a package to be downloaded"""
     def __init__(self, name, version, release, project, repository, arch, 
-                 preinstall, runscripts, buildarch, pacsuffix):
+                 preinstall, runscripts, buildarch, pacsuffix, scheme=config['scheme'], apisrv=config['apisrv']):
 
         self.name = name
         self.version = version
@@ -131,8 +141,8 @@ class Pac:
         self.mp['buildarch'] = self.buildarch
         self.mp['pacsuffix'] = self.pacsuffix
 
-        self.mp['scheme'] = config['scheme']
-        self.mp['apisrv'] = config['apisrv']
+        self.mp['scheme'] = scheme
+        self.mp['apisrv'] = apisrv
 
         self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
 
@@ -277,7 +287,7 @@ def main(opts, argv):
     bi_file.write(bi_text)
     bi_file.flush()
 
-    bi = Buildinfo(bi_file.name)
+    bi = Buildinfo(bi_file.name, store_read_apiurl(os.curdir))
 
     rpmlist_prefers = []
     if opts.prefer_pkgs:
