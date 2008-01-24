@@ -377,7 +377,10 @@ def main(opts, argv):
 
     print cmd
     rc = os.system(cmd)
-    if rc: sys.exit(rc)
+    if rc: 
+        print
+        print 'The buildroot was:', config['build-root']
+        sys.exit(rc)
 
     pacdirlink = os.path.join(config['build-root'], '.build.packages')
     if os.path.exists(pacdirlink):
