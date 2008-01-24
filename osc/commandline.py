@@ -1318,6 +1318,8 @@ class Osc(cmdln.Cmdln):
                   help='don\'t update the package changelog from a changes file')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
+    @cmdln.option('--no-verify', action='store_true',
+                  help='Skip signature verification of packages used for build.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR', 

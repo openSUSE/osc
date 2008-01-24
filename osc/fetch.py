@@ -179,6 +179,8 @@ def verify_pacs(pac_list):
     rpm --import %(dir)s/keyfile-%(name)s
 
   Then, just start the build again.
+
+- If the key is unavailable, you may use --no-verify (which may pose a risk).
 """ % {'name': missing_key, 
        'dir': os.path.expanduser('~')}
 

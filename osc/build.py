@@ -322,8 +322,11 @@ def main(opts, argv):
         anyway, I assume... verifying package now saves time though, since we don't
         even try to set up the buildroot if it wouldn't work."""
 
-        print 'Verifying integrity of cached packages'
-        verify_pacs([ i.fullfilename for i in bi.deps ])
+        if opts.no_verify:
+            print 'Skipping verification of package signatures'
+        else:
+            print 'Verifying integrity of cached packages'
+            verify_pacs([ i.fullfilename for i in bi.deps ])
 
     print 'Writing build configuration'
 
