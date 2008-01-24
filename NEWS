@@ -1,5 +1,14 @@
 since 0.99:
 
+- build:
+  - add --no-verify
+  - add --local-package to build a package which doesn't exist on the server
+  - add --alternative-project to specify a project, if the current one doesn't
+    exist on the server
+  - use api url from .osc/_apiurl [#355144]
+- new command remotebuildlog
+- diff: fix #347377 (diffing too many files)
+- checkout: check for project existance beforehand
 - rdiff: new command for server-side diffs between arbitrary packages
 - cat: new command to print a file on the standard output
 - diff: reworked functionality to show newly added files, and behaving more
