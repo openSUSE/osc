@@ -58,7 +58,7 @@ class TestOsc(unittest.TestCase):
     def testUsermeta(self):
         expect = """<person>
   <login>poeml</login>
-  <email>poeml@suse.de</email>
+  <email>poeml@novell.com</email>
   <realname>Dr. Peter Poeml</realname>
   <watchlist>
     <project name="server:mail"/>
