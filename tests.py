@@ -114,7 +114,8 @@ class TestOsc(unittest.TestCase):
     def testMetaPac(self):
         self.out, self.err = runosc('meta pkg Apache apache2')
         self.assertEqual(self.err, '')
-        self.assert_('<package project="Apache" name="apache2">' in self.out)
+        self.assert_(('<package name="apache2" project="Apache">' in self.out) \
+                  or ('<package project="Apache" name="apache2">' in self.out))
 
 
     #####################################################################
