@@ -1742,7 +1742,7 @@ def get_results(apiurl, prj, package):
         r.append(result_line_templ % rmap)
     return r
 
-def get_prj_results(apiurl, prj, show_legend=False):
+def get_prj_results(apiurl, prj, show_legend=False, csv=False):
     #print '----------------------------------------'
 
     r = []
@@ -1754,12 +1754,36 @@ def get_prj_results(apiurl, prj, show_legend=False):
     root = tree.getroot()
 
     pacs = []
+    # sequence of (repo,arch) tuples
+    targets = []
+    # {package: {(repo,arch): status}}
+    status = {}
     if not root.find('result'):
         return []
     for node in root.find('result'):
         pacs.append(node.get('package'))
     pacs.sort()
+    for node in root.findall('result'):
+        tg = (node.get('repository'), node.get('arch'))
+        targets.append(tg)
+        for pacnode in node.findall('status'):
+            pac = pacnode.get('package')
+            if pac not in status:
+                status[pac] = {}
+            status[pac][tg] = pacnode.get('code')
+    targets.sort()
 
+    # csv output
+    if csv:
+        # TODO: option to disable the table header
+        row = ['_'] + ['/'.join(tg) for tg in targets]
+        r.append(','.join(row))
+        for pac in pacs:
+            row = [pac] + [status[pac][tg] for tg in targets]
+            r.append(','.join(row))
+        return r
+
+    # human readable output
     max_pacs = 40
     for startpac in range(0, len(pacs), max_pacs):
         offset = 0
@@ -1767,28 +1791,23 @@ def get_prj_results(apiurl, prj, show_legend=False):
             r.append(' |' * offset + ' ' + pac)
             offset += 1
 
-        target = {}
-        for node in root.findall('result'):
-            target['repo'] = node.get('repository')
-            target['arch'] = node.get('arch')
-
-            status = {}
-            for pacnode in node.findall('status'):
-                try:
-                    status[pacnode.get('package')] = buildstatus_symbols[pacnode.get('code')]
-                except:
-                    print 'osc: warn: unknown status \'%s\'...' % pacnode.get('code')
-                    print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
-                    status[pacnode.get('package')] = '?'
-
+        for tg in targets:
             line = []
             line.append(' ')
             for pac in pacs[startpac:startpac+max_pacs]:
-                if not status.has_key(pac):     # for newly added packages, status may be missing
-                    status[pac] = '?'
-                line.append(status[pac])
+                st = ''
+                if not status.has_key(pac) or not status[pac].has_key(tg):
+                    # for newly added packages, status may be missing
+                    st = '?'
+                try:
+                    st = buildstatus_symbols[status[pac][tg]]
+                except:
+                    print 'osc: warn: unknown status \'%s\'...' % status[pac][tg]
+                    print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
+                    st = '?'
+                line.append(st)
                 line.append(' ')
-            line.append(' %s %s' % (target['repo'], target['arch']))
+            line.append(' %s %s' % tg)
             line = ''.join(line)
 
             r.append(line)

@@ -1128,6 +1128,8 @@ class Osc(cmdln.Cmdln):
                 
     @cmdln.option('-l', '--legend', action='store_true',
                         help='show the legend')
+    @cmdln.option('--csv', action='store_true',
+                        help='csv output')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
         
@@ -1159,7 +1161,7 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, '\'%s\' is neither an osc project or package directory' % wd
             return 1
 
-        print '\n'.join(get_prj_results(apiurl, project, show_legend=opts.legend))
+        print '\n'.join(get_prj_results(apiurl, project, show_legend=opts.legend, csv=opts.csv))
 
                 
     @cmdln.alias('bl')
