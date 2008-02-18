@@ -942,7 +942,7 @@ class Osc(cmdln.Cmdln):
 
         if opts.revision and ( len(args) == 1):
             rev, dummy = parseRevisionOption(opts.revision)
-            if not checkRevision(pacs[0].prjname, pacs[0].name, rev):
+            if not checkRevision(pacs[0].prjname, pacs[0].name, rev, pacs[0].apiurl):
                 print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
                 sys.exit(1)
         else:
@@ -1461,7 +1461,7 @@ class Osc(cmdln.Cmdln):
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(project, package, rev):
+        if rev and not checkRevision(project, package, rev, apiurl):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 

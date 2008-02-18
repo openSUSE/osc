@@ -1043,10 +1043,13 @@ metatypes = { 'prj':     { 'path': 'source/%s/_meta',
 def meta_exists(metatype,
                 path_args=None,
                 template_args=None,
-                create_new=True):
+                create_new=True,
+                apiurl=None):
 
     data = None
-    url = make_meta_url(metatype, path_args)
+    if not apiurl:
+        apiurl = conf.config['apiurl']
+    url = make_meta_url(metatype, path_args, apiurl)
     try:
         data = http_GET(url).readlines()
     except urllib2.HTTPError, e:
@@ -1060,7 +1063,9 @@ def meta_exists(metatype,
                                 % (metatype, url)
     return data
 
-def make_meta_url(metatype, path_args=None):
+def make_meta_url(metatype, path_args=None, apiurl=None):
+    if not apiurl:
+        apiurl = conf.config['apiurl']
     if metatype not in metatypes.keys():
         sys.exit('unknown metatype %s' % metatype)
     path = metatypes[metatype]['path']
@@ -1068,7 +1073,7 @@ def make_meta_url(metatype, path_args=None):
     if path_args:
         path = path % path_args
 
-    return makeurl(conf.config['apiurl'], [path])
+    return makeurl(apiurl, [path])
 
 
 def edit_meta(metatype, 
@@ -1381,7 +1386,7 @@ def make_diff(wc, revision):
         olddir = os.getcwd()
         tmpdir  = tempfile.mkdtemp(revision, wc.name, '/tmp')
         os.chdir(tmpdir)
-        init_package_dir(conf.config['apiurl'], wc.prjname, wc.name, tmpdir, revision)
+        init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
         cmp_pac = Package(tmpdir)
         if wc.todo:
             for file in wc.todo:
@@ -1434,7 +1439,7 @@ def make_diff(wc, revision):
         olddir = os.getcwd()
         tmpdir  = tempfile.mkdtemp(dir='/tmp')
         os.chdir(tmpdir)
-        init_package_dir(conf.config['apiurl'], wc.prjname, wc.name, tmpdir, wc.rev)
+        init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, wc.rev)
         tmp_pac = Package(tmpdir)
         os.chdir(olddir)
 
@@ -1497,7 +1502,7 @@ def checkout_package(apiurl, project, package, revision=None):
     olddir = os.getcwd()
 
     path = (quote_plus(project), quote_plus(package))
-    if meta_exists(metatype='pkg', path_args=path, create_new=False) == None:
+    if meta_exists(metatype='pkg', path_args=path, create_new=False, apiurl=apiurl) == None:
         print >>sys.stderr, 'error 404 - package or package does not exist'
         sys.exit(1)
  
@@ -2071,12 +2076,14 @@ def parseRevisionOption(string):
     else:
         return None, None
 
-def checkRevision(prj, pac, revision):
+def checkRevision(prj, pac, revision, apiurl=None):
     """
     check if revision is valid revision
     """
+    if not apiurl:
+        apiurl = conf.config['apiurl']
     try:
-        if int(revision) > int(show_upstream_rev(conf.config['apiurl'], prj, pac)) \
+        if int(revision) > int(show_upstream_rev(apiurl, prj, pac)) \
            or int(revision) <= 0:
             return False
         else:
