@@ -1728,6 +1728,12 @@ class Osc(cmdln.Cmdln):
             sys.exit(1)
         else:
             project = store_read_project(project_dir)
+            # act as if run with -A `cat $project_dir/.osc/_apiurl`
+	    # to get apiurl and user right
+            apiurl = store_read_apiurl(project_dir)
+            conf.get_config(override_conffile = self.options.conffile,
+                            override_http_debug = self.options.http_debug,
+                            override_apisrv = apiurl)
 
         rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
         if rpm_data:
