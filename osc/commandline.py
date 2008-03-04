@@ -348,6 +348,107 @@ class Osc(cmdln.Cmdln):
 
 
 
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
+    def do_mergereq(self, subcmd, opts, *args):
+        """${cmd_name}: Handle requests to merge two packages
+
+        For "create", the DESTPAC name is optional; the source packages' name
+        will be used if DESTPAC is omitted.
+
+        "list" lists open requests attached to a project or package.
+
+        "show" will show the request itself, and generate a diff for review.
+
+        refuse, accept:
+            Not implemented. Requires more intelligence.
+
+
+        usage: 
+            osc mergereq create [-m TEXT] SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+            osc mergereq list PRJ [PKG]
+            osc mergereq show ID
+            osc mergereq refuse ID
+            osc mergereq accept ID
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        cmds = ['create', 'list', 'show', 'refuse', 'accept']
+        if not args or args[0] not in cmds:
+            print >>sys.stderr, 'Unknown mergereq action. Choose one of %s.' % ', '.join(cmds)
+            return 2
+
+        cmd = args[0]
+        del args[0]
+
+        if cmd in ['create']:
+            min_args, max_args = 3, 4
+        elif cmd in ['list']:
+            min_args, max_args = 1, 2
+        else:
+            min_args, max_args = 1, 1
+        if len(args) < min_args:
+            print >>sys.stderr, 'Too few arguments.'
+            return 2
+        if len(args) > max_args:
+            print >>sys.stderr, 'Too many arguments.'
+            return 2
+
+        # collect specific arguments
+        if cmd == 'create':
+            src_project, src_package, dst_project = args[0:3]
+            if len(args) > 3:
+                dst_package = args[3]
+            else:
+                dst_package = src_package
+
+        elif cmd == 'list':
+            project = args[0]
+            if len(args) > 1:
+                package = args[1]
+            else:
+                package = None
+        elif cmd in ['show', 'refuse', 'accepd']:
+            reqid = args[0]
+
+
+        # create
+        if cmd == 'create':
+            result = create_merge_request(conf.config['apiurl'], 
+                                          src_project, src_package,
+                                          dst_project, dst_package,
+                                          opts.message)
+            print 'created request id', result
+
+
+        # list
+        elif cmd == 'list':
+            results = get_merge_request_list(conf.config['apiurl'], 
+                                             project, package)
+            for result in results:
+                print result.list_view()
+
+        # show
+        elif cmd == 'show':
+            r = get_merge_request(conf.config['apiurl'], reqid)
+            print r
+            # fixme: will inevitably fail if the given target doesn't exist
+            print pretty_diff(conf.config['apiurl'],
+                              r.src_project, r.src_package, None,
+                              r.dst_project, r.dst_package, None)
+
+
+        # refuse
+        elif cmd == 'refuse':
+            print 'not implemented yet.'
+
+        # accept
+        elif cmd == 'accept':
+            print 'not implemented yet.'
+
+
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
     @cmdln.alias("createprj")

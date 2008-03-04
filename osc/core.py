@@ -643,6 +643,84 @@ rev: %s
         os.unlink(filename)
 
 
+class MergeReq:
+    """represent a merge request and holds its metadata
+       it has methods to read in metadata from xml,
+       different views, ..."""
+    def __init__(self):
+        self.reqid       = None
+        self.state       = None
+        self.who         = None
+        self.when        = None
+        self.last_author = None
+        self.src_project = None
+        self.src_package = None
+        self.dst_project = None
+        self.dst_package = None
+        self.descr       = None
+        self.history     = None
+
+    def read(self, root):
+        self.reqid = root.get('id')
+
+        n = root.find('merge').find('source')
+        self.src_project = n.get('project')
+        self.src_package = n.get('package')
+
+        n = root.find('merge').find('target')
+        self.dst_project = n.get('project')
+        self.dst_package = n.get('package')
+
+        n = root.find('state')
+        self.state, self.who, self.when \
+                = n.get('name'), n.get('who'), n.get('when')
+
+        try:
+            n = root.find('description').text
+            self.descr = n
+        except:
+            pass
+
+        try:
+            n = root.find('history').text
+            self.history = n
+        except:
+            pass
+
+    def list_view(self):
+        return '%s   %s    %s/%s  ->  %s/%s    %s' % \
+            (self.reqid, 
+             self.state, 
+             self.src_project, 
+             self.src_package, 
+             self.dst_project, 
+             self.dst_package, 
+             repr(self.descr) or '')
+
+    def __str__(self):
+        return """\
+Request to merge (id %s): 
+    %s/%s  ->  %s/%s
+
+Message:
+    %s
+
+State: %s 
+       (%s, %s)
+
+"""% \
+            (self.reqid,
+             self.src_project, 
+             self.src_package, 
+             self.dst_project, 
+             self.dst_package, 
+             repr(self.descr) or '',
+             self.state, 
+             self.when, self.who,
+             #self.history,
+             )
+
+
 def shorttime(t):
     """format time as Apr 02 18:19
     or                Apr 02  2005
@@ -1182,6 +1260,69 @@ def read_meta_from_spec(specfile, *args):
         spec_data[section] = data
 
     return spec_data
+
+
+def create_merge_request(apiurl, 
+                         src_project, src_package, 
+                         dst_project, dst_package,
+                         message):
+
+    r = MergeReq()
+    r.src_project = src_project
+    r.src_package = src_package
+    r.dst_project = dst_project
+    r.dst_package = dst_package
+    import cgi
+    r.descr = cgi.escape(message)
+
+    xml = """\
+<request type="merge">
+    <merge>
+        <source project="%s" package="%s" />
+        <target project="%s" package="%s" />
+    </merge>
+    <state name="new"/>
+    <description>%s</description>
+</request>
+""" % (r.src_project, 
+       r.src_package,
+       r.dst_project, 
+       r.dst_package,
+       r.descr)
+
+    u = makeurl(apiurl, ['request'], query=['cmd=create'])
+    f = http_POST(u, data=xml)
+
+    root = ET.parse(f).getroot()
+    return root.get('id')
+
+
+def get_merge_request(apiurl, reqid):
+    u = makeurl(apiurl, ['request', reqid])
+    f = http_GET(u)
+    root = ET.parse(f).getroot()
+
+    r = MergeReq()
+    r.read(root)
+    return r
+
+
+def get_merge_request_list(apiurl, project, package):
+    match = 'merge/target/@project=\'%s\'' % quote_plus(project)
+    if package:
+        match += '%20and%20' + 'merge/target/@package=\'%s\'' % quote_plus(package)
+    
+    u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
+    f = http_GET(u)
+    collection = ET.parse(f).getroot()
+
+    requests = []
+    for root in collection.findall('request'):
+        r = MergeReq()
+        r.read(root)
+        requests.append(r)
+
+    return requests
 
 
 def get_user_meta(apiurl, user):
