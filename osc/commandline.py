@@ -410,7 +410,7 @@ class Osc(cmdln.Cmdln):
                 package = args[1]
             else:
                 package = None
-        elif cmd in ['show', 'refuse', 'accepd']:
+        elif cmd in ['show', 'refuse', 'accept']:
             reqid = args[0]
 
 
