@@ -64,7 +64,7 @@ class Osc(cmdln.Cmdln):
         
         (This is the same as checking out a
         package and then copying sources into the directory. It does NOT create
-        a new package. To create a package, use createpac.)
+        a new package. To create a package, use 'osc meta', then 'osc init'.)
 
         usage: 
             osc init PRJ PAC
