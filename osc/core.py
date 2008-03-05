@@ -643,8 +643,8 @@ rev: %s
         os.unlink(filename)
 
 
-class MergeReq:
-    """represent a merge request and holds its metadata
+class SubmitReq:
+    """represent a submit request and holds its metadata
        it has methods to read in metadata from xml,
        different views, ..."""
     def __init__(self):
@@ -663,10 +663,12 @@ class MergeReq:
     def read(self, root):
         self.reqid = root.get('id')
 
+        # FIXME: the xml is not yet adjusted, 'submit' is still called 'merge'
         n = root.find('merge').find('source')
         self.src_project = n.get('project')
         self.src_package = n.get('package')
 
+        # FIXME: the xml is not yet adjusted, 'submit' is still called 'merge'
         n = root.find('merge').find('target')
         self.dst_project = n.get('project')
         self.dst_package = n.get('package')
@@ -699,7 +701,7 @@ class MergeReq:
 
     def __str__(self):
         return """\
-Request to merge (id %s): 
+Request to submit (id %s): 
     %s/%s  ->  %s/%s
 
 Message:
@@ -1262,12 +1264,12 @@ def read_meta_from_spec(specfile, *args):
     return spec_data
 
 
-def create_merge_request(apiurl, 
+def create_submit_request(apiurl, 
                          src_project, src_package, 
                          dst_project, dst_package,
                          message):
 
-    r = MergeReq()
+    r = SubmitReq()
     r.src_project = src_project
     r.src_package = src_package
     r.dst_project = dst_project
@@ -1275,6 +1277,7 @@ def create_merge_request(apiurl,
     import cgi
     r.descr = cgi.escape(message)
 
+    # FIXME: merge is still called merge
     xml = """\
 <request type="merge">
     <merge>
@@ -1297,17 +1300,18 @@ def create_merge_request(apiurl,
     return root.get('id')
 
 
-def get_merge_request(apiurl, reqid):
+def get_submit_request(apiurl, reqid):
     u = makeurl(apiurl, ['request', reqid])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
-    r = MergeReq()
+    r = SubmitReq()
     r.read(root)
     return r
 
 
-def get_merge_request_list(apiurl, project, package):
+def get_submit_request_list(apiurl, project, package):
+    # FIXME: the api path is not yet renamed, still called "merge"
     match = 'merge/target/@project=\'%s\'' % quote_plus(project)
     if package:
         match += '%20and%20' + 'merge/target/@package=\'%s\'' % quote_plus(package)
@@ -1318,7 +1322,7 @@ def get_merge_request_list(apiurl, project, package):
 
     requests = []
     for root in collection.findall('request'):
-        r = MergeReq()
+        r = SubmitReq()
         r.read(root)
         if r.state not in ['declined', 'deleted']:
             requests.append(r)

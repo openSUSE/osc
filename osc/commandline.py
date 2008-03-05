@@ -350,8 +350,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
-    def do_mergereq(self, subcmd, opts, *args):
-        """${cmd_name}: Handle requests to merge two packages
+    def do_submitreq(self, subcmd, opts, *args):
+        """${cmd_name}: Handle requests to submit a package into another project
 
         For "create", the DESTPAC name is optional; the source packages' name
         will be used if DESTPAC is omitted.
@@ -365,11 +365,11 @@ class Osc(cmdln.Cmdln):
 
 
         usage: 
-            osc mergereq create [-m TEXT] SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
-            osc mergereq list PRJ [PKG]
-            osc mergereq show ID
-            osc mergereq refuse ID
-            osc mergereq accept ID
+            osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+            osc submitreq list PRJ [PKG]
+            osc submitreq show ID
+            osc submitreq refuse ID
+            osc submitreq accept ID
         ${cmd_option_list}
         """
 
@@ -377,7 +377,7 @@ class Osc(cmdln.Cmdln):
 
         cmds = ['create', 'list', 'show', 'refuse', 'accept']
         if not args or args[0] not in cmds:
-            print >>sys.stderr, 'Unknown mergereq action. Choose one of %s.' % ', '.join(cmds)
+            print >>sys.stderr, 'Unknown submitreq action. Choose one of %s.' % ', '.join(cmds)
             return 2
 
         cmd = args[0]
@@ -416,7 +416,7 @@ class Osc(cmdln.Cmdln):
 
         # create
         if cmd == 'create':
-            result = create_merge_request(conf.config['apiurl'], 
+            result = create_submit_request(conf.config['apiurl'], 
                                           src_project, src_package,
                                           dst_project, dst_package,
                                           opts.message)
@@ -425,14 +425,14 @@ class Osc(cmdln.Cmdln):
 
         # list
         elif cmd == 'list':
-            results = get_merge_request_list(conf.config['apiurl'], 
+            results = get_submit_request_list(conf.config['apiurl'], 
                                              project, package)
             for result in results:
                 print result.list_view()
 
         # show
         elif cmd == 'show':
-            r = get_merge_request(conf.config['apiurl'], reqid)
+            r = get_submit_request(conf.config['apiurl'], reqid)
             print r
             # fixme: will inevitably fail if the given target doesn't exist
             print pretty_diff(conf.config['apiurl'],
