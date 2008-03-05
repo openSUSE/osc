@@ -1320,7 +1320,8 @@ def get_merge_request_list(apiurl, project, package):
     for root in collection.findall('request'):
         r = MergeReq()
         r.read(root)
-        requests.append(r)
+        if r.state not in ['declined', 'deleted']:
+            requests.append(r)
 
     return requests
 
