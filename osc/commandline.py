@@ -348,6 +348,8 @@ class Osc(cmdln.Cmdln):
 
 
 
+    @cmdln.option('-d', '--diff', action='store_true',
+                  help='generate a diff')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     def do_submitreq(self, subcmd, opts, *args):
@@ -358,24 +360,25 @@ class Osc(cmdln.Cmdln):
 
         "list" lists open requests attached to a project or package.
 
-        "show" will show the request itself, and generate a diff for review.
+        "show" will show the request itself, and generate a diff for review, if
+        used with the --diff option.
 
-        refuse, accept:
+        decline, accept:
             Not implemented. Requires more intelligence.
 
 
         usage: 
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
             osc submitreq list PRJ [PKG]
-            osc submitreq show ID
-            osc submitreq refuse ID
+            osc submitreq show [-d] ID
+            osc submitreq decline ID
             osc submitreq accept ID
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
-        cmds = ['create', 'list', 'show', 'refuse', 'accept']
+        cmds = ['create', 'list', 'show', 'decline', 'accept']
         if not args or args[0] not in cmds:
             print >>sys.stderr, 'Unknown submitreq action. Choose one of %s.' % ', '.join(cmds)
             return 2
@@ -410,7 +413,7 @@ class Osc(cmdln.Cmdln):
                 package = args[1]
             else:
                 package = None
-        elif cmd in ['show', 'refuse', 'accept']:
+        elif cmd in ['show', 'decline', 'accept']:
             reqid = args[0]
 
 
@@ -435,14 +438,17 @@ class Osc(cmdln.Cmdln):
             r = get_submit_request(conf.config['apiurl'], reqid)
             print r
             # fixme: will inevitably fail if the given target doesn't exist
-            print pretty_diff(conf.config['apiurl'],
-                              r.src_project, r.src_package, None,
-                              r.dst_project, r.dst_package, None)
+            if opts.diff:
+                print pretty_diff(conf.config['apiurl'],
+                                  r.src_project, r.src_package, None,
+                                  r.dst_project, r.dst_package, None)
 
 
-        # refuse
-        elif cmd == 'refuse':
-            print 'not implemented yet.'
+        # decline
+        elif cmd == 'decline':
+            r = change_submit_request_state(conf.config['apiurl'], 
+                    reqid, 'declined', opts.message or '')
+            print r
 
         # accept
         elif cmd == 'accept':

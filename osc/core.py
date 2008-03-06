@@ -643,13 +643,21 @@ rev: %s
         os.unlink(filename)
 
 
+class RequestState:
+    """for objects to represent the "state" of a request"""
+    def __init__(self, name=None, who=None, when=None):
+        self.name = name
+        self.who  = who
+        self.when = when
+
+
 class SubmitReq:
     """represent a submit request and holds its metadata
        it has methods to read in metadata from xml,
        different views, ..."""
     def __init__(self):
         self.reqid       = None
-        self.state       = None
+        self.state       = RequestState()
         self.who         = None
         self.when        = None
         self.last_author = None
@@ -658,7 +666,7 @@ class SubmitReq:
         self.dst_project = None
         self.dst_package = None
         self.descr       = None
-        self.history     = None
+        self.statehistory = []
 
     def read(self, root):
         self.reqid = root.get('id')
@@ -673,26 +681,32 @@ class SubmitReq:
         self.dst_project = n.get('project')
         self.dst_package = n.get('package')
 
+        # read the state
         n = root.find('state')
-        self.state, self.who, self.when \
+        self.state.name, self.state.who, self.state.when \
                 = n.get('name'), n.get('who'), n.get('when')
 
+        # read the state history
+        for h in root.findall('history'):
+            s = RequestState()
+            s.name = h.get('name')
+            s.who  = h.get('who')
+            s.when = h.get('when')
+            self.statehistory.append(s)
+        self.statehistory.reverse()
+
+        # read a description, if it exists
         try:
             n = root.find('description').text
             self.descr = n
         except:
             pass
 
-        try:
-            n = root.find('history').text
-            self.history = n
-        except:
-            pass
 
     def list_view(self):
-        return '%s   %s    %s/%s  ->  %s/%s    %s' % \
+        return '%s   %-8s    %s/%s  ->  %s/%s    %s' % \
             (self.reqid, 
-             self.state, 
+             self.state.name, 
              self.src_project, 
              self.src_package, 
              self.dst_project, 
@@ -700,27 +714,31 @@ class SubmitReq:
              repr(self.descr) or '')
 
     def __str__(self):
-        return """\
+        s = """\
 Request to submit (id %s): 
     %s/%s  ->  %s/%s
 
 Message:
     %s
 
-State: %s 
-       (%s, %s)
+State:   %-10s   %s %s
+"""            % (self.reqid,
+               self.src_project, 
+               self.src_package, 
+               self.dst_project, 
+               self.dst_package, 
+               repr(self.descr) or '',
+               self.state.name, 
+               self.state.when, self.state.who)
 
-"""% \
-            (self.reqid,
-             self.src_project, 
-             self.src_package, 
-             self.dst_project, 
-             self.dst_package, 
-             repr(self.descr) or '',
-             self.state, 
-             self.when, self.who,
-             #self.history,
-             )
+        if len(self.statehistory):
+            histitems = [ '%-10s   %s %s' \
+                    % (i.name, i.when, i.who) \
+                    for i in self.statehistory ]
+            s += 'History: ' + '\n         '.join(histitems)
+
+        s += '\n'
+        return s
 
 
 def shorttime(t):
@@ -1269,13 +1287,14 @@ def create_submit_request(apiurl,
                          dst_project, dst_package,
                          message):
 
+    import cgi
+
     r = SubmitReq()
     r.src_project = src_project
     r.src_package = src_package
     r.dst_project = dst_project
     r.dst_package = dst_package
-    import cgi
-    r.descr = cgi.escape(message)
+    r.descr = cgi.escape(message or '')
 
     # FIXME: merge is still called merge
     xml = """\
@@ -1310,6 +1329,14 @@ def get_submit_request(apiurl, reqid):
     return r
 
 
+def change_submit_request_state(apiurl, reqid, newstate, message=''):
+    u = makeurl(apiurl, 
+                ['request', reqid], 
+                query=['cmd=changestate', 'newstate=%s' % newstate])
+    f = http_POST(u, data=message)
+    return f.read()
+
+
 def get_submit_request_list(apiurl, project, package):
     # FIXME: the api path is not yet renamed, still called "merge"
     match = 'merge/target/@project=\'%s\'' % quote_plus(project)
@@ -1324,7 +1351,7 @@ def get_submit_request_list(apiurl, project, package):
     for root in collection.findall('request'):
         r = SubmitReq()
         r.read(root)
-        if r.state not in ['declined', 'deleted']:
+        if r.state.name not in ['declined', 'deleted']:
             requests.append(r)
 
     return requests
