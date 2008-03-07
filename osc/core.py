@@ -28,7 +28,7 @@ exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~', '.*.sw
 
 
 new_project_templ = """\
-<project name="%s">
+<project name="%(name)s">
 
   <title>Short title of NewProject</title>
 
@@ -37,8 +37,8 @@ new_project_templ = """\
 It also does some weird stuff.
 </description>
 
-  <person role="maintainer" userid="%s" />
-  <person role="bugowner" userid="%s" />
+  <person role="maintainer" userid="%(user)s" />
+  <person role="bugowner" userid="%(user)s" />
 
 <!-- remove this block to publish your packages on the mirrors -->
   <publish>
@@ -89,7 +89,7 @@ It also does some weird stuff.
 """
 
 new_package_templ = """\
-<package name="%s">
+<package name="%(name)s">
 
   <title>Title of New Package</title>
 
@@ -98,8 +98,8 @@ GOES
 HERE
   </description>
 
-  <person role="maintainer" userid="%s"/>
-  <person role="bugowner" userid="%s"/>
+  <person role="maintainer" userid="%(user)s"/>
+  <person role="bugowner" userid="%(user)s"/>
 
 
 <!-- 
@@ -118,11 +118,11 @@ HERE
 
 new_user_template = """\
 <person>
-  <login>%s</login>
+  <login>%(user)s</login>
   <email>PUT_EMAIL_ADDRESS_HERE</email>
   <realname>PUT_REAL_NAME_HERE</realname>
   <watchlist>
-    <project name="home:%s"/>
+    <project name="home:%(user)s"/>
   </watchlist>
 </person>
 """

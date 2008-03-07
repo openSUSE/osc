@@ -277,12 +277,16 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj', 
                           edit=True,
                           path_args=quote_plus(project),
-                          template_args=(project, conf.config['user'], conf.config['user']))
+                          template_args=({
+                                  'name': project,
+                                  'user': conf.config['user']}))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg', 
                           edit=True,
                           path_args=(quote_plus(project), quote_plus(package)),
-                          template_args=(package, conf.config['user'], conf.config['user']))
+                          template_args=({
+                                  'name': package,
+                                  'user': conf.config['user']}))
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf', 
                           edit=True,
@@ -292,7 +296,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='user', 
                           edit=True,
                           path_args=(quote_plus(user)),
-                          template_args=(user, user))
+                          template_args=({'user': user}))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern', 
                           edit=True,
@@ -1866,7 +1870,9 @@ class Osc(cmdln.Cmdln):
             os.chdir(os.path.join(project_dir, pac))
             data = meta_exists(metatype='pkg',
                                path_args=(quote_plus(project), quote_plus(pac)),
-                               template_args=(pac, conf.config['user']))
+                               template_args=({
+                                   'name': pac,
+                                   'user': conf.config['user']}))
             if data:
                 data = ET.fromstring(''.join(data))
                 data.find('title').text = title
