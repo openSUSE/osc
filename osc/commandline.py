@@ -277,12 +277,12 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj', 
                           edit=True,
                           path_args=quote_plus(project),
-                          template_args=(project, conf.config['user']))
+                          template_args=(project, conf.config['user'], conf.config['user']))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg', 
                           edit=True,
                           path_args=(quote_plus(project), quote_plus(package)),
-                          template_args=(package, conf.config['user']))
+                          template_args=(package, conf.config['user'], conf.config['user']))
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf', 
                           edit=True,
