@@ -38,6 +38,7 @@ It also does some weird stuff.
 </description>
 
   <person role="maintainer" userid="%s" />
+  <person role="bugowner" userid="%s" />
 
 <!-- remove this block to publish your packages on the mirrors -->
   <publish>
@@ -98,6 +99,7 @@ HERE
   </description>
 
   <person role="maintainer" userid="%s"/>
+  <person role="bugowner" userid="%s"/>
 
 
 <!-- 
