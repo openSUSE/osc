@@ -165,27 +165,338 @@ class File:
 
 class Project:
     """represent a project directory, holding packages"""
-    def __init__(self, dir):
+    def __init__(self, dir, getPackageList=True):
         self.dir = dir
         self.absdir = os.path.abspath(dir)
 
         self.name = store_read_project(self.dir)
         self.apiurl = store_read_apiurl(self.dir)
 
-        self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
-
-        self.pacs_have = [ i for i in os.listdir(self.dir) if i in self.pacs_available ]
+        if getPackageList:
+            self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
+        else:
+            self.pacs_available = []
+        
+        if conf.config['do_package_tracking']:
+            self.pac_root = self.read_packages().getroot()
+            self.pacs_have = [ pac.get('name') for pac in self.pac_root.findall('package') ]
+            self.pacs_unvers = [ i for i in os.listdir(self.dir) if i not in self.pacs_have and i not in exclude_stuff ]
+            # store all broken packages (e.g. packages which where removed by a non-osc cmd)
+            # in the self.pacs_broken list
+            self.pacs_broken = []
+            for p in self.pacs_have:
+                if not os.path.isdir(os.path.join(self.absdir, p)):
+                    # all states will be replaced with the '!'-state
+                    # (except it is already marked as deleted ('D'-state))
+                    self.pacs_broken.append(p)
+        else:
+            self.pacs_have = [ i for i in os.listdir(self.dir) if i in self.pacs_available ]
 
         self.pacs_missing = [ i for i in self.pacs_available if i not in self.pacs_have ]
 
     def checkout_missing_pacs(self):
         for pac in self.pacs_missing:
-            print 'checking out new package %s' % pac
+
+            if conf.config['do_package_tracking'] and pac in self.pacs_unvers:
+                # pac is not under version control but a local file/dir exists
+                print 'can\'t add package \'%s\': Object already exists' % pac
+                sys.exit(1)
+            else:
+                print 'checking out new package %s' % pac
+                olddir = os.getcwd()
+                #os.chdir(os.pardir)
+                os.chdir(os.path.join(self.absdir, os.pardir))
+                #checkout_package(self.apiurl, self.name, pac, pathname = os.path.normpath(os.path.join(self.dir, pac)))
+                checkout_package(self.apiurl, self.name, pac, pathname = getTransActPath(os.path.join(self.dir, pac)), prj_obj=self)
+                os.chdir(olddir)
+                #self.new_package_entry(pac, ' ')
+                #self.pacs_have.append(pac)
+
+    def set_state(self, pac, state):
+        node = self.get_package_node(pac)
+        if node == None:
+            self.new_package_entry(pac, state)
+        else:
+            node.attrib['state'] = state
+
+    def get_package_node(self, pac):
+        for node in self.pac_root.findall('package'):
+            if pac == node.get('name'):
+                return node
+        return None
+
+    def del_package_node(self, pac):
+        for node in self.pac_root.findall('package'):
+            if pac == node.get('name'):
+                self.pac_root.remove(node)
+
+    def get_state(self, pac):
+        node = self.get_package_node(pac)
+        if node != None:
+            return node.get('state')
+        else:
+            return None
+
+    def new_package_entry(self, name, state):
+        ET.SubElement(self.pac_root, 'package', name=name, state=state)
+
+    def read_packages(self):
+        if os.path.isfile(os.path.join(self.absdir, store, '_packages')):
+            return ET.parse(os.path.join(self.absdir, store, '_packages'))
+        else:
+            # scan project for existing packages and migrate them
+            cur_pacs = []
+            for data in os.listdir(self.dir):
+                pac_dir = os.path.join(self.absdir, data)
+                # we cannot use self.pacs_available because we cannot guarantee that the package list
+                # was fetched from the server
+                if data in meta_get_packagelist(self.apiurl, self.name) and is_package_dir(pac_dir) \
+                   and Package(pac_dir).name == data:
+                    cur_pacs.append(ET.Element('package', name=data, state=' '))
+            store_write_initial_packages(self.absdir, self.name, cur_pacs)
+            return ET.parse(os.path.join(self.absdir, store, '_packages'))
+
+    def write_packages(self):
+        # TODO: should we only modify the existing file instead of overwriting?
+        ET.ElementTree(self.pac_root).write(os.path.join(self.absdir, store, '_packages'))
+
+    def addPackage(self, pac):
+        state = self.get_state(pac)
+        if state == None or state == 'D':
+            self.new_package_entry(pac, 'A')
+            self.write_packages()
+            # sometimes the new pac doesn't exist in the list because
+            # it would take too much time to update all data structs regulary
+            if pac in self.pacs_unvers:
+                self.pacs_unvers.remove(pac)
+            return True
+        else:
+            print 'package \'%s\' is already under version control' % pac
+            return False
+
+    def delPackage(self, pac, force = False):
+        state = self.get_state(pac.name)
+        can_delete = True
+        if state == ' ' or state == 'D':
+            del_files = []
+            for file in pac.filenamelist + pac.filenamelist_unvers:
+                filestate = pac.status(file)
+                if filestate == 'M' or filestate == 'C' or \
+                   filestate == 'A' or filestate == '?':
+                    can_delete = False
+                else:    
+                    del_files.append(file)
+            if can_delete or force:
+                for file in del_files:
+                    pac.delete_localfile(file)
+                    if pac.status(file) != '?':
+                        pac.delete_storefile(file)
+                        # this is not really necessary
+                        pac.put_on_deletelist(file)
+                        print statfrmt('D', os.path.join(pac.dir, file))
+                #print os.path.dirname(pac.dir)
+                # some black path vodoo
+                print statfrmt('D', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
+                pac.write_deletelist()
+                self.set_state(pac.name, 'D')
+                self.write_packages()
+            else:
+                print 'package \'%s\' has local modifications (see osc st for details)' % pac.name
+        elif state == 'A':
+            if force:
+                delete_dir(pac.absdir)
+                self.del_package_node(pac.name)
+                self.write_packages()
+                print statfrmt('D', pac.name)
+            else:
+                print 'package \'%s\' has local modifications (see osc st for details)' % pac.name
+        elif state == None:
+            print 'package is not under version control'
+        else:
+            print 'unsupported state'
+
+    def update(self, pacs = ()):
+        if len(pacs):
+            for pac in pacs:
+                Package(os.path.join(self.dir, pac)).update()
+        else:
+            # update complete project
+            # packages which no longer exists upstream
+            upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
+
+            for pac in upstream_del:
+                p = Package(os.path.join(self.dir, pac))
+                self.delPackage(p, force = True)
+                delete_storedir(p.storedir)
+                try:
+                    os.rmdir(pac)
+                except:
+                    pass
+                self.pac_root.remove(self.get_package_node(p.name))
+                self.pacs_have.remove(pac)
+
+            for pac in self.pacs_have:
+                state = self.get_state(pac)
+                if pac in self.pacs_broken:
+                    if self.get_state(pac) != 'A':
+                        olddir = self.absdir
+                        os.chdir(os.path.join(self.absdir, os.pardir))
+                        checkout_package(self.apiurl, self.name, pac,
+                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self)
+                        os.chdir(olddir)
+                elif state == ' ':
+                    # do a simple update
+                    Package(os.path.join(self.dir, pac)).update()
+                elif state == 'D':
+                    # TODO: Package::update has to fixed to behave like svn does
+                    if pac in self.pacs_broken:
+                        olddir = self.absdir
+                        os.chdir(os.path.join(self.absdir, os.pardir))
+                        checkout_package(self.apiurl, self.name, pac,
+                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self)
+                        os.chdir(olddir)
+                    else:
+                        Package(os.path.join(self.dir, pac)).update()
+                elif state == 'A' and pac in self.pacs_available:
+                    # file/dir called pac already exists and is under version control
+                    print 'can\'t add package \'%s\': Object already exists' % pac
+                    sys.exit(1)
+                elif state == 'A':
+                    # do nothing
+                    pass
+                else:
+                    print 'unexpected state.. package \'%s\'' % pac
+
+            self.checkout_missing_pacs()
+            self.write_packages()
+
+    def commit(self, pacs = (), msg = '', files = {}):
+        if len(pacs):
+            for pac in pacs:
+                todo = []
+                if files.has_key(pac):
+                    todo = files[pac]
+                state = self.get_state(pac)
+                if state == 'A':
+                    self.commitNewPackage(pac, msg, todo)
+                elif state == 'D':
+                    self.commitDelPackage(pac)
+                elif state == ' ':
+                    # display the correct dir when sending the changes
+                    if os.path.samefile(os.path.join(self.dir, pac), os.getcwd()):
+                        p = Package('.')
+                    else:
+                        p = Package(os.path.join(self.dir, pac))
+                    p.todo = todo
+                    p.commit(msg)
+                elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
+                    print 'osc: \'%s\' is not under version control' % pac
+                elif pac in self.pacs_broken:
+                    print 'osc: \'%s\' package not found' % pac
+                elif state == None:
+                    self.commitExtPackage(pac, msg, todo)
+        else:
+            # if we have packages marked as '!' we cannot commit
+            for pac in self.pacs_broken:
+                if self.get_state(pac) != 'D':
+                    print 'commit failed: package \'%s\' is missing' % pac
+                    sys.exit(1)
+            for pac in self.pacs_have:
+                state = self.get_state(pac)
+                if state == ' ':
+                    # do a simple commit
+                    try:
+                        Package(os.path.join(self.dir, pac)).commit(msg)
+                    except SystemExit:
+                        pass
+                elif state == 'D':
+                    self.commitDelPackage(pac)
+                elif state == 'A':
+                    self.commitNewPackage(pac, msg)
+        self.write_packages()
+
+    def commitNewPackage(self, pac, msg = '', files = []):
+        """creates and commits a new package if it does not exist on the server"""
+        if pac in self.pacs_available:
+            print 'package \'%s\' already exists' % pac
+        else:
+            edit_meta(metatype='pkg',
+                      path_args=(quote_plus(self.name), quote_plus(pac)),
+		      template_args=({
+			      'name': pac,
+			      'user': conf.config['user']}),
+		      apiurl=self.apiurl)
+            # display the correct dir when sending the changes
             olddir = os.getcwd()
-            os.chdir(os.pardir)
-            checkout_package(self.apiurl, self.name, pac)
+            if os.path.samefile(os.path.join(self.dir, pac), os.curdir):
+                os.chdir(os.pardir)
+                p = Package(pac)
+            else:
+                p = Package(os.path.join(self.dir, pac))
+            p.todo = files
+            #print statfrmt('Sending', os.path.normpath(os.path.join(p.dir, os.pardir, pac)))
+            print statfrmt('Sending', os.path.normpath(p.dir))
+            try:
+                p.commit(msg)
+            except SystemExit:
+                pass
+            self.set_state(pac, ' ')
             os.chdir(olddir)
 
+    def commitDelPackage(self, pac):
+        """deletes a package on the server and in the working copy"""
+        try:
+            # display the correct dir when sending the changes
+            if os.path.samefile(os.path.join(self.dir, pac), os.curdir):
+                pac_dir = pac
+            else:
+                pac_dir = os.path.join(self.dir, pac)
+            p = Package(os.path.join(self.dir, pac))
+            #print statfrmt('Deleting', os.path.normpath(os.path.join(p.dir, os.pardir, pac)))
+            delete_storedir(p.storedir)
+            try:
+                os.rmdir(p.dir)
+            except:
+                pass
+        except SystemExit:
+            pass
+        except OSError:
+            pac_dir = os.path.join(self.dir, pac)
+        #print statfrmt('Deleting', getTransActPath(os.path.join(self.dir, pac)))
+        print statfrmt('Deleting', getTransActPath(pac_dir))
+        delete_package(self.apiurl, self.name, pac)
+        self.del_package_node(pac)
+
+    def commitExtPackage(self, pac, msg, files = []):
+        """commits a package from an external project"""
+        if os.path.samefile(os.path.join(self.dir, pac), os.getcwd()):
+            pac_path = '.'
+        else:
+            pac_path = os.path.join(self.dir, pac)
+ 
+        project = store_read_project(pac_path)
+        package = store_read_package(pac_path)
+        apiurl = store_read_apiurl(pac_path)
+        if meta_exists(metatype='pkg',
+                       path_args=(quote_plus(project), quote_plus(package)),
+                       template_args=None,
+                       create_new=False, apiurl=apiurl):
+            p = Package(pac_path)
+            p.todo = files
+            p.commit(msg)
+        else:
+            edit_meta(metatype='pkg',
+                      path_args=(quote_plus(project), quote_plus(package)),
+                      template_args=({
+			      'name': pac,
+			      'user': conf.config['user']}),
+		      apiurl=apiurl)
+            try:
+                p = Package(pac_path)
+                p.todo = files
+                p.commit(msg)
+            except SystemExit:
+                pass
 
     def __str__(self):
         r = []
@@ -279,13 +590,15 @@ class Package:
             f.close()
 
     def delete_source_file(self, n):
-        
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)])
-        http_DELETE(u)
-
+        """delete local a source file"""
         self.delete_localfile(n)
         self.delete_storefile(n)
 
+    def delete_remote_source_file(self, n):
+        """delete a remote source file (e.g. from the server)"""
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)])
+        http_DELETE(u)
+ 
     def put_source_file(self, n):
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
@@ -307,15 +620,17 @@ class Package:
 
         if not self.todo:
             self.todo = self.filenamelist_unvers + self.filenamelist
+      
+        pathn = getTransActPath(self.dir)
 
         for filename in self.todo:
             st = self.status(filename)
             if st == 'A' or st == 'M':
                 self.todo_send.append(filename)
-                print 'Sending        %s' % filename
+                print statfrmt('Sending', os.path.join(pathn, filename))
             elif st == 'D':
                 self.todo_delete.append(filename)
-                print 'Deleting       %s' % filename
+                print statfrmt('Deleting',  os.path.join(pathn, filename))
 
         if not self.todo_send and not self.todo_delete:
             print 'nothing to do for package %s' % self.name
@@ -323,12 +638,15 @@ class Package:
 
         print 'Transmitting file data ', 
         for filename in self.todo_delete:
-            self.delete_source_file(filename)
+            # do not touch local files on commit --
+            # delete remotely instead
+            self.delete_remote_source_file(filename)
             self.to_be_deleted.remove(filename)
         for filename in self.todo_send:
             sys.stdout.write('.')
             sys.stdout.flush()
             self.put_source_file(filename)
+
         # all source files are committed - now comes the log
         query = []
         query.append('cmd=commit')
@@ -336,7 +654,7 @@ class Package:
         query.append('user=%s' % conf.config['user'])
         query.append('comment=%s' % quote_plus(msg))
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-        #print u
+
         f = http_POST(u)
         root = ET.parse(f).getroot()
         self.rev = int(root.get('rev'))
@@ -644,6 +962,60 @@ rev: %s
 
         os.unlink(filename)
 
+    def update(self, rev = None):
+        # save filelist and (modified) status before replacing the meta file
+        saved_filenames = self.filenamelist
+        saved_modifiedfiles = [ f for f in self.filenamelist if self.status(f) == 'M' ]
+
+        oldp = self
+        self.update_local_filesmeta(rev)
+        self = Package(self.dir)
+
+        # which files do no longer exist upstream?
+        disappeared = [ f for f in saved_filenames if f not in self.filenamelist ]
+
+        pathn = getTransActPath(self.dir)
+
+        for filename in saved_filenames:
+            if filename in disappeared:
+                print statfrmt('D', os.path.join(pathn, filename))
+                # keep file if it has local modifications
+                if oldp.status(filename) == ' ':
+                    self.delete_localfile(filename)
+                self.delete_storefile(filename)
+                continue
+
+        for filename in self.filenamelist:
+
+            state = self.status(filename)
+            if state == 'M' and self.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
+                # no merge necessary... local file is changed, but upstream isn't
+                pass
+            elif state == 'M' and filename in saved_modifiedfiles:
+                status_after_merge = self.mergefile(filename)
+                print statfrmt(status_after_merge, os.path.join(pathn, filename))
+            elif state == 'M':
+                self.updatefile(filename, rev)
+                print statfrmt('U', os.path.join(pathn, filename))
+            elif state == '!':
+                self.updatefile(filename, rev)
+                print 'Restored \'%s\'' % os.path.join(pathn, filename)
+            elif state == 'F':
+                self.updatefile(filename, rev)
+                print statfrmt('A', os.path.join(pathn, filename))
+            elif state == 'D' and self.findfilebyname(filename).md5 != oldp.findfilebyname(filename).md5:
+                self.updatefile(filename, rev)
+                self.delete_storefile(filename)
+                print statfrmt('U', os.path.join(pathn, filename))
+            elif state == ' ':
+                pass
+
+
+        self.update_local_pacmeta()
+
+        #print ljust(p.name, 45), 'At revision %s.' % p.rev
+        print 'At revision %s.' % self.rev
+ 
 
 class RequestState:
     """for objects to represent the "state" of a request"""
@@ -936,8 +1308,10 @@ def init_project_dir(apiurl, dir, project):
 
     store_write_project(dir, project)
     store_write_apiurl(dir, apiurl)
+    if conf.config['do_package_tracking']:
+        store_write_initial_packages(dir, project, [])
 
-def init_package_dir(apiurl, project, package, dir, revision=None):
+def init_package_dir(apiurl, project, package, dir, revision=None, files=True):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -948,9 +1322,13 @@ def init_package_dir(apiurl, project, package, dir, revision=None):
     f.write(package + '\n')
     f.close
 
-    f = open('_files', 'w')
-    f.write(''.join(show_files_meta(apiurl, project, package, revision)))
-    f.close()
+    if files:
+        f = open('_files', 'w')
+        f.write(''.join(show_files_meta(apiurl, project, package, revision)))
+        f.close()
+    else:
+        # create dummy
+        ET.ElementTree(element=ET.Element('directory')).write('_files')
 
     f = open('_osclib_version', 'w')
     f.write(__version__ + '\n')
@@ -1181,18 +1559,22 @@ def edit_meta(metatype,
               data=None, 
               template_args=None, 
               edit=False,
-              change_is_required=False):
+              change_is_required=False,
+              apiurl=None):
 
+    if not apiurl:
+        apiurl = conf.config['apiurl']
     if not data:
         data = meta_exists(metatype,
                            path_args,
                            template_args,
-                           create_new=True)
+                           create_new=True,
+                           apiurl=apiurl)
 
     if edit:
         change_is_required = True
 
-    url = make_meta_url(metatype, path_args)
+    url = make_meta_url(metatype, path_args, apiurl)
     f=metafile(url, data, change_is_required)
 
     if edit:
@@ -1658,37 +2040,48 @@ def pretty_diff(apiurl,
     return f.read()
 
 
-def make_dir(apiurl, project, package):
+def make_dir(apiurl, project, package, pathname):
     #print "creating directory '%s'" % project
     if not os.path.exists(project):
         print statfrmt('A', project)
         init_project_dir(apiurl, project, project)
-
     #print "creating directory '%s/%s'" % (project, package)
+    if not pathname:
+        pathname = os.path.join(project, package)
     if not os.path.exists(os.path.join(project, package)):
-        print statfrmt('A', '%s/%s' % (project, package))    
+        print statfrmt('A', pathname)
         os.mkdir(os.path.join(project, package))
         os.mkdir(os.path.join(project, package, store))
 
     return(os.path.join(project, package))
 
 
-def checkout_package(apiurl, project, package, revision=None):
+def checkout_package(apiurl, project, package, revision=None, pathname=None, prj_obj = None):
     olddir = os.getcwd()
+ 
+    if not pathname:
+        pathname = os.path.join(project, package)
 
     path = (quote_plus(project), quote_plus(package))
     if meta_exists(metatype='pkg', path_args=path, create_new=False, apiurl=apiurl) == None:
-        print >>sys.stderr, 'error 404 - package or package does not exist'
+        print >>sys.stderr, 'error 404 - project or package does not exist'
         sys.exit(1)
  
-    os.chdir(make_dir(apiurl, project, package))
+    os.chdir(make_dir(apiurl, project, package, pathname))
     init_package_dir(apiurl, project, package, store, revision)
-    p = Package(os.curdir)
+    os.chdir(os.pardir)
+    p = Package(package)
 
     for filename in p.filenamelist:
         p.updatefile(filename, revision)
-        print 'A   ', os.path.join(project, package, filename)
-
+        #print 'A   ', os.path.join(project, package, filename)
+        print statfrmt('A', os.path.join(pathname, filename))
+    if conf.config['do_package_tracking']:
+        # check if we can re-use an existing project object
+        if prj_obj == None:
+            prj_obj = Project(os.getcwd())
+        prj_obj.set_state(p.name, ' ')
+        prj_obj.write_packages()
     os.chdir(olddir)
 
 
@@ -2162,6 +2555,13 @@ def store_write_apiurl(dir, apiurl):
     fname = os.path.join(dir, store, '_apiurl')
     open(fname, 'w').write(apiurl + '\n')
 
+def store_write_initial_packages(dir, project, subelements):
+    fname = os.path.join(dir, store, '_packages')
+    root = ET.Element('project', name=project)
+    for elem in subelements:
+        root.append(elem)
+    ET.ElementTree(root).write(fname)
+
 def get_osc_version():
     return __version__
 
@@ -2363,29 +2763,16 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
     else:
         return None
 
-def delete_tmpdir(tmpdir):
-    """
-    This method deletes a tempdir. This tempdir
-    must be located under /tmp/$DIR. If "tmpdir" is not
-    a valid tempdir it'll return False. If os.unlink() / os.rmdir()
-    throws an exception we will return False too - otherwise
-    True.
-    """
-
+def delete_dir(dir):
     # small security checks
-    if os.path.islink(tmpdir):
+    if os.path.islink(dir):
         return False
-    elif os.path.abspath(tmpdir) == '/':
+    elif os.path.abspath(dir) == '/':
         return False
-    
-    head, tail = os.path.split(tmpdir)
-    if not head.startswith('/tmp') or not tail:
+    elif not os.path.isdir(dir):
         return False
 
-    if not os.path.isdir(tmpdir):
-        return False
-
-    for dirpath, dirnames, filenames in os.walk(tmpdir, topdown=False):
+    for dirpath, dirnames, filenames in os.walk(dir, topdown=False):
         for file in filenames:
             try:
                 os.unlink(os.path.join(dirpath, file))
@@ -2397,10 +2784,35 @@ def delete_tmpdir(tmpdir):
             except:
                 return False
     try:
-        os.rmdir(tmpdir)
+        os.rmdir(dir)
     except:
         return False
     return True
+
+def delete_tmpdir(tmpdir):
+    """
+    This method deletes a tempdir. This tempdir
+    must be located under /tmp/$DIR. If "tmpdir" is not
+    a valid tempdir it'll return False. If os.unlink() / os.rmdir()
+    throws an exception we will return False too - otherwise
+    True.
+    """
+
+    head, tail = os.path.split(tmpdir)
+    if not head.startswith('/tmp') or not tail:
+        return False
+    else:
+        return delete_dir(tmpdir)
+
+def delete_storedir(store_dir):
+    """
+    This method deletes a store dir.
+    """
+    head, tail = os.path.split(store_dir)
+    if tail == '.osc':
+        return delete_dir(store_dir)
+    else:
+        return False
 
 def unpack_srcrpm(srpm, dir, *files):
     """
@@ -2568,3 +2980,88 @@ def delMaintainer(apiurl, prj, pac, user):
             print "user \'%s\' not found in \'%s\'" % (user, pac or prj)
     else:
         print "an error occured"
+
+def addFiles(filenames):
+    for filename in filenames:
+        if not os.path.exists(filename):
+            print >>sys.stderr, "file '%s' does not exist" % filename
+            return 1
+
+    # init a package dir if we have a normal dir in the "filenames"-list
+    # so that it will be find by findpacs() later
+    for filename in filenames:
+
+        prj_dir, pac_dir = getPrjPacPaths(filename)
+
+        if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
+           and conf.config['do_package_tracking']:
+            old_dir = os.getcwd()
+            prj_name = store_read_project(prj_dir)
+            prj_apiurl = store_read_apiurl(prj_dir)
+            os.chdir(filename)
+            init_package_dir(prj_apiurl, prj_name, pac_dir, pac_dir, files=False)
+            os.chdir(old_dir)
+
+        elif is_package_dir(filename) and conf.config['do_package_tracking']:
+            print 'osc: warning: \'%s\' is already under version control' % filename
+            sys.exit(1)
+
+    pacs = findpacs(filenames)
+
+    for pac in pacs:
+        if conf.config['do_package_tracking'] and not pac.todo:
+            prj = Project(os.path.dirname(pac.absdir))
+            if pac.name in prj.pacs_unvers:
+                prj.addPackage(pac.name)
+                print statfrmt('A', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
+                for filename in pac.filenamelist_unvers:
+                    pac.todo.append(filename)
+            elif pac.name in prj.pacs_have:
+                print 'osc: warning: \'%s\' is already under version control' % pac.name
+        for filename in pac.todo:
+            if filename in pac.excluded:
+                continue
+            if filename in pac.filenamelist:
+                print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
+                continue
+            if pac.dir != '.':
+                pathname = os.path.join(pac.dir, filename)
+            else:
+                pathname = filename
+            print statfrmt('A', pathname)
+            pac.addfile(filename)
+
+def getPrjPacPaths(path):
+    """
+    returns the path for a project and a package
+    from path. This is needed if you try to add
+    or delete packages:
+    Examples:
+        osc add pac1/: prj_dir = CWD;
+                       pac_dir = pac1
+        osc add /path/to/pac1:
+                       prj_dir = path/to;
+                       pac_dir = pac1
+        osc add /path/to/pac1/file
+                       => this would be an invalid path
+                          the caller has to validate the returned
+                          path!
+    """
+    # make sure we hddave a dir: osc add bar vs. osc add bar/; osc add /path/to/prj_dir/new_pack
+    # filename = os.path.join(tail, '')
+    prj_dir, pac_dir = os.path.split(os.path.normpath(path))
+    if prj_dir == '':
+        prj_dir = os.getcwd()
+    return (prj_dir, pac_dir)
+
+def getTransActPath(pac_dir):
+    """
+    returns the path for the commit and update operations/transactions.
+    Normally the "dir" attribute of a Package() object will be passed to
+    this method.
+    """
+    if pac_dir != '.':
+        pathn = os.path.normpath(pac_dir)
+    else:
+        pathn = ''
+    return pathn

@@ -786,7 +786,6 @@ class Osc(cmdln.Cmdln):
             osc co PROJECT [PACKAGE] [FILE]
         ${cmd_option_list}
         """
-
         args = slash_split(args)
         project = package = filename = None
         try: 
@@ -860,12 +859,21 @@ class Osc(cmdln.Cmdln):
         args = parseargs(args)
 
         pacpaths = []
+        prj = None
         for arg in args:
             # when 'status' is run inside a project dir, it should
             # stat all packages existing in the wc
             if is_project_dir(arg):
-                prj = Project(arg)
-                pacpaths += [arg + '/' + n for n in prj.pacs_have]
+                prj = Project(arg, False)
+
+                if conf.config['do_package_tracking']:
+                    for pac in prj.pacs_have:
+                        # we cannot create package objects if the dir does not exist
+                        if not pac in prj.pacs_broken:
+                            pacpaths.append(os.path.join(arg, pac))
+                else:
+                    pacpaths += [arg + '/' + n for n in prj.pacs_have]
+
             elif is_package_dir(arg):
                 pacpaths.append(arg)
             elif os.path.isfile(arg):
@@ -874,8 +882,19 @@ class Osc(cmdln.Cmdln):
                 print >>sys.stderr, 'osc: error: %s is neither a project or a package directory' % arg
                 return 1
             
-
         pacs = findpacs(pacpaths)
+
+        lines = []
+        if prj:
+
+            if conf.config['do_package_tracking']:
+                for data in prj.pacs_unvers:
+                    lines.append(statfrmt('?', os.path.normpath(os.path.join(prj.dir, data))))
+                for data in prj.pacs_broken:
+                    if prj.get_state(data) == 'D':
+                        lines.append(statfrmt('D', os.path.normpath(os.path.join(prj.dir, data))))
+                    else:
+                        lines.append(statfrmt('!', os.path.normpath(os.path.join(prj.dir, data))))
 
         for p in pacs:
 
@@ -884,7 +903,11 @@ class Osc(cmdln.Cmdln):
                 p.todo = p.filenamelist + p.filenamelist_unvers
             p.todo.sort()
 
-            lines = []
+            if prj and conf.config['do_package_tracking']:
+                state = prj.get_state(p.name)
+                if state != None and (state != ' ' or opts.verbose):
+                    lines.append(statfrmt(state, os.path.normpath(os.path.join(prj.dir, p.name))))
+
             for filename in p.todo:
                 if filename in p.excluded:
                     continue
@@ -894,12 +917,12 @@ class Osc(cmdln.Cmdln):
                 elif s != ' ' or (s == ' ' and opts.verbose):
                     lines.append(statfrmt(s, pathjoin(p.dir, filename)))
 
-            # arrange the lines in order: unknown files first
-            # filenames are already sorted
-            lines = [line for line in lines if line[0] == '?'] \
-                  + [line for line in lines if line[0] != '?']
-            if lines:
-                print '\n'.join(lines)
+        # arrange the lines in order: unknown files first
+        # filenames are already sorted
+        lines = [line for line in lines if line[0] == '?'] \
+              + [line for line in lines if line[0] != '?']
+        if lines:
+            print '\n'.join(lines)
 
 
     def do_add(self, subcmd, opts, *args):
@@ -915,24 +938,40 @@ class Osc(cmdln.Cmdln):
             return 2
 
         filenames = parseargs(args)
+        #print filenames
+        addFiles(filenames)
 
-        for filename in filenames:
-            if not os.path.exists(filename):
-                print >>sys.stderr, "file '%s' does not exist" % filename
-                return 1
+    
+    def do_mkpac(self, subcmd, opts, *args):
+        """${cmd_name}: Create a new package under version control
 
-        pacs = findpacs(filenames)
+        usage:
+            osc mkpac new_package
+        ${cmd_option_list}
+        """
+        if len(args) != 1:
+            print >>sys.stderr, 'wrong number of arguments!'
+            sys.exit(1)
 
-        for pac in pacs:
-            for filename in pac.todo:
-                if filename in pac.excluded:
-                    continue
-                if filename in pac.filenamelist:
-                    print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
-                    continue
-
-                pac.addfile(filename)
-                print statfrmt('A', filename)
+        prj_dir, pac_dir = getPrjPacPaths(args[0])
+        if is_project_dir(prj_dir):
+            if not os.path.exists(args[0]):
+                prj = Project(prj_dir, False)
+                if prj.addPackage(pac_dir):
+                    os.mkdir(args[0])
+                    os.chdir(args[0])
+                    init_package_dir(prj.apiurl,
+                                     prj.name,
+                                     pac_dir, pac_dir, files=False)
+                    os.chdir(prj.absdir)
+                    print statfrmt('A', os.path.normpath(args[0]))
+            else:
+                print '\'%s\' already exists' % args[0]
+                sys.exit(1)
+        else:
+            print 'wrong number of arguments or ' \
+                  '\'%s\' is not a working copy' % prj_dir
+            sys.exit(1)
 
 
     def do_addremove(self, subcmd, opts, *args):
@@ -990,20 +1029,43 @@ class Osc(cmdln.Cmdln):
         ${cmd_usage}
         ${cmd_option_list}
         """
+        msg = ''
+        if opts.message:
+            msg = opts.message
+        elif opts.file:
+            try:
+                msg = open(opts.file).read()
+            except:
+                sys.exit('could not open file \'%s\'.' % opts.file)
 
         args = parseargs(args)
-        pacs = findpacs(args)
+        for arg in args:
+            if conf.config['do_package_tracking'] and is_project_dir(arg):
+                Project(arg).commit(msg=msg)
+                args.remove(arg)
 
-        for p in pacs:
-            msg = ''
-            if opts.message:
-                msg = opts.message
-            elif opts.file:
-                try:
-                    msg = open(opts.file).read()
-                except:
-                    sys.exit('could not open file \'%s\'.' % opts.file)
-            p.commit(msg)
+        pacs = findpacs(args)
+        if conf.config['do_package_tracking'] and len(pacs) > 0:
+            prj_paths = {}
+            single_paths = []
+            files = {}
+            # it is possible to commit packages from different projects at the same
+            # time: iterate over all pacs and put each pac to the right project in the dict
+            for pac in pacs:
+                path = os.path.normpath(os.path.join(pac.dir, os.pardir))
+                if is_project_dir(path):
+                    pac_path = os.path.basename(os.path.normpath(pac.absdir))
+                    prj_paths.setdefault(path, []).append(pac_path)
+                    files[pac_path] = pac.todo
+                else:
+                    single_paths.append(pac.dir)
+            for prj, packages in prj_paths.iteritems():
+                Project(prj).commit(tuple(packages), msg, files)
+            for pac in single_paths:
+                Package(pac).commit(msg)
+        else:
+            for p in pacs:
+                p.commit(msg)
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -1036,17 +1098,20 @@ class Osc(cmdln.Cmdln):
 
         for arg in args:
 
-            # when 'update' is run inside a project dir, it should...
             if is_project_dir(arg):
-
                 prj = Project(arg)
 
-                # (a) update all packages
-                args += prj.pacs_have
-
-                # (b) fetch new packages
-                prj.checkout_missing_pacs()
-                args.remove(arg)
+                if conf.config['do_package_tracking']:
+                    prj.update()
+                    args.remove(arg)
+                else:   
+                    # if not tracking package, and 'update' is run inside a project dir, 
+                    # it should do the following:
+                    # (a) update all packages
+                    args += prj.pacs_have
+                    # (b) fetch new packages
+                    prj.checkout_missing_pacs()
+                    args.remove(arg)
 
 
         pacs = findpacs(args)
@@ -1060,60 +1125,13 @@ class Osc(cmdln.Cmdln):
             rev = None
 
         for p in pacs:
-
             if len(pacs) > 1:
                 print 'Updating %s' % p.name
-            # save filelist and (modified) status before replacing the meta file
-            saved_filenames = p.filenamelist
-            saved_modifiedfiles = [ f for f in p.filenamelist if p.status(f) == 'M' ]
+            p.update(rev)
+                   
 
-            oldp = p
-            p.update_local_filesmeta(rev)
-            p = Package(p.dir)
-
-            # which files do no longer exist upstream?
-            disappeared = [ f for f in saved_filenames if f not in p.filenamelist ]
-                
-
-            for filename in saved_filenames:
-                if filename in disappeared:
-                    print statfrmt('D', filename)
-                    # keep file if it has local modifications
-                    if oldp.status(filename) == ' ':
-                        p.delete_localfile(filename)
-                    p.delete_storefile(filename)
-                    continue
-
-            for filename in p.filenamelist:
-
-                state = p.status(filename)
-                if state == 'M' and p.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
-                    # no merge necessary... local file is changed, but upstream isn't
-                    pass
-                elif state == 'M' and filename in saved_modifiedfiles:
-                    status_after_merge = p.mergefile(filename)
-                    print statfrmt(status_after_merge, filename)
-                elif state == 'M':
-                    p.updatefile(filename, rev)
-                    print statfrmt('U', filename)
-                elif state == '!':
-                    p.updatefile(filename, rev)
-                    print 'Restored \'%s\'' % filename
-                elif state == 'F':
-                    p.updatefile(filename, rev)
-                    print statfrmt('A', filename)
-                elif state == ' ':
-                    pass
-
-
-            p.update_local_pacmeta()
-
-            #print ljust(p.name, 45), 'At revision %s.' % p.rev
-            print 'At revision %s.' % p.rev
-                    
-
-
-            
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='forces removal of package')
     @cmdln.alias('rm')
     @cmdln.alias('del')
     @cmdln.alias('remove')
@@ -1131,21 +1149,38 @@ class Osc(cmdln.Cmdln):
             return 2
 
         args = parseargs(args)
+        # check if args contains a package which was removed by
+        # a non-osc command and mark it with the 'D'-state
+        for i in args:
+            if not os.path.exists(i):
+                prj_dir, pac_dir = getPrjPacPaths(i)
+                if is_project_dir(prj_dir):
+                    prj = Project(prj_dir, False)
+                    if i in prj.pacs_broken:
+                        if prj.get_state(i) != 'A':
+                            prj.set_state(pac_dir, 'D')
+                        else:
+                            prj.del_package_node(i)
+                        print statfrmt('D', getTransActPath(i))
+                        args.remove(i)
+                        prj.write_packages()
         pacs = findpacs(args)
 
         for p in pacs:
-
-            for filename in p.todo:
-                if filename not in p.filenamelist:
-                    sys.exit('\'%s\' is not under version control' % filename)
-                p.put_on_deletelist(filename)
-                p.write_deletelist()
-                try:
-                    os.unlink(os.path.join(p.dir, filename))
-                    os.unlink(os.path.join(p.storedir, filename))
-                except:
-                    pass
-                print statfrmt('D', filename)
+            if not p.todo:
+                prj_dir, pac_dir = getPrjPacPaths(p.absdir)
+                if conf.config['do_package_tracking'] and is_project_dir(prj_dir):
+                    prj = Project(prj_dir, False)
+                    prj.delPackage(p, opts.force)
+            else:
+                pathn = getTransActPath(p.dir)
+                for filename in p.todo:
+                    if filename not in p.filenamelist:
+                        sys.exit('\'%s\' is not under version control' % filename)
+                    p.put_on_deletelist(filename)
+                    p.write_deletelist()
+                    p.delete_source_file(filename)
+                    print statfrmt('D', os.path.join(pathn, filename))
 
 
     def do_resolved(self, subcmd, opts, *args):
@@ -1821,6 +1856,13 @@ class Osc(cmdln.Cmdln):
         """
         import glob
 
+        if opts.delete_old_files and conf.config['do_package_tracking']:
+            # IMHO the --delete-old-files option doesn't really fit into our
+            # package tracking strategy
+            print >>sys.stderr, '--delete-old-files is not supported anymore'
+            print >>sys.stderr, 'when do_package_tracking is enabled'
+            sys.exit(1)
+
         if '://' in srpm:
             print 'trying to fetch', srpm
             import urlgrabber
@@ -1832,13 +1874,16 @@ class Osc(cmdln.Cmdln):
         if opts.project:
             project_dir = opts.project
         else:
-            project_dir = os.getcwd()
+            project_dir = os.curdir
 
         if not is_project_dir(project_dir):
             print >>sys.stderr, 'project dir \'%s\' does not exist' % opts.project
             sys.exit(1)
         else:
-            project = store_read_project(project_dir)
+            if conf.config['do_package_tracking']:
+                project = Project(project_dir)
+            else:
+                project = store_read_project(project_dir)
             # act as if run with -A `cat $project_dir/.osc/_apiurl`
 	    # to get apiurl and user right
             apiurl = store_read_apiurl(project_dir)
@@ -1865,39 +1910,50 @@ class Osc(cmdln.Cmdln):
                                 'The automatic detection failed'
             sys.exit(1)
 
+        olddir = os.getcwd()
         if not os.path.exists(os.path.join(project_dir, pac)):
             os.mkdir(os.path.join(project_dir, pac))
             os.chdir(os.path.join(project_dir, pac))
-            data = meta_exists(metatype='pkg',
-                               path_args=(quote_plus(project), quote_plus(pac)),
-                               template_args=({
-                                   'name': pac,
-                                   'user': conf.config['user']}))
-            if data:
-                data = ET.fromstring(''.join(data))
-                data.find('title').text = title
-                data.find('description').text = ''.join(descr)
-                data = ET.tostring(data)
+            if conf.config['do_package_tracking']:
+                if project.addPackage(pac):
+                    init_package_dir(conf.config['apiurl'], project.name, pac, os.path.join(project.dir, pac), files=False)
+                else:
+                    sys.exit(1)
             else:
-                print >>sys.stderr, 'error - cannot get meta data'
-                sys.exit(1)
-            edit_meta(metatype='pkg',
-                      path_args=(quote_plus(project), quote_plus(pac)),
-                      data = data)
-            init_package_dir(conf.config['apiurl'], project, pac, os.path.join(project, pac))
+                data = meta_exists(metatype='pkg',
+                                   path_args=(quote_plus(project), quote_plus(pac)),
+                                   template_args=({
+                                       'name': pac,
+                                       'user': conf.config['user']}))
+                if data:
+                    data = ET.fromstring(''.join(data))
+                    data.find('title').text = title
+                    data.find('description').text = ''.join(descr)
+                    data = ET.tostring(data)
+                else:
+                    print >>sys.stderr, 'error - cannot get meta data'
+                    sys.exit(1)
+                edit_meta(metatype='pkg',
+                          path_args=(quote_plus(project), quote_plus(pac)),
+                          data = data)
+                init_package_dir(conf.config['apiurl'], project, pac, os.path.join(project, pac))
             unpack_srcrpm(srpm, os.getcwd())
             p = Package(os.getcwd())
             if len(p.filenamelist) == 0 and opts.commit:
-                # TODO: moving this into the Package class
                 print 'Adding files to working copy...'
-                self.do_add(None, None, *glob.glob('*'))
-                p.commit()
+                addFiles(glob.glob('*'))
+                if conf.config['do_package_tracking']:
+                    os.chdir(olddir)
+                    project.commit((pac, ))
+                else:
+                    p.update_datastructs()
+                    p.commit()
             elif opts.commit and opts.delete_old_files:
-                delete_server_files(conf.config['apiurl'], project, pac, p.filenamelist)
+                for file in p.filenamelist:
+                    p.delete_remote_source_file(file)
                 p.update_local_filesmeta()
-                # TODO: moving this into the Package class
                 print 'Adding files to working copy...'
-                self.do_add(None, None, *glob.glob('*'))
+                addFiles(glob.glob('*'))
                 p.update_datastructs()
                 p.commit()
             else:

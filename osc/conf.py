@@ -56,8 +56,10 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
 
              'http_debug': '0',
              'cookiejar': '~/.osc_cookiejar',
+             # disable project tracking by default
+             'do_package_tracking': '0',
 }
-boolean_opts = ['http_debug']
+boolean_opts = ['http_debug', 'do_package_tracking']
 
 new_conf_template = """
 [general]
