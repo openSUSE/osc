@@ -1276,7 +1276,7 @@ def http_request(method, url, data=None, file=None):
     # https://bugzilla.novell.com/show_bug.cgi?id=369176
     # Buildservice server sometimes sends broken replies
     # only prjconf requests (_config) can have empty replies (we hope)
-    if fd.headers['Content-Length'] == '0' and not fd.url.endswith('/_config'):
+    if False and fd.headers['Content-Length'] == '0' and not fd.url.endswith('/_config'):
         print 'DEBUG INFO'
         print 
         import time; print time.ctime()
