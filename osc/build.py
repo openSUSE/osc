@@ -258,9 +258,6 @@ def main(opts, argv):
             os.chmod(spec, 0644)
 
 
-     # make it possible to override configuration of the rc file
-     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
-
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
         val = os.getenv(var)
