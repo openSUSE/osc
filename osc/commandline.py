@@ -1482,6 +1482,8 @@ class Osc(cmdln.Cmdln):
                   help='build a package which does not exist on the server')
     @cmdln.option('', '--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
+    @cmdln.option('-d', '--debuginfo', action='store_true',
+                  help='also build debuginfo sub-packages')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 

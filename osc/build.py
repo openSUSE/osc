@@ -8,6 +8,7 @@
 
 
 import os
+import re
 import sys
 from tempfile import NamedTemporaryFile
 from osc.fetch import *
@@ -243,6 +244,22 @@ def main(opts, argv):
         print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
         return 1
 
+    if opts.debuginfo:
+        # make sure %debug_package is in the spec-file.
+        spec_text = open(spec).read()
+        if not re.search(r'(?m)^%debug_package', spec_text):
+            spec_text = re.sub(r'(?m)^(%prep)', 
+                r'# added by osc build -d\n%debug_package\n\n\1', 
+                spec_text, 1)
+            tmp_spec = NamedTemporaryFile(prefix = spec + '_', dir = '.', suffix = '.spec')
+            tmp_spec.write(spec_text)
+            tmp_spec.flush()
+            spec = tmp_spec.name
+            os.chmod(spec, 0644)
+
+
+     # make it possible to override configuration of the rc file
+     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 

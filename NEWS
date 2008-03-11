@@ -1,3 +1,6 @@
+jw:
+- add --debuginfo to osc build.
+
 since 0.99:
 
 - build:
