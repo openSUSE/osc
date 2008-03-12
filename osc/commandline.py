@@ -482,31 +482,6 @@ class Osc(cmdln.Cmdln):
         #self.do_help([None, 'meta'])
         return 2
 
-#    @cmdln.alias("createpac")
-#    def do_editpac(self, subcmd, opts, project, package):
-#        """${cmd_name}: Create package or edit package metadata
-#
-#        If the named package does not exist, it will be created.
-#
-#        ${cmd_usage}
-#        ${cmd_option_list}
-#        """
-#
-#        edit_meta(project, package)
-
-
-#    @cmdln.alias('createprj')
-#    def do_editprj(self, subcmd, opts, project):
-#        """${cmd_name}: Create project or edit project metadata
-#
-#        If the named project does not exist, it will be created.
-#
-#        ${cmd_usage}
-#        ${cmd_option_list}
-#        """
-#
-#        edit_meta(project, None)
-
 
     def do_linkpac(self, subcmd, opts, *args):
         """${cmd_name}: "Link" a package to another package
@@ -1889,7 +1864,7 @@ class Osc(cmdln.Cmdln):
             else:
                 project = store_read_project(project_dir)
             # act as if run with -A `cat $project_dir/.osc/_apiurl`
-	    # to get apiurl and user right
+            # to get apiurl and user right
             apiurl = store_read_apiurl(project_dir)
             conf.get_config(override_conffile = self.options.conffile,
                             override_http_debug = self.options.http_debug,
