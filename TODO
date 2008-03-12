@@ -37,6 +37,9 @@ NORMAL:
     - use http://code.google.com/p/iniparse/ instead of ConfigParser, with
       write capability, for the change
   - add switch to commit to change repository options, like to e.g. disable publishing?
+  - implement optional logging to .osc/log, which could be useful for debugging bugs like
+    the one where api.opensuse.org sends empty replies (a hard-to-catch one)
+
 
 MINOR: 
 
