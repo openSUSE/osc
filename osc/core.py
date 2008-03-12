@@ -1772,7 +1772,7 @@ def get_submit_request_list(apiurl, project, package):
     for root in collection.findall('request'):
         r = SubmitReq()
         r.read(root)
-        if r.state.name not in ['declined', 'deleted']:
+        if r.state.name not in ['accepted', 'declined', 'deleted']:
             requests.append(r)
 
     return requests

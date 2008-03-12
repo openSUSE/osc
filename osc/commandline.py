@@ -456,7 +456,9 @@ class Osc(cmdln.Cmdln):
 
         # accept
         elif cmd == 'accept':
-            print 'not implemented yet.'
+            r = change_submit_request_state(conf.config['apiurl'], 
+                    reqid, 'accepted', opts.message or '')
+            print r
 
 
     # editmeta and its aliases are all depracated
