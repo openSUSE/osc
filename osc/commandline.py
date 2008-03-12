@@ -356,27 +356,37 @@ class Osc(cmdln.Cmdln):
                   help='generate a diff')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('-r', '--revision', metavar='REV',
+                  help='for "create", specify a certain source revision ID (the md5 sum)')
     def do_submitreq(self, subcmd, opts, *args):
         """${cmd_name}: Handle requests to submit a package into another project
 
         For "create", the DESTPAC name is optional; the source packages' name
         will be used if DESTPAC is omitted.
+        With --message, a message can be attached.
+        With --revision, a revision MD5 of a package can be specified which is
+        to be submitted. The default is to request submission of the currently
+        checked in revision.
 
         "list" lists open requests attached to a project or package.
 
         "show" will show the request itself, and generate a diff for review, if
         used with the --diff option.
 
-        decline, accept:
-            Not implemented. Requires more intelligence.
+        "decline" will change the request state to "declined" and append a
+        message that you specify with the --message option.
+
+        "accept" will change the request state to "accepted" and will trigger
+        the actual submit process. That would normally be a server-side copy of
+        the source package to the target package.
 
 
-        usage: 
-            osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+        usage:
+            osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list PRJ [PKG]
             osc submitreq show [-d] ID
-            osc submitreq decline ID
-            osc submitreq accept ID
+            osc submitreq decline [-m TEXT] ID
+            osc submitreq accept [-m TEXT] ID
         ${cmd_option_list}
         """
 
@@ -426,7 +436,7 @@ class Osc(cmdln.Cmdln):
             result = create_submit_request(conf.config['apiurl'], 
                                           src_project, src_package,
                                           dst_project, dst_package,
-                                          opts.message)
+                                          opts.message, orev=opts.revision)
             print 'created request id', result
 
 
@@ -444,7 +454,7 @@ class Osc(cmdln.Cmdln):
             # fixme: will inevitably fail if the given target doesn't exist
             if opts.diff:
                 print pretty_diff(conf.config['apiurl'],
-                                  r.src_project, r.src_package, None,
+                                  r.src_project, r.src_package, r.src_md5,
                                   r.dst_project, r.dst_package, None)
 
 

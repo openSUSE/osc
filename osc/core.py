@@ -1037,6 +1037,7 @@ class SubmitReq:
         self.last_author = None
         self.src_project = None
         self.src_package = None
+        self.src_md5     = None
         self.dst_project = None
         self.dst_package = None
         self.descr       = None
@@ -1049,6 +1050,8 @@ class SubmitReq:
         n = root.find('merge').find('source')
         self.src_project = n.get('project')
         self.src_package = n.get('package')
+        try: self.src_md5 = n.get('rev')
+        except: pass
 
         # FIXME: the xml is not yet adjusted, 'submit' is still called 'merge'
         n = root.find('merge').find('target')
@@ -1090,7 +1093,11 @@ class SubmitReq:
     def __str__(self):
         s = """\
 Request to submit (id %s): 
+
     %s/%s  ->  %s/%s
+
+Source revision MD5:
+    %s
 
 Message:
     %s
@@ -1101,6 +1108,7 @@ State:   %-10s   %s %s
                self.src_package, 
                self.dst_project, 
                self.dst_package, 
+               self.src_md5 or 'not given',
                repr(self.descr) or '',
                self.state.name, 
                self.state.when, self.state.who)
@@ -1640,6 +1648,11 @@ def show_files_meta(apiurl, prj, pac, revision=None):
     return f.readlines()
 
 
+def show_upstream_srcmd5(apiurl, prj, pac):
+    m = show_files_meta(apiurl, prj, pac)
+    return ET.parse(StringIO(''.join(m))).getroot().get('srcmd5')
+
+
 def show_upstream_rev(apiurl, prj, pac):
     m = show_files_meta(apiurl, prj, pac)
     return ET.parse(StringIO(''.join(m))).getroot().get('rev')
@@ -1706,13 +1719,14 @@ def read_meta_from_spec(specfile, *args):
 def create_submit_request(apiurl, 
                          src_project, src_package, 
                          dst_project, dst_package,
-                         message):
+                         message, orev=None):
 
     import cgi
 
     r = SubmitReq()
     r.src_project = src_project
     r.src_package = src_package
+    r.src_md5     = orev or show_upstream_srcmd5(apiurl, src_project, src_package)
     r.dst_project = dst_project
     r.dst_package = dst_package
     r.descr = cgi.escape(message or '')
@@ -1721,7 +1735,7 @@ def create_submit_request(apiurl,
     xml = """\
 <request type="merge">
     <merge>
-        <source project="%s" package="%s" />
+        <source project="%s" package="%s" rev="%s"/>
         <target project="%s" package="%s" />
     </merge>
     <state name="new"/>
@@ -1729,6 +1743,7 @@ def create_submit_request(apiurl,
 </request>
 """ % (r.src_project, 
        r.src_package,
+       r.src_md5,
        r.dst_project, 
        r.dst_package,
        r.descr)
