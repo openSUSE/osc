@@ -264,8 +264,10 @@ def get_config(override_conffile = None,
     config['apiurl'] = config['scheme'] + '://' + config['apisrv']
 
     # XXX unless config['user'] goes away (and is replaced with a handy function, or 
-    # config becomes an object, even better), set the global 'user' here as well:
-    config['user'] = config['auth_dict'][config['apisrv']]['user']
+    # config becomes an object, even better), set the global 'user' here as well,
+    # provided that there _are_ credentials for the chosen apisrv:
+    if config['apisrv'] in config['auth_dict'].keys():
+        config['user'] = config['auth_dict'][config['apisrv']]['user']
 
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
     init_basicauth(config)
