@@ -1261,7 +1261,7 @@ class Osc(cmdln.Cmdln):
                 
     @cmdln.option('-l', '--legend', action='store_true',
                         help='show the legend')
-    @cmdln.option('--csv', action='store_true',
+    @cmdln.option('-c', '--csv', action='store_true',
                         help='csv output')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results

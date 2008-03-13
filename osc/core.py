@@ -2402,10 +2402,10 @@ def get_prj_results(apiurl, prj, show_legend=False, csv=False):
     if csv:
         # TODO: option to disable the table header
         row = ['_'] + ['/'.join(tg) for tg in targets]
-        r.append(','.join(row))
+        r.append(';'.join(row))
         for pac in pacs:
             row = [pac] + [status[pac][tg] for tg in targets]
-            r.append(','.join(row))
+            r.append(';'.join(row))
         return r
 
     # human readable output
