@@ -1428,12 +1428,12 @@ def meta_get_filelist(apiurl, prj, package, verbose=False):
     root = ET.parse(f).getroot()
 
     if not verbose:
-        return [ node.get('name') for node in root ]
+        return [ node.get('name') for node in root.findall('entry') ]
 
     else:
         l = []
         rev = int(root.get('rev'))
-        for node in root:
+        for node in root.findall('entry'):
             f = File(node.get('name'), 
                      node.get('md5'), 
                      int(node.get('size')), 
