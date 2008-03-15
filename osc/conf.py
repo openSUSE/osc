@@ -112,6 +112,21 @@ def parse_apisrv_url(scheme, apisrv):
     else:
         return scheme, apisrv
 
+def get_apiurl_usr(apiurl):
+    """
+    returns the user for this host - if this host does not exist in the
+    configfile the default user is returned.
+    """
+    import sys
+    scheme, apisrv = parse_apisrv_url(None, apiurl)
+    cp = get_configParser()
+    try:
+        return cp.get(apisrv, 'user')
+    except ConfigParser.NoSectionError:
+        print >>sys.stderr, 'section [\'%s\'] does not exist - using default user: \'%s\'' \
+            % (apisrv, config['user'])
+    return config['user']
+
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
 
@@ -160,6 +175,21 @@ def init_basicauth(config):
     # combination for urls for which arg2 (apisrv) is a super-url
     for host, auth in config['auth_dict'].iteritems():
         authhandler.add_password(None, host, auth['user'], auth['pass'])
+
+
+def get_configParser(conffile=None, force_read=False):
+    """
+    Returns an ConfigParser() object. After its first invocation the
+    ConfigParser object is stored in a method attribute and this attribute
+    is returned unless you pass force_read=True.
+    """
+    import os
+    conffile = conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
+    conffile = os.path.expanduser(conffile)
+    if force_read or not get_configParser.__dict__.has_key('cp'):
+        get_configParser.cp = ConfigParser.SafeConfigParser(DEFAULTS)
+        get_configParser.cp.read(conffile)
+    return get_configParser.cp
 
 
 def get_config(override_conffile = None, 
@@ -213,8 +243,7 @@ def get_config(override_conffile = None,
 
     # okay, we made sure that .oscrc exists
 
-    cp = ConfigParser.SafeConfigParser(DEFAULTS)
-    cp.read(conffile)
+    cp = get_configParser(conffile)
 
     if not cp.has_section('general'):
         # FIXME: it might be sufficient to just assume defaults?

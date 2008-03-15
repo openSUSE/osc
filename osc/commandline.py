@@ -939,26 +939,7 @@ class Osc(cmdln.Cmdln):
         if len(args) != 1:
             print >>sys.stderr, 'wrong number of arguments!'
             sys.exit(1)
-
-        prj_dir, pac_dir = getPrjPacPaths(args[0])
-        if is_project_dir(prj_dir):
-            if not os.path.exists(args[0]):
-                prj = Project(prj_dir, False)
-                if prj.addPackage(pac_dir):
-                    os.mkdir(args[0])
-                    os.chdir(args[0])
-                    init_package_dir(prj.apiurl,
-                                     prj.name,
-                                     pac_dir, pac_dir, files=False)
-                    os.chdir(prj.absdir)
-                    print statfrmt('A', os.path.normpath(args[0]))
-            else:
-                print '\'%s\' already exists' % args[0]
-                sys.exit(1)
-        else:
-            print 'wrong number of arguments or ' \
-                  '\'%s\' is not a working copy' % prj_dir
-            sys.exit(1)
+        createPackageDir(args[0])
 
 
     def do_addremove(self, subcmd, opts, *args):
@@ -1859,6 +1840,9 @@ class Osc(cmdln.Cmdln):
             srpm = os.path.basename(srpm)
 
         srpm = os.path.abspath(srpm)
+        if not os.path.isfile(srpm):
+            print >>sys.stderr, 'file \'%s\' does not exist' % srpm
+            sys.exit(1)
 
         if opts.project:
             project_dir = opts.project
@@ -1866,19 +1850,13 @@ class Osc(cmdln.Cmdln):
             project_dir = os.curdir
 
         if not is_project_dir(project_dir):
-            print >>sys.stderr, 'project dir \'%s\' does not exist' % opts.project
+            print >>sys.stderr, 'project dir \'%s\' does not exist' % project_dir
             sys.exit(1)
         else:
             if conf.config['do_package_tracking']:
                 project = Project(project_dir)
             else:
                 project = store_read_project(project_dir)
-            # act as if run with -A `cat $project_dir/.osc/_apiurl`
-            # to get apiurl and user right
-            apiurl = store_read_apiurl(project_dir)
-            conf.get_config(override_conffile = self.options.conffile,
-                            override_http_debug = self.options.http_debug,
-                            override_apisrv = apiurl)
 
         rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
         if rpm_data:
@@ -1900,20 +1878,20 @@ class Osc(cmdln.Cmdln):
             sys.exit(1)
 
         olddir = os.getcwd()
-        if not os.path.exists(os.path.join(project_dir, pac)):
-            os.mkdir(os.path.join(project_dir, pac))
-            os.chdir(os.path.join(project_dir, pac))
-            if conf.config['do_package_tracking']:
-                if project.addPackage(pac):
-                    init_package_dir(conf.config['apiurl'], project.name, pac, os.path.join(project.dir, pac), files=False)
-                else:
-                    sys.exit(1)
+        if conf.config['do_package_tracking']:
+            if createPackageDir(os.path.join(project.dir, pac), project):
+                os.chdir(os.path.join(project.dir, pac))
             else:
+                sys.exit(1)
+        else:
+            if not os.path.exists(os.path.join(project_dir, pac)):
+                apiurl = store_read_apiurl(project_dir)
+                user = conf.get_apiurl_usr(apiurl)
                 data = meta_exists(metatype='pkg',
                                    path_args=(quote_plus(project), quote_plus(pac)),
                                    template_args=({
                                        'name': pac,
-                                       'user': conf.config['user']}))
+                                       'user': user}), apiurl=apiurl)
                 if data:
                     data = ET.fromstring(''.join(data))
                     data.find('title').text = title
@@ -1924,34 +1902,37 @@ class Osc(cmdln.Cmdln):
                     sys.exit(1)
                 edit_meta(metatype='pkg',
                           path_args=(quote_plus(project), quote_plus(pac)),
-                          data = data)
-                init_package_dir(conf.config['apiurl'], project, pac, os.path.join(project, pac))
-            unpack_srcrpm(srpm, os.getcwd())
-            p = Package(os.getcwd())
-            if len(p.filenamelist) == 0 and opts.commit:
-                print 'Adding files to working copy...'
-                addFiles(glob.glob('*'))
-                if conf.config['do_package_tracking']:
-                    os.chdir(olddir)
-                    project.commit((pac, ))
-                else:
-                    p.update_datastructs()
-                    p.commit()
-            elif opts.commit and opts.delete_old_files:
-                for file in p.filenamelist:
-                    p.delete_remote_source_file(file)
-                p.update_local_filesmeta()
-                print 'Adding files to working copy...'
-                addFiles(glob.glob('*'))
+                          data = data, apiurl=apiurl)
+                os.mkdir(os.path.join(project_dir, pac))
+                os.chdir(os.path.join(project_dir, pac))
+                init_package_dir(apiurl, project, pac, os.path.join(project, pac))
+            else:
+                print >>sys.stderr, 'error - local package already exists'
+                sys.exit(1)
+
+        unpack_srcrpm(srpm, os.getcwd())
+        p = Package(os.getcwd())
+        if len(p.filenamelist) == 0 and opts.commit:
+            print 'Adding files to working copy...'
+            addFiles(glob.glob('*'))
+            if conf.config['do_package_tracking']:
+                os.chdir(olddir)
+                project.commit((pac, ))
+            else:
                 p.update_datastructs()
                 p.commit()
-            else:
-                print 'No files were committed to the server. Please ' \
-                      'commit them manually.'
-                print 'Package \'%s\' only imported locally' % pac
-                sys.exit(1)
+        elif opts.commit and opts.delete_old_files:
+            for file in p.filenamelist:
+                p.delete_remote_source_file(file)
+            p.update_local_filesmeta()
+            print 'Adding files to working copy...'
+            addFiles(glob.glob('*'))
+            p.update_datastructs()
+            p.commit()
         else:
-            print >>sys.stderr, 'error - local package already exists'
+            print 'No files were committed to the server. Please ' \
+                  'commit them manually.'
+            print 'Package \'%s\' only imported locally' % pac
             sys.exit(1)
 
         print 'Package \'%s\' imported successfully' % pac

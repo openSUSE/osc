@@ -420,11 +420,12 @@ class Project:
         if pac in self.pacs_available:
             print 'package \'%s\' already exists' % pac
         else:
+            user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
                       path_args=(quote_plus(self.name), quote_plus(pac)),
 		      template_args=({
 			      'name': pac,
-			      'user': conf.config['user']}),
+			      'user': user}),
 		      apiurl=self.apiurl)
             # display the correct dir when sending the changes
             olddir = os.getcwd()
@@ -485,11 +486,12 @@ class Project:
             p.todo = files
             p.commit(msg)
         else:
+            user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
                       path_args=(quote_plus(project), quote_plus(package)),
                       template_args=({
 			      'name': pac,
-			      'user': conf.config['user']}),
+			      'user': user}),
 		      apiurl=apiurl)
             try:
                 p = Package(pac_path)
@@ -651,7 +653,7 @@ class Package:
         query = []
         query.append('cmd=commit')
         query.append('rev=upload')
-        query.append('user=%s' % conf.config['user'])
+        query.append('user=%s' % conf.get_apiurl_usr(self.apiurl))
         query.append('comment=%s' % quote_plus(msg))
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
 
@@ -3032,6 +3034,32 @@ def delMaintainer(apiurl, prj, pac, user):
             print "user \'%s\' not found in \'%s\'" % (user, pac or prj)
     else:
         print "an error occured"
+
+def createPackageDir(pathname, prj_obj=None):
+    """
+    create and initialize a new package dir in the given project.
+    prj_obj can be a Project() instance.
+    """
+    prj_dir, pac_dir = getPrjPacPaths(pathname)
+    if is_project_dir(prj_dir):
+        if not os.path.exists(pac_dir):
+            prj = prj_obj or Project(prj_dir, False)
+            if prj.addPackage(pac_dir):
+                os.mkdir(pathname)
+                os.chdir(pathname)
+                init_package_dir(prj.apiurl,
+                                 prj.name,
+                                 pac_dir, pac_dir, files=False)
+                os.chdir(prj.absdir)
+                print statfrmt('A', os.path.normpath(pathname))
+                return True
+            else:
+                print '\'%s\' already exists' % pathname
+                return False
+    else:
+        print '\'%s\' is not a working copy' % prj_dir
+        return False
+
 
 def addFiles(filenames):
     for filename in filenames:
