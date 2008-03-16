@@ -1944,6 +1944,9 @@ class Osc(cmdln.Cmdln):
                         help='specify string data for e.g. POST')
     @cmdln.option('-f', '--file', default=None, metavar='FILE',
                         help='specify filename for e.g. PUT or DELETE')
+    @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING', 
+                        nargs=2, action='append', dest='headers',
+                        help='add the specified header to the request')
     def do_req(self, subcmd, opts, url):
         """${cmd_name}: Issue an arbitrary request to the API
 
@@ -1970,11 +1973,15 @@ class Osc(cmdln.Cmdln):
                 url = '/' + url
             url = conf.config['apiurl'] + url
 
+        if opts.headers:
+            opts.headers = dict(opts.headers)
+
         try:
             r = http_request(opts.method, 
                              url, 
                              data=opts.data, 
-                             file=opts.file) 
+                             file=opts.file,
+                             headers=opts.headers) 
 
         except urllib2.HTTPError, e:
             if e.code in [400, 404]:

@@ -1243,7 +1243,7 @@ def makeurl(baseurl, l, query=[]):
     return urlunsplit((scheme, netloc, '/'.join(l), '&'.join(query), ''))               
 
 
-def http_request(method, url, data=None, file=None):
+def http_request(method, url, headers={}, data=None, file=None):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
 
@@ -1265,6 +1265,11 @@ def http_request(method, url, data=None, file=None):
     # since we change the request into PUT, we also need to adjust the content type header
     if method == 'PUT':
         req.add_header('Content-Type', 'application/octet-stream')
+
+    if type(headers) == type({}):
+        for i in headers.keys():
+            print headers[i]
+            req.add_header(i, headers[i])
 
     if file and not data:
         size = os.path.getsize(file)
