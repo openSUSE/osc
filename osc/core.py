@@ -1273,7 +1273,15 @@ def http_request(method, url, data=None, file=None):
         else:
             import mmap
             filefd = open(file, 'r+')
-            data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
+            try:
+                data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
+            except EnvironmentError, e:
+                if e.errno == 19:
+                    sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
+                             '\non a filesystem which does not support this.' % (e, file))
+                else:
+                    raise
+
 
     fd = urllib2.urlopen(req, data=data)
 
