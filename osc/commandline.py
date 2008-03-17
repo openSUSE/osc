@@ -565,6 +565,8 @@ class Osc(cmdln.Cmdln):
             return 1
         aggregate_pac(src_project, src_package, dst_project, dst_package)
 
+    @cmdln.option('-s', '--server-side', action='store_true',
+                        help='do a (faster) server-side copy')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
     def do_copypac(self, subcmd, opts, *args):
@@ -607,8 +609,16 @@ class Osc(cmdln.Cmdln):
            src_apiurl == dst_apiurl:
             print >>sys.stderr, 'Error: source and destination are the same.'
             return 1
-        copy_pac(src_apiurl, src_project, src_package, 
-                 dst_apiurl, dst_project, dst_package)
+
+        if opts.server_side and src_apiurl != dst_apiurl:
+            print >>sys.stderr, 'Error: a server-side copy can\'t be done to ' \
+                                'copy from one API host to another.'
+            return 1
+
+        r = copy_pac(src_apiurl, src_project, src_package, 
+                     dst_apiurl, dst_project, dst_package,
+                     server_side=opts.server_side)
+        print r
 
 
     def do_deletepac(self, subcmd, opts, project, package):

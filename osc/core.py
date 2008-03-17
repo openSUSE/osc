@@ -2246,12 +2246,16 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
     print 'Done.'
 
 def copy_pac(src_apiurl, src_project, src_package, 
-             dst_apiurl, dst_project, dst_package):
+             dst_apiurl, dst_project, dst_package,
+             server_side = False):
     """
-    create a copy of a package
-    """
+    Create a copy of a package.
 
-    import tempfile
+    Copying can be done by downloading the files from one package and commit
+    them into the other by uploading them (client-side copy) --
+    or by the server, in a single api call.
+
+    """
 
     src_meta = show_package_meta(src_apiurl, src_project, src_package)
     src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
@@ -2260,18 +2264,26 @@ def copy_pac(src_apiurl, src_project, src_package,
     u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
     http_PUT(u, data=src_meta)
 
-    # copy one file after the other
     print 'Copying files...'
-    tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir='/tmp')
-    os.chdir(tmpdir)
-    for n in meta_get_filelist(src_apiurl, src_project, src_package):
-        print '  ', n
-        get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n)
-        u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)])
-        http_PUT(u, file = n)
-        os.unlink(n)
-    print 'Done.'
-    os.rmdir(tmpdir)
+    if server_side:
+        query = {'cmd': 'copy', 'oproject': src_project, 'opackage': src_package }
+        u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
+        f = http_POST(u)
+        return f.read()
+
+    else:
+        # copy one file after the other
+        import tempfile
+        tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir='/tmp')
+        os.chdir(tmpdir)
+        for n in meta_get_filelist(src_apiurl, src_project, src_package):
+            print '  ', n
+            get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n)
+            u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)])
+            http_PUT(u, file = n)
+            os.unlink(n)
+        os.rmdir(tmpdir)
+        return 'Done.'
 
 
 def delete_package(apiurl, prj, pac):
