@@ -3089,8 +3089,10 @@ def createPackageDir(pathname, prj_obj=None):
                 print statfrmt('A', os.path.normpath(pathname))
                 return True
             else:
-                print '\'%s\' already exists' % pathname
                 return False
+        else:
+            print '\'%s\' already exists' % pathname
+            return False
     else:
         print '\'%s\' is not a working copy' % prj_dir
         return False

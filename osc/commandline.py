@@ -946,6 +946,10 @@ class Osc(cmdln.Cmdln):
             osc mkpac new_package
         ${cmd_option_list}
         """
+        if not conf.config['do_package_tracking']:
+            print >>sys.stderr, "enable \'do_package_tracking\' to use this feature"
+            sys.exit(1)
+
         if len(args) != 1:
             print >>sys.stderr, 'wrong number of arguments!'
             sys.exit(1)
