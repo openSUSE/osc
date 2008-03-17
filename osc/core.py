@@ -10,7 +10,7 @@ __version__ = '0.99'
 import os
 import sys
 import urllib2
-from urllib import pathname2url, quote_plus
+from urllib import pathname2url, quote_plus, urlencode
 from urlparse import urlsplit, urlunsplit
 from cStringIO import StringIO
 import shutil
@@ -1235,12 +1235,23 @@ def pathjoin(a, *p):
 
 
 def makeurl(baseurl, l, query=[]):
-    """given a list of path compoments, construct a complete URL"""
+    """Given a list of path compoments, construct a complete URL.
+
+    Optional parameters for a query string can be given as a list, as a
+    dictionary, or as an already assembled string.
+    In case of a dictionary, the parameters will be urlencoded by this
+    function. In case of a list not -- this is to be backwards compatible.
+    """
 
     #print 'makeurl:', baseurl, l, query
 
+    if type(query) == type(list()):
+        query = '&'.join(query)
+    elif type(query) == type(dict()):
+        query = urlencode(query)
+
     scheme, netloc = urlsplit(baseurl)[0:2]
-    return urlunsplit((scheme, netloc, '/'.join(l), '&'.join(query), ''))               
+    return urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
 
 
 def http_request(method, url, headers={}, data=None, file=None):
