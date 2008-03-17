@@ -1419,22 +1419,26 @@ class Osc(cmdln.Cmdln):
 
 
     def do_repos(self, subcmd, opts, *args):
-        """${cmd_name}: Shows the repositories which are defined for a package
+        """${cmd_name}: Shows the repositories which are defined for a package or a project
 
-        ARG, if specified, is a package working copy.
+        ARG, if specified, is a package working copy or a project dir.
 
-        examples: 1. osc repos                   # package = current dir
+        examples: 1. osc repos                   # project/package = current dir
                   2. osc repos <packagedir>
+                  3. osc repos <projectdir>
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
         args = parseargs(args)
-        pacs = findpacs(args)
+        for arg in args:
+            if not is_project_dir(arg) and not is_package_dir(arg):
+                print >>sys.stderr, '\'%s\' is neither a package dir nor a project dir' % arg
+                args.remove(arg)
 
-        for p in pacs:
-            for platform in get_repos_of_project(p.apiurl, p.prjname):
+        for arg in args:
+            for platform in get_repos_of_project(store_read_apiurl(arg), store_read_project(arg)):
                 print platform
 
 
