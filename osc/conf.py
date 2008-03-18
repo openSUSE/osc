@@ -115,17 +115,16 @@ def parse_apisrv_url(scheme, apisrv):
 def get_apiurl_usr(apiurl):
     """
     returns the user for this host - if this host does not exist in the
-    configfile the default user is returned.
+    internal auth_dict the default user is returned.
     """
     import sys
     scheme, apisrv = parse_apisrv_url(None, apiurl)
-    cp = get_configParser()
-    try:
-        return cp.get(apisrv, 'user')
-    except ConfigParser.NoSectionError:
+    if config['auth_dict'].has_key(apisrv):
+        return config['auth_dict'][apisrv]['user']
+    else:
         print >>sys.stderr, 'section [\'%s\'] does not exist - using default user: \'%s\'' \
             % (apisrv, config['user'])
-    return config['user']
+        return config['user']
 
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
