@@ -453,9 +453,12 @@ class Osc(cmdln.Cmdln):
             print r
             # fixme: will inevitably fail if the given target doesn't exist
             if opts.diff:
-                print pretty_diff(conf.config['apiurl'],
-                                  r.src_project, r.src_package, r.src_md5,
-                                  r.dst_project, r.dst_package, None)
+                try:
+                    print pretty_diff(conf.config['apiurl'],
+                                      r.src_project, r.src_package, r.src_md5,
+                                      r.dst_project, r.dst_package, None)
+                except urllib2.HTTPError, e:
+                    print >>sys.stderr, 'Diff not possible:', e
 
 
         # decline
