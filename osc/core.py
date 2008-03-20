@@ -1048,15 +1048,13 @@ class SubmitReq:
     def read(self, root):
         self.reqid = root.get('id')
 
-        # FIXME: the xml is not yet adjusted, 'submit' is still called 'merge'
-        n = root.find('merge').find('source')
+        n = root.find('submit').find('source')
         self.src_project = n.get('project')
         self.src_package = n.get('package')
         try: self.src_md5 = n.get('rev')
         except: pass
 
-        # FIXME: the xml is not yet adjusted, 'submit' is still called 'merge'
-        n = root.find('merge').find('target')
+        n = root.find('submit').find('target')
         self.dst_project = n.get('project')
         self.dst_package = n.get('package')
 
@@ -1757,13 +1755,12 @@ def create_submit_request(apiurl,
     r.dst_package = dst_package
     r.descr = cgi.escape(message or '')
 
-    # FIXME: merge is still called merge
     xml = """\
-<request type="merge">
-    <merge>
+<request type="submit">
+    <submit>
         <source project="%s" package="%s" rev="%s"/>
         <target project="%s" package="%s" />
-    </merge>
+    </submit>
     <state name="new"/>
     <description>%s</description>
 </request>
@@ -1800,10 +1797,9 @@ def change_submit_request_state(apiurl, reqid, newstate, message=''):
 
 
 def get_submit_request_list(apiurl, project, package):
-    # FIXME: the api path is not yet renamed, still called "merge"
-    match = 'merge/target/@project=\'%s\'' % quote_plus(project)
+    match = 'submit/target/@project=\'%s\'' % quote_plus(project)
     if package:
-        match += '%20and%20' + 'merge/target/@package=\'%s\'' % quote_plus(package)
+        match += '%20and%20' + 'submit/target/@package=\'%s\'' % quote_plus(package)
     
     u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
     f = http_GET(u)
