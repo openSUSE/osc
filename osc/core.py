@@ -130,8 +130,9 @@ new_user_template = """\
 info_templ = """\
 Path: %s
 API URL: %s
-Repository UUID: %s
+srcmd5: %s
 Revision: %s
+Link info: %s
 """
 
 new_pattern_template = """\
@@ -164,14 +165,15 @@ class File:
 
 
 class Linkinfo:
-    """container class for linkinfo metadata (which is part of the xml
-    representing a directory
+    """linkinfo metadata (which is part of the xml representing a directory
     """
     def __init__(self):
         """creates an empty linkinfo instance"""
         self.project = None
         self.package = None
         self.xsrcmd5 = None
+        self.lsrcmd5 = None
+        self.srcmd5 = None
 
     def read(self, linkinfo_node):
         """read in the linkinfo metadata from the <linkinfo> element passed as
@@ -183,19 +185,29 @@ class Linkinfo:
         self.project = linkinfo_node.get('project')
         self.package = linkinfo_node.get('package')
         self.xsrcmd5 = linkinfo_node.get('xsrcmd5')
+        self.lsrcmd5 = linkinfo_node.get('lsrcmd5')
+        self.srcmd5  = linkinfo_node.get('srcmd5')
 
     def islink(self):
         """returns True if the linkinfo is not empty, otherwise False"""
-        if self.xsrcmd5:
+        if self.xsrcmd5 or self.lsrcmd5:
             return True
-        else:
-            return False
+        return False
+
+    def isexpanded(self):
+        """returns True if the package is an expanded link"""
+        if self.lsrcmd5 and not self.xsrcmd5:
+            return True
+        return False
 
     def __str__(self):
         """return an informatory string representation"""
-        if self.islink():
-            return 'project: %s, package: %s, srcmd5: %s' \
+        if self.islink() and not self.isexpanded():
+            return 'project %s, package %s, xsrcmd5 %s' \
                     % (self.project, self.package, self.xsrcmd5)
+        elif self.islink() and self.isexpanded():
+            return 'expanded link to project %s, package %s, srcmd5 %s, lsrcmd5 %s' \
+                    % (self.project, self.package, self.srcmd5, self.lsrcmd5)
         else:
             return 'None'
 
@@ -568,7 +580,8 @@ class Package:
         self.todo_delete = []
 
     def info(self):
-        return info_templ % (self.dir, self.apiurl, self.srcmd5, self.rev)
+        r = info_templ % (self.dir, self.apiurl, self.srcmd5, self.rev, self.linkinfo)
+        return r
 
     def addfile(self, n):
         st = os.stat(os.path.join(self.dir, n))
@@ -822,10 +835,15 @@ class Package:
                                      if i not in self.filenamelist ]
 
     def islink(self):
-        """tells us if the package has 'linkinfo'.  
+        """tells us if the package is a link (has 'linkinfo').  
         A package with linkinfo is a package which links to another package.
         Returns True if the package is a link, otherwise False."""
         return self.linkinfo.islink()
+
+    def isexpanded(self):
+        """tells us if the package is a link which is expanded.  
+        Returns True if the package is expanded, otherwise False."""
+        return self.linkinfo.isexpanded()
 
     def update_local_pacmeta(self):
         """
