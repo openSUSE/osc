@@ -163,6 +163,43 @@ class File:
         return self.name
 
 
+class Linkinfo:
+    """container class for linkinfo metadata (which is part of the xml
+    representing a directory
+    """
+    def __init__(self):
+        """creates an empty linkinfo instance"""
+        self.project = None
+        self.package = None
+        self.xsrcmd5 = None
+
+    def read(self, linkinfo_node):
+        """read in the linkinfo metadata from the <linkinfo> element passed as
+        elementtree node.
+        If the passed element is None, the method does nothing.
+        """
+        if linkinfo_node == None:
+            return
+        self.project = linkinfo_node.get('project')
+        self.package = linkinfo_node.get('package')
+        self.xsrcmd5 = linkinfo_node.get('xsrcmd5')
+
+    def islink(self):
+        """returns True if the linkinfo is not empty, otherwise False"""
+        if self.xsrcmd5:
+            return True
+        else:
+            return False
+
+    def __str__(self):
+        """return an informatory string representation"""
+        if self.islink():
+            return 'project: %s, package: %s, srcmd5: %s' \
+                    % (self.project, self.package, self.xsrcmd5)
+        else:
+            return 'None'
+
+
 class Project:
     """represent a project directory, holding packages"""
     def __init__(self, dir, getPackageList=True):
@@ -756,6 +793,9 @@ class Package:
         self.rev = files_tree_root.get('rev')
         self.srcmd5 = files_tree_root.get('srcmd5')
 
+        self.linkinfo = Linkinfo()
+        self.linkinfo.read(files_tree_root.find('linkinfo'))
+
         self.filenamelist = []
         self.filelist = []
         for node in files_tree_root.findall('entry'):
@@ -780,6 +820,12 @@ class Package:
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
                                      if i not in self.excluded
                                      if i not in self.filenamelist ]
+
+    def islink(self):
+        """tells us if the package has 'linkinfo'.  
+        A package with linkinfo is a package which links to another package.
+        Returns True if the package is a link, otherwise False."""
+        return self.linkinfo.islink()
 
     def update_local_pacmeta(self):
         """
@@ -889,12 +935,14 @@ name: %s
 prjname: %s
 workingdir: %s
 localfilelist: %s
+linkinfo: %s
 rev: %s
 'todo' files: %s
 """ % (self.name, 
         self.prjname, 
         self.dir, 
         '\n               '.join(self.filenamelist), 
+        self.linkinfo, 
         self.rev, 
         self.todo)
 
