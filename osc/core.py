@@ -2778,6 +2778,9 @@ def parseRevisionOption(string):
         else:
             if string.isdigit():
                 return string, None
+            elif string.isalnum() and len(string) == 32:
+                # could be an md5sum
+                return string, None
             else:
                 print >>sys.stderr, 'your revision \'%s\' will be ignored' % string
                 return None, None
@@ -2786,8 +2789,12 @@ def parseRevisionOption(string):
 
 def checkRevision(prj, pac, revision, apiurl=None):
     """
-    check if revision is valid revision
+    check if revision is valid revision, i.e. it is not 
+    larger than the upstream revision id
     """
+    if len(revision) == 32:
+        # there isn't a way to check this kind of revision for validity
+        return True
     if not apiurl:
         apiurl = conf.config['apiurl']
     try:
