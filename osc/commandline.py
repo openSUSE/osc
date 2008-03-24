@@ -770,12 +770,22 @@ class Osc(cmdln.Cmdln):
                         help='checkout the specified revision. '
                              'NOTE: if you checkout the complete project '
                              'this option is ignored!')
+    @cmdln.option('-e', '--expand-link', action='store_true',
+                        help='if a package is a link, check out the expanded sources')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: Check out content from the repository
         
         Check out content from the repository server, creating a local working
         copy.
+
+        When checking out a single package, the option --revision can be used
+        to specify a revions of the package to be checked out.
+
+        When --expand-link is used with source link packages, the expanded
+        sources will be checked out. Without this option, the _link file and
+        patches will be checked out.
+        
 
         examples:
             osc co Apache                    # entire project
@@ -805,7 +815,8 @@ class Osc(cmdln.Cmdln):
             get_source_file(conf.config['apiurl'], project, package, filename, revision=rev)
 
         elif package:
-            checkout_package(conf.config['apiurl'], project, package, rev)
+            checkout_package(conf.config['apiurl'], project, package, 
+                             rev, expand_link=opts.expand_link)
 
         elif project:
             if not os.path.exists(project):
@@ -820,7 +831,8 @@ class Osc(cmdln.Cmdln):
                 sys.exit(1)
             # all packages
             for package in meta_get_packagelist(conf.config['apiurl'], project):
-                checkout_package(conf.config['apiurl'], project, package)
+                checkout_package(conf.config['apiurl'], project, package, 
+                                 expand_link=opts.expand_link)
         else:
             print >>sys.stderr, 'Missing argument.'
             self.do_help([None, 'checkout'])
@@ -1053,10 +1065,14 @@ class Osc(cmdln.Cmdln):
                 p.commit(msg)
 
 
-    @cmdln.option('-r', '--revision', metavar='rev',
+    @cmdln.option('-r', '--revision', metavar='REV',
                         help='update to specified revision (this option will be ignored '
                              'if you are going to update the complete project or more than '
                              'one package)')
+    @cmdln.option('-u', '--unexpand-link', action='store_true',
+                        help='if a package is an expanded link, update to the raw _link file')
+    @cmdln.option('-e', '--expand-link', action='store_true',
+                        help='if a package is a link, update to the expanded sources')
     @cmdln.alias('up')
     def do_update(self, subcmd, opts, *args):
         """${cmd_name}: Update a working copy
@@ -1075,6 +1091,11 @@ class Osc(cmdln.Cmdln):
         2. osc up PAC
                 Update the packages specified by the path argument(s)
 
+        When --expand-link is used with source link packages, the expanded
+        sources will be checked out. Without this option, the _link file and
+        patches will be checked out. The option --unexpand-link can be used to
+        switch back to the "raw" source with a _link file plus patch(es).
+
         ${cmd_usage}
         ${cmd_option_list}
         """
@@ -1087,7 +1108,8 @@ class Osc(cmdln.Cmdln):
                 prj = Project(arg)
 
                 if conf.config['do_package_tracking']:
-                    prj.update()
+                    prj.update(expand_link=opts.expand_link, 
+                               unexpand_link=opts.unexpand_link)
                     args.remove(arg)
                 else:   
                     # if not tracking package, and 'update' is run inside a project dir, 
@@ -1101,6 +1123,12 @@ class Osc(cmdln.Cmdln):
 
         pacs = findpacs(args)
 
+        if (opts.expand_link and opts.unexpand_link) \
+            or (opts.expand_link and opts.revision) \
+            or (opts.unexpand_link and opts.revision):
+            sys.exit('The options --expand-link, --unexpand-link and ' 
+                     '--revision are mutually exclusive')
+
         if opts.revision and ( len(args) == 1):
             rev, dummy = parseRevisionOption(opts.revision)
             if not checkRevision(pacs[0].prjname, pacs[0].name, rev, pacs[0].apiurl):
@@ -1112,6 +1140,17 @@ class Osc(cmdln.Cmdln):
         for p in pacs:
             if len(pacs) > 1:
                 print 'Updating %s' % p.name
+
+            if opts.expand_link and p.islink() and not p.isexpanded():
+                print 'Expanding to rev', p.linkinfo.xsrcmd5
+                rev = p.linkinfo.xsrcmd5
+            elif opts.unexpand_link and p.islink() and p.isexpanded():
+                print 'Unexpanding to rev', p.linkinfo.lsrcmd5
+                rev = p.linkinfo.lsrcmd5
+            elif p.islink() and p.isexpanded():
+                rev = show_upstream_xsrcmd5(conf.config['apiurl'],
+                                            p.prjname, p.name)
+
             p.update(rev)
                    
 

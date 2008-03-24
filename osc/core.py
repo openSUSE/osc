@@ -364,7 +364,7 @@ class Project:
         else:
             print 'unsupported state'
 
-    def update(self, pacs = ()):
+    def update(self, pacs = (), expand_link=False, unexpand_link=False):
         if len(pacs):
             for pac in pacs:
                 Package(os.path.join(self.dir, pac)).update()
@@ -395,7 +395,18 @@ class Project:
                         os.chdir(olddir)
                 elif state == ' ':
                     # do a simple update
-                    Package(os.path.join(self.dir, pac)).update()
+                    p = Package(os.path.join(self.dir, pac))
+                    rev = None
+                    if expand_link and p.islink() and not p.isexpanded():
+                        print 'Expanding to rev', p.linkinfo.xsrcmd5
+                        rev = p.linkinfo.xsrcmd5
+                    elif unexpand_link and p.islink() and p.isexpanded():
+                        print 'Unexpanding to rev', p.linkinfo.lsrcmd5
+                        rev = p.linkinfo.lsrcmd5
+                    elif p.islink() and p.isexpanded():
+                        rev = show_upstream_xsrcmd5(conf.config['apiurl'],
+                                                    p.prjname, p.name)
+                    p.update(rev)
                 elif state == 'D':
                     # TODO: Package::update has to fixed to behave like svn does
                     if pac in self.pacs_broken:
@@ -1743,6 +1754,15 @@ def show_upstream_srcmd5(apiurl, prj, pac):
     return ET.parse(StringIO(''.join(m))).getroot().get('srcmd5')
 
 
+def show_upstream_xsrcmd5(apiurl, prj, pac):
+    m = show_files_meta(apiurl, prj, pac)
+    try:
+        # only source link packages have a <linkinfo> element.
+        return ET.parse(StringIO(''.join(m))).getroot().find('linkinfo').get('xsrcmd5')
+    except:
+        return None
+
+
 def show_upstream_rev(apiurl, prj, pac):
     m = show_files_meta(apiurl, prj, pac)
     return ET.parse(StringIO(''.join(m))).getroot().get('rev')
@@ -2195,7 +2215,9 @@ def make_dir(apiurl, project, package, pathname):
     return(os.path.join(project, package))
 
 
-def checkout_package(apiurl, project, package, revision=None, pathname=None, prj_obj = None):
+def checkout_package(apiurl, project, package, 
+                     revision=None, pathname=None, prj_obj=None,
+                     expand_link=False):
     olddir = os.getcwd()
  
     if not pathname:
@@ -2206,6 +2228,14 @@ def checkout_package(apiurl, project, package, revision=None, pathname=None, prj
         print >>sys.stderr, 'error 404 - project or package does not exist'
         sys.exit(1)
  
+    if expand_link:
+        # try to read from the linkinfo
+        x = show_upstream_xsrcmd5(apiurl, project, package)
+        if x:
+            # it is a link - thus, we use the xsrcmd5 as the revision to be
+            # checked out
+            revision = x
+
     os.chdir(make_dir(apiurl, project, package, pathname))
     init_package_dir(apiurl, project, package, store, revision)
     os.chdir(os.pardir)
