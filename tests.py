@@ -152,7 +152,7 @@ class TestOsc(unittest.TestCase):
         self.out, self.err = runosc('info')
         self.assertEqual(self.err, '')
         self.assert_('Path: .\n' in self.out)
-        self.assert_('Repository UUID' in self.out)
+        self.assert_('srcmd5:' in self.out)
         self.assert_('Revision' in self.out)
 
         lastrev = self.out[self.out.find('Revision') + 10 :].strip()
