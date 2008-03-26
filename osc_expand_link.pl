@@ -143,7 +143,7 @@ to retrieve the original specfile behind a link.
 	    my $file_re = "\Q$file\E"; $file_re =~ s{\\\*}{\.\*}g;
 	    my @match = grep { $_ =~ m{^$file_re$} } @list;
 	    die "pattern $file not found in\n @list\n" unless @match;
-	    $file = @match[0];
+	    $file = $match[0];
 	  }
 	$url .= "/$file";
 
