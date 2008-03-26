@@ -755,7 +755,8 @@ class Package:
         os.rename(filename, myfilename)
 
         mtime = self.findfilebyname(n).mtime
-        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=upfilename)
+        get_source_file(self.apiurl, self.prjname, self.name, n, 
+                        revision=self.rev, targetfilename=upfilename)
         os.utime(upfilename, (-1, mtime))
 
         if binary_file(myfilename) or binary_file(upfilename):
