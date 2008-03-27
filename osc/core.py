@@ -404,7 +404,7 @@ class Project:
                         print 'Unexpanding to rev', p.linkinfo.lsrcmd5
                         rev = p.linkinfo.lsrcmd5
                     elif p.islink() and p.isexpanded():
-                        rev = show_upstream_xsrcmd5(conf.config['apiurl'],
+                        rev = show_upstream_xsrcmd5(p.apiurl,
                                                     p.prjname, p.name)
                     p.update(rev)
                 elif state == 'D':
@@ -2491,7 +2491,7 @@ def get_results(apiurl, prj, package):
             rmap['status'] += ': ' + statusnode.find('details').text
 
         if rmap['status'] == 'failed':
-            rmap['status'] += ': %s://%s' % (conf.config['scheme'], conf.config['apisrv']) + \
+            rmap['status'] += ': %s' % apiurl + \
                 '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log' % rmap
 
         r.append(result_line_templ % rmap)
