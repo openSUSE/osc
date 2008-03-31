@@ -24,7 +24,7 @@ except ImportError:
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, '.svn', 'CVS', '.git', '.gitignore', '.pc', '*~', '.*.swp', '.swp']
+exclude_stuff = [store, 'CVS', '*~', '.*']
 
 
 new_project_templ = """\
@@ -215,6 +215,7 @@ class Linkinfo:
 class Project:
     """represent a project directory, holding packages"""
     def __init__(self, dir, getPackageList=True):
+        import fnmatch
         self.dir = dir
         self.absdir = os.path.abspath(dir)
 
@@ -229,7 +230,10 @@ class Project:
         if conf.config['do_package_tracking']:
             self.pac_root = self.read_packages().getroot()
             self.pacs_have = [ pac.get('name') for pac in self.pac_root.findall('package') ]
-            self.pacs_unvers = [ i for i in os.listdir(self.dir) if i not in self.pacs_have and i not in exclude_stuff ]
+            self.pacs_excluded = [ i for i in os.listdir(self.dir) 
+                                   for j in exclude_stuff 
+                                   if fnmatch.fnmatch(i, j) ]
+            self.pacs_unvers = [ i for i in os.listdir(self.dir) if i not in self.pacs_have and i not in self.pacs_excluded ]
             # store all broken packages (e.g. packages which where removed by a non-osc cmd)
             # in the self.pacs_broken list
             self.pacs_broken = []
