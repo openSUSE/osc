@@ -678,7 +678,10 @@ class Package:
 
     def commit(self, msg=''):
         # commit only if the upstream revision is the same as the working copy's
-        upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
+        if self.islink() and self.isexpanded():
+            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+        else:
+            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         if self.rev != upstream_rev:
             print >>sys.stderr, 'Working copy \'%s\' is out of date (rev %s vs rev %s).' \
                                 % (self.absdir, self.rev, upstream_rev)
@@ -703,6 +706,12 @@ class Package:
             print 'nothing to do for package %s' % self.name
             sys.exit(1)
 
+        if self.islink() and self.isexpanded():
+            # resolve the link into the upload revision
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name], 
+                        query='cmd=copy&rev=upload&expand=1')
+            f = http_POST(u)
+
         print 'Transmitting file data ', 
         for filename in self.todo_delete:
             # do not touch local files on commit --
@@ -717,7 +726,10 @@ class Package:
         # all source files are committed - now comes the log
         query = []
         query.append('cmd=commit')
-        query.append('rev=upload')
+        if self.islink() and self.isexpanded():
+            query.append('keeplink=1')
+        else:
+            query.append('rev=upload')
         query.append('user=%s' % conf.get_apiurl_usr(self.apiurl))
         query.append('comment=%s' % quote_plus(msg))
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
@@ -728,7 +740,10 @@ class Package:
         print
         print 'Committed revision %s.' % self.rev
 
-        self.update_local_filesmeta()
+        if self.islink() and self.isexpanded():
+            self.update_local_filesmeta(revision=show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name))
+        else:
+            self.update_local_filesmeta()
         self.write_deletelist()
 
     def write_conflictlist(self):
