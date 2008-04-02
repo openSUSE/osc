@@ -819,7 +819,7 @@ class Osc(cmdln.Cmdln):
 
         elif package:
             checkout_package(conf.config['apiurl'], project, package, 
-                             rev, expand_link=opts.expand_link)
+                             rev, expand_link=opts.expand_link, prj_dir=project)
 
         elif project:
             if not os.path.exists(project):
@@ -835,7 +835,7 @@ class Osc(cmdln.Cmdln):
             # all packages
             for package in meta_get_packagelist(conf.config['apiurl'], project):
                 checkout_package(conf.config['apiurl'], project, package, 
-                                 expand_link=opts.expand_link)
+                                 expand_link=opts.expand_link, prj_dir=project)
         else:
             print >>sys.stderr, 'Missing argument.'
             self.do_help([None, 'checkout'])

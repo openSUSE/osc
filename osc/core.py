@@ -256,14 +256,9 @@ class Project:
                 sys.exit(1)
             else:
                 print 'checking out new package %s' % pac
-                olddir = os.getcwd()
-                #os.chdir(os.pardir)
-                os.chdir(os.path.join(self.absdir, os.pardir))
-                #checkout_package(self.apiurl, self.name, pac, pathname = os.path.normpath(os.path.join(self.dir, pac)))
-                checkout_package(self.apiurl, self.name, pac, pathname = getTransActPath(os.path.join(self.dir, pac)), prj_obj=self)
-                os.chdir(olddir)
-                #self.new_package_entry(pac, ' ')
-                #self.pacs_have.append(pac)
+                checkout_package(self.apiurl, self.name, pac, \
+                                 pathname=getTransActPath(os.path.join(self.dir, pac)), \
+                                 prj_obj=self, prj_dir=self.dir)
 
     def set_state(self, pac, state):
         node = self.get_package_node(pac)
@@ -392,11 +387,8 @@ class Project:
                 state = self.get_state(pac)
                 if pac in self.pacs_broken:
                     if self.get_state(pac) != 'A':
-                        olddir = self.absdir
-                        os.chdir(os.path.join(self.absdir, os.pardir))
                         checkout_package(self.apiurl, self.name, pac,
-                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self)
-                        os.chdir(olddir)
+                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
                 elif state == ' ':
                     # do a simple update
                     p = Package(os.path.join(self.dir, pac))
@@ -414,11 +406,8 @@ class Project:
                 elif state == 'D':
                     # TODO: Package::update has to fixed to behave like svn does
                     if pac in self.pacs_broken:
-                        olddir = self.absdir
-                        os.chdir(os.path.join(self.absdir, os.pardir))
                         checkout_package(self.apiurl, self.name, pac,
-                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self)
-                        os.chdir(olddir)
+                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
                     else:
                         Package(os.path.join(self.dir, pac)).update()
                 elif state == 'A' and pac in self.pacs_available:
@@ -2217,29 +2206,35 @@ def pretty_diff(apiurl,
     return f.read()
 
 
-def make_dir(apiurl, project, package, pathname):
-    #print "creating directory '%s'" % project
-    if not os.path.exists(project):
-        print statfrmt('A', project)
-        init_project_dir(apiurl, project, project)
-    #print "creating directory '%s/%s'" % (project, package)
-    if not pathname:
-        pathname = os.path.join(project, package)
-    if not os.path.exists(os.path.join(project, package)):
+def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
+    """
+    creates the plain directory structure for a package dir.
+    The 'apiurl' parameter is needed for the project dir initialization.
+    The 'project' and 'package' parameters specify the name of the
+    project and the package. The optional 'pathname' parameter is used
+    for printing out the message that a new dir was created (default: 'prj_dir/package').
+    The optional 'prj_dir' parameter specifies the path to the project dir (default: 'project').
+    """
+    prj_dir = prj_dir or project
+    pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
+    if not os.path.exists(prj_dir):
+        print statfrmt('A', prj_dir)
+        init_project_dir(apiurl, prj_dir, project)
+    if not os.path.exists(os.path.join(prj_dir, package)):
         print statfrmt('A', pathname)
-        os.mkdir(os.path.join(project, package))
-        os.mkdir(os.path.join(project, package, store))
+        os.mkdir(os.path.join(prj_dir, package))
+        os.mkdir(os.path.join(prj_dir, package, store))
 
-    return(os.path.join(project, package))
+    return(os.path.join(prj_dir, package))
 
 
 def checkout_package(apiurl, project, package, 
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False):
+                     expand_link=False, prj_dir=os.getcwd()):
     olddir = os.getcwd()
  
     if not pathname:
-        pathname = os.path.join(project, package)
+        pathname = getTransActPath(os.path.join(prj_dir, package))
 
     path = (quote_plus(project), quote_plus(package))
     if meta_exists(metatype='pkg', path_args=path, create_new=False, apiurl=apiurl) == None:
@@ -2253,8 +2248,7 @@ def checkout_package(apiurl, project, package,
             # it is a link - thus, we use the xsrcmd5 as the revision to be
             # checked out
             revision = x
-
-    os.chdir(make_dir(apiurl, project, package, pathname))
+    os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
     init_package_dir(apiurl, project, package, store, revision)
     os.chdir(os.pardir)
     p = Package(package)
