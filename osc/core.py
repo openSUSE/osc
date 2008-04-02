@@ -670,7 +670,7 @@ class Package:
         
         # escaping '+' in the URL path (note: not in the URL query string) is 
         # only a workaround for ruby on rails, which swallows it otherwise
-        query = ['rev=upload']
+        query = 'rev=upload'
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_PUT(u, file = os.path.join(self.dir, n))
 
@@ -724,13 +724,12 @@ class Package:
             self.put_source_file(filename)
 
         # all source files are committed - now comes the log
-        query = []
-        query.append('cmd=commit')
-        query.append('rev=upload')
+        query = { 'cmd'    : 'commit',
+                  'rev'    : 'upload',
+                  'user'   : conf.get_apiurl_usr(self.apiurl),
+                  'comment': msg }
         if self.islink() and self.isexpanded():
-            query.append('keeplink=1')
-        query.append('user=%s' % conf.get_apiurl_usr(self.apiurl))
-        query.append('comment=%s' % quote_plus(msg))
+            query['keeplink'] = '1'
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
 
         f = http_POST(u)
@@ -1761,9 +1760,9 @@ def edit_meta(metatype,
 
 
 def show_files_meta(apiurl, prj, pac, revision=None):
-    query = []
+    query = None
     if revision:
-        query.append('rev=%s' % revision)
+        query = { 'rev': revision }
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
     return f.readlines()
 
@@ -1876,7 +1875,7 @@ def create_submit_request(apiurl,
        r.dst_package,
        r.descr)
 
-    u = makeurl(apiurl, ['request'], query=['cmd=create'])
+    u = makeurl(apiurl, ['request'], query='cmd=create')
     f = http_POST(u, data=xml)
 
     root = ET.parse(f).getroot()
@@ -1896,7 +1895,7 @@ def get_submit_request(apiurl, reqid):
 def change_submit_request_state(apiurl, reqid, newstate, message=''):
     u = makeurl(apiurl, 
                 ['request', reqid], 
-                query=['cmd=changestate', 'newstate=%s' % newstate])
+                query={'cmd': 'changestate', 'newstate': newstate})
     f = http_POST(u, data=message)
     return f.read()
 
@@ -1953,9 +1952,9 @@ def get_user_data(apiurl, user, *tags):
 
 
 def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision = None):
-    query = []
+    query = None
     if revision:
-        query.append('rev=%s' % quote_plus(revision))
+        query = { 'rev': revision }
 
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
     # print 'url: %s' % u
@@ -2469,9 +2468,9 @@ def get_binarylist_published(apiurl, prj, repo, arch):
 
 
 def show_results_meta(apiurl, prj, package=None):
-    query = []
+    query = None
     if package:
-        query.append('package=%s' % pathname2url(package))
+        query = { 'package': package }
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
@@ -2696,16 +2695,15 @@ def get_commitlog(apiurl, prj, package, revision):
 
 
 def rebuild(apiurl, prj, package, repo, arch, code=None):
-    query = []
-    query.append('cmd=rebuild')
+    query = { 'cmd': 'rebuild' }
     if package:
-        query.append('package=%s' % quote_plus(package))
+        query['package'] = package
     if repo:
-        query.append('repository=%s' % quote_plus(repo))
+        query['repository'] = repo
     if arch:
-        query.append('arch=%s' % quote_plus(arch))
+        query['arch'] = arch
     if code:
-        query.append('code=%s' % quote_plus(code))
+        query['code'] = code
 
     u = makeurl(apiurl, ['build', prj], query=query)
     try:
@@ -2767,14 +2765,13 @@ def get_osc_version():
 
 
 def abortbuild(apiurl, project, package=None, arch=None, repo=None):
-    query = []
-    query.append('cmd=abortbuild')
+    query = { 'cmd': 'abortbuild' }
     if package:
-        query.append('package=%s' % quote_plus(package))
+        query['package'] = package
     if arch:
-        query.append('arch=%s' % quote_plus(arch))
+        query['arch'] = arch
     if repo:
-        query.append('repository=%s' % quote_plus(repo))
+        query['repository'] = repo
     u = makeurl(apiurl, ['build', project], query)
     try:
         f = http_POST(u)
@@ -2795,16 +2792,15 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
 
 
 def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
-    query = []
-    query.append('cmd=wipe')
+    query = { 'cmd': 'wipe' }
     if package:
-        query.append('package=%s' % quote_plus(package))
+        query['package'] = package
     if arch:
-        query.append('arch=%s' % quote_plus(arch))
+        query['arch'] = arch
     if repo:
-        query.append('repository=%s' % quote_plus(repo))
+        query['repository'] = repo
     if code:
-        query.append('code=%s' % quote_plus(code))
+        query['code'] = code
 
     u = makeurl(apiurl, ['build', project], query)
     try:
