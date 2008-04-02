@@ -1,9 +1,26 @@
-jw:
-- add --debuginfo to osc build.
-
 since 0.99:
 
+- new command submitreq, to handle "submit requests" (next generation build
+  service feature). See http://en.opensuse.org/Build_Service/Collaboration
+- new link handling:
+  add support for handling linked packages in expanded form. They
+  can be checked out, updated (expanding or unexpanding them),
+  and built locally.
+  Newly introduced options are:
+  * osc checkout: --expand-link
+  * osc update: --expand-link and --unexpand-link
+- new feature: package tracking. It's not enabled by default and
+   needs to be switched on with do_package_tracking=1 in .oscrc.
+   before using. See
+   http://lists.opensuse.org/opensuse-buildservice/2008-03/msg00114.html
+- prjresults: add --csv option
+- req: add option -a / --add-header to inject arbitrary request headers
+- addremove (and others): ignore _all_ dot files (the buildservice doesn't
+  handle them)
+- copypac: do a (quicker) server-side copy by default, when source and target
+  are on the same buildservice instance.
 - build:
+  - add --debuginfo
   - add --no-verify
   - add --local-package to build a package which doesn't exist on the server
   - add --alternative-project to specify a project, if the current one doesn't
