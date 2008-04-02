@@ -726,10 +726,9 @@ class Package:
         # all source files are committed - now comes the log
         query = []
         query.append('cmd=commit')
+        query.append('rev=upload')
         if self.islink() and self.isexpanded():
             query.append('keeplink=1')
-        else:
-            query.append('rev=upload')
         query.append('user=%s' % conf.get_apiurl_usr(self.apiurl))
         query.append('comment=%s' % quote_plus(msg))
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
