@@ -568,15 +568,20 @@ class Osc(cmdln.Cmdln):
             return 1
         aggregate_pac(src_project, src_package, dst_project, dst_package)
 
-    @cmdln.option('-s', '--server-side', action='store_true',
-                        help='do a (faster) server-side copy')
+    @cmdln.option('-c', '--client-side-copy', action='store_true',
+                        help='do a (slower) client-side copy')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
     def do_copypac(self, subcmd, opts, *args):
         """${cmd_name}: Copy a package
 
-        A client-side copy implementation. It can be done cross-project, or even 
-        across buildservice instances, if the -t option is used.
+        A way to copy package to somewhere else. 
+        
+        It can be done across buildservice instances, if the -t option is used.
+        In that case, a client-side copy is implied.
+
+        Using --client-side-copy always involves downloading all files, and
+        uploading them to the target.
 
         The DESTPAC name is optional; the source packages' name will be used if
         DESTPAC is omitted.
@@ -613,14 +618,12 @@ class Osc(cmdln.Cmdln):
             print >>sys.stderr, 'Error: source and destination are the same.'
             return 1
 
-        if opts.server_side and src_apiurl != dst_apiurl:
-            print >>sys.stderr, 'Error: a server-side copy can\'t be done to ' \
-                                'copy from one API host to another.'
-            return 1
+        if src_apiurl != dst_apiurl:
+            opts.client_side_copy = True
 
         r = copy_pac(src_apiurl, src_project, src_package, 
                      dst_apiurl, dst_project, dst_package,
-                     server_side=opts.server_side)
+                     client_side_copy=opts.client_side_copy)
         print r
 
 

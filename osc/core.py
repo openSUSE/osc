@@ -2357,7 +2357,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
 
 def copy_pac(src_apiurl, src_project, src_package, 
              dst_apiurl, dst_project, dst_package,
-             server_side = False):
+             client_side_copy = False):
     """
     Create a copy of a package.
 
@@ -2375,7 +2375,7 @@ def copy_pac(src_apiurl, src_project, src_package,
     http_PUT(u, data=src_meta)
 
     print 'Copying files...'
-    if server_side:
+    if not client_side_copy:
         query = {'cmd': 'copy', 'oproject': src_project, 'opackage': src_package }
         u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
         f = http_POST(u)
