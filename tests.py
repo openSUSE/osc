@@ -155,7 +155,7 @@ class TestOsc(unittest.TestCase):
         self.assert_('srcmd5:' in self.out)
         self.assert_('Revision' in self.out)
 
-        lastrev = self.out[self.out.find('Revision') + 10 :].strip()
+        lastrev = self.out[self.out.find('Revision') + 10 :].splitlines()[0].strip()
 
         self.out, self.err = runosc('log -r %s' % lastrev)
         self.assertEqual(self.err, '')
@@ -174,7 +174,7 @@ class TestOsc(unittest.TestCase):
 
         self.out, self.err = runosc('info')
         self.assertEqual(self.err, '')
-        lastrev = self.out[self.out.find('Revision') + 10 :].strip()
+        lastrev = self.out[self.out.find('Revision') + 10 :].splitlines()[0].strip()
 
         self.out, self.err = runosc('log -r %s' % lastrev)
         self.assertEqual(self.err, '')
