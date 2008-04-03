@@ -309,6 +309,10 @@ class Project:
         ET.ElementTree(self.pac_root).write(os.path.join(self.absdir, store, '_packages'))
 
     def addPackage(self, pac):
+        import fnmatch
+        for i in exclude_stuff:
+            if fnmatch.fnmatch(pac, i):
+                return False
         state = self.get_state(pac)
         if state == None or state == 'D':
             self.new_package_entry(pac, 'A')
@@ -3237,7 +3241,8 @@ def addFiles(filenames):
         if conf.config['do_package_tracking'] and not pac.todo:
             prj = Project(os.path.dirname(pac.absdir))
             if pac.name in prj.pacs_unvers:
-                prj.addPackage(pac.name)
+                if not prj.addPackage(pac.name):
+                    sys.exit(1)
                 print statfrmt('A', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
                 for filename in pac.filenamelist_unvers:
                     pac.todo.append(filename)
