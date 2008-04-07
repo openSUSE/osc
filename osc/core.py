@@ -1959,6 +1959,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
         if not buf: break
         o.write(buf)
     o.close()
+    f.close()
 
 
 def get_binary_file(apiurl, prj, repo, arch, 
