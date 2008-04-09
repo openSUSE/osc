@@ -259,7 +259,7 @@ def main(opts, argv):
 
 
     # make it possible to override configuration of the rc file
-    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'BUILD_ROOT', 'OSC_BUILD_ROOT']: 
+    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']: 
         val = os.getenv(var)
         if val:
             if var.startswith('OSC_'): var = var[4:]
@@ -267,7 +267,6 @@ def main(opts, argv):
             if config.has_key(var):
                 print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
             config[var] = val
-
 
     config['build-root'] = config['build-root'] % {'repo': repo, 'arch': arch}
 

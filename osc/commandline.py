@@ -1542,16 +1542,15 @@ class Osc(cmdln.Cmdln):
 
         usage: 
             osc build [OPTS] PLATFORM ARCH BUILD_DESCR
-        ${cmd_option_list}
-        """
+
         # Note: 
         # Configuration can be overridden by envvars, e.g.  
         # OSC_SU_WRAPPER overrides the setting of su-wrapper. 
-        # BUILD_DIST or OSC_BUILD_DIST overrides the build target.
-        # BUILD_ROOT or OSC_BUILD_ROOT overrides the build-root.
-        # 
-        #       2. BUILD_DIST=... osc build <specfile> [--clean|--noinit]
-        #          where BUILD_DIST equals <platform>-<arch>
+        # OSC_BUILD_ROOT overrides the setting of build-root.
+        # OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
+
+        ${cmd_option_list}
+        """
 
         import osc.build
 
@@ -1561,20 +1560,7 @@ class Osc(cmdln.Cmdln):
             sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
             return 1
 
-        builddist = os.getenv('BUILD_DIST')
-        if builddist:
-            hyphen = builddist.rfind('-')
-            if len(args) == 1:
-                args = (builddist[:hyphen], builddist[hyphen+1:], args[0])
-            elif len(args) == 0:
-                print >>sys.stderr, 'Missing argument: build description (spec of dsc file)'
-                return 2
-            else:
-                print >>sys.stderr, 'Too many arguments'
-                return 2
-            # print sys.argv
-
-        elif len(args) >= 2 and len(args) < 3:
+        if len(args) == 2:
             print >>sys.stderr, 'Missing argument: build description (spec of dsc file)'
             return 2
         elif len(args) < 2:
@@ -1590,7 +1576,10 @@ class Osc(cmdln.Cmdln):
                 if arch == osc.build.hostarch or \
                    arch in osc.build.can_also_build.get(osc.build.hostarch, []):
                     print platform.strip()
-            return 1
+            return 2
+        elif len(args) > 3:
+            print >>sys.stderr, 'too many arguments'
+            return 2
 
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
