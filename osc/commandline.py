@@ -347,6 +347,7 @@ class Osc(cmdln.Cmdln):
             if cmd == 'pattern':
                 path = path % (project, pattern)
                 u = makeurl(conf.config['apiurl'], [path])
+                http_DELETE(u)
             else:
                 sys.exit('The --delete switch is only for pattern metadata.')
 
