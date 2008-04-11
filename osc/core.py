@@ -1727,6 +1727,9 @@ def edit_meta(metatype,
                            template_args,
                            create_new=True,
                            apiurl=apiurl)
+    if not data:
+        # meta_exists encountered an error
+        sys.exit(1)
 
     if edit:
         change_is_required = True
