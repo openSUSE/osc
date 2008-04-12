@@ -1384,11 +1384,12 @@ def http_request(method, url, headers={}, data=None, file=None):
                 else:
                     raise
 
-
-    fd = urllib2.urlopen(req, data=data)
-
-    if hasattr(conf.cookiejar, 'save'):
-        conf.cookiejar.save(ignore_discard=True)
+    # this handling is currently considered as temporary workaround, bug #378421
+    try:
+        fd = urllib2.urlopen(req, data=data)
+    finally:
+        if hasattr(conf.cookiejar, 'save'):
+            conf.cookiejar.save(ignore_discard=True)
 
     if filefd: filefd.close()
 
