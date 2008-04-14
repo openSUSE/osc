@@ -2512,7 +2512,7 @@ def get_results(apiurl, prj, package):
 
         if rmap['status'] == 'failed':
             rmap['status'] += ': %s' % apiurl + \
-                '/result/%(prj)s/%(rep)s/%(pac)s/%(arch)s/log' % rmap
+                '/build/%(prj)s/%(rep)s/%(arch)s/%(pac)s/_log' % rmap
 
         r.append(result_line_templ % rmap)
     return r
