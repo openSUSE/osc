@@ -2580,6 +2580,7 @@ def get_prj_results(apiurl, prj, show_legend=False, csv=False):
                     print 'osc: warn: unknown status \'%s\'...' % status[pac][tg]
                     print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
                     st = '?'
+                    buildstatus_symbols[status[pac][tg]] = '?'
                 line.append(st)
                 line.append(' ')
             line.append(' %s %s' % tg)
