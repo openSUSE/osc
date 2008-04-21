@@ -656,7 +656,8 @@ class Package:
 
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)])
+        query = 'rev=upload'
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_DELETE(u)
  
     def put_source_file(self, n):
