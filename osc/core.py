@@ -1394,41 +1394,6 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if filefd: filefd.close()
 
-    # this code is for debugging empty responses from api.opensuse.org
-    # https://bugzilla.novell.com/show_bug.cgi?id=369176
-    # Buildservice server sometimes sends broken replies
-    # only prjconf requests (_config) can have empty replies (we hope)
-    if False and fd.headers['Content-Length'] == '0' and not fd.url.endswith('/_config'):
-        print 'DEBUG INFO'
-        print 
-        import time; print time.ctime()
-        print url
-        print 
-        print 'Request Headers:'
-        for i in req.header_items():
-            print i
-        print 
-        print 'Reply:'
-        try:
-            print fd.code, fd.msg
-        except:
-            print 'could not print fd.code, fd.msg'
-        try:
-            print fd.url
-        except:
-            print 'could not print fd.url'
-        try:
-            print fd.headers
-        except:
-            print 'could not print fd.headers'
-
-        print
-        print 'An empty reply was received. This is a bug...'
-        print 'Please go to https://bugzilla.novell.com/show_bug.cgi?id=369176 and add the above info.'
-        print 'Thanks!'
-        print
-        sys.exit(1)
-
     return fd
 
 
