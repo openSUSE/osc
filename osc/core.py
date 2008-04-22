@@ -1403,28 +1403,6 @@ def http_PUT(*args, **kwargs):    return http_request('PUT', *args, **kwargs)
 def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 
 
-# obsolete!
-def urlopen(url, data=None):
-    """wrapper around urllib2.urlopen for error handling"""
-
-    print 'core.urlopen() is deprecated -- use http_GET et al.'
-
-    try:
-        # adding data to the request makes it a POST
-        if not data:
-            fd = http_GET(url)
-        else:
-            fd = http_POST(url, data=data)
-
-    except urllib2.HTTPError, e:
-        print >>sys.stderr, 'Error: can\'t get \'%s\'' % url
-        print >>sys.stderr, e
-        if e.code == 500:
-            print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
-        sys.exit(1)
-
-    return fd
-
 def init_project_dir(apiurl, dir, project):
     if not os.path.exists(dir):
         os.mkdir(dir)
