@@ -41,6 +41,7 @@ config = { }
 DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'scheme': 'https',
              'user': 'your_username',
+             'pass': 'your_password',
              'packagecachedir': '/var/tmp/osbuild-packagecache',
              'su-wrapper': 'su -c',
              'build-cmd': '/usr/bin/build',
