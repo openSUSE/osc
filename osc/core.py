@@ -3248,3 +3248,46 @@ def getTransActPath(pac_dir):
     else:
         pathn = ''
     return pathn
+
+def getStatus(pacs, prj_obj=None, verbose=False):
+    """
+    calculates the status of certain packages. pacs is a list of Package()
+    objects and prj_obj is a Project() object. If prj_obj is specified all
+    Package() objects in the pacs list have to belong to this project.
+    """
+    lines = []
+    if prj_obj:
+        if conf.config['do_package_tracking']:
+            for data in prj_obj.pacs_unvers:
+                lines.append(statfrmt('?', os.path.normpath(os.path.join(prj_obj.dir, data))))
+            for data in prj_obj.pacs_broken:
+                if prj_obj.get_state(data) == 'D':
+                    lines.append(statfrmt('D', os.path.normpath(os.path.join(prj_obj.dir, data))))
+                else:
+                    lines.append(statfrmt('!', os.path.normpath(os.path.join(prj_obj.dir, data))))
+
+    for p in pacs:
+        # no files given as argument? Take all files in current dir
+        if not p.todo:
+            p.todo = p.filenamelist + p.filenamelist_unvers
+        p.todo.sort()
+
+        if prj_obj and conf.config['do_package_tracking']:
+            state = prj_obj.get_state(p.name)
+            if state != None and (state != ' ' or verbose):
+               lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
+
+        for filename in p.todo:
+            if filename in p.excluded:
+                continue
+            s = p.status(filename)
+            if s == 'F':
+                lines.append(statfrmt('!', pathjoin(p.dir, filename)))
+            elif s != ' ' or (s == ' ' and verbose):
+                lines.append(statfrmt(s, pathjoin(p.dir, filename)))
+
+    # arrange the lines in order: unknown files first
+    # filenames are already sorted
+    lines = [line for line in lines if line[0] == '?'] \
+          + [line for line in lines if line[0] != '?']
+    return lines

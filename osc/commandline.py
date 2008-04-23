@@ -874,8 +874,10 @@ class Osc(cmdln.Cmdln):
 
         args = parseargs(args)
 
+        # storage for single Package() objects
         pacpaths = []
-        prj = None
+        # storage for a project dir ( { prj_instance : [ package objects ] } )
+        prjpacs = {}
         for arg in args:
             # when 'status' is run inside a project dir, it should
             # stat all packages existing in the wc
@@ -883,60 +885,26 @@ class Osc(cmdln.Cmdln):
                 prj = Project(arg, False)
 
                 if conf.config['do_package_tracking']:
+                    prjpacs[prj] = []
                     for pac in prj.pacs_have:
                         # we cannot create package objects if the dir does not exist
                         if not pac in prj.pacs_broken:
-                            pacpaths.append(os.path.join(arg, pac))
+                            prjpacs[prj].append(os.path.join(arg, pac))
                 else:
                     pacpaths += [arg + '/' + n for n in prj.pacs_have]
-
             elif is_package_dir(arg):
                 pacpaths.append(arg)
             elif os.path.isfile(arg):
                 pacpaths.append(arg)
             else:
-                print >>sys.stderr, 'osc: error: %s is neither a project or a package directory' % arg
+                print >>sys.stderr, 'osc: error: \'%s\' is neither a project or a package directory' % arg
                 return 1
-            
-        pacs = findpacs(pacpaths)
-
         lines = []
-        if prj:
-
-            if conf.config['do_package_tracking']:
-                for data in prj.pacs_unvers:
-                    lines.append(statfrmt('?', os.path.normpath(os.path.join(prj.dir, data))))
-                for data in prj.pacs_broken:
-                    if prj.get_state(data) == 'D':
-                        lines.append(statfrmt('D', os.path.normpath(os.path.join(prj.dir, data))))
-                    else:
-                        lines.append(statfrmt('!', os.path.normpath(os.path.join(prj.dir, data))))
-
-        for p in pacs:
-
-            # no files given as argument? Take all files in current dir
-            if not p.todo:
-                p.todo = p.filenamelist + p.filenamelist_unvers
-            p.todo.sort()
-
-            if prj and conf.config['do_package_tracking']:
-                state = prj.get_state(p.name)
-                if state != None and (state != ' ' or opts.verbose):
-                    lines.append(statfrmt(state, os.path.normpath(os.path.join(prj.dir, p.name))))
-
-            for filename in p.todo:
-                if filename in p.excluded:
-                    continue
-                s = p.status(filename)
-                if s == 'F':
-                    lines.append(statfrmt('!', pathjoin(p.dir, filename)))
-                elif s != ' ' or (s == ' ' and opts.verbose):
-                    lines.append(statfrmt(s, pathjoin(p.dir, filename)))
-
-        # arrange the lines in order: unknown files first
-        # filenames are already sorted
-        lines = [line for line in lines if line[0] == '?'] \
-              + [line for line in lines if line[0] != '?']
+        # process single packages
+        lines = getStatus(findpacs(pacpaths), None, opts.verbose)
+        # process project dirs
+        for prj, pacs in prjpacs.iteritems():
+            lines += getStatus(findpacs(pacs), prj, opts.verbose)
         if lines:
             print '\n'.join(lines)
 
