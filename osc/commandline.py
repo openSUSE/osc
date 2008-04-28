@@ -9,6 +9,7 @@
 from core import *
 import cmdln
 import conf
+import oscerr
 
 
 class Osc(cmdln.Cmdln):
@@ -26,6 +27,7 @@ class Osc(cmdln.Cmdln):
     * http://www.opensuse.org/Build_Service/CLI
     """
     name = 'osc'
+    conf = None
 
 
     def __init__(self, *args, **kwargs):
@@ -37,8 +39,16 @@ class Osc(cmdln.Cmdln):
         """this is the parser for "global" options (not specific to subcommand)"""
 
         optparser = cmdln.CmdlnOptionParser(self, version=get_osc_version())
+        optparser.add_option('--debugger', action='store_true',
+                      help='jump into the debugger before executing anything')
+        optparser.add_option('--post-mortem', action='store_true',
+                      help='jump into the debugger in case of errors')
+        optparser.add_option('-t', '--traceback', action='store_true',
+                      help='print call trace in case of errors')
         optparser.add_option('-H', '--http-debug', action='store_true',
                       help='debug HTTP traffic')
+        optparser.add_option('-d', '--debug', action='store_true',
+                      help='print info useful for debugging')
         optparser.add_option('-A', '--apisrv', dest='apisrv',
                       metavar='URL',
                       help='specify URL to access API server at')
@@ -50,10 +60,41 @@ class Osc(cmdln.Cmdln):
 
     def postoptparse(self):
         """merge commandline options into the config"""
+        try:
+            conf.get_config(override_conffile = self.options.conffile,
+                            override_apisrv = self.options.apisrv,
+                            override_debug = self.options.debug,
+                            override_http_debug = self.options.http_debug,
+                            override_traceback = self.options.traceback,
+                            override_post_mortem = self.options.post_mortem)
+        except oscerr.NoConfigfile, e:
+            print >>sys.stderr, e.msg
+            print >>sys.stderr, 'Creating osc configuration file %s ...' % e.file
+            import getpass
+            config = {}
+            config['user'] = raw_input('Username: ')
+            config['pass'] = getpass.getpass()
 
-        conf.get_config(override_conffile = self.options.conffile,
-                        override_http_debug = self.options.http_debug,
-                        override_apisrv = self.options.apisrv)
+            if conf.write_config(e.file, config):
+                print >>sys.stderr, 'done'
+                conf.get_config(override_conffile = self.options.conffile,
+                                override_apisrv = self.options.apisrv,
+                                override_debug = self.options.debug,
+                                override_http_debug = self.options.http_debug,
+                                override_traceback = self.options.traceback,
+                                override_post_mortem = self.options.post_mortem)
+            else:
+                raise NoConfigfile(e.file, 'Unable to create osc\'s configuration file \
+                                                 \'%s\'' % e.file)
+        self.conf = conf
+
+
+    def get_cmd_help(self, cmdname):
+        doc = self._get_cmd_handler(cmdname).__doc__
+        doc = self._help_reindent(doc)
+        doc = self._help_preprocess(doc, cmdname)
+        doc = doc.rstrip() + '\n' # trim down trailing space
+        return self._str(doc)
 
 
     def do_init(self, subcmd, opts, project, package):
@@ -117,15 +158,13 @@ class Osc(cmdln.Cmdln):
             package = args[1]
 
         if opts.binaries and (not opts.repo or not opts.arch):
-            sys.exit('missing options:\n'
-                     '-r <repo> -a <arch>\n'
-                     'list repositories with:\n'
-                     '\'osc platforms %s\'' %project)
+            raise oscerr.WrongOptions('Sorry, -r <repo> -a <arch> missing\n'
+                     'You can list repositories with: \'osc platforms <project>\'')
 
         # list binaries
         if opts.binaries:
             if not args:
-                sys.exit('there are no binaries to list above project level.')
+                raise oscerr.WrongArgs('There are no binaries to list above project level.')
 
             elif len(args) == 1:
                 #if opts.verbose:
@@ -144,7 +183,7 @@ class Osc(cmdln.Cmdln):
 
             elif len(args) == 1:
                 if opts.verbose:
-                    sys.exit('The verbose option is not implemented for projects.')
+                    raise oscerr.WrongOptions('Sorry, the --verbose option is not implemented for projects.')
 
                 print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
 
@@ -211,8 +250,8 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         if not args or args[0] not in metatypes.keys():
-            print >>sys.stderr, 'Unknown meta type. Choose one of %s.' % ', '.join(metatypes)
-            return 2
+            raise oscerr.WrongArgs('Unknown meta type. Choose one of %s.' \
+                                               % ', '.join(metatypes))
 
         cmd = args[0]
         del args[0]
@@ -224,11 +263,9 @@ class Osc(cmdln.Cmdln):
         else:
             min_args, max_args = 1, 1
         if len(args) < min_args:
-            print >>sys.stderr, 'Too few arguments.'
-            return 2
+            raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > max_args:
-            print >>sys.stderr, 'Too many arguments.'
-            return 2
+            raise oscerr.WrongArgs('Too many arguments.')
 
         # specific arguments
         if cmd == 'prj':
@@ -247,7 +284,7 @@ class Osc(cmdln.Cmdln):
                 pattern = None
                 # enforce pattern argument if needed
                 if opts.edit or opts.file:
-                    sys.exit('a pattern file argument is required.')
+                    raise oscerr.WrongArgs('A pattern file argument is required.')
 
         # show 
         if not opts.edit and not opts.file and not opts.delete:
@@ -395,8 +432,8 @@ class Osc(cmdln.Cmdln):
 
         cmds = ['create', 'list', 'show', 'decline', 'accept']
         if not args or args[0] not in cmds:
-            print >>sys.stderr, 'Unknown submitreq action. Choose one of %s.' % ', '.join(cmds)
-            return 2
+            raise oscerr.WrongArgs('Unknown submitreq action. Choose one of %s.' \
+                                               % ', '.join(cmds))
 
         cmd = args[0]
         del args[0]
@@ -408,11 +445,9 @@ class Osc(cmdln.Cmdln):
         else:
             min_args, max_args = 1, 1
         if len(args) < min_args:
-            print >>sys.stderr, 'Too few arguments.'
-            return 2
+            raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > max_args:
-            print >>sys.stderr, 'Too many arguments.'
-            return 2
+            raise oscerr.WrongArgs('Too many arguments.')
 
         # collect specific arguments
         if cmd == 'create':
@@ -459,7 +494,8 @@ class Osc(cmdln.Cmdln):
                                       r.dst_project, r.dst_package, None,
                                       r.src_project, r.src_package, r.src_md5)
                 except urllib2.HTTPError, e:
-                    print >>sys.stderr, 'Diff not possible:', e
+                    e.osc_msg = 'Diff not possible'
+                    raise
 
 
         # decline
@@ -521,9 +557,8 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         if not args or len(args) < 3:
-            print >>sys.stderr, 'Incorrect number of argument.'
-            self.do_help([None, 'linkpac'])
-            return 2
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('linkpac'))
 
         src_project = args[0]
         src_package = args[1]
@@ -552,9 +587,8 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         if not args or len(args) < 3:
-            print >>sys.stderr, 'Incorrect number of argument.'
-            self.do_help([None, 'aggregatepac'])
-            return 2
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('aggregatepac'))
 
         src_project = args[0]
         src_package = args[1]
@@ -595,9 +629,8 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         if not args or len(args) < 3:
-            print >>sys.stderr, 'Incorrect number of argument.'
-            self.do_help([None, 'copypac'])
-            return 2
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('copypac'))
 
         src_project = args[0]
         src_package = args[1]
@@ -616,8 +649,7 @@ class Osc(cmdln.Cmdln):
         if src_project == dst_project and \
            src_package == dst_package and \
            src_apiurl == dst_apiurl:
-            print >>sys.stderr, 'Error: source and destination are the same.'
-            return 1
+                raise oscerr.WrongArgs('Source and destination are the same.')
 
         if src_apiurl != dst_apiurl:
             opts.client_side_copy = True
@@ -679,7 +711,6 @@ class Osc(cmdln.Cmdln):
             specfile = None
         pacs = findpacs(args)
         for p in pacs:
-
             p.read_meta_from_spec(specfile)
             p.update_package_meta()
 
@@ -823,24 +854,22 @@ class Osc(cmdln.Cmdln):
                              rev, expand_link=opts.expand_link, prj_dir=project)
 
         elif project:
-            if not os.path.exists(project):
-                if meta_exists(metatype='prj', path_args=quote_plus(project), create_new=False):
-                    init_project_dir(conf.config['apiurl'], project, project)
-                    print statfrmt('A', project)
-                else:
-                    print >>sys.stderr, 'osc: project \'%s\' does not exist on the server' % project
-                    sys.exit(1)
-            else:
-                print >>sys.stderr, 'osc: project \'%s\' already exists' % project
-                sys.exit(1)
+            if os.path.exists(project):
+                sys.exit('osc: project \'%s\' already exists' % project)
+
+            # check if the project does exist (show_project_meta will throw an exception)
+            show_project_meta(conf.config['apiurl'], project)
+
+            init_project_dir(conf.config['apiurl'], project, project)
+            print statfrmt('A', project)
+
             # all packages
             for package in meta_get_packagelist(conf.config['apiurl'], project):
                 checkout_package(conf.config['apiurl'], project, package, 
                                  expand_link=opts.expand_link, prj_dir=project)
         else:
-            print >>sys.stderr, 'Missing argument.'
-            self.do_help([None, 'checkout'])
-            return 2
+            raise oscerr.WrongArgs('Missing argument.\n\n' \
+                  + self.get_cmd_help('checkout'))
 
 
     @cmdln.option('-v', '--verbose', action='store_true',
@@ -897,8 +926,8 @@ class Osc(cmdln.Cmdln):
             elif os.path.isfile(arg):
                 pacpaths.append(arg)
             else:
-                print >>sys.stderr, 'osc: error: \'%s\' is neither a project or a package directory' % arg
-                return 1
+                msg = '\'%s\' is neither a project or a package directory' % arg
+                raise oscerr.NoWorkingCopy, msg
         lines = []
         # process single packages
         lines = getStatus(findpacs(pacpaths), None, opts.verbose)
@@ -917,9 +946,8 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
         if not args:
-            print >>sys.stderr, 'Missing argument.'
-            self.do_help([None, 'add'])
-            return 2
+            raise oscerr.WrongArgs('Missing argument.\n\n' \
+                  + self.get_cmd_help('add'))
 
         filenames = parseargs(args)
         #print filenames
@@ -938,8 +966,8 @@ class Osc(cmdln.Cmdln):
             sys.exit(1)
 
         if len(args) != 1:
-            print >>sys.stderr, 'wrong number of arguments!'
-            sys.exit(1)
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+
         createPackageDir(args[0])
 
 
@@ -1098,8 +1126,8 @@ class Osc(cmdln.Cmdln):
         if (opts.expand_link and opts.unexpand_link) \
             or (opts.expand_link and opts.revision) \
             or (opts.unexpand_link and opts.revision):
-            sys.exit('The options --expand-link, --unexpand-link and ' 
-                     '--revision are mutually exclusive')
+            raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and ' 
+                     '--revision are mutually exclusive.')
 
         if opts.revision and ( len(args) == 1):
             rev, dummy = parseRevisionOption(opts.revision)
@@ -1140,9 +1168,8 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print >>sys.stderr, 'Missing argument.'
-            self.do_help([None, 'delete'])
-            return 2
+            raise oscerr.WrongArgs('Missing argument.\n\n' \
+                  + self.get_cmd_help('delete'))
 
         args = parseargs(args)
         # check if args contains a package which was removed by
@@ -1199,9 +1226,8 @@ class Osc(cmdln.Cmdln):
         """
 
         if not args:
-            print >>sys.stderr, 'Missing argument.'
-            self.do_help([None, 'resolved'])
-            return 2
+            raise oscerr.WrongArgs('Missing argument.\n\n' \
+                  + self.get_cmd_help('resolved'))
 
         args = parseargs(args)
         pacs = findpacs(args)
@@ -1296,12 +1322,8 @@ class Osc(cmdln.Cmdln):
         else:
             wd = os.curdir
 
-        try:
-            project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
-        except:
-            print >>sys.stderr, '\'%s\' is neither an osc project or package directory' % wd
-            return 1
+        project = store_read_project(wd)
+        apiurl = store_read_apiurl(wd)
 
         print '\n'.join(get_prj_results(apiurl, project, show_legend=opts.legend, csv=opts.csv))
 
@@ -1344,11 +1366,9 @@ class Osc(cmdln.Cmdln):
         """
         args = slash_split(args)
         if len(args) < 4:
-            print >>sys.stderr, "too few arguments"
-            sys.exit(1)
+            raise oscerr.WrongArgs('Too few arguments.')
         elif len(args) > 4:
-            print >>sys.stderr, "too many arguments"
-            sys.exit(1)
+            raise oscerr.WrongArgs('Too many arguments.')
 
         print_buildlog(conf.config['apiurl'], *args)
 
@@ -1385,12 +1405,11 @@ class Osc(cmdln.Cmdln):
         apiurl = store_read_apiurl(wd)
 
         if args is None or len(args) < 2:
-            print >>sys.stderr, 'Missing argument.'
             print 'Valid arguments for this package are:'
             print 
             self.do_repos(None, None)
             print
-            return 2
+            raise oscerr.WrongArgs('Missing argument')
             
         platform = args[0]
         arch = args[1]
@@ -1450,10 +1469,6 @@ class Osc(cmdln.Cmdln):
         """
 
         args = parseargs(args)
-        for arg in args:
-            if not is_project_dir(arg) and not is_package_dir(arg):
-                print >>sys.stderr, '\'%s\' is neither a package dir nor a project dir' % arg
-                args.remove(arg)
 
         for arg in args:
             for platform in get_repos_of_project(store_read_apiurl(arg), store_read_project(arg)):
@@ -1532,25 +1547,22 @@ class Osc(cmdln.Cmdln):
             return 1
 
         if len(args) == 2:
-            print >>sys.stderr, 'Missing argument: build description (spec of dsc file)'
-            return 2
+            raise oscerr.WrongArgs('Missing argument: build description (spec of dsc file)')
+
         elif len(args) < 2:
-            print
-            print >>sys.stderr, 'Missing argument.'
-            print 'Valid arguments are:'
-            print 'you have to choose a repo to build on'
-            print 'possible repositories on this machine are:'
-            print 
+            # we are going to raise an error for this, but first look up some helpful details:
+            msg= ['You have to choose a repo to build on.']
+            msg.append('Possible repositories on this machine are:\n')
             for platform in get_repos_of_project(store_read_apiurl(os.curdir),
                                                  store_read_project(os.curdir)):
                 arch = platform.split()[1] # arch
                 if arch == osc.build.hostarch or \
                    arch in osc.build.can_also_build.get(osc.build.hostarch, []):
-                    print platform.strip()
-            return 2
+                    msg.append(platform.strip())
+            raise oscerr.WrongArgs('Missing argument.\n\n' + '\n'.join(msg))
+
         elif len(args) > 3:
-            print >>sys.stderr, 'too many arguments'
-            return 2
+            raise oscerr.WrongArgs('Too many arguments')
 
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
@@ -1634,9 +1646,7 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         if len(args) < 1:
-            print >>sys.stderr, 'Missing argument.'
-            #self.do_help([None, 'rebuildpac'])
-            return 2
+            raise oscerr.WrongArgs('Missing argument.')
 
         package = repo = arch = code = None
         project = args[0]
@@ -1687,8 +1697,7 @@ class Osc(cmdln.Cmdln):
         """
 
         if len(args) < 1:
-            print >>sys.stderr, 'Missing <project> argument'
-            return 2
+            raise oscerr.WrongArgs('Missing <project> argument.')
 
         if len(args) == 2:
             package = args[1]
@@ -1722,8 +1731,7 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         if len(args) < 1:
-            print >>sys.stderr, 'Missing <project> argument'
-            return 2
+            raise oscerr.WrongArgs('Missing <project> argument.')
         
         if len(args) == 2:
             package = args[1]
@@ -1773,11 +1781,9 @@ class Osc(cmdln.Cmdln):
         """
 
         if len(args) > 1:
-            print >>sys.stderr, 'too many arguments'
-            sys.exit(1)
+            raise oscerr.WrongArgs('Too many arguments.')
         elif len(args) < 1:
-            print >>sys.stderr, 'too few arguments'
-            sys.exit(1)
+            raise oscerr.WrongArgs('Too few arguments.')
 
         search_list = []
         search_for = []
@@ -1872,14 +1878,10 @@ class Osc(cmdln.Cmdln):
         else:
             project_dir = os.curdir
 
-        if not is_project_dir(project_dir):
-            print >>sys.stderr, 'project dir \'%s\' does not exist' % project_dir
-            sys.exit(1)
+        if conf.config['do_package_tracking']:
+            project = Project(project_dir)
         else:
-            if conf.config['do_package_tracking']:
-                project = Project(project_dir)
-            else:
-                project = store_read_project(project_dir)
+            project = store_read_project(project_dir)
 
         rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
         if rpm_data:
@@ -1999,34 +2001,13 @@ class Osc(cmdln.Cmdln):
         if opts.headers:
             opts.headers = dict(opts.headers)
 
-        try:
-            r = http_request(opts.method, 
-                             url, 
-                             data=opts.data, 
-                             file=opts.file,
-                             headers=opts.headers) 
+        r = http_request(opts.method, 
+                         url, 
+                         data=opts.data, 
+                         file=opts.file,
+                         headers=opts.headers) 
 
-        except urllib2.HTTPError, e:
-            if e.code in [400, 404]:
-                print >>sys.stderr, e
-                print >>sys.stderr, e.read()
-                sys.exit(1)
-            elif e.code == 500:
-                print >>sys.stderr, e
-                # this may be unhelpful... because it may just print a big blob of uninteresting
-                # ichain html and javascript... however it could potentially be useful if the orign
-                # server returns an information body
-                if conf.config['http_debug']:
-                    print >>sys.stderr, e.read()
-                sys.exit(1)
-            else:
-                sys.exit('unexpected error')
-
-        try:
-            out = r.read()
-        except:
-            sys.exit('failed to read from file object')
-
+        out = r.read()
         sys.stdout.write(out)
 
 
@@ -2060,7 +2041,7 @@ class Osc(cmdln.Cmdln):
             prj = args[0]
             pac = args[1]
         else:
-            sys.exit('wrong argument count')
+            raise oscerr.WrongArgs('I need at least one argument.')
     
         maintainers = []
     
@@ -2107,8 +2088,7 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
         if len(args) != 3:
-            print >>sys.stderr, 'error - incorrect number of arguments'
-            sys.exit(1)
+            raise oscerr.WrongArgs('Wrong number of arguments.')
         rev, dummy = parseRevisionOption(opts.revision)
 
         import tempfile

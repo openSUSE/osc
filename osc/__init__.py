@@ -1,1 +1,1 @@
-__all__ = ['core', 'commandline', 'othermethods', 'build', 'fetch', 'meter']
+__all__ = ['babysitter', 'core', 'commandline', 'oscerr', 'othermethods', 'build', 'fetch', 'meter']

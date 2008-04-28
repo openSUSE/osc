@@ -33,6 +33,7 @@ The configuration dictionary could look like this:
 """
 
 import ConfigParser
+from osc import oscerr
 
 # being global to this module, this dict can be accessed from outside
 # it will hold the parsed configuration
@@ -55,12 +56,15 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
                 '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/_repository/%(name)s',
               ],
 
+             'debug': '0',
              'http_debug': '0',
+             'traceback': '0',
+             'post_mortem': '0',
              'cookiejar': '~/.osc_cookiejar',
              # disable project tracking by default
              'do_package_tracking': '0',
 }
-boolean_opts = ['http_debug', 'do_package_tracking']
+boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback']
 
 new_conf_template = """
 [general]
@@ -80,8 +84,17 @@ new_conf_template = """
 # /srv/oscbuild/%%(repo)s-%%(arch)s
 #build-root = %(build-root)s
 
+# show info useful for debugging 
+#debug = 1
+    
 # show HTTP traffic useful for debugging 
 #http_debug = 1
+    
+# jump into the debugger in case of errors
+#post_mortem = 1
+    
+# print call traces in case of errors
+#traceback = 1
     
 [%(apisrv)s]
 user = %(user)s
@@ -192,9 +205,42 @@ def get_configParser(conffile=None, force_read=False):
     return get_configParser.cp
 
 
+def write_config(conffile, entries, custom_template = None, force = False):
+    """
+    write osc's configuration file. entries is a dict which contains values
+    for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
+    custom_template is an optional configuration template. Use force=True if you
+    want to overwrite an existing configuration file.
+    """
+    import os
+    conf_template = custom_template or new_conf_template
+    config = DEFAULTS.copy()
+    config.update(entries)
+    if force or not os.path.exists(conffile):
+        file = None
+        try:
+            file = open(conffile, 'w')
+        except IOError, e:
+            raise oscerr.OscIOError(e, 'cannot open configfile \'%s\'' % conffile)
+        try:
+            try:
+                os.chmod(conffile, 0600)
+                file.write(conf_template % config)
+            except IOError, e:
+                raise oscerr.OscIOError(e, 'cannot write configfile \'s\'' % conffile)
+        finally:
+            if file: file.close()
+        return True
+    else:
+        return False
+
+
 def get_config(override_conffile = None, 
+               override_apisrv = None,
+               override_debug = None, 
                override_http_debug = None, 
-               override_apisrv = None):
+               override_traceback = None,
+               override_post_mortem = None):
     """do the actual work (see module documentation)"""
     import os
     import sys
@@ -223,23 +269,8 @@ def get_config(override_conffile = None,
                     netrc.netrc().authenticators(netrc_host)
             print >>sys.stderr, 'Read credentials from %s.' % os.path.expanduser('~/.netrc')
         except (IOError, TypeError, netrc.NetrcParseError):
-            #
-            # last resort... ask the user
-            #
-            import getpass
-            print >>sys.stderr, account_not_configured_text % conffile
-            config['user'] = raw_input('Username: ')
-            config['pass'] = getpass.getpass()
-
-        print >>sys.stderr, 'Creating osc configuration file %s ...' % conffile
-        fd = open(conffile, 'w')
-        os.chmod(conffile, 0600)
-        fd.write(new_conf_template % config)
-        fd.close()
-        print >>sys.stderr, 'done.'
-        #print >>sys.stderr, ('Now re-run the command.')
-        #sys.exit(0)
-
+            raise oscerr.NoConfigfile(conffile, \
+                                              account_not_configured_text % conffile)
 
     # okay, we made sure that .oscrc exists
 
@@ -247,9 +278,9 @@ def get_config(override_conffile = None,
 
     if not cp.has_section('general'):
         # FIXME: it might be sufficient to just assume defaults?
-        print >>sys.stderr, config_incomplete_text % conffile
-        print >>sys.stderr, new_conf_template % DEFAULTS
-        sys.exit(1)
+        msg = config_incomplete_text % conffile
+        msg += new_conf_template % DEFAULTS
+        raise oscerr.ConfigError(msg)
 
     config = dict(cp.items('general', raw=1))
 
@@ -263,7 +294,7 @@ def get_config(override_conffile = None,
             else:
                 config[i] = False
         except:
-            sys.exit('option %s requires an integer value' % i)
+            raise oscerr.ConfigError('option %s requires an integer value' % i)
 
     packagecachedir = os.path.expanduser(config['packagecachedir'])
 
@@ -283,8 +314,14 @@ def get_config(override_conffile = None,
     config['auth_dict'] = auth_dict
 
     # override values which we were called with
+    if override_debug: 
+        config['debug'] = override_debug
     if override_http_debug: 
         config['http_debug'] = override_http_debug
+    if override_traceback:
+        config['traceback'] = override_traceback
+    if override_post_mortem:
+        config['post_mortem'] = override_post_mortem
     if override_apisrv:
         config['scheme'], config['apisrv'] = \
             parse_apisrv_url(config['scheme'], override_apisrv)

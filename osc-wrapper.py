@@ -5,8 +5,12 @@
 
 import sys
 from osc import commandline
+from osc import babysitter
 
-osc = commandline.Osc()
-sys.exit( osc.main() )
+osccli = commandline.Osc()
+
+r = babysitter.run(osccli)
+sys.exit(r)
+
 
 

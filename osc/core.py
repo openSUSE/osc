@@ -14,6 +14,7 @@ from urllib import pathname2url, quote_plus, urlencode
 from urlparse import urlsplit, urlunsplit
 from cStringIO import StringIO
 import shutil
+import oscerr
 import conf
 try:
     from xml.etree import cElementTree as ET
@@ -252,8 +253,8 @@ class Project:
 
             if conf.config['do_package_tracking'] and pac in self.pacs_unvers:
                 # pac is not under version control but a local file/dir exists
-                print 'can\'t add package \'%s\': Object already exists' % pac
-                sys.exit(1)
+                msg = 'can\'t add package \'%s\': Object already exists' % pac
+                raise oscerr.PackageExists(self.name, pac, msg)
             else:
                 print 'checking out new package %s' % pac
                 checkout_package(self.apiurl, self.name, pac, \
@@ -318,7 +319,7 @@ class Project:
             self.new_package_entry(pac, 'A')
             self.write_packages()
             # sometimes the new pac doesn't exist in the list because
-            # it would take too much time to update all data structs regulary
+            # it would take too much time to update all data structs regularly
             if pac in self.pacs_unvers:
                 self.pacs_unvers.remove(pac)
             return True
@@ -345,9 +346,7 @@ class Project:
                         pac.delete_storefile(file)
                         # this is not really necessary
                         pac.put_on_deletelist(file)
-                        print statfrmt('D', os.path.join(pac.dir, file))
-                #print os.path.dirname(pac.dir)
-                # some black path vodoo
+                        print statfrmt('D', getTransActPath(os.path.join(pac.dir, file)))
                 print statfrmt('D', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
                 pac.write_deletelist()
                 self.set_state(pac.name, 'D')
@@ -372,105 +371,111 @@ class Project:
             for pac in pacs:
                 Package(os.path.join(self.dir, pac)).update()
         else:
-            # update complete project
-            # packages which no longer exists upstream
-            upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
+            # we need to make sure that the _packages file will be written (even if an exception
+            # occurs)
+            try:
+                # update complete project
+                # packages which no longer exists upstream
+                upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
 
-            for pac in upstream_del:
-                p = Package(os.path.join(self.dir, pac))
-                self.delPackage(p, force = True)
-                delete_storedir(p.storedir)
-                try:
-                    os.rmdir(pac)
-                except:
-                    pass
-                self.pac_root.remove(self.get_package_node(p.name))
-                self.pacs_have.remove(pac)
-
-            for pac in self.pacs_have:
-                state = self.get_state(pac)
-                if pac in self.pacs_broken:
-                    if self.get_state(pac) != 'A':
-                        checkout_package(self.apiurl, self.name, pac,
-                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
-                elif state == ' ':
-                    # do a simple update
+                for pac in upstream_del:
                     p = Package(os.path.join(self.dir, pac))
-                    rev = None
-                    if expand_link and p.islink() and not p.isexpanded():
-                        print 'Expanding to rev', p.linkinfo.xsrcmd5
-                        rev = p.linkinfo.xsrcmd5
-                    elif unexpand_link and p.islink() and p.isexpanded():
-                        print 'Unexpanding to rev', p.linkinfo.lsrcmd5
-                        rev = p.linkinfo.lsrcmd5
-                    elif p.islink() and p.isexpanded():
-                        rev = show_upstream_xsrcmd5(p.apiurl,
-                                                    p.prjname, p.name)
-                    p.update(rev)
-                elif state == 'D':
-                    # TODO: Package::update has to fixed to behave like svn does
-                    if pac in self.pacs_broken:
-                        checkout_package(self.apiurl, self.name, pac,
-                                         pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
-                    else:
-                        Package(os.path.join(self.dir, pac)).update()
-                elif state == 'A' and pac in self.pacs_available:
-                    # file/dir called pac already exists and is under version control
-                    print 'can\'t add package \'%s\': Object already exists' % pac
-                    sys.exit(1)
-                elif state == 'A':
-                    # do nothing
-                    pass
-                else:
-                    print 'unexpected state.. package \'%s\'' % pac
+                    self.delPackage(p, force = True)
+                    delete_storedir(p.storedir)
+                    try:
+                        os.rmdir(pac)
+                    except:
+                        pass
+                    self.pac_root.remove(self.get_package_node(p.name))
+                    self.pacs_have.remove(pac)
 
-            self.checkout_missing_pacs()
-            self.write_packages()
+                for pac in self.pacs_have:
+                    state = self.get_state(pac)
+                    if pac in self.pacs_broken:
+                        if self.get_state(pac) != 'A':
+                            checkout_package(self.apiurl, self.name, pac,
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
+                    elif state == ' ':
+                        # do a simple update
+                        p = Package(os.path.join(self.dir, pac))
+                        rev = None
+                        if expand_link and p.islink() and not p.isexpanded():
+                            print 'Expanding to rev', p.linkinfo.xsrcmd5
+                            rev = p.linkinfo.xsrcmd5
+                        elif unexpand_link and p.islink() and p.isexpanded():
+                            print 'Unexpanding to rev', p.linkinfo.lsrcmd5
+                            rev = p.linkinfo.lsrcmd5
+                        elif p.islink() and p.isexpanded():
+                            rev = show_upstream_xsrcmd5(p.apiurl,
+                                                        p.prjname, p.name)
+                        p.update(rev)
+                    elif state == 'D':
+                        # TODO: Package::update has to fixed to behave like svn does
+                        if pac in self.pacs_broken:
+                            checkout_package(self.apiurl, self.name, pac,
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
+                        else:
+                            Package(os.path.join(self.dir, pac)).update()
+                    elif state == 'A' and pac in self.pacs_available:
+                        # file/dir called pac already exists and is under version control
+                        msg = 'can\'t add package \'%s\': Object already exists' % pac
+                        raise oscerr.PackageExists(self.name, pac, msg)
+                    elif state == 'A':
+                        # do nothing
+                        pass
+                    else:
+                        print 'unexpected state.. package \'%s\'' % pac
+
+                self.checkout_missing_pacs()
+            finally:
+                self.write_packages()
 
     def commit(self, pacs = (), msg = '', files = {}):
         if len(pacs):
-            for pac in pacs:
-                todo = []
-                if files.has_key(pac):
-                    todo = files[pac]
-                state = self.get_state(pac)
-                if state == 'A':
-                    self.commitNewPackage(pac, msg, todo)
-                elif state == 'D':
-                    self.commitDelPackage(pac)
-                elif state == ' ':
-                    # display the correct dir when sending the changes
-                    if os.path.samefile(os.path.join(self.dir, pac), os.getcwd()):
-                        p = Package('.')
-                    else:
-                        p = Package(os.path.join(self.dir, pac))
-                    p.todo = todo
-                    p.commit(msg)
-                elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
-                    print 'osc: \'%s\' is not under version control' % pac
-                elif pac in self.pacs_broken:
-                    print 'osc: \'%s\' package not found' % pac
-                elif state == None:
-                    self.commitExtPackage(pac, msg, todo)
+            try:
+                for pac in pacs:
+                    todo = []
+                    if files.has_key(pac):
+                        todo = files[pac]
+                    state = self.get_state(pac)
+                    if state == 'A':
+                        self.commitNewPackage(pac, msg, todo)
+                    elif state == 'D':
+                        self.commitDelPackage(pac)
+                    elif state == ' ':
+                        # display the correct dir when sending the changes
+                        if os.path.samefile(os.path.join(self.dir, pac), os.getcwd()):
+                            p = Package('.')
+                        else:
+                            p = Package(os.path.join(self.dir, pac))
+                        p.todo = todo
+                        p.commit(msg)
+                    elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
+                        print 'osc: \'%s\' is not under version control' % pac
+                    elif pac in self.pacs_broken:
+                        print 'osc: \'%s\' package not found' % pac
+                    elif state == None:
+                        self.commitExtPackage(pac, msg, todo)
+            finally:
+                self.write_packages()
         else:
             # if we have packages marked as '!' we cannot commit
             for pac in self.pacs_broken:
                 if self.get_state(pac) != 'D':
-                    print 'commit failed: package \'%s\' is missing' % pac
-                    sys.exit(1)
-            for pac in self.pacs_have:
-                state = self.get_state(pac)
-                if state == ' ':
-                    # do a simple commit
-                    try:
+                    msg = 'commit failed: package \'%s\' is missing' % pac
+                    raise oscerr.PackageMissing(self.name, pac, msg)
+            try:
+                for pac in self.pacs_have:
+                    state = self.get_state(pac)
+                    if state == ' ':
+                        # do a simple commit
                         Package(os.path.join(self.dir, pac)).commit(msg)
-                    except SystemExit:
-                        pass
-                elif state == 'D':
-                    self.commitDelPackage(pac)
-                elif state == 'A':
-                    self.commitNewPackage(pac, msg)
-        self.write_packages()
+                    elif state == 'D':
+                        self.commitDelPackage(pac)
+                    elif state == 'A':
+                        self.commitNewPackage(pac, msg)
+            finally:
+                self.write_packages()
 
     def commitNewPackage(self, pac, msg = '', files = []):
         """creates and commits a new package if it does not exist on the server"""
@@ -677,10 +682,7 @@ class Package:
         else:
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         if self.rev != upstream_rev:
-            print >>sys.stderr, 'Working copy \'%s\' is out of date (rev %s vs rev %s).' \
-                                % (self.absdir, self.rev, upstream_rev)
-            print >>sys.stderr, 'Looks as if you need to update it first.'
-            sys.exit(1)
+            raise oscerr.WorkingCopyOutdated((self.absdir, self.rev, upstream_rev))
 
         if not self.todo:
             self.todo = self.filenamelist_unvers + self.filenamelist
@@ -1247,6 +1249,8 @@ def slash_split(l):
 
 
 def findpacs(files):
+    """collect Package objects belonging to the given files
+    and make sure each Package is returned only once"""
     pacs = []
     for f in files:
         p = filedir_to_pac(f)
@@ -1287,13 +1291,21 @@ def read_inconflict(dir):
 
 
 def parseargs(list_of_args):
-        if list_of_args:
-            return list(list_of_args)
-        else:
-            return [ os.curdir ]
+    """Convenience method osc's commandline argument parsing.
+    
+    If called with an empty tuple (or list), return a list containing the current directory.
+    Otherwise, return a list of the arguments."""
+    if list_of_args:
+        return list(list_of_args)
+    else:
+        return [os.curdir]
 
 
 def filedir_to_pac(f):
+    """Takes a working copy path, or a path to a file inside a working copy, 
+    and returns a Package object instance
+    
+    If the argument was a filename, add it onto the "todo" list of the Package """
 
     if os.path.isdir(f):
         wd = f
@@ -1385,6 +1397,8 @@ def http_request(method, url, headers={}, data=None, file=None):
                 else:
                     raise
 
+    if conf.config['debug']: print method, url
+
     try:
         fd = urllib2.urlopen(req, data=data)
 
@@ -1453,8 +1467,8 @@ def check_store_version(dir):
         v = ''
 
     if v == '':
-        print >>sys.stderr, 'error: "%s" is not an osc working copy' % dir
-        sys.exit(1)
+        msg = 'Error: "%s" is not an osc working copy.' % os.path.abspath(dir)
+        raise oscerr.NoWorkingCopy(msg)
 
     if v != __version__:
         if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96', '0.97', '0.98']:
@@ -1463,12 +1477,10 @@ def check_store_version(dir):
             f.write(__version__ + '\n')
             f.close()
             return 
-        print >>sys.stderr
-        print >>sys.stderr, 'the osc metadata of your working copy "%s"' % dir
-        print >>sys.stderr, 'has the wrong version (%s), should be %s' % (v, __version__)
-        print >>sys.stderr, 'please do a fresh checkout'
-        print >>sys.stderr
-        sys.exit(1)
+        msg = 'The osc metadata of your working copy "%s"' % dir
+        msg += '\nhas the wrong version (%s), should be %s' % (v, __version__)
+        msg += '\nPlease do a fresh checkout'
+        raise oscerr.WorkingCopyWrongVersion, msg
     
 
 def meta_get_packagelist(apiurl, prj):
@@ -1523,22 +1535,23 @@ def show_project_conf(apiurl, prj):
 
 
 def show_package_meta(apiurl, prj, pac):
+    url = makeurl(apiurl, ['source', prj, pac, '_meta'])
     try:
-        url = makeurl(apiurl, ['source', prj, pac, '_meta'])
         f = http_GET(url)
+        return f.readlines()
     except urllib2.HTTPError, e:
-        print >>sys.stderr, 'error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
-        print >>sys.stderr, e
-        if e.code == 500:
-            print >>sys.stderr, '\nDebugging output follows.\nurl:\n%s\nresponse:\n%s' % (url, e.read())
-        sys.exit(1)
-    return f.readlines()
+        e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
+        raise
 
 
 def show_pattern_metalist(apiurl, prj):
     url = makeurl(apiurl, ['source', prj, '_pattern'])
-    f = http_GET(url)
-    tree = ET.parse(f)
+    try:
+        f = http_GET(url)
+        tree = ET.parse(f)
+    except urllib2.HTTPError, e:
+        e.osc_msg = 'show_pattern_metalist: Error getting pattern list for project \'%s\'' % prj
+        raise
     r = [ node.get('name') for node in tree.getroot() ]
     r.sort()
     return r
@@ -1548,11 +1561,10 @@ def show_pattern_meta(apiurl, prj, pattern):
     url = makeurl(apiurl, ['source', prj, '_pattern', pattern])
     try:
         f = http_GET(url)
+        return f.readlines()
     except urllib2.HTTPError, e:
-        print >>sys.stderr, 'error getting pattern \'%s\' for project \'%s\'' % (pattern, prj)
-        print >>sys.stderr, e
-        sys.exit(1)
-    return f.readlines()
+        e.osc_msg = 'show_pattern_meta: Error getting pattern \'%s\' for project \'%s\'' % (pattern, prj)
+        raise
 
 
 class metafile:
@@ -1650,7 +1662,7 @@ def make_meta_url(metatype, path_args=None, apiurl=None):
     if not apiurl:
         apiurl = conf.config['apiurl']
     if metatype not in metatypes.keys():
-        sys.exit('unknown metatype %s' % metatype)
+        raise AttributeError('make_meta_url(): Unknown meta type \'%s\'' % metatype)
     path = metatypes[metatype]['path']
 
     if path_args:
@@ -1742,8 +1754,8 @@ def read_meta_from_spec(specfile, *args):
     """
 
     if not os.path.isfile(specfile):
-        print 'file \'%s\' is not a readable file' % specfile
-        sys.exit(1)
+        msg = 'File \'%s\' is not a readable file' % specfile
+        raise oscerr.UnreadableFile, msg
 
     try:
         lines = codecs.open(specfile, 'r', locale.getpreferredencoding()).readlines()
@@ -2192,10 +2204,9 @@ def checkout_package(apiurl, project, package,
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
 
-    path = (quote_plus(project), quote_plus(package))
-    if meta_exists(metatype='pkg', path_args=path, create_new=False, apiurl=apiurl) == None:
-        print >>sys.stderr, 'error 404 - project or package does not exist'
-        sys.exit(1)
+    # before we create directories and stuff, check if the package actually
+    # exists
+    show_package_meta(apiurl, project, package)
  
     if expand_link:
         # try to read from the linkinfo
@@ -2348,30 +2359,12 @@ def copy_pac(src_apiurl, src_project, src_package,
 
 def delete_package(apiurl, prj, pac):
     u = makeurl(apiurl, ['source', prj, pac])
-    try:
-        http_DELETE(u)
-    except urllib2.HTTPError, e:
-        if e.code == 404:
-            print >>sys.stderr, 'Package \'%s\' does not exist' % pac
-            sys.exit(1)
-        else:
-            print >>sys.stderr, 'an unexpected error occured while deleting ' \
-                                '\'%s\'' % pac
-            sys.exit(1)            
+    http_DELETE(u)
 
 
 def delete_project(apiurl, prj):
     u = makeurl(apiurl, ['source', prj])
-    try:
-        http_DELETE(u)
-    except urllib2.HTTPError, e:
-        if e.code == 404:
-            print >>sys.stderr, 'Package \'%s\' does not exist' % pac
-            sys.exit(1)
-        else:
-            print >>sys.stderr, 'an unexpected error occured while deleting ' \
-                                '\'%s\'' % pac
-            sys.exit(1)
+    http_DELETE(u)
 
 
 def get_platforms(apiurl):
@@ -2660,10 +2653,8 @@ def rebuild(apiurl, prj, package, repo, arch, code=None):
     try:
         f = http_POST(u)
     except urllib2.HTTPError, e:
-        print >>sys.stderr, 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
-        print >>sys.stderr, u
-        print >>sys.stderr, e
-        sys.exit(1)
+        e.osc_msg = 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
+        raise
 
     root = ET.parse(f).getroot()
     return root.get('code')
@@ -2673,9 +2664,8 @@ def store_read_project(dir):
     try:
         p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
     except IOError:
-        print >>sys.stderr, 'error: \'%s\' is not an osc project dir ' \
-                            'or working copy' % dir
-        sys.exit(1)                         
+        raise oscerr.NoWorkingCopy('Error: \'%s\' is not an osc project dir ' \
+                            'or working copy.' % os.path.abspath(dir))
     return p
 
 
@@ -2683,8 +2673,8 @@ def store_read_package(dir):
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     except IOError:
-        print >>sys.stderr, 'error: \'%s\' is not an osc working copy' % dir
-        sys.exit(1)
+        raise oscerr.NoWorkingCopy('error: \'%s\' is not an osc working copy' \
+                % os.path.abspath(dir))
     return p
 
 def store_read_apiurl(dir):
@@ -2727,17 +2717,15 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
     try:
         f = http_POST(u)
     except urllib2.HTTPError, e:
-        err_str = 'abortion failed for project %s' % project
+        e.osc_msg = 'abortion failed for project %s' % project
         if package:
-            err_str += ' package %s' % package
+            e.osc_msg += ' package %s' % package
         if arch:
-            err_str += ' arch %s' % arch
+            e.osc_msg += ' arch %s' % arch
         if repo:
-            err_str += ' repo %s' % repo
-        print >> sys.stderr, err_str
-        print >> sys.stderr, u
-        print >> sys.stderr, e
-        sys.exit(1)
+            e.osc_msg += ' repo %s' % repo
+        raise
+
     root = ET.parse(f).getroot()
     return root.get('code')
 
@@ -2757,19 +2745,17 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None)
     try:
         f = http_POST(u)
     except urllib2.HTTPError, e:
-        err_str = 'wipe binary rpms failed for project %s' % project
+        e.osc_msg = 'wipe binary rpms failed for project %s' % project
         if package:
-            err_str += ' package %s' % package
+            e.osc_msg += ' package %s' % package
         if arch:
-            err_str += ' arch %s' % arch
+            e.osc_msg += ' arch %s' % arch
         if repo:
-            err_str += ' repository %s' % repo
+            e.osc_msg += ' repository %s' % repo
         if code:
-            err_str += ' code=%s' % code
-        print >> sys.stderr, err_str
-        print >> sys.stderr, u
-        print >> sys.stderr, e
-        sys.exit(1)
+            e.osc_msg += ' code=%s' % code
+        raise
+
     root = ET.parse(f).getroot()
     return root.get('code')
 
@@ -3060,22 +3046,6 @@ def is_srcrpm(f):
         return True
     else:
         return False   
-
-def delete_server_files(apiurl, prj, pac, files):
-    """
-    This method deletes the given filelist on the
-    server. No local data will be touched.
-    """
-
-    for file in files:
-        try:
-            u = makeurl(apiurl, ['source', prj, pac, file])
-            http_DELETE(u)
-        except:
-            # we do not handle all exceptions here - we need another solution
-            # see bug #280034
-            print >>sys.stderr, 'error while deleting file \'%s\'' % file
-            sys.exit(1)
 
 def addMaintainer(apiurl, prj, pac, user):
     """ add a new maintainer to a package or project """
