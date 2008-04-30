@@ -605,6 +605,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-c', '--client-side-copy', action='store_true',
                         help='do a (slower) client-side copy')
+    @cmdln.option('-k', '--keep-maintainers', action='store_true',
+                        help='keep original maintainers. Default is remove all and replace with the one calling the script.')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
     def do_copypac(self, subcmd, opts, *args):
@@ -656,7 +658,8 @@ class Osc(cmdln.Cmdln):
 
         r = copy_pac(src_apiurl, src_project, src_package, 
                      dst_apiurl, dst_project, dst_package,
-                     client_side_copy=opts.client_side_copy)
+                     client_side_copy=opts.client_side_copy,
+                     keep_maintainers=opts.keep_maintainers)
         print r
 
 

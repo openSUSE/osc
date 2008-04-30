@@ -2233,18 +2233,19 @@ def checkout_package(apiurl, project, package,
     os.chdir(olddir)
 
 
-def replace_pkg_meta(pkgmeta, new_name, new_prj):
+def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False):
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
-    only maintainer
+    only maintainer (unless keep_maintainers is set)
     """
     root = ET.fromstring(''.join(pkgmeta))
     root.set('name', new_name)
     root.set('project', new_prj)
-    for person in root.findall('person'):
-        root.remove(person)
-    ET.SubElement(root, 'person',
-                  userid = conf.config['user'], role = 'maintainer')
+    if not keep_maintainers:
+        for person in root.findall('person'):
+            root.remove(person)
+        ET.SubElement(root, 'person',
+                      userid = conf.config['user'], role = 'maintainer')
     return ET.tostring(root)
 
 def link_pac(src_project, src_package, dst_project, dst_package):
@@ -2318,7 +2319,8 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
 
 def copy_pac(src_apiurl, src_project, src_package, 
              dst_apiurl, dst_project, dst_package,
-             client_side_copy = False):
+             client_side_copy = False,
+             keep_maintainers = False):
     """
     Create a copy of a package.
 
@@ -2329,7 +2331,7 @@ def copy_pac(src_apiurl, src_project, src_package,
     """
 
     src_meta = show_package_meta(src_apiurl, src_project, src_package)
-    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers)
 
     print 'Sending meta data...'
     u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
