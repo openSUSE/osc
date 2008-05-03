@@ -11,6 +11,8 @@ class OscBaseError(Exception):
     def __init__(self, args=()):
         Exception.__init__(self)
         self.args = args
+    def __str__(self):
+        return ''.join(self.args)
 
 class ConfigError(OscBaseError):
     """Exception raised when there is an error in the config file"""
