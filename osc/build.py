@@ -196,7 +196,7 @@ def get_prefer_pkgs(dirs, wanted_arch):
     import glob
     paths = []
     for dir in dirs:
-        paths += glob.glob(os.path.join(dir, '*.rpm'))
+        paths += glob.glob(os.path.join(os.path.abspath(dir), '*.rpm'))
     prefer_pkgs = []
 
     for path in paths:
