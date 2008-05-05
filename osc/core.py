@@ -2516,13 +2516,14 @@ def get_prj_results(apiurl, prj, show_legend=False, csv=False):
                 if not status.has_key(pac) or not status[pac].has_key(tg):
                     # for newly added packages, status may be missing
                     st = '?'
-                try:
-                    st = buildstatus_symbols[status[pac][tg]]
-                except:
-                    print 'osc: warn: unknown status \'%s\'...' % status[pac][tg]
-                    print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
-                    st = '?'
-                    buildstatus_symbols[status[pac][tg]] = '?'
+                else:
+                    try:
+                        st = buildstatus_symbols[status[pac][tg]]
+                    except:
+                        print 'osc: warn: unknown status \'%s\'...' % status[pac][tg]
+                        print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
+                        st = '?'
+                        buildstatus_symbols[status[pac][tg]] = '?'
                 line.append(st)
                 line.append(' ')
             line.append(' %s %s' % tg)
