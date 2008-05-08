@@ -497,12 +497,8 @@ class Project:
             else:
                 p = Package(os.path.join(self.dir, pac))
             p.todo = files
-            #print statfrmt('Sending', os.path.normpath(os.path.join(p.dir, os.pardir, pac)))
             print statfrmt('Sending', os.path.normpath(p.dir))
-            try:
-                p.commit(msg)
-            except SystemExit:
-                pass
+            p.commit(msg)
             self.set_state(pac, ' ')
             os.chdir(olddir)
 
@@ -521,8 +517,6 @@ class Project:
                 os.rmdir(p.dir)
             except:
                 pass
-        except SystemExit:
-            pass
         except OSError:
             pac_dir = os.path.join(self.dir, pac)
         #print statfrmt('Deleting', getTransActPath(os.path.join(self.dir, pac)))
@@ -554,13 +548,10 @@ class Project:
                       template_args=({
 			      'name': pac,
 			      'user': user}),
-		      apiurl=apiurl)
-            try:
-                p = Package(pac_path)
-                p.todo = files
-                p.commit(msg)
-            except SystemExit:
-                pass
+        		      apiurl=apiurl)
+            p = Package(pac_path)
+            p.todo = files
+            p.commit(msg)
 
     def __str__(self):
         r = []
@@ -700,7 +691,7 @@ class Package:
 
         if not self.todo_send and not self.todo_delete:
             print 'nothing to do for package %s' % self.name
-            sys.exit(1)
+            return 1
 
         if self.islink() and self.isexpanded():
             # resolve the link into the upload revision
