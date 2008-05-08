@@ -232,6 +232,8 @@ def main(opts, argv):
         buildargs.append('--changelog')
     if opts.jobs:
         buildargs.append('--jobs %s' % opts.jobs)
+    if opts.baselibs:
+        buildargs.append('--baselibs')
     buildargs = ' '.join(buildargs)
 
     prj = store_read_project(os.curdir)

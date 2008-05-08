@@ -1504,6 +1504,8 @@ class Osc(cmdln.Cmdln):
                   help='specify the build target project')
     @cmdln.option('-d', '--debuginfo', action='store_true',
                   help='also build debuginfo sub-packages')
+    @cmdln.option('-b', '--baselibs', action='store_true',
+                  help='Create -32bit/-64bit/-x86 rpms for other architectures')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
