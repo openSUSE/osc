@@ -150,6 +150,7 @@ buildstatus_symbols = {'succeeded':       '.',
                        'broken':          'B',
                        'blocked':         'b',
                        'building':        '%',
+                       'finished':        '%',
                        'scheduled':       's',
 }
 
