@@ -1297,10 +1297,15 @@ class Osc(cmdln.Cmdln):
             print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name))
 
                 
-    @cmdln.option('-l', '--legend', action='store_true',
-                        help='show the legend')
+    @cmdln.option('-q', '--hide-legend', action='store_true',
+                        help='hide the legend')
     @cmdln.option('-c', '--csv', action='store_true',
                         help='csv output')
+    @cmdln.option('-s', '--status-filter', metavar='STATUS',
+                        help='show only packages with buildstatus STATUS (see legend)')
+    @cmdln.option('-n', '--name-filter', metavar='EXPR',
+                        help='show only packages whos name matches EXPR')
+                       
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
         
@@ -1328,7 +1333,7 @@ class Osc(cmdln.Cmdln):
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
 
-        print '\n'.join(get_prj_results(apiurl, project, show_legend=opts.legend, csv=opts.csv))
+        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
 
                 
     @cmdln.alias('bl')

@@ -150,7 +150,7 @@ buildstatus_symbols = {'succeeded':       '.',
                        'broken':          'B',
                        'blocked':         'b',
                        'building':        '%',
-                       'finished':        '%',
+                       'finished':        'f',
                        'scheduled':       's',
 }
 
@@ -2451,7 +2451,7 @@ def get_results(apiurl, prj, package):
         r.append(result_line_templ % rmap)
     return r
 
-def get_prj_results(apiurl, prj, show_legend=False, csv=False):
+def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None):
     #print '----------------------------------------'
 
     r = []
@@ -2481,6 +2481,33 @@ def get_prj_results(apiurl, prj, show_legend=False, csv=False):
                 status[pac] = {}
             status[pac][tg] = pacnode.get('code')
     targets.sort()
+
+    # filter option
+    if status_filter or name_filter:
+
+        pacs_to_show = []
+
+        #filtering for Package Status 
+        if status_filter:
+            if status_filter in buildstatus_symbols.values():
+                for txt, sym in buildstatus_symbols.items():
+                    if sym == status_filter:
+                        filt_txt = txt
+                for pkg in status.keys():
+                    for repo in status[pkg].keys():
+                        if status[pkg][repo] == filt_txt:
+                            if not name_filter:
+                                pacs_to_show.append(pkg)
+                            elif name_filter in pkg:
+                                pacs_to_show.append(pkg)
+
+        #filtering for Package Name 
+        elif name_filter:
+            for pkg in pacs:
+                if name_filter in pkg:
+                    pacs_to_show.append(pkg)
+
+        pacs = [ i for i in pacs if i in pacs_to_show ]
 
     # csv output
     if csv:
@@ -2525,7 +2552,7 @@ def get_prj_results(apiurl, prj, show_legend=False, csv=False):
 
         r.append('')
 
-    if show_legend:
+    if not hide_legend:
         r.append(' Legend:')
         for i, j in buildstatus_symbols.items():
             r.append('  %s %s' % (j, i))
