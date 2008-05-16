@@ -2486,6 +2486,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     if status_filter or name_filter:
 
         pacs_to_show = []
+        targets_to_show = []
 
         #filtering for Package Status 
         if status_filter:
@@ -2498,6 +2499,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                         if status[pkg][repo] == filt_txt:
                             if not name_filter:
                                 pacs_to_show.append(pkg)
+                                targets_to_show.append(repo)
                             elif name_filter in pkg:
                                 pacs_to_show.append(pkg)
 
@@ -2508,6 +2510,8 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                     pacs_to_show.append(pkg)
 
         pacs = [ i for i in pacs if i in pacs_to_show ]
+        if len(targets_to_show) is not 0:
+            targets = [ i for i in targets if i in targets_to_show ]
 
     # csv output
     if csv:
