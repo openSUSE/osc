@@ -1,4 +1,26 @@
-since 0.99:
+0.100:
+
+- improved error handling (babysitter.py wrapper, oscerr.py exception classes)
+  Tracebacks are mostly suppressed now. To enable them, use
+       -t, --traceback    print call trace in case of errors
+  or set traceback=1 in .oscrc.
+- other new global options for debugging:
+       --debugger         jump into the debugger before executing anything
+       --post-mortem      jump into the debugger in case of errors
+       -d, --debug        print info useful for debugging
+- make way for more seamless osc version updates (the .osc directory in working copies
+  will have its own versioning in the future)
+- osc rprjresults and osc rresults: new commands to show remote build results
+- osc build: added --baselibs and --jobs options
+- osc copypac: added --keep-maintainers switch
+- BUILD_DIST environment variable will be ignored (bnc#359846)
+  The following environment variables can still be used:
+  * OSC_SU_WRAPPER overrides the setting of su-wrapper. 
+  * OSC_BUILD_ROOT overrides the setting of build-root.
+  * OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
+
+
+0.99+patches (interim releases, including Wed Apr  2 16:36:40 CEST 2008)
 
 - new command submitreq, to handle "submit requests" (next generation build
   service feature). See http://en.opensuse.org/Build_Service/Collaboration

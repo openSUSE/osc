@@ -8,10 +8,9 @@ MAJOR:
   
 NORMAL:
 
-  - Extending the diff command to take -rREV:REV as argument and show the
-    diff between those two (server-side) revisions
-    note: there is a 'rdiff' subcommand meanwhile, which implements this.
   - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
+    (update: we have some commands meanwhile which exist in an alternate form,
+    prefixed with r, which works remotely. E.g. rbuildlog, rprjresults, rresults)
   - status: implement -u option as in svn          [3]
   - implement (svn-like) switch command
   - implement 'mv' command
