@@ -5,7 +5,11 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.99'
+__version__ = '0.100'
+# __store_version__ is to be incremented when the format of the working copy
+# "store" changes in an incompatible way. Please add any needed migration
+# functionality to check_store_version().
+__store_version__ = '1.0'
 
 import os
 import sys
@@ -1442,7 +1446,7 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True):
         ET.ElementTree(element=ET.Element('directory')).write('_files')
 
     f = open('_osclib_version', 'w')
-    f.write(__version__ + '\n')
+    f.write(__store_version__ + '\n')
     f.close()
 
     store_write_apiurl(os.path.pardir, apiurl)
@@ -1462,16 +1466,16 @@ def check_store_version(dir):
         msg = 'Error: "%s" is not an osc working copy.' % os.path.abspath(dir)
         raise oscerr.NoWorkingCopy(msg)
 
-    if v != __version__:
-        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96', '0.97', '0.98']:
+    if v != __store_version__:
+        if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96', '0.97', '0.98', '0.99']:
             # version is fine, no migration needed
             f = open(versionfile, 'w')
-            f.write(__version__ + '\n')
+            f.write(__store_version__ + '\n')
             f.close()
             return 
         msg = 'The osc metadata of your working copy "%s"' % dir
-        msg += '\nhas the wrong version (%s), should be %s' % (v, __version__)
-        msg += '\nPlease do a fresh checkout'
+        msg += '\nhas __store_version__ = %s, but it should be %s' % (v, __store_version__)
+        msg += '\nPlease do a fresh checkout or update your client. Sorry about the inconvenience.'
         raise oscerr.WorkingCopyWrongVersion, msg
     
 
