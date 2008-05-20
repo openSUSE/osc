@@ -1586,31 +1586,13 @@ class metafile:
             os.unlink(self.filename)
             return True
 
-        try:
-            print 'Sending meta data...'
-            http_PUT(self.url, file=self.filename)
-            os.unlink(self.filename)
-            print 'Done.'
-            return True
-        except urllib2.HTTPError, e:
-            # internal server error (probably the xml file is incorrect)
-            if e.code == 400:
-                print >>sys.stderr, 'Cannot save meta data.'
-                print >>sys.stderr, e
-                print >>sys.stderr, e.read()
-                return False
-            if e.code == 500:
-                print >>sys.stderr, 'Cannot save meta data. Unknown error.'
-                print >>sys.stderr, e
-                # this may be unhelpful... because it may just print a big blob of uninteresting
-                # ichain html and javascript... however it could potentially be useful if the orign
-                # server returns an information body
-                if conf.config['http_debug']:
-                    print >>sys.stderr, e.read()
-                return False
-            else:
-                print >> sys.stderr, 'cannot save meta data - an unexpected error occured'
-                return False
+        print 'Sending meta data...'
+        # don't do any exception handling... it's up to the caller what to do in case
+        # of an exception
+        http_PUT(self.url, file=self.filename)
+        os.unlink(self.filename)
+        print 'Done.'
+        return True
     
 
 # different types of metadata
@@ -1642,21 +1624,18 @@ def meta_exists(metatype,
                 create_new=True,
                 apiurl=None):
 
-    data = None
     if not apiurl:
         apiurl = conf.config['apiurl']
     url = make_meta_url(metatype, path_args, apiurl)
     try:
         data = http_GET(url).readlines()
     except urllib2.HTTPError, e:
-        if e.code == 404:
-            if create_new:
-                data = metatypes[metatype]['template']
-                if template_args:
-                    data = data % template_args
+        if e.code == 404 and create_new:
+            data = metatypes[metatype]['template']
+            if template_args:
+                data = data % template_args
         else:
-            print >>sys.stderr, 'error getting metadata for type \'%s\' at URL \'%s\':' \
-                                % (metatype, url)
+            raise e
     return data
 
 def make_meta_url(metatype, path_args=None, apiurl=None):
@@ -1688,9 +1667,6 @@ def edit_meta(metatype,
                            template_args,
                            create_new=True,
                            apiurl=apiurl)
-    if not data:
-        # meta_exists encountered an error
-        sys.exit(1)
 
     if edit:
         change_is_required = True
@@ -1703,7 +1679,10 @@ def edit_meta(metatype,
         while 1:
             os.system('%s %s' % (editor, f.filename))
             if change_is_required == True:
-                if not f.sync():
+                try:
+                    f.sync()
+                except urllib2.HTTPError, e:
+                    print e
                     input = raw_input('Try again? (yY = Yes - nN = No): ')
                     if input != 'y' and input != 'Y':
                         break
