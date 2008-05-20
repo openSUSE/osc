@@ -2519,7 +2519,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                     pacs_to_show.append(pkg)
 
         pacs = [ i for i in pacs if i in pacs_to_show ]
-        if len(targets_to_show) is not 0:
+        if len(targets_to_show):
             targets = [ i for i in targets if i in targets_to_show ]
 
     # csv output
@@ -2565,7 +2565,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
 
         r.append('')
 
-    if not hide_legend:
+    if not hide_legend and len(pacs):
         r.append(' Legend:')
         for i, j in buildstatus_symbols.items():
             r.append('  %s %s' % (j, i))

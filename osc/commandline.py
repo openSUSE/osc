@@ -1297,7 +1297,7 @@ class Osc(cmdln.Cmdln):
             print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name))
 
 
-    def do_rresults(self, subcmd, opts, *args):
+    def do_rresults(self, subcmd, opts, prj, pkg):
         """${cmd_name}: Shows the build results of a remote package
 
         Examples:
@@ -1308,14 +1308,8 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        if args and len(args) > 2:
-            print >>sys.stderr, 'getting remote results for more than one package is not supported'
-            return 2
-
-        project = args[0]
-        pac = args[1]
         apiurl = conf.config['apiurl']
-        print '\n'.join(get_results(apiurl, project, pac))
+        print '\n'.join(get_results(apiurl, prj, pkg))
 
                 
     @cmdln.option('-q', '--hide-legend', action='store_true',
@@ -1366,7 +1360,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
                         help='show only packages whos name matches EXPR')
 
-    def do_rprjresults(self, subcmd, opts, *args):
+    def do_rprjresults(self, subcmd, opts, prj):
         """${cmd_name}: Shows project-wide build results of remote Projects
         
         Examples:
@@ -1377,20 +1371,9 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        if args and len(args) > 1:
-            print >>sys.stderr, 'getting results for more than one project is not supported'
-            return 2
-            
-        if args:
-            wd = args[0]
-        else:
-            print >>sys.stderr, 'specify project name of the remote Project'
-            return 2
-
-        project = wd
         apiurl = conf.config['apiurl']
 
-        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
+        print '\n'.join(get_prj_results(apiurl, prj, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
 
                 
     @cmdln.alias('bl')
