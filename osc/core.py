@@ -1565,13 +1565,13 @@ def show_pattern_meta(apiurl, prj, pattern):
 
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
-    def __init__(self, url, input, change_is_required=False):
+    def __init__(self, url, input, change_is_required=False, file_ext='.xml'):
         import tempfile
 
         self.url = url
         self.change_is_required = change_is_required
 
-        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = '.xml', dir = '/tmp')
+        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext, dir = '/tmp')
 
         f = os.fdopen(fd, 'w')
         f.write(''.join(input))
@@ -1616,18 +1616,23 @@ class metafile:
 # different types of metadata
 metatypes = { 'prj':     { 'path': 'source/%s/_meta',
                            'template': new_project_templ,
+                           'file_ext': '.xml'
                          },
               'pkg':     { 'path'     : 'source/%s/%s/_meta',
                            'template': new_package_templ,
+                           'file_ext': '.xml'
                          },
               'prjconf': { 'path': 'source/%s/_config',
                            'template': '',
+                           'file_ext': '.txt'
                          },
               'user':    { 'path': 'person/%s',
                            'template': new_user_template,
+                           'file_ext': '.xml'
                          },
               'pattern': { 'path': 'source/%s/_pattern/%s',
                            'template': new_pattern_template,
+                           'file_ext': '.xml'
                          },
             }
 
@@ -1691,7 +1696,7 @@ def edit_meta(metatype,
         change_is_required = True
 
     url = make_meta_url(metatype, path_args, apiurl)
-    f=metafile(url, data, change_is_required)
+    f=metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:
         editor = os.getenv('EDITOR', default='vim')
