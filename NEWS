@@ -13,6 +13,7 @@
 - osc rprjresults and osc rresults: new commands to show remote build results
 - osc build: added --baselibs and --jobs options
 - osc copypac: added --keep-maintainers switch
+- osc maintainer: new -D/--devel-project switch
 - BUILD_DIST environment variable will be ignored (bnc#359846)
   The following environment variables can still be used:
   * OSC_SU_WRAPPER overrides the setting of su-wrapper. 
