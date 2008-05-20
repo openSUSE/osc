@@ -3135,6 +3135,30 @@ def delMaintainer(apiurl, prj, pac, user):
     else:
         print "an error occured"
 
+def addDevelProject(apiurl, prj, pac, dprj):
+    """ add a <devel project="..."> element to package metadata"""
+    path = quote_plus(prj),
+    kind = 'prj'
+    if pac:
+        path = path + (quote_plus(pac),)
+        kind = 'pkg'
+    data = meta_exists(metatype=kind,
+                       path_args=path,
+                       template_args=None,
+                       create_new=False)
+                       
+    if data and show_project_meta(apiurl, dprj) != None:
+        tree = ET.fromstring(''.join(data))
+        if not tree.find('devel') != None:
+            ET.SubElement(tree, 'devel')
+        elem = tree.find('devel')
+        elem.attrib['project'] = dprj
+        edit_meta(metatype=kind,
+                  path_args=path,
+                  data=ET.tostring(tree))
+    else:
+        print "osc: an error occured"
+
 def createPackageDir(pathname, prj_obj=None):
     """
     create and initialize a new package dir in the given project.

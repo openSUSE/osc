@@ -2082,6 +2082,8 @@ class Osc(cmdln.Cmdln):
                   help='show email addresses instead of user names')
     @cmdln.option('-v', '--verbose', action='store_true',
                   help='show more information')
+    @cmdln.option('-D', '--devel-project', metavar='devel_project',
+                  help='define the project where this package is primarily developed')
     @cmdln.option('-a', '--add', metavar='user',
                   help='add a new maintainer')
     @cmdln.option('-d', '--delete', metavar='user',
@@ -2136,6 +2138,9 @@ class Osc(cmdln.Cmdln):
             addMaintainer(conf.config['apiurl'], prj, pac, opts.add)
         elif opts.delete:
             delMaintainer(conf.config['apiurl'], prj, pac, opts.delete)
+        elif opts.devel_project:
+            addDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
+
         else:
             print ', '.join(maintainers)
 
