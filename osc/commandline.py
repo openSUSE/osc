@@ -603,6 +603,7 @@ class Osc(cmdln.Cmdln):
             return 1
         aggregate_pac(src_project, src_package, dst_project, dst_package)
 
+
     @cmdln.option('-c', '--client-side-copy', action='store_true',
                         help='do a (slower) client-side copy')
     @cmdln.option('-k', '--keep-maintainers', action='store_true',
@@ -661,6 +662,29 @@ class Osc(cmdln.Cmdln):
                      client_side_copy=opts.client_side_copy,
                      keep_maintainers=opts.keep_maintainers)
         print r
+
+
+    def do_branch(self, subcmd, opts, prj, pkg):
+        """${cmd_name}: Branch a package
+
+        Create a source link from a package of an existing project to a new
+        subproject of the requesters home project (home:branches:)
+
+        The branched package will live in
+            home:USERNAME:branches:PROJECT/PACKAGE
+        
+        usage: 
+            osc branch SOURCEPRJ SOURCEPKG
+        ${cmd_option_list}
+        """
+
+        r = branch_pkg(conf.config['apiurl'], prj, pkg)
+        if self.options.debug:
+            print r
+
+        print 'A working copy of the branched package can be checked out with\n' \
+              'osc checkout home:%s:branches:%s %s' \
+                      % (conf.config['user'], prj, pkg)
 
 
     def do_deletepac(self, subcmd, opts, project, *pkgs):

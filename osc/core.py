@@ -2333,6 +2333,17 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
     http_PUT(u, data=aggregate_template)
     print 'Done.'
 
+def branch_pkg(apiurl, src_project, src_package):
+    """
+    Branch a package (via API call)
+    """
+    u = makeurl(conf.config['apiurl'], 
+                ['source', src_project, src_package], 
+                query='cmd=branch')
+    f = http_POST(u)
+    return f.read()
+
+
 def copy_pac(src_apiurl, src_project, src_package, 
              dst_apiurl, dst_project, dst_package,
              client_side_copy = False,
