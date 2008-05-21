@@ -80,13 +80,19 @@ def run(prg):
                 print >>sys.stderr, e.hdrs
                 print >>sys.stderr, e.read()
 
+        if e.code == 400:
+            msg = e.read()
+            msg = msg.split('<summary>')[1]
+            msg = msg.split('</summary>')[0]
+            print >>sys.stderr, msg
+
         # For 404s, check out _which_ part was not found
         #
         # It is very ugly, but may be Good for pragmatic reasons
         #
         # FIXME this can be obsoleted when the api returns a more specific error code
         #       like "project not found" right away
-        if e.code == 404:
+        elif e.code == 404:
             import urlparse
             scheme, netloc, path = urlparse.urlsplit(e.url)[0:3]
             parts = path.split('/')
