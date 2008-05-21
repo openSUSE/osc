@@ -133,8 +133,11 @@ new_user_template = """\
 """
 
 info_templ = """\
+Project name: %s
+Package name: %s
 Path: %s
 API URL: %s
+Source URL: %s
 srcmd5: %s
 Revision: %s
 Link info: %s
@@ -589,7 +592,8 @@ class Package:
         self.todo_delete = []
 
     def info(self):
-        r = info_templ % (self.dir, self.apiurl, self.srcmd5, self.rev, self.linkinfo)
+        source_url = makeurl(self.apiurl, ['source', self.prjname, self.name]) 
+        r = info_templ % (self.prjname, self.name, self.absdir, self.apiurl, source_url, self.srcmd5, self.rev, self.linkinfo)
         return r
 
     def addfile(self, n):
@@ -1778,6 +1782,38 @@ def read_meta_from_spec(specfile, *args):
         spec_data[section] = data
 
     return spec_data
+
+
+def edit_message(footer=''):
+    delim = '--This line, and those below, will be ignored--\n\n' + footer
+    import tempfile
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.txt', dir = '/tmp')
+    f = os.fdopen(fd, 'w')
+    f.write('\n')
+    f.write(delim)
+    f.close()
+    hash_orig = dgst(filename)
+
+    editor = os.getenv('EDITOR', default='vim')
+    while 1:
+        os.system('%s %s' % (editor, filename))
+        hash = dgst(filename)
+
+        if hash != hash_orig:
+            msg = open(filename).read()
+            os.unlink(filename)
+            return msg.split(delim)[0].rstrip()
+        else:
+            input = raw_input('Log message unchanged or not specified\n'
+                              'a)bort, c)ontinue, e)dit: ')
+            if input in 'aA':
+                os.unlink(filename)
+                raise oscerr.UserAbort
+            elif input in 'cC':
+                os.unlink(filename)
+                return ''
+            elif input in 'eE':
+                pass
 
 
 def create_submit_request(apiurl, 
@@ -3257,7 +3293,7 @@ def getTransActPath(pac_dir):
         pathn = ''
     return pathn
 
-def getStatus(pacs, prj_obj=None, verbose=False):
+def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
     """
     calculates the status of certain packages. pacs is a list of Package()
     objects and prj_obj is a Project() object. If prj_obj is specified all
@@ -3294,8 +3330,11 @@ def getStatus(pacs, prj_obj=None, verbose=False):
             elif s != ' ' or (s == ' ' and verbose):
                 lines.append(statfrmt(s, pathjoin(p.dir, filename)))
 
-    # arrange the lines in order: unknown files first
-    # filenames are already sorted
-    lines = [line for line in lines if line[0] == '?'] \
-          + [line for line in lines if line[0] != '?']
+    if quiet:
+        lines = [line for line in lines if line[0] != '?']
+    else:
+        # arrange the lines in order: unknown files first
+        # filenames are already sorted
+        lines = [line for line in lines if line[0] == '?'] \
+              + [line for line in lines if line[0] != '?']
     return lines

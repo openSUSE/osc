@@ -663,14 +663,19 @@ class Osc(cmdln.Cmdln):
         print r
 
 
-    def do_deletepac(self, subcmd, opts, project, package):
-        """${cmd_name}: Delete a package on the repository server
+    def do_deletepac(self, subcmd, opts, project, *pkgs):
+        """${cmd_name}: Delete packages on the repository server
 
-        ${cmd_usage}
+        usage:
+            osc deletepac PROJECT PACKAGE [PACKAGE ...]
         ${cmd_option_list}
         """
 
-        delete_package(conf.config['apiurl'], project, package)
+        if not pkgs:
+            raise oscerr.WrongArgs('Missing argument.')
+
+        for pkg in pkgs:
+            delete_package(conf.config['apiurl'], project, pkg)
 
 
     @cmdln.option('-f', '--force', action='store_true',
@@ -875,6 +880,8 @@ class Osc(cmdln.Cmdln):
                   + self.get_cmd_help('checkout'))
 
 
+    @cmdln.option('-q', '--quiet', action='store_true',
+                        help='print as little as possible')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='print extra information')
     @cmdln.alias('st')
@@ -933,10 +940,10 @@ class Osc(cmdln.Cmdln):
                 raise oscerr.NoWorkingCopy, msg
         lines = []
         # process single packages
-        lines = getStatus(findpacs(pacpaths), None, opts.verbose)
+        lines = getStatus(findpacs(pacpaths), None, opts.verbose, opts.quiet)
         # process project dirs
         for prj, pacs in prjpacs.iteritems():
-            lines += getStatus(findpacs(pacs), prj, opts.verbose)
+            lines += getStatus(findpacs(pacs), prj, opts.verbose, opts.quiet)
         if lines:
             print '\n'.join(lines)
 
@@ -1029,6 +1036,9 @@ class Osc(cmdln.Cmdln):
         ${cmd_usage}
         ${cmd_option_list}
         """
+
+        args = parseargs(args)
+
         msg = ''
         if opts.message:
             msg = opts.message
@@ -1038,13 +1048,27 @@ class Osc(cmdln.Cmdln):
             except:
                 sys.exit('could not open file \'%s\'.' % opts.file)
 
-        args = parseargs(args)
         for arg in args:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 Project(arg).commit(msg=msg)
                 args.remove(arg)
 
         pacs = findpacs(args)
+
+        if not msg:
+            # open editor for commit message
+            # but first, produce status and diff to append to the template
+            footer = diffs = []
+            for pac in pacs:
+                changed = getStatus([pac], quiet=True)
+                if changed:
+                    footer += changed
+                    diffs += ['\nDiff for working copy: %s' % pac.dir]
+                    diffs += make_diff(pac, 0)
+            # if footer is empty, there is nothing to commit, and no edit needed.
+            if footer:
+                msg = edit_message(footer='\n'.join(footer))
+
         if conf.config['do_package_tracking'] and len(pacs) > 0:
             prj_paths = {}
             single_paths = []

@@ -14,6 +14,9 @@ class OscBaseError(Exception):
     def __str__(self):
         return ''.join(self.args)
 
+class UserAbort(OscBaseError):
+    """Exception raised when the user requested abortion"""
+
 class ConfigError(OscBaseError):
     """Exception raised when there is an error in the config file"""
     def __init__(self, msg):

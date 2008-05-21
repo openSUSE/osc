@@ -58,6 +58,10 @@ def run(prg):
         print >>sys.stderr, 'interrupted!'
         return 1
 
+    except oscerr.UserAbort:
+        print >>sys.stderr, 'aborted.'
+        return 1
+
     except oscerr.UnreadableFile, e:
         print >>sys.stderr, e.msg
         return 1
