@@ -100,13 +100,19 @@ class Osc(cmdln.Cmdln):
     def do_init(self, subcmd, opts, project, package):
         """${cmd_name}: Initialize a directory as working copy 
 
-        Initialize a directory to be a working copy of an
-        existing buildservice package. 
-        
-        (This is the same as checking out a
-        package and then copying sources into the directory. It does NOT create
-        a new package. To create a package, use 'osc meta', then 'osc init'.)
+        Initialize an existing directory to be a working copy of an
+        (already existing) buildservice package. 
 
+        (This is the same as checking out a package and then copying sources
+        into the directory. It does NOT create a new package. To create a
+        package, use 'osc meta pkg ... ...')
+
+        You wouldn't normally use this command.
+
+        To get a working copy of a package (e.g. for building it or working on
+        it, you would normally use the checkout command. Use "osc help
+        checkout" to get help for it.
+        
         usage: 
             osc init PRJ PAC
         ${cmd_option_list}
