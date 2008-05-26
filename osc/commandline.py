@@ -689,7 +689,7 @@ class Osc(cmdln.Cmdln):
             print r
 
         print 'A working copy of the branched package can be checked out with\n' \
-              'osc checkout home:%s:branches:%s %s' \
+              'osc checkout --expand-link home:%s:branches:%s %s' \
                       % (conf.config['user'], prj, pkg)
 
 
