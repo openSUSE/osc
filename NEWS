@@ -1,3 +1,15 @@
+0.101:
+
+- add osc branch command, using the branch API call to branch a package to
+  home:poeml:branches:PRJ/PKG
+- osc commit now opens $EDITOR for commit message
+- improved error handling, when API returns HTTP status code 400 (bad request)
+- osc status: implement -q/--quiet switch
+- osc info: slightly more verbose
+- osc deletepac: allow deletion of multiple packages at once
+- make "osc meta prjconf <project> -e" work again (probably caused by r3702)
+
+
 0.100:
 
 - improved error handling (babysitter.py wrapper, oscerr.py exception classes)
