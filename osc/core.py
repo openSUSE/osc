@@ -2341,7 +2341,11 @@ def branch_pkg(apiurl, src_project, src_package):
                 ['source', src_project, src_package], 
                 query='cmd=branch')
     f = http_POST(u)
-    return f.read()
+    r = f.read()
+    r = r.split('targetproject">')[1]
+    r = r.split('</data>')[0]
+    return r
+
 
 
 def copy_pac(src_apiurl, src_project, src_package, 

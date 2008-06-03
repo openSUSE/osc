@@ -685,12 +685,10 @@ class Osc(cmdln.Cmdln):
         """
 
         r = branch_pkg(conf.config['apiurl'], prj, pkg)
-        if self.options.debug:
-            print r
 
         print 'A working copy of the branched package can be checked out with\n' \
-              'osc checkout --expand-link home:%s:branches:%s %s' \
-                      % (conf.config['user'], prj, pkg)
+              'osc checkout --expand-link %s %s' \
+                      % (r, pkg)
 
 
     def do_deletepac(self, subcmd, opts, project, *pkgs):
