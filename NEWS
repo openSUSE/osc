@@ -1,3 +1,12 @@
+0.102:
+
+- osc branch: Show the actually created branch project name, not
+  a guessed one.  Add --nodevelproject.
+- osc submitreq: look up the develproject of the target, and if
+  there is one, don't create the request, unless forced with
+  --nodevelproject.
+- make the global -d option work better under certain circumstances
+
 0.101:
 
 - add osc branch command, using the branch API call to branch a package to
