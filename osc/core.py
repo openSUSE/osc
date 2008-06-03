@@ -1544,6 +1544,14 @@ def show_package_meta(apiurl, prj, pac):
         raise
 
 
+def show_develproject(apiurl, prj, pac):
+    m = show_package_meta(apiurl, prj, pac)
+    try:
+        return ET.parse(StringIO(''.join(m))).getroot().find('devel').get('project')
+    except:
+        return None
+
+
 def show_pattern_metalist(apiurl, prj):
     url = makeurl(apiurl, ['source', prj, '_pattern'])
     try:

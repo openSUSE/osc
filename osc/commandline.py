@@ -402,6 +402,9 @@ class Osc(cmdln.Cmdln):
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
                   help='for "create", specify a certain source revision ID (the md5 sum)')
+    @cmdln.option('--nodevelproject', action='store_true',
+                  help='do not follow a defined devel project ' \
+                       '(primary project where a package is developed)')
     def do_submitreq(self, subcmd, opts, *args):
         """${cmd_name}: Handle requests to submit a package into another project
 
@@ -462,6 +465,14 @@ class Osc(cmdln.Cmdln):
                 dst_package = args[3]
             else:
                 dst_package = src_package
+            devloc = show_develproject(conf.config['apiurl'], dst_project, dst_package)
+            if devloc and dst_project != devloc and not opts.nodevelproject:
+                print """\
+Sorry, but a different project, %s, is defined as the place where development
+of the package %s primarily takes place.
+Please submit there instead, or use --nodevelproject to force direct submission.""" \
+                    % (devloc, dst_package)
+                sys.exit(1)
 
         elif cmd == 'list':
             project = args[0]
