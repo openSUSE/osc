@@ -75,13 +75,15 @@ def run(prg):
         if hasattr(e, 'osc_msg'):
             print >>sys.stderr, e.osc_msg
 
+        body = None
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
                 print >>sys.stderr, e.hdrs
-                print >>sys.stderr, e.read()
+                body = e.read()
+                print >>sys.stderr, body
 
         if e.code == 400:
-            msg = e.read()
+            msg = body or e.read()
             msg = msg.split('<summary>')[1]
             msg = msg.split('</summary>')[0]
             print >>sys.stderr, msg
