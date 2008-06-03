@@ -2333,15 +2333,19 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
     http_PUT(u, data=aggregate_template)
     print 'Done.'
 
-def branch_pkg(apiurl, src_project, src_package):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False):
     """
     Branch a package (via API call)
     """
+    query = { 'cmd': 'branch' }
+    if nodevelproject:
+        query['nodevelproject'] = '1'
     u = makeurl(conf.config['apiurl'], 
                 ['source', src_project, src_package], 
-                query='cmd=branch')
+                query=query)
     f = http_POST(u)
     r = f.read()
+    #print r
     r = r.split('targetproject">')[1]
     r = r.split('</data>')[0]
     return r

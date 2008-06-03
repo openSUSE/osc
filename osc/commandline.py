@@ -670,6 +670,9 @@ class Osc(cmdln.Cmdln):
         print r
 
 
+    @cmdln.option('--nodevelproject', action='store_true',
+                        help='do not follow a defined devel project ' \
+                             '(primary project where a package is developed)')
     def do_branch(self, subcmd, opts, prj, pkg):
         """${cmd_name}: Branch a package
 
@@ -684,9 +687,20 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        r = branch_pkg(conf.config['apiurl'], prj, pkg)
+        r = branch_pkg(conf.config['apiurl'], prj, pkg, nodevelproject=opts.nodevelproject)
 
-        print 'A working copy of the branched package can be checked out with\n' \
+        expected = 'home:%s:branches:%s' % (conf.config['user'], prj)
+        if r != expected:
+            devloc = r.split('branches:')[1]
+            print '\nNote: The branch has been created of a different project,\n' \
+                  '              %s,\n' \
+                  '      which is the primary location of where development for\n' \
+                  '      that package takes place.\n' \
+                  '      That\'s also where you would normally make changes against.\n' \
+                  '      A direct branch of the specified package can be forced\n' \
+                  '      with the --nodevelproject option.\n' % devloc
+
+        print 'A working copy of the branched package can be checked out with:\n' \
               'osc checkout --expand-link %s %s' \
                       % (r, pkg)
 
