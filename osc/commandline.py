@@ -408,8 +408,15 @@ class Osc(cmdln.Cmdln):
     def do_submitreq(self, subcmd, opts, *args):
         """${cmd_name}: Handle requests to submit a package into another project
 
-        For "create", the DESTPAC name is optional; the source packages' name
-        will be used if DESTPAC is omitted.
+        [See http://en.opensuse.org/Build_Service/Collaboration for information
+        on this topic.]
+
+        For "create", there are two ways to use it. Either with a working copy
+        or without. If called with no arguments, osc will guess what to submit 
+        where. If you don't have a working copy, you can give the respective
+        arguments on the commandline (see below for an example).
+        Then, the DESTPAC name is optional; the source packages' name will be
+        used if DESTPAC is omitted.
         With --message, a message can be attached.
         With --revision, a revision MD5 of a package can be specified which is
         to be submitted. The default is to request submission of the currently
@@ -429,6 +436,7 @@ class Osc(cmdln.Cmdln):
 
 
         usage:
+            osc submitreq create [-m TEXT] 
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list PRJ [PKG]
             osc submitreq show [-d] ID
@@ -448,7 +456,7 @@ class Osc(cmdln.Cmdln):
         del args[0]
 
         if cmd in ['create']:
-            min_args, max_args = 3, 4
+            min_args, max_args = 0, 4
         elif cmd in ['list']:
             min_args, max_args = 1, 2
         else:
@@ -458,21 +466,30 @@ class Osc(cmdln.Cmdln):
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
 
+        apiurl = conf.config['apiurl']
+
         # collect specific arguments
         if cmd == 'create':
-            src_project, src_package, dst_project = args[0:3]
-            if len(args) > 3:
-                dst_package = args[3]
-            else:
-                dst_package = src_package
-            devloc = show_develproject(conf.config['apiurl'], dst_project, dst_package)
-            if devloc and dst_project != devloc and not opts.nodevelproject:
-                print """\
-Sorry, but a different project, %s, is defined as the place where development
-of the package %s primarily takes place.
-Please submit there instead, or use --nodevelproject to force direct submission.""" \
-                    % (devloc, dst_package)
-                sys.exit(1)
+            if len(args) == 0:
+                # try using the working copy at hand
+                p = findpacs(os.curdir)[0]
+                src_project = p.prjname
+                src_package = p.name
+                if p.islink():
+                    dst_project = p.linkinfo.project
+                    dst_package = p.linkinfo.package
+                    apiurl = p.apiurl
+                else:
+                    sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
+                             'Please provide it the target via commandline arguments.' % p.name)
+
+            elif len(args) >= 3:
+                # get the arguments from the commandline
+                src_project, src_package, dst_project = args[0:3]
+                if len(args) == 4:
+                    dst_package = args[3]
+                else:
+                    dst_package = src_package
 
         elif cmd == 'list':
             project = args[0]
@@ -486,7 +503,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # create
         if cmd == 'create':
-            result = create_submit_request(conf.config['apiurl'], 
+            devloc = show_develproject(conf.config['apiurl'], dst_project, dst_package)
+            if devloc \
+                    and dst_project != devloc \
+                    and src_project != devloc \
+                    and not opts.nodevelproject:
+                print """\
+Sorry, but a different project, %s, is defined as the place where development
+of the package %s primarily takes place.
+Please submit there instead, or use --nodevelproject to force direct submission.""" \
+                    % (devloc, dst_package)
+                sys.exit(1)
+
+            result = create_submit_request(apiurl, 
                                           src_project, src_package,
                                           dst_project, dst_package,
                                           opts.message, orev=opts.revision)
@@ -687,6 +716,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_branch(self, subcmd, opts, prj, pkg):
         """${cmd_name}: Branch a package
 
+        [See http://en.opensuse.org/Build_Service/Collaboration for information
+        on this topic.]
+
         Create a source link from a package of an existing project to a new
         subproject of the requesters home project (home:branches:)
 
@@ -711,8 +743,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   '      A direct branch of the specified package can be forced\n' \
                   '      with the --nodevelproject option.\n' % devloc
 
-        print 'A working copy of the branched package can be checked out with:\n' \
-              'osc checkout --expand-link %s %s' \
+        print 'A working copy of the branched package can be checked out with:\n\n' \
+              'osc co %s/%s' \
                       % (r, pkg)
 
 
@@ -867,7 +899,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              'NOTE: if you checkout the complete project '
                              'this option is ignored!')
     @cmdln.option('-e', '--expand-link', action='store_true',
-                        help='if a package is a link, check out the expanded sources')
+                        help='if a package is a link, check out the expanded ' 
+                             'sources (no-op, since this became the default)')
+    @cmdln.option('-u', '--unexpand-link', action='store_true',
+                        help='if a package is a link, check out the _link file ' \
+                             'instead of the expanded sources')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: Check out content from the repository
@@ -878,9 +914,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         When checking out a single package, the option --revision can be used
         to specify a revions of the package to be checked out.
 
-        When --expand-link is used with source link packages, the expanded
-        sources will be checked out. Without this option, the _link file and
-        patches will be checked out.
+        When a package is a source link, then it will be checked out in 
+        expanded form. If --unexpand-link option is used, the checkout will 
+        instead produce the raw _link file plus patches.
         
 
         examples:
@@ -892,6 +928,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc co PROJECT [PACKAGE] [FILE]
         ${cmd_option_list}
         """
+
+        if opts.unexpand_link: expand_link = False
+        else: expand_link = True
+
         args = slash_split(args)
         project = package = filename = None
         try: 
@@ -900,6 +940,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             filename = args[2]
         except: 
             pass
+
 
         rev, dummy = parseRevisionOption(opts.revision)
 
@@ -912,7 +953,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         elif package:
             checkout_package(conf.config['apiurl'], project, package, 
-                             rev, expand_link=opts.expand_link, prj_dir=project)
+                             rev, expand_link=expand_link, prj_dir=project)
 
         elif project:
             if os.path.exists(project):
@@ -927,7 +968,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # all packages
             for package in meta_get_packagelist(conf.config['apiurl'], project):
                 checkout_package(conf.config['apiurl'], project, package, 
-                                 expand_link=opts.expand_link, prj_dir=project)
+                                 expand_link=expand_link, prj_dir=project)
         else:
             raise oscerr.WrongArgs('Missing argument.\n\n' \
                   + self.get_cmd_help('checkout'))
