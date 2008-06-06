@@ -1,3 +1,14 @@
+0.103:
+
+- osc submitreq create: simplify by make osc guess needed parameters, if 
+  there is a working copy and it is a source link.
+- osc submitreq create: don't stop on packages that have a devel project
+  defined, if the submit actually comes from that project.
+- osc checkout: checkout of source links is now done in expanded form per
+  default. The new option --unexpand-link can be used to get the raw link file.
+- show the API's error message for HTTP 403 (Forbidden) replies.
+
+
 0.102:
 
 - osc branch: Show the actually created branch project name, not
