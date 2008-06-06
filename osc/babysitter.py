@@ -81,7 +81,7 @@ def run(prg):
                 print >>sys.stderr, e.hdrs
                 print >>sys.stderr, body
 
-        if e.code == 400:
+        if e.code == 400 or e.code == 403:
             msg = body.split('<summary>')[1]
             msg = msg.split('</summary>')[0]
             print >>sys.stderr, msg
