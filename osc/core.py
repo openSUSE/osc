@@ -2081,6 +2081,7 @@ def make_diff(wc, revision):
     diff_hdr = 'Index: %s\n'
     diff_hdr += '===================================================================\n'
     diff = []
+    olddir = os.getcwd()
     if not revision:
         # normal diff
         if wc.todo:
@@ -2105,7 +2106,6 @@ def make_diff(wc, revision):
                 elif state == 'D':
                     removed_files.append(file)
     else:
-        olddir = os.getcwd()
         tmpdir  = tempfile.mkdtemp(revision, wc.name, '/tmp')
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
@@ -2157,8 +2157,7 @@ def make_diff(wc, revision):
     # FIXME: this is ugly but it cannot be avoided atm
     #        if a file is deleted via "osc rm file" we should keep the storefile.
     tmp_pac = None
-    if cmp_pac == None:
-        olddir = os.getcwd()
+    if cmp_pac == None and removed_files:
         tmpdir  = tempfile.mkdtemp(dir='/tmp')
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, wc.rev)
