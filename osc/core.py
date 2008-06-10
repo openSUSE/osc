@@ -1267,7 +1267,13 @@ def findpacs(files):
         
 
 def read_filemeta(dir):
-    return ET.parse(os.path.join(dir, store, '_files'))
+    try:
+        r = ET.parse(os.path.join(dir, store, '_files'))
+    except SyntaxError, e:
+        raise oscerr.NoWorkingCopy('\'%s\' is not a valid working copy.\n'
+                                   'When parsing .osc/_files, the following error was encountered:\n'
+                                   '%s' % (dir, e))
+    return r
 
 
 def read_tobedeleted(dir):
