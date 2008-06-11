@@ -81,41 +81,10 @@ def run(prg):
                 print >>sys.stderr, e.hdrs
                 print >>sys.stderr, body
 
-        if e.code == 400 or e.code == 403:
+        if e.code in [ 400, 403, 404 ]:
             msg = body.split('<summary>')[1]
             msg = msg.split('</summary>')[0]
             print >>sys.stderr, msg
-
-        # For 404s, check out _which_ part was not found
-        #
-        # It is very ugly, but may be Good for pragmatic reasons
-        #
-        # FIXME this can be obsoleted when the api returns a more specific error code
-        #       like "project not found" right away
-        elif e.code == 404:
-            import urlparse
-            scheme, netloc, path = urlparse.urlsplit(e.url)[0:3]
-            parts = path.split('/')
-            # we know how to do this for /source URLs. I don't know for others right now...
-            if len(parts) > 1 and parts[1] == 'source':
-                if len(parts) == 3:
-                    # it was a request on /source/project
-                    print >>sys.stderr, 'A project named \'%s\' does not exist.' % parts[2]
-                if len(parts) == 4:
-                    # it was a request on /source/project/package
-                    prjurl = urlparse.urlunsplit((scheme, netloc, '/'.join(parts[:3]), None, None))
-                    import osc.core
-                    try:
-                        osc.core.http_GET(prjurl)
-                    except:
-                        print >>sys.stderr, 'A project named \'%s\' does not exist.' % parts[2]
-                    else:
-                        print >>sys.stderr, \
-                              'A package named \'%s\' does not exist in project \'%s\'.' \
-                              % (parts[3], parts[2])
-                else:
-                    # not handled...
-                    pass
 
         return 1
 
