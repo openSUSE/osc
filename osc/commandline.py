@@ -1900,7 +1900,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 1:
             raise oscerr.WrongArgs('Missing <project> argument.')
-        
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+
         if len(args) == 2:
             package = args[1]
         else:
