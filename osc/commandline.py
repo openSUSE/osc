@@ -1273,6 +1273,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                             p.prjname, p.name)
 
             p.update(rev)
+            rev = None
                    
 
     @cmdln.option('-f', '--force', action='store_true',
