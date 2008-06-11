@@ -1,3 +1,13 @@
+0.104:
+- osc update: after update, reset the revision when updating multiple package.
+  Fixes "404: Not Found" type errors when updating an entire project. [bnc#399177]
+- more/better error messages in some error scenarios
+- osc wipebinaries: add missing check for commandline arguments, which could
+  cause a PACKAGE argument to be ignored
+- fixed make_diff in order to avoid errors when committing a new package
+  (created with mkpac)
+
+
 0.103:
 
 - osc submitreq create: simplify by make osc guess needed parameters, if 
