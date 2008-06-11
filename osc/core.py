@@ -944,7 +944,7 @@ class Package:
         
         return state
 
-    def comparePac(self, pac):
+    def comparePac(self, cmp_pac):
         """
         This method compares the local filelist with
         the filelist of the passed package to see which files
@@ -955,17 +955,21 @@ class Package:
         added_files = []
         removed_files = []
 
-        for file in self.filenamelist:
-            if not file in self.to_be_deleted:
-                if file in pac.filenamelist:
-                    if dgst(file) != pac.findfilebyname(file).md5:
-                        changed_files.append(file)
-                else:
-                    added_files.append(file)
-
-        for file in pac.filenamelist:
-            if (not file in self.filenamelist) or (file in self.to_be_deleted):
+        for file in self.filenamelist+self.filenamelist_unvers:
+            state = self.status(file)
+            if state == 'A' and (not file in cmp_pac.filenamelist):
+                added_files.append(file)
+            elif file in cmp_pac.filenamelist and state == 'D':
                 removed_files.append(file)
+            elif state == ' ' and not file in cmp_pac.filenamelist:
+                added_files.append(file)
+            elif file in cmp_pac.filenamelist and state != 'A' and state != '?':
+                if dgst(os.path.join(self.absdir, file)) != cmp_pac.findfilebyname(file).md5:
+                    changed_files.append(file)
+        for file in cmp_pac.filenamelist:
+            if not file in self.filenamelist:
+                removed_files.append(file)
+        removed_files = set(removed_files)
 
         return changed_files, added_files, removed_files
 
@@ -2120,21 +2124,7 @@ def make_diff(wc, revision):
                 else:
                     diff.append('osc: unable to find \'%s\' in revision %s' % (file, cmp_pac.rev))
         else:
-            for file in wc.filenamelist+wc.filenamelist_unvers:
-                state = wc.status(file)
-                if state == 'A' and (not file in cmp_pac.filenamelist):
-                    added_files.append(file)
-                elif file in cmp_pac.filenamelist and state == 'D':
-                    removed_files.append(file)
-                elif state == ' ' and not file in cmp_pac.filenamelist:
-                    added_files.append(file)
-                elif file in cmp_pac.filenamelist and state != 'A' and state != '?':
-                    if dgst(os.path.join(wc.absdir, file)) != cmp_pac.findfilebyname(file).md5:
-                        changed_files.append(file)
-            for file in cmp_pac.filenamelist:
-                if not file in wc.filenamelist:
-                    removed_files.append(file)
-            removed_files = set(removed_files)
+            changed_files, added_files, removed_files = wc.comparePac(cmp_pac)
 
     for file in changed_files:
         diff.append(diff_hdr % file)
