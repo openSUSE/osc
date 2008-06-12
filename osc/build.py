@@ -301,6 +301,8 @@ def main(opts, argv):
                 print >>sys.stderr, 'The project \'%s\' does not exists - please ' \
                                     'rerun with \'--alternative-project <alternative_project>\'' % prj
                 sys.exit(1)
+        else:
+            raise
     bi_file.write(bi_text)
     bi_file.flush()
 
