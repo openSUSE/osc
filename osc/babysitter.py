@@ -81,10 +81,11 @@ def run(prg):
                 print >>sys.stderr, e.hdrs
                 print >>sys.stderr, body
 
-        if e.code in [ 400, 403, 404 ]:
-            msg = body.split('<summary>')[1]
-            msg = msg.split('</summary>')[0]
-            print >>sys.stderr, msg
+        if e.code in [ 400, 403, 404, 500 ]:
+            if '<summary>' in body:
+                msg = body.split('<summary>')[1]
+                msg = msg.split('</summary>')[0]
+                print >>sys.stderr, msg
 
         return 1
 
