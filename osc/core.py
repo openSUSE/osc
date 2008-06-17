@@ -1805,7 +1805,7 @@ def read_meta_from_spec(specfile, *args):
 def edit_message(footer=''):
     delim = '--This line, and those below, will be ignored--\n\n' + footer
     import tempfile
-    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.txt', dir = '/tmp')
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff', dir = '/tmp')
     f = os.fdopen(fd, 'w')
     f.write('\n')
     f.write(delim)
@@ -2666,9 +2666,9 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
         t = time.localtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
-        r.append('%s   %s %6d   %2d   %s' % (t, srcmd5, rev, bcnt, versrel))
+        r.append('%s   %s %6d    %s.%d' % (t, srcmd5, rev, versrel, bcnt))
 
-    r.insert(0, 'time                  srcmd5                              rev  bcnt  vers-rel')
+    r.insert(0, 'time                  srcmd5                              rev   vers-rel.bcnt')
 
     return r
 

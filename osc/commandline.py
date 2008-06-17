@@ -1400,6 +1400,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print ''.join(show_results_meta(pac.apiurl, pac.prjname, package=pac.name))
 
                 
+    @cmdln.alias('r')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
@@ -1440,6 +1441,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
                         help='show only packages whos name matches EXPR')
                        
+    @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
         
