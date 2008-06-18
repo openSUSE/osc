@@ -490,6 +490,9 @@ class Osc(cmdln.Cmdln):
                     dst_package = args[3]
                 else:
                     dst_package = src_package
+            else:
+                raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                      + self.get_cmd_help('submitreq'))
 
         elif cmd == 'list':
             project = args[0]
