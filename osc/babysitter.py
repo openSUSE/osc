@@ -62,6 +62,10 @@ def run(prg):
         print >>sys.stderr, 'aborted.'
         return 1
 
+    except oscerr.APIError, e:
+        print >>sys.stderr, 'BuildService API error:', e.msg
+        return 1
+
     except oscerr.UnreadableFile, e:
         print >>sys.stderr, e.msg
         return 1

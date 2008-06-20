@@ -23,6 +23,12 @@ class ConfigError(OscBaseError):
         OscBaseError.__init__(self)
         self.msg = msg
 
+class APIError(OscBaseError):
+    """Exception raised when there is an error in the output from the API"""
+    def __init__(self, msg):
+        OscBaseError.__init__(self)
+        self.msg = msg
+
 class NoConfigfile(OscBaseError):
     """Exception raised when osc's configfile cannot be found"""
     def __init__(self, fname, msg):
