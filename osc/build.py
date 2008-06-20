@@ -14,6 +14,7 @@ from tempfile import NamedTemporaryFile
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig
 import osc.conf
+import oscerr
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -24,13 +25,15 @@ from conf import config
 change_personality = {
             'i686': 'linux32',
             'i586': 'linux32',
+            'i386': 'linux32',
             'ppc': 'powerpc32',
             's390': 's390',
         }
 
 can_also_build = { 
-             'x86_64': ['i686', 'i586'],
+             'x86_64': ['i686', 'i586', 'i386'],
              'i686': ['i586'],
+             'i386': ['i586'],
              'ppc64': ['ppc'],
              's390x': ['s390'],
             }
@@ -82,12 +85,23 @@ class Buildinfo:
 
         self.deps = []
         for node in root.findall('bdep'):
-            p = Pac(node.get('name'),
-                    node.get('version'),
-                    node.get('release'),
+            p_name = node.get('name')
+            p_arch = node.get('arch')
+            if not p_arch:
+                p_arch = self.buildarch
+            p_version = node.get('version')
+            p_release = node.get('release')
+
+            if not (p_name and p_arch and p_version and p_release):
+                raise oscerr.APIError(
+                    "buildinfo for package %s/%s/%s/%s is incomplete" % (p_name, p_arch, p_version, p_release))
+
+            p = Pac(p_name,
+                    p_version,
+                    p_release,
                     node.get('project'),
                     node.get('repository'),
-                    node.get('arch'),
+                    p_arch,
                     node.get('preinstall'),
                     node.get('runscripts'),
                     self.buildarch,       # buildarch is used only for the URL to access the full tree...
@@ -392,7 +406,9 @@ def main(opts, argv):
         # change personality, if needed
         if bi.buildarch in can_also_build.get(hostarch, []):
             cmd = change_personality[bi.buildarch] + ' ' + cmd
-
+        else:
+            print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
+            return 1
 
     print cmd
     rc = os.system(cmd)
