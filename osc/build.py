@@ -92,9 +92,9 @@ class Buildinfo:
             p_version = node.get('version')
             p_release = node.get('release')
 
-            if not (p_name and p_arch and p_version and p_release):
+            if not (p_name and p_arch and p_version):
                 raise oscerr.APIError(
-                    "buildinfo for package %s/%s/%s/%s is incomplete" % (p_name, p_arch, p_version, p_release))
+                    "buildinfo for package %s/%s/%s is incomplete" % (p_name, p_arch, p_version))
 
             p = Pac(p_name,
                     p_version,
