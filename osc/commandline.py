@@ -1951,6 +1951,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search for matches in the \'description\' element')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
+    @cmdln.option('-i', '--involved', action='store_true',
+                        help='show involved projects/packages')
     def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
 
@@ -1963,10 +1965,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        search_term = None
         if len(args) > 1:
             raise oscerr.WrongArgs('Too many arguments.')
-        elif len(args) < 1:
+        elif len(args) < 1 and not opts.involved:
             raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) == 1:
+            search_term = args[0]
+
+        if (opts.title or opts.description) and opts.involved:
+            raise oscerr.WrongArgs('Sorry, the options \'--title\' and/or \'--description\' ' \
+                                   'plus \'--involved\' are mutual exclusive')
 
         search_list = []
         search_for = []
@@ -1980,13 +1989,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.project:
             search_list.append('@name')
             search_for.append('project')
+        if opts.involved:
+            search_list = [ 'person/@userid' ]
+            search_term = search_term or conf.get_apiurl_usr(conf.config['apiurl'])
+            opts.enable_exact = True
 
         if not search_list:
             search_list = ['title', 'description', '@name']
         if not search_for:
             search_for = [ 'project', 'package' ]
         for kind in search_for:
-            result = search(conf.config['apiurl'], set(search_list), kind, args[0], opts.verbose, opts.enable_exact, opts.repos_baseurl)
+            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.enable_exact, opts.repos_baseurl)
             if result:
                 if kind == 'package':
                     headline = [ '# Package', '# Project' ]
@@ -1998,11 +2011,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     headline.append('# URL')
                 if len(search_for) > 1:
                     print '#' * 68
-                print 'matches for \'%s\' in %ss:\n' % (args[0], kind)
+                print 'matches for \'%s\' in %ss:\n' % (search_term, kind)
                 for row in build_table(len(headline), result, headline, 2):
                     print row
             else:
-               print 'No matches found for \'%s\' in %ss' % (args[0], kind)
+               print 'No matches found for \'%s\' in %ss' % (search_term, kind)
 
 
     @cmdln.option('-p', '--project', metavar='project',
