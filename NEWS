@@ -1,3 +1,10 @@
+0.105:
+- Workaround a bug which causes packages to be cached locally under the "None"
+  architecture (and therefore causing issues when building for more than one
+  architecture via osc build).
+- osc submitreq list can now also be called without parameters. It lists
+  submitrequests for the current working copy then.
+
 0.104:
 - osc update: after update, reset the revision when updating multiple package.
   Fixes "404: Not Found" type errors when updating an entire project. [bnc#399177]
