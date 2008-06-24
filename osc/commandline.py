@@ -438,7 +438,7 @@ class Osc(cmdln.Cmdln):
         usage:
             osc submitreq create [-m TEXT] 
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
-            osc submitreq list PRJ [PKG]
+            osc submitreq list [PRJ [PKG]]
             osc submitreq show [-d] ID
             osc submitreq decline [-m TEXT] ID
             osc submitreq accept [-m TEXT] ID
