@@ -458,7 +458,7 @@ class Osc(cmdln.Cmdln):
         if cmd in ['create']:
             min_args, max_args = 0, 4
         elif cmd in ['list']:
-            min_args, max_args = 1, 2
+            min_args, max_args = 0, 2
         else:
             min_args, max_args = 1, 1
         if len(args) < min_args:
@@ -495,11 +495,18 @@ class Osc(cmdln.Cmdln):
                       + self.get_cmd_help('submitreq'))
 
         elif cmd == 'list':
-            project = args[0]
+            package = None
+            project = None
+            if len(args) > 0:
+                project = args[0]
+            else:
+                # try using the working copy at hand
+                p = findpacs(os.curdir)[0]
+                project = p.prjname
+                package = p.name
+
             if len(args) > 1:
                 package = args[1]
-            else:
-                package = None
         elif cmd in ['show', 'decline', 'accept']:
             reqid = args[0]
 
