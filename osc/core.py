@@ -29,7 +29,7 @@ except ImportError:
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, 'CVS', '*~', '.*']
+exclude_stuff = [store, 'CVS', '*~', '.*', '_linkerror']
 
 
 new_project_templ = """\
@@ -3251,8 +3251,8 @@ def addFiles(filenames):
             os.chdir(old_dir)
 
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
-            print 'osc: warning: \'%s\' is already under version control' % filename
-            sys.exit(1)
+            print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
+            return 1
 
     pacs = findpacs(filenames)
 
@@ -3269,6 +3269,7 @@ def addFiles(filenames):
                 print 'osc: warning: \'%s\' is already under version control' % pac.name
         for filename in pac.todo:
             if filename in pac.excluded:
+                print >>sys.stderr, 'osc: warning: \'%s\' is excluded from a working copy' % filename
                 continue
             if filename in pac.filenamelist:
                 print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
