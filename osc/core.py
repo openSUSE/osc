@@ -2267,7 +2267,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False):
                       userid = conf.config['user'], role = 'maintainer')
     return ET.tostring(root)
 
-def link_pac(src_project, src_package, dst_project, dst_package):
+def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
     """
     create a linked package
      - "src" is the original package
@@ -2287,16 +2287,21 @@ def link_pac(src_project, src_package, dst_project, dst_package):
         print >>sys.stderr
         print >>sys.stderr, '_link file already exists...! Aborting'
         sys.exit(1)
-
+    
+    if rev:
+        rev = 'rev="%s"' % rev
+    else:
+        rev = ''
+	
     print 'Creating _link...',
     link_template = """\
-<link project="%s" package="%s">
+<link project="%s" package="%s" %s>
 <patches>
   <!-- <apply name="patch" /> -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> -->
 </patches>
 </link>
-""" % (src_project, src_package)
+""" % (src_project, src_package, rev)
 
     u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
