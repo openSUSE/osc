@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# vim: sw=4 et
+
 # Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
@@ -1141,7 +1143,7 @@ class SubmitReq:
         self.statehistory = []
 
     def read(self, root):
-        self.reqid = root.get('id')
+        self.reqid = int(root.get('id'))
 
         n = root.find('submit').find('source')
         self.src_project = n.get('project')
@@ -1176,18 +1178,26 @@ class SubmitReq:
 
 
     def list_view(self):
-        return '%s   %-8s    %s/%s  ->  %s/%s    %s' % \
+        dst = "%s/%s" % (self.dst_project, self.dst_package)
+        if self.src_package == self.dst_package:
+            dst = self.dst_project
+
+        desc = ""
+        if self.descr:
+            desc = "\n                 %s" % (repr(self.descr))
+
+        return '%6d  %-7s  %-50s  ->  %-20s   %s' % \
             (self.reqid, 
-             self.state.name, 
-             self.src_project, 
-             self.src_package, 
-             self.dst_project, 
-             self.dst_package, 
-             repr(self.descr) or '')
+             self.state.name,
+             "%s/%s" % (self.src_project, self.src_package),
+             dst, desc)
+
+    def __cmp__(self, other):
+        return cmp(self.reqid, other.reqid)
 
     def __str__(self):
         s = """\
-Request to submit (id %s): 
+Request to submit (sri%d): 
 
     %s/%s  ->  %s/%s
 
@@ -1894,7 +1904,7 @@ def change_submit_request_state(apiurl, reqid, newstate, message=''):
     return f.read()
 
 
-def get_submit_request_list(apiurl, project, package):
+def get_submit_request_list(apiurl, project, package, req_state=('new')):
     match = 'submit/target/@project=\'%s\'' % quote_plus(project)
     if package:
         match += '%20and%20' + 'submit/target/@package=\'%s\'' % quote_plus(package)
@@ -1907,7 +1917,7 @@ def get_submit_request_list(apiurl, project, package):
     for root in collection.findall('request'):
         r = SubmitReq()
         r.read(root)
-        if r.state.name not in ['accepted', 'declined', 'deleted']:
+        if r.state.name in req_state:
             requests.append(r)
 
     return requests
