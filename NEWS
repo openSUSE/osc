@@ -6,6 +6,7 @@
   submitrequests for the current working copy then.
 - osc meta -e returns the API error description instead of a plain HTTP
   error if available
+- osc submitreq list output is more beautiful
 
 0.104:
 - osc update: after update, reset the revision when updating multiple package.
