@@ -502,6 +502,7 @@ class Osc(cmdln.Cmdln):
                 project = args[0]
             else:
                 project = store_read_project(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
                 try:
                     package = store_read_package(os.curdir)
                 except oscerr.NoWorkingCopy:
@@ -515,7 +516,7 @@ class Osc(cmdln.Cmdln):
 
         # create
         if cmd == 'create':
-            devloc = show_develproject(conf.config['apiurl'], dst_project, dst_package)
+            devloc = show_develproject(apiurl, dst_project, dst_package)
             if devloc \
                     and dst_project != devloc \
                     and src_project != devloc \
@@ -536,7 +537,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # list
         elif cmd == 'list':
-            results = get_submit_request_list(conf.config['apiurl'], 
+            results = get_submit_request_list(apiurl, 
                                              project, package)
 
             results.sort(reverse=True)
