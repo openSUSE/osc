@@ -501,10 +501,11 @@ class Osc(cmdln.Cmdln):
             if len(args) > 0:
                 project = args[0]
             else:
-                # try using the working copy at hand
-                p = findpacs(os.curdir)[0]
-                project = p.prjname
-                package = p.name
+                project = store_read_project(os.curdir)
+                try:
+                    package = store_read_package(os.curdir)
+                except oscerr.NoWorkingCopy:
+                    pass
 
             if len(args) > 1:
                 package = args[1]
