@@ -1704,8 +1704,11 @@ def edit_meta(metatype,
                 try:
                     f.sync()
                 except urllib2.HTTPError, e:
-                    if e.code >= 400 and e.headers.get('X-Opensuse-Errorcode'):
-                        print >>sys.stderr, 'BuildService API error:', e.headers.get('X-Opensuse-Errorcode')
+                    error_help = "%d" % e.code
+                    if e.headers.get('X-Opensuse-Errorcode'):
+                        error_help = "%s (%d)" % (e.headers.get('X-Opensuse-Errorcode'), e.code)
+
+                    print >>sys.stderr, 'BuildService API error:', error_help
                     input = raw_input('Try again? ([y/N]): ')
                     if input != 'y' and input != 'Y':
                         break
