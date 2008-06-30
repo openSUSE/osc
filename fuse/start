@@ -1,0 +1,2 @@
+mkdir -p ./test
+./fuseosc ./test
