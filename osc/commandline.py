@@ -1297,6 +1297,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rev = show_upstream_xsrcmd5(p.apiurl,
                                             p.prjname, p.name)
 
+            # FIXME: ugly workaround for #399247
+            if opts.expand_link or opts.unexpand_link:
+                if [ i for i in p.filenamelist+p.filenamelist_unvers if p.status(i) != ' ' ]:
+                    print >>sys.stderr, 'osc: cannot expand/unexpand because your working ' \
+                                        'copy has local modifications. Please remove them ' \
+                                        'and try again'
+                    sys.exit(1)
             p.update(rev)
             rev = None
                    
