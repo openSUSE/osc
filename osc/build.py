@@ -52,7 +52,7 @@ class Buildinfo:
         try:
             tree = ET.parse(filename)
         except:
-            print >>sys.stderr, 'could not parse the buildconfig:'
+            print >>sys.stderr, 'could not parse the buildinfo:'
             print >>sys.stderr, open(filename).read()
             sys.exit(1)
 
