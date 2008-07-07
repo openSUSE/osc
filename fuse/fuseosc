@@ -14,7 +14,6 @@ import tempfile
 fuse.fuse_python_api = (0, 2)
 
 projects = []
-files = {}
 cache = {}
 
 class EmptyStat(fuse.Stat):
@@ -29,6 +28,12 @@ class EmptyStat(fuse.Stat):
         self.st_atime = 0
         self.st_mtime = 0
         self.st_ctime = 0
+
+class CacheEntry(object):
+    def __init__(self):
+        self.stat = None
+        self.handle = None
+        self.tmpname = None
 
 class oscFS(Fuse):
 
@@ -49,9 +54,8 @@ class oscFS(Fuse):
             st.st_nlink = 2
             return st
         # path is file
-        file = os.path.basename(path)
-        if files.has_key(file):
-            return files[file]
+        if cache.has_key(path):
+            return cache[path].stat
         else:
             return -errno.ENOENT
 
@@ -62,7 +66,6 @@ class oscFS(Fuse):
         if os.path.dirname(path) in projects: # path is package
             prj = os.path.dirname(path).replace('/','')
             pkg = os.path.basename(path)
-            files.clear()
             for f in osc.core.meta_get_filelist(osc.conf.config['apiurl'], prj, pkg, verbose=True):
                 st = EmptyStat()
                 st.st_mode = stat.S_IFREG | 0444
@@ -70,7 +73,8 @@ class oscFS(Fuse):
                 st.st_atime = f.mtime
                 st.st_ctime = f.mtime
                 st.st_mtime = f.mtime
-                files[f.name] = st
+                cache[path + '/' + f.name] = CacheEntry()
+                cache[path + '/' + f.name].stat = st
                 yield fuse.Direntry(f.name)
             return
 
@@ -120,15 +124,18 @@ class oscFS(Fuse):
         pkg = os.path.basename(d)
         prj = os.path.dirname(d).replace('/','')
         if not cache.has_key(path):
-            tmp = tempfile.mktemp(prefix = 'oscfs_')
-            osc.core.get_source_file(osc.conf.config['apiurl'], prj, pkg, file, tmp)
-            f = open(tmp, 'r')
-            cache[path] = (f, tmp)
+            return -errno.ENOENT
+        if cache[path].stat == None:
+            return -errno.ENOENT
+        tmp = tempfile.mktemp(prefix = 'oscfs_')
+        osc.core.get_source_file(osc.conf.config['apiurl'], prj, pkg, file, tmp)
+        cache[path].handle = open(tmp, 'r')
+        cache[path].tmpname = tmp
 
     def read ( self, path, length, offset ):
         if not cache.has_key(path):
             return -errno.EACCES
-        f = cache[path][0]
+        f = cache[path].handle
         f.seek(offset)
         return f.read(length)
 
@@ -138,9 +145,10 @@ class oscFS(Fuse):
 
     def release ( self, path, flags ):
         if cache.has_key(path):
-            cache[path][0].close()
-            os.unlink(cache[path][1])
-            del cache[path]
+            cache[path].handle.close()
+            cache[path].handle = None
+            os.unlink(f.cache[path].tmpname)
+            cache[path].tmpname = None
 
     def rename ( self, oldPath, newPath ):
         print '*** rename', oldPath, newPath
