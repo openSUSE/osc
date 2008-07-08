@@ -9,6 +9,8 @@ import sys
 import signal
 from osc import oscerr
 from urllib2 import URLError, HTTPError
+# import as RPMError because the class "error" is too generic
+from rpm import error as RPMError
 
 # the good things are stolen from Matt Mackall's mercurial
 
@@ -125,5 +127,9 @@ def run(prg):
         return 1
 
     except AttributeError, e:
+        print >>sys.stderr, e
+        return 1
+    
+    except RPMError, e:
         print >>sys.stderr, e
         return 1

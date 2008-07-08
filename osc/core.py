@@ -3096,6 +3096,7 @@ def data_from_rpm(rpm_file, *rpmdata):
     try:
         import rpm
         ts = rpm.TransactionSet()
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         file = open(rpm_file, 'r')
         header = ts.hdrFromFdno(file.fileno())
         file.close()
