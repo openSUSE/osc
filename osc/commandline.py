@@ -431,6 +431,9 @@ class Osc(cmdln.Cmdln):
         "decline" will change the request state to "declined" and append a
         message that you specify with the --message option.
 
+        "delete" will change the request state to "deleted" and append a
+        message that you specify with the --message option.
+
         "accept" will change the request state to "accepted" and will trigger
         the actual submit process. That would normally be a server-side copy of
         the source package to the target package.
@@ -442,13 +445,14 @@ class Osc(cmdln.Cmdln):
             osc submitreq list [PRJ [PKG]]
             osc submitreq show [-d] ID
             osc submitreq decline [-m TEXT] ID
+            osc submitreq delete [-m TEXT] ID
             osc submitreq accept [-m TEXT] ID
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
-        cmds = ['create', 'list', 'show', 'decline', 'accept']
+        cmds = ['create', 'list', 'show', 'decline', 'accept', 'delete']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown submitreq action. Choose one of %s.' \
                                                % ', '.join(cmds))
@@ -510,7 +514,7 @@ class Osc(cmdln.Cmdln):
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['show', 'decline', 'accept']:
+        elif cmd in ['show', 'decline', 'accept', 'delete']:
             reqid = args[0]
 
 
@@ -570,6 +574,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd == 'accept':
             r = change_submit_request_state(conf.config['apiurl'], 
                     reqid, 'accepted', opts.message or '')
+            print r
+        # delete
+        elif cmd == 'delete':
+            r = change_submit_request_state(conf.config['apiurl'],
+                    reqid, 'deleted', opts.message or '')
             print r
 
 
