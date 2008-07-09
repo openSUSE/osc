@@ -127,45 +127,6 @@ http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
 
 
 
-when can this happen?
- % osc up
-checking out new package t
-A    home:poeml/t
-A    home:poeml/t/foo
-At revision 16.
-At revision 9.
-D    bar1
-Traceback (most recent call last):
-  File "/suse/poeml/bin/osc", line 7, in ?
-    commandline.main()
-  File "/suse/poeml/osc-stable/osc/commandline.py", line 1072, in main
-    cmd(args)
-  File "/suse/poeml/osc-stable/osc/commandline.py", line 572, in update
-    if state == 'M' and p.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
-AttributeError: 'NoneType' object has no attribute 'md5'
-[1]    11871 exit 1     osc up
-
-
-
-
- % osc importsrcpkg  -n apache2-mod_memcache /tmp/apache-mod_memcache-0.1.0-2mdv2008.0.src.rpm       
-warning: rpmts_HdrFromFdno: Header V3 DSA signature: NOKEY, key ID 26752624
-Traceback (most recent call last):
-  File "/suse/poeml/bin/osc", line 10, in ?
-    sys.exit( osc.main() )
-  File "/suse/poeml/osc/osc/cmdln.py", line 256, in main
-    return self.cmd(args)
-  File "/suse/poeml/osc/osc/cmdln.py", line 279, in cmd
-    retval = self.onecmd(argv)
-  File "/suse/poeml/osc/osc/cmdln.py", line 395, in onecmd
-    return self._dispatch_cmd(handler, argv)
-  File "/suse/poeml/osc/osc/cmdln.py", line 1070, in _dispatch_cmd
-    return handler(argv[0], opts, *args)
-  File "/suse/poeml/osc/osc/commandline.py", line 1714, in do_importsrcpkg
-    rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
-  File "/suse/poeml/osc/osc/core.py", line 2128, in data_from_rpm
-    header = ts.hdrFromFdno(file.fileno())
-_rpm.error: public key not available
 
 
 15:16 < DuDE> mt: Projekte anlegen geht nur, wenn es ein Subprojekt ist von einem Projekt wo Du Schreibrechte hast

@@ -1,12 +1,34 @@
 0.105:
-- Workaround a bug which causes packages to be cached locally under the "None"
-  architecture (and therefore causing issues when building for more than one
-  architecture via osc build).
-- osc submitreq list can now also be called without parameters. It lists
-  submitrequests for the current working copy then.
-- osc meta -e returns the API error description instead of a plain HTTP
+
+- osc submitreq list: 
+   - can now be called without parameters, applying to the working copy then.
+   - calling it in a project directory is also possible now.
+   - output was improved. Newest requests are listed first.
+- osc submitreq delete: a new action which has been added
+- osc submitreq list/create: use api URL from the working copy
+- osc meta: editing returns the API error description instead of a plain HTTP
   error if available
-- osc submitreq list output is more beautiful
+- osc copypac: use the correct userid when copying to another api host
+- osc importsrcpkg: disable signature check when getting data from a rpm file
+- osc linkpac: --revision option added.
+- osc search: added option -i|--involved, to show in which projects/packages
+  a developer is involve
+- osc build: double check the buildinfo for local builds. Refuse to build for
+  architectures that are not supported by the host
+- osc buildhist: change the output into a format which better matches actual
+  RPM filenames.
+- osc commit: give commit message tempfiles a ".diff" suffix, so syntax
+  highlighting automatically works in capable editors
+- other bug fixes:
+  - don't expand/unexpand if the working copy has local modifications - this is
+    an ugly workaround for #399247 but this way the working copy isn't screwed up
+  - work around a bug which causes packages to be cached locally under the
+    "None" architecture (and therefore causing issues when building for more
+    than one architecture via osc build).
+  - don't create _linkerror files in working copies
+  - better error handling (mostly printing more details) in a number of cases
+  - show error messages from the API also for type 500 errors
+
 
 0.104:
 - osc update: after update, reset the revision when updating multiple package.
