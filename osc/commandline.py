@@ -406,6 +406,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
+    @cmdln.alias("sr")
     def do_submitreq(self, subcmd, opts, *args):
         """${cmd_name}: Handle requests to submit a package into another project
 
