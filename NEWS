@@ -12,7 +12,7 @@
 - osc importsrcpkg: disable signature check when getting data from a rpm file
 - osc linkpac: --revision option added.
 - osc search: added option -i|--involved, to show in which projects/packages
-  a developer is involve
+  a developer is involved
 - osc build: double check the buildinfo for local builds. Refuse to build for
   architectures that are not supported by the host
 - osc buildhist: change the output into a format which better matches actual
