@@ -1186,9 +1186,9 @@ class SubmitReq:
         if self.descr:
             desc = "\n                 %s" % (repr(self.descr))
 
-        return '%6d  %-7s  %-50s  ->  %-20s   %s' % \
+        return '%6d  %-7s %-12s %-50s  ->  %-20s   %s' % \
             (self.reqid, 
-             self.state.name,
+             self.state.name, "(%s)" % self.state.who,
              "%s/%s" % (self.src_project, self.src_package),
              dst, desc)
 
