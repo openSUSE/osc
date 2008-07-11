@@ -12,6 +12,7 @@ NORMAL:
     - create: enforce message
     - create: check if there is already a request open for that target package
       (if so, offer to obsolete it?)
+    - for done requests, show accept/reject messages also
 
   - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
     (update: we have some commands meanwhile which exist in an alternate form,
