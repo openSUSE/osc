@@ -2191,7 +2191,7 @@ def pretty_diff(apiurl,
                 old_project, old_package, old_revision,
                 new_project, new_package, new_revision):
 
-    query = {'cmd': 'diff'}
+    query = {'cmd': 'diff', 'expand': '1'}
     if old_project:
         query['oproject'] = old_project
     if old_package:
