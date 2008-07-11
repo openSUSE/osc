@@ -1,3 +1,10 @@
+0.106:
+
+- osc rdiff / osc submitreq show: diff the _expanded_ sources [bnc#408267]
+- osc submitreq list: show author's name 
+- osc submitreq: shortcut alias 'sr' added
+
+
 0.105:
 
 - osc submitreq list: 
