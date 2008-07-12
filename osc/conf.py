@@ -63,6 +63,8 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'cookiejar': '~/.osc_cookiejar',
              # disable project tracking by default
              'do_package_tracking': '0',
+             # default for osc build
+             'extra-pkgs': 'vim gdb strace',
 }
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback']
 
@@ -83,6 +85,12 @@ new_conf_template = """
 # can contain %%(repo)s and/or %%(arch)s for replacement, e.g.
 # /srv/oscbuild/%%(repo)s-%%(arch)s
 #build-root = %(build-root)s
+
+# extra packages to install when building packages locally (osc build)
+# this corresponds to osc build's -x option and can be overridden with that
+# -x '' can also be given on the command line to override this setting, or
+# you can have an empty setting here.
+#extra-pkgs = vim gdb strace
 
 # show info useful for debugging 
 #debug = 1
@@ -296,7 +304,11 @@ def get_config(override_conffile = None,
         except:
             raise oscerr.ConfigError('option %s requires an integer value' % i)
 
-    packagecachedir = os.path.expanduser(config['packagecachedir'])
+    config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
+
+    config['extra-pkgs'] = [ i.strip(',') for i in config['extra-pkgs'].split() ]
+    if config['extra-pkgs'] == []: 
+        config['extra-pkgs'] = None
 
     # transform 'url1, url2, url3' form into a list
     if type(config['urllist']) == str:

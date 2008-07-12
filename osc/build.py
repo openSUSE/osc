@@ -288,6 +288,13 @@ def main(opts, argv):
 
     config['build-root'] = config['build-root'] % {'repo': repo, 'arch': arch}
 
+    if not opts.extra_pkgs:
+        extra_pkgs = config['extra-pkgs']
+    elif opts.extra_pkgs == ['']:
+        extra_pkgs = None
+    else:
+        extra_pkgs = opts.extra_pkgs
+
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
     try:
@@ -297,7 +304,7 @@ def main(opts, argv):
                                         repo, 
                                         arch, 
                                         specfile=open(spec).read(), 
-                                        addlist=opts.extra_pkgs))
+                                        addlist=extra_pkgs))
     except urllib2.HTTPError, e:
         if e.code == 404:
         # check what caused the 404
