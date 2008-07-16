@@ -68,6 +68,10 @@ def run(prg):
         print >>sys.stderr, 'BuildService API error:', e.msg
         return 1
 
+    except oscerr.LinkExpandError, e:
+        print >>sys.stderr, 'Link cannot be expanded:\n', e
+        return 1
+
     except oscerr.UnreadableFile, e:
         print >>sys.stderr, e.msg
         return 1

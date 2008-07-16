@@ -64,6 +64,9 @@ class WorkingCopyOutdated(OscBaseError):
                     % (self[0], self[1], self[2]))
 
 
+class LinkExpandError(OscBaseError):
+    """Exception raised when source link expansion fails"""
+
 class UnreadableFile(OscBaseError):
     def __init__(self, msg):
         OscBaseError.__init__(self)

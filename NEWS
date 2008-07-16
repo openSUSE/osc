@@ -1,3 +1,11 @@
+0.107:
+
+- osc build: the --extra-pkgs option is now a configurable setting in .oscrc.
+  Default is "extra-pkgs = vim gdb strace"
+- .oscrc: make tilde expansion work on the packagecachedir setting
+- osc update: don't update working copy when a source link can't apply [bnc#409373]
+
+
 0.106:
 
 - osc rdiff / osc submitreq show: diff the _expanded_ sources [bnc#408267]

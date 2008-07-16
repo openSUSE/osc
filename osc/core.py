@@ -185,6 +185,7 @@ class Linkinfo:
         self.xsrcmd5 = None
         self.lsrcmd5 = None
         self.srcmd5 = None
+        self.error = None
 
     def read(self, linkinfo_node):
         """read in the linkinfo metadata from the <linkinfo> element passed as
@@ -198,6 +199,7 @@ class Linkinfo:
         self.xsrcmd5 = linkinfo_node.get('xsrcmd5')
         self.lsrcmd5 = linkinfo_node.get('lsrcmd5')
         self.srcmd5  = linkinfo_node.get('srcmd5')
+        self.error   = linkinfo_node.get('error')
 
     def islink(self):
         """returns True if the linkinfo is not empty, otherwise False"""
@@ -211,14 +213,24 @@ class Linkinfo:
             return True
         return False
 
+    def haserror(self):
+        """returns True if the link is in error state (could not be applied)"""
+        if self.error:
+            return True
+        return False
+
     def __str__(self):
         """return an informatory string representation"""
         if self.islink() and not self.isexpanded():
             return 'project %s, package %s, xsrcmd5 %s' \
                     % (self.project, self.package, self.xsrcmd5)
         elif self.islink() and self.isexpanded():
-            return 'expanded link to project %s, package %s, srcmd5 %s, lsrcmd5 %s' \
-                    % (self.project, self.package, self.srcmd5, self.lsrcmd5)
+            if self.haserror():
+                return 'broken link to project %s, package %s, srcmd5 %s, lsrcmd5 %s: %s' \
+                        % (self.project, self.package, self.srcmd5, self.lsrcmd5, self.error)
+            else:
+                return 'expanded link to project %s, package %s, srcmd5 %s, lsrcmd5 %s' \
+                        % (self.project, self.package, self.srcmd5, self.lsrcmd5)
         else:
             return 'None'
 
@@ -1748,9 +1760,17 @@ def show_upstream_xsrcmd5(apiurl, prj, pac):
     m = show_files_meta(apiurl, prj, pac)
     try:
         # only source link packages have a <linkinfo> element.
-        return ET.parse(StringIO(''.join(m))).getroot().find('linkinfo').get('xsrcmd5')
+        li_node = ET.parse(StringIO(''.join(m))).getroot().find('linkinfo')
     except:
         return None
+
+    li = Linkinfo()
+    li.read(li_node)
+
+    if li.haserror():
+        raise oscerr.LinkExpandError, li.error
+    else:
+        return li.xsrcmd5
 
 
 def show_upstream_rev(apiurl, prj, pac):
