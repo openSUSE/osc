@@ -2231,8 +2231,17 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package, 
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=os.getcwd()):
-    olddir = os.getcwd()
+                     expand_link=False, prj_dir=None):
+
+    try:
+        # the project we're in might be deleted.
+        # that'll throw an error then.
+        olddir = os.getcwd()
+    except:
+        olddir = os.environ.get("PWD")
+
+    if not prj_dir:
+        prj_dir = olddir
  
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
