@@ -657,6 +657,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_aggregatepac(self, subcmd, opts, *args):
         """${cmd_name}: "Aggregate" a package to another package
         
+        Aggregation of a package means that the build results (binaries) of a
+        package are basically copied into another project.
+        This can be used to make packages available from building that are
+        needed in a project but available only in a different project. Note
+        that this is done at the expense of disk space. See 
+        http://en.opensuse.org/Build_Service/Tips_and_Tricks#_link_and__aggregate
+        for more information.
+
         The DESTPAC name is optional; the source packages' name will be used if
         DESTPAC is omitted.
 
