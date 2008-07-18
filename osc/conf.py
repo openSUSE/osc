@@ -252,6 +252,7 @@ def get_config(override_conffile = None,
     """do the actual work (see module documentation)"""
     import os
     import sys
+    import re
     global config
 
     conffile = override_conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
@@ -297,22 +298,20 @@ def get_config(override_conffile = None,
 
     for i in boolean_opts:
         try:
-            if int(config.get(i)):
-                config[i] = True
-            else:
-                config[i] = False
-        except:
-            raise oscerr.ConfigError('option %s requires an integer value' % i)
+            config[i] = cp.getboolean('general', i)
+        except ValueError, e:
+            raise oscerr.ConfigError('cannot parse \'%s\' setting: ' % i + str(e))
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
 
-    config['extra-pkgs'] = [ i.strip(',') for i in config['extra-pkgs'].split() ]
+    re_clist = re.compile('[, ]+')
+    config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) ]
     if config['extra-pkgs'] == []: 
         config['extra-pkgs'] = None
 
     # transform 'url1, url2, url3' form into a list
     if type(config['urllist']) == str:
-        config['urllist'] = [ i.strip() for i in config['urllist'].split(',') ]
+        config['urllist'] = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
 
     # holds multiple usernames and passwords
     auth_dict = { } 
