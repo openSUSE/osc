@@ -242,6 +242,8 @@ def main(opts, argv):
         buildargs.append('--clean')
     if opts.noinit:
         buildargs.append('--noinit')
+    if opts.nochecks:
+        buildargs.append('--no-checks')
     if not opts.no_changelog:
         buildargs.append('--changelog')
     if opts.jobs:

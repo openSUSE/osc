@@ -521,17 +521,25 @@ class Osc(cmdln.Cmdln):
 
         # create
         if cmd == 'create':
-            devloc = show_develproject(apiurl, dst_project, dst_package)
-            if devloc \
-                    and dst_project != devloc \
-                    and src_project != devloc \
-                    and not opts.nodevelproject:
-                print """\
+            if not opts.nodevelproject:
+                devloc = None
+                try:
+                    devloc = show_develproject(apiurl, dst_project, dst_package)
+                except oscerr.APIError, e:
+                    print >>sys.stderr, """\
+Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
+                        % (dst_project, dst_package)
+                    pass
+
+                if devloc \
+                      and dst_project != devloc \
+                      and src_project != devloc:
+                          print """\
 Sorry, but a different project, %s, is defined as the place where development
 of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                     % (devloc, dst_package)
-                sys.exit(1)
+                          sys.exit(1)
 
             result = create_submit_request(apiurl, 
                                           src_project, src_package,
@@ -1700,6 +1708,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='don\'t update the package changelog from a changes file')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
+    @cmdln.option('--nochecks', '--no-checks', action='store_true',
+                  help='Do not run post build checks on the resulting packages.')
     @cmdln.option('--no-verify', action='store_true',
                   help='Skip signature verification of packages used for build.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
