@@ -1573,7 +1573,7 @@ def show_package_meta(apiurl, prj, pac):
         return f.readlines()
     except urllib2.HTTPError, e:
         e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
-        raise oscerr.APIError(e.osc_msg)
+        raise
 
 
 def show_develproject(apiurl, prj, pac):

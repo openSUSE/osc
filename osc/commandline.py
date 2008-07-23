@@ -525,7 +525,7 @@ class Osc(cmdln.Cmdln):
                 devloc = None
                 try:
                     devloc = show_develproject(apiurl, dst_project, dst_package)
-                except oscerr.APIError, e:
+                except urllib2.HTTPError:
                     print >>sys.stderr, """\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                         % (dst_project, dst_package)
