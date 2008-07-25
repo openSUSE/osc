@@ -1787,7 +1787,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if len(args) == 2:
-            raise oscerr.WrongArgs('Missing argument: build description (spec of dsc file)')
+            raise oscerr.WrongArgs('Missing argument: build description (spec or dsc file)')
 
         elif len(args) < 2:
             # we are going to raise an error for this, but first look up some helpful details:
