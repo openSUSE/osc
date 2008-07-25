@@ -407,6 +407,7 @@ class Osc(cmdln.Cmdln):
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
     @cmdln.alias("sr")
+    @cmdln.alias("submitrequest")
     def do_submitreq(self, subcmd, opts, *args):
         """${cmd_name}: Handle requests to submit a package into another project
 
@@ -432,7 +433,10 @@ class Osc(cmdln.Cmdln):
         "decline" will change the request state to "declined" and append a
         message that you specify with the --message option.
 
-        "delete" will change the request state to "deleted" and append a
+        "delete" will permanently delete a request and append a
+        message that you specify with the --message option.
+
+        "revoke" will set the request state to "revoked" and append a
         message that you specify with the --message option.
 
         "accept" will change the request state to "accepted" and will trigger
@@ -445,15 +449,16 @@ class Osc(cmdln.Cmdln):
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list [PRJ [PKG]]
             osc submitreq show [-d] ID
+            osc submitreq accept [-m TEXT] ID
             osc submitreq decline [-m TEXT] ID
             osc submitreq delete [-m TEXT] ID
-            osc submitreq accept [-m TEXT] ID
+            osc submitreq revoke [-m TEXT] ID
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
-        cmds = ['create', 'list', 'show', 'decline', 'accept', 'delete']
+        cmds = ['create', 'list', 'show', 'decline', 'accept', 'delete', 'revoke']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown submitreq action. Choose one of %s.' \
                                                % ', '.join(cmds))
@@ -515,7 +520,7 @@ class Osc(cmdln.Cmdln):
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['show', 'decline', 'accept', 'delete']:
+        elif cmd in ['show', 'decline', 'accept', 'delete', 'revoke']:
             reqid = args[0]
 
 
@@ -589,7 +594,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             r = change_submit_request_state(conf.config['apiurl'],
                     reqid, 'deleted', opts.message or '')
             print r
-
+        # revoke
+        elif cmd == 'revoke':
+            r = change_submit_request_state(conf.config['apiurl'],
+                    reqid, 'revoked', opts.message or '')
+            print r
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
