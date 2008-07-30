@@ -1768,6 +1768,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage: 
             osc build [OPTS] PLATFORM ARCH BUILD_DESCR
+            osc build [OPTS] PLATFORM (ARCH = hostarch, BUILD_DESCR is detected automatically)
+            osc build [OPTS] ARCH (PLATFORM = build_platform (config option), BUILD_DESCR is detected automatically)
+            osc build [OPTS] BUILD_DESCR (PLATFORM = build_platform (config option), ARCH = hostarch)
+            osc build [OPTS] (PLATFORM = build_platform (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
 
         # Note: 
         # Configuration can be overridden by envvars, e.g.  
@@ -1786,23 +1790,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
             return 1
 
-        if len(args) == 2:
+        if len(args) > 3:
+            raise oscerr.WrongArgs('Too many arguments')
+        
+        arg_arch = arg_platform = arg_descr = None
+        if len(args) < 3:
+            for arg in args:
+                if arg.endswith('.spec') or arg.endswith('.dsc'):
+                    arg_descr = arg
+                else:
+                    if arg in osc.build.can_also_build.get(osc.build.hostarch, []) or \
+                       arg in osc.build.hostarch:
+                        arg_arch = arg
+                    elif not arg_platform:
+                        arg_platform = arg
+                    else:
+                        raise oscerr.WrongArgs('unexpected argument: \'%s\'' % arg)
+        else:
+            arg_platform, arg_arch, arg_descr = args
+
+        arg_arch = arg_arch or osc.build.hostarch
+        arg_platform = arg_platform or conf.config['build_platform']
+        descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') ]
+        if not arg_descr and len(descr) == 1:
+            arg_descr = descr[0]
+        elif not arg_descr:
             raise oscerr.WrongArgs('Missing argument: build description (spec or dsc file)')
 
-        elif len(args) < 2:
-            # we are going to raise an error for this, but first look up some helpful details:
-            msg= ['You have to choose a repo to build on.']
-            msg.append('Possible repositories on this machine are:\n')
-            for platform in get_repos_of_project(store_read_apiurl(os.curdir),
-                                                 store_read_project(os.curdir)):
-                arch = platform.split()[1] # arch
-                if arch == osc.build.hostarch or \
-                   arch in osc.build.can_also_build.get(osc.build.hostarch, []):
-                    msg.append(platform.strip())
-            raise oscerr.WrongArgs('Missing argument.\n\n' + '\n'.join(msg))
-
-        elif len(args) > 3:
-            raise oscerr.WrongArgs('Too many arguments')
+        args = (arg_platform, arg_arch, arg_descr)
 
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
@@ -1814,7 +1829,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not os.path.isdir(opts.keep_pkgs):
                 print >> sys.stderr, 'Preferred save location \'%s\' is not a directory' % opts.keep_pkgs
                 return 1
-
+        
+        print 'Building %s for %s/%s' % (arg_descr, arg_platform, arg_arch)
         return osc.build.main(opts, args)
 
             

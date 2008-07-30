@@ -65,6 +65,8 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'do_package_tracking': '0',
              # default for osc build
              'extra-pkgs': 'vim gdb strace',
+             # default platform
+             'build_platform': 'openSUSE_Factory',
 }
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback']
 
@@ -91,6 +93,9 @@ new_conf_template = """
 # -x '' can also be given on the command line to override this setting, or
 # you can have an empty setting here.
 #extra-pkgs = vim gdb strace
+
+# build platform is used if the platform argument is omitted to osc build
+#build_platform = openSUSE_Factory
 
 # show info useful for debugging 
 #debug = 1
