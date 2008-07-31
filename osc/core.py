@@ -65,23 +65,23 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
+ <repository name="openSUSE_11.0">
+    <path project="openSUSE:11.0" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+ <repository name="openSUSE_10.3">
+    <path project="openSUSE:10.3" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
  <repository name="openSUSE_10.2">
     <path project="openSUSE:10.2" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="SUSE_Linux_10.1">
-    <path project="SUSE:SL-10.1" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="SUSE_Linux_10.0">
-    <path project="SUSE:SL-10.0" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="Fedora_7">
-    <path project="Fedora:7" repository="standard" />
+  <repository name="Fedora_9">
+    <path project="Fedora:9" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
