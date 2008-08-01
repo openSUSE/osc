@@ -102,7 +102,7 @@ class Osc(cmdln.Cmdln):
         """${cmd_name}: Initialize a directory as working copy 
 
         Initialize an existing directory to be a working copy of an
-        (already existing) buildservice package. 
+        (already existing) buildservice project/package. 
 
         (This is the same as checking out a package and then copying sources
         into the directory. It does NOT create a new package. To create a
@@ -115,12 +115,19 @@ class Osc(cmdln.Cmdln):
         checkout" to get help for it.
         
         usage: 
+            osc init PRJ
             osc init PRJ PAC
         ${cmd_option_list}
         """
-
-        init_package_dir(conf.config['apiurl'], project, package, os.path.curdir)
-        print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
+        
+        if len(args) == 1:
+            init_project_dir(conf.config['apiurl'], os.curdir, args[0])
+            print 'Initializing %s (Project: %s)' % (os.curdir, args[0])
+        elif len(args) == 2:
+            init_package_dir(conf.config['apiurl'], args[0], args[1], os.path.curdir)
+            print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, args[0], args[1])
+        else:
+            raise oscerr.WrongArgs('Incorrect number of arguments')
 
 
     @cmdln.alias('ls')
