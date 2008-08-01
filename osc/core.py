@@ -430,6 +430,7 @@ class Project:
                         elif p.islink() and p.isexpanded():
                             rev = show_upstream_xsrcmd5(p.apiurl,
                                                         p.prjname, p.name)
+                        print 'Updating %s' % p.name
                         p.update(rev)
                     elif state == 'D':
                         # TODO: Package::update has to fixed to behave like svn does
