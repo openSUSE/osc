@@ -1031,8 +1031,9 @@ rev: %s
                       'with --specfile'
                 sys.exit(1)     
 
-        data = read_meta_from_spec(specfile, 'Summary:', '%description')
-        self.summary = data['Summary:']
+        data = read_meta_from_spec(specfile, 'Summary', 'Url', '%description')
+        self.summary = data['Summary']
+        self.url = data['Url']
         self.descr = data['%description']
 
 
@@ -1053,6 +1054,10 @@ rev: %s
         tree = ET.parse(filename)
         tree.find('title').text = self.summary
         tree.find('description').text = ''.join(self.descr)
+        url = tree.find('url')
+        if not url:
+            url = ET.SubElement(tree.getroot(), 'url')
+        url.text = self.url
         tree.write(filename)
 
         print '*' * 36, 'old', '*' * 36
@@ -1780,10 +1785,10 @@ def show_upstream_rev(apiurl, prj, pac):
 
 
 def read_meta_from_spec(specfile, *args):
-    import codecs, locale
+    import codecs, locale, re
     """
     Read tags and sections from spec file. To read out
-    a tag the passed argument must end with a colon. To
+    a tag the passed argument mustn't end with a colon. To
     read out a section the passed argument must start with
     a '%'.
     This method returns a dictionary which contains the
@@ -1804,27 +1809,26 @@ def read_meta_from_spec(specfile, *args):
     spec_data = {}
 
     for itm in args:
-        if itm.endswith(':'):
-            tags.append(itm)
-        elif itm.startswith('%'):
+        if itm.startswith('%'):
             sections.append(itm)
         else:
-            print >>sys.stderr, 'error - \'%s\' is not a tag nor a section' % itm
-            sys.exit(1)
+            tags.append(itm)
 
+    tag_pat = '(?P<tag>^%s)\s*:\s*(?P<val>.*)'
     for tag in tags:
-        for line in lines:
-            if line.startswith(tag):
-                spec_data[tag] = line.split(':')[1].strip()
-                break
-        if not spec_data.has_key(tag):
+        m = re.compile(tag_pat % tag, re.I | re.M).search(''.join(lines))
+        if m and m.group('val'):
+            spec_data[tag] = m.group('val').strip()
+        else:
             print >>sys.stderr, 'error - tag \'%s\' does not exist' % tag
             sys.exit(1)
 
+    section_pat = '^%s\s*'
     for section in sections:
-        try:
-            start = lines.index(section + '\n') + 1
-        except ValueError:
+        m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
+        if m:
+            start = lines.index(m.group()) + 1
+        else:
             print >>sys.stderr, 'error - section \'%s\' does not exist' % section
             sys.exit(1)
         data = []
