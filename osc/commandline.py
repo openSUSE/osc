@@ -413,7 +413,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
-    @cmdln.option('-s', '--state', default='New',
+    @cmdln.option('-s', '--state', default='new',
                         help='only list requests in one of the comma separated given states [default=new]')
     @cmdln.alias("sr")
     @cmdln.alias("submitrequest")
