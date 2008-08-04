@@ -1933,7 +1933,7 @@ def get_submit_request_list(apiurl, project, package, req_state=('new')):
     match = 'submit/target/@project=\'%s\'' % quote_plus(project)
     if package:
         match += '%20and%20' + 'submit/target/@package=\'%s\'' % quote_plus(package)
-    
+
     u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
     f = http_GET(u)
     collection = ET.parse(f).getroot()
@@ -1942,7 +1942,7 @@ def get_submit_request_list(apiurl, project, package, req_state=('new')):
     for root in collection.findall('request'):
         r = SubmitReq()
         r.read(root)
-        if r.state.name in req_state:
+        if (r.state.name in req_state) or ('' in req_state):
             requests.append(r)
 
     return requests
@@ -2665,18 +2665,12 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-def get_buildlog(apiurl, prj, package, platform, arch, offset):
-    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log?nostream=1&start=%s' % offset])
-    f = http_GET(u)
-    return f.read()
-
 def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
     """prints out the buildlog on stdout"""
     try:
-        while True:
-            log_chunk = get_buildlog(apiurl, prj, package, platform, arch, offset)
-            if len(log_chunk) == 0:
-                break
+        u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log?start=%s' % offset])
+        f = http_GET(u)
+        for log_chunk in f:
             offset += len(log_chunk)
             print log_chunk.strip()
     except urllib2.HTTPError, e:
