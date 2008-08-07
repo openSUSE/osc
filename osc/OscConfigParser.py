@@ -4,7 +4,7 @@ import re
 # inspired from http://code.google.com/p/iniparse/ - although their implementation is
 # quite different
 
-class ConfigLineOrder():
+class ConfigLineOrder:
     """
     A ConfigLineOrder() instance task is to preserve the order of a config file.
     It keeps track of all lines (including comments) in the _lines list. This list
@@ -67,7 +67,7 @@ class ConfigLineOrder():
                 yield line.name
         raise StopIteration()
 
-class Line():
+class Line:
     """Base class for all line objects"""
     def __init__(self, name, type):
         self.name = name
