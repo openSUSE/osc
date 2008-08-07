@@ -19,9 +19,16 @@ class UserAbort(OscBaseError):
 
 class ConfigError(OscBaseError):
     """Exception raised when there is an error in the config file"""
-    def __init__(self, msg):
+    def __init__(self, msg, file):
         OscBaseError.__init__(self)
         self.msg = msg
+        self.file = file
+
+class ConfigMissingApiurl(ConfigError):
+    """Exception raised when a apiurl does not exist in the config file"""
+    def __init__(self, msg, file, url):
+        ConfigError.__init__(self, msg, file)
+        self.url = url
 
 class APIError(OscBaseError):
     """Exception raised when there is an error in the output from the API"""

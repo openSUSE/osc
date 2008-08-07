@@ -78,12 +78,25 @@ class Osc(cmdln.Cmdln):
 
             conf.write_initial_config(e.file, config, True)
             print >>sys.stderr, 'done'
-            conf.get_config(override_conffile = self.options.conffile,
-                            override_apisrv = self.options.apisrv,
-                            override_debug = self.options.debug,
-                            override_http_debug = self.options.http_debug,
-                            override_traceback = self.options.traceback,
-                            override_post_mortem = self.options.post_mortem)
+        except oscerr.ConfigMissingApiurl, e:
+            print >>sys.stderr, e.msg
+            import getpass
+            user = raw_input('Username: ')
+            passwd = getpass.getpass()
+            cp = conf.get_configParser()
+            cp.add_section(e.url)
+            cp.set(e.url, 'user', user)
+            cp.set(e.url, 'pass', passwd)
+            file = open(e.file, 'w')
+            cp.write(file, True)
+            if file: file.close()
+        conf.get_config(override_conffile = self.options.conffile,
+                        override_apisrv = self.options.apisrv,
+                        override_debug = self.options.debug,
+                        override_http_debug = self.options.http_debug,
+                        override_traceback = self.options.traceback,
+                        override_post_mortem = self.options.post_mortem)
+
         self.conf = conf
 
 

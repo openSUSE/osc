@@ -130,6 +130,11 @@ Make sure that it has a [general] section.
 
 """
 
+config_missing_apiurl_text = """
+the apiurl \'%s\' does not exist in the config file. Please enter
+your credentials for this apiurl.
+"""
+
 cookiejar = None
 
 def parse_apisrv_url(scheme, apisrv):
@@ -274,7 +279,7 @@ def get_config(override_conffile = None,
         # FIXME: it might be sufficient to just assume defaults?
         msg = config_incomplete_text % conffile
         msg += new_conf_template % DEFAULTS
-        raise oscerr.ConfigError(msg)
+        raise oscerr.ConfigError(msg, conffile)
 
     config = dict(cp.items('general', raw=1))
 
@@ -285,7 +290,7 @@ def get_config(override_conffile = None,
         try:
             config[i] = cp.getboolean('general', i)
         except ValueError, e:
-            raise oscerr.ConfigError('cannot parse \'%s\' setting: ' % i + str(e))
+            raise oscerr.ConfigError('cannot parse \'%s\' setting: ' % i + str(e), conffile)
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
 
@@ -330,6 +335,9 @@ def get_config(override_conffile = None,
     # provided that there _are_ credentials for the chosen apisrv:
     if config['apisrv'] in config['auth_dict'].keys():
         config['user'] = config['auth_dict'][config['apisrv']]['user']
+    else:
+        raise oscerr.ConfigMissingApiurl(config_missing_apiurl_text % config['apisrv'],
+                                         conffile, config['apiurl'])
 
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
     init_basicauth(config)
