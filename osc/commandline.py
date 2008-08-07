@@ -76,17 +76,14 @@ class Osc(cmdln.Cmdln):
             config['user'] = raw_input('Username: ')
             config['pass'] = getpass.getpass()
 
-            if conf.write_config(e.file, config):
-                print >>sys.stderr, 'done'
-                conf.get_config(override_conffile = self.options.conffile,
-                                override_apisrv = self.options.apisrv,
-                                override_debug = self.options.debug,
-                                override_http_debug = self.options.http_debug,
-                                override_traceback = self.options.traceback,
-                                override_post_mortem = self.options.post_mortem)
-            else:
-                raise NoConfigfile(e.file, 'Unable to create osc\'s configuration file \
-                                                 \'%s\'' % e.file)
+            conf.write_initial_config(e.file, config, True)
+            print >>sys.stderr, 'done'
+            conf.get_config(override_conffile = self.options.conffile,
+                            override_apisrv = self.options.apisrv,
+                            override_debug = self.options.debug,
+                            override_http_debug = self.options.http_debug,
+                            override_traceback = self.options.traceback,
+                            override_post_mortem = self.options.post_mortem)
         self.conf = conf
 
 

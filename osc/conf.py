@@ -32,7 +32,7 @@ The configuration dictionary could look like this:
 
 """
 
-import ConfigParser
+import OscConfigParser
 from osc import oscerr
 
 # being global to this module, this dict can be accessed from outside
@@ -213,39 +213,38 @@ def get_configParser(conffile=None, force_read=False):
     conffile = conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
     conffile = os.path.expanduser(conffile)
     if force_read or not get_configParser.__dict__.has_key('cp'):
-        get_configParser.cp = ConfigParser.SafeConfigParser(DEFAULTS)
+        get_configParser.cp = OscConfigParser.OscConfigParser(DEFAULTS)
         get_configParser.cp.read(conffile)
     return get_configParser.cp
 
 
-def write_config(conffile, entries, custom_template = None, force = False):
+def write_initial_config(conffile, entries, custom_template = ''):
     """
-    write osc's configuration file. entries is a dict which contains values
+    write osc's intial configuration file. entries is a dict which contains values
     for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
-    custom_template is an optional configuration template. Use force=True if you
-    want to overwrite an existing configuration file.
+    custom_template is an optional configuration template.
     """
-    import os
+    import os, StringIO, sys
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
-    if force or not os.path.exists(conffile):
-        file = None
+    sio = StringIO.StringIO(conf_template.strip() % config)
+    cp = OscConfigParser.OscConfigParser(DEFAULTS)
+    cp.readfp(sio)
+
+    file = None
+    try:
+        file = open(conffile, 'w')
+    except IOError, e:
+        raise oscerr.OscIOError(e, 'cannot open configfile \'%s\'' % conffile)
+    try:
         try:
-            file = open(conffile, 'w')
+            os.chmod(conffile, 0600)
+            cp.write(file)
         except IOError, e:
-            raise oscerr.OscIOError(e, 'cannot open configfile \'%s\'' % conffile)
-        try:
-            try:
-                os.chmod(conffile, 0600)
-                file.write(conf_template % config)
-            except IOError, e:
-                raise oscerr.OscIOError(e, 'cannot write configfile \'s\'' % conffile)
-        finally:
-            if file: file.close()
-        return True
-    else:
-        return False
+            raise oscerr.OscIOError(e, 'cannot write configfile \'s\'' % conffile)
+    finally:
+        if file: file.close()
 
 
 def get_config(override_conffile = None, 
@@ -264,27 +263,8 @@ def get_config(override_conffile = None,
     conffile = os.path.expanduser(conffile)
 
     if not os.path.exists(conffile):
-
-        # okay, let's create a fresh config file
-        # if credentials are found in .netrc, use those
-        # otherwise ask
-
-        config = DEFAULTS.copy()
-
-        # try .netrc
-        # the needed entry needs to look like this:
-        # machine api.opensuse.org login your_login password your_pass
-        # note that it is not suited for credentials containing spaces
-        import netrc
-        try:
-            # XXX: apisrv is a URL now, thus requiring the "scheme" setting if https is to be used
-            netrc_host = parse_apisrv_url(None, DEFAULTS['apisrv'])[1]
-            config['user'], account, config['pass'] = \
-                    netrc.netrc().authenticators(netrc_host)
-            print >>sys.stderr, 'Read credentials from %s.' % os.path.expanduser('~/.netrc')
-        except (IOError, TypeError, netrc.NetrcParseError):
-            raise oscerr.NoConfigfile(conffile, \
-                                              account_not_configured_text % conffile)
+        raise oscerr.NoConfigfile(conffile, \
+                                  account_not_configured_text % conffile)
 
     # okay, we made sure that .oscrc exists
 
