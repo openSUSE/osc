@@ -865,6 +865,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             delete_project(conf.config['apiurl'], project)
 
 
+    @cmdln.alias('metafromspec')
     @cmdln.option('', '--specfile', metavar='FILE',
                       help='Path to specfile. (if you pass more than working copy this option is ignored)')
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
