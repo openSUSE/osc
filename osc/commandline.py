@@ -108,7 +108,7 @@ class Osc(cmdln.Cmdln):
         return self._str(doc)
 
 
-    def do_init(self, subcmd, opts, project, package):
+    def do_init(self, subcmd, opts, project, package=None):
         """${cmd_name}: Initialize a directory as working copy 
 
         Initialize an existing directory to be a working copy of an
@@ -130,14 +130,12 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
         
-        if len(args) == 1:
-            init_project_dir(conf.config['apiurl'], os.curdir, args[0])
-            print 'Initializing %s (Project: %s)' % (os.curdir, args[0])
-        elif len(args) == 2:
-            init_package_dir(conf.config['apiurl'], args[0], args[1], os.path.curdir)
-            print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, args[0], args[1])
+        if not package:
+            init_project_dir(conf.config['apiurl'], os.curdir, project)
+            print 'Initializing %s (Project: %s)' % (os.curdir, project)
         else:
-            raise oscerr.WrongArgs('Incorrect number of arguments')
+            init_package_dir(conf.config['apiurl'], project, package, os.path.curdir)
+            print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
 
     @cmdln.alias('ls')

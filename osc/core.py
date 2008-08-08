@@ -1461,6 +1461,7 @@ def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 def init_project_dir(apiurl, dir, project):
     if not os.path.exists(dir):
         os.mkdir(dir)
+    if not os.path.exists(os.path.join(dir, store)):
         os.mkdir(os.path.join(dir, store))
 
     store_write_project(dir, project)
