@@ -44,8 +44,6 @@ class ConfigLineOrder:
 
     def __setitem__(self, key, value):
         section = SectionLine(key)
-        #if isinstance(value, dict) and value.has_key('__name__'):
-        #    section[key] = value['__name__']
         self._append(section)
 
     def __getitem__(self, key):
@@ -122,7 +120,6 @@ class SectionLine(Line):
     def __getitem__(self, key):
         line = self._find(key)
         if not line:
-            print "KEYERROR", key
             raise KeyError(key)
         return str(line)
 
@@ -137,7 +134,6 @@ class SectionLine(Line):
 
     # XXX: needed to support 'x' in cp._sections['sectname']
     def __iter__(self):
-        #return self._lines.__iter__()
         for line in self._lines:
             yield line.name
         raise StopIteration()
@@ -180,7 +176,6 @@ class OptionLine(Line):
         self.frmt = self.frmt.replace(val.strip(), '%s', 1).rstrip('\n')
 
     def __str__(self):
-        #return self.frmt % (self.name, self.value)
         return self.value
 
 
@@ -275,8 +270,6 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                         if optval == '""':
                             optval = ''
                         optname = self.optionxform(optname.rstrip())
-                        #print optname
-                        #print optval
                         if cursect == ConfigParser.DEFAULTSECT:
                             self._defaults[optname] = optval
                         else:
