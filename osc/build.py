@@ -331,6 +331,14 @@ def main(opts, argv):
 
     bi = Buildinfo(bi_file.name, store_read_apiurl(os.curdir))
 
+    # real arch of this machine 
+    # vs.
+    # arch we are supposed to build for
+    if hostarch != bi.buildarch:
+        if not bi.buildarch in can_also_build.get(hostarch, []):
+            print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
+            return 1
+
     rpmlist_prefers = []
     if opts.prefer_pkgs:
         print 'Evaluating preferred packages'
@@ -407,17 +415,9 @@ def main(opts, argv):
         tmpl = '%s %s'
     cmd = tmpl % (config['su-wrapper'], cmd)
         
-    # real arch of this machine 
-    # vs.
-    # arch we are supposed to build for
+    # change personality, if needed
     if hostarch != bi.buildarch:
-
-        # change personality, if needed
-        if bi.buildarch in can_also_build.get(hostarch, []):
-            cmd = change_personality[bi.buildarch] + ' ' + cmd
-        else:
-            print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
-            return 1
+        cmd = change_personality[bi.buildarch] + ' ' + cmd
 
     print cmd
     rc = os.system(cmd)
