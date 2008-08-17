@@ -563,13 +563,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     % (devloc, dst_package)
                           sys.exit(1)
             reqs = get_submit_request_list(apiurl, dst_project, dst_package)
-            oreqs = []
-            myreqs = []
-            for req in reqs:
-                if req.state.who == conf.get_apiurl_usr(apiurl):
-                    myreqs.append(req)
-                else:
-                    oreqs.append(req)
+            user = conf.get_apiurl_usr(apiurl)
+            myreqs = [ i for i in reqs if i.state.who == user ]
             if len(myreqs) > 0:
                 print 'You already created the following submitrequests: %s.' % \
                       ', '.join([str(i.reqid) for i in myreqs ])
@@ -577,7 +572,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if repl == 'y':
                     for req in myreqs:
                         change_submit_request_state(apiurl, str(req.reqid), 'revoked',
-                                                    'obsoleted by request: %s' % req.reqid)
+                                                    'obsoleted by another request')
 
             result = create_submit_request(apiurl, 
                                           src_project, src_package,
