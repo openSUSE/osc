@@ -1958,7 +1958,7 @@ def get_submit_request_list(apiurl, project, package, req_state=('new')):
     for root in collection.findall('request'):
         r = SubmitReq()
         r.read(root)
-        if (r.state.name in req_state) or ('' in req_state):
+        if (r.state.name in req_state) or not len(req_state):
             requests.append(r)
 
     return requests
