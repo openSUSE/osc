@@ -1151,10 +1151,11 @@ rev: %s
 
 class RequestState:
     """for objects to represent the "state" of a request"""
-    def __init__(self, name=None, who=None, when=None):
+    def __init__(self, name=None, who=None, when=None, comment=None):
         self.name = name
         self.who  = who
         self.when = when
+        self.comment = comment
 
 
 class SubmitReq:
@@ -1193,7 +1194,7 @@ class SubmitReq:
         self.state.name, self.state.who, self.state.when \
                 = n.get('name'), n.get('who'), n.get('when')
         try:
-            self.state.comment = n.find('comment').text
+            self.state.comment = n.find('comment').text.strip()
         except:
             self.state.comment = None
 
@@ -1203,6 +1204,10 @@ class SubmitReq:
             s.name = h.get('name')
             s.who  = h.get('who')
             s.when = h.get('when')
+            try:
+                s.comment = h.find('comment').text.strip()
+            except:
+                s.comment = None
             self.statehistory.append(s)
         self.statehistory.reverse()
 
@@ -1967,6 +1972,16 @@ def get_submit_request_list(apiurl, project, package, req_state=('new')):
             requests.append(r)
 
     return requests
+
+
+def get_submit_request_log(apiurl, reqid):
+    r = get_submit_request(conf.config['apiurl'], reqid)
+    data = []
+    frmt = '-' * 76 + '\n%s | %s | %s\n\n%s'
+    for state in [ r.state ] + r.statehistory:
+        s = frmt % (state.name, state.who, state.when, str(state.comment))
+        data.append(s)
+    return data
 
 
 def get_user_meta(apiurl, user):

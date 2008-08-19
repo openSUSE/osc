@@ -444,6 +444,8 @@ class Osc(cmdln.Cmdln):
 
         "list" lists open requests attached to a project or package.
 
+        "log" will show the history of the given ID
+
         "show" will show the request itself, and generate a diff for review, if
         used with the --diff option.
 
@@ -465,6 +467,7 @@ class Osc(cmdln.Cmdln):
             osc submitreq create [-m TEXT] 
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list [PRJ [PKG]]
+            osc submitreq log ID
             osc submitreq show [-d] ID
             osc submitreq accept [-m TEXT] ID
             osc submitreq decline [-m TEXT] ID
@@ -475,7 +478,7 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
-        cmds = ['create', 'list', 'show', 'decline', 'accept', 'delete', 'revoke']
+        cmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown submitreq action. Choose one of %s.' \
                                                % ', '.join(cmds))
@@ -537,7 +540,7 @@ class Osc(cmdln.Cmdln):
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['show', 'decline', 'accept', 'delete', 'revoke']:
+        elif cmd in ['log', 'show', 'decline', 'accept', 'delete', 'revoke']:
             reqid = args[0]
 
 
@@ -594,6 +597,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             for result in results:
                 print result.list_view()
+
+        elif cmd == 'log':
+            for l in get_submit_request_log(conf.config['apiurl'], reqid):
+                print l
+
 
         # show
         elif cmd == 'show':
