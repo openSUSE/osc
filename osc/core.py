@@ -1978,6 +1978,12 @@ def get_submit_request_log(apiurl, reqid):
     r = get_submit_request(conf.config['apiurl'], reqid)
     data = []
     frmt = '-' * 76 + '\n%s | %s | %s\n\n%s'
+    # the description of the submitrequest is used for the initial log entry
+    # otherwise its comment attribute would contain None
+    if len(r.statehistory) >= 1:
+        r.statehistory[-1].comment = r.descr
+    else:
+        r.state.comment = r.descr
     for state in [ r.state ] + r.statehistory:
         s = frmt % (state.name, state.who, state.when, str(state.comment))
         data.append(s)
