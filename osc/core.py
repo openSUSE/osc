@@ -1192,6 +1192,10 @@ class SubmitReq:
         n = root.find('state')
         self.state.name, self.state.who, self.state.when \
                 = n.get('name'), n.get('who'), n.get('when')
+        try:
+            self.state.comment = n.find('comment').text
+        except:
+            self.state.comment = None
 
         # read the state history
         for h in root.findall('history'):
@@ -1241,15 +1245,16 @@ Message:
     %s
 
 State:   %-10s   %s %s
+Comment: %s
 """            % (self.reqid,
                self.src_project, 
                self.src_package, 
                self.dst_project, 
                self.dst_package, 
                self.src_md5 or 'not given',
-               repr(self.descr) or '',
+               self.descr,
                self.state.name, 
-               self.state.when, self.state.who)
+               self.state.when, self.state.who, self.state.comment)
 
         if len(self.statehistory):
             histitems = [ '%-10s   %s %s' \
