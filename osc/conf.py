@@ -295,7 +295,7 @@ def get_config(override_conffile = None,
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
 
     re_clist = re.compile('[, ]+')
-    config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) ]
+    config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i ]
     if config['extra-pkgs'] == []: 
         config['extra-pkgs'] = None
 
