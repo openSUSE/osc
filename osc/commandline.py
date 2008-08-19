@@ -1547,8 +1547,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--status-filter', metavar='STATUS',
                         help='show only packages with buildstatus STATUS (see legend)')
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
-                        help='show only packages whos name matches EXPR')
-                       
+                        help='show only packages whose names match EXPR')
+    @cmdln.option('-p', '--project', metavar='PROJECT',
+                        help='show packages in project PROJECT')
+    
     @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
@@ -1561,6 +1563,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         2. osc prjresults
                 the project is guessed from the current dir
 
+        3. osc prjresults --project=<project>
+                the project is specified from the command line
+
         ${cmd_usage}
         ${cmd_option_list}
         """
@@ -1569,13 +1574,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'getting results for more than one project is not supported'
             return 2
             
-        if args:
-            wd = args[0]
+        if opts.project:
+            project = opts.project
+            apiurl = conf.config['apiurl']
         else:
-            wd = os.curdir
+            if args:
+                wd = args[0]
+            else:
+                wd = os.curdir
 
-        project = store_read_project(wd)
-        apiurl = store_read_apiurl(wd)
+            project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
 
         print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
 
@@ -1587,7 +1596,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--status-filter', metavar='STATUS',
                         help='show only packages with buildstatus STATUS (see legend)')
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
-                        help='show only packages whos name matches EXPR')
+                        help='show only packages whose names match EXPR')
 
     def do_rprjresults(self, subcmd, opts, prj):
         """${cmd_name}: Shows project-wide build results of remote Projects
