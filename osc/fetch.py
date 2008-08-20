@@ -23,7 +23,7 @@ def join_url(self, base_url, rel_url):
 
 
 class Fetcher:
-    def __init__(self, cachedir = '/tmp', auth_dict = {}, urllist = [], http_debug = False):
+    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False):
 
         __version__ = '0.1'
         __user_agent__ = 'osbuild/%s' % __version__
@@ -40,8 +40,8 @@ class Fetcher:
         self.http_debug = http_debug
 
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        for host in auth_dict.keys():
-            passmgr.add_password(None, host, auth_dict[host]['user'], auth_dict[host]['pass'])
+        for host in api_host_options.keys():
+            passmgr.add_password(None, host, api_host_options[host]['user'], api_host_options[host]['pass'])
         authhandler = urllib2.HTTPBasicAuthHandler(passmgr)
         self.gr = URLGrabber(user_agent=__user_agent__,
                             keepalive=1,

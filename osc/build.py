@@ -361,7 +361,7 @@ def main(opts, argv):
     print 'Updating cache of required packages'
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = config['urllist'],
-                      auth_dict = config['auth_dict'],
+                      api_host_options = config['api_host_options'],
                       http_debug = config['http_debug'])
 
     # now update the package cache

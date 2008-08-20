@@ -19,9 +19,11 @@ The configuration dictionary could look like this:
 
 {'apisrv': 'https://api.opensuse.org/',
  'user': 'poeml',
- 'auth_dict': {'api.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
-               'apitest.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
-               'foo.opensuse.org': {'user': 'foo', 'pass': 'foo'}},
+ 'api_host_options': {'api.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
+                      'apitest.opensuse.org': {'user': 'poeml', 'pass': 'secret',
+                                               'http_headers':(('Host','api.suse.de'),
+                                                               ('User','faye'))},
+                      'foo.opensuse.org': {'user': 'foo', 'pass': 'foo'}},
  'build-cmd': '/usr/bin/build',
  'build-root': '/abuild/oscbuild-%(repo)s-%(arch)s',
  'packagecachedir': '/var/cache/osbuild',
@@ -112,6 +114,10 @@ new_conf_template = """
 [%(apisrv)s]
 user = %(user)s
 pass = %(pass)s
+# additional headers to pass to a request, e.g. for special authentication
+http_headers = Host: foofoobar,
+       User: mumblegack
+],
 """
 
 
@@ -120,7 +126,6 @@ Your user account / password are not configured yet.
 You will be asked for them below, and they will be stored in
 %s for future use.
 """
-
 
 config_incomplete_text = """
 
@@ -147,12 +152,12 @@ def parse_apisrv_url(scheme, apisrv):
 def get_apiurl_usr(apiurl):
     """
     returns the user for this host - if this host does not exist in the
-    internal auth_dict the default user is returned.
+    internal api_host_options the default user is returned.
     """
     import sys
     scheme, apisrv = parse_apisrv_url(None, apiurl)
-    if config['auth_dict'].has_key(apisrv):
-        return config['auth_dict'][apisrv]['user']
+    if config['api_host_options'].has_key(apisrv):
+        return config['api_host_options'][apisrv]['user']
     else:
         print >>sys.stderr, 'section [\'%s\'] does not exist - using default user: \'%s\'' \
             % (apisrv, config['user'])
@@ -204,7 +209,7 @@ def init_basicauth(config):
 
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
-    for host, auth in config['auth_dict'].iteritems():
+    for host, auth in config['api_host_options'].iteritems():
         authhandler.add_password(None, host, auth['user'], auth['pass'])
 
 
@@ -304,15 +309,22 @@ def get_config(override_conffile = None,
         config['urllist'] = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
 
     # holds multiple usernames and passwords
-    auth_dict = { } 
+    api_host_options = { } 
     for url in [ x for x in cp.sections() if x != 'general' ]:
         dummy, host = \
             parse_apisrv_url(config['scheme'], url)
-        auth_dict[host] = { 'user': cp.get(url, 'user'), 
-                            'pass': cp.get(url, 'pass') }
+        host_items = cp.items(url, raw=True);
+        #DEBUG print url, host_items
+        api_host_options[host] = { 'user': cp.get(url, 'user'), 
+                                   'pass': cp.get(url, 'pass'),
+                                   'http_headers': cp.get(url, 'http_headers',
+                                                          vars= {'http_headers':''})};
+
 
     # add the auth data we collected to the config dict
-    config['auth_dict'] = auth_dict
+    config['api_host_options'] = api_host_options
+
+    #DEBUG print api_host_options
 
     # override values which we were called with
     if override_debug: 
@@ -333,8 +345,8 @@ def get_config(override_conffile = None,
     # XXX unless config['user'] goes away (and is replaced with a handy function, or 
     # config becomes an object, even better), set the global 'user' here as well,
     # provided that there _are_ credentials for the chosen apisrv:
-    if config['apisrv'] in config['auth_dict'].keys():
-        config['user'] = config['auth_dict'][config['apisrv']]['user']
+    if config['apisrv'] in config['api_host_options'].keys():
+        config['user'] = config['api_host_options'][config['apisrv']]['user']
     else:
         raise oscerr.ConfigMissingApiurl(config_missing_apiurl_text % config['apisrv'],
                                          conffile, config['apiurl'])

@@ -1432,6 +1432,11 @@ def http_request(method, url, headers={}, data=None, file=None):
         data = ''
         
     req = urllib2.Request(url)
+
+    #TODO:
+    #for header, value in [conf.config['api_host_options']['']['http_headers'].split]:
+    #    req.add_header(header, value)
+
     req.get_method = lambda: method
 
     # POST requests are application/x-www-form-urlencoded per default
