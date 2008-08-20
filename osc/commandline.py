@@ -1151,7 +1151,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   + self.get_cmd_help('add'))
 
         filenames = parseargs(args)
-        #print filenames
         addFiles(filenames)
 
     
@@ -1171,7 +1170,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         createPackageDir(args[0])
 
-
+    @cmdln.option('-r', '--recursive', action='store_true',
+                        help='If CWD is a project dir then scan all package dirs as well')
     def do_addremove(self, subcmd, opts, *args):
         """${cmd_name}: Adds new files, removes disappeared files
 
@@ -1184,6 +1184,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = parseargs(args)
+        arg_list = args[:]
+        for arg in arg_list:
+            if is_project_dir(arg):
+                prj = Project(arg, False)
+                for pac in prj.pacs_unvers:
+                    pac_dir = getTransActPath(os.path.join(prj.dir, pac))
+                    if os.path.isdir(pac_dir):
+                        addFiles([pac_dir], prj)
+                for pac in prj.pacs_broken:
+                    if prj.get_state(pac) != 'D':
+                        prj.set_state(pac, 'D')
+                        print statfrmt('D', getTransActPath(os.path.join(prj.dir, pac)))
+                if opts.recursive:
+                    for pac in prj.pacs_have:
+                        state = prj.get_state(pac)
+                        if state != None and state != 'D':
+                            pac_dir = getTransActPath(os.path.join(prj.dir, pac))
+                            args.append(pac_dir)
+                args.remove(arg)
+                prj.write_packages()
+
         pacs = findpacs(args)
         for p in pacs:
 
@@ -1198,12 +1219,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 state = p.status(filename)
                 if state == '?':
                     p.addfile(filename)
-                    print statfrmt('A', filename)
+                    print statfrmt('A', getTransActPath(os.path.join(p.dir, filename)))
                 elif state == '!':
                     p.put_on_deletelist(filename)
                     p.write_deletelist()
                     os.unlink(os.path.join(p.storedir, filename))
-                    print statfrmt('D', filename)
+                    print statfrmt('D', getTransActPath(os.path.join(p.dir, filename)))
 
 
 
@@ -1239,7 +1260,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             except:
                 sys.exit('could not open file \'%s\'.' % opts.file)
 
-        for arg in args:
+        arg_list = args[:]
+        for arg in arg_list:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 Project(arg).commit(msg=msg)
                 args.remove(arg)
@@ -1319,8 +1341,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = parseargs(args)
+        arg_list = args[:]
 
-        for arg in args:
+        for arg in arg_list:
 
             if is_project_dir(arg):
                 prj = Project(arg)
@@ -1400,7 +1423,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
         # check if args contains a package which was removed by
         # a non-osc command and mark it with the 'D'-state
-        for i in args:
+        arg_list = args[:]
+        for i in arg_list:
             if not os.path.exists(i):
                 prj_dir, pac_dir = getPrjPacPaths(i)
                 if is_project_dir(prj_dir):
