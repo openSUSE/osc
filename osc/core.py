@@ -1433,9 +1433,10 @@ def http_request(method, url, headers={}, data=None, file=None):
         
     req = urllib2.Request(url)
 
-    #TODO:
-    #for header, value in [conf.config['api_host_options']['']['http_headers'].split]:
-    #    req.add_header(header, value)
+    api_host_options=conf.get_apiurl_api_host_options(url)
+
+    for header, value in api_host_options['http_headers']:
+        req.add_header(header, value)
 
     req.get_method = lambda: method
 
