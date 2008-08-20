@@ -149,18 +149,33 @@ def parse_apisrv_url(scheme, apisrv):
     else:
         return scheme, apisrv
 
+def get_apiurl_api_host_options(apiurl):
+    """
+    Returns all apihost specific options for the given apiurl, None if
+    no such specific optiosn exist.
+    """
+    # FIXME: in A Better World (tm) there was a config object which
+    # knows this instead of having to extract it from a url where it
+    # had been mingled into before.  But this works fine for now.
+    scheme, apisrv = parse_apisrv_url(None, apiurl)
+    return config['api_host_options'][apisrv]
+
 def get_apiurl_usr(apiurl):
     """
     returns the user for this host - if this host does not exist in the
     internal api_host_options the default user is returned.
     """
+    # FIXME: maybe there should be defaults not just for the user but
+    # for all apihost specific options.  The ConfigParser class
+    # actually even does this but for some reason we don't use it
+    # (yet?).
+
     import sys
-    scheme, apisrv = parse_apisrv_url(None, apiurl)
-    if config['api_host_options'].has_key(apisrv):
-        return config['api_host_options'][apisrv]['user']
-    else:
-        print >>sys.stderr, 'section [\'%s\'] does not exist - using default user: \'%s\'' \
-            % (apisrv, config['user'])
+    try:
+        return get_apiurl_api_host_options(apiurl)['user']
+    except KeyError:
+        print >>sys.stderr, 'no specific section found in config file for host of [\'%s\'] - using default user: \'%s\'' \
+            % (apiurl, config['user'])
         return config['user']
 
 def init_basicauth(config):
