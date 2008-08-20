@@ -59,7 +59,7 @@ class Osc(cmdln.Cmdln):
         return optparser
 
 
-    def postoptparse(self):
+    def postoptparse(self, try_again = True):
         """merge commandline options into the config"""
         try:
             conf.get_config(override_conffile = self.options.conffile,
@@ -78,6 +78,7 @@ class Osc(cmdln.Cmdln):
 
             conf.write_initial_config(e.file, config, True)
             print >>sys.stderr, 'done'
+            if try_again: self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl, e:
             print >>sys.stderr, e.msg
             import getpass
@@ -90,12 +91,7 @@ class Osc(cmdln.Cmdln):
             file = open(e.file, 'w')
             cp.write(file, True)
             if file: file.close()
-        conf.get_config(override_conffile = self.options.conffile,
-                        override_apisrv = self.options.apisrv,
-                        override_debug = self.options.debug,
-                        override_http_debug = self.options.http_debug,
-                        override_traceback = self.options.traceback,
-                        override_post_mortem = self.options.post_mortem)
+            if try_again: self.postoptparse(try_again = False)
 
         self.conf = conf
 
