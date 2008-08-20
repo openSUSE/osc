@@ -323,23 +323,36 @@ def get_config(override_conffile = None,
     if type(config['urllist']) == str:
         config['urllist'] = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
 
-    # holds multiple usernames and passwords
-    api_host_options = { } 
+    # collect the usernames, passwords and additional options for each api host
+    api_host_options = { }
+
+    # Regexp to split extra http headers into a dictionary
+    # the text to be matched looks essentially looks this:
+    # "Attribute1: value1, Attribute2: value2, ..."
+    # there may be arbitray leading and intermitting whitespace.
+    # the following regexp does _not_ support quoted commas within the value.
+    http_header_regexp = re.compile(r"\s*(.*?)\s*:\s*(.*?)\s*(?:,\s*|\Z)")
+
     for url in [ x for x in cp.sections() if x != 'general' ]:
         dummy, host = \
             parse_apisrv_url(config['scheme'], url)
-        host_items = cp.items(url, raw=True);
-        #DEBUG print url, host_items
-        api_host_options[host] = { 'user': cp.get(url, 'user'), 
-                                   'pass': cp.get(url, 'pass'),
-                                   'http_headers': cp.get(url, 'http_headers',
-                                                          vars= {'http_headers':''})};
+        #FIXME: this could actually be the ideal spot to take defaults
+        #from the general section.
+        user         = cp.get(url, 'user')
+        password     = cp.get(url, 'pass')
 
+        if cp.has_option(url, 'http_headers'):
+            http_headers = cp.get(url, 'http_headers')
+            http_headers = http_header_regexp.findall(http_headers)
+        else:
+            http_headers = []
+
+        api_host_options[host] = { 'user': user,
+                                   'pass': password,
+                                   'http_headers': http_headers};
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
-
-    #DEBUG print api_host_options
 
     # override values which we were called with
     if override_debug: 
