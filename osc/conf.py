@@ -115,9 +115,8 @@ new_conf_template = """
 user = %(user)s
 pass = %(pass)s
 # additional headers to pass to a request, e.g. for special authentication
-http_headers = Host: foofoobar,
-       User: mumblegack
-],
+#http_headers = Host: foofoobar,
+#       User: mumblegack
 """
 
 

@@ -76,7 +76,7 @@ class Osc(cmdln.Cmdln):
             config['user'] = raw_input('Username: ')
             config['pass'] = getpass.getpass()
 
-            conf.write_initial_config(e.file, config, True)
+            conf.write_initial_config(e.file, config)
             print >>sys.stderr, 'done'
             if try_again: self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl, e:
