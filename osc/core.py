@@ -1070,7 +1070,7 @@ rev: %s
         tree.find('title').text = self.summary
         tree.find('description').text = ''.join(self.descr)
         url = tree.find('url')
-        if not url:
+        if url == None:
             url = ET.SubElement(tree.getroot(), 'url')
         url.text = self.url
         tree.write(filename)
