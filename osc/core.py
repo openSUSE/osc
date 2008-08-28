@@ -1456,9 +1456,10 @@ def http_request(method, url, headers={}, data=None, file=None):
             data = open(file).read()
         else:
             import mmap
-            filefd = open(file, 'r+')
+            filefd = open(file, 'r')
             try:
-                data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
+                data = mmap.mmap(filefd.fileno(), os.path.getsize(file),
+				mmap.MAP_SHARED, mmap.PROT_READ)
             except EnvironmentError, e:
                 if e.errno == 19:
                     sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
