@@ -1,3 +1,32 @@
+0.108:
+
+- osc submitreq: has two aliases now: "osc sr" and "osc submitrequest"
+- osc sr create: prompt to revoke existing requests
+- osc sr revoke: new command for to get rid of requests to projects one can't write to
+- osc sr list: allow showing requests in a state other than "new"
+- osc sr show: show the current state's comment
+- osc sr log: new command to show the history of a given id
+- osc sr: enable requests for submitting new packages
+- osc build: implement --no-checks 
+- osc build: be less strict on the arguments, and guess what's needed. For instance:
+  * osc build PLATFORM ARCH BUILD_DESCR
+  * osc build PLATFORM (ARCH = hostarch, BUILD_DESCR guessed)
+  * osc build ARCH (PLATFORM = build_platform (config option), BUILD_DESCR guessed)
+  * osc build BUILD_DESCR (PLATFORM = build_platform (config option), ARCH = hostarch)
+  * osc build (PLATFORM = build_platform (config option), ARCH = hostarch, BUILD_DESCR guessed)
+- osc build: download after the target architecture check
+- osc addremove: bugfixes, --recursive option 
+- osc init: added support to initialize a project dir
+- osc metafromspec: new alias for 'updatepacmetafromspec' which is hard to remember
+- osc updatepacmetafromspec: also update URL
+- osc buildlog: do not download entire log to memory
+- new http_headers option to add arbitrary headers to HTTP requests
+- bugfix to make osc work on Gentoo
+- enhance/update the package and project template
+- .netrc heritage from previous commandline client has been removed
+- osc asks for password now, when used with -A
+
+
 0.107:
 
 - osc build: the --extra-pkgs option is now a configurable setting in .oscrc.
