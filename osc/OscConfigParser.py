@@ -168,6 +168,8 @@ class OptionLine(Line):
     def format(self, line):
         mo = ConfigParser.ConfigParser.OPTCRE.match(line.strip())
         key, val = mo.group('option', 'value')
+        # escape all occurrences of '%' otherwise string formatting will fail
+        line = line.replace('%', '%%')
         self.frmt = line.replace(key.strip(), '%s', 1)
         pos = val.find(' ;')
         if pos >= 0:

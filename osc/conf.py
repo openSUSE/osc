@@ -264,7 +264,7 @@ def write_initial_config(conffile, entries, custom_template = ''):
     try:
         try:
             os.chmod(conffile, 0600)
-            cp.write(file)
+            cp.write(file, True)
         except IOError, e:
             raise oscerr.OscIOError(e, 'cannot write configfile \'s\'' % conffile)
     finally:
