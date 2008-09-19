@@ -2717,11 +2717,19 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
 def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
     """prints out the buildlog on stdout"""
     try:
-        u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log?start=%s' % offset])
-        f = http_GET(u)
-        for log_chunk in f:
-            offset += len(log_chunk)
-            print log_chunk.strip()
+        while True:
+            u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log?nostream=1&start=%s' % offset])
+            f = http_GET(u)
+            start_offset = offset
+            while True:
+                log_chunk = f.read(8192)
+                offset += len(log_chunk)
+                print log_chunk,
+                if not len(log_chunk):
+                    break
+            if start_offset == offset:
+                break
+
     except urllib2.HTTPError, e:
         print >>sys.stderr, 'Can\'t get logfile'
         print >>sys.stderr, e
