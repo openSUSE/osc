@@ -5,7 +5,6 @@ import osc.conf
 import osc.core
 import sys
 import fuse
-from fuse import Fuse
 import stat
 import os
 import errno
@@ -35,10 +34,10 @@ class CacheEntry(object):
         self.handle = None
         self.tmpname = None
 
-class oscFS(Fuse):
+class oscFS(fuse.Fuse):
 
     def __init__(self, *args, **kw):
-        Fuse.__init__(self, *args, **kw)
+        fuse.Fuse.__init__(self, *args, **kw)
         print 'OK'
 
     def getattr(self, path):
@@ -183,8 +182,12 @@ class oscFS(Fuse):
         return -errno.ENOSYS
 
 def fill_projects():
-    for prj in osc.core.meta_get_project_list(osc.conf.config['apiurl']):
-        projects.append( '/' + prj.replace(':', ':/') )
+    try:
+        for prj in osc.core.meta_get_project_list(osc.conf.config['apiurl']):
+            projects.append( '/' + prj.replace(':', ':/') )
+    except:
+        print 'failed'
+        sys.exit(1)
 
 if __name__ == '__main__':
     print 'Loading config ...',
