@@ -2091,8 +2091,13 @@ def dgst(file):
     #if not os.path.exists(file):
         #return None
 
-    import md5
-    s = md5.new()
+    try:
+        import hashlib
+        md5 = hashlib
+    except ImportError:
+        import md5
+        md5 = md5
+    s = md5.md5()
     f = open(file, 'r')
     while 1:
         buf = f.read(BUFSIZE)
