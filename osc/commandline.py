@@ -1945,6 +1945,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print '\n'.join(get_commitlog(apiurl, project, package, rev))
 
 
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='show log of the specified revision')
+    def do_rlog(self, subcmd, opts, prj, pkg):
+        """${cmd_name}: Shows the commit log of a remote package
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        apiurl = conf.config['apiurl']
+        rev, dummy = parseRevisionOption(opts.revision)
+        if rev and not checkRevision(prj, pkg, rev, apiurl):
+            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            sys.exit(1)
+
+        print '\n'.join(get_commitlog(apiurl, prj, pkg, rev))
+
+
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
     def do_rebuildpac(self, subcmd, opts, *args):
