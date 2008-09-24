@@ -9,8 +9,13 @@ import sys
 import signal
 from osc import oscerr
 from urllib2 import URLError, HTTPError
-# import as RPMError because the class "error" is too generic
-from rpm import error as RPMError
+try:
+    # import as RPMError because the class "error" is too generic
+    from rpm import error as RPMError
+except:
+    # if rpm-python isn't installed (we might be on a debian system):
+    RPMError = None
+
 
 # the good things are stolen from Matt Mackall's mercurial
 
