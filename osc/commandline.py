@@ -26,6 +26,9 @@ class Osc(cmdln.Cmdln):
     For additional information, see 
     * http://www.opensuse.org/Build_Service_Tutorial
     * http://www.opensuse.org/Build_Service/CLI
+
+    You can modify osc commands, or roll you own, via the plugin API:
+    * http://www.opensuse.org/Build_Service/osc_plugins
     """
     name = 'osc'
     conf = None
