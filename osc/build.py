@@ -250,6 +250,8 @@ def main(opts, argv):
         buildargs.append('--jobs %s' % opts.jobs)
     if opts.baselibs:
         buildargs.append('--baselibs')
+    if opts.debuginfo:
+        buildargs.append('--debug')
     buildargs = ' '.join(buildargs)
 
     prj = store_read_project(os.curdir)
@@ -263,20 +265,6 @@ def main(opts, argv):
     if not os.path.exists(spec):
         print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
         return 1
-
-    if opts.debuginfo:
-        # make sure %debug_package is in the spec-file.
-        spec_text = open(spec).read()
-        if not re.search(r'(?m)^%debug_package', spec_text):
-            spec_text = re.sub(r'(?m)^(%prep)', 
-                r'# added by osc build -d\n%debug_package\n\n\1', 
-                spec_text, 1)
-            tmp_spec = NamedTemporaryFile(prefix = spec + '_', dir = '.', suffix = '.spec')
-            tmp_spec.write(spec_text)
-            tmp_spec.flush()
-            spec = tmp_spec.name
-            os.chmod(spec, 0644)
-
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']: 
