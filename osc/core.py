@@ -2048,9 +2048,13 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
 
 
 def get_binary_file(apiurl, prj, repo, arch, 
-                    filename, targetfilename=None, 
-                    package=None,
-                    progress_meter=False):
+                    filename, 
+                    package = None,
+                    target_filename = None, 
+                    target_mtime = None,
+                    progress_meter = False):
+
+    target_filename = target_filename or filename
 
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
@@ -2064,26 +2068,35 @@ def get_binary_file(apiurl, prj, repo, arch,
 
     import tempfile
     (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc', dir = '/tmp')
+    os.chmod(tmpfilename, 0644)
 
-    o = os.fdopen(fd, 'w')
+    try:
+        o = os.fdopen(fd, 'w')
 
-    downloaded = 0
-    while 1:
-        #buf = f.read(BUFSIZE)
-        buf = f.read(16384)
-        if not buf: break
-        o.write(buf)
-        downloaded += len(buf)
+        downloaded = 0
+        while 1:
+            #buf = f.read(BUFSIZE)
+            buf = f.read(16384)
+            if not buf: break
+            o.write(buf)
+            downloaded += len(buf)
+            if progress_meter:
+                completion = str(int((float(downloaded)/binsize)*100))
+                sys.stdout.write('%s%*s%%]' % ('\b'*5, 3, completion))
+                sys.stdout.flush()
+        o.close()
+
         if progress_meter:
-            completion = str(int((float(downloaded)/binsize)*100))
-            sys.stdout.write('%s%*s%%]' % ('\b'*5, 3, completion))
-            sys.stdout.flush()
-    o.close()
+            sys.stdout.write('\n')
 
-    if progress_meter:
-        sys.stdout.write('\n')
+        shutil.move(tmpfilename, target_filename)
+        if target_mtime:
+            os.utime(target_filename, (-1, target_mtime))
 
-    shutil.move(tmpfilename, targetfilename or filename)
+    # make sure that the temp file is cleaned up when we are interrupted 
+    finally:
+        try: os.unlink(tmpfilename)
+        except: pass
 
 
 def dgst(file):
@@ -2542,13 +2555,22 @@ def get_repos_of_project(apiurl, prj):
             yield repo_line_templ % (node.get('name'), node2.text)
 
 
-def get_binarylist(apiurl, prj, repo, arch, package=None):
+def get_binarylist(apiurl, prj, repo, arch, package=None, verbose=False):
     what = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, what])
     f = http_GET(u)
     tree = ET.parse(f)
-    r = [ node.get('filename') for node in tree.findall('binary')]
-    return r
+    if not verbose:
+        return [ node.get('filename') for node in tree.findall('binary')]
+    else:
+        l = []
+        for node in tree.findall('binary'):
+            f = File(node.get('filename'), 
+                     None, 
+                     int(node.get('size')), 
+                     int(node.get('mtime')))
+            l.append(f)
+        return l
 
 
 def get_binarylist_published(apiurl, prj, repo, arch):

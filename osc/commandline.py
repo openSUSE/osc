@@ -2103,6 +2103,58 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, code)
 
 
+    @cmdln.option('-q', '--quiet', action='store_true',
+                  help='do not show downloading progress')
+    @cmdln.option('-d', '--destdir', default='.', metavar='DIR',
+                  help='destination directory')
+    def do_getbinaries(self, subcmd, opts, project, package, repository, architecture):
+        """${cmd_name}: Download binaries to a local directory
+
+        This command does download packages directly from the api server. 
+        Thus, it does directly access the packages that are used for building
+        others, even when they are "published" yet.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        # Get package list
+        binaries = get_binarylist(conf.config['apiurl'], 
+                                   project, repository, architecture, 
+                                   package = package, verbose=True)
+
+        if not os.path.isdir(opts.destdir):
+            print "Creating %s" % opts.destdir
+            os.makedirs(opts.destdir, 0755)
+
+        if binaries == [ ]:
+            sys.exit('no binaries found. Either the package does not '
+                     'exist, or no binaries have been built.')
+
+        for binary in binaries:
+
+            # skip source rpms
+            if binary.name.endswith('.src.rpm'):
+                continue
+
+            target_filename = '%s/%s' % (opts.destdir, binary.name)
+
+            if os.path.exists(target_filename):
+                st = os.stat(target_filename)
+                if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                    continue
+
+            get_binary_file(conf.config['apiurl'], 
+                            project, 
+                            repository, architecture, 
+                            binary.name, 
+                            package = package,
+                            target_filename = target_filename,
+                            target_mtime = binary.mtime,
+                            progress_meter = not opts.quiet)
+
+
+
     @cmdln.option('--repos-baseurl', action='store_true',
                         help='show base URLs of download repositories')
     @cmdln.option('-e', '--enable-exact', action='store_true',
