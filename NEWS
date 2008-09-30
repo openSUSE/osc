@@ -1,3 +1,16 @@
+0.109:
+
+- osc getbinaries: new command to download binaries directly from the api server
+- osc rlog: new command to show commit logs of remote packages
+- osc build: --debug option to the build script which will take care of creating debuginfo packages
+- add link to plugin API to osc help output
+- avoid a hard dependency on the rpm-python bindings.
+- fixed depracation warnings with Python 2.6 [bnc#426612]
+- streaming of unfinished logfiles fixed
+- fixed regression of .oscrc template [bnc#427118]
+Changes were from Marcus_H, poeml, dmueller, tpatzig.
+
+
 0.108:
 
 - osc submitreq: has two aliases now: "osc sr" and "osc submitrequest"
