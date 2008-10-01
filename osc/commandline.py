@@ -847,7 +847,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       % (r, pkg)
 
 
-    def do_deletepac(self, subcmd, opts, project, *pkgs):
+    def do_deletepac(self, subcmd, opts, *args):
         """${cmd_name}: Delete packages on the repository server
 
         usage:
@@ -855,11 +855,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+        pkgs = args[1:]
         if not pkgs:
             raise oscerr.WrongArgs('Missing argument.')
 
         for pkg in pkgs:
-            delete_package(conf.config['apiurl'], project, pkg)
+            delete_package(conf.config['apiurl'], args[0], pkg)
 
 
     @cmdln.option('-f', '--force', action='store_true',
