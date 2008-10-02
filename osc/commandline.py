@@ -1069,8 +1069,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             # all packages
             for package in meta_get_packagelist(conf.config['apiurl'], project):
-                checkout_package(conf.config['apiurl'], project, package, 
-                                 expand_link=expand_link, prj_dir=project)
+                try:
+                    checkout_package(conf.config['apiurl'], project, package, 
+                                     expand_link=expand_link, prj_dir=project)
+                except oscerr.LinkExpandError, e:
+                    print >>sys.stderr, 'Link cannot be expanded:\n', e
+                    # check out in unexpanded form at least
+                    checkout_package(conf.config['apiurl'], project, package, 
+                                     expand_link=False, prj_dir=project)
+
         else:
             raise oscerr.WrongArgs('Missing argument.\n\n' \
                   + self.get_cmd_help('checkout'))
