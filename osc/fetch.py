@@ -134,25 +134,24 @@ def verify_pacs(pac_list):
        Check all packages in one go, since this takes only 6 seconds on my Athlon 700
        instead of 20 when calling 'rpm -K' for each of them.
        """
-
+    import subprocess
 
     if not pac_list:
         return
         
-    # we can use os.popen4 because we don't care about the return value.
-    # we check the output anyway, and rpm always writes to stdout.
+    # don't care about the return value because we check the
+    # output anyway, and rpm always writes to stdout.
 
     # save locale first (we rely on English rpm output here)
     saved_LC_ALL = os.environ.get('LC_ALL')
     os.environ['LC_ALL'] = 'en_EN'
 
-    (i, o) = os.popen4(['/bin/rpm', '-K'] + pac_list)
+    o = subprocess.Popen(['/bin/rpm', '-K'] + pac_list, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, close_fds=True).stdout
 
     # restore locale
     if saved_LC_ALL: os.environ['LC_ALL'] = saved_LC_ALL;
     else: os.environ.pop('LC_ALL')
-
-    i.close()
 
     for line in o.readlines():
 

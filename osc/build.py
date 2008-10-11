@@ -15,6 +15,7 @@ from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig
 import osc.conf
 import oscerr
+import subprocess
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -194,13 +195,16 @@ class Pac:
 
 def get_built_files(pacdir, pactype):
     if pactype == 'rpm':
-        b_built = os.popen('find %s -name \*.rpm' \
-                    % os.path.join(pacdir, 'RPMS')).read().strip()
-        s_built = os.popen('find %s -name \*.rpm' \
-                    % os.path.join(pacdir, 'SRPMS')).read().strip()
+        b_built = subprocess.Popen('find %s -name \*.rpm' \
+                    % os.path.join(pacdir, 'RPMS'),
+                    stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+        s_built = subprocess.Popen('find %s -name \*.rpm' \
+                    % os.path.join(pacdir, 'SRPMS'),
+                    stdout=subprocess.PIPE, shell=True).stdout.read().strip()
     else:
-        b_built = os.popen('find %s -name \*.deb' \
-                    % os.path.join(pacdir, 'DEBS')).read().strip()
+        b_built = subprocess.Popen('find %s -name \*.deb' \
+                    % os.path.join(pacdir, 'DEBS'),
+                    stdout=subprocess.PIPE, shell=True).stdout.read().strip()
         s_built = None
     return s_built, b_built
 
@@ -218,9 +222,9 @@ def get_prefer_pkgs(dirs, wanted_arch):
             continue
         if path.find('-debuginfo-') > 0:
             continue
-        arch, name = os.popen('rpm -qp --nosignature --nodigest --qf "%%{arch} %%{name}\\n" %s' \
-                       % path).read().split()
-        # instead of this assumption, we should probably rather take the
+        arch, name = subprocess.Popen('rpm -qp --nosignature --nodigest --qf "%%{arch} %%{name}\\n" %s' \
+                       % path, stdout=subprocess.PIPE, shell=True).stdout.read().split()
+        # instead of thip assumption, we should probably rather take the
         # requested arch for this package from buildinfo
         # also, it will ignore i686 packages, how to handle those?
         if arch == wanted_arch or arch == 'noarch':
@@ -408,7 +412,7 @@ def main(opts, argv):
         cmd = change_personality[bi.buildarch] + ' ' + cmd
 
     print cmd
-    rc = os.system(cmd)
+    rc = subprocess.call(cmd, shell=True)
     if rc: 
         print
         print 'The buildroot was:', config['build-root']

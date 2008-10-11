@@ -22,6 +22,7 @@ from cStringIO import StringIO
 import shutil
 import oscerr
 import conf
+import subprocess
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -814,7 +815,7 @@ class Package:
             # diff3 OPTIONS... MINE OLDER YOURS
             merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
             # we would rather use the subprocess module, but it is not availablebefore 2.4
-            ret = os.system(merge_cmd) / 256
+            ret = subprocess.call(merge_cmd, shell=True) / 256
             
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
@@ -1760,7 +1761,7 @@ def edit_meta(metatype,
     if edit:
         editor = os.getenv('EDITOR', default='vim')
         while 1:
-            os.system('%s %s' % (editor, f.filename))
+            subprocess.call('%s %s' % (editor, f.filename), shell=True)
             if change_is_required == True:
                 try:
                     f.sync()
@@ -1886,7 +1887,7 @@ def edit_message(footer=''):
 
     editor = os.getenv('EDITOR', default='vim')
     while 1:
-        os.system('%s %s' % (editor, filename))
+        subprocess.call('%s %s' % (editor, filename), shell=True)
         hash = dgst(filename)
 
         if hash != hash_orig:
@@ -3174,7 +3175,7 @@ def unpack_srcrpm(srpm, dir, *files):
     else:
         os.chdir(dir)
     cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
-    ret = os.system(cmd)
+    ret = subprocess.call(cmd, shell=True)
     if ret != 0:
         print >>sys.stderr, 'error \'%s\' - cannot extract \'%s\'' % (ret, srpm)
         sys.exit(1)
