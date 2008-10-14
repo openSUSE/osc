@@ -258,13 +258,16 @@ def main(opts, argv):
         buildargs.append('--debug')
     buildargs = ' '.join(buildargs)
 
-    prj = store_read_project(os.curdir)
-    pac = store_read_package(os.curdir)
     if opts.local_package:
         pac = '_repository'
     if opts.alternative_project:
         prj = opts.alternative_project
         pac = '_repository'
+        apiurl = config['apiurl']
+    else:
+        prj = store_read_project(os.curdir)
+        pac = store_read_package(os.curdir)
+        apiurl = store_read_apiurl(os.curdir)
 
     if not os.path.exists(spec):
         print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
@@ -292,7 +295,7 @@ def main(opts, argv):
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
     try:
-        bi_text = ''.join(get_buildinfo(store_read_apiurl(os.curdir), 
+        bi_text = ''.join(get_buildinfo(apiurl, 
                                         prj,
                                         pac,
                                         repo, 
@@ -304,8 +307,8 @@ def main(opts, argv):
         # check what caused the 404
             if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
                            template_args=None, create_new=False):
-                if meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
-                               template_args=None, create_new=False) or pac == '_repository':
+                if pac == '_repository' or meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
+                                                       template_args=None, create_new=False):
                     print >>sys.stderr, 'wrong repo/arch?'
                     sys.exit(1)
                 else:
@@ -321,7 +324,7 @@ def main(opts, argv):
     bi_file.write(bi_text)
     bi_file.flush()
 
-    bi = Buildinfo(bi_file.name, store_read_apiurl(os.curdir))
+    bi = Buildinfo(bi_file.name, apiurl)
 
     # real arch of this machine 
     # vs.
@@ -387,7 +390,7 @@ def main(opts, argv):
 
     print 'Getting buildconfig from server'
     bc_file = NamedTemporaryFile(prefix='buildconfig.', dir = '/tmp')
-    bc_file.write(get_buildconfig(store_read_apiurl(os.curdir), prj, pac, repo, arch))
+    bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
     bc_file.flush()
 
 
