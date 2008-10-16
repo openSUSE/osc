@@ -812,7 +812,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nodevelproject', action='store_true',
                         help='do not follow a defined devel project ' \
                              '(primary project where a package is developed)')
-    def do_branch(self, subcmd, opts, prj, pkg):
+    def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
         [See http://en.opensuse.org/Build_Service/Collaboration for information
@@ -829,9 +829,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        r = branch_pkg(conf.config['apiurl'], prj, pkg, nodevelproject=opts.nodevelproject)
+        args = slash_split(args)
+        if len(args) != 2:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        expected = 'home:%s:branches:%s' % (conf.config['user'], prj)
+        r = branch_pkg(conf.config['apiurl'], args[0], args[1], nodevelproject=opts.nodevelproject)
+
+        expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if r != expected:
             devloc = r.split('branches:')[1]
             print '\nNote: The branch has been created of a different project,\n' \
@@ -844,7 +848,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print 'A working copy of the branched package can be checked out with:\n\n' \
               'osc co %s/%s' \
-                      % (r, pkg)
+                      % (r, args[1])
 
 
     def do_deletepac(self, subcmd, opts, *args):
