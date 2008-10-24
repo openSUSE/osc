@@ -1,3 +1,14 @@
+0.110:
+
+- osc build: no working copy needed anymore when building a local package [bnc#431434]
+- osc checkout: when checking out a project, and a linkerror occurs for one of
+  the packages, do a checkout in unexpanded form and continue checking out the
+  rest of the project [bnc#428303]
+- osc deletepac, osc branch: allow slash notation for the project/package arguments
+- fix deprecation warnings on Factory (which uses Python 2.6)
+- fix to avoid (internal) stale Package objects [bnc#436932]
+
+
 0.109:
 
 - osc getbinaries: new command to download binaries directly from the api server
