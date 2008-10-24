@@ -769,6 +769,7 @@ class Package:
             self.update_local_filesmeta(revision=show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name))
         else:
             self.update_local_filesmeta()
+        self.update_datastructs()
         self.write_deletelist()
 
     def write_conflictlist(self):
