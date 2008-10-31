@@ -83,6 +83,10 @@ class Buildinfo:
                 break
 
         self.buildarch = root.find('arch').text
+        if root.find('debuginfo') != None:
+            self.debuginfo = root.find('debuginfo').text
+        else:
+            self.debuginfo = 0
 
         self.deps = []
         for node in root.findall('bdep'):
@@ -256,7 +260,6 @@ def main(opts, argv):
         buildargs.append('--baselibs')
     if opts.debuginfo:
         buildargs.append('--debug')
-    buildargs = ' '.join(buildargs)
 
     if opts.local_package:
         pac = '_repository'
@@ -325,6 +328,9 @@ def main(opts, argv):
     bi_file.flush()
 
     bi = Buildinfo(bi_file.name, apiurl)
+    if bi.debuginfo:
+        buildargs.append('--debug')
+    buildargs = ' '.join(set(buildargs))
 
     # real arch of this machine 
     # vs.
