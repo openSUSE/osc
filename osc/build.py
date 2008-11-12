@@ -76,9 +76,10 @@ class Buildinfo:
         # are we building  .rpm or .deb?
         # need the right suffix for downloading
         # if a package named debhelper is in the dependencies, it must be .deb
+        # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        for node in root.findall('dep'):
-            if node.text == 'debhelper':
+        for node in root.findall('bdep'):
+            if node.get('name') == 'debhelper':
                 self.pacsuffix = 'deb'
                 break
 
