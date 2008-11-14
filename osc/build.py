@@ -200,16 +200,16 @@ class Pac:
 
 def get_built_files(pacdir, pactype):
     if pactype == 'rpm':
-        b_built = subprocess.Popen('find %s -name \*.rpm' \
-                    % os.path.join(pacdir, 'RPMS'),
-                    stdout=subprocess.PIPE, shell=True).stdout.read().strip()
-        s_built = subprocess.Popen('find %s -name \*.rpm' \
-                    % os.path.join(pacdir, 'SRPMS'),
-                    stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'), 
+                                    '-name', '*.rpm'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'), 
+                                    '-name', '*.rpm'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
     else:
-        b_built = subprocess.Popen('find %s -name \*.deb' \
-                    % os.path.join(pacdir, 'DEBS'),
-                    stdout=subprocess.PIPE, shell=True).stdout.read().strip()
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
+                                    '-name', '*.deb'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
         s_built = None
     return s_built, b_built
 
@@ -227,8 +227,10 @@ def get_prefer_pkgs(dirs, wanted_arch):
             continue
         if path.find('-debuginfo-') > 0:
             continue
-        arch, name = subprocess.Popen('rpm -qp --nosignature --nodigest --qf "%%{arch} %%{name}\\n" %s' \
-                       % path, stdout=subprocess.PIPE, shell=True).stdout.read().split()
+        arch, name = subprocess.Popen(['rpm', '-qp', 
+                                      '--nosignature', '--nodigest', 
+                                      '--qf', '%{arch} %{name}\n', path], 
+                                      stdout=subprocess.PIPE).stdout.read().split()
         # instead of thip assumption, we should probably rather take the
         # requested arch for this package from buildinfo
         # also, it will ignore i686 packages, how to handle those?
