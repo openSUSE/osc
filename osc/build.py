@@ -32,6 +32,8 @@ change_personality = {
         }
 
 can_also_build = { 
+             'armv4l': [                        'armv4l'                                          ],
+             'armv5el':[                        'armv4l', 'armv5el'                               ],
              'x86_64': ['i686', 'i586', 'i386'],
              'i686': ['i586'],
              'i386': ['i586'],
