@@ -1398,15 +1398,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(pacs) > 1:
                 print 'Updating %s' % p.name
 
-            if opts.expand_link and p.islink() and not p.isexpanded():
-                print 'Expanding to rev', p.linkinfo.xsrcmd5
-                rev = p.linkinfo.xsrcmd5
-            elif opts.unexpand_link and p.islink() and p.isexpanded():
-                print 'Unexpanding to rev', p.linkinfo.lsrcmd5
-                rev = p.linkinfo.lsrcmd5
-            elif p.islink() and p.isexpanded():
-                rev = show_upstream_xsrcmd5(p.apiurl,
-                                            p.prjname, p.name)
+            if not rev:
+                if opts.expand_link and p.islink() and not p.isexpanded():
+                    print 'Expanding to rev', p.linkinfo.xsrcmd5
+                    rev = p.linkinfo.xsrcmd5
+                elif opts.unexpand_link and p.islink() and p.isexpanded():
+                    print 'Unexpanding to rev', p.linkinfo.lsrcmd5
+                    rev = p.linkinfo.lsrcmd5
+                elif p.islink() and p.isexpanded():
+                    rev = show_upstream_xsrcmd5(p.apiurl,
+                                                p.prjname, p.name)
 
             # FIXME: ugly workaround for #399247
             if opts.expand_link or opts.unexpand_link:
