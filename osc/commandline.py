@@ -158,6 +158,7 @@ class Osc(cmdln.Cmdln):
            ls Apache                  # list packages in a project
            ls -b Apache               # list all binaries of a project
            ls Apache apache2          # list source files of package of a project
+           ls Apache apache2 <file>   # list <file> if this file exists
            ls -v Apache apache2       # verbosely list source files of package 
 
         With --verbose, the following fields will be shown for each item:
@@ -174,9 +175,14 @@ class Osc(cmdln.Cmdln):
 
         if len(args) == 1:
             project = args[0]
-        elif len(args) == 2:
+        elif len(args) == 2 or len(args) == 3:
             project = args[0]
             package = args[1]
+            fname = None
+            if len(args) == 3:
+                fname = args[2]
+        elif len(args) > 3:
+            raise oscerr.WrongArgs('Too many arguments')
 
         if opts.binaries and (not opts.repo or not opts.arch):
             raise oscerr.WrongOptions('Sorry, -r <repo> -a <arch> missing\n'
@@ -208,17 +214,27 @@ class Osc(cmdln.Cmdln):
 
                 print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
 
-            elif len(args) == 2:
+            elif len(args) == 2 or len(args) == 3:
                 l = meta_get_filelist(conf.config['apiurl'], 
                                       project, 
                                       package,
                                       verbose=opts.verbose)
                 if opts.verbose:
-                    for i in l:
-                        print '%s %7d %9d %s %s' \
-                            % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name)
+                    out = [ '%s %7d %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
+                            for i in l if not fname or fname == i.name ]
+                    if len(out) == 0:
+                        if fname:
+                            print 'file \'%s\' does not exist' % fname
+                    else:
+                        print '\n'.join(out)
                 else:
-                    print '\n'.join(l)
+                    if fname:
+                        if fname in l:
+                            print fname
+                        else:    
+                            print 'file \'%s\' does not exist' % fname
+                    else:
+                        print '\n'.join(l)
 
 
     @cmdln.option('-F', '--file', metavar='FILE',
