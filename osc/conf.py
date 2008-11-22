@@ -29,7 +29,7 @@ The configuration dictionary could look like this:
  'packagecachedir': '/var/cache/osbuild',
  'su-wrapper': 'sudo',
  'urllist': ['http://download.opensuse.org/repositories/%(project)s/%(repository)s/%(arch)s/%(filename)s',
-             'http://api.opensuse.org/rpm/%(project)s/%(repository)s/_repository/%(buildarch)s/%(name)s'],
+             'http://api.opensuse.org/rpm/%(project)s/%(repository)s/%(repopackage)s/%(buildarch)s/%(name)s'],
  }
 
 """
@@ -55,7 +55,7 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
                 # the normal repo server, redirecting to mirrors
                 'http://download.opensuse.org/repositories/%(project)s/%(repository)s/%(arch)s/%(filename)s',
                 # direct access to "full" tree
-                '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/_repository/%(name)s',
+                '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(name)s',
               ],
 
              'debug': '0',

@@ -93,33 +93,17 @@ class Buildinfo:
 
         self.deps = []
         for node in root.findall('bdep'):
-            p_name = node.get('name')
-            p_arch = node.get('arch')
-            if not p_arch:
-                p_arch = self.buildarch
-            p_version = node.get('version')
-            p_release = node.get('release')
-
-            if not (p_name and p_arch and p_version):
-                raise oscerr.APIError(
-                    "buildinfo for package %s/%s/%s is incomplete" % (p_name, p_arch, p_version))
-
-            p = Pac(p_name,
-                    p_version,
-                    p_release,
-                    node.get('project'),
-                    node.get('repository'),
-                    p_arch,
-                    node.get('preinstall'),
-                    node.get('runscripts'),
+            p = Pac(node,
                     self.buildarch,       # buildarch is used only for the URL to access the full tree...
                     self.pacsuffix,
                     scheme,
                     apisrv)
+                    
             self.deps.append(p)
 
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
+
 
     def has_dep(self, name):
         for i in self.deps:
@@ -136,33 +120,34 @@ class Buildinfo:
 
 
 class Pac:
-    """represent a package to be downloaded"""
-    def __init__(self, name, version, release, project, repository, arch, 
-                 preinstall, runscripts, buildarch, pacsuffix, scheme=config['scheme'], apisrv=config['apisrv']):
+    """represent a package to be downloaded
 
-        self.name = name
-        self.version = version
-        self.release = release
-        self.arch = arch
-        self.project = project
-        self.repository = repository
-        self.preinstall = preinstall
-        self.runscripts = runscripts
-        self.buildarch = buildarch
-        self.pacsuffix = pacsuffix
+    We build a map that's later used to fill our URL templates
+    """
+    def __init__(self, node, 
+                 buildarch, pacsuffix, 
+                 scheme=config['scheme'], apisrv=config['apisrv']):
 
-        # build a map to fill our the URL templates
         self.mp = {}
-        self.mp['name'] = self.name
-        self.mp['version'] = self.version
-        self.mp['release'] = self.release
-        self.mp['arch'] = self.arch
-        self.mp['project'] = self.project
-        self.mp['repository'] = self.repository
-        self.mp['preinstall'] = self.preinstall
-        self.mp['runscripts'] = self.runscripts
-        self.mp['buildarch'] = self.buildarch
-        self.mp['pacsuffix'] = self.pacsuffix
+        for i in ['name', 'package', 
+                  'version', 'release', 
+                  'project', 'repository', 
+                  'preinstall', 'noinstall', 'runscripts',
+                 ]:
+            self.mp[i] = node.get(i)
+
+        self.mp['buildarch']  = buildarch
+        self.mp['pacsuffix']  = pacsuffix
+
+
+        self.mp['repopackage'] = node.get('repopackage') or '_repository'
+        self.mp['arch'] = node.get('arch') or self.mp['buildarch']
+        self.mp['repoarch'] = node.get('repoarch') or self.mp['arch']
+
+        if not (self.mp['name'] and self.mp['arch'] and self.mp['version']):
+            raise oscerr.APIError(
+                "buildinfo for package %s/%s/%s is incomplete" 
+                    % (self.mp['name'], self.mp['arch'], self.mp['version']))
 
         self.mp['scheme'] = scheme
         self.mp['apisrv'] = apisrv
@@ -170,6 +155,9 @@ class Pac:
         self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
 
         self.mp['filename'] = self.filename
+
+        # make the content of the dictionary accessible as class attributes
+        self.__dict__.update(self.mp)
 
 
     def makeurls(self, cachedir, urllist):
@@ -246,7 +234,13 @@ def main(opts, argv):
 
     repo = argv[0]
     arch = argv[1]
-    spec = argv[2]
+    build_descr = argv[2]
+
+    build_type = os.path.splitext(build_descr)[1][1:]
+    if build_type not in ['spec', 'dsc', 'kiwi']:
+        raise oscerr.WrongArgs(
+                "Unknown build type: '%s'. Build description should end in .spec, .dsc or .kiwi." \
+                        % build_type)
 
     buildargs = []
     if not opts.userootforbuild:
@@ -277,8 +271,8 @@ def main(opts, argv):
         pac = store_read_package(os.curdir)
         apiurl = store_read_apiurl(os.curdir)
 
-    if not os.path.exists(spec):
-        print >>sys.stderr, 'Error: specfile \'%s\' does not exist.' % spec
+    if not os.path.exists(build_descr):
+        print >>sys.stderr, 'Error: build description named \'%s\' does not exist.' % build_descr
         return 1
 
     # make it possible to override configuration of the rc file
@@ -308,7 +302,7 @@ def main(opts, argv):
                                         pac,
                                         repo, 
                                         arch, 
-                                        specfile=open(spec).read(), 
+                                        specfile=open(build_descr).read(), 
                                         addlist=extra_pkgs))
     except urllib2.HTTPError, e:
         if e.code == 404:
@@ -373,6 +367,9 @@ def main(opts, argv):
     # now update the package cache
     fetcher.run(bi)
 
+    if build_type == 'kiwi' and not os.path.exists('repos'):
+        os.symlink(config['packagecachedir'], 'repos')
+
     if bi.pacsuffix == 'rpm':
         """don't know how to verify .deb packages. They are verified on install
         anyway, I assume... verifying package now saves time though, since we don't
@@ -386,7 +383,7 @@ def main(opts, argv):
 
     print 'Writing build configuration'
 
-    rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
+    rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
     rpmlist += [ '%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers ]
 
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
@@ -412,7 +409,7 @@ def main(opts, argv):
                     config['build-root'],
                     rpmlist_file.name, 
                     bc_file.name, 
-                    spec, 
+                    build_descr, 
                     buildargs)
 
     if config['su-wrapper'].startswith('su '):
