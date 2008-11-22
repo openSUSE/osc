@@ -24,22 +24,29 @@ except ImportError:
 from conf import config
 
 change_personality = {
-            'i686': 'linux32',
-            'i586': 'linux32',
-            'i386': 'linux32',
-            'ppc': 'powerpc32',
-            's390': 's390',
+            'i686':  'linux32',
+            'i586':  'linux32',
+            'i386':  'linux32',
+            'ppc':   'powerpc32',
+            's390':  's390',
+        }
+
+change_personality_cross = {
+            'armv4l':   ' ',
+            'armv5el':  ' ',
+            'sh4':      ' ',
         }
 
 can_also_build = { 
-             'armv4l': [                        'armv4l'                                          ],
-             'armv5el':[                        'armv4l', 'armv5el'                               ],
-             'x86_64': ['i686', 'i586', 'i386'],
-             'i686': ['i586'],
-             'i386': ['i586'],
-             'ppc64': ['ppc'],
-             's390x': ['s390'],
-            }
+             'armv4l': [                                         'armv4l'                                 ],
+             'armv5el':[                                         'armv4l', 'armv5el'                      ],
+             's390x':  ['s390'                                                                            ],
+             'ppc64':  [                        'ppc', 'ppc64',                                           ],
+             'i386':   [        'i586',                          'armv4l', 'armv5el',               'sh4' ],
+             'i586':   [                'i386',                  'armv4l', 'armv5el',               'sh4' ],
+             'i686':   [        'i586',                          'armv4l', 'armv5el',               'sh4' ],
+             'x86_64': ['i686', 'i586', 'i386',                  'armv4l', 'armv5el',               'sh4' ],
+             }
 
 # real arch of this machine
 hostarch = os.uname()[4]
@@ -235,6 +242,7 @@ def main(opts, argv):
     repo = argv[0]
     arch = argv[1]
     build_descr = argv[2]
+    crossbuild = False
 
     build_type = os.path.splitext(build_descr)[1][1:]
     if build_type not in ['spec', 'dsc', 'kiwi']:
@@ -404,6 +412,23 @@ def main(opts, argv):
 
     print 'Running build'
 
+    # check for cross-build
+    if hostarch == 'x86_64':
+       if bi.buildarch == 'armv4l':
+          crossbuild = True
+       if bi.buildarch == 'armv5el':
+          crossbuild = True
+       if bi.buildarch == 'sh4':
+          crossbuild = True
+
+    if hostarch == 'i586':
+       if bi.buildarch == 'armv4l':
+          crossbuild = True
+       if bi.buildarch == 'armv5el':
+          crossbuild = True
+       if bi.buildarch == 'sh4':
+          crossbuild = True
+
     cmd = '%s --root=%s --rpmlist=%s --dist=%s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
@@ -416,11 +441,15 @@ def main(opts, argv):
         tmpl = '%s \'%s\''
     else:
         tmpl = '%s %s'
-    cmd = tmpl % (config['su-wrapper'], cmd)
-        
+
     # change personality, if needed
-    if hostarch != bi.buildarch:
-        cmd = change_personality[bi.buildarch] + ' ' + cmd
+    cmd = tmpl % (config['su-wrapper'], cmd)
+    if crossbuild == False:
+       if hostarch != bi.buildarch:
+          cmd = change_personality[bi.buildarch] + ' ' + cmd
+
+    if crossbuild == True:
+          cmd = change_personality_cross[bi.buildarch] + ' ' + cmd + ' --arch=%s' % (bi.buildarch)
 
     print cmd
     rc = subprocess.call(cmd, shell=True)
