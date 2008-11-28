@@ -31,12 +31,6 @@ change_personality = {
             's390':  's390',
         }
 
-change_personality_cross = {
-            'armv4l':   ' ',
-            'armv5el':  ' ',
-            'sh4':      ' ',
-        }
-
 can_also_build = { 
              'armv4l': [                                         'armv4l'                                 ],
              'armv5el':[                                         'armv4l', 'armv5el'                      ],
@@ -409,31 +403,13 @@ def main(opts, argv):
     bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
     bc_file.flush()
 
-
     print 'Running build'
-
-    # check for cross-build
-    if hostarch == 'x86_64':
-       if bi.buildarch == 'armv4l':
-          crossbuild = True
-       if bi.buildarch == 'armv5el':
-          crossbuild = True
-       if bi.buildarch == 'sh4':
-          crossbuild = True
-
-    if hostarch == 'i586':
-       if bi.buildarch == 'armv4l':
-          crossbuild = True
-       if bi.buildarch == 'armv5el':
-          crossbuild = True
-       if bi.buildarch == 'sh4':
-          crossbuild = True
-
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s %s' \
+    cmd = '%s --root=%s --rpmlist=%s --dist=%s --arch=%s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
                     rpmlist_file.name, 
                     bc_file.name, 
+                    bi.buildarch,
                     build_descr, 
                     buildargs)
 
@@ -444,12 +420,8 @@ def main(opts, argv):
 
     # change personality, if needed
     cmd = tmpl % (config['su-wrapper'], cmd)
-    if crossbuild == False:
-       if hostarch != bi.buildarch:
-          cmd = change_personality[bi.buildarch] + ' ' + cmd
-
-    if crossbuild == True:
-          cmd = change_personality_cross[bi.buildarch] + ' ' + cmd + ' --arch=%s' % (bi.buildarch)
+    if hostarch != bi.buildarch:
+        cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
 
     print cmd
     rc = subprocess.call(cmd, shell=True)
