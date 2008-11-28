@@ -1,3 +1,12 @@
+0.111:
+- fix accidental truncation of .oscrc to 0 bytes
+- fix osc's ignorance of the revision option (-r) for expanded links
+- osc build: handle kiwi builds (local image build)
+- osc build: cross build support
+- osc build: support for ARMv5 EABI little endian arch added
+- osc build: fixed detection of the build type (rpm or deb), after change in the buildinfo
+- osc build: build debuginfo packages if enabled in the project/package meta (this partly fixes #421390)
+
 0.110:
 
 - osc build: no working copy needed anymore when building a local package [bnc#431434]
