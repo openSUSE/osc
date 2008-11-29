@@ -2287,9 +2287,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         the package does not exist on the server it will be created
         too otherwise the meta data of the existing package will be
         updated (<title /> and <description />).
-        The src.rpm will be extracted into the package dir. If the
-        --disable-commit switch is not used all changes will be
-        committed.
+        The src.rpm will be extracted into the package dir. The files
+        won't be committed unless you explicitly pass the --commit switch.
 
         SRPM is the path of the src.rpm in the local filesystem,
         or an URL.
