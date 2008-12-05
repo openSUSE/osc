@@ -34,12 +34,13 @@ change_personality = {
 can_also_build = { 
              'armv4l': [                                         'armv4l'                                 ],
              'armv5el':[                                         'armv4l', 'armv5el'                      ],
+             'armv7el':[                                         'armv4l', 'armv5el', 'armv7el'           ],
              's390x':  ['s390'                                                                            ],
              'ppc64':  [                        'ppc', 'ppc64',                                           ],
-             'i386':   [        'i586',                          'armv4l', 'armv5el',               'sh4' ],
-             'i586':   [                'i386',                  'armv4l', 'armv5el',               'sh4' ],
-             'i686':   [        'i586',                          'armv4l', 'armv5el',               'sh4' ],
-             'x86_64': ['i686', 'i586', 'i386',                  'armv4l', 'armv5el',               'sh4' ],
+             'i386':   [        'i586',                          'armv4l', 'armv5el', 'armv7el',    'sh4' ],
+             'i586':   [                'i386',                  'armv4l', 'armv5el', 'armv7el',    'sh4' ],
+             'i686':   [        'i586',                          'armv4l', 'armv5el', 'armv7el',    'sh4' ],
+             'x86_64': ['i686', 'i586', 'i386',                  'armv4l', 'armv5el', 'armv7el',    'sh4' ],
              }
 
 # real arch of this machine
