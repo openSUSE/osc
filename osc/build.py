@@ -88,10 +88,12 @@ class Buildinfo:
                 break
 
         self.buildarch = root.find('arch').text
+        self.debuginfo = 0
         if root.find('debuginfo') != None:
-            self.debuginfo = root.find('debuginfo').text
-        else:
-            self.debuginfo = 0
+            try:
+                self.debuginfo = int(root.find('debuginfo').text)
+            except ValueError:
+                pass
 
         self.deps = []
         for node in root.findall('bdep'):
