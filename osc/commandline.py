@@ -1832,6 +1832,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Add this package when installing the build-root')
     @cmdln.option('-j', '--jobs', metavar='N',
                   help='Compile with N jobs')
+    @cmdln.option('--icecream', metavar='N',
+                  help='use N parallel build jobs with icecream')
+    @cmdln.option('--ccache', action='store_true',
+                  help='use ccache to speed up rebuilds')
+    @cmdln.option('--with', metavar='X', dest='_with',
+                  help='enable feature X for build')
+    @cmdln.option('--without', metavar='X',
+                  help='disable feature X for build')
+# will not work as build.py does not support proper quoting
+#    @cmdln.option('--define', metavar='\'X Y\'',
+#                  help='define macro X with value Y')
     @cmdln.option('--userootforbuild', action='store_true',
                   help='Run build as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '

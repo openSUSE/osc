@@ -240,6 +240,7 @@ def main(opts, argv):
     arch = argv[1]
     build_descr = argv[2]
     crossbuild = False
+    xp = []
 
     build_type = os.path.splitext(build_descr)[1][1:]
     if build_type not in ['spec', 'dsc', 'kiwi']:
@@ -260,10 +261,23 @@ def main(opts, argv):
         buildargs.append('--changelog')
     if opts.jobs:
         buildargs.append('--jobs %s' % opts.jobs)
+    if opts.icecream:
+        buildargs.append('--icecream %s' % opts.icecream)
+        xp.append('icecream')
+    if opts.ccache:
+        buildargs.append('--ccache')
+        xp.append('ccache')
     if opts.baselibs:
         buildargs.append('--baselibs')
     if opts.debuginfo:
         buildargs.append('--debug')
+    if opts._with:
+        buildargs.append('--with %s' % opts._with)
+    if opts.without:
+        buildargs.append('--without %s' % opts.without)
+# FIXME: quoting
+#    if opts.define:
+#        buildargs.append('--define "%s"' % opts.define)
 
     if opts.local_package:
         pac = '_repository'
@@ -298,6 +312,10 @@ def main(opts, argv):
         extra_pkgs = None
     else:
         extra_pkgs = opts.extra_pkgs
+
+    if xp:
+        extra_pkgs += xp
+
 
     print 'Getting buildinfo from server'
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
