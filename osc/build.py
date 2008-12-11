@@ -239,7 +239,6 @@ def main(opts, argv):
     repo = argv[0]
     arch = argv[1]
     build_descr = argv[2]
-    crossbuild = False
     xp = []
 
     build_type = os.path.splitext(build_descr)[1][1:]
