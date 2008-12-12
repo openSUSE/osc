@@ -1300,9 +1300,13 @@ def is_package_dir(d):
 def slash_split(l):
     """Split command line arguments like 'foo/bar' into 'foo' 'bar'.
     This is handy to allow copy/paste a project/package combination in this form.
+
+    Trailing slashes are removed before the split, because the split would 
+    otherwise give an additional empty string.
     """
     r = []
     for i in l:
+        i = i.rstrip('/')
         r += i.split('/')
     return r
 

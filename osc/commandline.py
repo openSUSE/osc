@@ -881,7 +881,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Missing argument.')
 
         for pkg in pkgs:
-            delete_package(conf.config['apiurl'], args[0], pkg)
+            # careful: if pkg is an empty string, the package delete request results
+            # into a project delete request - which works recursively...
+            if pkg:
+                delete_package(conf.config['apiurl'], args[0], pkg)
 
 
     @cmdln.option('-f', '--force', action='store_true',
