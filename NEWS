@@ -1,3 +1,13 @@
+
+0.112:
+important bugfix:
+- osc deletepac: prevent recursive deletion of a whole project [bnc#458535]
+- osc build: support more options: --icecream, --ccache, --with, --without
+- osc build: --keep-pkgs also saves the src.rpm now
+- osc build: small fix in debuginfo handling 
+- osc build: new armv7el arch for all binaries for up to ARMv7 EABI with VFP
+
+
 0.111:
 - fix accidental truncation of .oscrc to 0 bytes
 - fix osc's ignorance of the revision option (-r) for expanded links
@@ -6,6 +16,7 @@
 - osc build: support for ARMv5 EABI little endian arch added
 - osc build: fixed detection of the build type (rpm or deb), after change in the buildinfo
 - osc build: build debuginfo packages if enabled in the project/package meta (this partly fixes #421390)
+
 
 0.110:
 
