@@ -1776,6 +1776,11 @@ def edit_meta(metatype,
                         error_help = "%s (%d)" % (e.headers.get('X-Opensuse-Errorcode'), e.code)
 
                     print >>sys.stderr, 'BuildService API error:', error_help
+                    # examine the error - we can't raise an exception because we might want
+                    # to try again
+                    data = e.read()
+                    if '<summary>' in data:
+                        print >>sys.stderr, data.split('<summary>')[1].split('</summary>')[0]
                     input = raw_input('Try again? ([y/N]): ')
                     if input != 'y' and input != 'Y':
                         break
