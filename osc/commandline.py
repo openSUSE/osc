@@ -1197,7 +1197,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         if not conf.config['do_package_tracking']:
-            print >>sys.stderr, "enable \'do_package_tracking\' to use this feature"
+            print >>sys.stderr, "to use this feature you have to enable \'do_package_tracking\' " \
+                                "in the [general] section in the configuration file"
             sys.exit(1)
 
         if len(args) != 1:
