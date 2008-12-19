@@ -146,7 +146,7 @@ def verify_pacs(pac_list):
     saved_LC_ALL = os.environ.get('LC_ALL')
     os.environ['LC_ALL'] = 'en_EN'
 
-    o = subprocess.Popen(['/bin/rpm', '-K'] + pac_list, stdout=subprocess.PIPE,
+    o = subprocess.Popen(['rpm', '-K'] + pac_list, stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT, close_fds=True).stdout
 
     # restore locale
