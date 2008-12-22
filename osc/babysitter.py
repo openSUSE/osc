@@ -142,3 +142,7 @@ def run(prg):
     except RPMError, e:
         print >>sys.stderr, e
         return 1
+
+    except OSError, e:
+        print >>sys.stderr, e
+        return 1
