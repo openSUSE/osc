@@ -937,9 +937,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-r', '--revision', metavar='rev1[:rev2]',
                         help='If rev1 is specified it will compare your working copy against '
                              'the revision (rev1) on the server. '
-                             'If rev1 and rev2 are specified it will compare rev1 against rev2'
-                             '(changes in your working copy are ignored in this case).\n'
-                             'NOTE: if more than 1 package is specified --revision will be ignored!')
+                             'If rev1 and rev2 are specified it will compare rev1 against rev2 '
+                             '(NOTE: changes in your working copy are ignored in this case and '
+                             'the resulting diff is NOT unified)')
     def do_diff(self, subcmd, opts, *args):
         """${cmd_name}: Generates a diff
 
@@ -958,7 +958,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev1, rev2 = parseRevisionOption(opts.revision)
         diff = ''
         for pac in pacs:
-            diff += ''.join(make_diff(pac, rev1))
+            if not rev2:
+                diff += ''.join(make_diff(pac, rev1))
+            else:
+                diff += pretty_diff(pac.apiurl, pac.prjname, pac.name, rev1,
+                                    pac.prjname, pac.name, rev2)
         if len(diff) > 0:
             print diff
 
