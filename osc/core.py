@@ -1867,11 +1867,11 @@ def read_meta_from_spec(specfile, *args):
             print >>sys.stderr, 'error - tag \'%s\' does not exist' % tag
             sys.exit(1)
 
-    section_pat = '^%s\s*'
+    section_pat = '^%s\s*?$'
     for section in sections:
         m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
         if m:
-            start = lines.index(m.group()) + 1
+            start = lines.index(m.group()+'\n') + 1
         else:
             print >>sys.stderr, 'error - section \'%s\' does not exist' % section
             sys.exit(1)
