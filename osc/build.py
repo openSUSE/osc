@@ -303,7 +303,9 @@ def main(opts, argv):
                 print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
             config[var] = val
 
-    config['build-root'] = config['build-root'] % {'repo': repo, 'arch': arch}
+    config['build-root'] = config['build-root'] % { 'repo': repo, 'arch': arch,
+                                                    'project' : prj, 'package' : pac
+                                                  }
 
     if not opts.extra_pkgs:
         extra_pkgs = config['extra-pkgs']

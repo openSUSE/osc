@@ -86,8 +86,9 @@ new_conf_template = """
 #su-wrapper = %(su-wrapper)s
 
 # rootdir to setup the chroot environment
-# can contain %%(repo)s and/or %%(arch)s for replacement, e.g.
-# /srv/oscbuild/%%(repo)s-%%(arch)s
+# can contain %%(repo)s, %%(arch)s, %%(project)s and %%(package)s for replacement, e.g.
+# /srv/oscbuild/%%(repo)s-%%(arch)s or
+# /srv/oscbuild/%%(repo)s-%%(arch)s-%%(project)s-%%(package)s
 #build-root = %(build-root)s
 
 # extra packages to install when building packages locally (osc build)
