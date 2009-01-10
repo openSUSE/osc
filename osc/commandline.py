@@ -2113,6 +2113,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Delete all binaries of packages for which the build failed')
     @cmdln.option('--broken', action='store_true',
                         help='Delete all binaries of packages for which the package source is bad')
+    @cmdln.option('--expansion', action='store_true',
+                        help='Delete all binaries of packages which have expansion errors')
     def do_wipebinaries(self, subcmd, opts, *args):
         """${cmd_name}: Delete all binary packages of a certain project/package
 
@@ -2143,6 +2145,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             codes.append('failed')
         if opts.broken:
             codes.append('broken')
+        if opts.expansion:
+            codes.append('expansion error')
 
         if len(codes) == 0:
             codes.append(None)
