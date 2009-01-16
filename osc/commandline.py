@@ -2160,6 +2160,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='do not show downloading progress')
     @cmdln.option('-d', '--destdir', default='.', metavar='DIR',
                   help='destination directory')
+    @cmdln.option('--sources', action="store_true",
+                  help='also fetch source packages')
     def do_getbinaries(self, subcmd, opts, project, package, repository, architecture):
         """${cmd_name}: Download binaries to a local directory
 
@@ -2187,7 +2189,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for binary in binaries:
 
             # skip source rpms
-            if binary.name.endswith('.src.rpm'):
+            if not opts.sources and binary.name.endswith('.src.rpm'):
                 continue
 
             target_filename = '%s/%s' % (opts.destdir, binary.name)
