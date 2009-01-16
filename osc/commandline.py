@@ -940,7 +940,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='If rev1 is specified it will compare your working copy against '
                              'the revision (rev1) on the server. '
                              'If rev1 and rev2 are specified it will compare rev1 against rev2 '
-                             '(NOTE: changes in your working copy are ignored in this case and)')
+                             '(NOTE: changes in your working copy are ignored in this case)')
     @cmdln.option('-p', '--pretty', action='store_true',
                         help='output the diff in the pretty diff format')
     def do_diff(self, subcmd, opts, *args):
