@@ -2290,9 +2290,9 @@ def make_diff(wc, revision):
     return diff
 
 
-def pretty_diff(apiurl,
+def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision):
+                new_project, new_package, new_revision, unified=False):
 
     query = {'cmd': 'diff', 'expand': '1'}
     if old_project:
@@ -2303,6 +2303,8 @@ def pretty_diff(apiurl,
         query['orev'] = old_revision
     if new_revision:
         query['rev'] = new_revision
+    if unified:
+        query['unified'] = 1
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
 

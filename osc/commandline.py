@@ -429,6 +429,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-d', '--diff', action='store_true',
                   help='generate a diff')
+    @cmdln.option('-u', '--unified', action='store_true',
+                  help='output the diff in the unified diff format')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
@@ -625,9 +627,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # fixme: will inevitably fail if the given target doesn't exist
             if opts.diff:
                 try:
-                    print pretty_diff(conf.config['apiurl'],
+                    print server_diff(conf.config['apiurl'],
                                       r.dst_project, r.dst_package, None,
-                                      r.src_project, r.src_package, r.src_md5)
+                                      r.src_project, r.src_package, r.src_md5, opts.unified)
                 except urllib2.HTTPError, e:
                     e.osc_msg = 'Diff not possible'
                     raise
@@ -938,8 +940,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='If rev1 is specified it will compare your working copy against '
                              'the revision (rev1) on the server. '
                              'If rev1 and rev2 are specified it will compare rev1 against rev2 '
-                             '(NOTE: changes in your working copy are ignored in this case and '
-                             'the resulting diff is NOT unified)')
+                             '(NOTE: changes in your working copy are ignored in this case and)')
+    @cmdln.option('-p', '--pretty', action='store_true',
+                        help='output the diff in the pretty diff format')
     def do_diff(self, subcmd, opts, *args):
         """${cmd_name}: Generates a diff
 
@@ -961,8 +964,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not rev2:
                 diff += ''.join(make_diff(pac, rev1))
             else:
-                diff += pretty_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2)
+                diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
+                                    pac.prjname, pac.name, rev2, not opts.pretty_diff)
         if len(diff) > 0:
             print diff
 
@@ -973,6 +976,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='package to compare against')
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
+    @cmdln.option('-u', '--unified', action='store_true',
+                  help='output the diff in the unified diff format')
     def do_rdiff(self, subcmd, opts, new_project, new_package):
         """${cmd_name}: Server-side "pretty" diff of two packages
 
@@ -993,9 +998,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.revision:
             old_revision, new_revision = parseRevisionOption(opts.revision)
 
-        rdiff = pretty_diff(conf.config['apiurl'],
+        rdiff = server_diff(conf.config['apiurl'],
                             opts.oldprj, opts.oldpkg, old_revision,
-                            new_project, new_package, new_revision)
+                            new_project, new_package, new_revision, opts.unified)
 
         print rdiff
 
