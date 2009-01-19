@@ -598,7 +598,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if repl == 'y':
                 for req in myreqs:
                     change_submit_request_state(apiurl, str(req.reqid), 'revoked',
-                                                'superseeded by %s' % result)
+                                                'superseded by %s' % result)
 
             print 'created request id', result
 
