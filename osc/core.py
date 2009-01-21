@@ -3203,7 +3203,8 @@ def tag_to_rpmpy(tag):
         import rpm
         tags = { 'Name:' : rpm.RPMTAG_NAME,
                  'Summary:' : rpm.RPMTAG_SUMMARY,
-                 '%description' : rpm.RPMTAG_DESCRIPTION
+                 '%description' : rpm.RPMTAG_DESCRIPTION,
+                 'Url:' : rpm.RPMTAG_URL
                }
         if tag in tags.keys():
             return tags[tag]

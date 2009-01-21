@@ -2356,11 +2356,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             project = store_read_project(project_dir)
 
-        rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description')
+        rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description', 'Url:')
         if rpm_data:
-            title, pac, descr = ( v for k, v in rpm_data.iteritems() )
+            title, pac, descr, url = ( v for k, v in rpm_data.iteritems() )
         else:
-            title = pac = descr = ''
+            title = pac = descr = url = ''
 
         if opts.title:
             title = opts.title
@@ -2394,6 +2394,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     data = ET.fromstring(''.join(data))
                     data.find('title').text = title
                     data.find('description').text = ''.join(descr)
+                    data.find('url').text = url
                     data = ET.tostring(data)
                 else:
                     print >>sys.stderr, 'error - cannot get meta data'
