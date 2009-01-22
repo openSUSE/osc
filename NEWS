@@ -1,3 +1,20 @@
+0.113:
+- osc diff -rX:Y: the default is to return an unified diff (to get a pretty
+  diff use the --pretty option)
+- osc rdiff: the default is to return a pretty diff (to get an unified diff use the --unified option)
+- osc sr show --diff: the default is to return a pretty diff (to get an unified diff use the --unified option)
+- osc getbinaries: optionally also download source rpms
+- osc importsrcpkg: set the url in the package meta (bnc#458083)
+- osc wipebinaries: added --expansion option
+- added support for format strings like "%(project)s" and "%(package)s" which
+  can be used in the build-root config option.  For example one could use a new
+  chroot for each package.
+- osc updatepacmetafromspec: fix failure if %description is starting with newline (bnc#462869)
+- catch OSError exceptions which might be raised by the subprocess module
+- don't use a hardcoded path for the rpm binary otherwise it fails on
+  distributions like debian
+- osc meta: be more verbose in case of failure (bnc#459292)
+- osc mkpac: add info how to enable the package tracking feature (bnc#459288) 
 
 0.112:
 important bugfix:
