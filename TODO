@@ -38,6 +38,7 @@ NORMAL:
 
 MINOR: 
 
+  - osc checkout should display file download progress (bnc#442115)
   - new command: osc listbinaries [<project>] [<package>]
     listing the built package, either as URLs or just the filenames?        	[1]
     there is ls -b:
