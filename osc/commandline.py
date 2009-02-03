@@ -2170,9 +2170,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_getbinaries(self, subcmd, opts, project, package, repository, architecture):
         """${cmd_name}: Download binaries to a local directory
 
-        This command does download packages directly from the api server. 
+        This command downloads packages directly from the api server. 
         Thus, it does directly access the packages that are used for building
-        others, even when they are "published" yet.
+        others, even when they aren't "published" yet.
 
         ${cmd_usage}
         ${cmd_option_list}
