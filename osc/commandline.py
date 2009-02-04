@@ -965,7 +965,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += ''.join(make_diff(pac, rev1))
             else:
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2, not opts.pretty_diff)
+                                    pac.prjname, pac.name, rev2, not opts.pretty)
         if len(diff) > 0:
             print diff
 
