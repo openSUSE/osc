@@ -830,6 +830,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nodevelproject', action='store_true',
                         help='do not follow a defined devel project ' \
                              '(primary project where a package is developed)')
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='branch against a specific revision')
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
@@ -851,7 +853,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) != 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        r = branch_pkg(conf.config['apiurl'], args[0], args[1], nodevelproject=opts.nodevelproject)
+        r = branch_pkg(conf.config['apiurl'], args[0], args[1],
+                       nodevelproject=opts.nodevelproject, rev=opts.revision)
 
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if r != expected:

@@ -2470,13 +2470,15 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
     http_PUT(u, data=aggregate_template)
     print 'Done.'
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None):
     """
     Branch a package (via API call)
     """
     query = { 'cmd': 'branch' }
     if nodevelproject:
         query['nodevelproject'] = '1'
+    if rev:
+        query['rev'] = rev
     u = makeurl(conf.config['apiurl'], 
                 ['source', src_project, src_package], 
                 query=query)
