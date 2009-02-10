@@ -2476,7 +2476,7 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None)
     """
     query = { 'cmd': 'branch' }
     if nodevelproject:
-        query['nodevelproject'] = '1'
+        query['ignoredevel'] = '1'
     if rev:
         query['rev'] = rev
     u = makeurl(conf.config['apiurl'], 
