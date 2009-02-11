@@ -1945,7 +1945,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not arg_descr and len(descr) == 1:
             arg_descr = descr[0]
         elif not arg_descr:
-            raise oscerr.WrongArgs('Missing argument: build description (spec or dsc file)')
+            msg = 'Missing argument: build description (spec or dsc file)'
+            try:
+                p = Package('.')
+                if p.islink() and not p.isexpanded():
+                    msg += ' (this package is not expanded - you might want to try osc up --expand)'
+            except:
+                pass
+            raise oscerr.WrongArgs(msg)
 
         args = (arg_platform, arg_arch, arg_descr)
 
