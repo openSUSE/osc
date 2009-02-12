@@ -77,10 +77,6 @@ def run(prg):
         print >>sys.stderr, 'Link cannot be expanded:\n', e
         return 1
 
-    except oscerr.UnreadableFile, e:
-        print >>sys.stderr, e.msg
-        return 1
-
     except (oscerr.NoWorkingCopy, oscerr.WorkingCopyWrongVersion), e:
         print >>sys.stderr, e
         return 1

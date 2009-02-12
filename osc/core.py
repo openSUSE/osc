@@ -970,9 +970,8 @@ class Package:
         elif not exists and exists_in_store and not known_by_meta:
             state = 'D'
         elif not exists and not exists_in_store and not known_by_meta:
-            print >>sys.stderr, '%s: not exists and not exists_in_store and not nown_by_meta' % n
-            print >>sys.stderr, 'this code path should never be reached!'
-            sys.exit(1)
+            # this case shouldn't happen (except there was a typo in the filename etc.)
+            raise IOError('osc: \'%s\' is not under version control' % n)
         
         return state
 
@@ -1840,8 +1839,7 @@ def read_meta_from_spec(specfile, *args):
     """
 
     if not os.path.isfile(specfile):
-        msg = 'File \'%s\' is not a readable file' % specfile
-        raise oscerr.UnreadableFile, msg
+        raise IOError('\'%s\' is not a regular file' % specfile)
 
     try:
         lines = codecs.open(specfile, 'r', locale.getpreferredencoding()).readlines()
