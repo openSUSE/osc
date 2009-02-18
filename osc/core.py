@@ -2595,9 +2595,9 @@ def get_binarylist_published(apiurl, prj, repo, arch):
 
 
 def show_results_meta(apiurl, prj, package=None, lastbuild=None):
-    query = None
+    query = {}
     if package:
-        query = { 'package': package }
+        query['package'] = package
     if lastbuild:
         query['lastbuild'] = 1
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
