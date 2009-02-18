@@ -65,18 +65,18 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
- <repository name="openSUSE_11.0">
+  <repository name="openSUSE_11.1">
+    <path project="openSUSE:11.1" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="openSUSE_11.0">
     <path project="openSUSE:11.0" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
- <repository name="openSUSE_10.3">
+  <repository name="openSUSE_10.3">
     <path project="openSUSE:10.3" repository="standard"/>
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
- <repository name="openSUSE_10.2">
-    <path project="openSUSE:10.2" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
