@@ -1594,6 +1594,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name))
 
 
+    @cmdln.option('-l', '--last-build', action='store_true',
+                        help='show last build results (succeeded/failed/unknown)')
+
     def do_rresults(self, subcmd, opts, prj, pkg):
         """${cmd_name}: Shows the build results of a remote package
 
@@ -1606,7 +1609,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         apiurl = conf.config['apiurl']
-        print '\n'.join(get_results(apiurl, prj, pkg))
+        print '\n'.join(get_results(apiurl, prj, pkg, opts.last_build))
 
                 
     @cmdln.option('-q', '--hide-legend', action='store_true',

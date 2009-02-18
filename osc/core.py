@@ -2594,10 +2594,12 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None):
     query = None
     if package:
         query = { 'package': package }
+    if lastbuild:
+        query['lastbuild'] = 1
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
@@ -2609,11 +2611,11 @@ def show_prj_results_meta(apiurl, prj):
     return f.readlines()
 
 
-def get_results(apiurl, prj, package):
+def get_results(apiurl, prj, package, lastbuild=None):
     r = []
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
-    f = show_results_meta(apiurl, prj, package=package)
+    f = show_results_meta(apiurl, prj, package=package, lastbuild=lastbuild)
     tree = ET.parse(StringIO(''.join(f)))
     root = tree.getroot()
 
