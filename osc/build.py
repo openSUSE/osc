@@ -408,6 +408,8 @@ def main(opts, argv):
         anyway, I assume... verifying package now saves time though, since we don't
         even try to set up the buildroot if it wouldn't work."""
 
+        if config['build-type'] == "xen" or config['build-type'] == "kvm":
+            print 'Skipping verification of package signatures due to secure VM build'
         if opts.no_verify:
             print 'Skipping verification of package signatures'
         else:
@@ -434,13 +436,28 @@ def main(opts, argv):
     bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
     bc_file.flush()
 
+    vm_options=""
+    if config['build-device'] and config['build-memory'] and config['build-type']:
+       if config['build-type'] == "kvm":
+          vm_options="--kvm " + config['build-device']
+       elif config['build-type'] == "xen":
+          vm_options="--xen " + config['build-device']
+       else:
+          print "ERROR: unknown VM is set ! (" + config['build-type'] + ")"
+          sys.exit(1)
+       if config['build-swap']:
+          vm_options+=" --swap " + config['build-swap']
+       if config['build-memory']:
+          vm_options+=" --memory " + config['build-memory']
+    
     print 'Running build'
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s --arch=%s %s %s' \
+    cmd = '%s --root=%s --rpmlist=%s --dist=%s --arch=%s %s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
                     rpmlist_file.name, 
                     bc_file.name, 
                     bi.buildarch,
+                    vm_options,
                     build_descr, 
                     buildargs)
 

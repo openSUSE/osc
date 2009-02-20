@@ -179,7 +179,9 @@ def verify_pacs(pac_list):
 
   Then, just start the build again.
 
-- If the key is unavailable, you may use --no-verify (which may pose a risk).
+- If you do not trust the packages, you should configure osc build for XEN or KVM
+
+- You may use --no-verify to skip the verification (which is a risk for your system).
 """ % {'name': missing_key, 
        'dir': os.path.expanduser('~')}
 

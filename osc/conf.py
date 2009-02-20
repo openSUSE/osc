@@ -45,8 +45,14 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'pass': 'your_password',
              'packagecachedir': '/var/tmp/osbuild-packagecache',
              'su-wrapper': 'su -c',
+
+             # build type settings
              'build-cmd': '/usr/bin/build',
+             'build-type' : '', # may be empty for chroot, kvm or xen
              'build-root': '/var/tmp/build-root',
+             'build-device': '', # required for VM builds
+             'build-memory' : '',# required for VM builds
+             'build-swap' : '',  # optional for VM builds
 
              'debug': '0',
              'http_debug': '0',
