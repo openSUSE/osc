@@ -2822,15 +2822,16 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
 
 def print_jobhistory(apiurl, prj, current_package, platform, arch):
     import time
-    u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'])
+    if current_package:
+        u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'], "package=%s" % (current_package))
+    else:
+        u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
     print "time                 package                   reason           code              build time"
     for node in root.findall('jobhist'):
         package = node.get('package')
-        if current_package and package != current_package:
-            continue
         reason = node.get('reason')
         if not reason:
             reason = "unknown"
