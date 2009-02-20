@@ -2820,6 +2820,39 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
 
     return r
 
+def print_jobhistory(apiurl, prj, current_package, platform, arch):
+    import time
+    u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'])
+    f = http_GET(u)
+    root = ET.parse(f).getroot()
+
+    print "time                 package                   reason           code              build time"
+    for node in root.findall('jobhist'):
+        package = node.get('package')
+        if current_package and package != current_package:
+            continue
+        reason = node.get('reason')
+        if not reason:
+            reason = "unknown"
+        bcnt = node.get('bcnt')
+        code = node.get('code')
+        rev = int(node.get('rev'))
+        srcmd5 = node.get('srcmd5') 
+        rt = int(node.get('readytime'))
+        readyt = time.localtime(rt)
+        readyt = time.strftime('%Y-%m-%d %H:%M:%S', readyt)
+        st = int(node.get('starttime'))
+        et = int(node.get('endtime'))
+        endtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(et))
+        waitstart = time.strftime('%H:%M:%S', time.gmtime(st-rt))
+        waittm = time.gmtime(et-st)
+        if waittm.tm_hour:
+            waitbuild = "%2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
+        else:
+            waitbuild = "    %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
+
+        print '%s  %-25s %-16s %-16s %s' % (endtime, package[0:24], reason[0:15], code[0:15], waitbuild)
+
 
 def get_commitlog(apiurl, prj, package, revision):
     import time, locale

@@ -1993,6 +1993,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch))
 
+    @cmdln.alias('jobhist')
+    def do_jobhistory(self, subcmd, opts, platform, arch):
+        """${cmd_name}: Shows the job history of a project
+
+        The arguments PLATFORM and ARCH can be taken from first two columns
+        of the 'osc repos' output.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        wd = os.curdir
+        project = store_read_project(wd)
+        package = None
+        try:
+            package = store_read_package(wd)
+        except:
+            pass
+        apiurl = store_read_apiurl(wd)
+
+        print_jobhistory(apiurl, project, package, platform, arch)
+
 
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
