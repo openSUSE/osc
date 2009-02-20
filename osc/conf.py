@@ -28,8 +28,6 @@ The configuration dictionary could look like this:
  'build-root': '/abuild/oscbuild-%(repo)s-%(arch)s',
  'packagecachedir': '/var/cache/osbuild',
  'su-wrapper': 'sudo',
- 'urllist': ['http://download.opensuse.org/repositories/%(project)s/%(repository)s/%(arch)s/%(filename)s',
-             'http://api.opensuse.org/rpm/%(project)s/%(repository)s/%(repopackage)s/%(buildarch)s/%(name)s'],
  }
 
 """
@@ -49,14 +47,6 @@ DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
              'su-wrapper': 'su -c',
              'build-cmd': '/usr/bin/build',
              'build-root': '/var/tmp/build-root',
-
-             # default list of download URLs, which will be tried in order
-             'urllist': [
-                # the normal repo server, redirecting to mirrors
-                'http://download.opensuse.org/repositories/%(project)s/%(repository)s/%(arch)s/%(filename)s',
-                # direct access to "full" tree
-                '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(name)s',
-              ],
 
              'debug': '0',
              'http_debug': '0',
@@ -318,10 +308,6 @@ def get_config(override_conffile = None,
     config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i ]
     if config['extra-pkgs'] == []: 
         config['extra-pkgs'] = None
-
-    # transform 'url1, url2, url3' form into a list
-    if type(config['urllist']) == str:
-        config['urllist'] = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
 
     # collect the usernames, passwords and additional options for each api host
     api_host_options = { }

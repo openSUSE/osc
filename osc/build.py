@@ -88,6 +88,8 @@ class Buildinfo:
                 break
 
         self.buildarch = root.find('arch').text
+        self.downloadurl = root.get('downloadurl')
+        self.apiurl = apisrv
         self.debuginfo = 0
         if root.find('debuginfo') != None:
             try:
@@ -383,8 +385,15 @@ def main(opts, argv):
                 continue
 
     print 'Updating cache of required packages'
+
+    urllist = []
+    # OBS 1.5 and before has no downloadurl defined in buildinfo
+    if bi.downloadurl:
+        urllist.append( bi.downloadurl + '/%(project)s/%(repository)s/%(arch)s/%(filename)s' )
+    urllist.append( '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(name)s' )
+
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
-                      urllist = config['urllist'],
+                      urllist = urllist,
                       api_host_options = config['api_host_options'],
                       http_debug = config['http_debug'])
 
