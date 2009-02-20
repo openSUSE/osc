@@ -1,3 +1,7 @@
+0.114:
+- osc jobhistory command added to browse the build job history of
+  a project or a package
+
 0.113:
 - osc diff -rX:Y: the default is to return an unified diff (to get a pretty
   diff use the --pretty option)
