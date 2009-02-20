@@ -147,7 +147,7 @@ class Pac:
         self.mp['pacsuffix']  = pacsuffix
 
 
-        self.mp['repopackage'] = node.get('repopackage') or '_repository'
+        self.mp['repopackage'] = node.get('package') or '_repository'
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
         self.mp['repoarch'] = node.get('repoarch') or self.mp['arch']
 
@@ -162,6 +162,10 @@ class Pac:
         self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
 
         self.mp['filename'] = self.filename
+	if self.mp['repopackage'] == '_repository':
+	    self.mp['repofilename'] = self.mp['name']
+	else:
+	    self.mp['repofilename'] = self.mp['filename']
 
         # make the content of the dictionary accessible as class attributes
         self.__dict__.update(self.mp)
@@ -391,7 +395,7 @@ def main(opts, argv):
     # OBS 1.5 and before has no downloadurl defined in buildinfo
     if bi.downloadurl:
         urllist.append( bi.downloadurl + '/%(project)s/%(repository)s/%(arch)s/%(filename)s' )
-    urllist.append( '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(name)s' )
+    urllist.append( '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = urllist,

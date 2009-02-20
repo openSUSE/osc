@@ -2206,8 +2206,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Download binaries to a local directory
 
         This command downloads packages directly from the api server. 
-        Thus, it does directly access the packages that are used for building
-        others, even when they aren't "published" yet.
+        Thus, it directly accesses the packages that are used for building
+        others even when they are not "published" yet.
 
         ${cmd_usage}
         ${cmd_option_list}
@@ -2224,7 +2224,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if binaries == [ ]:
             sys.exit('no binaries found. Either the package does not '
-                     'exist, or no binaries have been built.')
+                     'exist or no binaries have been built.')
 
         for binary in binaries:
 
