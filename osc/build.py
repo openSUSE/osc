@@ -107,6 +107,7 @@ class Buildinfo:
                     
             self.deps.append(p)
 
+        self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
 
@@ -138,7 +139,7 @@ class Pac:
         for i in ['name', 'package', 
                   'version', 'release', 
                   'project', 'repository', 
-                  'preinstall', 'noinstall', 'runscripts',
+                  'preinstall', 'vminstall', 'noinstall', 'runscripts',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -422,6 +423,7 @@ def main(opts, argv):
     rpmlist += [ '%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers ]
 
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
+    rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = '/tmp')
