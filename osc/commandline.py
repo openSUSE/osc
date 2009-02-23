@@ -1946,10 +1946,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         arg_arch = arg_arch or osc.build.hostarch
         arg_platform = arg_platform or conf.config['build_platform']
         descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') ]
+        # FIXME:
+        # * request repos from server and select by build type. 
         if not arg_descr and len(descr) == 1:
             arg_descr = descr[0]
         elif not arg_descr:
-            msg = 'Missing argument: build description (spec or dsc file)'
+            msg = 'Missing argument: build description (spec, dsc or kiwi file)'
             try:
                 p = Package('.')
                 if p.islink() and not p.isexpanded():
