@@ -39,8 +39,7 @@ from osc import oscerr
 # it will hold the parsed configuration
 config = { }
 
-DEFAULTS = { 'apisrv': 'https://api.opensuse.org/',
-             'scheme': 'https',
+DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
              'pass': 'your_password',
              'packagecachedir': '/var/tmp/osbuild-packagecache',
@@ -71,9 +70,9 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
 new_conf_template = """
 [general]
 
-# URL to access API server, e.g. %(apisrv)s
-# you also need a section [%(apisrv)s] with the credentials
-#apisrv = %(apisrv)s
+# URL to access API server, e.g. %(apiurl)s
+# you also need a section [%(apiurl)s] with the credentials
+apiurl = %(apiurl)s
 
 # Downloaded packages are cached here. Must be writable by you.
 #packagecachedir = %(packagecachedir)s
@@ -108,7 +107,7 @@ new_conf_template = """
 # print call traces in case of errors
 #traceback = 1
     
-[%(apisrv)s]
+[%(apiurl)s]
 user = %(user)s
 pass = %(pass)s
 # additional headers to pass to a request, e.g. for special authentication
@@ -145,6 +144,9 @@ def parse_apisrv_url(scheme, apisrv):
     else:
         return scheme, apisrv
 
+def urljoin(scheme, apisrv):
+    return '://'.join([scheme, apisrv])
+
 def get_apiurl_api_host_options(apiurl):
     """
     Returns all apihost specific options for the given apiurl, None if
@@ -153,8 +155,13 @@ def get_apiurl_api_host_options(apiurl):
     # FIXME: in A Better World (tm) there was a config object which
     # knows this instead of having to extract it from a url where it
     # had been mingled into before.  But this works fine for now.
-    scheme, apisrv = parse_apisrv_url(None, apiurl)
-    return config['api_host_options'][apisrv]
+
+    apiurl = urljoin(*parse_apisrv_url(None, apiurl))
+    try:
+        return config['api_host_options'][apiurl]
+    except KeyError:
+        raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
+                                         '', apiurl)
 
 def get_apiurl_usr(apiurl):
     """
@@ -269,7 +276,7 @@ def write_initial_config(conffile, entries, custom_template = ''):
 
 
 def get_config(override_conffile = None, 
-               override_apisrv = None,
+               override_apiurl = None,
                override_debug = None, 
                override_http_debug = None, 
                override_traceback = None,
@@ -299,8 +306,14 @@ def get_config(override_conffile = None,
 
     config = dict(cp.items('general', raw=1))
 
-    config['scheme'], config['apisrv'] = \
-        parse_apisrv_url(config['scheme'], config['apisrv'])
+    # backward compatibility
+    if config.has_key('apisrv'):
+        scheme = config.get('scheme', 'https')
+        config['apiurl'] = urljoin(scheme, config['apisrv'])
+    if config.has_key('apisrv') or config.has_key('scheme'):
+        import warnings
+        warnings.warn("Use of the 'scheme' or 'apisrv' config option is deprecated!",
+                      DeprecationWarning)
 
     for i in boolean_opts:
         try:
@@ -316,7 +329,7 @@ def get_config(override_conffile = None,
         config['extra-pkgs'] = None
 
     # collect the usernames, passwords and additional options for each api host
-    api_host_options = { }
+    api_host_options = {}
 
     # Regexp to split extra http headers into a dictionary
     # the text to be matched looks essentially looks this:
@@ -326,8 +339,10 @@ def get_config(override_conffile = None,
     http_header_regexp = re.compile(r"\s*(.*?)\s*:\s*(.*?)\s*(?:,\s*|\Z)")
 
     for url in [ x for x in cp.sections() if x != 'general' ]:
-        dummy, host = \
-            parse_apisrv_url(config['scheme'], url)
+        # backward compatiblity
+        scheme, host = \
+            parse_apisrv_url(config.get('scheme', 'https'), url)
+        apiurl = urljoin(scheme, host)
         #FIXME: this could actually be the ideal spot to take defaults
         #from the general section.
         user         = cp.get(url, 'user')
@@ -339,9 +354,9 @@ def get_config(override_conffile = None,
         else:
             http_headers = []
 
-        api_host_options[host] = { 'user': user,
-                                   'pass': password,
-                                   'http_headers': http_headers};
+        api_host_options[apiurl] = { 'user': user,
+                                     'pass': password,
+                                     'http_headers': http_headers};
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
@@ -349,27 +364,24 @@ def get_config(override_conffile = None,
     # override values which we were called with
     if override_debug: 
         config['debug'] = override_debug
-    if override_http_debug: 
+    if override_http_debug:
         config['http_debug'] = override_http_debug
     if override_traceback:
         config['traceback'] = override_traceback
     if override_post_mortem:
         config['post_mortem'] = override_post_mortem
-    if override_apisrv:
-        config['scheme'], config['apisrv'] = \
-            parse_apisrv_url(config['scheme'], override_apisrv)
-
-    # to make the mess complete, set up the more convenient api url which we'll rather use
-    config['apiurl'] = config['scheme'] + '://' + config['apisrv']
+    if override_apiurl:
+        config['apiurl'] = override_apiurl
 
     # XXX unless config['user'] goes away (and is replaced with a handy function, or 
     # config becomes an object, even better), set the global 'user' here as well,
-    # provided that there _are_ credentials for the chosen apisrv:
-    if config['apisrv'] in config['api_host_options'].keys():
-        config['user'] = config['api_host_options'][config['apisrv']]['user']
-    else:
-        raise oscerr.ConfigMissingApiurl(config_missing_apiurl_text % config['apisrv'],
-                                         conffile, config['apiurl'])
+    # provided that there _are_ credentials for the chosen apiurl:
+    try:
+        config['user'] = get_apiurl_api_host_options(config['apiurl'])
+    except oscerr.ConfigMissingApiurl, e:
+        e.msg = config_missing_apiurl_text % config['apiurl']
+        e.file = conffile
+        raise e
 
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
     init_basicauth(config)

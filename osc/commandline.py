@@ -53,7 +53,7 @@ class Osc(cmdln.Cmdln):
                       help='debug HTTP traffic')
         optparser.add_option('-d', '--debug', action='store_true',
                       help='print info useful for debugging')
-        optparser.add_option('-A', '--apisrv', dest='apisrv',
+        optparser.add_option('-A', '--apiurl', dest='apiurl',
                       metavar='URL',
                       help='specify URL to access API server at')
         optparser.add_option('-c', '--config', dest='conffile',
@@ -66,7 +66,7 @@ class Osc(cmdln.Cmdln):
         """merge commandline options into the config"""
         try:
             conf.get_config(override_conffile = self.options.conffile,
-                            override_apisrv = self.options.apisrv,
+                            override_apiurl = self.options.apiurl,
                             override_debug = self.options.debug,
                             override_http_debug = self.options.http_debug,
                             override_traceback = self.options.traceback,
@@ -78,6 +78,8 @@ class Osc(cmdln.Cmdln):
             config = {}
             config['user'] = raw_input('Username: ')
             config['pass'] = getpass.getpass()
+            if self.options.apiurl:
+                config['apiurl'] = self.options.apiurl
 
             conf.write_initial_config(e.file, config)
             print >>sys.stderr, 'done'

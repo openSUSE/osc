@@ -52,7 +52,7 @@ if hostarch == 'i686': # FIXME
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
-    def __init__(self, filename, apiurl=config['apiurl']):
+    def __init__(self, filename, apiurl):
 
         try:
             tree = ET.parse(filename)
@@ -69,13 +69,8 @@ class Buildinfo:
             sys.stderr.write(error + '\n')
             sys.exit(1)
 
-        if apiurl.startswith('https://') or apiurl.startswith('http://'):
-            import urlparse
-            scheme, netloc, path = urlparse.urlsplit(apiurl)[0:3]
-            apisrv = netloc+path
-        else:
-            print >>sys.stderr, 'invalid protocol for the apiurl: \'%s\'' % apiurl
-            sys.exit(1)
+        if not (apiurl.startswith('https://') or apiurl.startswith('http://')):
+            raise urllib2.URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
 
         # are we building  .rpm or .deb?
         # need the right suffix for downloading
@@ -89,7 +84,6 @@ class Buildinfo:
 
         self.buildarch = root.find('arch').text
         self.downloadurl = root.get('downloadurl')
-        self.apiurl = apisrv
         self.debuginfo = 0
         if root.find('debuginfo') != None:
             try:
@@ -102,8 +96,7 @@ class Buildinfo:
             p = Pac(node,
                     self.buildarch,       # buildarch is used only for the URL to access the full tree...
                     self.pacsuffix,
-                    scheme,
-                    apisrv)
+                    apiurl)
                     
             self.deps.append(p)
 
@@ -131,9 +124,7 @@ class Pac:
 
     We build a map that's later used to fill our URL templates
     """
-    def __init__(self, node, 
-                 buildarch, pacsuffix, 
-                 scheme=config['scheme'], apisrv=config['apisrv']):
+    def __init__(self, node, buildarch, pacsuffix, apiurl):
 
         self.mp = {}
         for i in ['name', 'package', 
@@ -156,8 +147,7 @@ class Pac:
                 "buildinfo for package %s/%s/%s is incomplete" 
                     % (self.mp['name'], self.mp['arch'], self.mp['version']))
 
-        self.mp['scheme'] = scheme
-        self.mp['apisrv'] = apisrv
+        self.mp['apiurl'] = apiurl
 
         self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
 
@@ -395,7 +385,7 @@ def main(opts, argv):
     # OBS 1.5 and before has no downloadurl defined in buildinfo
     if bi.downloadurl:
         urllist.append( bi.downloadurl + '/%(project)s/%(repository)s/%(arch)s/%(filename)s' )
-    urllist.append( '%(scheme)s://%(apisrv)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(repofilename)s' )
+    urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = urllist,

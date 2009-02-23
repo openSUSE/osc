@@ -2936,7 +2936,7 @@ def store_read_apiurl(dir):
     try:
         apiurl = open(fname).readlines()[0].strip()
     except:
-        apiurl = conf.config['scheme'] + '://' + conf.config['apisrv']
+        apiurl = conf.config['apiurl']
         #store_write_apiurl(dir, apiurl)
     return apiurl
 
