@@ -1578,6 +1578,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 
     @cmdln.alias('r')
+    @cmdln.option('-l', '--last-build', action='store_true',
+                        help='show last build results (succeeded/failed/unknown)')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
@@ -1591,12 +1593,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = findpacs(args)
 
         for pac in pacs:
-            print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name))
+            print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name, opts.last_build))
 
 
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
-
     def do_rresults(self, subcmd, opts, prj, pkg):
         """${cmd_name}: Shows the build results of a remote package
 
