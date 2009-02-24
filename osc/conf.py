@@ -141,8 +141,12 @@ def parse_apisrv_url(scheme, apisrv):
     import urlparse
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         return urlparse.urlsplit(apisrv)[0:2]
-    else:
+    elif scheme != None:
         return scheme, apisrv
+    else:
+        from urllib2 import URLError
+        msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
+        raise URLError(msg)
 
 def urljoin(scheme, apisrv):
     return '://'.join([scheme, apisrv])
