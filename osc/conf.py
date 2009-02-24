@@ -110,6 +110,8 @@ apiurl = %(apiurl)s
 [%(apiurl)s]
 user = %(user)s
 pass = %(pass)s
+# set aliases for this apiurl
+# aliases = foo, bar
 # additional headers to pass to a request, e.g. for special authentication
 #http_headers = Host: foofoobar,
 #       User: mumblegack
@@ -342,6 +344,7 @@ def get_config(override_conffile = None,
     # the following regexp does _not_ support quoted commas within the value.
     http_header_regexp = re.compile(r"\s*(.*?)\s*:\s*(.*?)\s*(?:,\s*|\Z)")
 
+    aliases = {}
     for url in [ x for x in cp.sections() if x != 'general' ]:
         # backward compatiblity
         scheme, host = \
@@ -357,6 +360,15 @@ def get_config(override_conffile = None,
             http_headers = http_header_regexp.findall(http_headers)
         else:
             http_headers = []
+        if cp.has_option(url, 'aliases'):
+            for i in cp.get(url, 'aliases').split(','):
+                key = i.strip()
+                if key == '':
+                    continue
+                if aliases.has_key(key):
+                    msg = 'duplicate alias entry: \'%s\' is already used for another apiurl' % key
+                    raise oscerr.ConfigError(msg, conffile)
+                aliases[key] = url
 
         api_host_options[apiurl] = { 'user': user,
                                      'pass': password,
@@ -375,7 +387,10 @@ def get_config(override_conffile = None,
     if override_post_mortem:
         config['post_mortem'] = override_post_mortem
     if override_apiurl:
-        config['apiurl'] = override_apiurl
+        apiurl = aliases.get(override_apiurl, override_apiurl)
+        # check if apiurl is a valid url
+        parse_apisrv_url(None, apiurl)
+        config['apiurl'] = apiurl
 
     # XXX unless config['user'] goes away (and is replaced with a handy function, or 
     # config becomes an object, even better), set the global 'user' here as well,
