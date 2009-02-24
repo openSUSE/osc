@@ -381,7 +381,7 @@ def get_config(override_conffile = None,
     # config becomes an object, even better), set the global 'user' here as well,
     # provided that there _are_ credentials for the chosen apiurl:
     try:
-        config['user'] = get_apiurl_api_host_options(config['apiurl'])
+        config['user'] = get_apiurl_usr(config['apiurl'])
     except oscerr.ConfigMissingApiurl, e:
         e.msg = config_missing_apiurl_text % config['apiurl']
         e.file = conffile
