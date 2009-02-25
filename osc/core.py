@@ -2824,7 +2824,7 @@ def print_jobhistory(apiurl, prj, current_package, platform, arch):
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
-    print "time                 package                   reason           code              build time"
+    print "time                 package                                            reason           code              build time"
     for node in root.findall('jobhist'):
         package = node.get('package')
         reason = node.get('reason')
@@ -2847,7 +2847,7 @@ def print_jobhistory(apiurl, prj, current_package, platform, arch):
         else:
             waitbuild = "    %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
 
-        print '%s  %-25s %-16s %-16s %s' % (endtime, package[0:24], reason[0:15], code[0:15], waitbuild)
+        print '%s  %-50s %-16s %-16s %s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild)
 
 
 def get_commitlog(apiurl, prj, package, revision):
