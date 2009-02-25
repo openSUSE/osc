@@ -314,8 +314,10 @@ def get_config(override_conffile = None,
 
     # backward compatibility
     if config.has_key('apisrv'):
+        apisrv = config['apisrv'].lstrip('http://')
+        apisrv = apisrv.lstrip('https://')
         scheme = config.get('scheme', 'https')
-        config['apiurl'] = urljoin(scheme, config['apisrv'])
+        config['apiurl'] = urljoin(scheme, apisrv)
     if config.has_key('apisrv') or config.has_key('scheme'):
         import warnings
         warnings.warn("Use of the 'scheme' or 'apisrv' config option is deprecated!",
