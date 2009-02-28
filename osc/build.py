@@ -21,7 +21,7 @@ try:
 except ImportError:
     import cElementTree as ET
 
-from conf import config
+from conf import config, cookiejar
 
 change_personality = {
             'i686':  'linux32',
@@ -390,7 +390,8 @@ def main(opts, argv):
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
-                      http_debug = config['http_debug'])
+                      http_debug = config['http_debug'],
+                      cookiejar=cookiejar)
 
     # now update the package cache
     fetcher.run(bi)

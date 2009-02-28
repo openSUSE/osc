@@ -1477,7 +1477,8 @@ def http_request(method, url, headers={}, data=None, file=None):
     try:
         fd = urllib2.urlopen(req, data=data)
     finally:
-        conf.cookiejar.save(ignore_discard=True)
+        if hasattr(conf.cookiejar, 'save'):
+            conf.cookiejar.save(ignore_discard=True)
 
     if filefd: filefd.close()
 

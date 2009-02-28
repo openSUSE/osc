@@ -23,7 +23,7 @@ def join_url(self, base_url, rel_url):
 
 
 class Fetcher:
-    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False):
+    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False, cookiejar = None):
 
         __version__ = '0.1'
         __user_agent__ = 'osbuild/%s' % __version__
@@ -42,10 +42,12 @@ class Fetcher:
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
             passmgr.add_password(None, host, api_host_options[host]['user'], api_host_options[host]['pass'])
-        authhandler = urllib2.HTTPBasicAuthHandler(passmgr)
+        openers = (urllib2.HTTPBasicAuthHandler(passmgr), )
+        if cookiejar:
+            openers += (urllib2.HTTPCookieProcessor(cookiejar), )
         self.gr = URLGrabber(user_agent=__user_agent__,
                             keepalive=1,
-                            opener = urllib2.build_opener(authhandler),
+                            opener = urllib2.build_opener(*openers),
                             progress_obj=self.progress_obj,
                             failure_callback=(self.failureReport,(),{}),
                             )
