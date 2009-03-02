@@ -5,8 +5,8 @@ from distutils.core import setup
 setup(name='osc',
       version='0.7',
       description='opensuse commander',
-      author='Peter Poeml',
-      author_email='poeml@suse.de',
+      author='openSUSE project',
+      author_email='opensuse-buildservice@opensuse.org',
       license='GPL',
       url='https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/',
 

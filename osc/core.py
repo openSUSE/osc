@@ -2,7 +2,7 @@
 
 # vim: sw=4 et
 
-# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
+# Copyright (C) 2006 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.

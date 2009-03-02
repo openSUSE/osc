@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
+# Copyright (C) 2006 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
@@ -18,9 +18,9 @@ After reading the config, urllib2 is initialized.
 The configuration dictionary could look like this:
 
 {'apisrv': 'https://api.opensuse.org/',
- 'user': 'poeml',
- 'api_host_options': {'api.opensuse.org': {'user': 'poeml', 'pass': 'secret'},
-                      'apitest.opensuse.org': {'user': 'poeml', 'pass': 'secret',
+ 'user': 'joe',
+ 'api_host_options': {'api.opensuse.org': {'user': 'joe', 'pass': 'secret'},
+                      'apitest.opensuse.org': {'user': 'joe', 'pass': 'secret',
                                                'http_headers':(('Host','api.suse.de'),
                                                                ('User','faye'))},
                       'foo.opensuse.org': {'user': 'foo', 'pass': 'foo'}},

@@ -17,7 +17,7 @@
 # this is basically a copy of python-urlgrabber's TextMeter class, 
 # with support added for dynamical sizing according to screen size.
 # it uses getScreenWidth() scrapped from smart.
-# Peter Poeml <poeml@suse.de>
+# 2007-04-24, poeml
 
 
 from urlgrabber.progress import BaseMeter, format_time, format_number

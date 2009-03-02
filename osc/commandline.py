@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # vim: sw=4 et
 
-# Copyright (C) 2006 Peter Poeml / Novell Inc.  All rights reserved.
+# Copyright (C) 2006 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
@@ -268,7 +268,7 @@ class Osc(cmdln.Cmdln):
         opens the program specified by the environmental variable EDITOR with a
         temporary file. Alternatively, content to be saved can be supplied via
         the --file switch. If the argument is '-', input is taken from stdin:
-        osc meta prjconf home:poeml | sed ... | osc meta prjconf home:poeml -F -
+        osc meta prjconf home:user | sed ... | osc meta prjconf home:user -F -
 
         When trying to edit a non-existing resource, it is created implicitely.
 
@@ -2497,8 +2497,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Note the global -A and -H options (see osc help).
 
         Examples:
-          osc req /source/home:poeml
-          osc req -m PUT -f /etc/fstab source/home:poeml/test5/myfstab
+          osc req /source/home:user
+          osc req -m PUT -f /etc/fstab source/home:user/test5/myfstab
 
         ${cmd_usage}
         ${cmd_option_list}
