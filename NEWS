@@ -1,10 +1,33 @@
 0.114:
-- osc jobhistory command added to browse the build job history of
-  a project or a package
-- support VM builds (solves the problem of untrusted packages on your system)
-- add parameter to show old build results in "rresults" call
-- obsolete the need to configure download server, get it from the build
-  service instance instead.
+- the .oscrc config handling has been cleaned up: 
+   * use "apiurl" for everything now (== <protocol>://<host>)
+   * added aliases support for [apiurl] sections in the ~/.oscrc.
+     Example:
+     [http(s)://foobar]
+     ...
+     aliases = foo, bar
+     => "osc -A foo <cmd>" will do the same as "osc -A http(s)://foobar ls"
+   * "scheme" and "apisrv" are deprecated and will produce a warning
+   * when writing a new ~/.oscrc, store the apiurl in the conffile (bnc#478054)
+   * fixed bug that made osc ask for credentials when -A was used (bnc#478054)
+   * fixed crash upon password entry (first startup) (bnc#478052)
+- osc build: 
+   * make product builds work
+   * speed up by using a cookie when fetching the binaries (bnc#477690)
+   * support for VM (kvm or xen) builds
+   * obsolete the need to configure download server, get it from the build
+     service instance instead.
+   * be a bit more verbose if the linked package isn't expanded (bnc#470948)
+- osc branch: 
+   * --develproject option fixed (the API calls it 'ignoredevel' instead of 'nodevelproject')
+   * --revision option added
+- osc jobhistory: new command to see build job history of a project or a package
+- osc results/rresults: option -l, --last-build added (show last build results)
+- osc linkpac: fix failure when -A<url> is used (bnc#479156)
+- osc commit: don't scare users if they want to commit a nonexistent file (bnc#469167)
+- osc diff: bugfix to make --pretty option work
+- 11.1 added to the osc project template
+
 
 0.113:
 - osc diff -rX:Y: the default is to return an unified diff (to get a pretty
