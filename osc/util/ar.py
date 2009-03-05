@@ -125,6 +125,11 @@ class Ar():
                 raise ArError('//', 'invalid data section - trailing slash (off: %d)' % start)
                 
 
+    def _get_file(self, hdr):
+        self.__file.seek(hdr.dataoff, os.SEEK_SET)
+        return ArFile(hdr.file, hdr.uid, hdr.gid, hdr.mode,
+                      self.__file.read(hdr.size))
+
     def read(self):
         """reads in the archive. It tries to use mmap due to performance reasons (in case of large files)"""
         if not self.__file:
@@ -163,7 +168,12 @@ class Ar():
     def get_file(self, fn):
         for h in self.hdrs:
             if h.file == fn:
-                self.__file.seek(h.dataoff, os.SEEK_SET)
-                return ArFile(h.file, h.uid, h.gid, h.mode,
-                              self.__file.read(h.size))
+                return self._get_file(h)
         return None
+
+    def __iter__(self):
+        for h in self.hdrs:
+            if h.file == '/':
+                continue
+            yield self._get_file(h)
+        raise StopIteration()
