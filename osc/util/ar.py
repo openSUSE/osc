@@ -55,6 +55,11 @@ class ArFile(StringIO.StringIO):
         self.mode = mode
 
     def saveTo(self, dir = None):
+        """
+        writes file to dir/filename if dir isn't specified the current
+        working dir is used. Additionally it tries to set the owner/group
+        and permissions.
+        """
         if not dir:
             dir = os.getcwd()
         fn = os.path.join(dir, self.name)
@@ -123,7 +128,6 @@ class Ar():
                 h.file = data[0:end]
             else:
                 raise ArError('//', 'invalid data section - trailing slash (off: %d)' % start)
-                
 
     def _get_file(self, hdr):
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
