@@ -275,15 +275,16 @@ def main(opts, argv):
 #    if opts.define:
 #        buildargs.append('--define "%s"' % opts.define)
 
-    if opts.local_package:
-        pac = '_repository'
     if opts.alternative_project:
         prj = opts.alternative_project
         pac = '_repository'
         apiurl = config['apiurl']
     else:
         prj = store_read_project(os.curdir)
-        pac = store_read_package(os.curdir)
+        if opts.local_package:
+            pac = '_repository'
+        else:
+            pac = store_read_package(os.curdir)
         apiurl = store_read_apiurl(os.curdir)
 
     if not os.path.exists(build_descr):
