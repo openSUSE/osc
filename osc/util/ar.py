@@ -75,6 +75,10 @@ class ArFile(StringIO.StringIO):
             gid = -1
         os.chown(fn, uid, gid)
 
+    def __str__(self):
+        return '%s %s %s %s' % (self.name, self.uid,
+                                self.gid, self.mode)
+
 class Ar():
     """
     Represents an ar archive (only GNU format is supported).
@@ -85,14 +89,17 @@ class Ar():
 
     def __init__(self, fn):
         self.filename = fn
-        self.hdrs = []
-        self.ext_fnhdr = None
         # file object: will be closed in __del__()
         self.__file = None
+        self._init_datastructs()
 
     def __del__(self):
         if self.__file:
             self.__file.close()
+
+    def _init_datastructs(self):
+        self.hdrs = []
+        self.ext_fnhdr = None
 
     def _appendHdr(self, hdr):
         # GNU uses an internal '//' file to store very long filenames
@@ -148,6 +155,7 @@ class Ar():
                     raise e
         else:
             self.__file.seek(0, os.SEEK_SET)
+        self._init_datastructs()
         data = self.__file.read(7)
         if data != '!<arch>':
             raise ArError(self.filename, 'no ar archive')
