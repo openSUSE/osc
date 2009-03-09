@@ -202,6 +202,7 @@ class Linkinfo:
         self.lsrcmd5 = None
         self.srcmd5 = None
         self.error = None
+        self.rev = None
 
     def read(self, linkinfo_node):
         """read in the linkinfo metadata from the <linkinfo> element passed as
@@ -216,6 +217,7 @@ class Linkinfo:
         self.lsrcmd5 = linkinfo_node.get('lsrcmd5')
         self.srcmd5  = linkinfo_node.get('srcmd5')
         self.error   = linkinfo_node.get('error')
+        self.rev     = linkinfo_node.get('rev')
 
     def islink(self):
         """returns True if the linkinfo is not empty, otherwise False"""
@@ -238,8 +240,8 @@ class Linkinfo:
     def __str__(self):
         """return an informatory string representation"""
         if self.islink() and not self.isexpanded():
-            return 'project %s, package %s, xsrcmd5 %s' \
-                    % (self.project, self.package, self.xsrcmd5)
+            return 'project %s, package %s, xsrcmd5 %s, rev %s' \
+                    % (self.project, self.package, self.xsrcmd5, self.rev)
         elif self.islink() and self.isexpanded():
             if self.haserror():
                 return 'broken link to project %s, package %s, srcmd5 %s, lsrcmd5 %s: %s' \
