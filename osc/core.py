@@ -1467,6 +1467,7 @@ def http_request(method, url, headers={}, data=None, file=None):
             try:
                 data = mmap.mmap(filefd.fileno(), os.path.getsize(file),
 				mmap.MAP_SHARED, mmap.PROT_READ)
+                data = buffer(data)
             except EnvironmentError, e:
                 if e.errno == 19:
                     sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
