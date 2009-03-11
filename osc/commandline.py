@@ -773,6 +773,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='do a (slower) client-side copy')
     @cmdln.option('-k', '--keep-maintainers', action='store_true',
                         help='keep original maintainers. Default is remove all and replace with the one calling the script.')
+    @cmdln.option('-d', '--keep-develproject', action='store_true',
+                        help='keep develproject tag in the package metadata')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
     def do_copypac(self, subcmd, opts, *args):
@@ -825,7 +827,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r = copy_pac(src_apiurl, src_project, src_package, 
                      dst_apiurl, dst_project, dst_package,
                      client_side_copy=opts.client_side_copy,
-                     keep_maintainers=opts.keep_maintainers)
+                     keep_maintainers=opts.keep_maintainers,
+                     keep_develproject=opts.keep_develproject)
         print r
 
 

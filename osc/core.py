@@ -2377,10 +2377,12 @@ def checkout_package(apiurl, project, package,
     os.chdir(olddir)
 
 
-def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False, dst_userid = None):
+def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
+                     dst_userid = None, keep_develproject = False):
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
-    only maintainer (unless keep_maintainers is set)
+    only maintainer (unless keep_maintainers is set). Additionally remove the
+    develproject entry (<devel />) unless keep_develproject is true.
     """
     root = ET.fromstring(''.join(pkgmeta))
     root.set('name', new_name)
@@ -2391,6 +2393,9 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False, dst_u
         dst_userid = dst_userid or conf.config['user']
         ET.SubElement(root, 'person',
                       userid = dst_userid, role = 'maintainer')
+    if not keep_develproject:
+        for dp in root.findall('devel'):
+            root.remove(dp)
     return ET.tostring(root)
 
 def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
@@ -2491,7 +2496,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None)
 def copy_pac(src_apiurl, src_project, src_package, 
              dst_apiurl, dst_project, dst_package,
              client_side_copy = False,
-             keep_maintainers = False):
+             keep_maintainers = False,
+             keep_develproject = False):
     """
     Create a copy of a package.
 
@@ -2503,7 +2509,8 @@ def copy_pac(src_apiurl, src_project, src_package,
 
     src_meta = show_package_meta(src_apiurl, src_project, src_package)
     dst_userid = conf.get_apiurl_usr(dst_apiurl)
-    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers, dst_userid)
+    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
+                                dst_userid, keep_develproject)
 
     print 'Sending meta data...'
     u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
