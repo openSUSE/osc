@@ -87,7 +87,10 @@ class Buildinfo:
         self.debuginfo = 0
         if root.find('debuginfo') != None:
             try:
-                self.debuginfo = int(root.find('debuginfo').text)
+		debug = root.find('debuginfo')
+		print >>sys.stderr, "debuginfo = ", debug
+		if debug.find('enable'):
+			self.debuginfo = 1
             except ValueError:
                 pass
 
