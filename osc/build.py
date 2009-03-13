@@ -137,9 +137,11 @@ class Pac:
         self.mp['buildarch']  = buildarch
         self.mp['pacsuffix']  = pacsuffix
 
-
-        self.mp['repopackage'] = node.get('package') or '_repository'
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
+
+	self.mp['extproject'] = node.get('project').replace(':', ':/')
+	self.mp['extrepository'] = node.get('repository').replace(':', ':/')
+        self.mp['repopackage'] = node.get('package') or '_repository'
         self.mp['repoarch'] = node.get('repoarch') or self.mp['arch']
 
         if not (self.mp['name'] and self.mp['arch'] and self.mp['version']):
@@ -385,7 +387,7 @@ def main(opts, argv):
     urllist = []
     # OBS 1.5 and before has no downloadurl defined in buildinfo
     if bi.downloadurl:
-        urllist.append( bi.downloadurl + '/%(project)s/%(repository)s/%(arch)s/%(filename)s' )
+        urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
     urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
