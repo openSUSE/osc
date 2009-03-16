@@ -1239,7 +1239,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
         arg_list = args[:]
         for arg in arg_list:
-            if is_project_dir(arg):
+            if is_project_dir(arg) and conf.config['do_package_tracking']:
                 prj = Project(arg, False)
                 for pac in prj.pacs_unvers:
                     pac_dir = getTransActPath(os.path.join(prj.dir, pac))
@@ -1257,6 +1257,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             args.append(pac_dir)
                 args.remove(arg)
                 prj.write_packages()
+            elif is_project_dir(arg):
+                print >>sys.stderr, 'osc: addremove is not supported in a project dir unless ' \
+                                    '\'do_package_tracking\' is enabled in the configuration file'
+                sys.exit(1)
 
         pacs = findpacs(args)
         for p in pacs:

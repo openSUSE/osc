@@ -3439,9 +3439,12 @@ def addFiles(filenames, prj_obj = None):
             os.chdir(filename)
             init_package_dir(prj_apiurl, prj_name, pac_dir, pac_dir, files=False)
             os.chdir(old_dir)
-
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
             print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
+            return 1
+        elif os.path.isdir(filename) and is_project_dir(prj_dir):
+            print >>sys.stderr, 'osc: cannot add a directory to a project unless ' \
+                                '\'do_package_tracking\' is enabled in the configuration file'
             return 1
 
     pacs = findpacs(filenames)
