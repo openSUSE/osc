@@ -2428,8 +2428,10 @@ def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
     link_template = """\
 <link project="%s" package="%s" %s>
 <patches>
-  <!-- <apply name="patch" /> -->
-  <!-- <topadd>%%define build_with_feature_x 1</topadd> -->
+  <!-- <apply name="patch" /> apply a patch on the source directory  -->
+  <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
+  <!-- <add>file.patch</add> add a patch to be applied after %%setup (spec file only) -->
+  <!-- <delete>filename</delete> delete a file -->
 </patches>
 </link>
 """ % (src_project, src_package, rev)
