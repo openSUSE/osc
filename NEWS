@@ -1,3 +1,9 @@
+0.115:
+- optional transfer of devel project during copy_pac and link_pac is fixing
+  opertation with remote build service instance
+- "osc ci" fails uploading large files to Provo BuildService
+- fixed support for accessing download repositories (worked only for download.o.o so far)
+
 0.114:
 - the .oscrc config handling has been cleaned up: 
    * use "apiurl" for everything now (== <protocol>://<host>)
