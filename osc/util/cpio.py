@@ -115,7 +115,8 @@ class Cpio():
         if not stat.S_ISREG(stat.S_IFMT(hdr.mode)):
             msg = '\'%s\' is no regular file - only regular files are supported atm' % hdr.filename
             raise NotImplementedError(msg)
-        f = open(os.path.join(dest, fn), 'wb')
+        fn = os.path.join(dest, fn)
+        f = open(fn, 'wb')
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
         f.write(self.__file.read(hdr.filesize))
         f.close()
