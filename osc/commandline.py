@@ -532,7 +532,12 @@ class Osc(cmdln.Cmdln):
                 else:
                     sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                              'Please provide it the target via commandline arguments.' % p.name)
-
+                modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
+                if len(modified) > 0:
+                    print 'Your working copy has local modifications.'
+                    repl = raw_input('Proceed without committing the local changes? (y|N) ')
+                    if repl != 'y':
+                        sys.exit(1)
             elif len(args) >= 3:
                 # get the arguments from the commandline
                 src_project, src_package, dst_project = args[0:3]
