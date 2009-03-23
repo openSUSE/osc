@@ -876,10 +876,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   '      That\'s also where you would normally make changes against.\n' \
                   '      A direct branch of the specified package can be forced\n' \
                   '      with the --nodevelproject option.\n' % devloc
-
+        apiopt = ''
+        if conf.get_configParser().get('general', 'apiurl') != conf.config['apiurl']:
+            apiopt = '-A %s ' % conf.config['apiurl']
         print 'A working copy of the branched package can be checked out with:\n\n' \
-              'osc co %s/%s' \
-                      % (r, args[1])
+              'osc %sco %s/%s' \
+                      % (apiopt, r, args[1])
 
 
     def do_deletepac(self, subcmd, opts, *args):
