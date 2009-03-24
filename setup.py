@@ -10,7 +10,7 @@ setup(name='osc',
       license='GPL',
       url='https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/',
 
-      packages=['osc'],
+      packages=['osc', 'osc.util'],
       scripts=['osc_hotshot.py', 'osc-wrapper.py'],
 
      )
