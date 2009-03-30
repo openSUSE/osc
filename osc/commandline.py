@@ -782,6 +782,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='keep develproject tag in the package metadata')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
+    @cmdln.option('-e', '--expand', action='store_true',
+                        help='if the source package is a link then copy the expanded version of the link')
     def do_copypac(self, subcmd, opts, *args):
         """${cmd_name}: Copy a package
 
@@ -833,7 +835,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      dst_apiurl, dst_project, dst_package,
                      client_side_copy=opts.client_side_copy,
                      keep_maintainers=opts.keep_maintainers,
-                     keep_develproject=opts.keep_develproject)
+                     keep_develproject=opts.keep_develproject,
+                     expand=opts.expand)
         print r
 
 

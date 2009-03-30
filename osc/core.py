@@ -1566,11 +1566,15 @@ def meta_get_packagelist(apiurl, prj):
     return [ node.get('name') for node in root.findall('entry') ]
 
 
-def meta_get_filelist(apiurl, prj, package, verbose=False):
+def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False):
     """return a list of file names,
     or a list File() instances if verbose=True"""
 
-    u = makeurl(apiurl, ['source', prj, package])
+    if expand:
+        expand = 'expand=1'
+    else:
+        expand = ''
+    u = makeurl(apiurl, ['source', prj, package], query=expand)
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
@@ -2499,14 +2503,14 @@ def copy_pac(src_apiurl, src_project, src_package,
              dst_apiurl, dst_project, dst_package,
              client_side_copy = False,
              keep_maintainers = False,
-             keep_develproject = False):
+             keep_develproject = False,
+             expand = False):
     """
     Create a copy of a package.
 
     Copying can be done by downloading the files from one package and commit
     them into the other by uploading them (client-side copy) --
     or by the server, in a single api call.
-
     """
 
     src_meta = show_package_meta(src_apiurl, src_project, src_package)
@@ -2521,6 +2525,8 @@ def copy_pac(src_apiurl, src_project, src_package,
     print 'Copying files...'
     if not client_side_copy:
         query = {'cmd': 'copy', 'oproject': src_project, 'opackage': src_package }
+        if expand:
+            query['expand'] = '1'
         u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
         f = http_POST(u)
         return f.read()
@@ -2530,7 +2536,7 @@ def copy_pac(src_apiurl, src_project, src_package,
         import tempfile
         tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir='/tmp')
         os.chdir(tmpdir)
-        for n in meta_get_filelist(src_apiurl, src_project, src_package):
+        for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand):
             print '  ', n
             get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n)
             u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)])
