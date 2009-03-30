@@ -148,6 +148,8 @@ class Osc(cmdln.Cmdln):
                         help='list built binaries, instead of sources')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='print extra information')
+    @cmdln.option('-e', '--expand', action='store_true',
+                        help='expand linked package')
     def do_list(self, subcmd, opts, *args):
         """${cmd_name}: List existing content on the server
 
@@ -189,6 +191,8 @@ class Osc(cmdln.Cmdln):
         if opts.binaries and (not opts.repo or not opts.arch):
             raise oscerr.WrongOptions('Sorry, -r <repo> -a <arch> missing\n'
                      'You can list repositories with: \'osc platforms <project>\'')
+        if opts.binaries and opts.expand:
+            raise oscerr.WrongOptions('Sorry, --binaries and --expand are mutual exclusive.')
 
         # list binaries
         if opts.binaries:
@@ -213,6 +217,8 @@ class Osc(cmdln.Cmdln):
             elif len(args) == 1:
                 if opts.verbose:
                     raise oscerr.WrongOptions('Sorry, the --verbose option is not implemented for projects.')
+                if opts.expand:
+                    raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
 
                 print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
 
@@ -220,7 +226,8 @@ class Osc(cmdln.Cmdln):
                 l = meta_get_filelist(conf.config['apiurl'], 
                                       project, 
                                       package,
-                                      verbose=opts.verbose)
+                                      verbose=opts.verbose,
+                                      expand=opts.expand)
                 if opts.verbose:
                     out = [ '%s %7d %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
                             for i in l if not fname or fname == i.name ]
