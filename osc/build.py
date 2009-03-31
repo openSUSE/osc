@@ -351,7 +351,7 @@ def main(opts, argv):
     bi_file.flush()
 
     bi = Buildinfo(bi_file.name, apiurl)
-    if bi.debuginfo:
+    if bi.debuginfo and not (opts.debuginfo or opts.disable_debuginfo):
         buildargs.append('--debug')
     buildargs = ' '.join(set(buildargs))
 

@@ -1893,12 +1893,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Run build as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
                   'in the spec file will invalidate this option.')
-    @cmdln.option('', '--local-package', action='store_true',
+    @cmdln.option('--local-package', action='store_true',
                   help='build a package which does not exist on the server')
-    @cmdln.option('', '--alternative-project', metavar='PROJECT',
+    @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
     @cmdln.option('-d', '--debuginfo', action='store_true',
                   help='also build debuginfo sub-packages')
+    @cmdln.option('--disable-debuginfo', action='store_true',
+                  help='disable build of debuginfo packages')
     @cmdln.option('-b', '--baselibs', action='store_true',
                   help='Create -32bit/-64bit/-x86 rpms for other architectures')
     def do_build(self, subcmd, opts, *args):
@@ -1949,6 +1951,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.stderr.write('Error: you need build.rpm with version 2007.3.12 or newer.\n')
             sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
             return 1
+
+        if opts.debuginfo and opts.disable_debuginfo:
+            raise oscerr.WrongOptions('osc: --debuginfo and --disable-debuginfo are mutual exclusive')
 
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
