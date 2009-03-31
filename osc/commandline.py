@@ -54,8 +54,8 @@ class Osc(cmdln.Cmdln):
         optparser.add_option('-d', '--debug', action='store_true',
                       help='print info useful for debugging')
         optparser.add_option('-A', '--apiurl', dest='apiurl',
-                      metavar='URL',
-                      help='specify URL to access API server at')
+                      metavar='URL/alias',
+                      help='specify URL to access API server at or an alias')
         optparser.add_option('-c', '--config', dest='conffile',
                       metavar='FILE',
                       help='specify alternate configuration file')
