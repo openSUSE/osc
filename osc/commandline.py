@@ -1456,6 +1456,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(pacs) > 1:
                 print 'Updating %s' % p.name
 
+            if opts.expand_link and p.haslinkerror():
+                raise oscerr.LinkExpandError(p.linkerror())
+
             if not rev:
                 if opts.expand_link and p.islink() and not p.isexpanded():
                     print 'Expanding to rev', p.linkinfo.xsrcmd5

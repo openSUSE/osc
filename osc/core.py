@@ -904,6 +904,20 @@ class Package:
         Returns True if the package is expanded, otherwise False."""
         return self.linkinfo.isexpanded()
 
+    def haslinkerror(self):
+        """
+        Returns True if the link is broken otherwise False.
+        If the package is not a link it returns False.
+        """
+        return self.linkinfo.haserror()
+
+    def linkerror(self):
+        """
+        Returns an error message if the link is broken otherwise None.
+        If the package is not a link it returns None.
+        """
+        return self.linkinfo.error
+
     def update_local_pacmeta(self):
         """
         Update the local _meta file in the store.
