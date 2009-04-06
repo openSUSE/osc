@@ -10,7 +10,6 @@
 This module reads and parses ~/.oscrc. The resulting configuration is stored
 for later usage in a dictionary named 'config'. 
 
-In the absence of .oscrc, it tries .netrc.
 If information is missing, it asks the user questions.
 
 After reading the config, urllib2 is initialized.

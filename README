@@ -34,7 +34,85 @@ CONFIGURATION:
 When you use it for the first time, it will ask you for your username and
 password, and store it in ~/.oscrc.
 
-If authentication data is found in .netrc, it will also be used.
+
+CONFIGURATION MIGRATION (only affects versions >= 0.114):
+
+Version 0.114 got some cleanups for the configfile handling and therefore some
+options are now deprecated, namely:
+* apisrv
+* scheme
+
+One new option was added:
+* apiurl = <protocol>://<somehost> # use this as the default apiurl. If this
+option isn't specified the default (https://api.opensuse.org) is used.
+
+So far osc still has some backward compatibility for these options but it might
+get removed in the future that's why it issues a deprecation warning in case
+one of those options is still in use.
+
+The new configuration scheme looks like the following:
+ # entry for an apiurl
+ [<protocol>://<apiurl>]
+ user = <username>
+ password = <password>
+ ...
+
+'''Before starting the migration please save your ~/.oscrc file!'''
+
+If the migration doesn't work for whatever reason feel free to send me an email
+or ask on the opensuse-buildservice mailinglist or in the #opensuse-buildservice
+irc channel.
+
+=== Migration case I (apisrv only) ===
+The apisrv option is used to specify the default apihost. If apisrv isn't
+specified at all the default ("api.opensuse.org") is used.
+The current [general] section looks like this:
+ [general]
+ ...
+ apisrv = <somehost>
+ # or
+ apisrv = <protocol>://<somehost>
+
+apisrv got superseded by the new apiurl option which looks like this:
+ [general]
+ ...
+ apiurl = <protocol>://<somehost>
+
+If apisrv has no "<protocol>" https is used. Make sure all apiurl sections have
+the new format which is described above. Afterwards apisrv can be removed.
+
+=== Migration case II (scheme only) ===
+The current [general] section looks like this:
+ [general]
+ ...
+ scheme = <protocol>
+
+This means every apiurl section which don't have the new format which is
+described above for instance
+ [<somehost>]
+ user = <username>
+ password = <password>
+ ...
+
+has to be converted to
+ [<protocol>://<somehost>]
+ user = <username>
+ password = <password>
+ ...
+
+Afterwards the scheme option can be removed from the [general] section (it
+might be the case that some sections already have the correct format).
+
+=== Migration case III (apisrv and scheme) ===
+The current [general] section looks like this:
+ [general]
+ ...
+ apisrv = <somehost>
+ scheme = <protocol>
+
+Both options can be removed if all apiurl sections have the new format which is
+described above. So basically just adjust all apiurl sections (it might be the
+case that some sections already have the correct format).
 
 
 
