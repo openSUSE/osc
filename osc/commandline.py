@@ -2289,7 +2289,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('--repos-baseurl', action='store_true',
                         help='show base URLs of download repositories')
-    @cmdln.option('-e', '--enable-exact', action='store_true',
+    @cmdln.option('-e', '--exact', action='store_true',
                         help='show only exact matches')
     @cmdln.option('--package', action='store_true',
                         help='search for a package')
