@@ -319,7 +319,8 @@ def get_config(override_conffile = None,
         config['apiurl'] = urljoin(scheme, apisrv)
     if config.has_key('apisrv') or config.has_key('scheme'):
         import warnings
-        warnings.warn("Use of the 'scheme' or 'apisrv' config option is deprecated!",
+        warnings.warn('Use of the \'scheme\' or \'apisrv\' config option is deprecated! ' \
+                      'See README for migration details.',
                       DeprecationWarning)
 
     for i in boolean_opts:
