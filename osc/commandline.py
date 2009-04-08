@@ -693,6 +693,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         return 2
 
 
+    @cmdln.option('-c', '--current', action='store_true',
+                  help='link fixed against current revision.')
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='link the specified revision.')
     def do_linkpac(self, subcmd, opts, *args):
@@ -735,6 +737,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if src_project == dst_project and src_package == dst_package:
             print >>sys.stderr, 'Error: source and destination are the same.'
             return 1
+
+        if opts.current:
+            rev = show_upstream_rev(conf.config['apiurl'], src_project, src_package);
 
         if rev and not checkRevision(src_project, src_package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
