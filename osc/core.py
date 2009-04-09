@@ -1192,7 +1192,7 @@ class SubmitReq:
         self.last_author = None
         self.src_project = None
         self.src_package = None
-        self.src_md5     = None
+        self.src_rev     = None
         self.dst_project = None
         self.dst_package = None
         self.descr       = None
@@ -1204,7 +1204,7 @@ class SubmitReq:
         n = root.find('submit').find('source')
         self.src_project = n.get('project')
         self.src_package = n.get('package')
-        try: self.src_md5 = n.get('rev')
+        try: self.src_rev = n.get('rev')
         except: pass
 
         n = root.find('submit').find('target')
@@ -1265,7 +1265,7 @@ Request to submit (sri%d):
 
     %s/%s  ->  %s/%s
 
-Source revision MD5:
+Source revision:
     %s
 
 Message:
@@ -1278,7 +1278,7 @@ Comment: %s
                self.src_package, 
                self.dst_project, 
                self.dst_package, 
-               self.src_md5 or 'not given',
+               self.src_rev or 'not given',
                self.descr,
                self.state.name, 
                self.state.when, self.state.who, self.state.comment)
@@ -1949,7 +1949,7 @@ def create_submit_request(apiurl,
     r = SubmitReq()
     r.src_project = src_project
     r.src_package = src_package
-    r.src_md5     = orev or show_upstream_srcmd5(apiurl, src_project, src_package)
+    r.src_rev     = orev or show_upstream_rev(apiurl, src_project, src_package)
     r.dst_project = dst_project
     r.dst_package = dst_package
     r.descr = cgi.escape(message or '')
@@ -1965,7 +1965,7 @@ def create_submit_request(apiurl,
 </request>
 """ % (r.src_project, 
        r.src_package,
-       r.src_md5,
+       r.src_rev,
        r.dst_project, 
        r.dst_package,
        r.descr)

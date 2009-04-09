@@ -648,7 +648,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     print server_diff(conf.config['apiurl'],
                                       r.dst_project, r.dst_package, None,
-                                      r.src_project, r.src_package, r.src_md5, opts.unified)
+                                      r.src_project, r.src_package, r.src_rev, opts.unified)
                 except urllib2.HTTPError, e:
                     e.osc_msg = 'Diff not possible'
                     raise
