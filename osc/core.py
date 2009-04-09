@@ -2791,27 +2791,25 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
+def streamfile(url, http_meth = http_GET, bufsize=8192):
+    """
+    performs http_meth on url and read bufsize bytes from the response
+    until EOF is reached. After each read bufsize bytes are yielded to the
+    caller.
+    """
+    f = http_meth.__call__(url)
+    data = f.read(bufsize)
+    while len(data):
+        yield data
+        data = f.read(bufsize)
+
+
 def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
     """prints out the buildlog on stdout"""
-    try:
-        while True:
-            u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log?nostream=1&start=%s' % offset])
-            f = http_GET(u)
-            start_offset = offset
-            while True:
-                log_chunk = f.read(8192)
-                offset += len(log_chunk)
-                print log_chunk,
-                if not len(log_chunk):
-                    break
-            if start_offset == offset:
-                break
-
-    except urllib2.HTTPError, e:
-        print >>sys.stderr, 'Can\'t get logfile'
-        print >>sys.stderr, e
-    except KeyboardInterrupt:
-        pass
+    query = {'nostream' : '1', 'start' : '%s' % offset}
+    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log'], query=query)
+    for data in streamfile(u):
+        print data
 
 def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None, addlist=None):
     query = []

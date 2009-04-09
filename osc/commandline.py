@@ -2686,21 +2686,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments.')
         rev, dummy = parseRevisionOption(opts.revision)
 
-        import tempfile
-        (fd, filename) = tempfile.mkstemp(prefix = 'osc_%s.' % args[2], dir = '/tmp')
+        query = ''
+        if opts.revision:
+            query = 'rev=%s' % opts.revision
+        u = makeurl(conf.config['apiurl'], ['source', args[0], args[1], args[2]], query=query)
+        for data in streamfile(u):
+            sys.stdout.write(data)
 
-        get_source_file(conf.config['apiurl'], args[0], args[1], args[2],
-                        targetfilename=filename, revision=rev)
-
-        # FIXME: stream directly without temp file and without keeping the entire file in memory
-        f = open(filename, 'rb')
-        sys.stdout.write(f.read())
-        f.close()
-
-        try:
-            os.unlink(filename)
-        except:
-            pass
 # fini!
 ###############################################################################
         
