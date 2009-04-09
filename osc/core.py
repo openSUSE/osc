@@ -80,8 +80,13 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="Fedora_9">
-    <path project="Fedora:9" repository="standard" />
+  <repository name="Fedora_10">
+    <path project="Fedora:10" repository="standard" />
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+  <repository name="SLE_11">
+    <path project="SUSE:SLE-11" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
@@ -1580,7 +1585,7 @@ def meta_get_packagelist(apiurl, prj):
     return [ node.get('name') for node in root.findall('entry') ]
 
 
-def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False):
+def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revision=0):
     """return a list of file names,
     or a list File() instances if verbose=True"""
 
@@ -1588,7 +1593,12 @@ def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False):
         expand = 'expand=1'
     else:
         expand = ''
-    u = makeurl(apiurl, ['source', prj, package], query=expand)
+    if revision and revision > 0:
+        revision = '?rev=%s' % revision
+    else:
+        revision = ''
+
+    u = makeurl(apiurl, ['source', prj, package, revision], query=expand)
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
@@ -3179,11 +3189,34 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
                 title = title[:61] + '...'
             result.append(title)
         if repos_baseurl:
+            # FIXME: no hardcoded URL of instance
             result.append('http://download.opensuse.org/repositories/%s/' % project.replace(':', ':/'))
     if result:
         return result
     else:
         return None
+
+
+def set_link_rev(project, package, revision = 0):
+    url = makeurl(conf.config['apiurl'], ['source', project, package, '_link'])
+    try:
+       f = http_GET(url)
+       root = ET.parse(f).getroot()
+    except urllib2.HTTPError, e:
+       e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
+       raise
+
+    if not revision or revision == 0:
+       src_project = root.attrib['project']
+       src_package = root.attrib['package']
+       revision = show_upstream_rev(conf.config['apiurl'], src_project, src_package);
+
+    # set revision element
+    root.attrib['rev'] = revision
+    l = ET.tostring(root)
+    # upload _link file again
+    http_PUT(url, data=l)
+
 
 def delete_dir(dir):
     # small security checks

@@ -142,6 +142,8 @@ class Osc(cmdln.Cmdln):
     @cmdln.alias('ls')
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='specify architecture')
+    @cmdln.option('-R', '--revision', metavar='REVISION',
+                        help='specify revision')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='specify repository')
     @cmdln.option('-b', '--binaries', action='store_true',
@@ -198,6 +200,8 @@ class Osc(cmdln.Cmdln):
         if opts.binaries:
             if not args:
                 raise oscerr.WrongArgs('There are no binaries to list above project level.')
+            if opts.revision:
+                raise oscerr.WrongOptions('Sorry, the --revision option is not supported for binaries.')
 
             elif len(args) == 1:
                 #if opts.verbose:
@@ -227,7 +231,8 @@ class Osc(cmdln.Cmdln):
                                       project, 
                                       package,
                                       verbose=opts.verbose,
-                                      expand=opts.expand)
+                                      expand=opts.expand,
+                                      revision=opts.revision)
                 if opts.verbose:
                     out = [ '%s %7d %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
                             for i in l if not fname or fname == i.name ]
@@ -691,6 +696,57 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print >>sys.stderr, 'See \'osc help meta\'.'
         #self.do_help([None, 'meta'])
         return 2
+
+
+    @cmdln.option('-r', '--revision', metavar='rev',
+                  help='use the specified revision.')
+    def do_setlinkrev(self, subcmd, opts, *args):
+        """${cmd_name}: Updates a revision number in a source link.
+        
+        This command adds or updates a specified revision number in a source link.
+        The current revision of the source is used, if no revision number is specified.
+
+        usage: 
+            osc setlinkrev
+            osc setlinkrev PROJECT PACKAGE
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        if not args or len(args) == 0:
+            p = findpacs(os.curdir)[0]
+            project = p.prjname
+            package = p.name
+            if p.islink() and project and package:
+                src_project = p.linkinfo.project
+                src_package = p.linkinfo.package
+            else:
+                sys.exit('Local directory is no checked out package, aborting')
+        elif len(args) == 2:
+            project = args[0]
+            package = args[1]
+        else:
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('setlinkrev'))
+
+        rev, dummy = parseRevisionOption(opts.revision)
+
+        if not rev:
+            if not args or len(args) == 0:
+                revision = show_upstream_rev(conf.config['apiurl'], src_project, src_package);
+            else:
+                url = makeurl(conf.config['apiurl'], ['source', project, package, '_link'])
+                try:
+                   f = http_GET(url)
+                   root = ET.parse(f).getroot()
+                except urllib2.HTTPError, e:
+                   e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
+                   raise
+            
+                return set_link_rev(project, package)
+
+        set_link_rev(project, package, rev)
 
 
     @cmdln.option('-c', '--current', action='store_true',
@@ -2653,11 +2709,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         get_source_file(conf.config['apiurl'], args[0], args[1], args[2],
                         targetfilename=filename, revision=rev)
 
-        if binary_file(filename):
-            print >>sys.stderr, 'error - cannot display binary file \'%s\'' % args[2]
-        else:
-            for line in open(filename):
-                print line.rstrip('\n')
+        # FIXME: stream directly without temp file and without keeping the entire file in memory
+        f = open(filename, 'rb')
+        sys.stdout.write(f.read())
+        f.close()
 
         try:
             os.unlink(filename)

@@ -1,3 +1,9 @@
+0.116:
+- support listings of older revisions with "osc ls -R"
+- add --current parameter for linkpac to use current revision of source package fixed.
+- add osc setlinkrev to add or update revision number in links easily
+- fix streaming of binary files via "cat" (#493325)
+
 0.115:
 - optional transfer of devel project during copy_pac and link_pac is fixing
   opertation with remote build service instance
