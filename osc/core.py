@@ -2067,17 +2067,11 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
     if revision:
         query = { 'rev': revision }
 
-    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
-    # print 'url: %s' % u
-    f = http_GET(u)
-
     o = open(targetfilename or filename, 'w')
-    while 1:
-        buf = f.read(BUFSIZE)
-        if not buf: break
+    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
+    for buf in streamfile(u, http_GET, BUFSIZE):
         o.write(buf)
     o.close()
-    f.close()
 
 
 def get_binary_file(apiurl, prj, repo, arch, 
@@ -2802,6 +2796,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192):
     while len(data):
         yield data
         data = f.read(bufsize)
+    f.close()
 
 
 def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
