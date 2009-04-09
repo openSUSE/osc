@@ -713,15 +713,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
-
+        apiurl = conf.config['apiurl']
         if not args or len(args) == 0:
             p = findpacs(os.curdir)[0]
             project = p.prjname
             package = p.name
-            if p.islink() and project and package:
-                src_project = p.linkinfo.project
-                src_package = p.linkinfo.package
-            else:
+            apiurl = p.apiurl
+            if not p.islink():
                 sys.exit('Local directory is no checked out package, aborting')
         elif len(args) == 2:
             project = args[0]
@@ -731,22 +729,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   + self.get_cmd_help('setlinkrev'))
 
         rev, dummy = parseRevisionOption(opts.revision)
-
-        if not rev:
-            if not args or len(args) == 0:
-                revision = show_upstream_rev(conf.config['apiurl'], src_project, src_package);
-            else:
-                url = makeurl(conf.config['apiurl'], ['source', project, package, '_link'])
-                try:
-                   f = http_GET(url)
-                   root = ET.parse(f).getroot()
-                except urllib2.HTTPError, e:
-                   e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
-                   raise
-            
-                return set_link_rev(project, package)
-
-        set_link_rev(project, package, rev)
+        set_link_rev(apiurl, project, package, rev)
 
 
     @cmdln.option('-c', '--current', action='store_true',
