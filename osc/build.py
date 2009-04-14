@@ -385,6 +385,15 @@ def main(opts, argv):
     print 'Updating cache of required packages'
 
     urllist = []
+
+    # transform 'url1, url2, url3' form into a list
+    if 'urllist' in config:
+        if type(config['urllist']) == str:
+	    re_clist = re.compile('[, ]+')
+            urllist = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
+        else:
+            urllist = config['urllist']
+
     # OBS 1.5 and before has no downloadurl defined in buildinfo
     if bi.downloadurl:
         urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
