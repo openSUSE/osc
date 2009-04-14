@@ -736,7 +736,7 @@ class Package:
                 self.todo_delete.append(filename)
                 print statfrmt('Deleting',  os.path.join(pathn, filename))
 
-        if not self.todo_send and not self.todo_delete:
+        if not self.todo_send and not self.todo_delete and not self.rev == "upload":
             print 'nothing to do for package %s' % self.name
             return 1
 
