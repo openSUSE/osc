@@ -262,6 +262,7 @@ def main(opts, argv):
     if opts.icecream:
         buildargs.append('--icecream %s' % opts.icecream)
         xp.append('icecream')
+        xp.append('gcc-c++')
     if opts.ccache:
         buildargs.append('--ccache')
         xp.append('ccache')
