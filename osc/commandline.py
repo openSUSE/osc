@@ -2386,14 +2386,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.involved:
             search_list = [ 'person/@userid' ]
             search_term = search_term or conf.get_apiurl_usr(conf.config['apiurl'])
-            opts.enable_exact = True
+            opts.exact = True
 
         if not search_list:
             search_list = ['title', 'description', '@name']
         if not search_for:
             search_for = [ 'project', 'package' ]
         for kind in search_for:
-            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.enable_exact, opts.repos_baseurl)
+            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl)
             if result:
                 if kind == 'package':
                     headline = [ '# Package', '# Project' ]
