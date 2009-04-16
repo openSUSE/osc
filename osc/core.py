@@ -23,6 +23,7 @@ import shutil
 import oscerr
 import conf
 import subprocess
+import re
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -1907,22 +1908,25 @@ def read_meta_from_spec(specfile, *args):
     return spec_data
 
 
-def edit_message(footer=''):
+def edit_message(footer='', template=''):
     delim = '--This line, and those below, will be ignored--\n\n' + footer
+    hash_orig = dgst_from_string('\n' + delim)
+    if template != '':
+        delim = template + '\n' + delim
     import tempfile
     (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff', dir = '/tmp')
     f = os.fdopen(fd, 'w')
-    f.write('\n')
     f.write(delim)
     f.close()
-    hash_orig = dgst(filename)
+    mtime_orig = os.stat(filename).st_mtime
 
     editor = os.getenv('EDITOR', default='vim')
     while 1:
         subprocess.call('%s %s' % (editor, filename), shell=True)
         hash = dgst(filename)
-
-        if hash != hash_orig:
+        mtime = os.stat(filename).st_mtime
+        
+        if mtime_orig < mtime and hash != hash_orig:
             msg = open(filename).read()
             os.unlink(filename)
             return msg.split(delim)[0].rstrip()
@@ -2125,6 +2129,16 @@ def get_binary_file(apiurl, prj, repo, arch,
         try: os.unlink(tmpfilename)
         except: pass
 
+def dgst_from_string(str):
+    try:
+        import hashlib
+        md5 = hashlib
+    except ImportError:
+        import md5
+        md5 = md5
+    s = md5.md5()
+    s.update(str)
+    return s.hexdigest()
 
 def dgst(file):
 
@@ -3599,3 +3613,37 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
         lines = [line for line in lines if line[0] == '?'] \
               + [line for line in lines if line[0] != '?']
     return lines
+
+def get_commit_message_template(pac):
+    """
+    Read the difference in .changes file(s) and put them as a template to commit message.
+    """
+    diff = ""
+    template = []
+    date_re = re.compile(r'\+(Mon|Tue|Wed|Thu|Fri|Sat|Sun) ([A-Z][a-z]{2}) ( ?[0-9]|[0-3][0-9]) .*')
+    if pac.todo:
+        files = filter(lambda file: '.changes' in file and pac.status(file) in ('A', 'M'), pac.todo)
+        if not files:
+            return template
+        
+        for file in files:
+            diff += get_source_file_diff(pac.absdir, file, pac.rev)
+    
+    if diff:
+        index = 0
+        diff = diff.split('\n')
+
+        # The first four lines contains a header of diff
+        for line in diff[4:]:
+            # this condition is magical, but it removes all unwanted lines from commit message
+            if not(line) or (line and line[0] != '+') or \
+            date_re.match(line) or \
+            line == '+' or line[0:3] == '+++':
+                continue
+
+            if line == '+-------------------------------------------------------------------':
+                template.append('')
+            else:
+                template.append(line[1:])
+    
+    return template

@@ -1390,15 +1390,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # open editor for commit message
             # but first, produce status and diff to append to the template
             footer = diffs = []
+            template = []
             for pac in pacs:
                 changed = getStatus([pac], quiet=True)
                 if changed:
                     footer += changed
                     diffs += ['\nDiff for working copy: %s' % pac.dir]
                     diffs += make_diff(pac, 0)
+                    template.extend(get_commit_message_template(pac))
             # if footer is empty, there is nothing to commit, and no edit needed.
             if footer:
-                msg = edit_message(footer='\n'.join(footer))
+                msg = edit_message(footer='\n'.join(footer), template='\n'.join(template))
 
         if conf.config['do_package_tracking'] and len(pacs) > 0:
             prj_paths = {}
