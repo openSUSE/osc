@@ -720,7 +720,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = p.name
             apiurl = p.apiurl
             if not p.islink():
-                sys.exit('Local directory is no checked out package, aborting')
+                sys.exit('Local directory is no checked out source link package, aborting')
         elif len(args) == 2:
             project = args[0]
             package = args[1]

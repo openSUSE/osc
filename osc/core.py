@@ -3188,7 +3188,7 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
 
 
 def set_link_rev(apiurl, project, package, revision = None):
-    url = makeurl(conf.config['apiurl'], ['source', project, package, '_link'])
+    url = makeurl(apiurl, ['source', project, package, '_link'])
     try:
        f = http_GET(url)
        root = ET.parse(f).getroot()
