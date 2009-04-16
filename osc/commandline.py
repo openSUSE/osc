@@ -1107,6 +1107,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is a link, check out the _link file ' \
                              'instead of the expanded sources')
+    @cmdln.option('-c', '--current-dir', action='store_true',
+                        help='place PACKAGE folder in the current directory' \
+                             'instead of a PROJECT/PACKAGE directory')
+
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: Check out content from the repository
@@ -1155,8 +1159,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             get_source_file(conf.config['apiurl'], project, package, filename, revision=rev)
 
         elif package:
+            if opts.current_dir: prj_dir = None
+            else: prj_dir = project
+
             checkout_package(conf.config['apiurl'], project, package, 
-                             rev, expand_link=expand_link, prj_dir=project)
+                             rev, expand_link=expand_link, prj_dir=prj_dir)
 
         elif project:
             if os.path.exists(project):
