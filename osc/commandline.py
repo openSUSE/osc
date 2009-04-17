@@ -894,6 +894,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nodevelproject', action='store_true',
                         help='do not follow a defined devel project ' \
                              '(primary project where a package is developed)')
+    @cmdln.option('-c', '--checkout', action='store_true',
+                        help='Checkout branched package afterwards ' )
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='branch against a specific revision')
     def do_branch(self, subcmd, opts, *args):
@@ -907,21 +909,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         The branched package will live in
             home:USERNAME:branches:PROJECT/PACKAGE
+        if nothing else specified.
         
         usage: 
-            osc branch SOURCEPRJ SOURCEPKG
+            osc branch SOURCEPROJECT SOURCEPACKAGE
+            osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
+            osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
         ${cmd_option_list}
         """
 
         args = slash_split(args)
-        if len(args) != 2:
+        tproject = tpackage = None
+        if not (len(args) >= 2 and len(args) <= 4):
             raise oscerr.WrongArgs('Wrong number of arguments.')
+        if len(args) >= 3:
+            tproject = args[2]
+        if len(args) >= 4:
+            tpackage = args[3]
 
         r = branch_pkg(conf.config['apiurl'], args[0], args[1],
-                       nodevelproject=opts.nodevelproject, rev=opts.revision)
+                       nodevelproject=opts.nodevelproject, rev=opts.revision, target_project=tproject, target_package=tpackage)
 
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
-        if r != expected:
+        if len(args) == 2 and r != expected:
             devloc = r.split('branches:')[1]
             print '\nNote: The branch has been created of a different project,\n' \
                   '              %s,\n' \
@@ -930,12 +940,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   '      That\'s also where you would normally make changes against.\n' \
                   '      A direct branch of the specified package can be forced\n' \
                   '      with the --nodevelproject option.\n' % devloc
-        apiopt = ''
-        if conf.get_configParser().get('general', 'apiurl') != conf.config['apiurl']:
-            apiopt = '-A %s ' % conf.config['apiurl']
-        print 'A working copy of the branched package can be checked out with:\n\n' \
-              'osc %sco %s/%s' \
-                      % (apiopt, r, args[1])
+
+        package = args[1]
+        if tpackage:
+           package = tpackage
+        if opts.checkout:
+            checkout_package(conf.config['apiurl'], r, package,
+                             expand_link=True, prj_dir=r)
+        else:
+            apiopt = ''
+            if conf.get_configParser().get('general', 'apiurl') != conf.config['apiurl']:
+                apiopt = '-A %s ' % conf.config['apiurl']
+            print 'A working copy of the branched package can be checked out with:\n\n' \
+                  'osc %sco %s/%s' \
+                      % (apiopt, r, package)
 
 
     def do_deletepac(self, subcmd, opts, *args):
@@ -1154,7 +1172,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if args and len(args) == 1:
             localdir = os.getcwd()
             if is_project_dir(localdir):
-                project = Project(os.getcwd()).name
+                project = Project(localdir).name
                 project_dir = localdir
                 package = args[0]
                 apiurl = Project(localdir).apiurl

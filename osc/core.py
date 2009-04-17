@@ -7,7 +7,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.116'
+__version__ = '0.117'
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
@@ -2507,7 +2507,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package):
     http_PUT(u, data=aggregate_template)
     print 'Done.'
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None):
     """
     Branch a package (via API call)
     """
@@ -2516,6 +2516,10 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None)
         query['ignoredevel'] = '1'
     if rev:
         query['rev'] = rev
+    if target_project:
+        query['target_project'] = target_project
+    if target_package:
+        query['target_package'] = target_package
     u = makeurl(conf.config['apiurl'], 
                 ['source', src_project, src_package], 
                 query=query)
