@@ -1124,15 +1124,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         When a package is a source link, then it will be checked out in 
         expanded form. If --unexpand-link option is used, the checkout will 
         instead produce the raw _link file plus patches.
-        
-
-        examples:
-            osc co Apache                    # entire project
-            osc co Apache apache2            # a package
-            osc co Apache apache2 foo        # single file -> to current dir
 
         usage: 
             osc co PROJECT [PACKAGE] [FILE]
+               osc co PROJECT                    # entire project
+               osc co PACKAGE                    # checksout a package, when local directory is a checkout package
+               osc co PROJECT PACKAGE            # a package
+               osc co PROJECT PACKAGE FILE       # single file -> to current dir
+
+            inside a checked out local project directory:
+               osc co PACKAGE
+
         ${cmd_option_list}
         """
 
@@ -1141,13 +1143,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         project = package = filename = None
+        apiurl = conf.config['apiurl']
         try: 
-            project = args[0]
+            project = project_dir = args[0]
             package = args[1]
             filename = args[2]
         except: 
             pass
 
+        if args and len(args) == 1:
+            if is_project_dir(os.getcwd()):
+                project = Project(os.getcwd()).name
+                project_dir = "."
+                package = args[0]
+                apiurl = Project(os.getcwd()).apiurl
 
         rev, dummy = parseRevisionOption(opts.revision)
 
@@ -1156,34 +1165,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit(1)
 
         if filename:
-            get_source_file(conf.config['apiurl'], project, package, filename, revision=rev)
+            get_source_file(apiurl, project, package, filename, revision=rev)
 
         elif package:
-            if opts.current_dir: prj_dir = None
-            else: prj_dir = project
-
-            checkout_package(conf.config['apiurl'], project, package, 
-                             rev, expand_link=expand_link, prj_dir=prj_dir)
+            checkout_package(apiurl, project, package, 
+                             rev, expand_link=expand_link, prj_dir=project_dir)
 
         elif project:
             if os.path.exists(project):
                 sys.exit('osc: project \'%s\' already exists' % project)
 
             # check if the project does exist (show_project_meta will throw an exception)
-            show_project_meta(conf.config['apiurl'], project)
+            show_project_meta(apiurl, project)
 
-            init_project_dir(conf.config['apiurl'], project, project)
+            init_project_dir(apiurl, project, project)
             print statfrmt('A', project)
 
             # all packages
-            for package in meta_get_packagelist(conf.config['apiurl'], project):
+            for package in meta_get_packagelist(apiurl, project):
                 try:
-                    checkout_package(conf.config['apiurl'], project, package, 
+                    checkout_package(apiurl, project, package, 
                                      expand_link=expand_link, prj_dir=project)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     # check out in unexpanded form at least
-                    checkout_package(conf.config['apiurl'], project, package, 
+                    checkout_package(apiurl, project, package, 
                                      expand_link=False, prj_dir=project)
 
         else:

@@ -1,3 +1,6 @@
+0.117:
+- support checkout of single package via "osc co PACKAGE" when local dir is project
+
 0.116:
 - support listings of older revisions with "osc ls -R"
 - add --current parameter for linkpac to use current revision of source package fixed.
