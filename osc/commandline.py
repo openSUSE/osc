@@ -1152,11 +1152,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pass
 
         if args and len(args) == 1:
-            if is_project_dir(os.getcwd()):
+            localdir = os.getcwd()
+            if is_project_dir(localdir):
                 project = Project(os.getcwd()).name
-                project_dir = "."
+                project_dir = localdir
                 package = args[0]
-                apiurl = Project(os.getcwd()).apiurl
+                apiurl = Project(localdir).apiurl
 
         rev, dummy = parseRevisionOption(opts.revision)
 
