@@ -931,7 +931,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        nodevelproject=opts.nodevelproject, rev=opts.revision, target_project=tproject, target_package=tpackage)
 
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
-        if len(args) == 2 and r != expected:
+        if r != expected:
             devloc = r.split('branches:')[1]
             print '\nNote: The branch has been created of a different project,\n' \
                   '              %s,\n' \
