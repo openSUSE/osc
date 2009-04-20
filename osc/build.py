@@ -199,6 +199,10 @@ def get_built_files(pacdir, pactype):
         s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'), 
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
+    elif pactype == 'kiwi':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'), 
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
     else:
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
@@ -481,29 +485,28 @@ def main(opts, argv):
     if hostarch != bi.buildarch:
         cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
 
-    print cmd
     rc = subprocess.call(cmd, shell=True)
     if rc: 
         print
         print 'The buildroot was:', config['build-root']
         sys.exit(rc)
 
-    pacdirlink = os.path.join(config['build-root'], '.build.packages')
-    if os.path.exists(pacdirlink):
-        pacdirlink = os.readlink(pacdirlink)
-        pacdir = os.path.join(config['build-root'], pacdirlink)
+    pacdir = os.path.join(config['build-root'], '.build.packages')
+    if os.path.islink(pacdir):
+        pacdir = os.readlink(pacdir)
+        pacdir = os.path.join(config['build-root'], pacdir)
 
-        if os.path.exists(pacdir):
-            (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
+    if os.path.exists(pacdir):
+        (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
+        
+        print
+        if s_built: print s_built
+        print
+        print b_built
 
-            print
-            if s_built: print s_built
-            print
-            print b_built
-
-            if opts.keep_pkgs:
-                for i in b_built.splitlines() + s_built.splitlines():
-                    import shutil
-                    shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
+        if opts.keep_pkgs:
+            for i in b_built.splitlines() + s_built.splitlines():
+                import shutil
+                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
 
 
