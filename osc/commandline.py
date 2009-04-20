@@ -2727,6 +2727,70 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for data in streamfile(u):
             sys.stdout.write(data)
 
+    @cmdln.option('-m', '--message',
+                  help='Change message')
+    def do_vc(self, subcmd, opts, *args):
+        """${cmd_name}: Edit the changes file
+
+        osc vc [filename[.changes]|path [file_with_comment]]
+        If no <filename> is given, exactly one *.changes or *.spec file has to
+        be in the cwd or in path.
+
+        The email adress used in .changes file is read from BuildService
+        instance, or should be defined in ~/.oscrc
+        [https://api.opensuse.org/]
+        user = login
+        pass = password
+        email = user@defined.email
+
+        or can be specified via mailaddr environment variable.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        
+        from subprocess import Popen, PIPE
+
+        if not os.path.exists('/usr/bin/buildvc'):
+            print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
+            print >>sys.stderr, 'See http://download.opensuse.org/repositories/openSUSE:/Tools/'
+            return 1
+
+        cmd_list = ["/usr/bin/buildvc", ]
+        
+        if len(args) > 0:
+            arg = args[0]
+        else:
+            arg = ""
+
+        # set user's email if no mailaddr exists
+        if not os.environ.has_key('mailaddr'):
+            
+            if arg and is_package_dir(arg):
+                apiurl = store_read_apiurl(arg)
+            elif is_package_dir(os.getcwd()):
+                apiurl = store_read_apiurl(os.getcwd())
+            else:
+                apiurl = conf.config['apiurl']
+
+            user = conf.config['user']
+
+            if conf.config['api_host_options'][apiurl].has_key('email'):
+                os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
+            else:
+                os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
+
+        if opts.message:
+            cmd_list.append("-m")
+            cmd_list.append("'%s'" % opts.message)
+
+        if arg:
+            cmd_list.append(arg)
+
+        vc = Popen(cmd_list)
+        vc.wait()
+        sys.exit(vc.returncode)
+
 # fini!
 ###############################################################################
         

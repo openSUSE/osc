@@ -111,6 +111,8 @@ user = %(user)s
 pass = %(pass)s
 # set aliases for this apiurl
 # aliases = foo, bar
+# email used in .changes, unless the one from osc meta prj <user> will be used
+# email = 
 # additional headers to pass to a request, e.g. for special authentication
 #http_headers = Host: foofoobar,
 #       User: mumblegack
@@ -356,6 +358,9 @@ def get_config(override_conffile = None,
         #from the general section.
         user         = cp.get(url, 'user')
         password     = cp.get(url, 'pass')
+        email        = ''
+        if cp.has_option(url, 'email'):
+            email    = cp.get(url, 'email')
 
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
@@ -374,7 +379,9 @@ def get_config(override_conffile = None,
 
         api_host_options[apiurl] = { 'user': user,
                                      'pass': password,
-                                     'http_headers': http_headers};
+                                     'http_headers': http_headers}
+        if email:
+            api_host_options[apiurl]['email'] = email
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
