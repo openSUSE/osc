@@ -446,14 +446,13 @@ class Project:
                         p = Package(os.path.join(self.dir, pac))
                         rev = None
                         if expand_link and p.islink() and not p.isexpanded():
-                            print 'Expanding to rev', p.linkinfo.xsrcmd5
                             rev = p.linkinfo.xsrcmd5
+                            print 'Expanding to rev', rev
                         elif unexpand_link and p.islink() and p.isexpanded():
-                            print 'Unexpanding to rev', p.linkinfo.lsrcmd5
                             rev = p.linkinfo.lsrcmd5
+                            print 'Unexpanding to rev', rev
                         elif p.islink() and p.isexpanded():
-                            rev = show_upstream_xsrcmd5(p.apiurl,
-                                                        p.prjname, p.name)
+                            rev = p.latest_rev();
                         print 'Updating %s' % p.name
                         p.update(rev)
                     elif state == 'D':
@@ -532,10 +531,10 @@ class Project:
             user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
                       path_args=(quote_plus(self.name), quote_plus(pac)),
-		      template_args=({
-			      'name': pac,
-			      'user': user}),
-		      apiurl=self.apiurl)
+                      template_args=({
+                              'name': pac,
+                              'user': user}),
+                      apiurl=self.apiurl)
             # display the correct dir when sending the changes
             olddir = os.getcwd()
             if os.path.samefile(os.path.join(self.dir, pac), os.curdir):
@@ -593,9 +592,9 @@ class Project:
             edit_meta(metatype='pkg',
                       path_args=(quote_plus(project), quote_plus(package)),
                       template_args=({
-			      'name': pac,
-			      'user': user}),
-        		      apiurl=apiurl)
+                              'name': pac,
+                              'user': user}),
+                              apiurl=apiurl)
             p = Package(pac_path)
             p.todo = files
             p.commit(msg)
@@ -666,13 +665,18 @@ class Package:
             filename = os.path.join(self.dir, n)
             storefilename = os.path.join(self.storedir, n)
             myfilename = os.path.join(self.dir, n + '.mine')
-            upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+            if self.islinkrepair():
+                upfilename = os.path.join(self.dir, n + '.new')
+            else:
+                upfilename = os.path.join(self.dir, n + '.r' + self.rev)
 
             try:
                 os.unlink(myfilename)
                 # the working copy may be updated, so the .r* ending may be obsolete...
                 # then we don't care
                 os.unlink(upfilename)
+		if self.islinkrepair():
+		    os.unlink(os.path.join(self.dir, n + '.old'))
             except: 
                 pass
 
@@ -716,10 +720,7 @@ class Package:
 
     def commit(self, msg=''):
         # commit only if the upstream revision is the same as the working copy's
-        if self.islink() and self.isexpanded():
-            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
-        else:
-            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
+        upstream_rev = self.latest_rev();
         if self.rev != upstream_rev:
             raise oscerr.WorkingCopyOutdated((self.absdir, self.rev, upstream_rev))
 
@@ -743,8 +744,9 @@ class Package:
 
         if self.islink() and self.isexpanded():
             # resolve the link into the upload revision
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name], 
-                        query='cmd=copy&rev=upload&expand=1')
+            # XXX: do this always?
+            query = { 'cmd': 'copy', 'rev': 'upload', 'orev': self.rev }
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
             f = http_POST(u)
 
         print 'Transmitting file data ', 
@@ -765,16 +767,32 @@ class Package:
                   'comment': msg }
         if self.islink() and self.isexpanded():
             query['keeplink'] = '1'
+        if self.islinkrepair():
+            query['repairlink'] = '1'
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-
-        f = http_POST(u)
+        try:
+            f = http_POST(u)
+        except urllib2.HTTPError, e:
+            e.osc_msg = 'commit failed'
+            # delete upload revision
+            try:
+                query = { 'cmd': 'deleteuploadrev' }
+                u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
+                f = http_POST(u)
+            except:
+                pass
+            raise e
         root = ET.parse(f).getroot()
         self.rev = int(root.get('rev'))
         print
         print 'Committed revision %s.' % self.rev
 
+        if self.islinkrepair():
+            os.unlink(os.path.join(self.storedir, '_linkrepair'))
+            self.linkrepair = False
+            # XXX: mark package as invalid?
         if self.islink() and self.isexpanded():
-            self.update_local_filesmeta(revision=show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name))
+            self.update_local_filesmeta(revision=self.latest_rev())
         else:
             self.update_local_filesmeta()
         self.update_datastructs()
@@ -853,7 +871,7 @@ class Package:
         Update the local _files file in the store.
         It is replaced with the version pulled from upstream.
         """
-        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision))
+        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision))
         f = open(os.path.join(self.storedir, '_files'), 'w')
         f.write(meta)
         f.close()
@@ -890,6 +908,7 @@ class Package:
 
         self.to_be_deleted = read_tobedeleted(self.dir)
         self.in_conflict = read_inconflict(self.dir)
+        self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir) 
@@ -909,6 +928,10 @@ class Package:
         """tells us if the package is a link which is expanded.  
         Returns True if the package is expanded, otherwise False."""
         return self.linkinfo.isexpanded()
+
+    def islinkrepair(self):
+        """tells us if we are repairing a broken source link."""
+        return self.linkrepair
 
     def haslinkerror(self):
         """
@@ -1116,6 +1139,15 @@ rev: %s
             print 'discarding', filename
 
         os.unlink(filename)
+
+    def latest_rev(self):
+        if self.islinkrepair():
+            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1)
+        elif self.islink() and self.isexpanded():
+            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+        else:
+            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
+        return upstream_rev
 
     def update(self, rev = None):
         # save filelist and (modified) status before replacing the meta file
@@ -1486,7 +1518,7 @@ def http_request(method, url, headers={}, data=None, file=None):
             filefd = open(file, 'r')
             try:
                 data = mmap.mmap(filefd.fileno(), os.path.getsize(file),
-				mmap.MAP_SHARED, mmap.PROT_READ)
+                                mmap.MAP_SHARED, mmap.PROT_READ)
                 data = buffer(data)
             except EnvironmentError, e:
                 if e.errno == 19:
@@ -1817,21 +1849,27 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None):
+def show_files_meta(apiurl, prj, pac, expand=False, revision=None, linkrev=None, linkrepair=False):
     query = None
     if revision:
         query = { 'rev': revision }
+    if linkrev:
+        query = { 'linkrev': linkrev }
+    if expand:
+        query = { 'expand': 1 }
+    if linkrepair:
+        query = { 'emptylink': 1 }
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
     return f.readlines()
 
 
-def show_upstream_srcmd5(apiurl, prj, pac):
-    m = show_files_meta(apiurl, prj, pac)
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False):
+    m = show_files_meta(apiurl, prj, pac, expand=expand)
     return ET.parse(StringIO(''.join(m))).getroot().get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac):
-    m = show_files_meta(apiurl, prj, pac)
+def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair)
     try:
         # only source link packages have a <linkinfo> element.
         li_node = ET.parse(StringIO(''.join(m))).getroot().find('linkinfo')
@@ -1843,8 +1881,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac):
 
     if li.haserror():
         raise oscerr.LinkExpandError, li.error
-    else:
-        return li.xsrcmd5
+    return li.xsrcmd5
 
 
 def show_upstream_rev(apiurl, prj, pac):
@@ -2387,10 +2424,10 @@ def checkout_package(apiurl, project, package,
  
     if expand_link:
         # try to read from the linkinfo
-        x = show_upstream_xsrcmd5(apiurl, project, package)
+        # if it is a link we use the xsrcmd5 as the revision to be
+        # checked out
+        x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision)
         if x:
-            # it is a link - thus, we use the xsrcmd5 as the revision to be
-            # checked out
             revision = x
     os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
     init_package_dir(apiurl, project, package, store, revision)
@@ -2456,7 +2493,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
         rev = 'rev="%s"' % rev
     else:
         rev = ''
-	
+
     print 'Creating _link...',
     link_template = """\
 <link project="%s" package="%s" %s>
@@ -2985,6 +3022,10 @@ def store_read_apiurl(dir):
         apiurl = conf.config['apiurl']
         #store_write_apiurl(dir, apiurl)
     return apiurl
+
+def store_write_string(dir, file, string):
+    fname = os.path.join(dir, store, file)
+    open(fname, 'w').write(string)
 
 def store_write_project(dir, project):
     fname = os.path.join(dir, store, '_project')
