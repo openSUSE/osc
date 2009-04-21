@@ -2,6 +2,7 @@
 - support checkout of single package via "osc co PACKAGE" when local dir is project
 - allow to specify target project and package on osc branch (requires server version 1.6)
 - add option to automatic checkout a branched package
+- support "osc getbinaries" in checkout packages
 - new vc command for editing the changes files (requires build.rpm 2009.04.17 or newest)
 
 0.116:

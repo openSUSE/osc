@@ -2317,19 +2317,42 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='destination directory')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
-    def do_getbinaries(self, subcmd, opts, project, package, repository, architecture):
+    def do_getbinaries(self, subcmd, opts, *args):
         """${cmd_name}: Download binaries to a local directory
 
         This command downloads packages directly from the api server. 
         Thus, it directly accesses the packages that are used for building
         others even when they are not "published" yet.
 
-        ${cmd_usage}
+        usage:
+           osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out package
+           osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+        apiurl = conf.config['apiurl']
+
+        if len(args) == 4:
+            project = args[0]
+            package = args[1]
+            repository   = args[2]
+            architecture = args[3]
+        elif len(args) == 2:
+            if is_package_dir(os.getcwd()):
+               project = Project(os.getcwd()).name
+               p = Package(os.getcwd())
+               package = p.name
+               apiurl  = p.apiurl
+               repository   = args[0]
+               architecture = args[1]
+            else:
+               sys.exit('Local directory is no checkout package, neither it is specified. ' )
+        else:
+            sys.exit('Need either 2 or 4 arguments.' )
+
         # Get package list
-        binaries = get_binarylist(conf.config['apiurl'], 
+        binaries = get_binarylist(apiurl, 
                                    project, repository, architecture, 
                                    package = package, verbose=True)
 
