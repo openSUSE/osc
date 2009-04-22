@@ -2415,6 +2415,9 @@ def checkout_package(apiurl, project, package,
     if not prj_dir:
         prj_dir = olddir
  
+    if not revision:
+        revision = "latest"
+
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
 
