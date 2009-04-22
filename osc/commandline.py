@@ -2966,7 +2966,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 apiurl = conf.config['apiurl']
 
-            user = conf.config['user']
+            user = conf.get_apiurl_usr(apiurl)
 
             if conf.config['api_host_options'][apiurl].has_key('email'):
                 os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
