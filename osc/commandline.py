@@ -454,6 +454,8 @@ class Osc(cmdln.Cmdln):
                        '(primary project where a package is developed)')
     @cmdln.option('-s', '--state', default='new',
                         help='only list requests in one of the comma separated given states [default=new]')
+    @cmdln.option('-b', '--brief', action='store_true', default=False,
+                        help='print output in list view as list subcommand')
     @cmdln.alias("sr")
     @cmdln.alias("submitrequest")
     def do_submitreq(self, subcmd, opts, *args):
@@ -499,7 +501,7 @@ class Osc(cmdln.Cmdln):
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list [PRJ [PKG]]
             osc submitreq log ID
-            osc submitreq show [-d] ID
+            osc submitreq show [-d] [-b] ID
             osc submitreq accept [-m TEXT] ID
             osc submitreq decline [-m TEXT] ID
             osc submitreq delete [-m TEXT] ID
@@ -642,7 +644,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # show
         elif cmd == 'show':
             r = get_submit_request(conf.config['apiurl'], reqid)
-            print r
+            if opts.brief:
+                print r.list_view()
+            else:
+                print r
             # fixme: will inevitably fail if the given target doesn't exist
             if opts.diff:
                 try:
