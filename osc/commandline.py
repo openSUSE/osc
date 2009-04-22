@@ -2382,7 +2382,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if st.st_mtime == binary.mtime and st.st_size == binary.size:
                     continue
 
-            get_binary_file(conf.config['apiurl'], 
+            get_binary_file(apiurl, 
                             project, 
                             repository, architecture, 
                             binary.name, 
