@@ -1212,6 +1212,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      expand_link=expand_link, prj_dir=project)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
+                    print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, 
                                      expand_link=False, prj_dir=project)
@@ -2813,8 +2814,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         dir_new = {'apiurl': apiurl}
         dir_new['srcmd5'] = root_new.get('srcmd5')
         dir_new['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_new.findall('entry'))
-        dir_new['project'] = linkinfo.get('project')
-        dir_new['package'] = linkinfo.get('package')
+        dir_new['project'] = prj
+        dir_new['package'] = package
 
         query = { 'rev': lastworkingrev }
         u = makeurl(apiurl, ['source', prj, package], query=query)
