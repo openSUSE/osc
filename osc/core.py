@@ -675,8 +675,8 @@ class Package:
                 # the working copy may be updated, so the .r* ending may be obsolete...
                 # then we don't care
                 os.unlink(upfilename)
-		if self.islinkrepair():
-		    os.unlink(os.path.join(self.dir, n + '.old'))
+                if self.islinkrepair():
+                    os.unlink(os.path.join(self.dir, n + '.old'))
             except: 
                 pass
 
@@ -729,6 +729,7 @@ class Package:
       
         pathn = getTransActPath(self.dir)
 
+        have_conflicts = False
         for filename in self.todo:
             st = self.status(filename)
             if st == 'A' or st == 'M':
@@ -736,7 +737,13 @@ class Package:
                 print statfrmt('Sending', os.path.join(pathn, filename))
             elif st == 'D':
                 self.todo_delete.append(filename)
-                print statfrmt('Deleting',  os.path.join(pathn, filename))
+                print statfrmt('Deleting', os.path.join(pathn, filename))
+            elif st == 'C':
+                have_conflicts = True
+
+        if have_conflicts and self.islinkrepair():
+            print 'Please resolve all conflicts before committing!'
+            return 1
 
         if not self.todo_send and not self.todo_delete and not self.rev == "upload":
             print 'nothing to do for package %s' % self.name
@@ -750,30 +757,29 @@ class Package:
             f = http_POST(u)
 
         print 'Transmitting file data ', 
-        for filename in self.todo_delete:
-            # do not touch local files on commit --
-            # delete remotely instead
-            self.delete_remote_source_file(filename)
-            self.to_be_deleted.remove(filename)
-        for filename in self.todo_send:
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            self.put_source_file(filename)
-
-        # all source files are committed - now comes the log
-        query = { 'cmd'    : 'commit',
-                  'rev'    : 'upload',
-                  'user'   : conf.get_apiurl_usr(self.apiurl),
-                  'comment': msg }
-        if self.islink() and self.isexpanded():
-            query['keeplink'] = '1'
-        if self.islinkrepair():
-            query['repairlink'] = '1'
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
         try:
+            for filename in self.todo_delete:
+                # do not touch local files on commit --
+                # delete remotely instead
+                self.delete_remote_source_file(filename)
+                self.to_be_deleted.remove(filename)
+            for filename in self.todo_send:
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                self.put_source_file(filename)
+
+            # all source files are committed - now comes the log
+            query = { 'cmd'    : 'commit',
+                      'rev'    : 'upload',
+                      'user'   : conf.get_apiurl_usr(self.apiurl),
+                      'comment': msg }
+            if self.islink() and self.isexpanded():
+                query['keeplink'] = '1'
+            if self.islinkrepair():
+                query['repairlink'] = '1'
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
             f = http_POST(u)
         except urllib2.HTTPError, e:
-            e.osc_msg = 'commit failed'
             # delete upload revision
             try:
                 query = { 'cmd': 'deleteuploadrev' }
@@ -782,6 +788,7 @@ class Package:
             except:
                 pass
             raise e
+
         root = ET.parse(f).getroot()
         self.rev = int(root.get('rev'))
         print
@@ -791,6 +798,7 @@ class Package:
             os.unlink(os.path.join(self.storedir, '_linkrepair'))
             self.linkrepair = False
             # XXX: mark package as invalid?
+            print 'The source link has been repaired. This directory can now be removed.'
         if self.islink() and self.isexpanded():
             self.update_local_filesmeta(revision=self.latest_rev())
         else:
@@ -1627,6 +1635,8 @@ def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revisio
         query['expand'] = 1
     if revision:
         query['rev'] = revision
+    else:
+        query['rev'] = 'latest'
 
     u = makeurl(apiurl, ['source', prj, package], query=query)
     f = http_GET(u)
@@ -1850,15 +1860,17 @@ def edit_meta(metatype,
 
 
 def show_files_meta(apiurl, prj, pac, expand=False, revision=None, linkrev=None, linkrepair=False):
-    query = None
+    query = {}
     if revision:
-        query = { 'rev': revision }
+        query['rev'] = revision
+    else:
+        query['rev'] = 'latest'
     if linkrev:
-        query = { 'linkrev': linkrev }
+        query['linkrev'] = linkrev
     if expand:
-        query = { 'expand': 1 }
+        query['expand'] = 1
     if linkrepair:
-        query = { 'emptylink': 1 }
+        query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
     return f.readlines()
 

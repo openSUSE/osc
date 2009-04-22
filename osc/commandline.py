@@ -1555,7 +1555,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             # FIXME: ugly workaround for #399247
             if opts.expand_link or opts.unexpand_link:
-                if [ i for i in p.filenamelist+p.filenamelist_unvers if p.status(i) != ' ' ]:
+                if [ i for i in p.filenamelist+p.filenamelist_unvers if p.status(i) != ' ' and p.status(i) != '?']:
                     print >>sys.stderr, 'osc: cannot expand/unexpand because your working ' \
                                         'copy has local modifications. Please remove them ' \
                                         'and try again'
@@ -2811,11 +2811,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         f = http_GET(u)
         meta = f.readlines()
         root_new = ET.parse(StringIO(''.join(meta))).getroot()
-        dir_new = {'apiurl': apiurl}
+        dir_new = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_new['srcmd5'] = root_new.get('srcmd5')
         dir_new['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_new.findall('entry'))
-        dir_new['project'] = prj
-        dir_new['package'] = package
 
         query = { 'rev': lastworkingrev }
         u = makeurl(apiurl, ['source', prj, package], query=query)
@@ -2826,22 +2824,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('lastworking is not a source link?')
         if linkinfo_oldpatched.get('error') != None:
             raise oscerr.APIError('lastworking is not working?')
-        dir_oldpatched = {'apiurl': apiurl}
+        dir_oldpatched = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_oldpatched['srcmd5'] = root_oldpatched.get('srcmd5')
         dir_oldpatched['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_oldpatched.findall('entry'))
-        dir_oldpatched['project'] = prj
-        dir_oldpatched['package'] = package
 
         query = {}
         query['rev'] = linkinfo_oldpatched.get('srcmd5')
         u = makeurl(apiurl, ['source', linkinfo_oldpatched.get('project'), linkinfo_oldpatched.get('package')], query=query)
         f = http_GET(u)
         root_old = ET.parse(f).getroot()
-        dir_old = {'apiurl': apiurl}
-        dir_old['srcmd5'] = root_old.get('srcmd5')
-        dir_old['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_old.findall('entry'))
+        dir_old = { 'apiurl': apiurl }
         dir_old['project'] = linkinfo_oldpatched.get('project')
         dir_old['package'] = linkinfo_oldpatched.get('package')
+        dir_old['srcmd5'] = root_old.get('srcmd5')
+        dir_old['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_old.findall('entry'))
 
         entries_old = dict(dir_old['entries'])
         entries_oldpatched = dict(dir_oldpatched['entries'])
