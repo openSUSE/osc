@@ -2919,11 +2919,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print 'fix the conflicts, and commit the changes.'
 
     @cmdln.option('-m', '--message',
-                  help='Change message')
+                  help='add MESSAGE to changes (not open an editor)')
+    @cmdln.option('-e', '--just-edit', action='store_true', default=False,
+		  help='just open changes (cannot be used with -m)')
     def do_vc(self, subcmd, opts, *args):
         """${cmd_name}: Edit the changes file
 
-        osc vc [filename[.changes]|path [file_with_comment]]
+        osc vc [-m MESSAGE|-e] [filename[.changes]|path [file_with_comment]]
         If no <filename> is given, exactly one *.changes or *.spec file has to
         be in the cwd or in path.
 
@@ -2942,12 +2944,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         
         from subprocess import Popen, PIPE
 
-        if not os.path.exists('/usr/bin/buildvc'):
+        if not os.path.exists('/usr/lib/build/vc'):
             print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
             print >>sys.stderr, 'See http://download.opensuse.org/repositories/openSUSE:/Tools/'
             return 1
 
-        cmd_list = ["/usr/bin/buildvc", ]
+        cmd_list = ["/usr/lib/build/vc", ]
         
         if len(args) > 0:
             arg = args[0]
@@ -2974,6 +2976,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.message:
             cmd_list.append("-m")
             cmd_list.append("'%s'" % opts.message)
+
+        if opts.just_edit:
+            cmd_list.append("-e")
 
         if arg:
             cmd_list.append(arg)

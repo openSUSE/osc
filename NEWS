@@ -7,6 +7,7 @@
 - new repairlink command for repairing a broken source link (requires server version 1.6)
 - '-b|--brief' option for osc submitreq show subcommand
 - use "latest" revision on checkout, not "upload" (#441783)
+- '-e|--just-open' option for vc command and used /usr/lib/build/vc as an executable
 
 0.116:
 - support listings of older revisions with "osc ls -R"
