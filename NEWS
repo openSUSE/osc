@@ -4,6 +4,7 @@
 - add option to automatic checkout a branched package
 - support "osc getbinaries" in checkout packages
 - new vc command for editing the changes files (requires build.rpm 2009.04.17 or newest)
+- new repairlink command for repairing a broken source link
 
 0.116:
 - support listings of older revisions with "osc ls -R"

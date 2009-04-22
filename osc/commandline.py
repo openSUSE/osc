@@ -2752,171 +2752,169 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     # helper function to download a file from a specific revision
     def download(self, name, md5, dir, destfile):
-	o = open(destfile, 'w')
-	if md5 != '':
-	    query = {'rev': dir['srcmd5']}
-	    u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], pathname2url(name)], query=query)
-	    for buf in streamfile(u, http_GET, BUFSIZE):
-		o.write(buf)
-	o.close
+        o = open(destfile, 'w')
+        if md5 != '':
+            query = {'rev': dir['srcmd5']}
+            u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], pathname2url(name)], query=query)
+            for buf in streamfile(u, http_GET, BUFSIZE):
+                o.write(buf)
+        o.close
 
     @cmdln.option('-d', '--destdir', default='repairlink', metavar='DIR',
-	    help='destination directory')
+            help='destination directory')
     @cmdln.option('-p', '--project', help='project with broken package')
     @cmdln.option('', '--package', help='package with broken link')
     def do_repairlink(self, subcmd, opts):
-	"""${cmd_name}: Repair a broken source link
+        """${cmd_name}: Repair a broken source link
 
-	${cmd_usage}
-	${cmd_option_list}
-	"""
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
 
-	apiurl = conf.config['apiurl']
-	prj = None
-	package = None
-	if is_package_dir(os.getcwd()):
-	    apiurl = store_read_apiurl(os.getcwd())
-	    prj = store_read_project(os.getcwd())
-	    package = store_read_package(os.getcwd())
-	if opts.project:
-	    prj = opts.project
-	if opts.package:
-	    package = opts.package
-	if prj == None:
-	    raise oscerr.WrongArgs('please specify a project')
-	if package == None:
-	    raise oscerr.WrongArgs('please specify a package')
+        apiurl = conf.config['apiurl']
+        prj = None
+        package = None
+        if is_package_dir(os.getcwd()):
+            apiurl = store_read_apiurl(os.getcwd())
+            prj = store_read_project(os.getcwd())
+            package = store_read_package(os.getcwd())
+        if opts.project:
+            prj = opts.project
+        if opts.package:
+            package = opts.package
+        if prj == None:
+            raise oscerr.WrongArgs('please specify a project')
+        if package == None:
+            raise oscerr.WrongArgs('please specify a package')
 
-	query = { 'lastworking': 1 }
-	u = makeurl(apiurl, ['source', prj, package], query=query)
-	f = http_GET(u)
-	root = ET.parse(f).getroot()
-	linkinfo = root.find('linkinfo')
-	if linkinfo == None:
-	    raise oscerr.APIError('package is not a source link')
-	if linkinfo.get('error') == None:
-	    raise oscerr.APIError('source link is not broken')
-	lastworkingrev = linkinfo.get('lastworking')
-	if lastworkingrev == None:
-	    raise oscerr.APIError('source link never worked')
+        query = { 'lastworking': 1 }
+        u = makeurl(apiurl, ['source', prj, package], query=query)
+        f = http_GET(u)
+        root = ET.parse(f).getroot()
+        linkinfo = root.find('linkinfo')
+        if linkinfo == None:
+            raise oscerr.APIError('package is not a source link')
+        if linkinfo.get('error') == None:
+            raise oscerr.APIError('source link is not broken')
+        lastworkingrev = linkinfo.get('lastworking')
+        if lastworkingrev == None:
+            raise oscerr.APIError('source link never worked')
 
-	query = { 'expand': 1, 'emptylink': 1 }
-	u = makeurl(apiurl, ['source', prj, package], query=query)
-	f = http_GET(u)
-	meta = f.readlines()
-	root_new = ET.parse(StringIO(''.join(meta))).getroot()
-	dir_new = {'apiurl': apiurl}
-	dir_new['srcmd5'] = root_new.get('srcmd5')
-	dir_new['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_new.findall('entry'))
-	dir_new['project'] = linkinfo.get('project')
-	dir_new['package'] = linkinfo.get('package')
+        query = { 'expand': 1, 'emptylink': 1 }
+        u = makeurl(apiurl, ['source', prj, package], query=query)
+        f = http_GET(u)
+        meta = f.readlines()
+        root_new = ET.parse(StringIO(''.join(meta))).getroot()
+        dir_new = {'apiurl': apiurl}
+        dir_new['srcmd5'] = root_new.get('srcmd5')
+        dir_new['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_new.findall('entry'))
+        dir_new['project'] = linkinfo.get('project')
+        dir_new['package'] = linkinfo.get('package')
 
-	query = { 'rev': lastworkingrev }
-	u = makeurl(apiurl, ['source', prj, package], query=query)
-	f = http_GET(u)
-	root_oldpatched = ET.parse(f).getroot()
-	linkinfo_oldpatched = root_oldpatched.find('linkinfo')
-	if linkinfo_oldpatched == None:
-	    raise oscerr.APIError('lastworking is not a source link?')
-	if linkinfo_oldpatched.get('error') != None:
-	    raise oscerr.APIError('lastworking is not working?')
-	dir_oldpatched = {'apiurl': apiurl}
-	dir_oldpatched['srcmd5'] = root_oldpatched.get('srcmd5')
-	dir_oldpatched['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_oldpatched.findall('entry'))
-	dir_oldpatched['project'] = prj
-	dir_oldpatched['package'] = package
+        query = { 'rev': lastworkingrev }
+        u = makeurl(apiurl, ['source', prj, package], query=query)
+        f = http_GET(u)
+        root_oldpatched = ET.parse(f).getroot()
+        linkinfo_oldpatched = root_oldpatched.find('linkinfo')
+        if linkinfo_oldpatched == None:
+            raise oscerr.APIError('lastworking is not a source link?')
+        if linkinfo_oldpatched.get('error') != None:
+            raise oscerr.APIError('lastworking is not working?')
+        dir_oldpatched = {'apiurl': apiurl}
+        dir_oldpatched['srcmd5'] = root_oldpatched.get('srcmd5')
+        dir_oldpatched['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_oldpatched.findall('entry'))
+        dir_oldpatched['project'] = prj
+        dir_oldpatched['package'] = package
 
-	query = {}
-	query['rev'] = linkinfo_oldpatched.get('srcmd5')
-	u = makeurl(apiurl, ['source', linkinfo_oldpatched.get('project'), linkinfo_oldpatched.get('package')], query=query)
-	f = http_GET(u)
-	root_old = ET.parse(f).getroot()
-	dir_old = {'apiurl': apiurl}
-	dir_old['srcmd5'] = root_old.get('srcmd5')
-	dir_old['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_old.findall('entry'))
-	dir_old['project'] = linkinfo_oldpatched.get('project')
-	dir_old['package'] = linkinfo_oldpatched.get('package')
+        query = {}
+        query['rev'] = linkinfo_oldpatched.get('srcmd5')
+        u = makeurl(apiurl, ['source', linkinfo_oldpatched.get('project'), linkinfo_oldpatched.get('package')], query=query)
+        f = http_GET(u)
+        root_old = ET.parse(f).getroot()
+        dir_old = {'apiurl': apiurl}
+        dir_old['srcmd5'] = root_old.get('srcmd5')
+        dir_old['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_old.findall('entry'))
+        dir_old['project'] = linkinfo_oldpatched.get('project')
+        dir_old['package'] = linkinfo_oldpatched.get('package')
 
-	entries_old = dict(dir_old['entries'])
-	entries_oldpatched = dict(dir_oldpatched['entries'])
-	entries_new = dict(dir_new['entries'])
+        entries_old = dict(dir_old['entries'])
+        entries_oldpatched = dict(dir_oldpatched['entries'])
+        entries_new = dict(dir_new['entries'])
 
-	entries = {}
-	entries.update(entries_old)
-	entries.update(entries_oldpatched)
-	entries.update(entries_new)
+        entries = {}
+        entries.update(entries_old)
+        entries.update(entries_oldpatched)
+        entries.update(entries_new)
 
-	destdir = opts.destdir
-	if os.path.isdir(destdir):
-	    shutil.rmtree(destdir)
-	os.mkdir(destdir)
+        destdir = opts.destdir
+        if os.path.isdir(destdir):
+            shutil.rmtree(destdir)
+        os.mkdir(destdir)
 
-	olddir=os.getcwd()
-	os.chdir(destdir)
-	init_package_dir(apiurl, prj, package, destdir, files=False)
-	os.chdir(olddir)
-	store_write_string(destdir, '_files', ''.join(meta));
-	store_write_string(destdir, '_linkrepair', '');
+        olddir=os.getcwd()
+        os.chdir(destdir)
+        init_package_dir(apiurl, prj, package, destdir, files=False)
+        os.chdir(olddir)
+        store_write_string(destdir, '_files', ''.join(meta));
+        store_write_string(destdir, '_linkrepair', '');
+        pac = Package(destdir)
 
-	storedir = os.path.join(destdir, store)
+        storedir = os.path.join(destdir, store)
 
-	conflictlist = []
-	deletelist = []
-	for name in sorted(entries.keys()):
-	    md5_old = entries_old.get(name, '')
-	    md5_new = entries_new.get(name, '')
-	    md5_oldpatched = entries_oldpatched.get(name, '')
-	    if md5_new != '':
-		self.download(name, md5_new, dir_new, os.path.join(storedir, name))
-	    if md5_old == md5_new:
-		if md5_oldpatched == '':
-		    deletelist.append(name)
-		    continue
-		print "  " + name
-		self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name))
-		continue
-	    if md5_old == md5_oldpatched:
-		if md5_new == '':
-		    continue
-		print "  " + name
-		shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
-		continue
-	    if md5_new == md5_oldpatched:
-		if md5_new == '':
-		    continue
-		print "G " + name
-		shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
-		continue
-	    self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name + '.mine'))
-	    if md5_new != '':
-		shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name + '.new'))
-	    else:
-		self.download(name, md5_new, dir_new, os.path.join(destdir, name + '.new'))
-	    self.download(name, md5_old, dir_old, os.path.join(destdir, name + '.old'))
-	    o = open(os.path.join(destdir,  name), 'w')
-	    code = subprocess.call(['diff3', '-m',
-	      '-L', '.mine',
+        for name in sorted(entries.keys()):
+            md5_old = entries_old.get(name, '')
+            md5_new = entries_new.get(name, '')
+            md5_oldpatched = entries_oldpatched.get(name, '')
+            if md5_new != '':
+                self.download(name, md5_new, dir_new, os.path.join(storedir, name))
+            if md5_old == md5_new:
+                if md5_oldpatched == '':
+                    pac.put_on_deletelist(name)
+                    continue
+                print statfrmt(' ', name)
+                self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name))
+                continue
+            if md5_old == md5_oldpatched:
+                if md5_new == '':
+                    continue
+                print statfrmt(' ', name)
+                shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
+                continue
+            if md5_new == md5_oldpatched:
+                if md5_new == '':
+                    continue
+                print statfrmt('G', name)
+                shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
+                continue
+            self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name + '.mine'))
+            if md5_new != '':
+                shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name + '.new'))
+            else:
+                self.download(name, md5_new, dir_new, os.path.join(destdir, name + '.new'))
+            self.download(name, md5_old, dir_old, os.path.join(destdir, name + '.old'))
+            o = open(os.path.join(destdir,  name), 'w')
+            code = subprocess.call(['diff3', '-m',
+              '-L', '.mine',
               os.path.join(destdir, name + '.mine'),
-	      '-L', '.old',
+              '-L', '.old',
               os.path.join(destdir, name + '.old'),
-	      '-L', '.new',
+              '-L', '.new',
               os.path.join(destdir, name + '.new'),
-	    ], stdout=o)
-	    if code == 0:
-		print "M " + name
-	    elif code == 1:
-		print "C " + name
-		conflictlist.append(name)
-	    else:
-		print "? " + name
-		conflictlist.append(name)
+            ], stdout=o)
+            if code == 0:
+                print statfrmt('M', name)
+            elif code == 1:
+                print statfrmt('C', name)
+                pac.put_on_conflictlist(name)
+            else:
+                print statfrmt('?', name)
+                pac.put_on_conflictlist(name)
 
-	if len(conflictlist) != 0:
-	    store_write_string(destdir, '_in_conflict', '\n'.join(conflictlist))
-
-	if len(deletelist) != 0:
-	    store_write_string(destdir, '_to_be_deleted', '\n'.join(deletelist))
-
+        pac.write_deletelist()
+        pac.write_conflictlist()
+        print
+        print 'Please change into the \'%s\' directory,' % destdir
+        print 'fix the conflicts, and commit the changes.'
 
     @cmdln.option('-m', '--message',
                   help='Change message')
