@@ -745,7 +745,7 @@ class Package:
             print 'Please resolve all conflicts before committing!'
             return 1
 
-        if not self.todo_send and not self.todo_delete and not self.rev == "upload":
+        if not self.todo_send and not self.todo_delete and not self.rev == "upload" and not self.islinkrepair():
             print 'nothing to do for package %s' % self.name
             return 1
 
