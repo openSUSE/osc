@@ -2896,6 +2896,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 self.download(name, md5_new, dir_new, os.path.join(destdir, name + '.new'))
             self.download(name, md5_old, dir_old, os.path.join(destdir, name + '.old'))
+
+            if binary_file(os.path.join(destdir, name + '.mine')) or \
+               binary_file(os.path.join(destdir, name + '.old')) or \
+               binary_file(os.path.join(destdir, name + '.new')):
+                shutil.copy2(os.path.join(destdir, name + '.new'), os.path.join(destdir, name))
+                print statfrmt('C', name)
+                pac.put_on_conflictlist(name)
+                continue
+
             o = open(os.path.join(destdir,  name), 'w')
             code = subprocess.call(['diff3', '-m',
               '-L', '.mine',
