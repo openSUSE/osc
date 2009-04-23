@@ -1581,7 +1581,7 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True):
 
     if files:
         f = open('_files', 'w')
-        f.write(''.join(show_files_meta(apiurl, project, package, revision)))
+        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision)))
         f.close()
     else:
         # create dummy
@@ -1862,7 +1862,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, expand=False, revision=None, linkrev=None, linkrepair=False):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False):
     query = {}
     if revision:
         query['rev'] = revision
