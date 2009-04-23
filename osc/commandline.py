@@ -2766,32 +2766,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 o.write(buf)
         o.close
 
+
     @cmdln.option('-d', '--destdir', default='repairlink', metavar='DIR',
             help='destination directory')
-    @cmdln.option('-p', '--project', help='project with broken package')
-    @cmdln.option('', '--package', help='package with broken link')
-    def do_repairlink(self, subcmd, opts):
+    def do_repairlink(self, subcmd, opts, *args):
         """${cmd_name}: Repair a broken source link
 
-        ${cmd_usage}
+        This command checks out a package with merged source changes. It uses
+        a 3-way merge to resolve file conflicts. After reviewing/repairing
+        the merge, 'osc ci' will re-create a working source link.
+
+        usage: 
+            osc repairlink
+            osc repairlink PROJECT PACKAGE
+
         ${cmd_option_list}
         """
 
         apiurl = conf.config['apiurl']
-        prj = None
-        package = None
-        if is_package_dir(os.getcwd()):
-            apiurl = store_read_apiurl(os.getcwd())
-            prj = store_read_project(os.getcwd())
-            package = store_read_package(os.getcwd())
-        if opts.project:
-            prj = opts.project
-        if opts.package:
-            package = opts.package
-        if prj == None:
-            raise oscerr.WrongArgs('please specify a project')
-        if package == None:
-            raise oscerr.WrongArgs('please specify a package')
+        if args and len(args) == 2:
+            prj = args[0]
+            package = args[1]
+        else:
+            if is_package_dir(os.getcwd()):
+                apiurl = store_read_apiurl(os.getcwd())
+                prj = store_read_project(os.getcwd())
+                package = store_read_package(os.getcwd())
+            else:
+                raise oscerr.WrongArgs('Please specify project and package')
 
         query = { 'lastworking': 1 }
         u = makeurl(apiurl, ['source', prj, package], query=query)
@@ -2879,7 +2881,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if md5_old == md5_oldpatched:
                 if md5_new == '':
                     continue
-                print statfrmt(' ', name)
+                print statfrmt('U', name)
                 shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
                 continue
             if md5_new == md5_oldpatched:
@@ -2904,7 +2906,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
               os.path.join(destdir, name + '.new'),
             ], stdout=o)
             if code == 0:
-                print statfrmt('M', name)
+                print statfrmt('G', name)
             elif code == 1:
                 print statfrmt('C', name)
                 pac.put_on_conflictlist(name)

@@ -6,7 +6,7 @@
 - new vc command for editing the changes files (requires build.rpm 2009.04.17 or newest)
 - new repairlink command for repairing a broken source link (requires server version 1.6)
 - '-b|--brief' option for osc submitreq show subcommand
-- use "latest" revision on checkout, not "upload" (#441783)
+- use "latest" commited revision on checkout, not "upload" (#441783)
 - '-e|--just-open' option for vc command and used /usr/lib/build/vc as an executable
 
 0.116:
