@@ -1151,12 +1151,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage: 
             osc co PROJECT [PACKAGE] [FILE]
                osc co PROJECT                    # entire project
-               osc co PACKAGE                    # checksout a package, when local directory is a checkout package
                osc co PROJECT PACKAGE            # a package
                osc co PROJECT PACKAGE FILE       # single file -> to current dir
 
-            inside a checked out local project directory:
-               osc co PACKAGE
+            while inside a project directory:
+               osc co PACKAGE                    # check out PACKAGE from project
 
         ${cmd_option_list}
         """
