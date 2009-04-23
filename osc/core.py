@@ -808,7 +808,10 @@ class Package:
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
-            os.unlink(os.path.join(self.storedir, '_in_conflict'))
+            try:
+                os.unlink(os.path.join(self.storedir, '_in_conflict'))
+            except:
+                pass
         else:
             fname = os.path.join(self.storedir, '_in_conflict')
             f = open(fname, 'w')
