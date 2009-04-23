@@ -1192,6 +1192,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             get_source_file(apiurl, project, package, filename, revision=rev)
 
         elif package:
+            if opts.current_dir: project_dir = None
+
             checkout_package(apiurl, project, package, 
                              rev, expand_link=expand_link, prj_dir=project_dir)
 
