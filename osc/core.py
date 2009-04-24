@@ -2872,9 +2872,15 @@ def streamfile(url, http_meth = http_GET, bufsize=8192):
 def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
     """prints out the buildlog on stdout"""
     query = {'nostream' : '1', 'start' : '%s' % offset}
-    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log'], query=query)
-    for data in streamfile(u):
-        print data
+    while True:
+        query['start'] = offset
+        start_offset = offset
+        u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log'], query=query)
+        for data in streamfile(u):
+            offset += len(data)
+            print data
+        if start_offset == offset:
+            break
 
 def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None, addlist=None):
     query = []
