@@ -2880,7 +2880,7 @@ def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
         u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log'], query=query)
         for data in streamfile(u):
             offset += len(data)
-            print data
+            sys.stdout.write(data)
         if start_offset == offset:
             break
 
