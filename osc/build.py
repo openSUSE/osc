@@ -207,7 +207,9 @@ def get_built_files(pacdir, pactype):
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
+        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'), 
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
     return s_built, b_built
 
 
