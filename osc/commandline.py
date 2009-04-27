@@ -2796,7 +2796,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 raise oscerr.WrongArgs('Please specify project and package')
 
-        query = { 'lastworking': 1 }
+        # first try stored reference, then lastworking
+        query = { 'rev': 'latest' }
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
         root = ET.parse(f).getroot()
@@ -2805,9 +2806,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('package is not a source link')
         if linkinfo.get('error') == None:
             raise oscerr.APIError('source link is not broken')
-        lastworkingrev = linkinfo.get('lastworking')
-        if lastworkingrev == None:
-            raise oscerr.APIError('source link never worked')
+        workingrev = None
+
+        baserev = linkinfo.get('baserev')
+        if baserev != None:
+            query = { 'rev': 'latest', 'linkrev': baserev }
+            u = makeurl(apiurl, ['source', prj, package], query=query)
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            linkinfo = root.find('linkinfo')
+            if linkinfo.get('error') == None:
+                workingrev = linkinfo.get('xsrcmd5')
+
+        if workingrev == None:
+            query = { 'lastworking': 1 }
+            u = makeurl(apiurl, ['source', prj, package], query=query)
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            linkinfo = root.find('linkinfo')
+            if linkinfo == None:
+                raise oscerr.APIError('package is not a source link')
+            if linkinfo.get('error') == None:
+                raise oscerr.APIError('source link is not broken')
+            workingrev = linkinfo.get('lastworking')
+            if workingrev == None:
+                raise oscerr.APIError('source link never worked')
+            print "using last working link target"
+        else:
+            print "using link target of last commit"
 
         query = { 'expand': 1, 'emptylink': 1 }
         u = makeurl(apiurl, ['source', prj, package], query=query)
@@ -2818,15 +2844,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         dir_new['srcmd5'] = root_new.get('srcmd5')
         dir_new['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_new.findall('entry'))
 
-        query = { 'rev': lastworkingrev }
+        query = { 'rev': workingrev }
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
         root_oldpatched = ET.parse(f).getroot()
         linkinfo_oldpatched = root_oldpatched.find('linkinfo')
         if linkinfo_oldpatched == None:
-            raise oscerr.APIError('lastworking is not a source link?')
+            raise oscerr.APIError('working rev is not a source link?')
         if linkinfo_oldpatched.get('error') != None:
-            raise oscerr.APIError('lastworking is not working?')
+            raise oscerr.APIError('working rev is not working?')
         dir_oldpatched = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_oldpatched['srcmd5'] = root_oldpatched.get('srcmd5')
         dir_oldpatched['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_oldpatched.findall('entry'))
@@ -2917,6 +2943,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             ], stdout=o)
             if code == 0:
                 print statfrmt('G', name)
+                os.unlink(os.path.join(destdir, name + '.mine'))
+                os.unlink(os.path.join(destdir, name + '.old'))
+                os.unlink(os.path.join(destdir, name + '.new'))
             elif code == 1:
                 print statfrmt('C', name)
                 pac.put_on_conflictlist(name)
@@ -2933,7 +2962,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (not open an editor)')
     @cmdln.option('-e', '--just-edit', action='store_true', default=False,
-		  help='just open changes (cannot be used with -m)')
+                  help='just open changes (cannot be used with -m)')
     def do_vc(self, subcmd, opts, *args):
         """${cmd_name}: Edit the changes file
 
