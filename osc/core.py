@@ -3695,14 +3695,20 @@ def get_commit_message_template(pac):
             return template
         
         for file in files:
-            diff += get_source_file_diff(pac.absdir, file, pac.rev)
+            if pac.status(file) == 'M':
+                diff += get_source_file_diff(pac.absdir, file, pac.rev)
+            elif pac.status(file) == 'A':
+                f = open(file, 'r')
+                for line in f:
+                    diff += '+' + line
+                f.close()
     
     if diff:
         index = 0
         diff = diff.split('\n')
 
         # The first four lines contains a header of diff
-        for line in diff[4:]:
+        for line in diff[3:]:
             # this condition is magical, but it removes all unwanted lines from commit message
             if not(line) or (line and line[0] != '+') or \
             date_re.match(line) or \
