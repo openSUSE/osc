@@ -1962,12 +1962,12 @@ def read_meta_from_spec(specfile, *args):
 
 def edit_message(footer='', template=''):
     delim = '--This line, and those below, will be ignored--\n\n' + footer
-    hash_orig = dgst_from_string('\n' + delim)
-    if template != '':
-        delim = template + '\n' + delim
     import tempfile
     (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff', dir = '/tmp')
     f = os.fdopen(fd, 'w')
+    if template != '':
+        f.write(template)
+        f.write('\n')
     f.write(delim)
     f.close()
     mtime_orig = os.stat(filename).st_mtime
@@ -1975,10 +1975,9 @@ def edit_message(footer='', template=''):
     editor = os.getenv('EDITOR', default='vim')
     while 1:
         subprocess.call('%s %s' % (editor, filename), shell=True)
-        hash = dgst(filename)
         mtime = os.stat(filename).st_mtime
         
-        if mtime_orig < mtime and hash != hash_orig:
+        if mtime_orig < mtime:
             msg = open(filename).read()
             os.unlink(filename)
             return msg.split(delim)[0].rstrip()
