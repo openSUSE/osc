@@ -803,8 +803,8 @@ class Package:
             self.update_local_filesmeta(revision=self.latest_rev())
         else:
             self.update_local_filesmeta()
-        self.update_datastructs()
         self.write_deletelist()
+        self.update_datastructs()
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
