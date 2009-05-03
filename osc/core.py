@@ -2050,7 +2050,7 @@ def change_submit_request_state(apiurl, reqid, newstate, message=''):
     return f.read()
 
 
-def get_submit_request_list(apiurl, project, package, req_state=('new')):
+def get_submit_request_list(apiurl, project, package, req_state=('new',)):
     match = 'submit/target/@project=\'%s\'' % quote_plus(project)
     if package:
         match += '%20and%20' + 'submit/target/@package=\'%s\'' % quote_plus(package)
