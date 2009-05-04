@@ -2778,16 +2778,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         the merge, 'osc ci' will re-create a working source link.
 
         usage: 
+        * For merging conflicting changes of a checkout package:
             osc repairlink
+
+        * Check out a package and merge changes:
             osc repairlink PROJECT PACKAGE
+
+        * Pull conflicting changes from one project into another one:
+            osc repairlink PROJECT PACKAGE INTO_PROJECT [INTO_PACKAGE]
 
         ${cmd_option_list}
         """
 
         apiurl = conf.config['apiurl']
-        if args and len(args) == 2:
+        if args and len(args) >= 3 and len(args) <= 4:
             prj = args[0]
-            package = args[1]
+            package = target_package = args[1]
+            target_prj = args[2]
+            if len(args) == 4:
+               target_package = args[3]
+        elif args and len(args) == 2:
+            target_prj = prj = args[0]
+            target_package = package = args[1]
         else:
             if is_package_dir(os.getcwd()):
                 apiurl = store_read_apiurl(os.getcwd())
@@ -2884,7 +2896,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         olddir=os.getcwd()
         os.chdir(destdir)
-        init_package_dir(apiurl, prj, package, destdir, files=False)
+        init_package_dir(apiurl, target_prj, target_package, destdir, files=False)
         os.chdir(olddir)
         store_write_string(destdir, '_files', ''.join(meta));
         store_write_string(destdir, '_linkrepair', '');
