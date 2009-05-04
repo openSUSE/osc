@@ -969,48 +969,65 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       % (apiopt, r, package)
 
 
-    def do_deletepac(self, subcmd, opts, *args):
-        """${cmd_name}: Delete packages on the repository server
-
-        usage:
-            osc deletepac PROJECT PACKAGE [PACKAGE ...]
-        ${cmd_option_list}
-        """
-
-        args = slash_split(args)
-        pkgs = args[1:]
-        if not pkgs:
-            raise oscerr.WrongArgs('Missing argument.')
-
-        for pkg in pkgs:
-            # careful: if pkg is an empty string, the package delete request results
-            # into a project delete request - which works recursively...
-            if pkg:
-                delete_package(conf.config['apiurl'], args[0], pkg)
-
+         
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='deletes a project and its packages')
-    def do_deleteprj(self, subcmd, opts, project):
-        """${cmd_name}: Delete a project on the repository server
+    def do_rdelete(self, subcmd, opts, *args):
+        """${cmd_name}: Delete a project or packages on the server.
 
         As a safety measure, project must be empty (i.e., you need to delete all
         packages first). If you are sure that you want to remove this project and all
         its packages use \'--force\' switch.
 
+        usage:
+           osc rdelete -f PROJECT
+           osc rdelete PROJECT PACKAGE [PACKAGE ...]
 
-        ${cmd_usage}
         ${cmd_option_list}
         """
 
-        if len(meta_get_packagelist(conf.config['apiurl'], project)) >= 1 and not opts.force:
+        args = slash_split(args)
+        prj = args[0]
+        pkgs = args[1:]
+        if not prj:
+            raise oscerr.WrongArgs('Missing argument.')
+
+        if pkgs:
+           for pkg in pkgs:
+               # careful: if pkg is an empty string, the package delete request results
+               # into a project delete request - which works recursively...
+               if pkg:
+                   delete_package(conf.config['apiurl'], prj, pkg)
+        elif len(meta_get_packagelist(conf.config['apiurl'], project)) >= 1 and not opts.force:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
                                 'packages use the \'--force\' switch'
             sys.exit(1)
         else:
-            delete_project(conf.config['apiurl'], project)
+            delete_project(conf.config['apiurl'], prj)
 
+    @cmdln.hide(1)
+    def do_deletepac(self, subcmd, opts, *args):
+        print """s{cmd_name} is obsolete !
+             
+                 Please use either 
+                   osc delete       for checked out packages or projects
+                 or
+                   osc rdelete      for server side operations."""
+
+        sys.exit(1)
+
+    @cmdln.hide(1)
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='deletes a project and its packages')
+    def do_deleteprj(self, subcmd, opts, project):
+        """${cmd_name} is obsolete !
+
+                 Please use
+                   osc rdelete PROJECT
+        """
+        sys.exit(1)
 
     @cmdln.alias('metafromspec')
     @cmdln.option('', '--specfile', metavar='FILE',
@@ -1574,15 +1591,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    
 
     @cmdln.option('-f', '--force', action='store_true',
-                        help='forces removal of package')
+                        help='forces removal of entire package and its files')
     @cmdln.alias('rm')
     @cmdln.alias('del')
     @cmdln.alias('remove')
     def do_delete(self, subcmd, opts, *args):
-        """${cmd_name}: Mark files to be deleted upon the next 'checkin'
+        """${cmd_name}: Mark files or directories to be deleted upon the next 'checkin'
 
         usage: 
-            osc rm FILE [FILE...]
+            osc rm FILE/DIRECTORY [FILE/DIRECTORY...]
+
+        This command works on check out copies. Use "rdelete" for working on server
+        side only. This is needed for removing the entire project.
+
+        As a safety measure, package must be empty (i.e., you need to delete all
+        packages first). If you are sure that you want to remove a package and all
+        its files use \'--force\' switch.
+
+
         ${cmd_option_list}
         """
 
@@ -1612,9 +1638,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for p in pacs:
             if not p.todo:
                 prj_dir, pac_dir = getPrjPacPaths(p.absdir)
-                if conf.config['do_package_tracking'] and is_project_dir(prj_dir):
-                    prj = Project(prj_dir, False)
-                    prj.delPackage(p, opts.force)
+                if is_project_dir(prj_dir):
+                   if conf.config['do_package_tracking']:
+                       prj = Project(prj_dir, False)
+                       prj.delPackage(p, opts.force)
+                   else:
+                       print "WARNING: package tracking is disabled, operation skipped !"
             else:
                 pathn = getTransActPath(p.dir)
                 for filename in p.todo:

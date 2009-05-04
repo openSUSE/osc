@@ -2,6 +2,10 @@
 - support of added .changes in commit message template
 - make submit request listing fast by server side filtering
 - allow pulling of conflicting changes via "osc repairlink"
+- delete commands consolidated:
+  * deleteprj and deletepac are obsolete.
+  * delete and rdelete take over
+- enable package tracking by default
 - bugfix: templates in edit commit message causes an empty commit logs
 - osc sr create consumes DESTPRJ [DESTPKG] arguments only
 

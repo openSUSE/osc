@@ -57,8 +57,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'traceback': '0',
              'post_mortem': '0',
              'cookiejar': '~/.osc_cookiejar',
-             # disable project tracking by default
-             'do_package_tracking': '0',
+             # enable project tracking by default
+             'do_package_tracking': '1',
              # default for osc build
              'extra-pkgs': 'vim gdb strace',
              # default platform

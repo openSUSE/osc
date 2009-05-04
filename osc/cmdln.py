@@ -650,7 +650,8 @@ class RawCmdln(cmd.Cmd):
                 #log.debug("stripping %r from start of %s's help string",
                 #          to_strip, cmdname)
                 doc = doc[len(to_strip):].lstrip()
-            linedata.append( (cmdstr, doc) )
+            if not getattr(self._get_cmd_handler(cmdname), "hidden", None):
+                linedata.append( (cmdstr, doc) )
 
         if linedata:
             subindent = indent + ' '*4
@@ -979,6 +980,20 @@ def option(*args, **kwargs):
         if not hasattr(f, "optparser"):
             f.optparser = SubCmdOptionParser()
         f.optparser.add_option(*args, **kwargs)
+        return f
+    return decorate
+
+def hide(*args):
+    """For obsolete calls, hide them in help listings.
+
+    Example:
+        class MyShell(cmdln.Cmdln):
+            @cmdln.hide()
+            def do_shell(self, argv):
+                #...implement 'shell' command
+    """
+    def decorate(f):
+        f.hidden = 1
         return f
     return decorate
 
