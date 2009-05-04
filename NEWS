@@ -1,6 +1,7 @@
 0.118:
 - support of added .changes in commit message template
 - make submit request listing fast by server side filtering
+- allow pulling of conflicting changes via "osc repairlink"
 - bugfix: templates in edit commit message causes an empty commit logs
 
 0.117:

@@ -1,11 +1,6 @@
 
 MAJOR:
 
-  - changelog handling (equivalent of Novell-internal 'vc' tool, I guess)
-    (should also work with multiple spec files <package-name>-<repository-name>.spec, and with <package-name>-<version>.spec)
-    see http://lists.opensuse.org/opensuse-buildservice/2007-08/msg00170.html
-
-  
 NORMAL:
 
   - improvements submit requests:
