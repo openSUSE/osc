@@ -35,6 +35,8 @@ can_also_build = {
              'armv4l': [                                         'armv4l'                                 ],
              'armv5el':[                                         'armv4l', 'armv5el'                      ],
              'armv7el':[                                         'armv4l', 'armv5el', 'armv7el'           ],
+             'armv6l' :[                                         'armv4l', 'armv5el'                      ],
+             'armv7l' :[                                         'armv4l', 'armv5el', 'armv7el'           ],
              's390x':  ['s390'                                                                            ],
              'ppc64':  [                        'ppc', 'ppc64',                                           ],
              'i386':   [        'i586',                          'armv4l', 'armv5el', 'armv7el',    'sh4' ],
