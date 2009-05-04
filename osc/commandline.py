@@ -498,6 +498,7 @@ class Osc(cmdln.Cmdln):
 
         usage:
             osc submitreq create [-m TEXT] 
+            osc submitreq create [-m TEXT] DESTPRJ [DESTPKG]
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list [PRJ [PKG]]
             osc submitreq log ID
@@ -534,18 +535,25 @@ class Osc(cmdln.Cmdln):
 
         # collect specific arguments
         if cmd == 'create':
-            if len(args) == 0:
+            if len(args) <= 2:
                 # try using the working copy at hand
                 p = findpacs(os.curdir)[0]
                 src_project = p.prjname
                 src_package = p.name
-                if p.islink():
+                if len(args) == 0 and p.islink():
                     dst_project = p.linkinfo.project
                     dst_package = p.linkinfo.package
                     apiurl = p.apiurl
+                elif len(args) > 0:
+                    dst_project = args[0]
+                    if len(args) == 2:
+                        dst_package = args[1]
+                    else:
+                        dst_package = src_package
                 else:
                     sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
-                             'Please provide it the target via commandline arguments.' % p.name)
+                            'Please provide it the target via commandline arguments.' % p.name)
+
                 modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
                 if len(modified) > 0:
                     print 'Your working copy has local modifications.'
