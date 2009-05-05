@@ -13,9 +13,9 @@ import oscerr
 
 
 class Osc(cmdln.Cmdln):
-    """usage:
-        osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
-        osc help SUBCOMMAND
+    """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
+    or: osc help SUBCOMMAND
+
     OpenSUSE build service command-line tool.
     Type 'osc help <subcommand>' for help on a specific subcommand.
 
