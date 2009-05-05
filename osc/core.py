@@ -1484,7 +1484,7 @@ def makeurl(baseurl, l, query=[]):
     return urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
 
 
-def http_request(method, url, headers={}, data=None, file=None):
+def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
 
@@ -1539,7 +1539,7 @@ def http_request(method, url, headers={}, data=None, file=None):
     if conf.config['debug']: print method, url
 
     try:
-        fd = urllib2.urlopen(req, data=data)
+        fd = urllib2.urlopen(req, data=data, timeout=timeout)
     finally:
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
