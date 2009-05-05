@@ -9,6 +9,7 @@
 - bugfix: templates in edit commit message causes an empty commit logs
 - osc sr create consumes DESTPRJ [DESTPKG] arguments only
 - osc build now also tested on native arm targets where uname -m reports a string like armv{4l,5el,6l,7el,7l}
+- osc rlog now works with srcmd5 also
 - plugins now should be placed in /usr/lib/osc to match FHS (the /var path is still supported though)
 
 0.117:
