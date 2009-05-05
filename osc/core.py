@@ -2970,15 +2970,19 @@ def get_commitlog(apiurl, prj, package, revision):
     revisions = root.findall('revision')
     revisions.reverse()
     for node in revisions:
+        srcmd5 = node.find('srcmd5').text
         try:
             rev = int(node.get('rev'))
             #vrev = int(node.get('vrev')) # what is the meaning of vrev?
-            if revision and rev != int(revision):
-                continue
+            try:
+                if revision and rev != int(revision):
+                    continue
+            except ValueError:
+                if revision != srcmd5:
+                    continue
         except ValueError:
             # this part should _never_ be reached but...
             return [ 'an unexpected error occured - please file a bug' ]
-        srcmd5 = node.find('srcmd5').text
         version = node.find('version').text
         user = node.find('user').text
         try:
