@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import struct, sys
 
 class Cpio:

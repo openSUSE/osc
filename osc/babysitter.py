@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # Copyright (C) 2008 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,

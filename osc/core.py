@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # vim: sw=4 et
 
 # Copyright (C) 2006 Novell Inc.  All rights reserved.
