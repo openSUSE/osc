@@ -29,7 +29,7 @@ class ArError(Exception):
     def __str__(self):
         return 'ar error: %s' % self.msg
 
-class ArHdr():
+class ArHdr:
     """Represents an ar header entry"""
     def __init__(self, fn, date, uid, gid, mode, size, fmag, off):
         self.file = fn.strip()
@@ -79,7 +79,7 @@ class ArFile(StringIO.StringIO):
         return '%s %s %s %s' % (self.name, self.uid,
                                 self.gid, self.mode)
 
-class Ar():
+class Ar:
     """
     Represents an ar archive (only GNU format is supported).
     Readonly access.

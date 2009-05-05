@@ -27,7 +27,7 @@ class CpioError(Exception):
         self.file = fn
         self.msg = msg
 
-class CpioHdr():
+class CpioHdr:
     """
     Represents a cpio header ("New" portable format and CRC format).
     """
@@ -64,7 +64,7 @@ class CpioHdr():
     def __str__(self):
         return "%s %s %s %s" % (self.filename, self.filesize, self.namesize, self.dataoff)
 
-class Cpio():
+class Cpio:
     """
     Represents a cpio archive.
     Supported formats:
