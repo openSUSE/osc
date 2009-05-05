@@ -3080,7 +3080,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 ###############################################################################
         
     # load subcommands plugged-in locally
-    plugin_dirs = ['/var/lib/osc-plugins', os.path.expanduser('~/.osc-plugins')]
+    plugin_dirs = [
+        '/usr/lib/osc-plugins', 
+        '/usr/local/lib/osc-plugins', 
+        '/var/lib/osc-plugins',  # Kept for backward compatibility
+        os.path.expanduser('~/.osc-plugins')]
     for plugin_dir in plugin_dirs:
         if os.path.isdir(plugin_dir):
             for extfile in os.listdir(plugin_dir):
