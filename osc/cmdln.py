@@ -43,7 +43,6 @@ import re
 import cmd
 import optparse
 from pprint import pprint
-from core import get_osc_version
 from datetime import date
 
 
@@ -62,17 +61,17 @@ _NOT_SPECIFIED = ("Not", "Specified")
 _INCORRECT_NUM_ARGS_RE = re.compile(
     r"(takes [\w ]+ )(\d+)( arguments? \()(\d+)( given\))")
 
-MAN_HEADER = r""".TH OSC "1" "%s" "osc %s" "User Commands"
+# Static bits of man page
+MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
-osc \- OpenSUSE build service command-line tool.
+%(name)s \- Program to do useful things.
 .SH SYNOPSIS
-.B osc
+.B %(name)s
 [\fIGLOBALOPTS\fR] \fISUBCOMMAND \fR[\fIOPTS\fR] [\fIARGS\fR...]
 .br
-.B osc
+.B %(name)s
 \fIhelp SUBCOMMAND\fR
 .SH DESCRIPTION
-OpenSUSE build service command\-line tool.
 """
 MAN_COMMANDS_HEADER = r"""
 .SS COMMANDS
@@ -81,17 +80,8 @@ MAN_OPTIONS_HEADER = r"""
 .SS GLOBAL OPTIONS
 """
 MAN_FOOTER = r"""
-.SH "SEE ALSO"
-Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
-.PP
-For additional information, see
- * http://www.opensuse.org/Build_Service_Tutorial
- * http://www.opensuse.org/Build_Service/CLI
-.PP
-You can modify osc commands, or roll you own, via the plugin API:
- * http://www.opensuse.org/Build_Service/osc_plugins
 .SH AUTHOR
-osc was written by several authors. This man page is automatically generated.
+This man page is automatically generated.
 """
 
 #---- exceptions
@@ -162,6 +152,12 @@ class RawCmdln(cmd.Cmd):
 
     helpindent = '' # string with which to indent help output
 
+    # Default man page parts, please change them in subclass
+    man_header = MAN_HEADER
+    man_commands_header = MAN_COMMANDS_HEADER
+    man_options_header = MAN_OPTIONS_HEADER
+    man_footer = MAN_FOOTER
+
     def __init__(self, completekey='tab', 
                  stdin=None, stdout=None, stderr=None):
         """Cmdln(completekey='tab', stdin=None, stdout=None, stderr=None)
@@ -219,6 +215,12 @@ class RawCmdln(cmd.Cmd):
                     and "%s %s" % (self._name_str, self.version)
                     or None)
         return CmdlnOptionParser(self, version=version)
+
+    def get_version(self):
+        """
+        Returns version of program. To be replaced in subclass.
+        """
+        return __version__
 
     def postoptparse(self):
         """Hook method executed just after `.main()' parses top-level
@@ -542,11 +544,15 @@ class RawCmdln(cmd.Cmd):
         usage:
             ${name} man
         """
-        self.stdout.write(MAN_HEADER % (
-                date.today().strftime('%b %Y'), 
-                get_osc_version()))
+        self.stdout.write(self.man_header % {
+                'date': date.today().strftime('%b %Y'), 
+                'version': self.get_version(),
+                'name': self.name,
+                'ucname': self.name.upper()
+                }
+        )
 
-        self.stdout.write(MAN_COMMANDS_HEADER)
+        self.stdout.write(self.man_commands_header)
         commands = self._help_get_command_list()
         for command, doc in commands:
             cmdname = command.split(' ')[0]
@@ -559,10 +565,10 @@ class RawCmdln(cmd.Cmd):
 
             self.stdout.write('.TP\n\\fB%s\\fR\n%s\n' % (command, '\n'.join(lines)))
 
-        self.stdout.write(MAN_OPTIONS_HEADER)
+        self.stdout.write(self.man_options_header)
         self.stdout.write(self._help_preprocess('${option_list}', None))
 
-        self.stdout.write(MAN_FOOTER)
+        self.stdout.write(self.man_footer)
 
         self.stdout.flush()
 

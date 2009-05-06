@@ -11,6 +11,32 @@ import cmdln
 import conf
 import oscerr
 
+MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
+.SH NAME
+%(name)s \- OpenSUSE build service command-line tool.
+.SH SYNOPSIS
+.B %(name)s
+[\fIGLOBALOPTS\fR] \fISUBCOMMAND \fR[\fIOPTS\fR] [\fIARGS\fR...]
+.br
+.B %(name)s
+\fIhelp SUBCOMMAND\fR
+.SH DESCRIPTION
+OpenSUSE build service command\-line tool.
+"""
+MAN_FOOTER = r"""
+.SH "SEE ALSO"
+Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
+.PP
+For additional information, see
+ * http://www.opensuse.org/Build_Service_Tutorial
+ * http://www.opensuse.org/Build_Service/CLI
+.PP
+You can modify osc commands, or roll you own, via the plugin API:
+ * http://www.opensuse.org/Build_Service/osc_plugins
+.SH AUTHOR
+osc was written by several authors. This man page is automatically generated.
+"""
+
 
 class Osc(cmdln.Cmdln):
     """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
@@ -32,11 +58,15 @@ class Osc(cmdln.Cmdln):
     name = 'osc'
     conf = None
 
+    man_header = MAN_HEADER
+    man_footer = MAN_FOOTER
 
     def __init__(self, *args, **kwargs):
         cmdln.Cmdln.__init__(self, *args, **kwargs)
         cmdln.Cmdln.do_help.aliases.append('h')
 
+    def get_version(self):
+        return get_osc_version()
 
     def get_optparser(self):
         """this is the parser for "global" options (not specific to subcommand)"""
