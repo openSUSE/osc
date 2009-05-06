@@ -998,7 +998,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                # into a project delete request - which works recursively...
                if pkg:
                    delete_package(conf.config['apiurl'], prj, pkg)
-        elif len(meta_get_packagelist(conf.config['apiurl'], project)) >= 1 and not opts.force:
+        elif len(meta_get_packagelist(conf.config['apiurl'], prj)) >= 1 and not opts.force:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
                                 'packages use the \'--force\' switch'
