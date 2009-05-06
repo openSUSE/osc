@@ -43,6 +43,8 @@ import re
 import cmd
 import optparse
 from pprint import pprint
+from core import get_osc_version
+from datetime import date
 
 
 
@@ -60,7 +62,37 @@ _NOT_SPECIFIED = ("Not", "Specified")
 _INCORRECT_NUM_ARGS_RE = re.compile(
     r"(takes [\w ]+ )(\d+)( arguments? \()(\d+)( given\))")
 
-
+MAN_HEADER = r""".TH OSC "1" "%s" "osc %s" "User Commands"
+.SH NAME
+osc \- OpenSUSE build service command-line tool.
+.SH SYNOPSIS
+.B osc
+[\fIGLOBALOPTS\fR] \fISUBCOMMAND \fR[\fIOPTS\fR] [\fIARGS\fR...]
+.br
+.B osc
+\fIhelp SUBCOMMAND\fR
+.SH DESCRIPTION
+OpenSUSE build service command\-line tool.
+"""
+MAN_COMMANDS_HEADER = r"""
+.SS COMMANDS
+"""
+MAN_OPTIONS_HEADER = r"""
+.SS GLOBAL OPTIONS
+"""
+MAN_FOOTER = r"""
+.SH "SEE ALSO"
+Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
+.PP
+For additional information, see
+ * http://www.opensuse.org/Build_Service_Tutorial
+ * http://www.opensuse.org/Build_Service/CLI
+.PP
+You can modify osc commands, or roll you own, via the plugin API:
+ * http://www.opensuse.org/Build_Service/osc_plugins
+.SH AUTHOR
+osc was written by several authors. This man page is automatically generated.
+"""
 
 #---- exceptions
 
@@ -457,6 +489,7 @@ class RawCmdln(cmd.Cmd):
         self.stderr.flush()
         return 1
 
+
     def do_help(self, argv):
         """${cmd_name}: give detailed help on a specific sub-command
 
@@ -501,6 +534,37 @@ class RawCmdln(cmd.Cmd):
             self.stdout.write(self._str(doc))
             self.stdout.flush()
     do_help.aliases = ["?"]
+
+
+    def do_man(self, argv):
+        """${cmd_name}: generates a man page
+
+        usage:
+            ${name} man
+        """
+        self.stdout.write(MAN_HEADER % (
+                date.today().strftime('%b %Y'), 
+                get_osc_version()))
+
+        self.stdout.write(MAN_COMMANDS_HEADER)
+        commands = self._help_get_command_list()
+        for command, doc in commands:
+            cmdname = command.split(' ')[0]
+            text = self._help_preprocess(doc, cmdname)
+            lines = []
+            for line in text.splitlines(False):
+                if line[:8] == ' ' * 8:
+                    line = line[8:]
+                lines.append(line)
+
+            self.stdout.write('.TP\n\\fB%s\\fR\n%s\n' % (command, '\n'.join(lines)))
+
+        self.stdout.write(MAN_OPTIONS_HEADER)
+        self.stdout.write(self._help_preprocess('${option_list}', None))
+
+        self.stdout.write(MAN_FOOTER)
+
+        self.stdout.flush()
 
     def _help_reindent(self, help, indent=None):
         """Hook to re-indent help strings before writing to stdout.
@@ -602,12 +666,7 @@ class RawCmdln(cmd.Cmd):
         help = help.replace(indent+marker+suffix, block, 1)
         return help
 
-
-    def _help_preprocess_command_list(self, help, cmdname=None):
-        marker = "${command_list}"
-        indent, indent_width = _get_indent(marker, help)
-        suffix = _get_trailing_whitespace(marker, help)
-
+    def _help_get_command_list(self):
         # Find any aliases for commands.
         token2canonical = self._get_canonical_map()
         aliases = {}
@@ -651,6 +710,15 @@ class RawCmdln(cmd.Cmd):
                 doc = doc[len(to_strip):].lstrip()
             if not getattr(self._get_cmd_handler(cmdname), "hidden", None):
                 linedata.append( (cmdstr, doc) )
+
+        return linedata
+
+    def _help_preprocess_command_list(self, help, cmdname=None):
+        marker = "${command_list}"
+        indent, indent_width = _get_indent(marker, help)
+        suffix = _get_trailing_whitespace(marker, help)
+
+        linedata = self._help_get_command_list()
 
         if linedata:
             subindent = indent + ' '*4
