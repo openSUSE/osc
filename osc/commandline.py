@@ -2919,7 +2919,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         root_new = ET.parse(StringIO(''.join(meta))).getroot()
         dir_new = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_new['srcmd5'] = root_new.get('srcmd5')
-        dir_new['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_new.findall('entry'))
+        dir_new['entries'] = [[n.get('name'), n.get('md5')] for n in root_new.findall('entry')]
 
         query = { 'rev': workingrev }
         u = makeurl(apiurl, ['source', prj, package], query=query)
@@ -2932,7 +2932,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('working rev is not working?')
         dir_oldpatched = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_oldpatched['srcmd5'] = root_oldpatched.get('srcmd5')
-        dir_oldpatched['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_oldpatched.findall('entry'))
+        dir_oldpatched['entries'] = [[n.get('name'), n.get('md5')] for n in root_oldpatched.findall('entry')]
 
         query = {}
         query['rev'] = linkinfo_oldpatched.get('srcmd5')
@@ -2943,7 +2943,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         dir_old['project'] = linkinfo_oldpatched.get('project')
         dir_old['package'] = linkinfo_oldpatched.get('package')
         dir_old['srcmd5'] = root_old.get('srcmd5')
-        dir_old['entries'] = map(lambda e: [e.get('name'), e.get('md5')], root_old.findall('entry'))
+        dir_old['entries'] = [[n.get('name'), n.get('md5')] for n in root_old.findall('entry')]
 
         entries_old = dict(dir_old['entries'])
         entries_oldpatched = dict(dir_oldpatched['entries'])
