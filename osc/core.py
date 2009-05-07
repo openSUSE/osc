@@ -740,7 +740,7 @@ class Package:
                 have_conflicts = True
 
         if have_conflicts and self.islinkrepair():
-            print 'Please resolve all conflicts before committing!'
+            print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
             return 1
 
         if not self.todo_send and not self.todo_delete and not self.rev == "upload" and not self.islinkrepair():
