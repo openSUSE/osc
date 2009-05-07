@@ -1017,10 +1017,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
+        if len(args) < 1:
+            raise oscerr.WrongArgs('Missing argument.')
         prj = args[0]
         pkgs = args[1:]
-        if not prj:
-            raise oscerr.WrongArgs('Missing argument.')
 
         if pkgs:
            for pkg in pkgs:
