@@ -2857,22 +2857,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         apiurl = conf.config['apiurl']
-        if args and len(args) >= 3 and len(args) <= 4:
+        if len(args) >= 3 and len(args) <= 4:
             prj = args[0]
             package = target_package = args[1]
             target_prj = args[2]
             if len(args) == 4:
                target_package = args[3]
-        elif args and len(args) == 2:
+        elif len(args) == 2:
             target_prj = prj = args[0]
             target_package = package = args[1]
+        elif is_package_dir(os.getcwd()):
+            apiurl = store_read_apiurl(os.getcwd())
+            target_prj = prj = store_read_project(os.getcwd())
+            target_package = package = store_read_package(os.getcwd())
         else:
-            if is_package_dir(os.getcwd()):
-                apiurl = store_read_apiurl(os.getcwd())
-                prj = store_read_project(os.getcwd())
-                package = store_read_package(os.getcwd())
-            else:
-                raise oscerr.WrongArgs('Please specify project and package')
+            raise oscerr.WrongArgs('Please specify project and package')
 
         # first try stored reference, then lastworking
         query = { 'rev': 'latest' }
