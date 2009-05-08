@@ -2575,12 +2575,9 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['target_project'] = target_project
     if target_package:
         query['target_package'] = target_package
-    u = makeurl(conf.config['apiurl'], 
-                ['source', src_project, src_package], 
-                query=query)
+    u = makeurl(apiurl, ['source', src_project, src_package], query=query)
     f = http_POST(u)
     r = f.read()
-    #print r
     r = r.split('targetproject">')[1]
     r = r.split('</data>')[0]
     return r
