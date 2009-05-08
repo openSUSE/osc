@@ -22,6 +22,7 @@ import oscerr
 import conf
 import subprocess
 import re
+import socket
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -1538,9 +1539,12 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
 
     if conf.config['debug']: print method, url
 
+    old_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(timeout)
     try:
-        fd = urllib2.urlopen(req, data=data, timeout=timeout)
+        fd = urllib2.urlopen(req, data=data)
     finally:
+        socket.setdefaulttimeout(old_timeout)
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
 
