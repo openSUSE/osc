@@ -1777,7 +1777,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
-    def do_rresults(self, subcmd, opts, prj, pkg):
+    def do_rresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a remote package
 
         Examples:
@@ -1787,9 +1787,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        args = slash_split(args)
+        if len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = conf.config['apiurl']
-        print '\n'.join(get_results(apiurl, prj, pkg, opts.last_build))
+        print '\n'.join(get_results(apiurl, args[0], args[1], opts.last_build))
 
                 
     @cmdln.option('-q', '--hide-legend', action='store_true',
