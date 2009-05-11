@@ -1035,9 +1035,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):
-        print """s{cmd_name} is obsolete !
-             
-                 Please use either 
+        print """${cmd_name} is obsolete !
+
+                 Please use either
                    osc delete       for checked out packages or projects
                  or
                    osc rdelete      for server side operations."""
@@ -1376,6 +1376,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-r', '--recursive', action='store_true',
                         help='If CWD is a project dir then scan all package dirs as well')
+    @cmdln.alias('ar')
     def do_addremove(self, subcmd, opts, *args):
         """${cmd_name}: Adds new files, removes disappeared files
 
