@@ -88,6 +88,8 @@ class Osc(cmdln.Cmdln):
         optparser.add_option('-c', '--config', dest='conffile',
                       metavar='FILE',
                       help='specify alternate configuration file')
+        optparser.add_option('--no-gnome-keyring', action='store_true',
+                      help='disable usage of GNOME Keyring')
         return optparser
 
 
@@ -99,7 +101,8 @@ class Osc(cmdln.Cmdln):
                             override_debug = self.options.debug,
                             override_http_debug = self.options.http_debug,
                             override_traceback = self.options.traceback,
-                            override_post_mortem = self.options.post_mortem)
+                            override_post_mortem = self.options.post_mortem,
+                            override_no_gnome_keyring = self.options.no_gnome_keyring)
         except oscerr.NoConfigfile, e:
             print >>sys.stderr, e.msg
             print >>sys.stderr, 'Creating osc configuration file %s ...' % e.file
@@ -118,13 +121,7 @@ class Osc(cmdln.Cmdln):
             import getpass
             user = raw_input('Username: ')
             passwd = getpass.getpass()
-            cp = conf.get_configParser()
-            cp.add_section(e.url)
-            cp.set(e.url, 'user', user)
-            cp.set(e.url, 'pass', passwd)
-            file = open(e.file, 'w')
-            cp.write(file, True)
-            if file: file.close()
+            conf.add_section(e.file, e.url, user, passwd)
             if try_again: self.postoptparse(try_again = False)
 
         self.conf = conf

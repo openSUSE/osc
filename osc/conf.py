@@ -32,6 +32,14 @@ The configuration dictionary could look like this:
 import OscConfigParser
 from osc import oscerr
 
+try:
+    import gobject
+    gobject.set_application_name('osc')
+    import gnomekeyring
+    GNOME_KEYRING = gnomekeyring.is_available()
+except:
+    GNOME_KEYRING = False
+
 # being global to this module, this dict can be accessed from outside
 # it will hold the parsed configuration
 config = { }
@@ -54,6 +62,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'http_debug': '0',
              'traceback': '0',
              'post_mortem': '0',
+             'gnome_keyring': '1',
              'cookiejar': '~/.osc_cookiejar',
              # enable project tracking by default
              'do_package_tracking': '1',
@@ -104,6 +113,9 @@ apiurl = %(apiurl)s
 # print call traces in case of errors
 #traceback = 1
     
+# use GNOME keyring for credentials if available
+#gnome_keyring = 0
+    
 [%(apiurl)s]
 user = %(user)s
 pass = %(pass)s
@@ -114,6 +126,8 @@ pass = %(pass)s
 # additional headers to pass to a request, e.g. for special authentication
 #http_headers = Host: foofoobar,
 #       User: mumblegack
+# Force using of keyring for this API
+#keyring = 1
 """
 
 
@@ -261,6 +275,16 @@ def write_initial_config(conffile, entries, custom_template = ''):
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
+    if config['gnome_keyring'] and GNOME_KEYRING:
+        protocol, host = \
+            parse_apisrv_url(None, config['apisrv'])
+        gnomekeyring.set_network_password_sync(
+            user = config['user'],
+            password = config['pass'],
+            protocol = protocol,
+            server = host)
+        config['user'] = ''
+        config['pass'] = ''
     sio = StringIO.StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
     cp.readfp(sio)
@@ -279,13 +303,41 @@ def write_initial_config(conffile, entries, custom_template = ''):
     finally:
         if file: file.close()
 
+def add_section(filename, url, user, passwd):
+    """
+    Add a section to config file for new api url.
+    """
+    global config
+    cp = get_configParser(filename)
+    try:
+        cp.add_section(url)
+    except OscConfigParser.ConfigParser.DuplicateSectionError:
+        # Section might have existed, but was empty
+        pass
+    if config['gnome_keyring'] and GNOME_KEYRING:
+        protocol, host = \
+            parse_apisrv_url(None, url)
+        gnomekeyring.set_network_password_sync(
+            user = user,
+            password = passwd,
+            protocol = protocol,
+            server = host)
+        cp.set(url, 'keyring', '1')
+    else:
+        cp.set(url, 'user', user)
+        cp.set(url, 'pass', passwd)
+    file = open(filename, 'w')
+    cp.write(file, True)
+    if file: file.close()
+
 
 def get_config(override_conffile = None, 
                override_apiurl = None,
                override_debug = None, 
                override_http_debug = None, 
                override_traceback = None,
-               override_post_mortem = None):
+               override_post_mortem = None,
+               override_no_gnome_keyring = None):
     """do the actual work (see module documentation)"""
     import os
     import sys
@@ -346,16 +398,38 @@ def get_config(override_conffile = None,
     # the following regexp does _not_ support quoted commas within the value.
     http_header_regexp = re.compile(r"\s*(.*?)\s*:\s*(.*?)\s*(?:,\s*|\Z)")
 
+    # override values which we were called with
+    # This needs to be done before processing API sections as it might be already used there
+    if override_no_gnome_keyring: 
+        config['gnome_keyring'] = False
+
     aliases = {}
     for url in [ x for x in cp.sections() if x != 'general' ]:
         # backward compatiblity
         scheme, host = \
             parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host)
-        #FIXME: this could actually be the ideal spot to take defaults
-        #from the general section.
-        user         = cp.get(url, 'user')
-        password     = cp.get(url, 'pass')
+        user = None
+        # Read from gnome keyring if available
+        if config['gnome_keyring'] and GNOME_KEYRING:
+            try:
+                gk_data = gnomekeyring.find_network_password_sync(
+                    protocol = scheme,
+                    server = host)
+                password = gk_data[0]['password']
+                user = gk_data[0]['user']
+            except gnomekeyring.NoMatchError:
+                # Fallback to file based auth.
+                pass
+        # Read credentials from config
+        if user is None:
+            #FIXME: this could actually be the ideal spot to take defaults
+            #from the general section.
+            user         = cp.get(url, 'user')
+            password     = cp.get(url, 'pass')
+            if cp.has_option(url, 'keyring') and cp.get(url, 'keyring'):
+                # This APIURL was configured to use keyring by
+                continue
         email        = ''
         if cp.has_option(url, 'email'):
             email    = cp.get(url, 'email')

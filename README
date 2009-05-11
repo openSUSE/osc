@@ -115,6 +115,15 @@ described above. So basically just adjust all apiurl sections (it might be the
 case that some sections already have the correct format).
 
 
+KEYRING USAGE
+
+Osc now can store passwords in Gnome keyring instead of ~/.oscrc. To use it,
+you need python-gnomekeyring and keyring daemon running.
+
+If you want to switch to using Gnome keyring you need to delete apiurl section
+from ~/.oscrc and you will be asked for credentials again, which will be then
+stored in Gnome keyring.
+
 
 USAGE EXAMPLES:
 (online at http://en.opensuse.org/Build_Service/CLI )
