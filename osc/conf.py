@@ -425,8 +425,8 @@ def get_config(override_conffile = None,
         if user is None:
             #FIXME: this could actually be the ideal spot to take defaults
             #from the general section.
-            user         = cp.get(url, 'user')
-            password     = cp.get(url, 'pass')
+            user         = cp.get(url, 'user', raw=True) # need to set raw to prevent '%' expansion
+            password     = cp.get(url, 'pass', raw=True) # especially on password!
             if cp.has_option(url, 'keyring') and cp.get(url, 'keyring'):
                 # This APIURL was configured to use keyring by
                 continue
