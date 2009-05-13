@@ -3005,7 +3005,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text'):
             r.append(s)
         elif format == 'xml':
             r.append('<logentry')
-            r.append('   revision="%s">' % rev)
+            r.append('   revision="%s" srcmd5="%s">' % (rev, srcmd5))
             r.append('<author>%s</author>' % user)
             r.append('<date>%s</date>' % t)
             r.append('<msg>%s</msg>' % 
