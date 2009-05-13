@@ -2210,6 +2210,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
+    @cmdln.option('', '--csv', action='store_true',
+                        help='generate output in CSV (separated by |)')
+    @cmdln.option('', '--xml', action='store_true',
+                        help='generate output in XML')
     def do_log(self, subcmd, opts):
         """${cmd_name}: Shows the commit log of a package
 
@@ -2226,11 +2230,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
-        print '\n'.join(get_commitlog(apiurl, project, package, rev))
+        format = 'text'
+        if opts.csv:
+            format = 'csv'
+        if opts.xml:
+            format = 'xml'
+
+        print '\n'.join(get_commitlog(apiurl, project, package, rev, format))
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
+    @cmdln.option('', '--csv', action='store_true',
+                        help='generate output in CSV (separated by |)')
+    @cmdln.option('', '--xml', action='store_true',
+                        help='generate output in XML')
     def do_rlog(self, subcmd, opts, prj, pkg):
         """${cmd_name}: Shows the commit log of a remote package
 
@@ -2244,7 +2258,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
-        print '\n'.join(get_commitlog(apiurl, prj, pkg, rev))
+        format = 'text'
+        if opts.csv:
+            format = 'csv'
+        if opts.xml:
+            format = 'xml'
+
+        print '\n'.join(get_commitlog(apiurl, prj, pkg, rev, format))
 
 
     @cmdln.option('-f', '--failed', action='store_true',

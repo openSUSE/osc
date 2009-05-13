@@ -2964,13 +2964,16 @@ def print_jobhistory(apiurl, prj, current_package, platform, arch):
         print '%s  %-50s %-16s %-16s %s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild)
 
 
-def get_commitlog(apiurl, prj, package, revision):
+def get_commitlog(apiurl, prj, package, revision, format = 'text'):
     import time, locale
     u = makeurl(apiurl, ['source', prj, package, '_history'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
     r = []
+    if format == 'xml':
+        r.append('<?xml version="1.0"?>')
+        r.append('<log>')
     revisions = root.findall('revision')
     revisions.reverse()
     for node in revisions:
@@ -2996,12 +2999,28 @@ def get_commitlog(apiurl, prj, package, revision):
         t = time.localtime(int(node.find('time').text))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
-        s = '-' * 76 + \
-            '\nr%s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version) + \
-            '\n' + comment
-        r.append(s)
+        if format == 'csv':
+            s = '%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version, 
+                comment.replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'))
+            r.append(s)
+        elif format == 'xml':
+            r.append('<logentry')
+            r.append('   revision="%s">' % rev)
+            r.append('<author>%s</author>' % user)
+            r.append('<date>%s</date>' % t)
+            r.append('<msg>%s</msg>' % 
+                comment.replace('&', '&amp;').replace('<', '&gt;').replace('>', '&lt;'))
+            r.append('</logentry>')
+        else:
+            s = '-' * 76 + \
+                '\nr%s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version) + \
+                '\n' + comment
+            r.append(s)
 
-    r.append('-' * 76)
+    if format not in ['csv', 'xml']:
+        r.append('-' * 76)
+    if format == 'xml':
+        r.append('</log>')
     return r
 
 
