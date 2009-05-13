@@ -2167,6 +2167,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             
 
+    @cmdln.option('', '--csv', action='store_true',
+                        help='generate output in CSV (separated by |)')
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, platform, arch):
         """${cmd_name}: Shows the build history of a package
@@ -2183,8 +2185,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
 
-        print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch))
+        format = 'text'
+        if opts.csv:
+            format = 'csv'
 
+        print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch, format))
+
+    @cmdln.option('', '--csv', action='store_true',
+                        help='generate output in CSV (separated by |)')
     @cmdln.alias('jobhist')
     def do_jobhistory(self, subcmd, opts, platform, arch):
         """${cmd_name}: Shows the job history of a project
@@ -2205,7 +2213,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pass
         apiurl = store_read_apiurl(wd)
 
-        print_jobhistory(apiurl, project, package, platform, arch)
+        format = 'text'
+        if opts.csv:
+            format = 'csv'
+
+        print_jobhistory(apiurl, project, package, platform, arch, format)
 
 
     @cmdln.option('-r', '--revision', metavar='rev',

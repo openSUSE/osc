@@ -2908,7 +2908,7 @@ def get_buildconfig(apiurl, prj, package, platform, arch):
     return f.read()
 
 
-def get_buildhistory(apiurl, prj, package, platform, arch):
+def get_buildhistory(apiurl, prj, package, platform, arch, format = 'text'):
     import time
     u = makeurl(apiurl, ['build', prj, platform, arch, package, '_history'])
     f = http_GET(u)
@@ -2923,13 +2923,17 @@ def get_buildhistory(apiurl, prj, package, platform, arch):
         t = time.localtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
-        r.append('%s   %s %6d    %s.%d' % (t, srcmd5, rev, versrel, bcnt))
+        if format == 'csv':
+            r.append('%s|%s|%d|%s.%d' % (t, srcmd5, rev, versrel, bcnt))
+        else:
+            r.append('%s   %s %6d    %s.%d' % (t, srcmd5, rev, versrel, bcnt))
 
-    r.insert(0, 'time                  srcmd5                              rev   vers-rel.bcnt')
+    if format == 'text':
+        r.insert(0, 'time                  srcmd5                              rev   vers-rel.bcnt')
 
     return r
 
-def print_jobhistory(apiurl, prj, current_package, platform, arch):
+def print_jobhistory(apiurl, prj, current_package, platform, arch, format = 'text'):
     import time
     if current_package:
         u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'], "package=%s" % (current_package))
@@ -2938,7 +2942,8 @@ def print_jobhistory(apiurl, prj, current_package, platform, arch):
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
-    print "time                 package                                            reason           code              build time"
+    if format == 'text':
+        print "time                 package                                            reason           code              build time"
     for node in root.findall('jobhist'):
         package = node.get('package')
         reason = node.get('reason')
@@ -2960,8 +2965,11 @@ def print_jobhistory(apiurl, prj, current_package, platform, arch):
             waitbuild = "%2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
         else:
             waitbuild = "    %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
-
-        print '%s  %-50s %-16s %-16s %s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild)
+        
+        if format == 'csv':
+            print '%s|%s|%s|%s|%s' % (endtime, package, reason, code, waitbuild)
+        else:
+            print '%s  %-50s %-16s %-16s %s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild)
 
 
 def get_commitlog(apiurl, prj, package, revision, format = 'text'):
