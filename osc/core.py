@@ -2486,7 +2486,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
             root.remove(dp)
     return ET.tostring(root)
 
-def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
+def link_pac(src_project, src_package, dst_project, dst_package, rev='', cicount=''):
     """
     create a linked package
      - "src" is the original package
@@ -2512,9 +2512,14 @@ def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
     else:
         rev = ''
 
+    if cicount:
+        cicount = 'cicount="%s"' % cicount
+    else:
+        cicount = ''
+
     print 'Creating _link...',
     link_template = """\
-<link project="%s" package="%s" %s>
+<link project="%s" package="%s" %s %s>
 <patches>
   <!-- <apply name="patch" /> apply a patch on the source directory  -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
@@ -2522,7 +2527,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, rev=''):
   <!-- <delete>filename</delete> delete a file -->
 </patches>
 </link>
-""" % (src_project, src_package, rev)
+""" % (src_project, src_package, rev, cicount)
 
     u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
