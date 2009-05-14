@@ -5,8 +5,15 @@ import distutils.command.build
 import distutils.command.install_data
 import os.path
 import osc.core
+import sys
 from osc import commandline
 from osc import babysitter
+# optional support for py2exe
+try:
+    import py2exe
+    HAVE_PY2EXE = True
+except:
+    HAVE_PY2EXE = False
 
 class build_osc(distutils.command.build.build, object):
     """
@@ -32,24 +39,35 @@ class build_osc(distutils.command.build.build, object):
         super(build_osc, self).run()
         self.build_man_page()
 
-setup(name='osc',
-      version=osc.core.__version__,
-      description='openSUSE (buildsystem) commander',
-      long_description='Commandline client for the openSUSE Build Service, which allows to access repositories in the openSUSE Build Service in similar way as Subversion repositories.',
-      author='openSUSE project',
-      author_email='opensuse-buildservice@opensuse.org',
-      license='GPL',
-      platforms = ['Linux'],
-      keywords = ['openSUSE', 'SUSE', 'RPM', 'build', 'buildservice'],
-      url='https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/',
+addparams = {}
+if HAVE_PY2EXE:
+    addparams['console'] = [{'script': 'osc-wrapper.py', 'icon_resources': [(1, 'osc.ico')]}]
+    addparams['zipfile'] = 'shared.lib'
+    addparams['options'] = {'py2exe': { 'optimize': 2, 'compressed': True }}
 
-      packages=['osc', 'osc.util'],
-      scripts=['osc_hotshot.py', 'osc-wrapper.py'],
-      data_files=[(os.path.join('share','man','man1'), [os.path.join('build', 'osc.1.gz')])],
+data_files = []
+if sys.platform != 'win32':
+    data_files.append((os.path.join('share','man','man1'), [os.path.join('build', 'osc.1.gz')]))
+
+setup(name='osc',
+      version = osc.core.__version__,
+      description = 'openSUSE commander',
+      long_description = 'Command-line client for the openSUSE Build Service, which allows to access repositories in the openSUSE Build Service in similar way as Subversion repositories.',
+      author = 'openSUSE project',
+      author_email = 'opensuse-buildservice@opensuse.org',
+      license = 'GPL',
+      platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME'],
+      keywords = ['openSUSE', 'SUSE', 'RPM', 'build', 'buildservice'],
+      url = 'http://en.opensuse.org/Build_Service/CLI',
+      download_url = 'https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/',
+
+      packages = ['osc', 'osc.util'],
+      scripts = ['osc_hotshot.py', 'osc-wrapper.py'],
+      data_files = data_files,
 
       # Override certain command classes with our own ones
       cmdclass = {
         'build': build_osc,
         },
+      **addparams
      )
-
