@@ -2594,7 +2594,9 @@ def copy_pac(src_apiurl, src_project, src_package,
              client_side_copy = False,
              keep_maintainers = False,
              keep_develproject = False,
-             expand = False):
+             expand = False,
+             revision = None,
+             comment = None):
     """
     Create a copy of a package.
 
@@ -2617,6 +2619,10 @@ def copy_pac(src_apiurl, src_project, src_package,
         query = {'cmd': 'copy', 'oproject': src_project, 'opackage': src_package }
         if expand:
             query['expand'] = '1'
+        if revision:
+            query['orev'] = revision
+        if comment:
+            query['comment'] = comment
         u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
         f = http_POST(u)
         return f.read()
@@ -2628,10 +2634,11 @@ def copy_pac(src_apiurl, src_project, src_package,
         os.chdir(tmpdir)
         for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand):
             print '  ', n
-            get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n)
+            get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n, revision=revision)
             u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)])
             http_PUT(u, file = n)
             os.unlink(n)
+        #FIXME: add comment when doing the final commit (and no commits for each file)
         os.rmdir(tmpdir)
         return 'Done.'
 

@@ -872,8 +872,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='keep original maintainers. Default is remove all and replace with the one calling the script.')
     @cmdln.option('-d', '--keep-develproject', action='store_true',
                         help='keep develproject tag in the package metadata')
+    @cmdln.option('-r', '--revision', metavar='rev',
+      	            	help='link the specified revision.')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
     @cmdln.option('-e', '--expand', action='store_true',
                         help='if the source package is a link then copy the expanded version of the link')
     def do_copypac(self, subcmd, opts, *args):
@@ -923,12 +927,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if src_apiurl != dst_apiurl:
             opts.client_side_copy = True
 
+        rev, dummy = parseRevisionOption(opts.revision)
+
+        if opts.message:
+            comment=opts.comment
+	else:
+	    if not rev:
+                rev = show_upstream_rev(src_apiurl, src_project, src_package);
+	    comment='osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
+
         r = copy_pac(src_apiurl, src_project, src_package, 
                      dst_apiurl, dst_project, dst_package,
                      client_side_copy=opts.client_side_copy,
                      keep_maintainers=opts.keep_maintainers,
                      keep_develproject=opts.keep_develproject,
-                     expand=opts.expand)
+                     expand=opts.expand,
+                     revision=rev,
+                     comment=comment)
         print r
 
 
