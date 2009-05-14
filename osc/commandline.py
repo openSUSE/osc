@@ -1872,6 +1872,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 
     @cmdln.alias('bl')
+    @cmdln.option('-s', '--start', metavar='START',
+                    help='get log starting from the offset')
     def do_buildlog(self, subcmd, opts, platform, arch):
         """${cmd_name}: Shows the build log of a package
 
@@ -1891,7 +1893,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
 
-        print_buildlog(apiurl, project, package, platform, arch)
+        offset=0
+        if opts.start:
+            offset = int(opts.start)
+
+        print_buildlog(apiurl, project, package, platform, arch, offset)
 
 
     @cmdln.alias('rbl')
