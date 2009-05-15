@@ -1753,6 +1753,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print '\n'.join(get_platforms(conf.config['apiurl']))
 
 
+    @cmdln.option('-l', '--last-build', action='store_true',
+                        help='show last build results (succeeded/failed/unknown)')
+    @cmdln.option('-r', '--repo', action='append',
+                        help='Show results only for specified repo(s)')
+    @cmdln.option('-a', '--arch', action='append',
+                        help='Show results only for specified architecture(s)')
     def do_results_meta(self, subcmd, opts, *args):
         """${cmd_name}: Shows raw build results of a package
 
@@ -1768,12 +1774,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = findpacs(args)
 
         for pac in pacs:
-            print ''.join(show_results_meta(pac.apiurl, pac.prjname, package=pac.name))
+            print ''.join(show_results_meta(pac.apiurl, pac.prjname, pac.name, opts.last_build, opts.repo, opts.arch))
 
                 
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
+    @cmdln.option('-r', '--repo', action='append',
+                        help='Show results only for specified repo(s)')
+    @cmdln.option('-a', '--arch', action='append',
+                        help='Show results only for specified architecture(s)')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
@@ -1787,11 +1797,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = findpacs(args)
 
         for pac in pacs:
-            print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name, opts.last_build))
+            print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name, opts.last_build, opts.repo, opts.arch))
 
 
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
+    @cmdln.option('-r', '--repo', action='append',
+                        help='Show results only for specified repo(s)')
+    @cmdln.option('-a', '--arch', action='append',
+                        help='Show results only for specified architecture(s)')
     def do_rresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a remote package
 
@@ -1809,7 +1823,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = conf.config['apiurl']
-        print '\n'.join(get_results(apiurl, args[0], args[1], opts.last_build))
+        print '\n'.join(get_results(apiurl, args[0], args[1], opts.last_build, opts.repo, opts.arch))
 
                 
     @cmdln.option('-q', '--hide-legend', action='store_true',
