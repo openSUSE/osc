@@ -329,7 +329,7 @@ def main(opts, argv):
     tempdir = '/tmp'
     if sys.platform[:3] == 'win':
         tempdir = os.getenv('TEMP')
-    bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = tempfile)
+    bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = tempdir)
     try:
         bi_text = ''.join(get_buildinfo(apiurl, 
                                         prj,
