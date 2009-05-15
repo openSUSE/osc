@@ -15,7 +15,7 @@
 - osc can now store credentials in Gnome keyring if it is available
 - new support for osc linkpac to specify cicount attribute
 - new log/rlog output formats (CSV and XML)
-- new jobhistory/buildhistory output format (CSV)
+- new jobhistory/buildhistory/search output format (CSV)
 - new option to fetch buildlogs starting at given offset
 - new option for copypac
   * -r to specify source revision

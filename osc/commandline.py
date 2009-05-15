@@ -2548,6 +2548,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show more information')
     @cmdln.option('-i', '--involved', action='store_true',
                         help='show projects/packages where given person is involved')
+    @cmdln.option('--csv', action='store_true',
+                        help='generate output in CSV (separated by |)')
     def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
 
@@ -2604,10 +2606,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     headline.append('# Title')
                 if opts.repos_baseurl:
                     headline.append('# URL')
-                if len(search_for) > 1:
-                    print '#' * 68
-                print 'matches for \'%s\' in %ss:\n' % (search_term, kind)
-                for row in build_table(len(headline), result, headline, 2):
+                if not opts.csv:
+                    if len(search_for) > 1:
+                        print '#' * 68
+                    print 'matches for \'%s\' in %ss:\n' % (search_term, kind)
+                for row in build_table(len(headline), result, headline, 2, csv = opts.csv):
                     print row
             else:
                print 'No matches found for \'%s\' in %ss' % (search_term, kind)
