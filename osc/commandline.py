@@ -1753,12 +1753,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print '\n'.join(get_platforms(conf.config['apiurl']))
 
 
-    @cmdln.option('-l', '--last-build', action='store_true',
-                        help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append', default = [],
-                        help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append', default = [],
-                        help='Show results only for specified architecture(s)')
+    @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):
         """${cmd_name}: Shows raw build results of a package
 
@@ -1769,12 +1764,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        print """results_meta is obsolete !
 
-        args = parseargs(args)
-        pacs = findpacs(args)
-
-        for pac in pacs:
-            print ''.join(show_results_meta(pac.apiurl, pac.prjname, pac.name, opts.last_build, opts.repo, opts.arch))
+                 Please use either
+                   osc results --xml       for checked out packages or projects
+                 or
+                   osc rresults --xml      for server side operations."""
+        sys.exit(1)
 
                 
     @cmdln.alias('r')
@@ -1784,6 +1780,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified repo(s)')
     @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
+    @cmdln.option('', '--xml', action='store_true',
+                        help='generate output in XML (former results_meta)')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
@@ -1796,8 +1794,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
         pacs = findpacs(args)
 
+        if not opts.xml:
+            func = get_results
+            delim = '\n'
+        else:
+            func = show_results_meta
+            delim = ''
+
         for pac in pacs:
-            print '\n'.join(get_results(pac.apiurl, pac.prjname, pac.name, opts.last_build, opts.repo, opts.arch))
+            print delim.join(func(pac.apiurl, pac.prjname, pac.name, opts.last_build, opts.repo, opts.arch))
 
 
     @cmdln.option('-l', '--last-build', action='store_true',
@@ -1806,6 +1811,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified repo(s)')
     @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
+    @cmdln.option('', '--xml', action='store_true',
+                        help='generate output in XML (former results_meta)')
     def do_rresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a remote package
 
@@ -1821,9 +1828,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too few arguments.')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
+        
+        if not opts.xml:
+            func = get_results
+            delim = '\n'
+        else:
+            func = show_results_meta
+            delim = ''
 
         apiurl = conf.config['apiurl']
-        print '\n'.join(get_results(apiurl, args[0], args[1], opts.last_build, opts.repo, opts.arch))
+        print delim.join(func(apiurl, args[0], args[1], opts.last_build, opts.repo, opts.arch))
 
                 
     @cmdln.option('-q', '--hide-legend', action='store_true',
