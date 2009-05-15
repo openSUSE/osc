@@ -2547,7 +2547,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
     @cmdln.option('-i', '--involved', action='store_true',
-                        help='show involved projects/packages')
+                        help='show projects/packages where given person is involved')
     def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
 
