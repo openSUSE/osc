@@ -3231,7 +3231,7 @@ def build_xpath_predicate(search_list, search_term, exact_matches):
     predicate.append(']')
     return predicate
 
-def build_table(col_num, data = [], headline = [], width=1):
+def build_table(col_num, data = [], headline = [], width=1, csv = False):
     """
     This method builds a simple table.
     Example1: build_table(2, ['foo', 'bar', 'suse', 'osc'], ['col1', 'col2'], 2)
@@ -3243,7 +3243,7 @@ def build_table(col_num, data = [], headline = [], width=1):
     longest_col = []
     for i in range(col_num):
         longest_col.append(0)
-    if headline:
+    if headline and not csv:
         data[0:0] = headline
     # find longest entry in each column
     i = 0
@@ -3263,19 +3263,21 @@ def build_table(col_num, data = [], headline = [], width=1):
     i = 0
     for itm in data:
         if i % col_num == 0:
-            if row:
-                table.append(''.join(row))
             i = 0
-            row = [itm.ljust(longest_col[i])]
+            row = []
+            table.append(row)
+        # there is no need to justify the entries of the last column
+        # or when generating csv
+        if i == col_num -1 or csv:
+            row.append(itm)
         else:
-            # there is no need to justify the entries of the last column
-            if i == col_num -1:
-                row.append(itm)
-            else:
-                row.append(itm.ljust(longest_col[i]))
+            row.append(itm.ljust(longest_col[i]))
         i += 1
-    table.append(''.join(row))
-    return table
+    if csv:
+        separator = '|'
+    else:
+        separator = ''
+    return [separator.join(row) for row in table]
 
 def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False):
     """
