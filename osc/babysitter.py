@@ -72,7 +72,7 @@ def run(prg):
         return 1
 
     except oscerr.LinkExpandError, e:
-        print >>sys.stderr, 'Link cannot be expanded:\n', e
+        print >>sys.stderr, 'Link "%s/%s" cannot be expanded:\n' % (e.prj, e.pac), e.msg
         print >>sys.stderr, 'Use "osc repairlink" to fix merge conflicts.\n'
         return 1
 

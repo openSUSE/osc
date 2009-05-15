@@ -68,9 +68,18 @@ class WorkingCopyOutdated(OscBaseError):
                'Looks as if you need to update it first.' \
                     % (self[0], self[1], self[2]))
 
+class PackageError(OscBaseError):
+    """Base class for all Package related exceptions"""
+    def __init__(self, prj, pac):
+        OscBaseError.__init__(self)
+        self.prj = prj
+        self.pac = pac
 
-class LinkExpandError(OscBaseError):
+class LinkExpandError(PackageError):
     """Exception raised when source link expansion fails"""
+    def __init__(self, prj, pac, msg):
+        PackageError.__init__(self, prj, pac)
+        self.msg = msg
 
 class OscIOError(OscBaseError):
     def __init__(self, e, msg):
@@ -80,13 +89,6 @@ class OscIOError(OscBaseError):
 
 class SignalInterrupt(Exception):
     """Exception raised on SIGTERM and SIGHUP."""
-
-class PackageError(OscBaseError):
-    """Base class for all Package related exceptions"""
-    def __init__(self, prj, pac):
-        OscBaseError.__init__(self)
-        self.prj = prj
-        self.pac = pac
 
 class PackageExists(PackageError):
     """

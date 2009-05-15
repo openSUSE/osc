@@ -1906,7 +1906,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     li.read(li_node)
 
     if li.haserror():
-        raise oscerr.LinkExpandError, li.error
+        raise oscerr.LinkExpandError(prj, pac, li.error)
     return li.xsrcmd5
 
 

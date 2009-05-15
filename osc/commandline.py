@@ -1617,7 +1617,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print 'Updating %s' % p.name
 
             if opts.expand_link and p.haslinkerror() and not p.islinkrepair():
-                raise oscerr.LinkExpandError(p.linkerror())
+                raise oscerr.LinkExpandError(p.prjname, p.name, p.linkerror())
 
             if not rev:
                 if opts.expand_link and p.islink() and not p.isexpanded():
