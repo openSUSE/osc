@@ -1755,9 +1755,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append',
+    @cmdln.option('-r', '--repo', action='append', default = [],
                         help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append',
+    @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
     def do_results_meta(self, subcmd, opts, *args):
         """${cmd_name}: Shows raw build results of a package
@@ -1780,9 +1780,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append',
+    @cmdln.option('-r', '--repo', action='append', default = [],
                         help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append',
+    @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
@@ -1802,9 +1802,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append',
+    @cmdln.option('-r', '--repo', action='append', default = [],
                         help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append',
+    @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
     def do_rresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a remote package
