@@ -482,6 +482,8 @@ class Osc(cmdln.Cmdln):
                         help='only list requests in one of the comma separated given states [default=new]')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
+    @cmdln.option('-M', '--mine', action='store_true', 
+                        help='only show requests created by yourself')
     @cmdln.alias("sr")
     @cmdln.alias("submitrequest")
     def do_submitreq(self, subcmd, opts, *args):
@@ -526,7 +528,7 @@ class Osc(cmdln.Cmdln):
             osc submitreq create [-m TEXT] 
             osc submitreq create [-m TEXT] DESTPRJ [DESTPKG]
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
-            osc submitreq list [PRJ [PKG]]
+            osc submitreq list [-M] [PRJ [PKG]]
             osc submitreq log ID
             osc submitreq show [-d] [-b] ID
             osc submitreq accept [-m TEXT] ID
@@ -603,12 +605,13 @@ class Osc(cmdln.Cmdln):
             if len(args) > 0:
                 project = args[0]
             else:
-                project = store_read_project(os.curdir)
-                apiurl = store_read_apiurl(os.curdir)
-                try:
-                    package = store_read_package(os.curdir)
-                except oscerr.NoWorkingCopy:
-                    pass
+                if not opts.mine:
+                    project = store_read_project(os.curdir)
+                    apiurl = store_read_apiurl(os.curdir)
+                    try:
+                            package = store_read_package(os.curdir)
+                    except oscerr.NoWorkingCopy:
+                        pass
 
             if len(args) > 1:
                 package = args[1]
@@ -661,9 +664,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # list
         elif cmd == 'list':
             state_list = opts.state.split(',')
-
+            who = conf.get_apiurl_usr(apiurl) if opts.mine else ''
+            
             results = get_submit_request_list(apiurl,
-                                             project, package, state_list)
+                                             project, package, who, state_list)
 
             results.sort(reverse=True)
 

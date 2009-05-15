@@ -2067,12 +2067,20 @@ def change_submit_request_state(apiurl, reqid, newstate, message=''):
     return f.read()
 
 
-def get_submit_request_list(apiurl, project, package, req_state=('new',)):
-    match = 'submit/target/@project=\'%s\'' % quote_plus(project)
+def get_submit_request_list(apiurl, project, package, req_who, req_state=('new',) ):
+    match = ''
+    if project:
+        if len(match): match += '%20and%20'
+        match += 'submit/target/@project=\'%s\'' % quote_plus(project)
     if package:
-        match += '%20and%20' + 'submit/target/@package=\'%s\'' % quote_plus(package)
+        if len(match): match += '%20and%20'
+        match += 'submit/target/@package=\'%s\'' % quote_plus(package)
     for state in req_state:
-        match += '%20and%20' + 'state/@name=\'%s\'' % quote_plus(state)
+        if len(match): match += '%20and%20'
+        match += 'state/@name=\'%s\'' % quote_plus(state)
+    if req_who:
+        if len(match): match += '%20and%20'
+        match += 'state/@who=\'%s\'' % quote_plus(req_who)
 
     u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
     f = http_GET(u)
