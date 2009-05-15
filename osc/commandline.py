@@ -580,7 +580,7 @@ class Osc(cmdln.Cmdln):
                         dst_package = src_package
                 else:
                     sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
-                            'Please provide it the target via commandline arguments.' % p.name)
+                             'Please provide it the target via commandline arguments.' % p.name)
 
                 modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
                 if len(modified) > 0:
@@ -604,14 +604,13 @@ class Osc(cmdln.Cmdln):
             project = None
             if len(args) > 0:
                 project = args[0]
-            else:
-                if not opts.mine:
-                    project = store_read_project(os.curdir)
-                    apiurl = store_read_apiurl(os.curdir)
-                    try:
-                            package = store_read_package(os.curdir)
-                    except oscerr.NoWorkingCopy:
-                        pass
+            elif not opts.mine:
+                project = store_read_project(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
+                try:
+                    package = store_read_package(os.curdir)
+                except oscerr.NoWorkingCopy:
+                    pass
 
             if len(args) > 1:
                 package = args[1]
@@ -667,7 +666,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             who = conf.get_apiurl_usr(apiurl) if opts.mine else ''
             
             results = get_submit_request_list(apiurl,
-                                             project, package, who, state_list)
+                                              project, package, who, state_list)
 
             results.sort(reverse=True)
 
