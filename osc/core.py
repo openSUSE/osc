@@ -1114,7 +1114,10 @@ rev: %s
         """
 
         import tempfile
-        (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = '/tmp')
+        tempdir = '/tmp'
+        if sys.platform[:3] == 'win':
+            tempdir = os.getenv('TEMP')
+        (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = tempdir)
 
         m = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
 
@@ -1731,7 +1734,10 @@ class metafile:
         self.url = url
         self.change_is_required = change_is_required
 
-        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext, dir = '/tmp')
+        tempdir = '/tmp'
+        if sys.platform[:3] == 'win':
+            tempdir = os.getenv('TEMP')
+        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext, dir = tempdir)
 
         f = os.fdopen(fd, 'w')
         f.write(''.join(input))
@@ -1835,7 +1841,10 @@ def edit_meta(metatype,
     f=metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:
-        editor = os.getenv('EDITOR', default='vim')
+        if sys.platform[:3] != 'win':
+            editor = os.getenv('EDITOR', default='vim')
+        else:
+            editor = os.getenv('EDITOR', default='notepad')
         while 1:
             subprocess.call('%s %s' % (editor, f.filename), shell=True)
             if change_is_required == True:
@@ -1965,7 +1974,10 @@ def read_meta_from_spec(specfile, *args):
 def edit_message(footer='', template=''):
     delim = '--This line, and those below, will be ignored--\n\n' + footer
     import tempfile
-    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff', dir = '/tmp')
+    tempdir = '/tmp'
+    if sys.platform[:3] == 'win':
+        tempdir = os.getenv('TEMP')
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff', dir = tempdir)
     f = os.fdopen(fd, 'w')
     if template != '':
         f.write(template)
@@ -1974,7 +1986,10 @@ def edit_message(footer='', template=''):
     f.close()
     mtime_orig = os.stat(filename).st_mtime
 
-    editor = os.getenv('EDITOR', default='vim')
+    if sys.platform[:3] != 'win':
+        editor = os.getenv('EDITOR', default='vim')
+    else:
+        editor = os.getenv('EDITOR', default='notepad')
     while 1:
         subprocess.call('%s %s' % (editor, filename), shell=True)
         mtime = os.stat(filename).st_mtime
@@ -2153,7 +2168,10 @@ def get_binary_file(apiurl, prj, repo, arch,
     binsize = int(f.headers['content-length'])
 
     import tempfile
-    (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc', dir = '/tmp')
+    tempdir = '/tmp'
+    if sys.platform[:3] == 'win':
+        tempdir = os.getenv('TEMP')
+    (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc', dir = tempdir)
     os.chmod(tmpfilename, 0644)
 
     try:
@@ -2312,7 +2330,10 @@ def make_diff(wc, revision):
                 elif state == 'D':
                     removed_files.append(file)
     else:
-        tmpdir  = tempfile.mkdtemp(revision, wc.name, '/tmp')
+        tempdir = '/tmp'
+        if sys.platform[:3] == 'win':
+            tempdir = os.getenv('TEMP')
+        tmpdir  = tempfile.mkdtemp(revision, wc.name, dir = tempdir)
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
         cmp_pac = Package(tmpdir)
@@ -2336,7 +2357,10 @@ def make_diff(wc, revision):
             cmp_pac.updatefile(file, revision)
             diff.append(get_source_file_diff(wc.absdir, file, revision, file,
                                              cmp_pac.absdir, file))
-    (fd, tmpfile) = tempfile.mkstemp(dir='/tmp')
+    tempdir = '/tmp'
+    if sys.platform[:3] == 'win':
+        tempdir = os.getenv('TEMP')
+    (fd, tmpfile) = tempfile.mkstemp(dir = tempdir)
     for file in added_files:
         diff.append(diff_hdr % file)
         if cmp_pac == None:
@@ -2350,7 +2374,10 @@ def make_diff(wc, revision):
     #        if a file is deleted via "osc rm file" we should keep the storefile.
     tmp_pac = None
     if cmp_pac == None and removed_files:
-        tmpdir  = tempfile.mkdtemp(dir='/tmp')
+        tempdir = '/tmp'
+        if sys.platform[:3] == 'win':
+            tempdir = os.getenv('TEMP')
+        tmpdir  = tempfile.mkdtemp( dir = tempdir)
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, wc.rev)
         tmp_pac = Package(tmpdir)
@@ -2432,6 +2459,9 @@ def checkout_package(apiurl, project, package,
 
     if not prj_dir:
         prj_dir = olddir
+    else:
+        if sys.platform[:3] == 'win':
+            prj_dir = prj_dir[:2] + prj_dir[2:].replace(':', ';')
  
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
@@ -2630,7 +2660,10 @@ def copy_pac(src_apiurl, src_project, src_package,
     else:
         # copy one file after the other
         import tempfile
-        tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir='/tmp')
+        tempdir = '/tmp'
+        if sys.platform[:3] == 'win':
+            tempdir = os.getenv('TEMP')
+        tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir = tempdir)
         os.chdir(tmpdir)
         for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand):
             print '  ', n
@@ -3373,10 +3406,16 @@ def delete_tmpdir(tmpdir):
     """
 
     head, tail = os.path.split(tmpdir)
-    if not head.startswith('/tmp') or not tail:
-        return False
+    if sys.platform == 'win32':
+        if head.upper().startswith(os.getenv('TEMP').upper) and tail:
+            try:
+                os.rmdir(tmpdir)
+            except:
+                return false
     else:
-        return delete_dir(tmpdir)
+        if head.startswith('/tmp') and tail:
+            return delete_dir(tmpdir)
+    return False
 
 def delete_storedir(store_dir):
     """

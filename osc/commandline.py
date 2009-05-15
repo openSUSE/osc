@@ -1265,26 +1265,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              rev, expand_link=expand_link, prj_dir=project_dir)
 
         elif project:
-            if os.path.exists(project):
+            prj_dir = project
+            if sys.platform[:3] == 'win':
+                prj_dir = prj_dir.replace(':', ';')
+            if os.path.exists(prj_dir):
                 sys.exit('osc: project \'%s\' already exists' % project)
 
             # check if the project does exist (show_project_meta will throw an exception)
             show_project_meta(apiurl, project)
 
-            init_project_dir(apiurl, project, project)
-            print statfrmt('A', project)
+            init_project_dir(apiurl, prj_dir, project)
+            print statfrmt('A', prj_dir)
 
             # all packages
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package, 
-                                     expand_link=expand_link, prj_dir=project)
+                                     expand_link = expand_link, prj_dir = prj_dir)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, 
-                                     expand_link=False, prj_dir=project)
+                                     expand_link = False, prj_dir = prj_dir)
 
         else:
             raise oscerr.WrongArgs('Missing argument.\n\n' \

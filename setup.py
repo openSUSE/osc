@@ -41,12 +41,12 @@ class build_osc(distutils.command.build.build, object):
 
 addparams = {}
 if HAVE_PY2EXE:
-    addparams['console'] = [{'script': 'osc-wrapper.py', 'icon_resources': [(1, 'osc.ico')]}]
+    addparams['console'] = [{'script': 'osc-wrapper.py', 'dest_base': 'osc', 'icon_resources': [(1, 'osc.ico')]}]
     addparams['zipfile'] = 'shared.lib'
-    addparams['options'] = {'py2exe': { 'optimize': 2, 'compressed': True }}
+    addparams['options'] = {'py2exe': { 'optimize': 0, 'compressed': True, 'packages': ['xml.etree', 'StringIO', 'gzip'] }}
 
 data_files = []
-if sys.platform != 'win32':
+if sys.platform[:3] != 'win':
     data_files.append((os.path.join('share','man','man1'), [os.path.join('build', 'osc.1.gz')]))
 
 setup(name='osc',

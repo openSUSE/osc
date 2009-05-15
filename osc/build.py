@@ -326,7 +326,10 @@ def main(opts, argv):
 
 
     print 'Getting buildinfo from server'
-    bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = '/tmp')
+    tempdir = '/tmp'
+    if sys.platform[:3] == 'win':
+        tempdir = os.getenv('TEMP')
+    bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = tempfile)
     try:
         bi_text = ''.join(get_buildinfo(apiurl, 
                                         prj,
@@ -440,7 +443,10 @@ def main(opts, argv):
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
-    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = '/tmp')
+    tempdir = '/tmp'
+    if sys.platform[:3] == 'win':
+        tempdir = os.getenv('TEMP')
+    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = tempdir)
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
     os.fsync(rpmlist_file)
@@ -448,7 +454,10 @@ def main(opts, argv):
 
 
     print 'Getting buildconfig from server'
-    bc_file = NamedTemporaryFile(prefix='buildconfig.', dir = '/tmp')
+    tempdir = '/tmp'
+    if sys.platform[:3] == 'win':
+        tempdir = os.getenv('TEMP')
+    bc_file = NamedTemporaryFile(prefix='buildconfig.', dir = tempdir)
     bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
     bc_file.flush()
 
