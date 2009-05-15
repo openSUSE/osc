@@ -3411,7 +3411,7 @@ def delete_tmpdir(tmpdir):
             try:
                 os.rmdir(tmpdir)
             except:
-                return false
+                return False
     else:
         if head.startswith('/tmp') and tail:
             return delete_dir(tmpdir)
