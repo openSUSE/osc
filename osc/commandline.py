@@ -663,7 +663,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # list
         elif cmd == 'list':
             state_list = opts.state.split(',')
-            who = conf.get_apiurl_usr(apiurl) if opts.mine else ''
+            who = ''
+            if opts.mine:
+                who = conf.get_apiurl_usr(apiurl)
             
             results = get_submit_request_list(apiurl,
                                               project, package, who, state_list)
