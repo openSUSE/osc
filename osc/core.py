@@ -2067,7 +2067,7 @@ def change_submit_request_state(apiurl, reqid, newstate, message=''):
     return f.read()
 
 
-def get_submit_request_list(apiurl, project, package, req_who, req_state=('new',) ):
+def get_submit_request_list(apiurl, project, package, req_who='', req_state=('new',) ):
     match = ''
     if project:
         if len(match): match += '%20and%20'
