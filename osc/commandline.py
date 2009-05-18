@@ -48,7 +48,7 @@ class Osc(cmdln.Cmdln):
     ${command_list}
     ${help_list}
     global ${option_list}
-    For additional information, see 
+    For additional information, see
     * http://www.opensuse.org/Build_Service_Tutorial
     * http://www.opensuse.org/Build_Service/CLI
 
@@ -136,10 +136,10 @@ class Osc(cmdln.Cmdln):
 
 
     def do_init(self, subcmd, opts, project, package=None):
-        """${cmd_name}: Initialize a directory as working copy 
+        """${cmd_name}: Initialize a directory as working copy
 
         Initialize an existing directory to be a working copy of an
-        (already existing) buildservice project/package. 
+        (already existing) buildservice project/package.
 
         (This is the same as checking out a package and then copying sources
         into the directory. It does NOT create a new package. To create a
@@ -150,13 +150,13 @@ class Osc(cmdln.Cmdln):
         To get a working copy of a package (e.g. for building it or working on
         it, you would normally use the checkout command. Use "osc help
         checkout" to get help for it.
-        
-        usage: 
+
+        usage:
             osc init PRJ
             osc init PRJ PAC
         ${cmd_option_list}
         """
-        
+
         if not package:
             init_project_dir(conf.config['apiurl'], os.curdir, project)
             print 'Initializing %s (Project: %s)' % (os.curdir, project)
@@ -191,7 +191,7 @@ class Osc(cmdln.Cmdln):
            ls -b Apache               # list all binaries of a project
            ls Apache apache2          # list source files of package of a project
            ls Apache apache2 <file>   # list <file> if this file exists
-           ls -v Apache apache2       # verbosely list source files of package 
+           ls -v Apache apache2       # verbosely list source files of package
 
         With --verbose, the following fields will be shown for each item:
            MD5 hash of file
@@ -253,8 +253,8 @@ class Osc(cmdln.Cmdln):
                 print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
 
             elif len(args) == 2 or len(args) == 3:
-                l = meta_get_filelist(conf.config['apiurl'], 
-                                      project, 
+                l = meta_get_filelist(conf.config['apiurl'],
+                                      project,
                                       package,
                                       verbose=opts.verbose,
                                       expand=opts.expand,
@@ -271,7 +271,7 @@ class Osc(cmdln.Cmdln):
                     if fname:
                         if fname in l:
                             print fname
-                        else:    
+                        else:
                             print 'file \'%s\' does not exist' % fname
                     else:
                         print '\n'.join(l)
@@ -363,7 +363,7 @@ class Osc(cmdln.Cmdln):
                 if opts.edit or opts.file:
                     raise oscerr.WrongArgs('A pattern file argument is required.')
 
-        # show 
+        # show
         if not opts.edit and not opts.file and not opts.delete:
             if cmd == 'prj':
                 sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
@@ -388,31 +388,31 @@ class Osc(cmdln.Cmdln):
         # edit
         if opts.edit and not opts.file:
             if cmd == 'prj':
-                edit_meta(metatype='prj', 
+                edit_meta(metatype='prj',
                           edit=True,
                           path_args=quote_plus(project),
                           template_args=({
                                   'name': project,
                                   'user': conf.config['user']}))
             elif cmd == 'pkg':
-                edit_meta(metatype='pkg', 
+                edit_meta(metatype='pkg',
                           edit=True,
                           path_args=(quote_plus(project), quote_plus(package)),
                           template_args=({
                                   'name': package,
                                   'user': conf.config['user']}))
             elif cmd == 'prjconf':
-                edit_meta(metatype='prjconf', 
+                edit_meta(metatype='prjconf',
                           edit=True,
                           path_args=quote_plus(project),
                           template_args=None)
             elif cmd == 'user':
-                edit_meta(metatype='user', 
+                edit_meta(metatype='user',
                           edit=True,
                           path_args=(quote_plus(user)),
                           template_args=({'user': user}))
             elif cmd == 'pattern':
-                edit_meta(metatype='pattern', 
+                edit_meta(metatype='pattern',
                           edit=True,
                           path_args=(project, pattern),
                           template_args=None)
@@ -429,27 +429,27 @@ class Osc(cmdln.Cmdln):
                     sys.exit('could not open file \'%s\'.' % opts.file)
 
             if cmd == 'prj':
-                edit_meta(metatype='prj', 
+                edit_meta(metatype='prj',
                           data=f,
                           edit=opts.edit,
                           path_args=quote_plus(project))
             elif cmd == 'pkg':
-                edit_meta(metatype='pkg', 
+                edit_meta(metatype='pkg',
                           data=f,
                           edit=opts.edit,
                           path_args=(quote_plus(project), quote_plus(package)))
             elif cmd == 'prjconf':
-                edit_meta(metatype='prjconf', 
+                edit_meta(metatype='prjconf',
                           data=f,
                           edit=opts.edit,
                           path_args=quote_plus(project))
             elif cmd == 'user':
-                edit_meta(metatype='user', 
+                edit_meta(metatype='user',
                           data=f,
                           edit=opts.edit,
                           path_args=(quote_plus(user)))
             elif cmd == 'pattern':
-                edit_meta(metatype='pattern', 
+                edit_meta(metatype='pattern',
                           data=f,
                           edit=opts.edit,
                           path_args=(project, pattern))
@@ -482,7 +482,7 @@ class Osc(cmdln.Cmdln):
                         help='only list requests in one of the comma separated given states [default=new]')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
-    @cmdln.option('-M', '--mine', action='store_true', 
+    @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
     @cmdln.alias("sr")
     @cmdln.alias("submitrequest")
@@ -493,7 +493,7 @@ class Osc(cmdln.Cmdln):
         on this topic.]
 
         For "create", there are two ways to use it. Either with a working copy
-        or without. If called with no arguments, osc will guess what to submit 
+        or without. If called with no arguments, osc will guess what to submit
         where. If you don't have a working copy, you can give the respective
         arguments on the commandline (see below for an example).
         Then, the DESTPAC name is optional; the source packages' name will be
@@ -525,7 +525,7 @@ class Osc(cmdln.Cmdln):
 
 
         usage:
-            osc submitreq create [-m TEXT] 
+            osc submitreq create [-m TEXT]
             osc submitreq create [-m TEXT] DESTPRJ [DESTPKG]
             osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
             osc submitreq list [-M] [PRJ [PKG]]
@@ -648,7 +648,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       ', '.join([str(i.reqid) for i in myreqs ])
                 repl = raw_input('Revoke the old requests? (y/N) ')
 
-            result = create_submit_request(apiurl, 
+            result = create_submit_request(apiurl,
                                           src_project, src_package,
                                           dst_project, dst_package,
                                           opts.message, orev=opts.revision)
@@ -666,7 +666,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             who = ''
             if opts.mine:
                 who = conf.get_apiurl_usr(apiurl)
-            
+
             results = get_submit_request_list(apiurl,
                                               project, package, who, state_list)
 
@@ -700,13 +700,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # decline
         elif cmd == 'decline':
-            r = change_submit_request_state(conf.config['apiurl'], 
+            r = change_submit_request_state(conf.config['apiurl'],
                     reqid, 'declined', opts.message or '')
             print r
 
         # accept
         elif cmd == 'accept':
-            r = change_submit_request_state(conf.config['apiurl'], 
+            r = change_submit_request_state(conf.config['apiurl'],
                     reqid, 'accepted', opts.message or '')
             print r
         # delete
@@ -728,8 +728,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("edituser")
     @cmdln.alias("usermeta")
     def do_editmeta(self, subcmd, opts, *args):
-        """${cmd_name}: 
-        
+        """${cmd_name}:
+
         Obsolete command to edit metadata. Use 'meta' now.
 
         See the help output of 'meta'.
@@ -746,11 +746,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use the specified revision.')
     def do_setlinkrev(self, subcmd, opts, *args):
         """${cmd_name}: Updates a revision number in a source link.
-        
+
         This command adds or updates a specified revision number in a source link.
         The current revision of the source is used, if no revision number is specified.
 
-        usage: 
+        usage:
             osc setlinkrev
             osc setlinkrev PROJECT PACKAGE
         ${cmd_option_list}
@@ -784,7 +784,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='link the specified revision.')
     def do_linkpac(self, subcmd, opts, *args):
         """${cmd_name}: "Link" a package to another package
-        
+
         A linked package is a clone of another package, but plus local
         modifications. It can be cross-project.
 
@@ -798,7 +798,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         See the examples in the _link file.
 
-        usage: 
+        usage:
             osc linkpac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         ${cmd_option_list}
         """
@@ -834,19 +834,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def do_aggregatepac(self, subcmd, opts, *args):
         """${cmd_name}: "Aggregate" a package to another package
-        
+
         Aggregation of a package means that the build results (binaries) of a
         package are basically copied into another project.
         This can be used to make packages available from building that are
         needed in a project but available only in a different project. Note
-        that this is done at the expense of disk space. See 
+        that this is done at the expense of disk space. See
         http://en.opensuse.org/Build_Service/Tips_and_Tricks#_link_and__aggregate
         for more information.
 
         The DESTPAC name is optional; the source packages' name will be used if
         DESTPAC is omitted.
 
-        usage: 
+        usage:
             osc aggregatepac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         ${cmd_option_list}
         """
@@ -888,8 +888,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_copypac(self, subcmd, opts, *args):
         """${cmd_name}: Copy a package
 
-        A way to copy package to somewhere else. 
-        
+        A way to copy package to somewhere else.
+
         It can be done across buildservice instances, if the -t option is used.
         In that case, a client-side copy is implied.
 
@@ -899,7 +899,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The DESTPAC name is optional; the source packages' name will be used if
         DESTPAC is omitted.
 
-        usage: 
+        usage:
             osc copypac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         ${cmd_option_list}
         """
@@ -941,7 +941,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rev = show_upstream_rev(src_apiurl, src_project, src_package);
 	    comment='osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
 
-        r = copy_pac(src_apiurl, src_project, src_package, 
+        r = copy_pac(src_apiurl, src_project, src_package,
                      dst_apiurl, dst_project, dst_package,
                      client_side_copy=opts.client_side_copy,
                      keep_maintainers=opts.keep_maintainers,
@@ -971,8 +971,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The branched package will live in
             home:USERNAME:branches:PROJECT/PACKAGE
         if nothing else specified.
-        
-        usage: 
+
+        usage:
             osc branch SOURCEPROJECT SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
@@ -1017,7 +1017,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       % (apiopt, r, package)
 
 
-         
+
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='deletes a project and its packages')
@@ -1101,6 +1101,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.alias('di')
+    @cmdln.option('-c', '--change', metavar='rev',
+                        help='the change made by revision rev (like -r rev-1:rev).'
+                             'If rev is negative this is like -r rev:rev-1.')
     @cmdln.option('-r', '--revision', metavar='rev1[:rev2]',
                         help='If rev1 is specified it will compare your working copy against '
                              'the revision (rev1) on the server. '
@@ -1113,7 +1116,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Generates a diff, comparing local changes against the repository
         server.
-        
+
         ARG, specified, is a filename to include in the diff.
 
         ${cmd_usage}
@@ -1122,8 +1125,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = parseargs(args)
         pacs = findpacs(args)
-        
-        rev1, rev2 = parseRevisionOption(opts.revision)
+
+        if opts.change:
+            try:
+                rev = int(opts.change)
+                if rev > 0:
+                    rev1 = rev - 1
+                    rev2 = rev
+                elif rev < 0:
+                    rev1 = -rev
+                    rev2 = -rev - 1
+                else:
+                    return
+            except:
+                return
+        else:
+            rev1, rev2 = parseRevisionOption(opts.revision)
         diff = ''
         for pac in pacs:
             if not rev2:
@@ -1171,7 +1188,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     def do_repourls(self, subcmd, opts, *args):
-        """${cmd_name}: Shows URLs of .repo files 
+        """${cmd_name}: Shows URLs of .repo files
 
         Shows URLs on which to access the project .repos files (yum-style
         metadata) on download.opensuse.org.
@@ -1198,7 +1215,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              'NOTE: if you checkout the complete project '
                              'this option is ignored!')
     @cmdln.option('-e', '--expand-link', action='store_true',
-                        help='if a package is a link, check out the expanded ' 
+                        help='if a package is a link, check out the expanded '
                              'sources (no-op, since this became the default)')
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is a link, check out the _link file ' \
@@ -1210,18 +1227,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: Check out content from the repository
-        
+
         Check out content from the repository server, creating a local working
         copy.
 
         When checking out a single package, the option --revision can be used
         to specify a revions of the package to be checked out.
 
-        When a package is a source link, then it will be checked out in 
-        expanded form. If --unexpand-link option is used, the checkout will 
+        When a package is a source link, then it will be checked out in
+        expanded form. If --unexpand-link option is used, the checkout will
         instead produce the raw _link file plus patches.
 
-        usage: 
+        usage:
             osc co PROJECT [PACKAGE] [FILE]
                osc co PROJECT                    # entire project
                osc co PROJECT PACKAGE            # a package
@@ -1239,11 +1256,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         project = package = filename = None
         apiurl = conf.config['apiurl']
-        try: 
+        try:
             project = project_dir = args[0]
             package = args[1]
             filename = args[2]
-        except: 
+        except:
             pass
 
         if args and len(args) == 1:
@@ -1266,7 +1283,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif package:
             if opts.current_dir: project_dir = None
 
-            checkout_package(apiurl, project, package, 
+            checkout_package(apiurl, project, package,
                              rev, expand_link=expand_link, prj_dir=project_dir)
 
         elif project:
@@ -1285,13 +1302,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # all packages
             for package in meta_get_packagelist(apiurl, project):
                 try:
-                    checkout_package(apiurl, project, package, 
+                    checkout_package(apiurl, project, package,
                                      expand_link = expand_link, prj_dir = prj_dir)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
-                    checkout_package(apiurl, project, package, 
+                    checkout_package(apiurl, project, package,
                                      expand_link = False, prj_dir = prj_dir)
 
         else:
@@ -1325,7 +1342,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           osc st <directory>
           osc st file1 file2 ...
 
-        usage: 
+        usage:
             osc status [OPTS] [PATH...]
         ${cmd_option_list}
         """
@@ -1370,7 +1387,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_add(self, subcmd, opts, *args):
         """${cmd_name}: Mark files to be added upon the next commit
 
-        usage: 
+        usage:
             osc add FILE [FILE...]
         ${cmd_option_list}
         """
@@ -1381,7 +1398,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         filenames = parseargs(args)
         addFiles(filenames)
 
-    
+
     def do_mkpac(self, subcmd, opts, *args):
         """${cmd_name}: Create a new package under version control
 
@@ -1474,7 +1491,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Upload content which is changed in your working copy, to the repository
         server.
 
-        examples: 
+        examples:
            osc ci                   # current dir
            osc ci <dir>
            osc ci file1 file2 ...
@@ -1553,7 +1570,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_update(self, subcmd, opts, *args):
         """${cmd_name}: Update a working copy
 
-        examples: 
+        examples:
 
         1. osc up
                 If the current working directory is a package, update it.
@@ -1585,11 +1602,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(arg)
 
                 if conf.config['do_package_tracking']:
-                    prj.update(expand_link=opts.expand_link, 
+                    prj.update(expand_link=opts.expand_link,
                                unexpand_link=opts.unexpand_link)
                     args.remove(arg)
-                else:   
-                    # if not tracking package, and 'update' is run inside a project dir, 
+                else:
+                    # if not tracking package, and 'update' is run inside a project dir,
                     # it should do the following:
                     # (a) update all packages
                     args += prj.pacs_have
@@ -1603,7 +1620,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if (opts.expand_link and opts.unexpand_link) \
             or (opts.expand_link and opts.revision) \
             or (opts.unexpand_link and opts.revision):
-            raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and ' 
+            raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
                      '--revision are mutually exclusive.')
 
         if opts.revision and ( len(args) == 1):
@@ -1640,7 +1657,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     sys.exit(1)
             p.update(rev)
             rev = None
-                   
+
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='forces removal of entire package and its files')
@@ -1650,7 +1667,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_delete(self, subcmd, opts, *args):
         """${cmd_name}: Mark files or directories to be deleted upon the next 'checkin'
 
-        usage: 
+        usage:
             osc rm FILE/DIRECTORY [FILE/DIRECTORY...]
 
         This command works on check out copies. Use "rdelete" for working on server
@@ -1709,11 +1726,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def do_resolved(self, subcmd, opts, *args):
         """${cmd_name}: Remove 'conflicted' state on working copy files
-        
+
         If an upstream change can't be merged automatically, a file is put into
         in 'conflicted' ('C') state. Within the file, conflicts are marked with
         special <<<<<<< as well as ======== and >>>>>>> lines.
-        
+
         After manually resolving all conflicting parts, use this command to
         remove the 'conflicted' state.
 
@@ -1721,7 +1738,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         remove conflict markers; it merely removes the conflict-related
         artifact files and allows PATH to be committed again.
 
-        usage: 
+        usage:
             osc resolved FILE [FILE...]
         ${cmd_option_list}
         """
@@ -1742,7 +1759,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def do_platforms(self, subcmd, opts, *args):
         """${cmd_name}: Shows available platforms
-        
+
         Examples:
         1. osc platforms
                 Shows all available platforms/build targets
@@ -1780,7 +1797,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    osc rresults --xml      for server side operations."""
         sys.exit(1)
 
-                
+
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
@@ -1836,7 +1853,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too few arguments.')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
-        
+
         if not opts.xml:
             func = get_results
             delim = '\n'
@@ -1847,7 +1864,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = conf.config['apiurl']
         print delim.join(func(apiurl, args[0], args[1], opts.last_build, opts.repo, opts.arch))
 
-                
+
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
     @cmdln.option('-c', '--csv', action='store_true',
@@ -1858,11 +1875,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show only packages whose names match EXPR')
     @cmdln.option('-p', '--project', metavar='PROJECT',
                         help='show packages in project PROJECT')
-    
+
     @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
-        
+
         Examples:
 
         1. osc prjresults <dir>
@@ -1881,7 +1898,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if args and len(args) > 1:
             print >>sys.stderr, 'getting results for more than one project is not supported'
             return 2
-            
+
         if opts.project:
             project = opts.project
             apiurl = conf.config['apiurl']
@@ -1908,7 +1925,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def do_rprjresults(self, subcmd, opts, prj):
         """${cmd_name}: Shows project-wide build results of remote Projects
-        
+
         Examples:
 
         osc rprjresults <remote project name>
@@ -1921,7 +1938,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print '\n'.join(get_prj_results(apiurl, prj, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
 
-                
+
     @cmdln.alias('bl')
     @cmdln.option('-s', '--start', metavar='START',
                     help='get log starting from the offset')
@@ -1994,7 +2011,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The arguments PLATFORM and ARCH can be taken from first two columns
         of the 'osc repos' output.
 
-        usage: 
+        usage:
             osc buildinfo PLATFORM ARCH [BUILD_DESCR]
         ${cmd_option_list}
         """
@@ -2006,11 +2023,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if args is None or len(args) < 2:
             print 'Valid arguments for this package are:'
-            print 
+            print
             self.do_repos(None, None)
             print
             raise oscerr.WrongArgs('Missing argument')
-            
+
         platform = args[0]
         arch = args[1]
 
@@ -2023,9 +2040,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, e
             return 1
 
-        print ''.join(get_buildinfo(apiurl, 
-                                    project, package, platform, arch, 
-                                    specfile=spec, 
+        print ''.join(get_buildinfo(apiurl,
+                                    project, package, platform, arch,
+                                    specfile=spec,
                                     addlist=opts.extra_pkgs))
 
 
@@ -2087,7 +2104,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Skip signature verification of packages used for build.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
-    @cmdln.option('-k', '--keep-pkgs', metavar='DIR', 
+    @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
                   help='Save built packages into this directory')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
@@ -2143,16 +2160,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Example:
             osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
-        usage: 
+        usage:
             osc build [OPTS] PLATFORM ARCH BUILD_DESCR
             osc build [OPTS] PLATFORM (ARCH = hostarch, BUILD_DESCR is detected automatically)
             osc build [OPTS] ARCH (PLATFORM = build_platform (config option), BUILD_DESCR is detected automatically)
             osc build [OPTS] BUILD_DESCR (PLATFORM = build_platform (config option), ARCH = hostarch)
             osc build [OPTS] (PLATFORM = build_platform (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
 
-        # Note: 
-        # Configuration can be overridden by envvars, e.g.  
-        # OSC_SU_WRAPPER overrides the setting of su-wrapper. 
+        # Note:
+        # Configuration can be overridden by envvars, e.g.
+        # OSC_SU_WRAPPER overrides the setting of su-wrapper.
         # OSC_BUILD_ROOT overrides the setting of build-root.
         # OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
 
@@ -2172,7 +2189,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
-        
+
         arg_arch = arg_platform = arg_descr = None
         if len(args) < 3:
             for arg in args:
@@ -2193,7 +2210,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         arg_platform = arg_platform or conf.config['build_platform']
         descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') ]
         # FIXME:
-        # * request repos from server and select by build type. 
+        # * request repos from server and select by build type.
         if not arg_descr and len(descr) == 1:
             arg_descr = descr[0]
         elif not arg_descr:
@@ -2218,11 +2235,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not os.path.isdir(opts.keep_pkgs):
                 print >> sys.stderr, 'Preferred save location \'%s\' is not a directory' % opts.keep_pkgs
                 return 1
-        
+
         print 'Building %s for %s/%s' % (arg_descr, arg_platform, arg_arch)
         return osc.build.main(opts, args)
 
-            
+
 
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
@@ -2355,7 +2372,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The arguments PLATFORM and ARCH are as in the first two columns of the
         'osc repos' output.
 
-        usage: 
+        usage:
             osc rebuildpac PROJECT [PACKAGE [PLATFORM [ARCH]]]
         ${cmd_option_list}
         """
@@ -2404,11 +2421,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Abort builds for a specific repository')
     def do_abortbuild(self, subcmd, opts, *args):
         """${cmd_name}: Aborts the build of a certain project/package
-        
+
         With the optional argument <package> you can specify a certain package
         otherwise all builds in the project will be cancelled.
-        
-        usage: 
+
+        usage:
             osc abortbuild [OPTS] PROJECT [PACKAGE]
         ${cmd_option_list}
         """
@@ -2442,11 +2459,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         With the optional argument <package> you can specify a certain package
         otherwise all binary packages in the project will be deleted.
 
-        usage: 
+        usage:
             osc wipebinaries [OPTS] PROJECT [PACKAGE]
         ${cmd_option_list}
         """
-        
+
         args = slash_split(args)
 
         if len(args) < 1:
@@ -2486,7 +2503,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_getbinaries(self, subcmd, opts, *args):
         """${cmd_name}: Download binaries to a local directory
 
-        This command downloads packages directly from the api server. 
+        This command downloads packages directly from the api server.
         Thus, it directly accesses the packages that are used for building
         others even when they are not "published" yet.
 
@@ -2518,8 +2535,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit('Need either 2 or 4 arguments.' )
 
         # Get package list
-        binaries = get_binarylist(apiurl, 
-                                   project, repository, architecture, 
+        binaries = get_binarylist(apiurl,
+                                   project, repository, architecture,
                                    package = package, verbose=True)
 
         if not os.path.isdir(opts.destdir):
@@ -2543,10 +2560,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if st.st_mtime == binary.mtime and st.st_size == binary.size:
                     continue
 
-            get_binary_file(apiurl, 
-                            project, 
-                            repository, architecture, 
-                            binary.name, 
+            get_binary_file(apiurl,
+                            project,
+                            repository, architecture,
+                            binary.name,
                             package = package,
                             target_filename = target_filename,
                             target_mtime = binary.mtime,
@@ -2710,7 +2727,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pac = opts.name
         if opts.description:
             descr = opts.description
-        
+
         # title and description can be empty
         if not pac:
             print >>sys.stderr, 'please specify a package name with the \'--name\' option. ' \
@@ -2785,7 +2802,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify string data for e.g. POST')
     @cmdln.option('-f', '--file', default=None, metavar='FILE',
                         help='specify filename for e.g. PUT or DELETE')
-    @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING', 
+    @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING',
                         nargs=2, action='append', dest='headers',
                         help='add the specified header to the request')
     def do_req(self, subcmd, opts, url):
@@ -2817,11 +2834,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.headers:
             opts.headers = dict(opts.headers)
 
-        r = http_request(opts.method, 
-                         url, 
-                         data=opts.data, 
+        r = http_request(opts.method,
+                         url,
+                         data=opts.data,
                          file=opts.file,
-                         headers=opts.headers) 
+                         headers=opts.headers)
 
         out = r.read()
         sys.stdout.write(out)
@@ -2839,17 +2856,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='delete a maintainer from a project or package')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
-    
+
         To be used like this:
-    
+
             osc maintainer PRJ <options>
-        or 
+        or
             osc maintainer PRJ PKG <options>
-    
+
         ${cmd_usage}
         ${cmd_option_list}
         """
-    
+
         pac = None
         if len(args) == 1:
             m = show_project_meta(conf.config['apiurl'], args[0])
@@ -2860,13 +2877,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pac = args[1]
         else:
             raise oscerr.WrongArgs('I need at least one argument.')
-    
+
         maintainers = []
-    
+
         tree = ET.parse(StringIO(''.join(m)))
         for person in tree.findall('person'):
             maintainers.append(person.get('userid'))
-    
+
         if opts.email:
             emails = []
             for maintainer in maintainers:
@@ -2940,7 +2957,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         a 3-way merge to resolve file conflicts. After reviewing/repairing
         the merge, 'osc ci' will re-create a working source link.
 
-        usage: 
+        usage:
         * For merging conflicting changes of a checkout package:
             osc repairlink
 
@@ -3156,7 +3173,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
-        
+
         from subprocess import Popen, PIPE
 
         if not os.path.exists('/usr/lib/build/vc'):
@@ -3165,7 +3182,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         cmd_list = ["/usr/lib/build/vc", ]
-        
+
         if len(args) > 0:
             arg = args[0]
         else:
@@ -3173,7 +3190,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # set user's email if no mailaddr exists
         if not os.environ.has_key('mailaddr'):
-            
+
             if arg and is_package_dir(arg):
                 apiurl = store_read_apiurl(arg)
             elif is_package_dir(os.getcwd()):
@@ -3204,11 +3221,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 # fini!
 ###############################################################################
-        
+
     # load subcommands plugged-in locally
     plugin_dirs = [
-        '/usr/lib/osc-plugins', 
-        '/usr/local/lib/osc-plugins', 
+        '/usr/lib/osc-plugins',
+        '/usr/local/lib/osc-plugins',
         '/var/lib/osc-plugins',  # Kept for backward compatibility
         os.path.expanduser('~/.osc-plugins')]
     for plugin_dir in plugin_dirs:
