@@ -277,7 +277,7 @@ def write_initial_config(conffile, entries, custom_template = ''):
     config.update(entries)
     if config['gnome_keyring'] and GNOME_KEYRING:
         protocol, host = \
-            parse_apisrv_url(None, config['apisrv'])
+            parse_apisrv_url(None, config['apiurl'])
         gnomekeyring.set_network_password_sync(
             user = config['user'],
             password = config['pass'],
