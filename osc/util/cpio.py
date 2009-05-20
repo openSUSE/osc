@@ -17,6 +17,7 @@ import mmap
 import os
 import stat
 import struct
+import sys
 
 # format implementation is based on src/copyin.c and src/util.c (see cpio sources)
 
@@ -139,7 +140,10 @@ class Cpio:
         if not self.__file:
             self.__file = open(self.filename, 'rb')
             try:
-                self.__file = mmap.mmap(self.__file.fileno(), 0, prot = mmap.PROT_READ)
+                if sys.platform[:3] != 'win':
+                    self.__file = mmap.mmap(self.__file.fileno(), 0, prot = mmap.PROT_READ)
+                else:
+                    self.__file = mmap.mmap(self.__file.fileno(), 0)
             except EnvironmentError, e:
                 if e.errno == 19:
                     print >>sys.stderr, 'cannot use mmap to read the file, failing back to default'

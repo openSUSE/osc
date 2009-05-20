@@ -1536,8 +1536,10 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
             import mmap
             filefd = open(file, 'r')
             try:
-                data = mmap.mmap(filefd.fileno(), os.path.getsize(file),
-                                mmap.MAP_SHARED, mmap.PROT_READ)
+                if sys.platform[:3] != 'win':
+                    data = mmap.mmap(filefd.fileno(), os.path.getsize(file), mmap.MAP_SHARED, mmap.PROT_READ)
+                else:
+                    data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
                 data = buffer(data)
             except EnvironmentError, e:
                 if e.errno == 19:
