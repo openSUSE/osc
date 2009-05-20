@@ -184,6 +184,12 @@ buildstatus_symbols = {'succeeded':       '.',
                        'scheduled':       's',
 }
 
+# os.path.samefile is available only under Unix
+def os_path_samefile(path1, path2):
+  try:
+      return os.path.samefile(path1, path2)
+  except:
+      return os.path.realpath(file1) == os.path.realpath(file2)
 
 class File:
     """represent a file, including its metadata"""
@@ -489,7 +495,7 @@ class Project:
                         self.commitDelPackage(pac)
                     elif state == ' ':
                         # display the correct dir when sending the changes
-                        if os.path.samefile(os.path.join(self.dir, pac), os.getcwd()):
+                        if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
                             p = Package('.')
                         else:
                             p = Package(os.path.join(self.dir, pac))
@@ -536,7 +542,7 @@ class Project:
                       apiurl=self.apiurl)
             # display the correct dir when sending the changes
             olddir = os.getcwd()
-            if os.path.samefile(os.path.join(self.dir, pac), os.curdir):
+            if os_path_samefile(os.path.join(self.dir, pac), os.curdir):
                 os.chdir(os.pardir)
                 p = Package(pac)
             else:
@@ -551,7 +557,7 @@ class Project:
         """deletes a package on the server and in the working copy"""
         try:
             # display the correct dir when sending the changes
-            if os.path.samefile(os.path.join(self.dir, pac), os.curdir):
+            if os_path_samefile(os.path.join(self.dir, pac), os.curdir):
                 pac_dir = pac
             else:
                 pac_dir = os.path.join(self.dir, pac)
@@ -571,7 +577,7 @@ class Project:
 
     def commitExtPackage(self, pac, msg, files = []):
         """commits a package from an external project"""
-        if os.path.samefile(os.path.join(self.dir, pac), os.getcwd()):
+        if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
             pac_path = '.'
         else:
             pac_path = os.path.join(self.dir, pac)
