@@ -189,7 +189,7 @@ def os_path_samefile(path1, path2):
   try:
       return os.path.samefile(path1, path2)
   except:
-      return os.path.realpath(file1) == os.path.realpath(file2)
+      return os.path.realpath(path1) == os.path.realpath(path2)
 
 class File:
     """represent a file, including its metadata"""
