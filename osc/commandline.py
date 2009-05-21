@@ -993,7 +993,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if r != expected:
-            devloc = r.split('branches:')[1]
+            devloc = r
+            if 'branches:' in r:
+                devloc = r.split('branches:')[1]
             print '\nNote: The branch has been created of a different project,\n' \
                   '              %s,\n' \
                   '      which is the primary location of where development for\n' \
