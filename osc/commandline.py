@@ -1971,6 +1971,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.alias('rbl')
+    @cmdln.alias('rbuildlog')
     def do_remotebuildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
