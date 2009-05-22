@@ -2942,7 +2942,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     # helper function to download a file from a specific revision
     def download(self, name, md5, dir, destfile):
-        o = open(destfile, 'w')
+        o = open(destfile, 'wb')
         if md5 != '':
             query = {'rev': dir['srcmd5']}
             u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], pathname2url(name)], query=query)
@@ -3126,7 +3126,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pac.put_on_conflictlist(name)
                 continue
 
-            o = open(os.path.join(destdir,  name), 'w')
+            o = open(os.path.join(destdir,  name), 'wb')
             code = subprocess.call(['diff3', '-m',
               '-L', '.mine',
               os.path.join(destdir, name + '.mine'),

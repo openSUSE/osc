@@ -1531,10 +1531,10 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     if file and not data:
         size = os.path.getsize(file)
         if size < 1024*512:
-            data = open(file).read()
+            data = open(file, 'rb').read()
         else:
             import mmap
-            filefd = open(file, 'r')
+            filefd = open(file, 'rb')
             try:
                 if sys.platform[:3] != 'win':
                     data = mmap.mmap(filefd.fileno(), os.path.getsize(file), mmap.MAP_SHARED, mmap.PROT_READ)
@@ -1547,7 +1547,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
                              '\non a filesystem which does not support this.' % (e, file))
                 elif hasattr(e, 'winerror') and e.winerror == 5:
                     # falling back to the default io
-                    data = open(file).read()
+                    data = open(file, 'rb').read()
                 else:
                     raise
 
@@ -2160,7 +2160,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
     if revision:
         query = { 'rev': revision }
 
-    o = open(targetfilename or filename, 'w')
+    o = open(targetfilename or filename, 'wb')
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
     for buf in streamfile(u, http_GET, BUFSIZE):
         o.write(buf)
@@ -2194,7 +2194,7 @@ def get_binary_file(apiurl, prj, repo, arch,
     os.chmod(tmpfilename, 0644)
 
     try:
-        o = os.fdopen(fd, 'w')
+        o = os.fdopen(fd, 'wb')
 
         downloaded = 0
         while 1:
@@ -2244,7 +2244,7 @@ def dgst(file):
         import md5
         md5 = md5
     s = md5.md5()
-    f = open(file, 'r')
+    f = open(file, 'rb')
     while 1:
         buf = f.read(BUFSIZE)
         if not buf: break
@@ -2262,7 +2262,7 @@ def binary(s):
 
 def binary_file(fn):
     """read 4096 bytes from a file named fn, and call binary() on the data"""
-    return binary(open(fn, 'r').read(4096))
+    return binary(open(fn, 'rb').read(4096))
 
 
 def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, origfilename = None):
@@ -2287,11 +2287,11 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     file1 = os.path.join(olddir, oldfilename)   # old/stored original
     file2 = os.path.join(dir, filename)         # working copy
 
-    f1 = open(file1, 'r')
+    f1 = open(file1, 'rb')
     s1 = f1.read()
     f1.close()
 
-    f2 = open(file2, 'r')
+    f2 = open(file2, 'rb')
     s2 = f2.read()
     f2.close()
 
@@ -3497,7 +3497,7 @@ def data_from_rpm(rpm_file, *rpmdata):
         import rpm
         ts = rpm.TransactionSet()
         ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
-        file = open(rpm_file, 'r')
+        file = open(rpm_file, 'rb')
         header = ts.hdrFromFdno(file.fileno())
         file.close()
         data = {}
@@ -3516,7 +3516,7 @@ def data_from_rpm(rpm_file, *rpmdata):
 def is_rpm(f):
     """check if the named file is an RPM package"""
     try:                                                                                                                                
-        h = open(f).read(4)
+        h = open(f, 'rb').read(4)
     except:
         return False
 
@@ -3532,7 +3532,7 @@ def is_srcrpm(f):
         return False
 
     try:
-        h = open(f).read(8)
+        h = open(f, 'rb').read(8)
     except:
         return False
 
