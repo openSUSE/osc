@@ -1545,6 +1545,9 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
                 if e.errno == 19:
                     sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
                              '\non a filesystem which does not support this.' % (e, file))
+                elif hasattr(e, 'winerror') and e.winerror == 5:
+                    # falling back to the default io
+                    data = open(file).read()
                 else:
                     raise
 
