@@ -1843,15 +1843,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_rresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a remote package
 
-        Examples:
+        Usage:
+            osc rresults [ remote_project remote_package ]
 
-        osc rresults <remote project name> <remote package name>
-
-        ${cmd_usage}
         ${cmd_option_list}
         """
         args = slash_split(args)
-        if len(args) < 2:
+        if len(args) == 0:
+            args = ( store_read_project('.'), store_read_package('.') )
+        elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments.')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -2334,16 +2334,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML')
-    def do_rlog(self, subcmd, opts, prj, pkg):
+    def do_rlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the commit log of a remote package
 
-        ${cmd_usage}
+        Usage:
+            osc rlog [ remote_project remote_package ]
+
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+        if len(args) == 0:
+            args = ( store_read_project('.'), store_read_package('.') )
+        elif len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
+
         apiurl = conf.config['apiurl']
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(prj, pkg, rev, apiurl):
+        if rev and not checkRevision(args[0], args[1], rev, apiurl):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
@@ -2353,7 +2363,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        print '\n'.join(get_commitlog(apiurl, prj, pkg, rev, format))
+        print '\n'.join(get_commitlog(apiurl, args[0], args[1], rev, format))
 
 
     @cmdln.option('-f', '--failed', action='store_true',
