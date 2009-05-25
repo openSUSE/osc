@@ -1782,23 +1782,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):
-        """${cmd_name}: Shows raw build results of a package
-
-        Shows the build results of the package in raw XML.
-
-        ARG, if specified, is the working copy of a package.
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-        print """results_meta is obsolete !
-
-                 Please use either
-                   osc results --xml       for checked out packages or projects
-                 or
-                   osc rresults --xml      for server side operations."""
+        print "Command results_meta is obsolete. Please use: osc results --xml"
         sys.exit(1)
 
+    @cmdln.hide(1)
+    def do_rresults(self, subcmd, opts, *args):
+        print "Command rresults is obsolete. Please use 'osc results'"
+        sys.exit(1)
 
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',
@@ -1812,49 +1802,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
-        ARG, if specified, is the working copy of a package.
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        args = parseargs(args)
-        pacs = findpacs(args)
-
-        if not opts.xml:
-            func = get_results
-            delim = '\n'
-        else:
-            func = show_results_meta
-            delim = ''
-
-        for pac in pacs:
-            print delim.join(func(pac.apiurl, pac.prjname, pac.name, opts.last_build, opts.repo, opts.arch))
-
-
-    @cmdln.option('-l', '--last-build', action='store_true',
-                        help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append', default = [],
-                        help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append', default = [],
-                        help='Show results only for specified architecture(s)')
-    @cmdln.option('', '--xml', action='store_true',
-                        help='generate output in XML (former results_meta)')
-    def do_rresults(self, subcmd, opts, *args):
-        """${cmd_name}: Shows the build results of a remote package
-
         Usage:
-            osc rresults [ remote_project remote_package ]
+            osc results (inside working copy)
+            osc results remote_project remote_package
 
         ${cmd_option_list}
         """
+
         args = slash_split(args)
         if len(args) == 0:
-            args = ( store_read_project('.'), store_read_package('.') )
+            wd = os.curdir
+            project = store_read_project(wd)
+            package = store_read_package(wd)
+            apiurl = store_read_apiurl(wd)
         elif len(args) < 2:
-            raise oscerr.WrongArgs('Too few arguments.')
+            raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
+            raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        else:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
 
         if not opts.xml:
             func = get_results
@@ -1864,8 +1832,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             delim = ''
 
         apiurl = conf.config['apiurl']
-        print delim.join(func(apiurl, args[0], args[1], opts.last_build, opts.repo, opts.arch))
-
+        print delim.join(func(apiurl, project, package, opts.last_build, opts.repo, opts.arch))
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
@@ -1877,39 +1844,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show only packages whose names match EXPR')
     @cmdln.option('-p', '--project', metavar='PROJECT',
                         help='show packages in project PROJECT')
-
     @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
 
-        Examples:
+        Usage:
+            osc prjresults (inside working copy)
+            osc prjresults project
 
-        1. osc prjresults <dir>
-                dir is a project or package directory
-
-        2. osc prjresults
-                the project is guessed from the current dir
-
-        3. osc prjresults --project=<project>
-                the project is specified from the command line
-
-        ${cmd_usage}
         ${cmd_option_list}
         """
 
-        if args and len(args) > 1:
-            print >>sys.stderr, 'getting results for more than one project is not supported'
-            return 2
-
-        if opts.project:
-            project = opts.project
+        if args:
             apiurl = conf.config['apiurl']
-        else:
-            if args:
-                wd = args[0]
+            if len(args) == 1:
+                project = args[0]
             else:
-                wd = os.curdir
-
+                print >>sys.stderr, 'getting results for more than one project is not supported'
+                return 2
+        else:
+            wd = os.curdir
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
 
@@ -1925,21 +1879,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
                         help='show only packages whose names match EXPR')
 
-    def do_rprjresults(self, subcmd, opts, prj):
-        """${cmd_name}: Shows project-wide build results of remote Projects
-
-        Examples:
-
-        osc rprjresults <remote project name>
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        apiurl = conf.config['apiurl']
-
-        print '\n'.join(get_prj_results(apiurl, prj, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
-
+    @cmdln.hide(1)
+    def do_rprjresults(self, subcmd, opts, *args):
+        print "Command rprjresults is obsolete. Please use 'osc prjresults'"
+        sys.exit(1)
 
     @cmdln.alias('bl')
     @cmdln.option('-s', '--start', metavar='START',
@@ -2296,6 +2239,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print_jobhistory(apiurl, project, package, platform, arch, format)
 
+    @cmdln.hide(1)
+    def do_rlog(self, subcmd, opts, *args):
+        print "Command rlog is obsolete. Please use 'osc log'"
+        sys.exit(1)
 
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
@@ -2303,17 +2250,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML')
-    def do_log(self, subcmd, opts):
+    def do_log(self, subcmd, opts, *args):
         """${cmd_name}: Shows the commit log of a package
 
-        ${cmd_usage}
+        Usage:
+            osc log (inside working copy)
+            osc log remote_project remote_package
+
         ${cmd_option_list}
         """
 
-        wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        apiurl = store_read_apiurl(wd)
+        args = slash_split(args)
+        if len(args) == 0:
+            wd = os.curdir
+            project = store_read_project(wd)
+            package = store_read_package(wd)
+            apiurl = store_read_apiurl(wd)
+        elif len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments (required none or two)')
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        else:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+
         rev, dummy = parseRevisionOption(opts.revision)
         if rev and not checkRevision(project, package, rev, apiurl):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
@@ -2326,45 +2287,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             format = 'xml'
 
         print '\n'.join(get_commitlog(apiurl, project, package, rev, format))
-
-
-    @cmdln.option('-r', '--revision', metavar='rev',
-                        help='show log of the specified revision')
-    @cmdln.option('', '--csv', action='store_true',
-                        help='generate output in CSV (separated by |)')
-    @cmdln.option('', '--xml', action='store_true',
-                        help='generate output in XML')
-    def do_rlog(self, subcmd, opts, *args):
-        """${cmd_name}: Shows the commit log of a remote package
-
-        Usage:
-            osc rlog [ remote_project remote_package ]
-
-        ${cmd_option_list}
-        """
-
-        args = slash_split(args)
-        if len(args) == 0:
-            args = ( store_read_project('.'), store_read_package('.') )
-        elif len(args) < 2:
-            raise oscerr.WrongArgs('Too few arguments.')
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
-
-        apiurl = conf.config['apiurl']
-        rev, dummy = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(args[0], args[1], rev, apiurl):
-            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
-            sys.exit(1)
-
-        format = 'text'
-        if opts.csv:
-            format = 'csv'
-        if opts.xml:
-            format = 'xml'
-
-        print '\n'.join(get_commitlog(apiurl, args[0], args[1], rev, format))
-
 
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
