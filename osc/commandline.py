@@ -308,7 +308,7 @@ class Osc(cmdln.Cmdln):
         the --file switch. If the argument is '-', input is taken from stdin:
         osc meta prjconf home:user | sed ... | osc meta prjconf home:user -F -
 
-        When trying to edit a non-existing resource, it is created implicitely.
+        When trying to edit a non-existing resource, it is created implicitly.
 
 
         Examples:
@@ -495,7 +495,7 @@ class Osc(cmdln.Cmdln):
         For "create", there are two ways to use it. Either with a working copy
         or without. If called with no arguments, osc will guess what to submit
         where. If you don't have a working copy, you can give the respective
-        arguments on the commandline (see below for an example).
+        arguments on the command line (see below for an example).
         Then, the DESTPAC name is optional; the source packages' name will be
         used if DESTPAC is omitted.
         With --message, a message can be attached.
@@ -1234,7 +1234,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         copy.
 
         When checking out a single package, the option --revision can be used
-        to specify a revions of the package to be checked out.
+        to specify a revision of the package to be checked out.
 
         When a package is a source link, then it will be checked out in
         expanded form. If --unexpand-link option is used, the checkout will
