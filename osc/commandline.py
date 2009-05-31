@@ -2388,6 +2388,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Delete all binaries of packages for which the package source is bad')
     @cmdln.option('--expansion', action='store_true',
                         help='Delete all binaries of packages which have expansion errors')
+    @cmdln.option('--all', action='store_true',
+                        help='Delete all binaries regardless of the package status (previously default)')
     def do_wipebinaries(self, subcmd, opts, *args):
         """${cmd_name}: Delete all binary packages of a certain project/package
 
@@ -2395,7 +2397,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         otherwise all binary packages in the project will be deleted.
 
         usage:
-            osc wipebinaries [OPTS] PROJECT [PACKAGE]
+            osc wipebinaries OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
@@ -2420,9 +2422,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             codes.append('broken')
         if opts.expansion:
             codes.append('expansion error')
+        if opts.all:
+            codes.append(None)
 
         if len(codes) == 0:
-            codes.append(None)
+            print 'No option has been provided. If you want to delete all binaries, use --all option.'
+            return 1
 
         # make a new request for each code= parameter
         for code in codes:
