@@ -3147,7 +3147,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.message:
             cmd_list.append("-m")
-            cmd_list.append("'%s'" % opts.message)
+            cmd_list.append(opts.message)
 
         if opts.just_edit:
             cmd_list.append("-e")
