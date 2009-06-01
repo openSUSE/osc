@@ -3152,8 +3152,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.just_edit:
             cmd_list.append("-e")
 
-        if arg:
-            cmd_list.append(arg)
+        if args:
+            cmd_list.extend(args)
 
         vc = Popen(cmd_list)
         vc.wait()
