@@ -1231,9 +1231,18 @@ class RequestState:
         self.when = when
         self.comment = comment
 
+class Action:
+    """represents an action"""
+    def __init__(self, type, src_project, src_package, src_rev, dst_project, dst_package):
+        self.type = type
+        self.src_project = src_project
+        self.src_package = src_package
+        self.src_rev = src_rev
+        self.dst_project = dst_project
+        self.dst_package = dst_package
 
-class SubmitReq:
-    """represent a submit request and holds its metadata
+class Request:
+    """represent a request and holds its metadata
        it has methods to read in metadata from xml,
        different views, ..."""
     def __init__(self):
@@ -1242,26 +1251,30 @@ class SubmitReq:
         self.who         = None
         self.when        = None
         self.last_author = None
-        self.src_project = None
-        self.src_package = None
-        self.src_rev     = None
-        self.dst_project = None
-        self.dst_package = None
         self.descr       = None
+        self.actions     = []
         self.statehistory = []
 
     def read(self, root):
         self.reqid = int(root.get('id'))
+        actions = root.findall('action')
+        if len(actions) == 0:
+            actions = [ root.find('submit') ] # for old style requests
 
-        n = root.find('submit').find('source')
-        self.src_project = n.get('project')
-        self.src_package = n.get('package')
-        try: self.src_rev = n.get('rev')
-        except: pass
-
-        n = root.find('submit').find('target')
-        self.dst_project = n.get('project')
-        self.dst_package = n.get('package')
+        for action in actions:
+            type = action.get('type', 'submit')
+            try:
+                n = action.find('source')
+                src_prj = n.get('project')
+                src_pkg = n.get('package')
+                src_rev = n.get('rev', None)
+                n = action.find('target')
+                dst_prj = n.get('project')
+                dst_pkg = n.get('package')
+                self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg)
+            except:
+                msg = 'invalid request format:\n%s' % ET.tostring(root)
+                raise oscerr.APIError(msg)
 
         # read the state
         n = root.find('state')
@@ -1292,11 +1305,15 @@ class SubmitReq:
         except:
             pass
 
+    def add_action(self, type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg):
+        self.actions.append(Action(type, src_prj, src_pkg, src_rev,
+                                   dst_prj, dst_pkg)
+                           )
 
     def list_view(self):
-        dst = "%s/%s" % (self.dst_project, self.dst_package)
-        if self.src_package == self.dst_package:
-            dst = self.dst_project
+        dst = "%s/%s" % (self.actions[0].dst_project, self.actions[0].dst_package)
+        if self.actions[0].src_package == self.actions[0].dst_package:
+            dst = self.actions[0].dst_project
 
         desc = ""
         if self.descr:
@@ -1305,15 +1322,16 @@ class SubmitReq:
         return '%6d  %-7s %-12s %-50s  ->  %-20s   %s' % \
             (self.reqid, 
              self.state.name, "(%s)" % self.state.who,
-             "%s/%s" % (self.src_project, self.src_package),
+             "%s/%s" % (self.actions[0].src_project, self.actions[0].src_package),
              dst, desc)
 
     def __cmp__(self, other):
         return cmp(self.reqid, other.reqid)
 
     def __str__(self):
+        # XXX: only prints out the first action element
         s = """\
-Request to submit (sri%d): 
+Request to %s (sri%s): 
 
     %s/%s  ->  %s/%s
 
@@ -1325,12 +1343,13 @@ Message:
 
 State:   %-10s   %s %s
 Comment: %s
-"""            % (self.reqid,
-               self.src_project, 
-               self.src_package, 
-               self.dst_project, 
-               self.dst_package, 
-               self.src_rev or 'not given',
+"""          % (self.actions[0].type,
+               self.reqid,
+               self.actions[0].src_project, 
+               self.actions[0].src_package, 
+               self.actions[0].dst_project, 
+               self.actions[0].dst_package, 
+               self.actions[0].src_rev or 'not given',
                self.descr,
                self.state.name, 
                self.state.when, self.state.who, self.state.comment)
@@ -2022,21 +2041,68 @@ def edit_message(footer='', template=''):
                 pass
 
 
+def create_delete_request(apiurl, project, package, message):
+
+    import cgi
+
+    if package:
+      package = """package="%s" """ % (package)
+    else:
+      package = ""
+
+    xml = """\
+<request>
+    <action type="delete">
+        <target project="%s" %s/>
+    </action>
+    <state name="new"/>
+    <description>%s</description>
+</request>
+""" % (project, package,
+       cgi.escape(message or ''))
+
+    u = makeurl(apiurl, ['request'], query='cmd=create')
+    f = http_POST(u, data=xml)
+
+    root = ET.parse(f).getroot()
+    return root.get('id')
+
+
+def create_change_devel_request(apiurl, 
+                                devel_project, devel_package, 
+                                project, package,
+                                message):
+
+    import cgi
+    xml = """\
+<request>
+    <action type="change_devel">
+        <source project="%s" package="%s" />
+        <target project="%s" package="%s" />
+    </action>
+    <state name="new"/>
+    <description>%s</description>
+</request>
+""" % (devel_project, 
+       devel_package,
+       project, 
+       package,
+       cgi.escape(message or ''))
+
+    u = makeurl(apiurl, ['request'], query='cmd=create')
+    f = http_POST(u, data=xml)
+
+    root = ET.parse(f).getroot()
+    return root.get('id')
+
+
 def create_submit_request(apiurl, 
                          src_project, src_package, 
                          dst_project, dst_package,
                          message, orev=None):
 
     import cgi
-
-    r = SubmitReq()
-    r.src_project = src_project
-    r.src_package = src_package
-    r.src_rev     = orev or show_upstream_rev(apiurl, src_project, src_package)
-    r.dst_project = dst_project
-    r.dst_package = dst_package
-    r.descr = cgi.escape(message or '')
-
+    # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">
     <submit>
@@ -2046,12 +2112,12 @@ def create_submit_request(apiurl,
     <state name="new"/>
     <description>%s</description>
 </request>
-""" % (r.src_project, 
-       r.src_package,
-       r.src_rev,
-       r.dst_project, 
-       r.dst_package,
-       r.descr)
+""" % (src_project, 
+       src_package,
+       orev or show_upstream_rev(apiurl, src_project, src_package),
+       dst_project, 
+       dst_package,
+       cgi.escape(message or ''))
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
     f = http_POST(u, data=xml)
@@ -2060,17 +2126,17 @@ def create_submit_request(apiurl,
     return root.get('id')
 
 
-def get_submit_request(apiurl, reqid):
+def get_request(apiurl, reqid):
     u = makeurl(apiurl, ['request', reqid])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
-    r = SubmitReq()
+    r = Request()
     r.read(root)
     return r
 
 
-def change_submit_request_state(apiurl, reqid, newstate, message=''):
+def change_request_state(apiurl, reqid, newstate, message=''):
     u = makeurl(apiurl, 
                 ['request', reqid], 
                 query={'cmd': 'changestate', 'newstate': newstate})
@@ -2078,40 +2144,43 @@ def change_submit_request_state(apiurl, reqid, newstate, message=''):
     return f.read()
 
 
-def get_submit_request_list(apiurl, project, package, req_who='', req_state=('new',) ):
-    match = ''
-    if project:
-        if len(match): match += '%20and%20'
-        match += 'submit/target/@project=\'%s\'' % quote_plus(project)
-    if package:
-        if len(match): match += '%20and%20'
-        match += 'submit/target/@package=\'%s\'' % quote_plus(package)
-    for state in req_state:
-        if len(match): match += '%20and%20'
-        match += 'state/@name=\'%s\'' % quote_plus(state)
-    if req_who:
-        if len(match): match += '%20and%20'
-        match += 'state/@who=\'%s\'' % quote_plus(req_who)
-
-    u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
-    f = http_GET(u)
-    collection = ET.parse(f).getroot()
-
+def get_request_list(apiurl, project, package, req_who='', req_state=('new',) ):
     requests = []
-    for root in collection.findall('request'):
-        r = SubmitReq()
-        r.read(root)
-        if (r.state.name in req_state) or not len(req_state):
-            requests.append(r)
+    # XXX: we cannot use the '|' in the xpath expression because it is not supported
+    #      in the backend
+    for what in ['action', 'submit']:
+        match = ''
+        if project:
+            if len(match): match += '%20and%20'
+            match += '%s/target/@project=\'%s\'' % (what, quote_plus(project))
+        if package:
+            if len(match): match += '%20and%20'
+            match += '%s/target/@package=\'%s\'' % (what, quote_plus(package))
+        for state in req_state:
+            if len(match): match += '%20and%20'
+            match += 'state/@name=\'%s\'' % quote_plus(state)
+        if req_who:
+            if len(match): match += '%20and%20'
+            match += 'state/@who=\'%s\'' % quote_plus(req_who)
+
+        u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
+        f = http_GET(u)
+        collection = ET.parse(f).getroot()
+
+        for root in collection.findall('request'):
+            r = Request()
+            r.read(root)
+            if (r.state.name in req_state) or not len(req_state):
+                requests.append(r)
 
     return requests
 
 
-def get_submit_request_log(apiurl, reqid):
-    r = get_submit_request(conf.config['apiurl'], reqid)
+def get_request_log(apiurl, reqid):
+    r = get_request(conf.config['apiurl'], reqid)
     data = []
     frmt = '-' * 76 + '\n%s | %s | %s\n\n%s'
-    # the description of the submitrequest is used for the initial log entry
+    # the description of the request is used for the initial log entry
     # otherwise its comment attribute would contain None
     if len(r.statehistory) >= 1:
         r.statehistory[-1].comment = r.descr

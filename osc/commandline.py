@@ -486,58 +486,25 @@ class Osc(cmdln.Cmdln):
                         help='only show requests created by yourself')
     @cmdln.alias("sr")
     @cmdln.alias("submitrequest")
+    @cmdln.hide(1)
     def do_submitreq(self, subcmd, opts, *args):
         """${cmd_name}: Handle requests to submit a package into another project
 
         [See http://en.opensuse.org/Build_Service/Collaboration for information
         on this topic.]
 
-        For "create", there are two ways to use it. Either with a working copy
-        or without. If called with no arguments, osc will guess what to submit
-        where. If you don't have a working copy, you can give the respective
-        arguments on the command line (see below for an example).
-        Then, the DESTPAC name is optional; the source packages' name will be
-        used if DESTPAC is omitted.
-        With --message, a message can be attached.
-        With --revision, a revision MD5 of a package can be specified which is
-        to be submitted. The default is to request submission of the currently
-        checked in revision.
-
-        "list" lists open requests attached to a project or package.
-
-        "log" will show the history of the given ID
-
-        "show" will show the request itself, and generate a diff for review, if
-        used with the --diff option.
-
-        "decline" will change the request state to "declined" and append a
-        message that you specify with the --message option.
-
-        "delete" will permanently delete a request and append a
-        message that you specify with the --message option.
-
-        "revoke" will set the request state to "revoked" and append a
-        message that you specify with the --message option.
-
-        "accept" will change the request state to "accepted" and will trigger
-        the actual submit process. That would normally be a server-side copy of
-        the source package to the target package.
-
-
-        usage:
-            osc submitreq create [-m TEXT]
-            osc submitreq create [-m TEXT] DESTPRJ [DESTPKG]
-            osc submitreq create [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
-            osc submitreq list [-M] [PRJ [PKG]]
-            osc submitreq log ID
-            osc submitreq show [-d] [-b] ID
-            osc submitreq accept [-m TEXT] ID
-            osc submitreq decline [-m TEXT] ID
-            osc submitreq delete [-m TEXT] ID
-            osc submitreq revoke [-m TEXT] ID
-        ${cmd_option_list}
+        *************************************************************************
+        WARNING: the "submitreq" command is about to become obsolete. Please use
+                 the "request" command instead !
+        *************************************************************************
         """
 
+        print """
+        *************************************************************************
+        WARNING: the "submitreq" command is about to become obsolete. Please use
+                 the "request" command instead !
+        *************************************************************************
+        """
         args = slash_split(args)
 
         cmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
@@ -639,23 +606,25 @@ of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                     % (devloc, dst_package)
                           sys.exit(1)
-            reqs = get_submit_request_list(apiurl, dst_project, dst_package)
+            reqs = get_request_list(apiurl, dst_project, dst_package)
             user = conf.get_apiurl_usr(apiurl)
             myreqs = [ i for i in reqs if i.state.who == user ]
             repl = ''
             if len(myreqs) > 0:
-                print 'You already created the following submitrequests: %s.' % \
+                print 'You already created the following requests: %s.' % \
                       ', '.join([str(i.reqid) for i in myreqs ])
                 repl = raw_input('Revoke the old requests? (y/N) ')
 
+            # since we have no support in the cli to specify different action types yet
+            # the default is a submit action
             result = create_submit_request(apiurl,
-                                          src_project, src_package,
-                                          dst_project, dst_package,
-                                          opts.message, orev=opts.revision)
+                                           src_project, src_package,
+                                           dst_project, dst_package,
+                                           opts.message, orev=opts.revision)
             if repl == 'y':
                 for req in myreqs:
-                    change_submit_request_state(apiurl, str(req.reqid), 'revoked',
-                                                'superseded by %s' % result)
+                    change_request_state(apiurl, str(req.reqid), 'revoked',
+                                         'superseded by %s' % result)
 
             print 'created request id', result
 
@@ -667,8 +636,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.mine:
                 who = conf.get_apiurl_usr(apiurl)
 
-            results = get_submit_request_list(apiurl,
-                                              project, package, who, state_list)
+            results = get_request_list(apiurl,
+                                       project, package, who, state_list)
 
             results.sort(reverse=True)
 
@@ -676,13 +645,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print result.list_view()
 
         elif cmd == 'log':
-            for l in get_submit_request_log(conf.config['apiurl'], reqid):
+            for l in get_request_log(conf.config['apiurl'], reqid):
                 print l
 
 
         # show
         elif cmd == 'show':
-            r = get_submit_request(conf.config['apiurl'], reqid)
+            r = get_request(conf.config['apiurl'], reqid)
             if opts.brief:
                 print r.list_view()
             else:
@@ -691,8 +660,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.diff:
                 try:
                     print server_diff(conf.config['apiurl'],
-                                      r.dst_project, r.dst_package, None,
-                                      r.src_project, r.src_package, r.src_rev, opts.unified)
+                                      r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                      r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified)
                 except urllib2.HTTPError, e:
                     e.osc_msg = 'Diff not possible'
                     raise
@@ -700,23 +669,300 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # decline
         elif cmd == 'decline':
-            r = change_submit_request_state(conf.config['apiurl'],
+            r = change_request_state(conf.config['apiurl'],
                     reqid, 'declined', opts.message or '')
             print r
 
         # accept
         elif cmd == 'accept':
-            r = change_submit_request_state(conf.config['apiurl'],
+            r = change_request_state(conf.config['apiurl'],
                     reqid, 'accepted', opts.message or '')
             print r
         # delete
         elif cmd == 'delete':
-            r = change_submit_request_state(conf.config['apiurl'],
+            r = change_request_state(conf.config['apiurl'],
                     reqid, 'deleted', opts.message or '')
             print r
         # revoke
         elif cmd == 'revoke':
-            r = change_submit_request_state(conf.config['apiurl'],
+            r = change_request_state(conf.config['apiurl'],
+                    reqid, 'revoked', opts.message or '')
+            print r
+
+
+    @cmdln.option('-d', '--diff', action='store_true',
+                  help='generate a diff')
+    @cmdln.option('-u', '--unified', action='store_true',
+                  help='output the diff in the unified diff format')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
+    @cmdln.option('-r', '--revision', metavar='REV',
+                  help='for "create", specify a certain source revision ID (the md5 sum)')
+    @cmdln.option('--nodevelproject', action='store_true',
+                  help='do not follow a defined devel project ' \
+                       '(primary project where a package is developed)')
+    @cmdln.option('-s', '--state', default='new',
+                        help='only list requests in one of the comma separated given states [default=new]')
+    @cmdln.option('-b', '--brief', action='store_true', default=False,
+                        help='print output in list view as list subcommand')
+    @cmdln.option('-M', '--mine', action='store_true',
+                        help='only show requests created by yourself')
+    @cmdln.alias("rq")
+    def do_request(self, subcmd, opts, *args):
+        """${cmd_name}: Handle requests to another project
+
+        [See http://en.opensuse.org/Build_Service/Collaboration for information
+        on this topic.]
+
+        For "submit", there are two ways to use it. Either with a working copy
+        or without. If called with no arguments, osc will guess what to submit
+        where. If you don't have a working copy, you can give the respective
+        arguments on the command line (see below for an example).
+        Then, the DESTPAC name is optional; the source packages' name will be
+        used if DESTPAC is omitted.
+        With --message, a message can be attached.
+        With --revision, a revision MD5 of a package can be specified which is
+        to be submitted. The default is to request submission of the currently
+        checked in revision.
+
+        "list" lists open requests attached to a project or package.
+
+        "log" will show the history of the given ID
+
+        "show" will show the request itself, and generate a diff for review, if
+        used with the --diff option.
+
+        "decline" will change the request state to "declined" and append a
+        message that you specify with the --message option.
+
+        "delete" will permanently delete a request and append a
+        message that you specify with the --message option.
+
+        "revoke" will set the request state to "revoked" and append a
+        message that you specify with the --message option.
+
+        "accept" will change the request state to "accepted" and will trigger
+        the actual submit process. That would normally be a server-side copy of
+        the source package to the target package.
+
+
+        usage:
+            osc request submit [-m TEXT]
+            osc request submit [-m TEXT] DESTPRJ [DESTPKG]
+            osc request submit [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
+            osc request list [-M] [PRJ [PKG]]
+            osc request log ID
+            osc request show [-d] [-b] ID
+            osc request accept [-m TEXT] ID
+            osc request decline [-m TEXT] ID
+            osc request revoke [-m TEXT] ID
+            osc request delete [-m TEXT] DESTPRJ [DESTPKG]
+            osc request change_devel [-m TEXT] PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        cmds = ['submit', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke', 'change_devel']
+        if not args or args[0] not in cmds:
+            raise oscerr.WrongArgs('Unknown request action. Choose one of %s.' \
+                                               % ', '.join(cmds))
+
+        cmd = args[0]
+        del args[0]
+
+        if cmd in ['submit']:
+            min_args, max_args = 0, 4
+        elif cmd in ['delete']:
+            min_args, max_args = 1, 2
+        elif cmd in ['change_devel']:
+            min_args, max_args = 3, 4
+        elif cmd in ['list']:
+            min_args, max_args = 0, 2
+        else:
+            min_args, max_args = 1, 1
+        if len(args) < min_args:
+            raise oscerr.WrongArgs('Too few arguments.')
+        if len(args) > max_args:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        apiurl = conf.config['apiurl']
+
+        # collect specific arguments
+        if cmd == 'submit':
+            if len(args) <= 2:
+                # try using the working copy at hand
+                p = findpacs(os.curdir)[0]
+                src_project = p.prjname
+                src_package = p.name
+                if len(args) == 0 and p.islink():
+                    dst_project = p.linkinfo.project
+                    dst_package = p.linkinfo.package
+                    apiurl = p.apiurl
+                elif len(args) > 0:
+                    dst_project = args[0]
+                    if len(args) == 2:
+                        dst_package = args[1]
+                    else:
+                        dst_package = src_package
+                else:
+                    sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
+                             'Please provide it the target via commandline arguments.' % p.name)
+
+                modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
+                if len(modified) > 0:
+                    print 'Your working copy has local modifications.'
+                    repl = raw_input('Proceed without committing the local changes? (y|N) ')
+                    if repl != 'y':
+                        sys.exit(1)
+            elif len(args) >= 3:
+                # get the arguments from the commandline
+                src_project, src_package, dst_project = args[0:3]
+                if len(args) == 4:
+                    dst_package = args[3]
+                else:
+                    dst_package = src_package
+            else:
+                raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                      + self.get_cmd_help('request'))
+
+        elif cmd == 'list':
+            package = None
+            project = None
+            if len(args) > 0:
+                project = args[0]
+            elif not opts.mine:
+                project = store_read_project(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
+                try:
+                    package = store_read_package(os.curdir)
+                except oscerr.NoWorkingCopy:
+                    pass
+
+            if len(args) > 1:
+                package = args[1]
+        elif cmd in ['log', 'show', 'decline', 'accept', 'delete', 'revoke']:
+            reqid = args[0]
+
+
+        # create submit request
+        if cmd == 'submit':
+            if not opts.nodevelproject:
+                devloc = None
+                try:
+                    devloc = show_develproject(apiurl, dst_project, dst_package)
+                except urllib2.HTTPError:
+                    print >>sys.stderr, """\
+Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
+                        % (dst_project, dst_package)
+                    pass
+
+                if devloc \
+                      and dst_project != devloc \
+                      and src_project != devloc:
+                          print """\
+Sorry, but a different project, %s, is defined as the place where development
+of the package %s primarily takes place.
+Please submit there instead, or use --nodevelproject to force direct submission.""" \
+                    % (devloc, dst_package)
+                          sys.exit(1)
+            reqs = get_request_list(apiurl, dst_project, dst_package)
+            user = conf.get_apiurl_usr(apiurl)
+            myreqs = [ i for i in reqs if i.state.who == user ]
+            repl = ''
+            if len(myreqs) > 0:
+                print 'You already created the following submit request: %s.' % \
+                      ', '.join([str(i.reqid) for i in myreqs ])
+                repl = raw_input('Revoke the old requests? (y/N) ')
+
+            # since we have no support in the cli to specify different action types yet
+            # the default is a submit action
+            result = create_submit_request(apiurl,
+                                           src_project, src_package,
+                                           dst_project, dst_package,
+                                           opts.message, orev=opts.revision)
+            if repl == 'y':
+                for req in myreqs:
+                    change_request_state(apiurl, str(req.reqid), 'revoked',
+                                         'superseded by %s' % result)
+
+            print 'created request id', result
+
+        # create delete request
+        elif cmd == 'delete':
+            project = args[0]
+            package = None
+            if len(args) > 1:
+               package = args[1]
+            result = create_delete_request(apiurl, project, package, opts.message)
+            print result
+
+        # request to change devel project
+        elif cmd == 'change_devel':
+            devel_project = args[2]
+            project = args[0]
+            package = args[1]
+            devel_package = package
+            if len(args) > 3:
+               devel_package = args[3]
+            result = create_change_devel_request(apiurl,
+                                           devel_project, devel_package,
+                                           project, package,
+                                           opts.message)
+            print result
+
+        # list
+        elif cmd == 'list':
+            state_list = opts.state.split(',')
+            who = ''
+            if opts.mine:
+                who = conf.get_apiurl_usr(apiurl)
+
+            results = get_request_list(apiurl,
+                                       project, package, who, state_list)
+
+            results.sort(reverse=True)
+
+            for result in results:
+                print result.list_view()
+
+        elif cmd == 'log':
+            for l in get_request_log(conf.config['apiurl'], reqid):
+                print l
+
+
+        # show
+        elif cmd == 'show':
+            r = get_request(conf.config['apiurl'], reqid)
+            if opts.brief:
+                print r.list_view()
+            else:
+                print r
+            # fixme: will inevitably fail if the given target doesn't exist
+            if opts.diff:
+                try:
+                    print server_diff(conf.config['apiurl'],
+                                      r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                      r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified)
+                except urllib2.HTTPError, e:
+                    e.osc_msg = 'Diff not possible'
+                    raise
+
+
+        # decline
+        elif cmd == 'decline':
+            r = change_request_state(conf.config['apiurl'],
+                    reqid, 'declined', opts.message or '')
+            print r
+
+        # accept
+        elif cmd == 'accept':
+            r = change_request_state(conf.config['apiurl'],
+                    reqid, 'accepted', opts.message or '')
+            print r
+        # revoke
+        elif cmd == 'revoke':
+            r = change_request_state(conf.config['apiurl'],
                     reqid, 'revoked', opts.message or '')
             print r
 
@@ -727,6 +973,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("createpac")
     @cmdln.alias("edituser")
     @cmdln.alias("usermeta")
+    @cmdln.hide(1)
     def do_editmeta(self, subcmd, opts, *args):
         """${cmd_name}:
 

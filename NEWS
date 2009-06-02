@@ -1,4 +1,9 @@
 0.118:
+- Obsolete "submitreq" command
+- New generic "request" command:
+  - new "delete" request
+  - new "change_devel" request
+  - Multiple actions in one request is not yet supported by osc
 - support of added .changes in commit message template
 - make submit request listing fast by server side filtering
 - allow pulling of conflicting changes via "osc repairlink"

@@ -58,85 +58,11 @@ MINOR:
 
 
 
-[1]
-
-http://api.opensuse.org/result/Apache/SUSE_Linux_10.0/apache2/result
-15:06 <darix> kurz zeit ueber 1-2 osc feature request zu reden die ich grade bekommen habe?
-15:06 <DuDE_> ja
-15:06 <darix> ok
-15:06 <darix> das 1. ist
-15:06 <darix> osc listpackages [<project>]
-15:06 <DuDE_> als Alias?
-15:07 <darix> osc listpackages [<project>] [<package>]
-15:07 <darix> es soll die gebauten sachen listen
-15:07 <DuDE_> ach so, rpms
-15:07 <darix> quasi alle rpms/debs die da sind
-15:07 <darix> und dann
-15:07 <DuDE_> mit Pfad/URL?
-15:07 <DuDE_> also praktisch den Link auf software.opesuse.org?
-15:07 <darix> osc getpackage [<project>] [<package>] [<rpm>]+
-15:07 <darix> nein
-15:07 <darix> im zweifel ueber API saugen
-15:08 <DuDE_> hm, waere noetig, falls ein Projekt noch nicht durchgebaut hat
-15:08 <darix> jau
-15:08 <darix> richi wuerde sich wirklich drueber freuen
-15:08 <darix> ich weiss dass es ueber die api vom backend geht
-15:09 <darix> ich weiss nur nicht ob api alles durchreicht
-15:09 <darix> und leider hab ich schon ein paar sachen im api code gefunden
-15:09 <darix> der falsch mit dem backend spricht :/
-15:09 <DuDE_> ja, macht osc build auch so, eigentlich, allerdings weiss es dann die noetigen Datein aus dem buildinfo (version, release)
-15:09 <darix> man kann auf dem backend alle rpms listen lassen
-
-
-
-[3]
-
-19:08 < Beineri> DuDE: can you add an option to "up" which moves instead overwriting a file if it has changed in the repository?
-19:08 < darix> Beineri: moves?
-19:08 < darix> oO
-19:08 < darix> Beineri: use case?
-19:09 < Beineri> darix: I want to see what changed when updating (we miss notification and history if you didn't notice). so I want to run "diff foo.myversion foo"
-19:09 < darix> Beineri: we have a history?
-19:09 < darix> Beineri: you should rtfm the api docs before claiming stuff!:p
-19:10 < Beineri> darix: trying to turn around my words?
-19:10 < darix> Beineri: no
-19:10 < darix> just correcting wrong statements.
-19:10 < DuDE> Beineri: doesn't sound too useful
-19:10 < Beineri> darix: what's wrong with "we miss history"?
-19:10 < DuDE> it's deviating too much from the normal usecase
-19:10 < DuDE> which is, merging upstream changes in
-19:10 < DuDE> Beineri: but I have a better idea, I think
-19:11 < DuDE> Beineri: something that I miss in svn very much
-19:11 < Beineri> DuDE: it still shall merge, but make a copy of my version before :-)
-19:11 < darix> GET http://api.opensuse.org/source/<project>/<package>/<filename>
-19:11 < DuDE> Beineri: you mean, keep a fool.mine file in any case?
-19:11 < darix> GET http://api.opensuse.org/source/<project>/<package>/<filename>?rev=1234
-19:11 < DuDE> Beineri: what I miss badly, is a command to see upstream changes
-19:11 < DuDE> Beineri: such as the good old cvs status
-19:12 < DuDE> Beineri: which showed the status of the files on the server
-19:12 < Beineri> DuDE: status is not enough, I want to see what changed :-)
-19:12 < DuDE> Beineri: I mostly want to know what I have to expect, before up'ping and merging
-19:12 < DuDE> Beineri: yes, I also want to see that
-19:12 < DuDE> Beineri: some kind of osc updiff
-19:13 < DuDE> Beineri: would that help?
-19:13 < darix> .oO( i smell nice race conditions^^ )o
-19:13 < DuDE> Beineri: sorry, I just recognize that you asked for an option
-19:13 < DuDE> Beineri: that's of course always an option
-19:14 < DuDE> Beineri: surely
-19:14 < Beineri> DuDE: that would help, yes. "my" stuff I could for now do with a wrapper :-)
-19:15 < Beineri> darix: and that's how useful without osc/web-frontend support?
-
-
-
-
-
-
 15:16 < DuDE> mt: Projekte anlegen geht nur, wenn es ein Subprojekt ist von einem Projekt wo Du Schreibrechte hast
 15:16 < mt> DuDE: wofür?
 15:16 < DuDE> mt: dass jeder einfach so top-level-Projekte anlegen kann, war einmal. Chaos-Reduzierung
 15:17 < DuDE> mt: ueblich ist heutzutage ein Request auf opensuse-buildservice@
 15:18 < DuDE> mt: kannst Du das gleiche mal eben mit osc -H probieren? Mich wuerde mal interessieren, ob da eine sinnvollere Meldung im Body mitkommt
-15:19 < DuDE> mt: mit -H muesste osc den Response-Body anzeigen. Meist ist der unerwuenscht, weil er typischerweise dank iChain hauptsaechlich Javascript-Schlonz enthaelt.
 15:19 < mt> DuDE: reply: 'HTTP/1.1 403 Forbidden\r\n'
 15:20 < DuDE> mt: das ist gut, dann sollte osc kein "try again" anbieten, sondern die Meldung rueberbringen
 
