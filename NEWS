@@ -1,4 +1,4 @@
-0.118:
+0.119:
 - Support new request types
   - "submitreq" command has a new syntax (incompatible !)
   - new "deleterequest" command 
