@@ -1749,7 +1749,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Mark files or directories to be deleted upon the next 'checkin'
 
         usage:
-            osc rm FILE/DIRECTORY [FILE/DIRECTORY...]
+            osc delete FILE/DIRECTORY [FILE/DIRECTORY...]
 
         This command works on check out copies. Use "rdelete" for working on server
         side only. This is needed for removing the entire project.
