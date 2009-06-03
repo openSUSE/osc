@@ -419,8 +419,7 @@ def main(opts, argv):
     # now update the package cache
     fetcher.run(bi)
 
-    # its bad linking the complete packagecache as createrepo will run over _all_
-    # so lets just link the needed packages
+    # Make packages from buildinfo available as repos for kiwi
     if build_type == 'kiwi':
         if not os.path.exists('repos'):
             os.mkdir('repos')
@@ -447,16 +446,6 @@ def main(opts, argv):
                 os.makedirs(os.path.join(pradir))
             if not os.path.exists(tffn):
                 os.symlink(sffn, tffn)
-            ## or - linking complete arch dirs instead of single files
-            #if not os.path.exists(os.path.join(prdir)):
-            #    os.makedirs(os.path.join(prdir))
-            ## source dir
-            #sdir = config['packagecachedir']+"/"+pdir+"/"+rdir+"/"+adir
-            #if not os.path.exists(pradir):
-            #    os.symlink(sdir, pradir)
-    ## old
-    #if build_type == 'kiwi' and not os.path.exists('repos'):
-    #    os.symlink(config['packagecachedir'], 'repos')
 
     if bi.pacsuffix == 'rpm':
         """don't know how to verify .deb packages. They are verified on install
