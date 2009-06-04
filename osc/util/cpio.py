@@ -144,7 +144,7 @@ class Cpio:
                     self.__file = mmap.mmap(self.__file.fileno(), 0, prot = mmap.PROT_READ)
                 else:
                     self.__file = mmap.mmap(self.__file.fileno(), 0)
-            except: EnvironmentError, e:
+            except EnvironmentError, e:
                 if e.errno == 19 or ( hasattr(e, 'winerror') and e.winerror == 5 ):
                     print >>sys.stderr, 'cannot use mmap to read the file, failing back to default'
                 else:
