@@ -561,8 +561,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   ', '.join([str(i.reqid) for i in myreqs ])
             repl = raw_input('Revoke the old requests? (y/N) ')
 
-        # since we have no support in the cli to specify different action types yet
-        # the default is a submit action
         result = create_submit_request(apiurl,
                                        src_project, src_package,
                                        dst_project, dst_package,
@@ -652,6 +650,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
     @cmdln.alias("rq")
+    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests 
 
@@ -2824,7 +2823,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING',
                         nargs=2, action='append', dest='headers',
                         help='add the specified header to the request')
-    def do_req(self, subcmd, opts, url):
+    def do_api(self, subcmd, opts, url):
         """${cmd_name}: Issue an arbitrary request to the API
 
         Useful for testing.
@@ -2835,8 +2834,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Note the global -A and -H options (see osc help).
 
         Examples:
-          osc req /source/home:user
-          osc req -m PUT -f /etc/fstab source/home:user/test5/myfstab
+          osc api /source/home:user
+          osc api -m PUT -f /etc/fstab source/home:user/test5/myfstab
 
         ${cmd_usage}
         ${cmd_option_list}
