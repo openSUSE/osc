@@ -1903,6 +1903,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
+        apiurl = conf.config['apiurl']
         if len(args) == 0:
             wd = os.curdir
             project = store_read_project(wd)
@@ -1913,7 +1914,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         else:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
 
@@ -1924,7 +1924,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             func = show_results_meta
             delim = ''
 
-        apiurl = conf.config['apiurl']
         print delim.join(func(apiurl, project, package, opts.last_build, opts.repo, opts.arch))
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
