@@ -492,6 +492,15 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
+        # remove this block later again
+        oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
+        if args and args[0] in oldcmds:
+            print "****************************************************************"
+            print "* WARNING: It looks that you are using this command with a     *"
+            print "*          deprecated syntax (maybe) !                         *"
+            print "*          Please run \"osc sr --help\" to see the new syntax.   *"
+            print "****************************************************************"
+
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
@@ -1867,6 +1876,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.hide(1)
     def do_rresults(self, subcmd, opts, *args):
         print "Command rresults is obsolete. Please use 'osc results'"
+        sys.exit(1)
+
+    @cmdln.hide(1)
+    def do_req(self, subcmd, opts, *args):
+        print "Command req is obsolete. Please use 'osc api'"
         sys.exit(1)
 
     @cmdln.alias('r')
