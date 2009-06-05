@@ -888,9 +888,16 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision))
-        f = open(os.path.join(self.storedir, '_files'), 'w')
-        f.write(meta)
-        f.close()
+        try:
+            f = open(os.path.join(self.storedir, '_files.new'), 'w')
+            f.write(meta)
+            f.close()
+            os.rename(os.path.join(self.storedir, '_files.new'), os.path.join(self.storedir, '_files'))
+        except:
+            raise
+        finally:
+            if os.path.exists(os.path.join(self.storedir, '_files.new')):
+                os.unlink(os.path.join(self.storedir, '_files.new'))
 
     def update_datastructs(self):
         """
