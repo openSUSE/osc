@@ -500,6 +500,10 @@ class Osc(cmdln.Cmdln):
             print "*          deprecated syntax (maybe) !                         *"
             print "*          Please run \"osc sr --help\" to see the new syntax.   *"
             print "****************************************************************"
+            if args[0] == 'create':
+                args.pop(0)
+            else:
+                sys.exit(1)
 
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
