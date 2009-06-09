@@ -2672,6 +2672,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             search_for = [ 'project', 'package' ]
         for kind in search_for:
             result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl)
+
+            # unfortunately, there is no sort support in the api.
+            # we can do it here. Maybe it would be better done in osc.core.search() already.
+            if result and kind in ['project']:
+                result.sort()
+            if result and kind in ['package']:
+                # hm... results is a flat list
+                l = [ (j, i) for i, j in zip(*[iter(result)]*2) ]
+                l.sort()
+                result = []
+                for j, i in l:
+                    result.extend([i, j])
+
             if result:
                 if kind == 'package':
                     headline = [ '# Package', '# Project' ]
