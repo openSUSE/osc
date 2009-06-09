@@ -2153,23 +2153,33 @@ def change_request_state(apiurl, reqid, newstate, message=''):
 
 def get_request_list(apiurl, project, package, req_who='', req_state=('new',) ):
     requests = []
+
+    matches = []
+    match=''
+    for state in req_state:
+        if len(match): match += '%20and%20'
+        match += 'state/@name=\'%s\'' % quote_plus(state)
+    if req_who:
+        if len(match): match += '%20and%20'
+        match += 'state/@who=\'%s\'' % quote_plus(req_who)
+
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend
-    for what in ['action', 'submit']:
-        match = ''
-        if project:
-            if len(match): match += '%20and%20'
-            match += '%s/target/@project=\'%s\'' % (what, quote_plus(project))
-        if package:
-            if len(match): match += '%20and%20'
-            match += '%s/target/@package=\'%s\'' % (what, quote_plus(package))
-        for state in req_state:
-            if len(match): match += '%20and%20'
-            match += 'state/@name=\'%s\'' % quote_plus(state)
-        if req_who:
-            if len(match): match += '%20and%20'
-            match += 'state/@who=\'%s\'' % quote_plus(req_who)
+    if project or package:
+        for what in ['action', 'submit']:
+            m = match
+            if project:
+                if len(m): m += '%20and%20'
+                m += '%s/target/@project=\'%s\'' % (what, quote_plus(project))
+            if package:
+                if len(m): m += '%20and%20'
+                m += '%s/target/@package=\'%s\'' % (what, quote_plus(package))
 
+            matches.append(m)
+    else:
+        matches.append(match)
+
+    for match in matches:
         u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
         f = http_GET(u)
         collection = ET.parse(f).getroot()
