@@ -1708,7 +1708,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     prj.checkout_missing_pacs()
                     args.remove(arg)
 
-
+        args.sort()
         pacs = findpacs(args)
 
         if (opts.expand_link and opts.unexpand_link) \
