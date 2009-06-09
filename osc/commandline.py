@@ -2673,11 +2673,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for kind in search_for:
             result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl)
 
+            if not result:
+                print 'No matches found for \'%s\' in %ss' % (search_term, kind)
+                continue
+
             # unfortunately, there is no sort support in the api.
             # we can do it here. Maybe it would be better done in osc.core.search() already.
-            if result and kind in ['project']:
+            if kind in ['project']:
                 result.sort()
-            if result and kind in ['package']:
+            if kind in ['package']:
                 # hm... results is a flat list
                 l = [ (j, i) for i, j in zip(*[iter(result)]*2) ]
                 l.sort()
@@ -2685,23 +2689,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for j, i in l:
                     result.extend([i, j])
 
-            if result:
-                if kind == 'package':
-                    headline = [ '# Package', '# Project' ]
-                else:
-                    headline = [ '# Project' ]
-                if opts.verbose:
-                    headline.append('# Title')
-                if opts.repos_baseurl:
-                    headline.append('# URL')
-                if not opts.csv:
-                    if len(search_for) > 1:
-                        print '#' * 68
-                    print 'matches for \'%s\' in %ss:\n' % (search_term, kind)
-                for row in build_table(len(headline), result, headline, 2, csv = opts.csv):
-                    print row
+            if kind == 'package':
+                headline = [ '# Package', '# Project' ]
             else:
-               print 'No matches found for \'%s\' in %ss' % (search_term, kind)
+                headline = [ '# Project' ]
+            if opts.verbose:
+                headline.append('# Title')
+            if opts.repos_baseurl:
+                headline.append('# URL')
+            if not opts.csv:
+                if len(search_for) > 1:
+                    print '#' * 68
+                print 'matches for \'%s\' in %ss:\n' % (search_term, kind)
+            for row in build_table(len(headline), result, headline, 2, csv = opts.csv):
+                print row
 
 
     @cmdln.option('-p', '--project', metavar='project',
