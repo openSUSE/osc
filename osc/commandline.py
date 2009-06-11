@@ -2255,14 +2255,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.alternative_project or store_read_project('.'))
         if not arg_platform:
 
-            # Use a default value from config, but just even if it's available
-            # unless try standard, or openSUSE_Factory
-            for platform in (conf.config['build_platform'], 'standard', 'openSUSE_Factory'):
-                if platform in platforms:
-                    arg_platform = platform
-                    break
+            if len(platforms) == 0:
+                arg_platform = conf.config['build_platform']
+            
+            else:
 
-            arg_platform = arg_platform or platforms[len(platforms)-1]
+                # Use a default value from config, but just even if it's available
+                # unless try standard, or openSUSE_Factory
+                for platform in (conf.config['build_platform'], 'standard', 'openSUSE_Factory'):
+                    if platform in platforms:
+                        arg_platform = platform
+                        break
+
+                arg_platform = arg_platform or platforms[len(platforms)-1]
 
         if not arg_platform in platforms:
             raise oscerr.WrongArgs('%s is not a valid platform, use one of: %s' % (arg_platform, ", ".join(platforms)))
