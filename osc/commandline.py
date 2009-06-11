@@ -2249,7 +2249,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_platform, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
-        arg_platform = arg_platform or conf.config['build_platform']
+        
+        platforms = get_platforms_of_project( \
+                store_read_apiurl('.'), \
+                opts.alternative_project or store_read_project('.'))
+        if not arg_platform:
+
+            # Use a default value from config, but just even if it's available
+            # unless try standard, or openSUSE_Factory
+            for platform in (conf.config['build_platform'], 'standard', 'openSUSE_Factory'):
+                if platform in platforms:
+                    arg_platform = platform
+                    break
+
+            arg_platform = arg_platform or platforms[len(platforms)-1]
+
+        if not arg_platform in platforms:
+            raise oscerr.WrongArgs('%s is not a valid platform, use one of: %s' % (arg_platform, ", ".join(platforms)))
+
         descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') ]
         # FIXME:
         # * request repos from server and select by build type.
