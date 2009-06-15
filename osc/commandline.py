@@ -2410,7 +2410,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
-    def do_rebuildpac(self, subcmd, opts, *args):
+    @cmdln.alias('rebuildpac')
+    def do_rebuild(self, subcmd, opts, *args):
         """${cmd_name}: Triggers package rebuilds
 
         With the optional <repo> and <arch> arguments, the rebuild can be limited
@@ -2428,7 +2429,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         'osc repos' output.
 
         usage:
-            osc rebuildpac PROJECT [PACKAGE [PLATFORM [ARCH]]]
+            osc rebuild PROJECT [PACKAGE [PLATFORM [ARCH]]]
         ${cmd_option_list}
         """
 

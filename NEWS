@@ -39,6 +39,7 @@
   availibility config value, 'standard' and 'opensuse_Factory' in platforms list and in case
   of fail it uses the last entry from that list
 - new osc linkpac -f to allow to override existing _link files
+- rename "rebuildpac" to "rebuild", but keep "rebuildpac" as alias
 
 0.117:
 - support checkout of single package via "osc co PACKAGE" when local dir is project
