@@ -874,6 +874,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='cicount attribute in the link, known values are add, copy, and local, default in buildservice is currently add.')
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='link the specified revision.')
+    @cmdln.option('-f', '--force', action='store_true',
+                  help='overwrite an existing link file if it is there.')
     def do_linkpac(self, subcmd, opts, *args):
         """${cmd_name}: "Link" a package to another package
 
@@ -922,7 +924,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
-        link_pac(src_project, src_package, dst_project, dst_package, rev, opts.cicount)
+        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount)
 
     def do_aggregatepac(self, subcmd, opts, *args):
         """${cmd_name}: "Aggregate" a package to another package

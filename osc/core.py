@@ -2622,7 +2622,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
             root.remove(dp)
     return ET.tostring(root)
 
-def link_pac(src_project, src_package, dst_project, dst_package, rev='', cicount=''):
+def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount=''):
     """
     create a linked package
      - "src" is the original package
@@ -2639,9 +2639,12 @@ def link_pac(src_project, src_package, dst_project, dst_package, rev='', cicount
     # create the _link file
     # but first, make sure not to overwrite an existing one
     if '_link' in meta_get_filelist(conf.config['apiurl'], dst_project, dst_package):
-        print >>sys.stderr
-        print >>sys.stderr, '_link file already exists...! Aborting'
-        sys.exit(1)
+        if force:
+            print >>sys.stderr, 'forced overwrite of existing _link file'
+        else:
+            print >>sys.stderr
+            print >>sys.stderr, '_link file already exists...! Aborting'
+            sys.exit(1)
     
     if rev:
         rev = 'rev="%s"' % rev
