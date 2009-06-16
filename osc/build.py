@@ -63,6 +63,8 @@ class Buildinfo:
 
         root = tree.getroot()
 
+	self.apiurl = apiurl
+
         if root.find('error') != None:
             sys.stderr.write('buildinfo is broken... it says:\n')
             error = root.find('error').text
@@ -95,9 +97,13 @@ class Buildinfo:
                 pass
 
         self.deps = []
+        self.projects = {}
+        self.keys = []
         for node in root.findall('bdep'):
             p = Pac(node, self.buildarch, self.pacsuffix,
                     apiurl, localpkgs)
+            if p.project:
+                self.projects[p.project] = 1
             self.deps.append(p)
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
@@ -621,13 +627,11 @@ def main(opts, argv):
                    os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        if config['build-type'] == "xen" or config['build-type'] == "kvm":
-            print 'Skipping verification of package signatures due to secure VM build'
-        elif opts.no_verify or opts.noinit:
+        if opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
-            verify_pacs([ i.fullfilename for i in bi.deps ])
+            verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
     elif bi.pacsuffix == 'deb':
         if config['build-type'] == "xen" or config['build-type'] == "kvm":
             print 'Skipping verification of package signatures due to secure VM build'

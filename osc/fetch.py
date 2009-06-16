@@ -9,6 +9,7 @@ from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
 from core import makeurl
 from util import packagequery, cpio
+import conf
 import tempfile
 try:
     from meter import TextMeter
@@ -37,6 +38,7 @@ class Fetcher:
             self.progress_obj = None
 
 
+	self.nopac = False
         self.cachedir = cachedir
         self.urllist = urllist
         self.http_debug = http_debug
@@ -63,8 +65,9 @@ class Fetcher:
 
         #log(0, '%s: %s' % (errobj.url, str(errobj.exception)))
         #log(0, 'Trying other mirror.')
-        print 'Trying openSUSE Build Service server for %s (%s), since it is not on %s.' \
-                % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
+	if not self.nopac:
+		print 'Trying openSUSE Build Service server for %s (%s), since it is not on %s.' \
+			% (self.curpac, self.curpac.project, errobj.url.split('/')[2])
         raise errobj.exception
 
 
@@ -197,7 +200,27 @@ class Fetcher:
                 if os.path.exists(tmpfile):
                     os.unlink(tmpfile)
 
-def verify_pacs(pac_list):
+        self.nopac = True
+        for i in buildinfo.projects:
+            dest = "%s/%s/_pubkey" % (self.cachedir, i)
+            if os.path.exists(dest):
+                buildinfo.keys.append(dest)
+            else:
+                url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
+                try:
+                    self.gr.urlgrab(url, dest, text="key for %s" % i)
+                    buildinfo.keys.append(dest)
+                except KeyboardInterrupt:
+                    print 'Cancelled by user (ctrl-c)'
+                    print 'Exiting.'
+                    if os.path.exists(dest):
+                        os.unlink(dest)
+                    sys.exit(0)
+                except URLGrabError, e:
+                    print "can't fetch key for %s: %s" %(i, e.strerror)
+        self.nopac = False
+
+def verify_pacs_old(pac_list):
     """Take a list of rpm filenames and run rpm -K on them.
 
        In case of failure, exit.
@@ -264,3 +287,45 @@ def verify_pacs(pac_list):
             sys.exit(1)
 
 
+def verify_pacs(pac_list, key_list):
+    """Take a list of rpm filenames and verify their signatures.
+
+       In case of failure, exit.
+       """
+
+    # XXX: remove if new code stable
+    if not conf.config.get('builtin_signature_check', False):
+        return verify_pacs_old(pac_list)
+
+    if not pac_list:
+        return
+
+    if not key_list:
+	print "no keys"
+        sys.exit(1)
+        return
+
+    print key_list
+
+    import checker
+    failed = False
+    checker = checker.Checker()
+    try:
+	checker.readkeys(key_list)
+        for pkg in pac_list:
+            try:
+                checker.check(pkg)
+            except Exception, e:
+                failed = True
+                print pkg, ':', e
+    except Exception, e:
+        checker.cleanup()
+        sys.exit(1)
+
+    if failed:
+        checker.cleanup()
+        sys.exit(1)
+
+    checker.cleanup()
+
+# vim: sw=4 et
