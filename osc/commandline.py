@@ -2101,8 +2101,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         which is directly readable by the build script. It contains RPM macros
         and BuildRequires expansions, for example.
 
-        The arguments PLATFORM and ARCH can be taken first two columns in the
-        'osc repos' output.
+        The arguments PLATFORM and ARCH can be taken from the first two columns 
+        of the 'osc repos' output.
 
         ${cmd_usage}
         ${cmd_option_list}
