@@ -7,6 +7,7 @@ import sys, os
 import urllib2
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
+from core import data_from_rpm
 try:
     from meter import TextMeter
 except:
@@ -67,6 +68,7 @@ class Fetcher:
 
         MirrorGroup._join_url = join_url
         mg = MirrorGroup(self.gr, pac.urllist)
+        partname = pac.fullfilename + ".part"
 
         if self.http_debug:
             print
@@ -77,7 +79,7 @@ class Fetcher:
         try:
             # it returns the filename
             ret = mg.urlgrab(pac.filename, 
-                             filename=pac.fullfilename, 
+                             filename=partname,
                              text = '(%s) %s' %(pac.project, pac.filename))
 
         except URLGrabError, e:
@@ -87,7 +89,22 @@ class Fetcher:
             print >>sys.stderr, '\n'.join(pac.urllist)
 
             sys.exit(1)
-        
+
+        if partname.endswith('.rpm.part'):
+            rpm_data = data_from_rpm(partname, 'Name:', 'Version:', 'Release:', 'Arch:', 'SourceRPM:', 'NoSource:', 'NoPatch:')
+            if rpm_data:
+                arch = rpm_data['Arch:']
+                if not rpm_data['SourceRPM:']:
+                    if rpm_data['NoSource:'] or rpm_data['NoPatch:']:
+                        arch = "nosrc"
+                    else:
+                        arch = "src"
+                canonname = "%s-%s-%s.%s.rpm" % (rpm_data['Name:'], rpm_data['Version:'], rpm_data['Release:'], arch)
+                head, tail = os.path.split(pac.fullfilename)
+                pac.filename = canonname
+                pac.fullfilename = os.path.join(head, canonname)
+
+        os.rename(partname, pac.fullfilename);
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)

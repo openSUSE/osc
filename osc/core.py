@@ -3565,6 +3565,12 @@ def tag_to_rpmpy(tag):
     try:
         import rpm
         tags = { 'Name:' : rpm.RPMTAG_NAME,
+                 'Version:' : rpm.RPMTAG_VERSION,
+                 'Release:' : rpm.RPMTAG_RELEASE,
+                 'Arch:' : rpm.RPMTAG_ARCH,
+                 'SourceRPM:' : rpm.RPMTAG_SOURCERPM,
+                 'NoSource:' : 1051,
+                 'NoPatch:' : 1052,
                  'Summary:' : rpm.RPMTAG_SUMMARY,
                  '%description' : rpm.RPMTAG_DESCRIPTION,
                  'Url:' : rpm.RPMTAG_URL

@@ -145,7 +145,7 @@ class Pac:
         self.mp['repopackage'] = node.get('package') or '_repository'
         self.mp['repoarch'] = node.get('repoarch') or self.mp['arch']
 
-        if not (self.mp['name'] and self.mp['arch'] and self.mp['version']):
+        if pacsuffix == 'deb' and not (self.mp['name'] and self.mp['arch'] and self.mp['version']):
             raise oscerr.APIError(
                 "buildinfo for package %s/%s/%s is incomplete" 
                     % (self.mp['name'], self.mp['arch'], self.mp['version']))
