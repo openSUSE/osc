@@ -13,7 +13,7 @@ import oscerr
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
-%(name)s \- OpenSUSE build service command-line tool.
+%(name)s \- openSUSE build service command-line tool.
 .SH SYNOPSIS
 .B %(name)s
 [\fIGLOBALOPTS\fR] \fISUBCOMMAND \fR[\fIOPTS\fR] [\fIARGS\fR...]
@@ -21,7 +21,7 @@ MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Comm
 .B %(name)s
 \fIhelp SUBCOMMAND\fR
 .SH DESCRIPTION
-OpenSUSE build service command-line tool.
+openSUSE build service command-line tool.
 """
 MAN_FOOTER = r"""
 .SH "SEE ALSO"
@@ -42,7 +42,7 @@ class Osc(cmdln.Cmdln):
     """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
     or: osc help SUBCOMMAND
 
-    OpenSUSE build service command-line tool.
+    openSUSE build service command-line tool.
     Type 'osc help <subcommand>' for help on a specific subcommand.
 
     ${command_list}
