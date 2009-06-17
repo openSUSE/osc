@@ -21,7 +21,7 @@ MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Comm
 .B %(name)s
 \fIhelp SUBCOMMAND\fR
 .SH DESCRIPTION
-OpenSUSE build service command\-line tool.
+OpenSUSE build service command-line tool.
 """
 MAN_FOOTER = r"""
 .SH "SEE ALSO"

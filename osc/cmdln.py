@@ -117,6 +117,24 @@ def alias(*aliases):
         return f
     return decorate
 
+MAN_REPLACES = [
+    (re.compile(r'(^|[ \t])--([^/ \t-]*)-([^/ \t-]*)-([^/ \t-]*)($|[ \t=])'), r'\1\-\-\2\-\3\-\4\5'),
+    (re.compile(r'(^|[ \t])-([^/ \t-]*)-([^/ \t-]*)-([^/ \t-]*)($|[ \t=])'), r'\1\-\2\-\3\-\4\5'),
+    (re.compile(r'(^|[ \t])--([^/ \t-]*)-([^/ \t-]*)($|[ \t=])'), r'\1\-\-\2\-\3\4'),
+    (re.compile(r'(^|[ \t])-([^/ \t-]*)-([^/ \t-]*)($|[ \t=])'), r'\1\-\2\-\3\4'),
+    (re.compile(r'(^|[ \t])--([^/ \t-]*)($|[ \t=])'), r'\1\-\-\2\3'),
+    (re.compile(r'(^|[ \t])-([^/ \t-]*)($|[ \t=])'), r'\1\-\2\3'),
+    ]
+
+def man_escape(text):
+    '''
+    Escapes text to be included in man page.
+
+    For now it only escapes dashes in command line options.
+    '''
+    for repl in MAN_REPLACES:
+        text = repl[0].sub(repl[1], text)
+    return text
 
 class RawCmdln(cmd.Cmd):
     """An improved (on cmd.Cmd) framework for building multi-subcommand
@@ -561,12 +579,12 @@ class RawCmdln(cmd.Cmd):
             for line in text.splitlines(False):
                 if line[:8] == ' ' * 8:
                     line = line[8:]
-                lines.append(line)
+                lines.append(man_escape(line))
 
             self.stdout.write('.TP\n\\fB%s\\fR\n%s\n' % (command, '\n'.join(lines)))
 
         self.stdout.write(self.man_options_header)
-        self.stdout.write(self._help_preprocess('${option_list}', None))
+        self.stdout.write(man_escape(self._help_preprocess('${option_list}', None)))
 
         self.stdout.write(self.man_footer)
 
