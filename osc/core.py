@@ -2017,7 +2017,7 @@ def edit_message(footer='', template=''):
     f = os.fdopen(fd, 'w')
     if template != '':
         f.write(template)
-        f.write('\n')
+    f.write('\n')
     f.write(delim)
     f.close()
     mtime_orig = os.stat(filename).st_mtime
