@@ -1271,12 +1271,21 @@ class Request:
             type = action.get('type', 'submit')
             try:
                 n = action.find('source')
-                src_prj = n.get('project')
-                src_pkg = n.get('package')
-                src_rev = n.get('rev', None)
+                if n:
+                    src_prj = n.get('project')
+                    src_pkg = n.get('package')
+                    src_rev = n.get('rev', None)
+                else:
+                    src_prj = None
+                    src_pkg = None
+                    src_rev = None
                 n = action.find('target')
-                dst_prj = n.get('project')
-                dst_pkg = n.get('package')
+                if n:
+                    dst_prj = n.get('project')
+                    dst_pkg = n.get('package', None)
+                else:
+                    dst_prj = None
+                    dst_pkg = None
                 self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
