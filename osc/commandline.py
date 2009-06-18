@@ -2936,8 +2936,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         sys.stdout.write(out)
 
 
+    @cmdln.option('-b', '--bugowner', action='store_true',
+                  help='Show only the bugowner')
     @cmdln.option('-e', '--email', action='store_true',
                   help='show email addresses instead of user names')
+    @cmdln.option('--nodevelproject', action='store_true',
+                  help='do not follow a defined devel project ' \
+                       '(primary project where a package is developed)')
     @cmdln.option('-v', '--verbose', action='store_true',
                   help='show more information')
     @cmdln.option('-D', '--devel-project', metavar='devel_project',
@@ -2959,48 +2964,70 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        maintainers = []
         pac = None
+        tree = None
+        roles = [ 'bugowner', 'maintainer' ]
+        if opts.bugowner:
+            roles = [ 'bugowner' ]
+
         if len(args) == 1:
-            m = show_project_meta(conf.config['apiurl'], args[0])
             prj = args[0]
+            m = show_project_meta(conf.config['apiurl'], prj)
+            tree = ET.parse(StringIO(''.join(m)))
         elif len(args) == 2:
-            m = show_package_meta(conf.config['apiurl'], args[0], args[1])
             prj = args[0]
             pac = args[1]
+            m = show_package_meta(conf.config['apiurl'], prj, pac)
+            tree = ET.parse(StringIO(''.join(m)))
+            if not opts.nodevelproject and not opts.delete and not opts.add:
+               while tree.findall('devel'):
+                  d = tree.find('devel')
+                  prj = d.get('project', prj)
+                  pac = d.get('package', pac)
+                  print "Following to the development space:", prj, "/", pac
+                  m = show_package_meta(conf.config['apiurl'], prj, pac)
+                  tree = ET.parse(StringIO(''.join(m)))
+               if not tree.findall('person'):
+                  print "No dedicated persons in package defined, showing the project persons !"
+                  m = show_project_meta(conf.config['apiurl'], prj)
+                  tree = ET.parse(StringIO(''.join(m)))
         else:
             raise oscerr.WrongArgs('I need at least one argument.')
 
-        maintainers = []
-
-        tree = ET.parse(StringIO(''.join(m)))
-        for person in tree.findall('person'):
-            maintainers.append(person.get('userid'))
-
-        if opts.email:
-            emails = []
-            for maintainer in maintainers:
-                user = get_user_data(conf.config['apiurl'], maintainer, 'email')
-                if user != None:
-                    emails.append(''.join(user))
-            print ', '.join(emails)
-        elif opts.verbose:
-            userdata = []
-            for maintainer in maintainers:
-                user = get_user_data(conf.config['apiurl'], maintainer, 'realname', 'login', 'email')
-                if user != None:
-                    for itm in user:
-                        userdata.append(itm)
-            for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
-                print row
-        elif opts.add:
+        if opts.add:
             addMaintainer(conf.config['apiurl'], prj, pac, opts.add)
         elif opts.delete:
             delMaintainer(conf.config['apiurl'], prj, pac, opts.delete)
         elif opts.devel_project:
-            addDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
-
-        else:
-            print ', '.join(maintainers)
+            setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
+        else:     
+            # showing the maintainers
+            for role in roles:
+                print ""
+                print role, ":"
+                for person in tree.findall('person'):
+                    if person.get('role') == role:
+                       maintainers.append(person.get('userid'))
+                
+                if opts.email:
+                    emails = []
+                    for maintainer in maintainers:
+                        user = get_user_data(conf.config['apiurl'], maintainer, 'email')
+                        if user != None:
+                            emails.append(''.join(user))
+                    print ', '.join(emails)
+                elif opts.verbose:
+                    userdata = []
+                    for maintainer in maintainers:
+                        user = get_user_data(conf.config['apiurl'], maintainer, 'realname', 'login', 'email')
+                        if user != None:
+                            for itm in user:
+                                userdata.append(itm)
+                    for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
+                        print row
+                else:
+                    print ', '.join(maintainers)
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
