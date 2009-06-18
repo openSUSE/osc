@@ -1270,13 +1270,16 @@ class Request:
         for action in actions:
             type = action.get('type', 'submit')
             try:
-                n = action.find('source')
-                src_prj = n.get('project', None)
-                src_pkg = n.get('package', None)
-                src_rev = n.get('rev', None)
-                n = action.find('target')
-                dst_prj = n.get('project', None)
-                dst_pkg = n.get('package', None)
+                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = None
+                if action.findall('source'):
+                   n = action.find('source')
+                   src_prj = n.get('project', None)
+                   src_pkg = n.get('package', None)
+                   src_rev = n.get('rev', None)
+                if action.findall('target'):
+                   n = action.find('target')
+                   dst_prj = n.get('project', None)
+                   dst_pkg = n.get('package', None)
                 self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
