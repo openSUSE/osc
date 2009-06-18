@@ -656,6 +656,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='output the diff in the unified diff format')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('-t', '--type', metavar='TEXT',
+                  help='limit to requests which contain a given action type (submit/delete/develchange)')
     @cmdln.option('-s', '--state', default='new',
                         help='only list requests in one of the comma separated given states [default=new]')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
@@ -700,7 +702,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
         usage:
-            osc request list [-M] [PRJ [PKG]]
+            osc request list [-M] [-t type] [PRJ [PKG]]
             osc request log ID
             osc request show [-d] [-b] ID
             osc request accept [-m TEXT] ID
@@ -760,7 +762,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 who = conf.get_apiurl_usr(apiurl)
 
             results = get_request_list(apiurl,
-                                       project, package, who, state_list)
+                                       project, package, who, state_list, opts.type)
 
             results.sort(reverse=True)
 

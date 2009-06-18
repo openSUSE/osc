@@ -80,8 +80,8 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="Fedora_10">
-    <path project="Fedora:10" repository="standard" />
+  <repository name="Fedora_11">
+    <path project="Fedora:11" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
@@ -1271,21 +1271,12 @@ class Request:
             type = action.get('type', 'submit')
             try:
                 n = action.find('source')
-                if n:
-                    src_prj = n.get('project')
-                    src_pkg = n.get('package')
-                    src_rev = n.get('rev', None)
-                else:
-                    src_prj = None
-                    src_pkg = None
-                    src_rev = None
+                src_prj = n.get('project', None)
+                src_pkg = n.get('package', None)
+                src_rev = n.get('rev', None)
                 n = action.find('target')
-                if n:
-                    dst_prj = n.get('project')
-                    dst_pkg = n.get('package', None)
-                else:
-                    dst_prj = None
-                    dst_pkg = None
+                dst_prj = n.get('project', None)
+                dst_pkg = n.get('package', None)
                 self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
@@ -1326,19 +1317,22 @@ class Request:
                            )
 
     def list_view(self):
-        dst = "%s/%s" % (self.actions[0].dst_project, self.actions[0].dst_package)
-        if self.actions[0].src_package == self.actions[0].dst_package:
-            dst = self.actions[0].dst_project
+        ret = '%6d  State:%-7s Creator:%-12s When:%-12s' % (self.reqid, self.state.name, self.state.who, self.state.when)
 
-        desc = ""
+        for a in self.actions:
+           dst = "%s/%s" % (a.dst_project, a.dst_package)
+           if a.src_package == a.dst_package:
+               dst = a.dst_project
+
+           ret += '\n        %s:       %-50s  ->  %-20s   ' % \
+            (a.type, 
+             "%s/%s" % (a.src_project, a.src_package), dst)
+
         if self.descr:
-            desc = "\n                 %s" % (repr(self.descr))
+            ret += "\n        Comment: %s" % (repr(self.descr))
+        ret += "\n"
 
-        return '%6d  %-7s %-12s %-50s  ->  %-20s   %s' % \
-            (self.reqid, 
-             self.state.name, "(%s)" % self.state.who,
-             "%s/%s" % (self.actions[0].src_project, self.actions[0].src_package),
-             dst, desc)
+        return ret
 
     def __cmp__(self, other):
         return cmp(self.reqid, other.reqid)
@@ -2159,7 +2153,7 @@ def change_request_state(apiurl, reqid, newstate, message=''):
     return f.read()
 
 
-def get_request_list(apiurl, project, package, req_who='', req_state=('new',) ):
+def get_request_list(apiurl, project, package, req_who='', req_state=('new',), req_type=None ):
     requests = []
 
     matches = []
@@ -2182,6 +2176,9 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',) ):
             if package:
                 if len(m): m += '%20and%20'
                 m += '%s/target/@package=\'%s\'' % (what, quote_plus(package))
+            if req_type:
+                if len(m): m += '%20and%20'
+                m += '%s/@type=\'%s\'' % (what, quote_plus(req_type))
 
             matches.append(m)
     else:

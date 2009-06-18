@@ -1,7 +1,9 @@
 0.120:
  - support "setlinkrev" for whole projects
- - support "setlinkrev -u" for removing revision references
- - added dist directory with completion scripts for packaging
+ - add "setlinkrev --unset" for removing revision references
+ - add "osc request list -t <type>" to list only submit, delete or develchange requests
+ - add shell completion scripts
+ - fix support of listing requests with multiple actions
 
 0.119:
 - Support new request types
