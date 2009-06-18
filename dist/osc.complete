@@ -1,0 +1,289 @@
+#!/bin/bash
+#
+#  Helper script for completion, usage with tcsh:
+#
+#     complete osc 'p@*@`osc.complete`@'
+#
+#  usage with bash
+#
+#     complete -C osc.complete osc
+#
+#  Author: Werner Fink <werner@suse.de>
+#
+
+set -o noclobber
+shopt -s extglob
+typeset -i last
+typeset -i count
+
+test "/proc/$PPID/exe" -ef /bin/tcsh || COMMAND_LINE="$COMP_LINE"
+cmdline=($COMMAND_LINE)
+test "${cmdline[0]}" != "osc" && exit 1
+
+let last=${#COMMAND_LINE}
+let last--
+let count=${#cmdline[@]}
+let count--
+test "${COMMAND_LINE:$last}" = " " && let count++
+unset last
+
+osccmds=(abortbuild add addremove aggregatepac branch build buildconfig \
+    buildhistory buildhist buildinfo buildlog bl cat checkout co commit \
+    checkin ci copypac delete del remove rm deletepac deleteprj diff di \
+    getbinaries help importsrcpkg info init jobhistory jobhist linkpac list \
+    log ls maintainer meta mkpac platforms prjresults pr rdiff rebuildpac \
+    remotebuildlog rbl repos repourls req resolved results results_meta rlog \
+    rprjresults rresults search status sr submitreq update up updatepacmetafromspec \
+    metafromspec wipebinaries)
+oscreq=(create list log show accept decline delete revoke)
+
+oscprj=""
+oscpkg=""
+lnkprj=""
+lnkpkg=""
+test -s ${PWD}/.osc/_project && read -t 1 oscprj < ${PWD}/.osc/_project
+test -s ${PWD}/.osc/_package && read -t 1 oscpkg < ${PWD}/.osc/_package
+if test -s ${PWD}/.osc/_files ; then
+    lnkprj=$(command sed -rn '/<linkinfo/{s@.*[[:blank:]]project="([^"]+)".*@\1@p;}' < ${PWD}/.osc/_files)
+    lnkpkg=$(command sed -rn '/<linkinfo/{s@.*[[:blank:]]package="([^"]+)".*@\1@p;}' < ${PWD}/.osc/_files)
+fi
+
+if test -s ~/.osc.projects ; then
+    typeset -i ctime=$(command date -d "$(command stat -c '%z' ~/.osc.projects)" +'%s')
+    typeset -i   now=$(command date -d now +'%s')
+    ((now - ctime > 86400)) && command osc ls >| ~/.osc.projects
+else
+    command osc ls >| ~/.osc.projects
+fi
+
+submit ()
+{
+    local -i pos=$1
+    local -i off=$2
+    local target
+
+    if ((pos == 1)) ; then
+	if test -z "${cmdline[$((3+off))]}" -a -n "${oscprj}" ; then
+	    builtin compgen -W "${oscprj}"
+	else
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((3+off))]}"
+	fi
+    fi
+    if ((pos == 2)) ; then
+	if test -z "${cmdline[$((4+off))]}" -a -n "${oscpkg}" ; then
+	    builtin compgen -W "${oscpkg}"
+	else
+	    builtin compgen -W "$(command osc ls "${cmdline[$((3+off))]}")" -- "${cmdline[$((4+off))]}"
+	fi
+    fi
+    if ((pos == 3)) ; then
+	if test -z "${cmdline[$((5+off))]}" -a -n "${lnkprj}" ; then
+	    builtin compgen -W "${lnkprj}"
+	else
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((5+off))]}"
+	fi
+    fi
+    if ((pos == 4)) ; then
+	target="${lnkpkg}"
+	target="${target:+$target }$oscpkg"
+	if test -n "${target}" ; then
+	    builtin compgen -W "${target}" -- "${cmdline[$((6+off))]}"
+	else
+	    builtin compgen -W "$(command osc ls "${cmdline[$((5+off))]}")" -- "${cmdline[$((6+off))]}"
+	fi
+    fi
+}
+
+case "${cmdline[1]}" in
+add|addremove)
+    if ((count == 1)) ; then
+	builtin compgen -W 'add addremove' -- "${cmdline[1]}"
+    else
+	for x in $(builtin compgen -f -X '.osc' -- "${cmdline[2]}"); do
+	    test -d $x && builtin echo $x/ || builtin echo $x
+	done
+    fi
+    ;;
+branch)
+    if ((count == 1)) ; then
+	builtin compgen -W 'branch' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    --nodevelproject)
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[3]}"
+	fi
+	if ((count == 4)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[3]}")" -- "${cmdline[4]}"
+	fi
+	;;
+    -*) builtin compgen -W '--nodevelproject' -- "${cmdline[3]}" ;;
+    *)
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+    esac
+    ;;
+list|ls)
+    if ((count == 1)) ; then
+	builtin compgen -W 'list ls' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+    fi
+    if ((count == 3)) ; then
+	builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+    fi
+    ;;
+sr|submitreq)
+    if ((count == 1)) ; then
+	builtin compgen -W 'sr submitreq' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    create)
+	case "${cmdline[3]}" in
+	--nodevelproject)
+	    submit $((count - 3)) 1 ;;
+	-*) builtin compgen -W '--nodevelproject' -- "${cmdline[3]}" ;;
+	*)  submit $((count - 2)) 0 ;;
+	esac
+	;;
+    accept|decline|delete|revoke|log)
+	if ((count == 3)) ; then
+	    builtin echo -n 'ID'
+	fi
+	;;
+    show)
+	if ((count == 3)) ; then
+	    builtin compgen -W '--diff' -- "${cmdline[3]}"
+	else    
+	    builtin echo -n 'ID'
+	fi
+	;;
+    list)
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[3]}"
+	fi
+	if ((count == 4)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[3]}")" -- "${cmdline[4]}"
+	fi
+	;;
+    *)
+	((count == 2)) && builtin compgen -W "$(builtin echo ${oscreq[@]})" -- "${cmdline[2]}"
+    esac
+    ;;
+copypac|linkpac)
+    if ((count == 1)) ; then
+	builtin compgen -W 'copypac linkpac' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    *)
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+	if ((count == 4)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[4]}"
+	fi
+	if ((count == 5)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[4]}")" -- "${cmdline[5]}"
+	fi
+    esac
+    ;;
+rdiff)
+    if ((count == 1)) ; then
+	builtin compgen -W 'rdiff' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    *)
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+	if ((count == 4)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -P --oldprj= -- "${cmdline[4]#*=}"
+	fi
+	if ((count == 5)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[4]}")" -P --oldpkg= -- "${cmdline[5]#*=}"
+	fi
+    esac
+    ;;
+ci|commit|checkin)
+    if ((count == 1)) ; then
+	builtin compgen -W 'ci commit checkin' -- "${cmdline[1]}"
+    else
+	for x in $(builtin compgen -f -X '.osc' -- "${cmdline[2]}"); do
+	    test -d $x && builtin echo $x/ || builtin echo $x
+	done
+    fi
+    ;;
+co|checkout)
+    if ((count == 1)) ; then
+	builtin compgen -W 'co checkout' -- "${cmdline[1]}"
+    fi
+    if ((count == 1)) ; then
+	builtin compgen -W 'co checkout' -- "${cmdline[1]}"
+    else
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+    fi
+    ;;
+up|update)
+    if ((count == 1)) ; then
+	builtin compgen -W 'up update' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin  compgen -W '--expand-link --unexpand-link' -- "${cmdline[2]}"
+    fi
+    ;;
+meta)
+    if ((count == 1)) ; then
+	builtin compgen -W 'meta metafromspec' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W 'prj pkg' -- "${cmdline[2]}"
+    fi
+    if ((count == 3)) ; then
+	builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[3]}"
+    fi
+    if ((count == 4)) && test "${cmdline[2]}" = pkg ; then
+	builtin compgen -W "$(command osc ls "${cmdline[3]}")" -- "${cmdline[4]}"
+    fi
+    if ((count == 5)) ; then
+	builtin compgen -W '--edit -e' -- "${cmdline[5]}"
+    fi
+    ;;
+wipebinaries)
+    if ((count == 1)) ; then
+	builtin compgen -W 'wipebinaries' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+    fi
+    if ((count == 3)) ; then
+	builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+    fi
+    if ((count == 4)) ; then
+	builtin compgen -W "--expansion --broken --build-failed --build-disabled" -- "${cmdline[4]}"
+    fi
+    ;;
+help)
+    if ((count == 1)) ; then
+	builtin compgen -W 'help' -- "${cmdline[1]}"
+    fi
+    ((count == 2)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[2]}"
+    ;;
+*)
+    ((count == 1)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[1]}"
+esac
