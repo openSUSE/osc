@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-__version__ = '0.119'
+__version__ = '0.119.90'
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
@@ -3475,13 +3475,16 @@ def set_link_rev(apiurl, project, package, revision = None):
        e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
        raise
 
+    # set revision element
     if not revision:
        src_project = root.attrib['project']
        src_package = root.attrib['package']
-       revision = show_upstream_rev(apiurl, src_project, src_package);
+       root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package);
+    elif revision == -1:
+       del root.attrib['rev']
+    else:
+       root.attrib['rev'] = revision
 
-    # set revision element
-    root.attrib['rev'] = revision
     l = ET.tostring(root)
     # upload _link file again
     http_PUT(url, data=l)

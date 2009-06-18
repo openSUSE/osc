@@ -1,3 +1,7 @@
+0.120:
+ - support "setlinkrev" for whole projects
+ - support "setlinkrev -u" for removing revision references
+
 0.119:
 - Support new request types
   - "submitreq" command has a new syntax (incompatible !)

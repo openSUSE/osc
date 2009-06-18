@@ -836,6 +836,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='use the specified revision.')
+    @cmdln.option('-u', '--unset', action='store_true',
+                  help='remove revision in link, it will point always to latest revision')
     def do_setlinkrev(self, subcmd, opts, *args):
         """${cmd_name}: Updates a revision number in a source link.
 
@@ -844,12 +846,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc setlinkrev
-            osc setlinkrev PROJECT PACKAGE
+            osc setlinkrev PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
         args = slash_split(args)
         apiurl = conf.config['apiurl']
+        package = None
         if not args or len(args) == 0:
             p = findpacs(os.curdir)[0]
             project = p.prjname
@@ -860,18 +863,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) == 2:
             project = args[0]
             package = args[1]
+        elif len(args) == 1:
+            project = args[0]
         else:
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('setlinkrev'))
 
-        rev, dummy = parseRevisionOption(opts.revision)
-        set_link_rev(apiurl, project, package, rev)
+        if package:
+            packages = [ package ]
+        else:
+            packages = meta_get_packagelist(apiurl, project)
+
+        for p in packages:
+            print "setting revision for package", p
+            if opts.unset:
+               rev=-1
+            else:
+               rev, dummy = parseRevisionOption(opts.revision)
+            set_link_rev(apiurl, project, p, rev)
 
 
-    @cmdln.option('-c', '--current', action='store_true',
-                  help='link fixed against current revision.')
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
                   help='cicount attribute in the link, known values are add, copy, and local, default in buildservice is currently add.')
+    @cmdln.option('-c', '--current', action='store_true',
+                  help='link fixed against current revision.')
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='link the specified revision.')
     @cmdln.option('-f', '--force', action='store_true',
