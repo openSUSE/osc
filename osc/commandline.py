@@ -2951,6 +2951,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='add a new maintainer')
     @cmdln.option('-d', '--delete', metavar='user',
                   help='delete a maintainer from a project or package')
+    @cmdln.option('-r', '--role', metavar='role',
+                  help='Specify user role')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
 
@@ -2967,6 +2969,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         maintainers = []
         pac = None
         tree = None
+        role = opts.role
         roles = [ 'bugowner', 'maintainer' ]
         if opts.bugowner:
             roles = [ 'bugowner' ]
@@ -2996,9 +2999,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('I need at least one argument.')
 
         if opts.add:
-            addMaintainer(conf.config['apiurl'], prj, pac, opts.add)
+            addPerson(conf.config['apiurl'], prj, pac, opts.add, role)
         elif opts.delete:
-            delMaintainer(conf.config['apiurl'], prj, pac, opts.delete)
+            delPerson(conf.config['apiurl'], prj, pac, opts.delete, role)
         elif opts.devel_project:
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
         else:     

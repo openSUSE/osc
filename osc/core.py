@@ -3648,7 +3648,11 @@ def is_srcrpm(f):
         return False   
 
 def addMaintainer(apiurl, prj, pac, user):
-    """ add a new maintainer to a package or project """
+    # for backward compatibility only
+    addPerson(apiurl, prj, pac, user)
+
+def addPerson(apiurl, prj, pac, user, role="maintainer"):
+    """ add a new person to a package or project """
     path = quote_plus(prj),
     kind = 'prj'
     if pac:
@@ -3663,13 +3667,13 @@ def addMaintainer(apiurl, prj, pac, user):
         tree = ET.fromstring(''.join(data))
         found = False
         for person in tree.getiterator('person'):
-            if person.get('userid') == user:
+            if person.get('userid') == user and person.get('role') == role:
                 found = True
                 print "user already exists"
                 break
         if not found:
             # the xml has a fixed structure
-            tree.insert(2, ET.Element('person', role='maintainer', userid=user))
+            tree.insert(2, ET.Element('person', role=role, userid=user))
             print 'user \'%s\' added to \'%s\'' % (user, pac or prj)
             edit_meta(metatype=kind,
                       path_args=path,

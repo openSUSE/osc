@@ -1,5 +1,7 @@
 0.121:
  - osc metafromspec allows editing before send
+ - allow handling of other roles than "maintainer" with maintainer command
+   (-r role)
 
 0.120:
  - support "setlinkrev" for whole projects
