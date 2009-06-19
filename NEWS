@@ -1,3 +1,6 @@
+0.121:
+ - osc metafromspec allows editing before send
+
 0.120:
  - support "setlinkrev" for whole projects
  - add "setlinkrev --unset" for removing revision references
@@ -6,7 +9,6 @@
  - fix support of listing requests with multiple actions
  - "osc maintainer" is following to the development project / package now
  - "osc maintainer" list maintainer and bugowner roles now
- - osc metafromspec allows editing before send
 
 0.119:
 - Support new request types
