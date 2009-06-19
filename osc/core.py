@@ -12,6 +12,7 @@ __version__ = '0.120'
 __store_version__ = '1.0'
 
 import os
+import os.path
 import sys
 import urllib2
 from urllib import pathname2url, quote_plus, urlencode
@@ -1125,45 +1126,31 @@ rev: %s
         for the updatepacmetafromspec subcommand
         """
 
-        import tempfile
-        tempdir = '/tmp'
-        if sys.platform[:3] == 'win':
-            tempdir = os.getenv('TEMP')
-        (fd, filename) = tempfile.mkstemp(prefix = 'osc_editmeta.', suffix = '.xml', dir = tempdir)
-
         m = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
 
-        f = os.fdopen(fd, 'w')
-        f.write(m)
-        f.close()
-
-        tree = ET.parse(filename)
+        tree = ET.fromstring(m)
         tree.find('title').text = self.summary
         tree.find('description').text = ''.join(self.descr)
         url = tree.find('url')
         if url == None:
-            url = ET.SubElement(tree.getroot(), 'url')
+            url = ET.SubElement(tree, 'url')
         url.text = self.url
-        tree.write(filename)
+
+        mf = metafile(self.apiurl, ET.tostring(tree))
 
         print '*' * 36, 'old', '*' * 36
         print m
         print '*' * 36, 'new', '*' * 36
-        tree.write(sys.stdout)
+        print ET.tostring(tree)
         print '*' * 72
 
         # FIXME: for testing...
         # open the new description in $EDITOR instead?
         repl = raw_input('Write? (y/N) ')
         if repl == 'y':
-            print 'Sending meta data...', 
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
-            http_PUT(u, file=filename)
-            print 'Done.'
-        else:
-            print 'discarding', filename
+            mf.sync()
 
-        os.unlink(filename)
+        mf.discard()
 
     def latest_rev(self):
         if self.islinkrepair():
@@ -1801,6 +1788,12 @@ class metafile:
         os.unlink(self.filename)
         print 'Done.'
         return True
+
+    def discard(self):
+        if os.path.exists(self.filename):
+            print 'discarding', self.filename
+            os.unlink(self.filename)
+        return self
     
 
 # different types of metadata
