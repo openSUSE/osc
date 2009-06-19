@@ -1790,6 +1790,38 @@ class metafile:
         print 'Done.'
         return True
 
+    def edit(self):
+        if sys.platform[:3] != 'win':
+            editor = os.getenv('EDITOR', default='vim')
+        else:
+            editor = os.getenv('EDITOR', default='notepad')
+        while 1:
+            subprocess.call('%s %s' % (editor, self.filename), shell=True)
+            if self.change_is_required == True:
+                try:
+                    self.sync()
+                except urllib2.HTTPError, e:
+                    error_help = "%d" % e.code
+                    if e.headers.get('X-Opensuse-Errorcode'):
+                        error_help = "%s (%d)" % (e.headers.get('X-Opensuse-Errorcode'), e.code)
+
+                    print >>sys.stderr, 'BuildService API error:', error_help
+                    # examine the error - we can't raise an exception because we might want
+                    # to try again
+                    data = e.read()
+                    if '<summary>' in data:
+                        print >>sys.stderr, data.split('<summary>')[1].split('</summary>')[0]
+                    input = raw_input('Try again? ([y/N]): ')
+                    if input != 'y' and input != 'Y':
+                        break
+                else:
+                    break
+            else:
+                self.sync()
+                break
+        self.discard()
+        return self
+
     def discard(self):
         if os.path.exists(self.filename):
             print 'discarding', self.filename
@@ -1877,34 +1909,7 @@ def edit_meta(metatype,
     f=metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:
-        if sys.platform[:3] != 'win':
-            editor = os.getenv('EDITOR', default='vim')
-        else:
-            editor = os.getenv('EDITOR', default='notepad')
-        while 1:
-            subprocess.call('%s %s' % (editor, f.filename), shell=True)
-            if change_is_required == True:
-                try:
-                    f.sync()
-                except urllib2.HTTPError, e:
-                    error_help = "%d" % e.code
-                    if e.headers.get('X-Opensuse-Errorcode'):
-                        error_help = "%s (%d)" % (e.headers.get('X-Opensuse-Errorcode'), e.code)
-
-                    print >>sys.stderr, 'BuildService API error:', error_help
-                    # examine the error - we can't raise an exception because we might want
-                    # to try again
-                    data = e.read()
-                    if '<summary>' in data:
-                        print >>sys.stderr, data.split('<summary>')[1].split('</summary>')[0]
-                    input = raw_input('Try again? ([y/N]): ')
-                    if input != 'y' and input != 'Y':
-                        break
-                else:
-                    break
-            else:
-                f.sync()
-                break
+        f.edit()
     else:
         f.sync()
 
