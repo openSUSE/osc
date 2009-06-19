@@ -1145,11 +1145,11 @@ rev: %s
         print ET.tostring(tree)
         print '*' * 72
 
-        # FIXME: for testing...
-        # open the new description in $EDITOR instead?
-        repl = raw_input('Write? (y/N) ')
+        repl = raw_input('Write? (y/N/e) ')
         if repl == 'y':
             mf.sync()
+        elif repl == 'e':
+            mf.edit()
 
         mf.discard()
 
