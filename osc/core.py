@@ -1135,8 +1135,9 @@ rev: %s
         if url == None:
             url = ET.SubElement(tree, 'url')
         url.text = self.url
-
-        mf = metafile(self.apiurl, ET.tostring(tree))
+        
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
+        mf = metafile(u, ET.tostring(tree))
 
         print '*' * 36, 'old', '*' * 36
         print m
