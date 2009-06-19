@@ -657,7 +657,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-t', '--type', metavar='TEXT',
-                  help='limit to requests which contain a given action type (submit/delete/develchange)')
+                  help='limit to requests which contain a given action type (submit/delete/change_devel)')
     @cmdln.option('-s', '--state', default='new',
                         help='only list requests in one of the comma separated given states [default=new]')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
