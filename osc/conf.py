@@ -370,10 +370,8 @@ def get_config(override_conffile = None,
         scheme = config.get('scheme', 'https')
         config['apiurl'] = urljoin(scheme, apisrv)
     if config.has_key('apisrv') or config.has_key('scheme'):
-        import warnings
-        warnings.warn('Use of the \'scheme\' or \'apisrv\' config option is deprecated! ' \
-                      'See README for migration details.',
-                      DeprecationWarning)
+        print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
+                            'Warning: See README for migration details.'
 
     for i in boolean_opts:
         try:
