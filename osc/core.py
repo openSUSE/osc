@@ -1319,7 +1319,7 @@ class Request:
            if a.type=="submit":
               sr_source="%s/%s  -> " % (a.src_project, a.src_package)
            if a.type=="change_devel":
-              dst = "developed in %s/%s" % (a.dst_project, a.dst_package)
+              dst = "developed in %s/%s" % (a.src_project, a.src_package)
               sr_source="%s/%s" % (a.dst_project, a.dst_package)
 
            ret += '\n        %s:       %-50s %-20s   ' % \
