@@ -605,7 +605,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = conf.config['apiurl']
-        
+
         project = args[0]
         package = None
         if len(args) > 1:
@@ -668,7 +668,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 # may support it later, but lets fail for people used the api call before
 #    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
-        """${cmd_name}: Show and modify requests 
+        """${cmd_name}: Show and modify requests
 
         [See http://en.opensuse.org/Build_Service/Collaboration for information
         on this topic.]
@@ -2069,7 +2069,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The returned data is XML and contains a list of the packages used in
         building, their source, and the expanded BuildRequires.
 
-        The arguments PLATFORM and ARCH can be taken from first two columns
+        The arguments PLATFORM and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         usage:
@@ -2118,7 +2118,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         which is directly readable by the build script. It contains RPM macros
         and BuildRequires expansions, for example.
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns 
+        The arguments PLATFORM and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         ${cmd_usage}
@@ -2202,7 +2202,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         You need to call the command inside a package directory, which should be a
         buildsystem checkout. (Local modifications are fine.)
 
-        The arguments PLATFORM and ARCH can be taken from first two columns
+        The arguments PLATFORM and ARCH can be taken from the first two columns
         of the 'osc repos' output. BUILD_DESCR is either a RPM spec file, or a
         Debian dsc file.
 
@@ -2268,7 +2268,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_platform, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
-        
+
         platforms = get_platforms_of_project( \
                 store_read_apiurl('.'), \
                 opts.alternative_project or store_read_project('.'))
@@ -2276,7 +2276,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(platforms) == 0:
                 arg_platform = conf.config['build_platform']
-            
+
             else:
 
                 # Use a default value from config, but just even if it's available
@@ -2330,7 +2330,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_buildhistory(self, subcmd, opts, platform, arch):
         """${cmd_name}: Shows the build history of a package
 
-        The arguments PLATFORM and ARCH can be taken from first two columns
+        The arguments PLATFORM and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         ${cmd_usage}
@@ -2354,7 +2354,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_jobhistory(self, subcmd, opts, platform, arch):
         """${cmd_name}: Shows the job history of a project
 
-        The arguments PLATFORM and ARCH can be taken from first two columns
+        The arguments PLATFORM and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         ${cmd_usage}
@@ -2442,8 +2442,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Note the --failed option, which can be used to rebuild all failed
         packages.
 
-        The arguments PLATFORM and ARCH are as in the first two columns of the
-        'osc repos' output.
+        The arguments PLATFORM and ARCH can be taken from the first two columns
+        of the 'osc repos' output.
 
         usage:
             osc rebuild PROJECT [PACKAGE [PLATFORM [ARCH]]]
@@ -3004,7 +3004,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             delPerson(conf.config['apiurl'], prj, pac, opts.delete, role)
         elif opts.devel_project:
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
-        else:     
+        else:
             # showing the maintainers
             for role in roles:
                 print ""
@@ -3012,7 +3012,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for person in tree.findall('person'):
                     if person.get('role') == role:
                        maintainers.append(person.get('userid'))
-                
+
                 if opts.email:
                     emails = []
                     for maintainer in maintainers:
