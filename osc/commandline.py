@@ -565,7 +565,7 @@ of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package)
                       sys.exit(1)
-        reqs = get_request_list(apiurl, dst_project, dst_package)
+        reqs = get_request_list(apiurl, dst_project, dst_package, 'submit')
         user = conf.get_apiurl_usr(apiurl)
         myreqs = [ i for i in reqs if i.state.who == user ]
         repl = ''
