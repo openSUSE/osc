@@ -2,6 +2,7 @@
  - osc metafromspec allows editing before send
  - allow handling of other roles than "maintainer" with maintainer command
    (-r role)
+ - fix and improve request list and show output
 
 0.120:
  - support "setlinkrev" for whole projects

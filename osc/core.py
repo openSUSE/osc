@@ -1313,11 +1313,17 @@ class Request:
         for a in self.actions:
            dst = "%s/%s" % (a.dst_project, a.dst_package)
            if a.src_package == a.dst_package:
-               dst = a.dst_project
+              dst = a.dst_project
 
-           ret += '\n        %s:       %-50s  ->  %-20s   ' % \
-            (a.type, 
-             "%s/%s" % (a.src_project, a.src_package), dst)
+           sr_source=""
+           if a.type=="submit":
+              sr_source="%s/%s  -> " % (a.src_project, a.src_package)
+           if a.type=="change_devel":
+              dst = "developed in %s/%s" % (a.dst_project, a.dst_package)
+              sr_source="%s/%s" % (a.dst_project, a.dst_package)
+
+           ret += '\n        %s:       %-50s %-20s   ' % \
+            (a.type, sr_source, dst)
 
         if self.descr:
             ret += "\n        Comment: %s" % (repr(self.descr))
@@ -1329,30 +1335,40 @@ class Request:
         return cmp(self.reqid, other.reqid)
 
     def __str__(self):
-        # XXX: only prints out the first action element
+        action_list=""
+        for action in self.actions:
+            action_list="  %s:  " % (action.type)
+            if action.type=="submit":
+               r=""
+               if action.src_rev:
+                   r="(r%s)" % (action.src_rev)
+               action_list=action_list+" %s/%s%s -> %s" % ( action.src_project, action.src_package, r, action.dst_project )
+               if action.dst_package:
+                   action_list=action_list+"/%s" % ( action.dst_package )
+            elif action.type=="delete":
+               action_list=action_list+"  %s" % ( action.dst_project )
+               if action.dst_package:
+                   action_list=action_list+"/%s" % ( action.dst_package )
+            elif action.type=="change_devel":
+               action_list=action_list+" %s/%s developed in %s/%s" % \
+                           ( action.dst_project, action.dst_package, action.src_project, action.src_package )
+            action_list=action_list+"\n"
+
         s = """\
-Request to %s (sri%s): 
+Request #%s: 
 
-    %s/%s  ->  %s/%s
-
-Source revision:
-    %s
+%s
 
 Message:
     %s
 
 State:   %-10s   %s %s
 Comment: %s
-"""          % (self.actions[0].type,
-               self.reqid,
-               self.actions[0].src_project, 
-               self.actions[0].src_package, 
-               self.actions[0].dst_project, 
-               self.actions[0].dst_package, 
-               self.actions[0].src_rev or 'not given',
+"""          % (self.reqid,
+               action_list,
                self.descr,
-               self.state.name, 
-               self.state.when, self.state.who, self.state.comment)
+               self.state.name, self.state.when, self.state.who,
+               self.state.comment)
 
         if len(self.statehistory):
             histitems = [ '%-10s   %s %s' \
