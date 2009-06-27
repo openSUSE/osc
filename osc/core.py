@@ -747,7 +747,7 @@ class Package:
             elif st == 'C':
                 have_conflicts = True
 
-        if have_conflicts and self.islinkrepair():
+        if have_conflicts or self.islinkrepair():
             print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
             return 1
 
@@ -859,7 +859,7 @@ class Package:
             # diff3 OPTIONS... MINE OLDER YOURS
             merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
             # we would rather use the subprocess module, but it is not availablebefore 2.4
-            ret = subprocess.call(merge_cmd, shell=True) / 256
+            ret = subprocess.call(merge_cmd, shell=True)
             
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
