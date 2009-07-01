@@ -330,6 +330,15 @@ help)
     fi
     ((count == 2)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[2]}"
     ;;
+search)
+    if ((count == 1)) ; then
+	builtin compgen -W 'search' -- "${cmdline[1]}"
+    else
+	oscsearch="--help --csv -i --involved -v --verbose --description --title \
+		   --project --package -e --exact --repos-baseurl"
+	builtin compgen -W "${oscsearch}" -- "${cmdline[$count]}"
+    fi
+    ;;
 *)
     ((count == 1)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[1]}"
 esac
