@@ -2817,6 +2817,10 @@ def delete_project(apiurl, prj):
     u = makeurl(apiurl, ['source', prj])
     http_DELETE(u)
 
+def delete_files(apiurl, prj, pac, files):
+    for file in files:
+        u = makeurl(apiurl, ['source', prj, pac, file], query={'comment': 'removed %s' % (file, )})
+        http_DELETE(u)
 
 def get_platforms(apiurl):
     f = http_GET(makeurl(apiurl, ['platform']))
