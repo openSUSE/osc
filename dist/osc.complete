@@ -273,6 +273,18 @@ co|checkout)
 	fi
     fi
     ;;
+maintainer)
+    if ((count == 1)) ; then
+	builtin compgen -W 'maintainer' -- "${cmdline[1]}"
+    else
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+    fi
+    ;;
 up|update)
     if ((count == 1)) ; then
 	builtin compgen -W 'up update' -- "${cmdline[1]}"
