@@ -27,15 +27,15 @@ let count--
 test "${COMMAND_LINE:$last}" = " " && let count++
 unset last
 
-osccmds=(abortbuild add addremove aggregatepac branch build buildconfig \
-    buildhistory buildhist buildinfo buildlog bl cat checkout co commit \
-    checkin ci copypac delete del remove rm deletepac deleteprj diff di \
-    getbinaries help importsrcpkg info init jobhistory jobhist linkpac list \
-    log ls maintainer meta mkpac platforms prjresults pr rdiff rebuildpac \
-    remotebuildlog rbl repos repourls req resolved results results_meta rlog \
-    rprjresults rresults search status sr submitreq update up updatepacmetafromspec \
-    metafromspec wipebinaries)
-oscreq=(create list log show accept decline delete revoke)
+osccmds=(abortbuild add addremove ar aggregatepac api branch build buildconfig \
+    buildhistory buildhist buildinfo buildlog bl cat changedevelrequest changedevelreq \
+    cr checkout co commit checkin ci copypac delete del remove rm deleterequest \
+    deletereq dr diff di getbinaries help importsrcpkg info init jobhistory jobhist \
+    linkpac list ls log maintainer man meta mkpac platforms prjresults pr rdelete \
+    rdiff rebuild rebuildpac remotebuildlog rbl rbuildlog repairlink repos repourls \
+    request rq resolved results r search setlinkrev status st submitrequest sr \
+    submitreq update up updatepacmetafromspec metafromspec vc wipebinaries)
+oscreq=(list log show accept decline delete revoke wipe)
 
 oscprj=""
 oscpkg=""
@@ -63,41 +63,41 @@ submit ()
     local target
 
     if ((pos == 1)) ; then
-	if test -z "${cmdline[$((3+off))]}" -a -n "${oscprj}" ; then
+	if test -z "${cmdline[$((2+off))]}" -a -n "${oscprj}" ; then
 	    builtin compgen -W "${oscprj}"
 	else
-	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((3+off))]}"
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((2+off))]}"
 	fi
     fi
     if ((pos == 2)) ; then
-	if test -z "${cmdline[$((4+off))]}" -a -n "${oscpkg}" ; then
+	if test -z "${cmdline[$((3+off))]}" -a -n "${oscpkg}" ; then
 	    builtin compgen -W "${oscpkg}"
 	else
-	    builtin compgen -W "$(command osc ls "${cmdline[$((3+off))]}")" -- "${cmdline[$((4+off))]}"
+	    builtin compgen -W "$(command osc ls "${cmdline[$((2+off))]}")" -- "${cmdline[$((3+off))]}"
 	fi
     fi
     if ((pos == 3)) ; then
-	if test -z "${cmdline[$((5+off))]}" -a -n "${lnkprj}" ; then
+	if test -z "${cmdline[$((4+off))]}" -a -n "${lnkprj}" ; then
 	    builtin compgen -W "${lnkprj}"
 	else
-	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((5+off))]}"
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((4+off))]}"
 	fi
     fi
     if ((pos == 4)) ; then
 	target="${lnkpkg}"
 	target="${target:+$target }$oscpkg"
 	if test -n "${target}" ; then
-	    builtin compgen -W "${target}" -- "${cmdline[$((6+off))]}"
+	    builtin compgen -W "${target}" -- "${cmdline[$((5+off))]}"
 	else
-	    builtin compgen -W "$(command osc ls "${cmdline[$((5+off))]}")" -- "${cmdline[$((6+off))]}"
+	    builtin compgen -W "$(command osc ls "${cmdline[$((4+off))]}")" -- "${cmdline[$((5+off))]}"
 	fi
     fi
 }
 
 case "${cmdline[1]}" in
-add|addremove)
+add|addremove|ar)
     if ((count == 1)) ; then
-	builtin compgen -W 'add addremove' -- "${cmdline[1]}"
+	builtin compgen -W 'add addremove ar' -- "${cmdline[1]}"
     else
 	for x in $(builtin compgen -f -X '.osc' -- "${cmdline[2]}"); do
 	    test -d $x && builtin echo $x/ || builtin echo $x
@@ -138,20 +138,23 @@ list|ls)
 	builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
     fi
     ;;
-sr|submitreq)
+sr|submitreq|submitrequest)
     if ((count == 1)) ; then
-	builtin compgen -W 'sr submitreq' -- "${cmdline[1]}"
+	builtin compgen -W 'sr submitreq submitrequest' -- "${cmdline[1]}"
     fi
     case "${cmdline[2]}" in
-    create)
-	case "${cmdline[3]}" in
-	--nodevelproject)
-	    submit $((count - 3)) 1 ;;
-	-*) builtin compgen -W '--nodevelproject' -- "${cmdline[3]}" ;;
-	*)  submit $((count - 2)) 0 ;;
-	esac
-	;;
-    accept|decline|delete|revoke|log)
+    --nodevelproject)
+	    submit $((count - 2)) 1 ;;
+    -*) builtin compgen -W '--nodevelproject' -- "${cmdline[2]}" ;;
+    *)  submit $((count - 1)) 0 ;;
+    esac
+    ;;
+rq|request)
+    if ((count == 1)) ; then
+	builtin compgen -W 'rq request' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    accept|decline|wipe|revoke|log)
 	if ((count == 3)) ; then
 	    builtin echo -n 'ID'
 	fi
@@ -178,6 +181,40 @@ sr|submitreq)
 copypac|linkpac)
     if ((count == 1)) ; then
 	builtin compgen -W 'copypac linkpac' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    *)
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+	if ((count == 4)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[4]}"
+	fi
+	if ((count == 5)) ; then
+	    builtin compgen -W "$(command osc ls "${cmdline[4]}")" -- "${cmdline[5]}"
+	fi
+    esac
+    ;;
+deleterequest|deletereq|dr)
+    if ((count == 1)) ; then
+	builtin compgen -W 'deleterequest deletereq dr' -- "${cmdline[1]}"
+    fi
+    case "${cmdline[2]}" in
+    *)
+	if ((count == 2)) ; then
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	fi
+    esac
+    ;;
+changedevelrequest|changedevelreq|cr)
+    if ((count == 1)) ; then
+	builtin compgen -W 'changedevelrequest changedevelreq cr' -- "${cmdline[1]}"
     fi
     case "${cmdline[2]}" in
     *)
@@ -226,10 +263,7 @@ ci|commit|checkin)
     ;;
 co|checkout)
     if ((count == 1)) ; then
-	builtin compgen -W 'co checkout' -- "${cmdline[1]}"
-    fi
-    if ((count == 1)) ; then
-	builtin compgen -W 'co checkout' -- "${cmdline[1]}"
+	builtin compgen -W 'co copypac checkout' -- "${cmdline[1]}"
     else
 	if ((count == 2)) ; then
 	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
