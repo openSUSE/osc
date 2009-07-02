@@ -248,7 +248,7 @@ rdiff)
 	    builtin compgen -W "$(command cat ~/.osc.projects)" -P --oldprj= -- "${cmdline[4]#*=}"
 	fi
 	if ((count == 5)) ; then
-	    builtin compgen -W "$(command osc ls "${cmdline[4]}")" -P --oldpkg= -- "${cmdline[5]#*=}"
+	    builtin compgen -W "$(command osc ls "${cmdline[4]#*=}")" -P --oldpkg= -- "${cmdline[5]#*=}"
 	fi
     esac
     ;;
