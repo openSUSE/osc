@@ -3,6 +3,7 @@
  - allow handling of other roles than "maintainer" with maintainer command
    (-r role)
  - fix and improve request list and show output
+ - new osc rremove command for remote source files removal
 
 0.120:
  - support "setlinkrev" for whole projects

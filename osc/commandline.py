@@ -1901,6 +1901,44 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print "Command rresults is obsolete. Please use 'osc results'"
         sys.exit(1)
 
+
+    @cmdln.option('-f', '--force', action='store_true', default=False,
+                        help="Don't ask and delete files")
+    def do_rremove(self, subcmd, opts, project, package, *files):
+        """${cmd_name}: Remove source files from selected package
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        if len(files) == 0:
+            if not '/' in project:
+                raise oscerr.WrongArgs("Missing operand, type osc help rremove for help")
+            else:
+                files = (package, )
+                project, package = project.split('/')
+
+        for file in files:
+            if not opts.force:
+                resp = raw_input("rm: remove source file `%s' from `%s/%s'? " % (file, project, package))
+                if resp not in ('y', 'Y'):
+                    continue
+            try:
+                delete_files(conf.config['apiurl'], project, package, (file, ))
+            except urllib2.HTTPError, e:
+                print >>sys.stderr, e.msg
+
+                if opts.force:
+                    body = e.read()
+                    if e.code in [ 400, 403, 404, 500 ]:
+                        if '<summary>' in body:
+                            msg = body.split('<summary>')[1]
+                            msg = msg.split('</summary>')[0]
+                            print >>sys.stderr, msg
+                    continue
+                else:
+                    raise e
+
     @cmdln.hide(1)
     def do_req(self, subcmd, opts, *args):
         print "Command req is obsolete. Please use 'osc api'"
