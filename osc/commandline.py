@@ -2598,7 +2598,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             codes.append('broken')
         if opts.expansion:
             codes.append('expansion error')
-        if opts.all:
+        if opts.all or opts.repo or opts.arch:
             codes.append(None)
 
         if len(codes) == 0:
