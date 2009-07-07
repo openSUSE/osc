@@ -659,7 +659,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-t', '--type', metavar='TEXT',
                   help='limit to requests which contain a given action type (submit/delete/change_devel)')
     @cmdln.option('-s', '--state', default='new',
-                        help='only list requests in one of the comma separated given states [default=new]')
+                        help='only list requests in one of the comma separated given states (new/accepted/rejected/revoked/declined) [default=new]')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
     @cmdln.option('-M', '--mine', action='store_true',
@@ -702,7 +702,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
         usage:
-            osc request list [-M] [-t type] [PRJ [PKG]]
+            osc request list [-M] [-s state] [-t type] [PRJ [PKG]]
             osc request log ID
             osc request show [-d] [-b] ID
             osc request accept [-m TEXT] ID
