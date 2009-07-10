@@ -339,6 +339,46 @@ search)
 	builtin compgen -W "${oscsearch}" -- "${cmdline[$count]}"
     fi
     ;;
+pr|prjresults)
+    if ((count == 1)) ; then
+	builtin compgen -W 'pr prjresults' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+    fi
+    if ((count > 2)) ; then
+	case "${cmdline[$((count-1))]}" in
+	-n|--name-filter*)
+	    builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[$count]}"
+	    ;;
+	-s|--status-filter*)
+	    OIFS="$IFS"; IFS=:
+	    builtin compgen -W 'disabled:failed:finished:building:succeeded:broken:scheduled:expansion error:blocked' -- "${cmdline[$count]}"
+	    IFS="$OIFS"
+	    ;;
+	-p|--project*)
+	    builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$count]}"
+	    ;;
+	*)
+	    builtin compgen -W "-n --name-filter -s --status-filter -c --csv -q --hide-legend" -- "${cmdline[$count]}"
+	    ;;
+	esac
+    fi
+    ;;
+r|results)
+    if ((count == 1)) ; then
+	builtin compgen -W 'r results' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+    fi
+    if ((count == 3)) ; then
+	builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+    fi
+    if ((count > 3)) ; then
+	 builtin compgen -W "-r --repo -a --arch -l --last-build --xml" -- "${cmdline[$count]}"
+    fi
+    ;;
 *)
     ((count == 1)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[1]}"
 esac
