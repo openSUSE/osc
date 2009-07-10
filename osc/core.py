@@ -1121,9 +1121,10 @@ rev: %s
         self.descr = data['%description']
 
 
-    def update_package_meta(self):
+    def update_package_meta(self, force=False):
         """
         for the updatepacmetafromspec subcommand
+            argument force supress the confirm question
         """
 
         m = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
@@ -1139,13 +1140,16 @@ rev: %s
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
         mf = metafile(u, ET.tostring(tree))
 
-        print '*' * 36, 'old', '*' * 36
-        print m
-        print '*' * 36, 'new', '*' * 36
-        print ET.tostring(tree)
-        print '*' * 72
+        if not force:
+            print '*' * 36, 'old', '*' * 36
+            print m
+            print '*' * 36, 'new', '*' * 36
+            print ET.tostring(tree)
+            print '*' * 72
+            repl = raw_input('Write? (y/N/e) ')
+        else:
+            repl = 'y'
 
-        repl = raw_input('Write? (y/N/e) ')
         if repl == 'y':
             mf.sync()
         elif repl == 'e':
