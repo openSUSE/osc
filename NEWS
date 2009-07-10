@@ -4,6 +4,7 @@
    (-r role)
  - fix and improve request list and show output
  - new osc rremove command for remote source files removal
+ - handle _service\* files correctly
 
 0.120:
  - support "setlinkrev" for whole projects

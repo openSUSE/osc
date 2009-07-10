@@ -737,15 +737,16 @@ class Package:
 
         have_conflicts = False
         for filename in self.todo:
-            st = self.status(filename)
-            if st == 'A' or st == 'M':
-                self.todo_send.append(filename)
-                print statfrmt('Sending', os.path.join(pathn, filename))
-            elif st == 'D':
-                self.todo_delete.append(filename)
-                print statfrmt('Deleting', os.path.join(pathn, filename))
-            elif st == 'C':
-                have_conflicts = True
+            if not filename.startswith('_service:'):
+              st = self.status(filename)
+              if st == 'A' or st == 'M':
+                  self.todo_send.append(filename)
+                  print statfrmt('Sending', os.path.join(pathn, filename))
+              elif st == 'D':
+                  self.todo_delete.append(filename)
+                  print statfrmt('Deleting', os.path.join(pathn, filename))
+              elif st == 'C':
+                  have_conflicts = True
 
         if have_conflicts or self.islinkrepair():
             print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
@@ -811,6 +812,13 @@ class Package:
             self.update_local_filesmeta()
         self.write_deletelist()
         self.update_datastructs()
+
+        if self.filenamelist.count('_service'):
+            print 'The package contains a source service, update generated files from server...'
+            for filename in self.todo:
+              if filename.startswith('_service:') and os.path.exists(filename):
+                os.unlink(filename)
+            self.update()
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
