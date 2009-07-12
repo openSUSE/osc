@@ -8,7 +8,10 @@ import sys, locale
 # this is a hack to make osc work as expected with utf-8 characters, no matter
 # how site.py is set...
 reload(sys)
-sys.setdefaultencoding(locale.getdefaultlocale()[1])
+loc = locale.getdefaultlocale()[1]
+if not loc:
+    loc = sys.getdefaultencoding()
+sys.setdefaultencoding(loc)
 del sys.setdefaultencoding
 
 from osc import commandline
