@@ -473,6 +473,8 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
+    @cmdln.option('-d', '--diff', action='store_true',
+                  help='show diff only instead of creating the actual request')
     @cmdln.alias("sr")
     @cmdln.alias("submitreq")
     def do_submitrequest(self, subcmd, opts, *args):
@@ -484,9 +486,9 @@ class Osc(cmdln.Cmdln):
         See the "request" command for showing and modifing existing requests.
 
         usage:
-            osc submitreq [-m TEXT]
-            osc submitreq [-m TEXT] DESTPRJ [DESTPKG]
-            osc submitreq [-m TEXT] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
+            osc submitreq [OPTIONS]
+            osc submitreq [OPTIONS] DESTPRJ [DESTPKG]
+            osc submitreq [OPTIONS] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
         ${cmd_option_list}
         """
 
@@ -565,25 +567,32 @@ of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package)
                       sys.exit(1)
-        reqs = get_request_list(apiurl, dst_project, dst_package, 'submit')
-        user = conf.get_apiurl_usr(apiurl)
-        myreqs = [ i for i in reqs if i.state.who == user ]
-        repl = ''
-        if len(myreqs) > 0:
-            print 'You already created the following submit request: %s.' % \
-                  ', '.join([str(i.reqid) for i in myreqs ])
-            repl = raw_input('Revoke the old requests? (y/N) ')
+        if opts.diff:
+            print 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
+            rdiff = server_diff(apiurl,
+                                dst_project, dst_package, None,
+                                src_project, src_package, None, True)
+            print rdiff
+        else:
+            reqs = get_request_list(apiurl, dst_project, dst_package, 'submit')
+            user = conf.get_apiurl_usr(apiurl)
+            myreqs = [ i for i in reqs if i.state.who == user ]
+            repl = ''
+            if len(myreqs) > 0:
+                print 'You already created the following submit request: %s.' % \
+                      ', '.join([str(i.reqid) for i in myreqs ])
+                repl = raw_input('Revoke the old requests? (y/N) ')
 
-        result = create_submit_request(apiurl,
-                                       src_project, src_package,
-                                       dst_project, dst_package,
-                                       opts.message, orev=opts.revision)
-        if repl == 'y':
-            for req in myreqs:
-                change_request_state(apiurl, str(req.reqid), 'revoked',
-                                     'superseded by %s' % result)
+            result = create_submit_request(apiurl,
+                                           src_project, src_package,
+                                           dst_project, dst_package,
+                                           opts.message, orev=opts.revision)
+            if repl == 'y':
+                for req in myreqs:
+                    change_request_state(apiurl, str(req.reqid), 'revoked',
+                                         'superseded by %s' % result)
 
-        print 'created request id', result
+            print 'created request id', result
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
