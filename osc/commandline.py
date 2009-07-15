@@ -1055,11 +1055,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev, dummy = parseRevisionOption(opts.revision)
 
         if opts.message:
-            comment=opts.comment
-	else:
-	    if not rev:
+            comment = opts.message
+        else:
+    	    if not rev:
                 rev = show_upstream_rev(src_apiurl, src_project, src_package);
-	    comment='osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
+            comment = 'osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
 
         r = copy_pac(src_apiurl, src_project, src_package,
                      dst_apiurl, dst_project, dst_package,

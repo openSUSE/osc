@@ -2809,13 +2809,18 @@ def copy_pac(src_apiurl, src_project, src_package,
             tempdir = os.getenv('TEMP')
         tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir = tempdir)
         os.chdir(tmpdir)
+        query = {'rev': 'upload'}
         for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand):
             print '  ', n
             get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n, revision=revision)
-            u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)])
+            u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)], query=query)
             http_PUT(u, file = n)
             os.unlink(n)
-        #FIXME: add comment when doing the final commit (and no commits for each file)
+        if comment:
+            query['comment'] = comment
+        query['cmd'] = 'commit'
+        u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
+        http_POST(u)
         os.rmdir(tmpdir)
         return 'Done.'
 
