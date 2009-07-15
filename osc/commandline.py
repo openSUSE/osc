@@ -1457,7 +1457,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           'D' Deleted
           'M' Modified
           '?' item is not under version control
-          '!' item is missing (removed by non-svn command) or incomplete
+          '!' item is missing (removed by non-osc command) or incomplete
 
         examples:
           osc st
