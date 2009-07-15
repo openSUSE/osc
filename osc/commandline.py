@@ -1838,12 +1838,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 pathn = getTransActPath(p.dir)
                 for filename in p.todo:
-                    if filename not in p.filenamelist:
+                    ret, state = p.delete_file(filename, opts.force)
+                    if ret:
+                        print statfrmt('D', os.path.join(pathn, filename))
+                        continue
+                    if state == '?':
                         sys.exit('\'%s\' is not under version control' % filename)
-                    p.put_on_deletelist(filename)
-                    p.write_deletelist()
-                    p.delete_source_file(filename)
-                    print statfrmt('D', os.path.join(pathn, filename))
+                    elif state in ['A', 'M'] and not opts.force:
+                        sys.exit('\'%s\' has local modifications (use --force to remove this file)' % filename)
 
 
     def do_resolved(self, subcmd, opts, *args):

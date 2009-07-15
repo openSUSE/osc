@@ -647,7 +647,20 @@ class Package:
         self.filenamelist.append(n)
         self.filenamelist_unvers.remove(n) 
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
-        
+
+    def delete_file(self, n, force=False):
+        """deletes a file if possible and marks the file as deleted"""
+        state = self.status(n)
+        if state in ['?', 'A', 'M'] and not force:
+            return (False, state)
+        self.delete_localfile(n)
+        if state != 'A':
+            self.put_on_deletelist(n)
+            self.write_deletelist()
+        else:
+            self.delete_storefile(n)
+        return (True, state)
+
     def delete_storefile(self, n):
         try: os.unlink(os.path.join(self.storedir, n))
         except: pass
@@ -1195,7 +1208,6 @@ rev: %s
                 if oldp.status(filename) == ' ':
                     self.delete_localfile(filename)
                 self.delete_storefile(filename)
-                continue
 
         for filename in self.filenamelist:
 
