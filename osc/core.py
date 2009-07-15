@@ -33,7 +33,7 @@ except ImportError:
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, 'CVS', '*~', '.*', '_linkerror']
+exclude_stuff = [store, 'CVS', '*~', '#*#', '.*', '_linkerror']
 
 
 new_project_templ = """\
