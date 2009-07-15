@@ -140,8 +140,8 @@ class Pac:
 
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
 
-	self.mp['extproject'] = node.get('project').replace(':', ':/')
-	self.mp['extrepository'] = node.get('repository').replace(':', ':/')
+        self.mp['extproject'] = node.get('project').replace(':', ':/')
+        self.mp['extrepository'] = node.get('repository').replace(':', ':/')
         self.mp['repopackage'] = node.get('package') or '_repository'
         self.mp['repoarch'] = node.get('repoarch') or self.mp['arch']
 
@@ -153,12 +153,13 @@ class Pac:
         self.mp['apiurl'] = apiurl
 
         self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
+        self.partname = '%s.part' % self.filename
 
         self.mp['filename'] = self.filename
-	if self.mp['repopackage'] == '_repository':
-	    self.mp['repofilename'] = self.mp['name']
-	else:
-	    self.mp['repofilename'] = self.mp['filename']
+        if self.mp['repopackage'] == '_repository':
+	        self.mp['repofilename'] = self.mp['name']
+        else:
+            self.mp['repofilename'] = self.mp['filename']
 
         # make the content of the dictionary accessible as class attributes
         self.__dict__.update(self.mp)
@@ -174,7 +175,8 @@ class Pac:
         # or if-modified-since, so the caching is simply name-based (on the assumption
         # that the filename is suitable as identifier)
         self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
-        self.fullfilename=os.path.join(self.localdir, self.filename)
+        self.fullfilename = os.path.join(self.localdir, self.filename)
+        self.fullpartname = os.path.join(self.localdir, self.partname)
         self.url_local = 'file://%s/' % self.fullfilename
 
         # first, add the local URL 

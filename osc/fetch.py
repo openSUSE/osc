@@ -68,7 +68,6 @@ class Fetcher:
 
         MirrorGroup._join_url = join_url
         mg = MirrorGroup(self.gr, pac.urllist)
-        partname = pac.fullfilename + ".part"
 
         if self.http_debug:
             print
@@ -79,7 +78,7 @@ class Fetcher:
         try:
             # it returns the filename
             ret = mg.urlgrab(pac.filename, 
-                             filename=partname,
+                             filename = pac.fullpartname,
                              text = '(%s) %s' %(pac.project, pac.filename))
 
         except URLGrabError, e:
@@ -90,8 +89,8 @@ class Fetcher:
 
             sys.exit(1)
 
-        if partname.endswith('.rpm.part'):
-            rpm_data = data_from_rpm(partname, 'Name:', 'Version:', 'Release:', 'Arch:', 'SourceRPM:', 'NoSource:', 'NoPatch:')
+        if pac.partname.endswith('.rpm.part'):
+            rpm_data = data_from_rpm(pac.fullpartname, 'Name:', 'Version:', 'Release:', 'Arch:', 'SourceRPM:', 'NoSource:', 'NoPatch:')
             if rpm_data:
                 arch = rpm_data['Arch:']
                 if not rpm_data['SourceRPM:']:
@@ -104,7 +103,7 @@ class Fetcher:
                 pac.filename = canonname
                 pac.fullfilename = os.path.join(head, canonname)
 
-        os.rename(partname, pac.fullfilename);
+        os.rename(pac.fullpartname, pac.fullfilename);
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
@@ -126,7 +125,6 @@ class Fetcher:
                 pass
             else:
                 self.dirSetup(i)
-
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
@@ -136,9 +134,9 @@ class Fetcher:
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
                     print 'Exiting.'
-                    if os.path.exists(i.fullfilename):
-                        print 'Cleaning up incomplete file', i.fullfilename
-                        os.unlink(i.fullfilename)
+                    if os.path.exists(i.fullpartname):
+                        print 'Cleaning up incomplete file', i.fullpartname
+                        os.unlink(i.fullpartname)
                     sys.exit(0)
 
 
