@@ -3283,10 +3283,12 @@ def store_read_package(dir):
 def store_read_apiurl(dir):
     fname = os.path.join(dir, store, '_apiurl')
     try:
-        apiurl = open(fname).readlines()[0].strip()
+        url = open(fname).readlines()[0].strip()
+        # this is needed to get a proper apiurl
+        # (former osc versions may stored an apiurl with a trailing slash etc.)
+        apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
     except:
         apiurl = conf.config['apiurl']
-        #store_write_apiurl(dir, apiurl)
     return apiurl
 
 def store_write_string(dir, file, string):

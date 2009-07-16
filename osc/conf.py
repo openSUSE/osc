@@ -157,7 +157,8 @@ def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         return urlparse.urlsplit(apisrv)[0:2]
     elif scheme != None:
-        return scheme, apisrv
+        # the split/join is needed to get a proper url (e.g. without a trailing slash)
+        return urlparse.urlsplit(urljoin(scheme, apisrv))[0:2]
     else:
         from urllib2 import URLError
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
@@ -362,6 +363,7 @@ def get_config(override_conffile = None,
         raise oscerr.ConfigError(msg, conffile)
 
     config = dict(cp.items('general', raw=1))
+    config['apiurl'] = urljoin(*parse_apisrv_url(None, config['apiurl']))
 
     # backward compatibility
     if config.has_key('apisrv'):
