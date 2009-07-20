@@ -183,6 +183,8 @@ buildstatus_symbols = {'succeeded':       '.',
                        'building':        '%',
                        'finished':        'f',
                        'scheduled':       's',
+                       'excluded':        'x',
+                       'dispatching':     'd',
 }
 
 # os.path.samefile is available only under Unix
