@@ -628,7 +628,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("cr")
     @cmdln.alias("changedevelreq")
     def do_changedevelrequest(self, subcmd, opts, *args):
-        """${cmd_name}: Handle requests to another project
+        """${cmd_name}: Create request to change the devel package definition.
 
         [See http://en.opensuse.org/Build_Service/Collaboration for information
         on this topic.]
