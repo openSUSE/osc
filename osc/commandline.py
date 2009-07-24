@@ -750,9 +750,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) > 0:
                 project = args[0]
             elif not opts.mine:
-                project = store_read_project(os.curdir)
-                apiurl = store_read_apiurl(os.curdir)
                 try:
+                    project = store_read_project(os.curdir)
+                    apiurl = store_read_apiurl(os.curdir)
                     package = store_read_package(os.curdir)
                 except oscerr.NoWorkingCopy:
                     pass
