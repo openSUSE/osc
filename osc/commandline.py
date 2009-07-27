@@ -1288,9 +1288,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         If neither OLDPRJ nor OLDPKG are specified, the diff is against the
         last revision, thus showing the latest change.
 
-        Note that this command doesn't reply a "normal" diff which can be
-        applied as patch, but a pretty diff, which also compares the content of
-        tarballs.
+        Note that this command doesn't return a normal diff (which could be
+        applied as patch), but a "pretty" diff, which also compares the content
+        of tarballs.
 
 
         ${cmd_usage}
