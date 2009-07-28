@@ -3778,11 +3778,13 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
         if dprj:
            elem.attrib['project'] = dprj
         else:
-           del elem.attrib['project']
+           if elem.attrib.has_key('project'):
+              del elem.attrib['project']
         if dpkg:
            elem.attrib['package'] = dpkg
         else:
-           del elem.attrib['package']
+           if elem.attrib.has_key('package'):
+              del elem.attrib['package']
         edit_meta(metatype='pkg',
                   path_args=path,
                   data=ET.tostring(tree))
