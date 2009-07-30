@@ -2663,9 +2663,6 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     if not keep_maintainers:
         for person in root.findall('person'):
             root.remove(person)
-        dst_userid = dst_userid or conf.config['user']
-        ET.SubElement(root, 'person',
-                      userid = dst_userid, role = 'maintainer')
     if not keep_develproject:
         for dp in root.findall('devel'):
             root.remove(dp)
@@ -2678,12 +2675,17 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
      - "dst" is the "link" package that we are creating here
     """
 
-    src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
-    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
-
-    edit_meta('pkg',
-              path_args=(dst_project, dst_package), 
-              data=src_meta)
+    try: meta_exists(metatype='pkg',
+                       path_args=(quote_plus(dst_project), quote_plus(dst_package)),
+                       template_args=None,
+                       create_new=False, apiurl=conf.config['apiurl'])
+    except:
+        src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
+        src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+     
+        edit_meta('pkg',
+                  path_args=(dst_project, dst_package), 
+                  data=src_meta)
 
     # create the _link file
     # but first, make sure not to overwrite an existing one
