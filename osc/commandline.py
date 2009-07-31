@@ -952,6 +952,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount)
 
+    @cmdln.option('-m', '--map-repo', metavar='SRC=TARGET[,SRC=TARGET]',
+                  help='Allows repository mapping(s) to be given as SRC=TARGET[,SRC=TARGET]')
     def do_aggregatepac(self, subcmd, opts, *args):
         """${cmd_name}: "Aggregate" a package to another package
 
@@ -988,7 +990,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if src_project == dst_project and src_package == dst_package:
             print >>sys.stderr, 'Error: source and destination are the same.'
             return 1
-        aggregate_pac(src_project, src_package, dst_project, dst_package)
+
+        repo_map = {}
+        if opts.map_repo:
+            for pair in opts.map_repo.split(','):
+                src_tgt = pair.split('=')
+                if len(src_tgt) != 2:
+                    print >>sys.stderr, 'map "%s" must be SRC=TARGET[,SRC=TARGET]' % opts.map_repo
+                    return 1
+                repo_map[src_tgt[0]] = src_tgt[1]
+
+        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map)
 
 
     @cmdln.option('-c', '--client-side-copy', action='store_true',
