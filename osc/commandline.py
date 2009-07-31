@@ -1641,6 +1641,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = findpacs(args)
 
+        # warn if any of files has a ? status (usually a patch, or new source was not added to meta)
+        for p in pacs:
+            # no files given as argument? Take all files in current dir
+            if not p.todo:
+                p.todo = p.filenamelist + p.filenamelist_unvers
+            p.todo.sort()
+            for f in (f for f in p.todo if os.path.isfile(f)):
+                if p.status(f) == '?':
+                    resp = raw_input("File `%s' is not in package meta. Would you like to continue? [y/N] "% (f, ))
+                    if resp not in ('y', 'Y'):
+                        return
+
         if not msg:
             # open editor for commit message
             # but first, produce status and diff to append to the template
