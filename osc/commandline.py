@@ -1619,11 +1619,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify log message TEXT')
     @cmdln.option('-F', '--file', metavar='FILE',
                   help='read log message from FILE')
+    @cmdln.option('-f', '--force', default=False, action="store_true",
+                  help='force commit - do not tests a file list')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
         Upload content which is changed in your working copy, to the repository
         server.
+
+        Checks the state of a working copy, if found a file with unknown state,
+        it requests an user input:
+         * skip - don't change anything, just move to another file
+         * remove - remove a file from dir
+         * edit file list - edit filelist using EDITOR
+         * commit - don't check anything and commit package
+         * abort - abort commit - this is default value
 
         examples:
            osc ci                   # current dir
@@ -1653,17 +1663,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = findpacs(args)
 
-        # warn if any of files has a ? status (usually a patch, or new source was not added to meta)
-        for p in pacs:
-            # no files given as argument? Take all files in current dir
-            if not p.todo:
-                p.todo = p.filenamelist + p.filenamelist_unvers
-            p.todo.sort()
-            for f in (f for f in p.todo if os.path.isfile(f)):
-                if p.status(f) == '?':
-                    resp = raw_input("File `%s' is not in package meta. Would you like to continue? [y/N] "% (f, ))
-                    if resp not in ('y', 'Y'):
-                        return
+        if not opts.force:
+            check_filelist_before_commit(pacs)
 
         if not msg:
             # open editor for commit message
