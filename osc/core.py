@@ -1252,8 +1252,12 @@ rev: %s
         self.todo.sort()
 
         ret = ""
-        for f in (f for f in self.todo if os.path.isfile(f)):
-            ret += "leave %s %s\n" % (self.status(f), f)
+        for f in (f for f in self.todo if not os.path.isdir(f)):
+            action = 'leave'
+            status = self.status(f)
+            if status == '!':
+                action = 'remove'
+            ret += "%s %s %s\n" % (action, status, f)
 
         ret += """
 # Edit a filelist for package %s
@@ -4107,8 +4111,8 @@ def check_filelist_before_commit(pacs):
         if not p.todo:
             p.todo = p.filenamelist + p.filenamelist_unvers
         p.todo.sort()
-        for f in (f for f in p.todo if os.path.isfile(f)):
-            if p.status(f) == '?':
+        for f in (f for f in p.todo if not os.path.isdir(f)):
+            if p.status(f) in ('?', '!'):
                 resp = raw_input("File `%s' is not in package meta. Would you like skip/remove/edit file lists/commit/abort? (s/r/e/c/A) "% (f, ))
                 if resp in ('s', 'S'):
                     continue
