@@ -1663,7 +1663,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = findpacs(args)
 
-        if not opts.force:
+        if conf.config['check_filelist'] and not opts.force:
             check_filelist_before_commit(pacs)
 
         if not msg:

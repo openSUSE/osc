@@ -70,8 +70,10 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'extra-pkgs': 'vim gdb strace',
              # default platform
              'build_platform': 'openSUSE_Factory',
+             # check for unversioned/removed files before commit
+             'check_filelist': True,
 }
-boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback']
+boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist']
 
 new_conf_template = """
 [general]
@@ -115,7 +117,10 @@ apiurl = %(apiurl)s
     
 # use GNOME keyring for credentials if available
 #gnome_keyring = 0
-    
+
+# check for unversioned/removed files before commit
+#check_filelist = 1
+   
 [%(apiurl)s]
 user = %(user)s
 pass = %(pass)s
