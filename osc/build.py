@@ -53,7 +53,7 @@ if hostarch == 'i686': # FIXME
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
-    def __init__(self, filename, apiurl):
+    def __init__(self, filename, apiurl, buildtype = 'spec'):
 
         try:
             tree = ET.parse(filename)
@@ -73,15 +73,13 @@ class Buildinfo:
         if not (apiurl.startswith('https://') or apiurl.startswith('http://')):
             raise urllib2.URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
 
-        # are we building  .rpm or .deb?
-        # need the right suffix for downloading
-        # if a package named debhelper is in the dependencies, it must be .deb
+        self.buildtype = buildtype
+
+        # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        for node in root.findall('bdep'):
-            if node.get('name') == 'debhelper':
-                self.pacsuffix = 'deb'
-                break
+        if self.buildtype == 'dsc':
+            self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
         self.downloadurl = root.get('downloadurl')
@@ -363,7 +361,7 @@ def main(opts, argv):
     bi_file.write(bi_text)
     bi_file.flush()
 
-    bi = Buildinfo(bi_file.name, apiurl)
+    bi = Buildinfo(bi_file.name, apiurl, build_type)
     if bi.debuginfo and not opts.disable_debuginfo:
         buildargs.append('--debug')
     buildargs = ' '.join(set(buildargs))
