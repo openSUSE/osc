@@ -71,7 +71,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # default platform
              'build_platform': 'openSUSE_Factory',
              # check for unversioned/removed files before commit
-             'check_filelist': True,
+             'check_filelist': '1',
 }
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist']
 
