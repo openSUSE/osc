@@ -1627,13 +1627,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Upload content which is changed in your working copy, to the repository
         server.
 
-        Checks the state of a working copy, if found a file with unknown state,
-        it requests an user input:
+        Optionally checks the state of a working copy, if found a file with
+        unknown state, it requests an user input:
          * skip - don't change anything, just move to another file
          * remove - remove a file from dir
          * edit file list - edit filelist using EDITOR
          * commit - don't check anything and commit package
          * abort - abort commit - this is default value
+        This can be supressed by check_filelist config item, or -f/--force
+        command line option.
 
         examples:
            osc ci                   # current dir
