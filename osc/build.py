@@ -408,7 +408,7 @@ def main(opts, argv):
     # OBS 1.5 and before has no downloadurl defined in buildinfo
     if bi.downloadurl:
         urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
-    urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(buildarch)s/%(repopackage)s/%(repofilename)s' )
+    urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = urllist,
