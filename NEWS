@@ -6,6 +6,7 @@
  - new osc rremove command for remote source files removal
  - handle _service\* files correctly
  - osc commit asks if some file has a '?' status (can be skipped by --force option)
+ - fixed request list for multiple states
 
 0.120:
  - support "setlinkrev" for whole projects

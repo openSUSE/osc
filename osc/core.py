@@ -2301,10 +2301,10 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     matches = []
     match=''
     for state in req_state:
-        if len(match): match += '%20and%20'
+        if len(match): match += '%20or%20'
         match += 'state/@name=\'%s\'' % quote_plus(state)
     if req_who:
-        if len(match): match += '%20and%20'
+        if len(match): match += '%20or%20'
         match += 'state/@who=\'%s\'' % quote_plus(req_who)
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
