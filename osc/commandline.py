@@ -610,6 +610,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
 
+        if len(args) < 1:
+            raise oscerr.WrongArgs('Please specify at least a project.')
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
 
