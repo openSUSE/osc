@@ -752,7 +752,7 @@ class Package:
 
         have_conflicts = False
         for filename in self.todo:
-            if not filename.startswith('_service:'):
+            if not filename.startswith('_service:') and not filename.startswith('_service_'):
               st = self.status(filename)
               if st == 'A' or st == 'M':
                   self.todo_send.append(filename)
@@ -829,11 +829,10 @@ class Package:
         self.update_datastructs()
 
         if self.filenamelist.count('_service'):
-            print 'The package contains a source service, update generated files from server...'
-            for filename in self.todo:
+            print 'The package contains a source service.'
+            for filename in self.todo: 
               if filename.startswith('_service:') and os.path.exists(filename):
-                os.unlink(filename)
-            self.update()
+                os.unlink(filename) #remove local files
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
@@ -2707,7 +2706,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package, 
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None):
+                     expand_link=False, prj_dir=None, service_file=None):
 
     try:
         # the project we're in might be deleted.
@@ -2742,9 +2741,10 @@ def checkout_package(apiurl, project, package,
     p = Package(package)
 
     for filename in p.filenamelist:
-        p.updatefile(filename, revision)
-        #print 'A   ', os.path.join(project, package, filename)
-        print statfrmt('A', os.path.join(pathname, filename))
+        if service_file or not filename.startswith('_service:'):
+           p.updatefile(filename, revision)
+           #print 'A   ', os.path.join(project, package, filename)
+           print statfrmt('A', os.path.join(pathname, filename))
     if conf.config['do_package_tracking']:
         # check if we can re-use an existing project object
         if prj_obj == None:

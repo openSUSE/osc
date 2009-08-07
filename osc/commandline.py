@@ -1359,6 +1359,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-c', '--current-dir', action='store_true',
                         help='place PACKAGE folder in the current directory' \
                              'instead of a PROJECT/PACKAGE directory')
+    @cmdln.option('-s', '--source-service-files', action='store_true',
+                        help='server side generated files of source services' \
+                             'gets downloaded as well' )
 
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
@@ -1388,6 +1391,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.unexpand_link: expand_link = False
         else: expand_link = True
+        if opts.source_service_files: service_file = True
+        else: service_file = False
 
         args = slash_split(args)
         project = package = filename = None
@@ -1420,7 +1425,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir: project_dir = None
 
             checkout_package(apiurl, project, package,
-                             rev, expand_link=expand_link, prj_dir=project_dir)
+                             rev, expand_link=expand_link, prj_dir=project_dir, service_file=service_file)
 
         elif project:
             prj_dir = project
@@ -1439,13 +1444,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package,
-                                     expand_link = expand_link, prj_dir = prj_dir)
+                                     expand_link = expand_link, prj_dir = prj_dir, service_file = service_file)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package,
-                                     expand_link = False, prj_dir = prj_dir)
+                                     expand_link = False, prj_dir = prj_dir, service_file = service_file)
 
         else:
             raise oscerr.WrongArgs('Missing argument.\n\n' \
