@@ -141,7 +141,7 @@ class Pac:
         self.mp['extproject'] = node.get('project').replace(':', ':/')
         self.mp['extrepository'] = node.get('repository').replace(':', ':/')
         self.mp['repopackage'] = node.get('package') or '_repository'
-        self.mp['repoarch'] = node.get('repoarch') or self.mp['arch']
+        self.mp['repoarch'] = node.get('repoarch') or self.mp['buildarch']
 
         if pacsuffix == 'deb' and not (self.mp['name'] and self.mp['arch'] and self.mp['version']):
             raise oscerr.APIError(
