@@ -763,7 +763,7 @@ class Package:
               elif st == 'C':
                   have_conflicts = True
 
-        if have_conflicts or self.islinkrepair():
+        if have_conflicts:
             print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
             return 1
 
