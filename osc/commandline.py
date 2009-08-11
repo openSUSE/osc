@@ -1749,11 +1749,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        if (opts.expand_link and opts.unexpand_link) \
+            or (opts.expand_link and opts.revision) \
+            or (opts.unexpand_link and opts.revision):
+            raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
+                     '--revision are mutually exclusive.')
+
         args = parseargs(args)
         arg_list = args[:]
 
         for arg in arg_list:
-
             if is_project_dir(arg):
                 prj = Project(arg)
 
@@ -1772,12 +1777,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args.sort()
         pacs = findpacs(args)
-
-        if (opts.expand_link and opts.unexpand_link) \
-            or (opts.expand_link and opts.revision) \
-            or (opts.unexpand_link and opts.revision):
-            raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
-                     '--revision are mutually exclusive.')
 
         if opts.revision and ( len(args) == 1):
             rev, dummy = parseRevisionOption(opts.revision)
