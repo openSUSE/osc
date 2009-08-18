@@ -2239,6 +2239,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Delete old build root before initializing it')
     @cmdln.option('--no-changelog', action='store_true',
                   help='don\'t update the package changelog from a changes file')
+    @cmdln.option('--rsync-src', metavar='RSYNCSRCPATH', dest='rsyncsrc', 
+                  help='Copy folder to buildroot after installing all RPMs. Use together with --rsync-dest. This is the path on the HOST filesystem e.g. /tmp/linux-kernel-tree. It defines RSYNCDONE 1 .')
+    @cmdln.option('--rsync-dest', metavar='RSYNCDESTPATH', dest='rsyncdest', 
+                  help='Copy folder to buildroot after installing all RPMs. Use together with --rsync-src. This is the path on the TARGET filesystem e.g. /usr/src/packages/BUILD/linux-2.6 .')
+    @cmdln.option('--overlay', metavar='OVERLAY',
+                  help='Copy overlay filesystem to buildroot after installing all RPMs .')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
     @cmdln.option('--nochecks', '--no-checks', action='store_true',

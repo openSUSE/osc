@@ -502,11 +502,44 @@ def main(opts, argv):
           vm_options+=" --memory " + config['build-memory']
     
     print 'Running build'
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s --arch=%s %s %s %s' \
+    # special handling for overlay and rsync-src/dest
+    specialcmdopts = " "
+    if opts.rsyncsrc or opts.rsyncdest :
+        if not opts.rsyncsrc or not opts.rsyncdest:
+            print "When using --rsync-{src,dest} both parameters have to be specified."
+            sys.exit(1)
+        myrsyncsrc = os.path.expanduser(os.path.expandvars(opts.rsyncsrc))
+        myrsyncdest = ""
+        if os.path.isdir(myrsyncsrc):
+            myrsyncsrc = os.path.abspath(myrsyncsrc)
+        else:
+            print "--rsync-src " + str(opts.rsyncsrc) + " is no valid directory!"
+            sys.exit(1)
+        # can't check destination - its in the target chroot ;) - but we can check for sanity
+        if not opts.rsyncdest.startswith("/"):
+            print "--rsync-dest " + str(opts.rsyncsrc) + " is no absolute path (starting with '/')!"
+            sys.exit(1)
+        myrsyncdest = os.path.expandvars(opts.rsyncdest)
+        specialcmdopts += '--rsync-src=%s --rsync-dest=%s' \
+                            % (myrsyncsrc,
+                               myrsyncdest)
+    if opts.overlay:
+        myoverlay = os.path.expanduser(os.path.expandvars(opts.overlay))
+        if not os.path.isdir(myoverlay):
+            print "--overlay " + str(opts.overlay) + " is no valid directory!"
+            sys.exit(1)
+        myoverlay = os.path.abspath(myoverlay)
+        specialcmdopts += '--overlay=%s' \
+                            % (myoverlay)
+
+
+
+    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s %s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
                     rpmlist_file.name, 
                     bc_file.name, 
+                    specialcmdopts,
                     bi.buildarch,
                     vm_options,
                     build_descr, 
