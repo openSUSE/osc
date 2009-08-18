@@ -7,6 +7,8 @@
  - handle _service\* files correctly
  - osc commit asks if some file has a '?' status (can be skipped by --force option)
  - fixed request list for multiple states
+ - new option --overlay
+ - new option --rsync-src / --rsync-dest
 
 0.120:
  - support "setlinkrev" for whole projects
