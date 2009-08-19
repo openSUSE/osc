@@ -1793,7 +1793,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # (a) update all packages
                     args += prj.pacs_have
                     # (b) fetch new packages
-                    prj.checkout_missing_pacs()
+                    prj.checkout_missing_pacs(opts.expand_link)
                     args.remove(arg)
 
         args.sort()

@@ -302,7 +302,7 @@ class Project:
 
         self.pacs_missing = [ i for i in self.pacs_available if i not in self.pacs_have ]
 
-    def checkout_missing_pacs(self):
+    def checkout_missing_pacs(self, expand_link=False):
         for pac in self.pacs_missing:
 
             if conf.config['do_package_tracking'] and pac in self.pacs_unvers:
@@ -313,7 +313,7 @@ class Project:
                 print 'checking out new package %s' % pac
                 checkout_package(self.apiurl, self.name, pac, \
                                  pathname=getTransActPath(os.path.join(self.dir, pac)), \
-                                 prj_obj=self, prj_dir=self.dir)
+                                 prj_obj=self, prj_dir=self.dir, expand_link=expand_link)
 
     def set_state(self, pac, state):
         node = self.get_package_node(pac)
@@ -448,7 +448,7 @@ class Project:
                     if pac in self.pacs_broken:
                         if self.get_state(pac) != 'A':
                             checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir, expand_link=expand_link)
                     elif state == ' ':
                         # do a simple update
                         p = Package(os.path.join(self.dir, pac))
@@ -467,7 +467,7 @@ class Project:
                         # TODO: Package::update has to fixed to behave like svn does
                         if pac in self.pacs_broken:
                             checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir)
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir, expand_link=expand_link)
                         else:
                             Package(os.path.join(self.dir, pac)).update()
                     elif state == 'A' and pac in self.pacs_available:
