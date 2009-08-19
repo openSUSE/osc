@@ -1668,6 +1668,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for arg in arg_list:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 Project(arg).commit(msg=msg)
+                if not msg:
+                    msg = edit_message()
                 args.remove(arg)
 
         pacs = findpacs(args)
