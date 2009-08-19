@@ -680,6 +680,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify message TEXT')
     @cmdln.option('-t', '--type', metavar='TEXT',
                   help='limit to requests which contain a given action type (submit/delete/change_devel)')
+    @cmdln.option('-a', '--all', action='store_true',
+                        help='all states')
     @cmdln.option('-s', '--state', default='new',
                         help='only list requests in one of the comma separated given states (new/accepted/rejected/revoked/declined) [default=new]')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
@@ -782,6 +784,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             who = ''
             if opts.mine:
                 who = conf.get_apiurl_usr(apiurl)
+            if opts.all:
+                state_list = ('new', 'accepted', 'declined', 'revoked', 'rejected')
 
             results = get_request_list(apiurl,
                                        project, package, who, state_list, opts.type)

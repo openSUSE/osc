@@ -2300,6 +2300,8 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     matches = []
     match=''
     m=''
+    if "all" in req_state:
+        req_state=('new', 'accepted', 'declined', 'revoked', 'rejected')
     for state in req_state:
         if len(m): m += '%20or%20'
         m += 'state/@name=\'%s\'' % quote_plus(state)
