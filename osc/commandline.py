@@ -583,6 +583,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       ', '.join([str(i.reqid) for i in myreqs ])
                 repl = raw_input('Revoke the old requests? (y/N) ')
 
+            if not opts.message:
+                opts.message = edit_message()
+
             result = create_submit_request(apiurl,
                                            src_project, src_package,
                                            dst_project, dst_package,
@@ -621,6 +624,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         package = None
         if len(args) > 1:
            package = args[1]
+
+        if not opts.message:
+            opts.message = edit_message()
+
         result = create_delete_request(apiurl, project, package, opts.message)
         print result
 
@@ -653,6 +660,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         devel_package = package
         if len(args) > 3:
            devel_package = args[3]
+
+        if not opts.message:
+            opts.message = edit_message()
+
         result = create_change_devel_request(apiurl,
                                        devel_project, devel_package,
                                        project, package,
@@ -803,26 +814,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise
 
 
-        # decline
-        elif cmd == 'decline':
-            r = change_request_state(conf.config['apiurl'],
-                    reqid, 'declined', opts.message or '')
-            print r
-        # accept
-        elif cmd == 'accept':
-            r = change_request_state(conf.config['apiurl'],
-                    reqid, 'accepted', opts.message or '')
-            print r
-        # delete/wipe
-        elif cmd == 'wipe':
-            r = change_request_state(conf.config['apiurl'],
-                    reqid, 'deleted', opts.message or '')
-            print r
-        # revoke
-        elif cmd == 'revoke':
-            r = change_request_state(conf.config['apiurl'],
-                    reqid, 'revoked', opts.message or '')
-            print r
+        else:
+            if not opts.message:
+                opts.message = edit_message()
+
+            # decline
+            if cmd == 'decline':
+                r = change_request_state(conf.config['apiurl'],
+                        reqid, 'declined', opts.message or '')
+                print r
+            # accept
+            elif cmd == 'accept':
+                r = change_request_state(conf.config['apiurl'],
+                        reqid, 'accepted', opts.message or '')
+                print r
+            # delete/wipe
+            elif cmd == 'wipe':
+                r = change_request_state(conf.config['apiurl'],
+                        reqid, 'deleted', opts.message or '')
+                print r
+            # revoke
+            elif cmd == 'revoke':
+                r = change_request_state(conf.config['apiurl'],
+                        reqid, 'revoked', opts.message or '')
+                print r
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
