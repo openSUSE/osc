@@ -2306,8 +2306,10 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     if len(m): match += "(" + m + ")"
     m=''
     if req_who:
-        if len(m): m += '%20or%20'
+        if len(m): m += '%20and%20'
         m += 'state/@who=\'%s\'' % quote_plus(req_who)
+        m += '%20or%20'
+        m += 'history/@who=\'%s\'' % quote_plus(req_who)
     if len(m):
         if len(match): match += "%20and%20"
         match += "(" + m + ")"
