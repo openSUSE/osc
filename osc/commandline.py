@@ -3,7 +3,7 @@
 # Copyright (C) 2006 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
-# either version 2, or (at your option) any later version.
+# either version 2, or version 3 (at your option).
 
 
 from core import *
@@ -58,6 +58,11 @@ class Osc(cmdln.Cmdln):
     name = 'osc'
     conf = None
 
+    ## FIXME: not sure, if it is possible in python to 
+    ## fetch conf.config['request_list_days'] from 
+    ## oscrc instead of an ugly pointer string hre.
+    request_list_days = 'oscrc:request_list_days'
+
     man_header = MAN_HEADER
     man_footer = MAN_FOOTER
 
@@ -90,6 +95,10 @@ class Osc(cmdln.Cmdln):
                       help='specify alternate configuration file')
         optparser.add_option('--no-gnome-keyring', action='store_true',
                       help='disable usage of GNOME Keyring')
+        optparser.add_option('-v', '--verbose', dest='verbose', action='count', default=0,
+                      help='increase verbosity')
+        optparser.add_option('-q', '--quiet',   dest='verbose', action='store_const', const=-1,
+                      help='be quiet, not verbose')
         return optparser
 
 
@@ -102,7 +111,8 @@ class Osc(cmdln.Cmdln):
                             override_http_debug = self.options.http_debug,
                             override_traceback = self.options.traceback,
                             override_post_mortem = self.options.post_mortem,
-                            override_no_gnome_keyring = self.options.no_gnome_keyring)
+                            override_no_gnome_keyring = self.options.no_gnome_keyring,
+                            override_verbose = self.options.verbose)
         except oscerr.NoConfigfile, e:
             print >>sys.stderr, e.msg
             print >>sys.stderr, 'Creating osc configuration file %s ...' % e.file
@@ -125,6 +135,11 @@ class Osc(cmdln.Cmdln):
             if try_again: self.postoptparse(try_again = False)
 
         self.conf = conf
+        self.options.verbose = conf.config['verbose']
+        conf.exclude_glob = conf.config['exclude_glob'].split()
+        #if conf.config['version']:
+        #    print "osc-%s" % __version__
+        #    exit
 
 
     def get_cmd_help(self, cmdname):
@@ -166,6 +181,9 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.alias('ls')
+    @cmdln.alias('ll')
+    @cmdln.alias('lL')
+    @cmdln.alias('LL')
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='specify architecture')
     @cmdln.option('-R', '--revision', metavar='REVISION',
@@ -175,6 +193,8 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-b', '--binaries', action='store_true',
                         help='list built binaries, instead of sources')
     @cmdln.option('-v', '--verbose', action='store_true',
+                        help='print extra information')
+    @cmdln.option('-l', '--long', action='store_true', dest='verbose',
                         help='print extra information')
     @cmdln.option('-e', '--expand', action='store_true',
                         help='expand linked package')
@@ -192,6 +212,9 @@ class Osc(cmdln.Cmdln):
            ls Apache apache2          # list source files of package of a project
            ls Apache apache2 <file>   # list <file> if this file exists
            ls -v Apache apache2       # verbosely list source files of package
+           ls -l Apache apache2       # verbosely list source files of package
+           ll Apache apache2          # verbosely list source files of package
+           LL Apache apache2          # verbosely list source files of expanded link
 
         With --verbose, the following fields will be shown for each item:
            MD5 hash of file
@@ -204,6 +227,8 @@ class Osc(cmdln.Cmdln):
         """
 
         args = slash_split(args)
+        if (subcmd == 'll'): opts.verbose = True;
+        if (subcmd == 'lL' or subcmd == 'LL'): opts.verbose = True; opts.expand = True;
 
         if len(args) == 1:
             project = args[0]
@@ -246,7 +271,8 @@ class Osc(cmdln.Cmdln):
 
             elif len(args) == 1:
                 if opts.verbose:
-                    raise oscerr.WrongOptions('Sorry, the --verbose option is not implemented for projects.')
+                    if self.options.verbose:
+                        print >>sys.stderr, 'Sorry, the --verbose option is not implemented for projects.'
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
 
@@ -260,7 +286,7 @@ class Osc(cmdln.Cmdln):
                                       expand=opts.expand,
                                       revision=opts.revision)
                 if opts.verbose:
-                    out = [ '%s %7d %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
+                    out = [ '%s %7s %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
                             for i in l if not fname or fname == i.name ]
                     if len(out) == 0:
                         if fname:
@@ -475,8 +501,11 @@ class Osc(cmdln.Cmdln):
                        '(primary project where a package is developed)')
     @cmdln.option('-d', '--diff', action='store_true',
                   help='show diff only instead of creating the actual request')
+    @cmdln.option('-l', '--list', action='store_true',
+                  help='show submitrequests. Same as \'osc req list -M -s all -t submit -D 0\'')
     @cmdln.alias("sr")
     @cmdln.alias("submitreq")
+    @cmdln.alias("submitpac")
     def do_submitrequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to submit source into another Project
 
@@ -492,16 +521,26 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        if opts.list:
+           opts.state = "all"
+           opts.user = ""
+           opts.all = True
+           opts.type = "submit"
+           opts.mine = True
+           return self.do_request('list', opts, *args)
+
         args = slash_split(args)
 
         # remove this block later again
         oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
         if args and args[0] in oldcmds:
-            print "****************************************************************"
-            print "* WARNING: It looks that you are using this command with a     *"
-            print "*          deprecated syntax (maybe) !                         *"
-            print "*          Please run \"osc sr --help\" to see the new syntax.   *"
-            print "****************************************************************"
+            print "***********************************************************************"
+            print "* WARNING: It looks that you are using this command with a            *"
+            print "*          deprecated syntax (maybe) !                                *"
+            print "*          Please run \"osc sr --help\" and \"osc req --help\"            *"
+            print "*          to see the new syntax.                                     *"
+            print "* E.g. \"osc sr -l\" is shortcut for \"osc req list -M -s all -t submit\" *"
+            print "***********************************************************************"
             if args[0] == 'create':
                 args.pop(0)
             else:
@@ -671,7 +710,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print result
 
 
-
     @cmdln.option('-d', '--diff', action='store_true',
                   help='generate a diff')
     @cmdln.option('-u', '--unified', action='store_true',
@@ -681,16 +719,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-t', '--type', metavar='TEXT',
                   help='limit to requests which contain a given action type (submit/delete/change_devel)')
     @cmdln.option('-a', '--all', action='store_true',
-                        help='all states')
-    @cmdln.option('-s', '--state', default='new',
-                        help='only list requests in one of the comma separated given states (new/accepted/rejected/revoked/declined) [default=new]')
+                        help='all states. Same as\'-s all\'')
+    @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new' otherwise
+                        help='only list requests in one of the comma separated given states (new/accepted/rejected/revoked/declined) or "all" [default=new, or all, if no args given]')
+    @cmdln.option('-D', '--days', default='%s' % request_list_days, metavar='DAYS',
+                        help='only list requests created or changed in the last DAYS. [default=%s]' % request_list_days)
+    @cmdln.option('-U', '--user', metavar='USER',
+                        help='same as -M, but for the specified USER')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
     @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
     @cmdln.alias("rq")
-# may support it later, but lets fail for people used the api call before
-#    @cmdln.alias("req")
+    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
@@ -705,7 +746,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         This command has the following sub commands:
 
-        "list" lists open requests attached to a project or package.
+        "list" lists open requests attached to a project or package or person.
+        Uses the project/package of the current directory if none of
+        -M, -U USER, project/package are given.
 
         "log" will show the history of the given ID
 
@@ -726,7 +769,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
         usage:
-            osc request list [-M] [-s state] [-t type] [PRJ [PKG]]
+            osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [PRJ [PKG]]
             osc request log ID
             osc request show [-d] [-b] ID
             osc request accept [-m TEXT] ID
@@ -738,8 +781,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
 
+        # 'req' defaults to 'req list -M -s all'
+        if not args:
+            args = [ 'list' ]
+            opts.mine = 1
+            if opts.state == '':
+                opts.state = 'all'
+
+        if opts.state == '':
+            opts.state = 'new'
+
         cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke']
         if not args or args[0] not in cmds:
+            if subcmd == 'req':
+                print >>sys.stderr, 'You may want to try "osc api" instead of "osc req".'
             raise oscerr.WrongArgs('Unknown request action. Choose one of %s.' \
                                                % ', '.join(cmds))
 
@@ -780,20 +835,50 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # list
         if cmd == 'list':
+            states = ('new', 'accepted', 'rejected', 'revoked', 'declined')
             state_list = opts.state.split(',')
+            if opts.state == 'all':
+                state_list = []
+            for s in state_list:
+                if not s in states:
+                    print >>sys.stderr, "Unknown state %s, try one of %s" % (s, ','.join(states))
             who = ''
             if opts.mine:
                 who = conf.get_apiurl_usr(apiurl)
+            if opts.user:
+                who = opts.user
             if opts.all:
-                state_list = ('new', 'accepted', 'declined', 'revoked', 'rejected')
+                state_list = []
 
             results = get_request_list(apiurl,
                                        project, package, who, state_list, opts.type)
 
             results.sort(reverse=True)
+            import time
+            try: 
+                ## ugly hack needed, as as the -D decorator constructs its default before osrcrc is loaded.
+                if opts.days == self.request_list_days:
+                    opts.days = conf.config['request_list_days']
+                int(opts.days)
+            except:
+                opts.days = '0'
+            if int(opts.days) > 0:
+                since = time.strftime('%Y-%m-%dT%H:%M:%S',time.localtime(time.time()-int(opts.days)*24*3600))
 
+
+            skipped = 0
+            ## bs has received 2009-09-20 a new xquery compare() function
+            ## which allows us to limit the list inside of get_request_list
+            ## That would be much faster for coolo. But counting the remainder
+            ## is not possible with current xquery implementation.
             for result in results:
-                print result.list_view()
+                if int(opts.days) == 0 or result.state.when > since:
+                    print result.list_view()
+                else:
+                    skipped += 1
+            if skipped:
+                print "There are %d requests older than %s days.\n" % (skipped,opts.days)
+  
 
         elif cmd == 'log':
             for l in get_request_log(conf.config['apiurl'], reqid):
@@ -1031,7 +1116,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-d', '--keep-develproject', action='store_true',
                         help='keep develproject tag in the package metadata')
     @cmdln.option('-r', '--revision', metavar='rev',
-      	            	help='link the specified revision.')
+                        help='link the specified revision.')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -1090,7 +1175,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.message:
             comment = opts.message
         else:
-    	    if not rev:
+            if not rev:
                 rev = show_upstream_rev(src_apiurl, src_project, src_package);
             comment = 'osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
 
@@ -1105,11 +1190,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print r
 
 
+    @cmdln.alias('branch_co')
+    @cmdln.alias('branchco')
+    @cmdln.alias('bco')
+    @cmdln.alias('getpac')
     @cmdln.option('--nodevelproject', action='store_true',
                         help='do not follow a defined devel project ' \
                              '(primary project where a package is developed)')
     @cmdln.option('-c', '--checkout', action='store_true',
-                        help='Checkout branched package afterwards ' )
+                        help='Checkout branched package afterwards ' \
+                                '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='branch against a specific revision')
     def do_branch(self, subcmd, opts, *args):
@@ -1125,15 +1215,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             home:USERNAME:branches:PROJECT/PACKAGE
         if nothing else specified.
 
+        The branched package will come from 
+            openSUSE:Factory
+        if nothing else specified.
+
         usage:
+            osc branch  SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
+            osc bco ...
         ${cmd_option_list}
         """
 
+        # FIXME: how can we interpolate conf.config['branch_project'] in the above message?
+
+        if (subcmd == 'branch_co' or subcmd == 'branchco' or subcmd == 'bco'): opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
+
+        if (len(args) == 1):
+            print >>sys.stderr, "defaulting to %s/%s" % (conf.config['branch_project'],args[0])
+            # python has no args.unshift ???
+            args = [ conf.config['branch_project'] , args[0] ]
+
+
         if not (len(args) >= 2 and len(args) <= 4):
             raise oscerr.WrongArgs('Wrong number of arguments.')
         if len(args) >= 3:
@@ -1142,9 +1248,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             tpackage = args[3]
 
         r = branch_pkg(conf.config['apiurl'], args[0], args[1],
-                       nodevelproject=opts.nodevelproject, rev=opts.revision, target_project=tproject, target_package=tpackage)
+                           nodevelproject=opts.nodevelproject, rev=opts.revision, 
+                           target_project=tproject, target_package=tpackage, 
+                           return_existing=opts.checkout)
 
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
+
+        if r[0] is None:
+            r = expected = r[1]
+            print >>sys.stderr, 'Using existing branch project:', r, '\n'
+
         if r != expected:
             devloc = r
             if 'branches:' in r:
@@ -1163,6 +1276,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.checkout:
             checkout_package(conf.config['apiurl'], r, package,
                              expand_link=True, prj_dir=r)
+            if conf.config['verbose']:
+                print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
         else:
             apiopt = ''
             if conf.get_configParser().get('general', 'apiurl') != conf.config['apiurl']:
@@ -1175,7 +1290,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('-f', '--force', action='store_true',
-                        help='deletes a project and its packages')
+                        help='deletes a package or an empty project')
     def do_rdelete(self, subcmd, opts, *args):
         """${cmd_name}: Delete a project or packages on the server.
 
@@ -1340,6 +1455,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             new_project, new_package, new_revision, opts.unified)
 
         print rdiff
+
+    def do_install(self, subcmd, opts, *args):
+        """${cmd_name}: install a package after build via zypper in -r
+
+        Not implemented yet. Use osc repourls, 
+        select the url you best like (standard), 
+        chop off after the last /, this should work with zypper.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        print self.do_install.__doc__
 
 
     def do_repourls(self, subcmd, opts, *args):
@@ -1621,14 +1749,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             p.todo = p.filenamelist + p.filenamelist_unvers
 
+
             for filename in p.todo:
                 if os.path.isdir(filename):
                     continue
                 # ignore foo.rXX, foo.mine for files which are in 'C' state
                 if os.path.splitext(filename)[0] in p.in_conflict:
-                    continue
+                     continue
                 state = p.status(filename)
+
                 if state == '?':
+                    # TODO: should ignore typical backup files suffix ~ or .orig
                     p.addfile(filename)
                     print statfrmt('A', getTransActPath(os.path.join(p.dir, filename)))
                 elif state == '!':
@@ -1962,8 +2093,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         sys.exit(1)
 
     @cmdln.hide(1)
+    @cmdln.option('-l', '--last-build', action='store_true',
+                        help='show last build results (succeeded/failed/unknown)')
+    @cmdln.option('-r', '--repo', action='append', default = [],
+                        help='Show results only for specified repo(s)')
+    @cmdln.option('-a', '--arch', action='append', default = [],
+                        help='Show results only for specified architecture(s)')
+    @cmdln.option('', '--xml', action='store_true',
+                        help='generate output in XML (former results_meta)')
     def do_rresults(self, subcmd, opts, *args):
-        print "Command rresults is obsolete. Please use 'osc results'"
+        print "Command rresults is obsolete. Running 'osc results' instead"
+        self.do_results('results', opts, *args)
         sys.exit(1)
 
 
@@ -2004,10 +2144,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     raise e
 
-    @cmdln.hide(1)
-    def do_req(self, subcmd, opts, *args):
-        print "Command req is obsolete. Please use 'osc api'"
-        sys.exit(1)
+#    @cmdln.hide(1)
+#    def do_req(self, subcmd, opts, *args):
+#        print "Command req is obsolete. Please use 'osc api'"
+#        sys.exit(1)
 
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',
@@ -2029,6 +2169,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
+
         apiurl = conf.config['apiurl']
         if len(args) == 0:
             wd = os.curdir
@@ -2786,6 +2927,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc search \'search term\' <options>
         ${cmd_option_list}
+
+        osc search does not find binary rpm names. Use 
+        http://software.opensuse.org/search?q=binaryname
         """
 
         search_term = None
@@ -3144,6 +3288,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='print out the specified revision')
+    @cmdln.option('-e', '--expand', action='store_true',
+                  help='expand linked package')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
 
@@ -3160,9 +3306,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments.')
         rev, dummy = parseRevisionOption(opts.revision)
 
-        query = ''
+        query = { }
         if opts.revision:
-            query = 'rev=%s' % opts.revision
+            query['rev'] = opts.revision
+        if opts.expand:
+            query['rev'] = show_upstream_srcmd5(conf.config['apiurl'], args[0], args[1], expand=True, revision=opts.revision)
         u = makeurl(conf.config['apiurl'], ['source', args[0], args[1], args[2]], query=query)
         for data in streamfile(u):
             sys.stdout.write(data)
@@ -3186,7 +3334,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         This command checks out a package with merged source changes. It uses
         a 3-way merge to resolve file conflicts. After reviewing/repairing
-        the merge, 'osc ci' will re-create a working source link.
+        the merge, use 'osc resolved ...' and 'osc ci' to re-create a 
+        working source link.
 
         usage:
         * For merging conflicting changes of a checkout package:
@@ -3379,7 +3528,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pac.write_conflictlist()
         print
         print 'Please change into the \'%s\' directory,' % destdir
-        print 'fix the conflicts, and commit the changes.'
+        print 'fix the conflicts (files marked with \'C\' above),'
+        print 'run \'osc resolved ...\', and commit the changes.'
 
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (not open an editor)')

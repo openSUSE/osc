@@ -1,12 +1,17 @@
-# Copyright (C) 2006 Novell Inc.  All rights reserved.
+# Copyright (C) 2006-2009 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
-# either version 2, or (at your option) any later version.
+# either version 2, or version 3 (at your option).
 
 """Read osc configuration and store it in a dictionary
 
 This module reads and parses ~/.oscrc. The resulting configuration is stored
 for later usage in a dictionary named 'config'. 
+The .oscrc is kept mode 0600, so that it is not publically readable.
+This gives no real security for storing passwords. 
+If in doubt, use your favourite keyring.
+Password is stored on ~/.oscrc as bz2 compressed and base64 encoded, so that is fairly 
+large and not to be recognized or remembered easily by an occasional spectator.
 
 If information is missing, it asks the user questions.
 
@@ -28,7 +33,6 @@ The configuration dictionary could look like this:
  }
 
 """
-
 import OscConfigParser
 from osc import oscerr
 
@@ -47,6 +51,7 @@ config = { }
 DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
              'pass': 'your_password',
+             'passx': '',
              'packagecachedir': '/var/tmp/osbuild-packagecache',
              'su-wrapper': 'su -c',
 
@@ -70,6 +75,20 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'extra-pkgs': 'vim gdb strace',
              # default platform
              'build_platform': 'openSUSE_Factory',
+             # default project for branch or bco
+             'branch_project': 'openSUSE:Factory',
+             # alternate filesystem layout: have multiple subdirs, where colons were.
+             'checkout_no_colon': 0,
+             # local files to ignore with status, addremove, ....
+             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak',
+             # keep passwords in plaintext. If you see this comment, your osc 
+             # already uses the encrypted password, and only keeps them in plain text
+             # for backwards compatibility. Default will change to 0 in future releases.
+             'plaintext_passwd': 1,
+             # limit the age of requests shown with 'osc req list'.
+             # this is a default only, can be overridden by 'osc req list -D NNN'
+             # Use 0 for unlimted.
+             'request_list_days': 30,
              # check for unversioned/removed files before commit
              'check_filelist': '1',
 }
@@ -101,20 +120,41 @@ apiurl = %(apiurl)s
 #extra-pkgs = vim gdb strace
 
 # build platform is used if the platform argument is omitted to osc build
-#build_platform = openSUSE_Factory
+#build_platform = %(build_platform)s
 
-# show info useful for debugging 
+# default project for branch or bco
+#branch_project = %(branch_project)s
+
+# alternate filesystem layout: have multiple subdirs, where colons were.
+#checkout_no_colon = %(checkout_no_colon)s
+
+# local files to ignore with status, addremove, ....
+#exclude_glob = %(exclude_glob)s
+
+# keep passwords in plaintext. If you see this comment, your osc
+# already uses the encrypted password, and only keeps them in plain text
+# for backwards compatibility. Default will change to 0 in future releases.
+# You can remove the plaintext password without harm, if you do not need
+# backwards compatibility.
+#plaintext_passwd = %(plaintext_passwd)s
+
+# limit the age of requests shown with 'osc req list'.
+# this is a default only, can be overridden by 'osc req list -D NNN'
+# Use 0 for unlimted.
+#request_list_days = %(request_list_days)s
+
+# show info useful for debugging
 #debug = 1
-    
-# show HTTP traffic useful for debugging 
+
+# show HTTP traffic useful for debugging
 #http_debug = 1
-    
+
 # jump into the debugger in case of errors
 #post_mortem = 1
-    
+
 # print call traces in case of errors
 #traceback = 1
-    
+
 # use GNOME keyring for credentials if available
 #gnome_keyring = 0
 
@@ -124,10 +164,11 @@ apiurl = %(apiurl)s
 [%(apiurl)s]
 user = %(user)s
 pass = %(pass)s
+passx = %(passx)s
 # set aliases for this apiurl
 # aliases = foo, bar
 # email used in .changes, unless the one from osc meta prj <user> will be used
-# email = 
+# email =
 # additional headers to pass to a request, e.g. for special authentication
 #http_headers = Host: foofoobar,
 #       User: mumblegack
@@ -281,6 +322,7 @@ def write_initial_config(conffile, entries, custom_template = ''):
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
+    config['passx'] = config['pass'].encode('bz2').encode('base64')
     if config['gnome_keyring'] and GNOME_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, config['apiurl'])
@@ -290,6 +332,9 @@ def write_initial_config(conffile, entries, custom_template = ''):
             protocol = protocol,
             server = host)
         config['user'] = ''
+        config['pass'] = ''
+        config['passx'] = ''
+    if not config['plaintext_passwd']:
         config['pass'] = ''
     sio = StringIO.StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
@@ -331,7 +376,9 @@ def add_section(filename, url, user, passwd):
         cp.set(url, 'keyring', '1')
     else:
         cp.set(url, 'user', user)
-        cp.set(url, 'pass', passwd)
+        if not config['plaintext_passwd']:
+            cp.remove_option(url, 'pass')
+        cp.set(url, 'passx', passwd.encode('bz2').encode('base64'))
     file = open(filename, 'w')
     cp.write(file, True)
     if file: file.close()
@@ -343,7 +390,8 @@ def get_config(override_conffile = None,
                override_http_debug = None, 
                override_traceback = None,
                override_post_mortem = None,
-               override_no_gnome_keyring = None):
+               override_no_gnome_keyring = None,
+               override_verbose = None):
     """do the actual work (see module documentation)"""
     import os
     import sys
@@ -358,6 +406,9 @@ def get_config(override_conffile = None,
                                   account_not_configured_text % conffile)
 
     # okay, we made sure that .oscrc exists
+
+    # make sure it is not world readable, it may contain a password.
+    os.chmod(conffile, 0600)
 
     cp = get_configParser(conffile)
 
@@ -405,7 +456,7 @@ def get_config(override_conffile = None,
 
     # override values which we were called with
     # This needs to be done before processing API sections as it might be already used there
-    if override_no_gnome_keyring: 
+    if override_no_gnome_keyring:
         config['gnome_keyring'] = False
 
     aliases = {}
@@ -432,6 +483,17 @@ def get_config(override_conffile = None,
             #from the general section.
             user         = cp.get(url, 'user', raw=True) # need to set raw to prevent '%' expansion
             password     = cp.get(url, 'pass', raw=True) # especially on password!
+            passwordx    = cp.get(url, 'passx', raw=True) # especially on password!
+            if password is None or password == 'your_password':
+                try:
+                    password = passwordx.decode('base64').decode('bz2');
+                except:
+                     print "%s: no credentials known" % url
+                     password = 'your_password'
+            else:
+                if not passwordx:
+                    print "%s: rewriting from plain pass to encoded pass\n" % url
+                    add_section(conffile, url, user, password)
             if cp.has_option(url, 'keyring') and cp.get(url, 'keyring'):
                 # This APIURL was configured to use keyring by
                 continue
@@ -464,7 +526,11 @@ def get_config(override_conffile = None,
     config['api_host_options'] = api_host_options
 
     # override values which we were called with
-    if override_debug: 
+    if override_verbose:
+        config['verbose'] = override_verbose + 1
+    if not config.has_key('verbose') : config['verbose'] = 1;
+
+    if override_debug:
         config['debug'] = override_debug
     if override_http_debug:
         config['http_debug'] = override_http_debug
@@ -478,7 +544,7 @@ def get_config(override_conffile = None,
         parse_apisrv_url(None, apiurl)
         config['apiurl'] = apiurl
 
-    # XXX unless config['user'] goes away (and is replaced with a handy function, or 
+    # XXX unless config['user'] goes away (and is replaced with a handy function, or
     # config becomes an object, even better), set the global 'user' here as well,
     # provided that there _are_ credentials for the chosen apiurl:
     try:

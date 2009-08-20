@@ -3,9 +3,9 @@
 # Copyright (C) 2006 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
-# either version 2, or (at your option) any later version.
+# either version 2, or version 3 (at your option).
 
-__version__ = '0.120.90'
+__version__ = '0.121.jw02'
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
@@ -15,7 +15,7 @@ import os
 import os.path
 import sys
 import urllib2
-from urllib import pathname2url, quote_plus, urlencode
+from urllib import pathname2url, quote_plus, urlencode, unquote
 from urlparse import urlsplit, urlunsplit
 from cStringIO import StringIO
 import shutil
@@ -33,8 +33,6 @@ except ImportError:
 
 BUFSIZE = 1024*1024
 store = '.osc'
-exclude_stuff = [store, 'CVS', '*~', '#*#', '.*', '_linkerror']
-
 
 new_project_templ = """\
 <project name="%(name)s">
@@ -286,7 +284,7 @@ class Project:
             self.pac_root = self.read_packages().getroot()
             self.pacs_have = [ pac.get('name') for pac in self.pac_root.findall('package') ]
             self.pacs_excluded = [ i for i in os.listdir(self.dir) 
-                                   for j in exclude_stuff 
+                                   for j in conf.exclude_glob 
                                    if fnmatch.fnmatch(i, j) ]
             self.pacs_unvers = [ i for i in os.listdir(self.dir) if i not in self.pacs_have and i not in self.pacs_excluded ]
             # store all broken packages (e.g. packages which where removed by a non-osc cmd)
@@ -365,7 +363,7 @@ class Project:
 
     def addPackage(self, pac):
         import fnmatch
-        for i in exclude_stuff:
+        for i in conf.exclude_glob:
             if fnmatch.fnmatch(pac, i):
                 return False
         state = self.get_state(pac)
@@ -957,7 +955,7 @@ class Package:
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir) 
-                          for j in exclude_stuff 
+                          for j in conf.exclude_glob 
                           if fnmatch.fnmatch(i, j) ]
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
                                      if i not in self.excluded
@@ -1431,7 +1429,7 @@ class Request:
                            )
 
     def list_view(self):
-        ret = '%6d  State:%-7s Creator:%-12s When:%-12s' % (self.reqid, self.state.name, self.state.who, self.state.when)
+        ret = '%6d  State:%-7s By:%-12s When:%-12s' % (self.reqid, self.state.name, self.state.who, self.state.when)
 
         for a in self.actions:
            dst = "%s/%s" % (a.dst_project, a.dst_package)
@@ -1448,8 +1446,14 @@ class Request:
            ret += '\n        %s:       %-50s %-20s   ' % \
             (a.type, sr_source, dst)
 
+        if self.statehistory and self.statehistory[0]:
+            who = []
+            for h in self.statehistory:
+                who.append("%s(%s)" % (h.who,h.name))
+            who.reverse()
+            ret += "\n        From: %s" % (' -> '.join(who))
         if self.descr:
-            ret += "\n        Comment: %s" % (repr(self.descr))
+            ret += "\n        Descr: %s" % (repr(self.descr))
         ret += "\n"
 
         return ret
@@ -1733,10 +1737,14 @@ def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 
 def init_project_dir(apiurl, dir, project):
     if not os.path.exists(dir):
-        os.mkdir(dir)
+        if conf.config['checkout_no_colon']:
+            os.makedirs(dir)      # helpful with checkout_no_colon
+        else:
+            os.mkdir(dir)
     if not os.path.exists(os.path.join(dir, store)):
         os.mkdir(os.path.join(dir, store))
 
+    # print 'project=',project,'  dir=',dir
     store_write_project(dir, project)
     store_write_apiurl(dir, apiurl)
     if conf.config['do_package_tracking']:
@@ -1780,6 +1788,8 @@ def check_store_version(dir):
 
     if v == '':
         msg = 'Error: "%s" is not an osc working copy.' % os.path.abspath(dir)
+        if os.path.exists(os.path.join(dir, '.svn')):
+            msg = msg + '\nTry svn instead of osc.'
         raise oscerr.NoWorkingCopy(msg)
 
     if v != __store_version__:
@@ -1824,7 +1834,8 @@ def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revisio
 
     else:
         l = []
-        rev = int(root.get('rev'))
+        # rev = int(root.get('rev'))    # don't force int. also allow srcmd5 here.
+        rev = root.get('rev')
         for node in root.findall('entry'):
             f = File(node.get('name'), 
                      node.get('md5'), 
@@ -2069,8 +2080,8 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     return f.readlines()
 
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False):
-    m = show_files_meta(apiurl, prj, pac, expand=expand)
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None):
+    m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision)
     return ET.parse(StringIO(''.join(m))).getroot().get('srcmd5')
 
 
@@ -2323,10 +2334,12 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
             m = match
             if project:
                 if len(m): m += '%20and%20'
-                m += '%s/target/@project=\'%s\'' % (what, quote_plus(project))
+                m += '(%s/target/@project=\'%s\'%%20or%%20' % (what, quote_plus(project))
+                m +=  '%s/source/@project=\'%s\')' % (what, quote_plus(project))
             if package:
                 if len(m): m += '%20and%20'
-                m += '%s/target/@package=\'%s\'' % (what, quote_plus(package))
+                m += '(%s/target/@package=\'%s\'%%20or%%20' % (what, quote_plus(package))
+                m +=  '%s/source/@package=\'%s\')' % (what, quote_plus(package))
             if req_type:
                 if len(m): m += '%20and%20'
                 m += '%s/@type=\'%s\'' % (what, quote_plus(req_type))
@@ -2336,6 +2349,8 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
         matches.append(match)
 
     for match in matches:
+        if conf.config['verbose'] > 1:
+            print "[",match,"]"
         u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
         f = http_GET(u)
         collection = ET.parse(f).getroot()
@@ -2696,10 +2711,31 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
     The optional 'prj_dir' parameter specifies the path to the project dir (default: 'project').
     """
     prj_dir = prj_dir or project
+
+    # FIXME: carefully test each patch component of prj_dir,
+    # if we have a .osc/_files entry at that level.
+    #   -> if so, we have a package/project clash,
+    #      and should rename this path component by appending '.proj'
+    #      and give user a warning message, to discourage such clashes
+
     pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
-    if not os.path.exists(prj_dir):
+    if os.path.exists(os.path.join(prj_dir,store,'_files')):
+        # we want this to become a project directory, 
+        # but it already is a package directory.
+        e.osc_msg = 'checkout_package: package/project clash. Moving myself away not implemented'
+        raise
+
+    if not os.path.exists(os.path.join(prj_dir,store,'_packages')):
+        # this directory could exist as a parent direory for one of our earlier 
+        # checked out sub-projects. in this case, we still need to initialize it.
         print statfrmt('A', prj_dir)
         init_project_dir(apiurl, prj_dir, project)
+    if os.path.exists(os.path.join(prj_dir, package, store, '_packages')):
+        # the thing exists, but is a project directory and not a package directory
+        # FIXME: this should be a warning message to discourage package/project clashes
+        e.osc_msg = 'checkout_package: package/project clash. Moving project away not implemented'
+        raise
+        
     if not os.path.exists(os.path.join(prj_dir, package)):
         print statfrmt('A', pathname)
         os.mkdir(os.path.join(prj_dir, package))
@@ -2724,6 +2760,9 @@ def checkout_package(apiurl, project, package,
     else:
         if sys.platform[:3] == 'win':
             prj_dir = prj_dir[:2] + prj_dir[2:].replace(':', ';')
+        else:
+            if conf.config['checkout_no_colon']:
+                prj_dir = prj_dir.replace(':', '/')
  
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
@@ -2873,7 +2912,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     http_PUT(u, data=aggregate_template)
     print 'Done.'
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False):
     """
     Branch a package (via API call)
     """
@@ -2887,7 +2926,20 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     if target_package:
         query['target_package'] = target_package
     u = makeurl(apiurl, ['source', src_project, src_package], query=query)
-    f = http_POST(u)
+    try:
+        f = http_POST(u)
+    except urllib2.HTTPError, e:
+        if not return_existing:
+            raise
+        msg = ''.join(e.readlines())
+        msg = msg.split('<summary>')[1]
+        msg = msg.split('</summary>')[0]
+        m = re.match(r"branch target package already exists: (\S+)/", msg)
+        if not m:
+            e.msg += '\n' + msg
+            raise
+        return (None, m.group(1))
+
     r = f.read()
     r = r.split('targetproject">')[1]
     r = r.split('</data>')[0]
@@ -3387,8 +3439,12 @@ def store_read_project(dir):
     try:
         p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
     except IOError:
+        if os.path.exists(os.path.join(dir, '.svn')):
+            svn = '\nTry svn instead of osc.'
+        else:
+            svn = ''
         raise oscerr.NoWorkingCopy('Error: \'%s\' is not an osc project dir ' \
-                            'or working copy.' % os.path.abspath(dir))
+                            'or working copy.'+svn % os.path.abspath(dir))
     return p
 
 
@@ -3396,7 +3452,11 @@ def store_read_package(dir):
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     except IOError:
-        raise oscerr.NoWorkingCopy('error: \'%s\' is not an osc working copy' \
+        if os.path.exists(os.path.join(dir, '.svn')):
+            svn = '\nTry svn instead of osc.'
+        else:
+            svn = ''
+        raise oscerr.NoWorkingCopy('error: \'%s\' is not an osc working copy'+svn \
                 % os.path.abspath(dir))
     return p
 
@@ -3609,6 +3669,7 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
 
     predicate = build_xpath_predicate(search_list, search_term, exact_matches)
     u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus(''.join(predicate))])
+    if conf.config['verbose']: print '>>', unquote(u), '<<'
     f = http_GET(u)
     root = ET.parse(f).getroot()
     result = []
@@ -3934,6 +3995,8 @@ def createPackageDir(pathname, prj_obj=None):
             return False
     else:
         print '\'%s\' is not a working copy' % prj_dir
+        if os.path.exists(os.path.join(prj_dir, '.svn')):
+            print 'try svn instead of osc.'
         return False
 
 

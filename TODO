@@ -1,3 +1,34 @@
+CRITICAL:
+  - there is no way to list my old requests, regardless of their state,
+    the online help is misleading about comma seperated lists.
+    osc request list -s revoked,revoked openSUSE:Tools 	-> lists 37
+    osc request list -s accecpted openSUSE:Tools 	-> lists 113
+    osc request list -s accecpted,revoked openSUSE:Tools 	-> lists 0
+
+ - hitting the wrong build service is a legal risk. 
+   osc has no guard against forgetting -A. Add automatic pickup from current path.
+
+ - webpage can create a _link in a fully populated package.
+   Need to prevent his somehow.
+
+ - cat -E <srcmd5> -r 3 <file>  should expand through the third revision of the link to a
+   named md5sum revision of the file. Or is this nonsense???
+   
+ - canonical option parser.
+   -A, -e, -u, -E <n>, should be univeral to all subconmmands that work on prj/pkg objects.
+   With all subcommands that work on prj/pkg, the following should all be synonyms:
+   -A apiurl prj pkg
+   -A apiurl --project prj --package=pkg
+   -A apiurl prj/pkg
+   -A apiurl prj:pkg
+   apiurl/source/prj/pkg
+   The current working directory or its descendants should provide defaults 
+   for apiurl, prj and/or pkg.
+
+ - checkout working directories should be real directories. No more colons.
+   A prj / package nameing collision shall be resolved by renaming the project to 
+   have a .prj suffix
+
 
 MAJOR:
 
@@ -21,11 +52,6 @@ NORMAL:
       and put it into the spec file... otherwise clients won't regard the copied package as newer
   - commit: check if errors during PUT are handled sensibly, so the change is
     not committed to localmeta	
-  - store password base64 hashed, so it is not directly visible in plaintext
-    when opening .oscrc and someone is looking over the shoulder
-    - use http://code.google.com/p/iniparse/ instead of ConfigParser, with
-      write capability, for the change
-    - or implement Juergen Weigert's idea of a on-demand password agent
   - add switch to commit to change repository options, like to e.g. disable publishing?
   - implement optional logging to .osc/log, which could be useful for debugging bugs like
     the one where api.opensuse.org sends empty replies (a hard-to-catch one)
@@ -47,13 +73,9 @@ MINOR:
     this can peruse the new get_binarylist() and get_binary_file() functions
   - adjust zsh completion to work with cmdln.py implementation
   - add support for adding tags to packages?
-
-
-
-
-
-
-
+  - evaluate password storage alternatives
+    - use http://code.google.com/p/iniparse/ instead of ConfigParser, with
+      write capability, for the change
 
 
 
@@ -65,5 +87,17 @@ MINOR:
 15:18 < DuDE> mt: kannst Du das gleiche mal eben mit osc -H probieren? Mich wuerde mal interessieren, ob da eine sinnvollere Meldung im Body mitkommt
 15:19 < mt> DuDE: reply: 'HTTP/1.1 403 Forbidden\r\n'
 15:20 < DuDE> mt: das ist gut, dann sollte osc kein "try again" anbieten, sondern die Meldung rueberbringen
+
+
+JW:
+FIXME: osc co overwrites local changes without warning.
+FIXME: when branching, the user should be added to bugowner, for the branch project.
+FIXME: 'osc req' shall default to 'osc req list -M -B -s all', 
+       where -B shows requests related to packages where I am the bugowner.
+FIXME: 'osc log openSUSE:Factory PKG' should also point to the bsdevelproject
+
+osc addrepo - obsolete zypper ar
+osc install - obsolete zypper in
+  -
 
 

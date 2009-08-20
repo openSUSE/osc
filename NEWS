@@ -1,3 +1,34 @@
+0.121.jw02
+ - made rresults an alias for results. python decorators are a strange concept...
+ - asserting that ~/.oscrc remains mode 0600
+ - no more plain text passwords in ~/.oscrc, we store now as bz2+base64
+ - added verbosity control -v -q. To be used in guess_proj_pack()
+ - added 'll' and 'ls -l' as shorthand to 'list -v'
+ - started to change to explicit dual license GPLv2 or GPLv3 to conform to Novell policy.
+ - added revision parameter to show_upstream_srcmd5(), so that it can be used in do_cat later.
+ - allowed both integer and srcmd5 revisions in meta_get_filelist()
+ - added 'lL', 'LL': allowed -e and -v together in do_list(). Was an internal error before.
+ - added cat -e, to cat a file through a link.
+   'cat -e -r 3' expands through the third revision of the _link.
+ - added subcmd bco as alias for branch -c
+ - added default project to branch subcommand. .oscrc:branch_project = OpenSUSE:Factory
+ - added primitive experimental support for .oscrc:checkout_no_colon = 1
+ - suggest using svn when .svn found.
+ - alias submitpac submitrequest
+ - osc bco now continues to checkout after branch target exists error.
+ - added .oscrc:plaintext_passwd=1 for backwards compatibility
+ - moved core.py:exclude_stuff to .oscrc:exclude_glob and expand it to catch *.orig etc.
+ - allowed req as alias for request.
+ - bugfix get_request_list: use 'or' with multiple states, not 'and'.
+ - added osc req list -s all; a shorthand for enumerating all states
+ - osc req list no longer confuses creator with approver.
+ - osc req list -D nnn limit to requests nnn days old.
+ - osc req list now also shows requests from the the given package, not only to.
+ - improved help texts with repairlink to point to osc resolved.
+ - improved passx code when creating oscrc.
+ - osc sr -l is now a shortcut for 'osc req list -M -a -t submit -D 0'
+
+
 0.121:
  - osc metafromspec allows editing before send
  - allow handling of other roles than "maintainer" with maintainer command
