@@ -54,7 +54,6 @@ class Buildinfo:
     """represent the contents of a buildinfo file"""
 
     def __init__(self, filename, apiurl, buildtype = 'spec'):
-
         try:
             tree = ET.parse(filename)
         except:
@@ -82,6 +81,9 @@ class Buildinfo:
             self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
+        self.release = "0"
+        if root.find('release') != None:
+           self.release = root.find('release').text
         self.downloadurl = root.get('downloadurl')
         self.debuginfo = 0
         if root.find('debuginfo') != None:
@@ -534,13 +536,14 @@ def main(opts, argv):
 
 
 
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s %s %s %s' \
+    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s --release=%s %s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
                     rpmlist_file.name, 
                     bc_file.name, 
                     specialcmdopts,
                     bi.buildarch,
+                    bi.release,
                     vm_options,
                     build_descr, 
                     buildargs)
