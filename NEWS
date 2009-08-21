@@ -1,3 +1,9 @@
+0.121.jw03
+ - fixed osc req list -U to not look into the local dir
+ - added osc my ... pkg/prj/req  shorthand commands
+ - add 'osc se' alias for 'osc search -e'
+ - add -b -m -M to 'osc search'
+
 0.121.jw02
  - made rresults an alias for results. python decorators are a strange concept...
  - asserting that ~/.oscrc remains mode 0600

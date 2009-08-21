@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.121.jw02'
+__version__ = '0.121.jw03'
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
@@ -3659,13 +3659,16 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
         separator = ''
     return [separator.join(row) for row in table]
 
-def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False):
+def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False, role_filter = None):
     """
     Perform a search for 'search_term'. A list which contains the
     results will be returned on success otherwise 'None'. If 'verbose' is true
     and the title-tag-text (<title>TEXT</title>) is longer than 60 chars it'll we
     truncated.
     """
+
+    if role_filter:
+        role_filter = role_filter.split(':')
 
     predicate = build_xpath_predicate(search_list, search_term, exact_matches)
     u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus(''.join(predicate))])
@@ -3674,6 +3677,14 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
     root = ET.parse(f).getroot()
     result = []
     for node in root.findall(kind):
+        if role_filter:
+	    skip = 1
+            for p in node.findall('person'):
+	        if p.get('userid') == role_filter[0] and p.get('role') == role_filter[1]:
+		    skip = 0
+	    if skip:
+	        continue
+
         # TODO: clarify if we need to check if node.get() returns 'None'.
         #       If it returns 'None' something is broken anyway...
         if kind == 'package':

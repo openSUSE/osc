@@ -818,7 +818,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = None
             if len(args) > 0:
                 project = args[0]
-            elif not opts.mine:
+            elif not opts.mine and not opts.user:
                 try:
                     project = store_read_project(os.curdir)
                     apiurl = store_read_apiurl(os.curdir)
@@ -2895,6 +2895,54 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             progress_meter = not opts.quiet)
 
 
+    @cmdln.option('-U', '--user', metavar='USER',
+                        help='search not for yourself, but for the specified USER')
+    @cmdln.option('-a', '--all', action='store_true',
+                        help='all involvements. No effect for requests. Default: bugowner')
+    def do_my(self, subcmd, opts, *args):
+        """${cmd_name}: Show your projects, packages, or requests.
+
+        usage:
+            osc my pkg         osc my [-a] [-U USER] packages
+            osc my prj         osc my ... projects
+            osc my req         osc my ... requests
+        ${cmd_option_list}
+
+	  'osc my' implements memonic shorthands for 
+	  specific 'osc search' and 'osc req list' commands.
+	  See there for additional help.
+	"""
+
+        if not args:
+            raise oscerr.WrongArgs('Please specify one of projects/packages/requests')
+
+	if args[0] in ('requests', 'request', 'req', 'rq'):
+	    opts.state = 'all'
+	    opts.type = ''
+	    opts.days = conf.config['request_list_days']
+	    opts.mine = False
+	    args = ['list']
+	    if not opts.user: opts.mine = True
+	    return self.do_request('req', opts, *args)
+
+	if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg', 'projects', 'project', 'projs', 'proj', 'prj'):
+	    opts.title = opts.description = opts.project = opts.package = False
+	    opts.involved = opts.mine = opts.bugowner = opts.maintainer = False
+	    opts.verbose = opts.repos_baseurl = opts.csv = False
+	    if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg'): opts.package = True
+	    else: opts.project = True
+	    args = []
+	    if opts.user: args = [ opts.user ]
+	    if opts.all: opts.involved = True
+	    else: opts.bugowner = True
+	    return self.do_search('se', opts, *args)
+
+	raise oscerr.WrongArgs('Unknown arg "%s": Please specify one of projects/packages/requests' % args[0])
+
+
+
+
+
 
     @cmdln.option('--repos-baseurl', action='store_true',
                         help='show base URLs of download repositories')
@@ -2911,9 +2959,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
     @cmdln.option('-i', '--involved', action='store_true',
-                        help='show projects/packages where given person is involved')
+                        help='show projects/packages where given person (or myself) is involved as bugowner or maintainer')
+    @cmdln.option('-b', '--bugowner', action='store_true',
+                        help='as -i, but only bugowner')
+    @cmdln.option('-m', '--maintainer', action='store_true',
+                        help='as -i, but only maintainer')
+    @cmdln.option('-M', '--mine', action='store_true',
+                        help='shorthand for --bugowner --package')
     @cmdln.option('--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
+    @cmdln.alias('se')
     def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
 
@@ -2923,23 +2978,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc search \'search term\' <options>
+	    osc se ...
         ${cmd_option_list}
+
+        'osc se' is a shorthand for 'osc search -e'
 
         osc search does not find binary rpm names. Use 
         http://software.opensuse.org/search?q=binaryname
         """
+	
+	if subcmd == 'se':
+            opts.exact = True
+	if opts.mine:
+	    opts.bugowner = True
+	    opts.package = True
+	    
+	for_user = False
+        if opts.involved or opts.bugowner or opts.maintainer:
+	    for_user = True
 
         search_term = None
         if len(args) > 1:
             raise oscerr.WrongArgs('Too many arguments.')
-        elif len(args) < 1 and not opts.involved:
+        elif len(args) < 1 and not for_user:
             raise oscerr.WrongArgs('Too few arguments.')
         elif len(args) == 1:
             search_term = args[0]
 
-        if (opts.title or opts.description) and opts.involved:
+        if (opts.title or opts.description) and for_user:
             raise oscerr.WrongArgs('Sorry, the options \'--title\' and/or \'--description\' ' \
-                                   'plus \'--involved\' are mutual exclusive')
+                                   'are mutually exclusive with \'-i\'/\'-b\'/\'-m\'/\'-M\'')
 
         search_list = []
         search_for = []
@@ -2953,20 +3021,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.project:
             search_list.append('@name')
             search_for.append('project')
-        if opts.involved:
+
+	role_filter=None
+        if for_user:
             search_list = [ 'person/@userid' ]
             search_term = search_term or conf.get_apiurl_usr(conf.config['apiurl'])
             opts.exact = True
+	    if opts.bugowner and not opts.maintainer:
+	        role_filter = search_term+':bugowner'
+	    if not opts.bugowner and opts.maintainer:
+	        role_filter = search_term+':maintainer'
 
         if not search_list:
             search_list = ['title', 'description', '@name']
         if not search_for:
             search_for = [ 'project', 'package' ]
         for kind in search_for:
-            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl)
+            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl, role_filter)
 
             if not result:
-                print 'No matches found for \'%s\' in %ss' % (search_term, kind)
+                print 'No matches found for \'%s\' in %ss' % (role_filter or search_term, kind)
                 continue
 
             # unfortunately, there is no sort support in the api.
@@ -2992,7 +3066,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.csv:
                 if len(search_for) > 1:
                     print '#' * 68
-                print 'matches for \'%s\' in %ss:\n' % (search_term, kind)
+                print 'matches for \'%s\' in %ss:\n' % (role_filter or search_term, kind)
             for row in build_table(len(headline), result, headline, 2, csv = opts.csv):
                 print row
 
