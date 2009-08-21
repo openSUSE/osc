@@ -3438,12 +3438,10 @@ def store_read_project(dir):
     try:
         p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
     except IOError:
+        msg = 'Error: \'%s\' is not an osc project dir or working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
-            svn = '\nTry svn instead of osc.'
-        else:
-            svn = ''
-        raise oscerr.NoWorkingCopy('Error: \'%s\' is not an osc project dir ' \
-                            'or working copy.'+svn % os.path.abspath(dir))
+            msg += '\nTry svn instead of osc.'
+        raise oscerr.NoWorkingCopy(msg)
     return p
 
 
@@ -3451,12 +3449,10 @@ def store_read_package(dir):
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     except IOError:
+        msg = 'Error: \'%s\' is not an osc working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
-            svn = '\nTry svn instead of osc.'
-        else:
-            svn = ''
-        raise oscerr.NoWorkingCopy('error: \'%s\' is not an osc working copy'+svn \
-                % os.path.abspath(dir))
+            msg += '\nTry svn instead of osc.'
+        raise oscerr.NoWorkingCopy(msg)
     return p
 
 def store_read_apiurl(dir):
