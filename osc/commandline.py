@@ -58,11 +58,6 @@ class Osc(cmdln.Cmdln):
     name = 'osc'
     conf = None
 
-    ## FIXME: not sure, if it is possible in python to 
-    ## fetch conf.config['request_list_days'] from 
-    ## oscrc instead of an ugly pointer string hre.
-    request_list_days = 'oscrc:request_list_days'
-
     man_header = MAN_HEADER
     man_footer = MAN_FOOTER
 
@@ -149,6 +144,10 @@ class Osc(cmdln.Cmdln):
         doc = doc.rstrip() + '\n' # trim down trailing space
         return self._str(doc)
 
+    # overridden from Cmdln in order to use config values in options' help text
+    def _help_preprocess_cmd_option_list(self, help, cmdname=None):
+        help = cmdln.Cmdln._help_preprocess_cmd_option_list(self, help, cmdname)
+        return help % conf.config
 
     def do_init(self, subcmd, opts, project, package=None):
         """${cmd_name}: Initialize a directory as working copy
@@ -722,8 +721,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new' otherwise
                         help='only list requests in one of the comma separated given states (new/accepted/rejected/revoked/declined) or "all" [default=new, or all, if no args given]')
-    @cmdln.option('-D', '--days', default='%s' % request_list_days, metavar='DAYS',
-                        help='only list requests created or changed in the last DAYS. [default=%s]' % request_list_days)
+    @cmdln.option('-D', '--days', metavar='DAYS',
+                        help='only list requests created or changed in the last DAYS. [default=%(request_list_days)s]')
     @cmdln.option('-U', '--user', metavar='USER',
                         help='same as -M, but for the specified USER')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
@@ -855,16 +854,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             results.sort(reverse=True)
             import time
+            days = opts.days or conf.config['request_list_days']
+            since = ''
             try: 
-                ## ugly hack needed, as as the -D decorator constructs its default before osrcrc is loaded.
-                if opts.days == self.request_list_days:
-                    opts.days = conf.config['request_list_days']
-                int(opts.days)
-            except:
-                opts.days = '0'
-            if int(opts.days) > 0:
-                since = time.strftime('%Y-%m-%dT%H:%M:%S',time.localtime(time.time()-int(opts.days)*24*3600))
-
+                days = int(days)
+            except ValueError:
+                days = 0
+            if days > 0:
+                since = time.strftime('%Y-%m-%dT%H:%M:%S',time.localtime(time.time()-days*24*3600))
 
             skipped = 0
             ## bs has received 2009-09-20 a new xquery compare() function
@@ -872,12 +869,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             ## That would be much faster for coolo. But counting the remainder
             ## is not possible with current xquery implementation.
             for result in results:
-                if int(opts.days) == 0 or result.state.when > since:
+                if days == 0 or result.state.when > since:
                     print result.list_view()
                 else:
                     skipped += 1
             if skipped:
-                print "There are %d requests older than %s days.\n" % (skipped,opts.days)
+                print "There are %d requests older than %s days.\n" % (skipped, days)
   
 
         elif cmd == 'log':
