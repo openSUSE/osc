@@ -2719,23 +2719,22 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
     #      and give user a warning message, to discourage such clashes
 
     pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
-    if os.path.exists(os.path.join(prj_dir,store,'_files')):
+    if is_package_dir(prj_dir):
         # we want this to become a project directory, 
         # but it already is a package directory.
-        e.osc_msg = 'checkout_package: package/project clash. Moving myself away not implemented'
-        raise
+        raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving myself away not implemented')
 
-    if not os.path.exists(os.path.join(prj_dir,store,'_packages')):
+    if not is_project_dir(prj_dir):
         # this directory could exist as a parent direory for one of our earlier 
         # checked out sub-projects. in this case, we still need to initialize it.
         print statfrmt('A', prj_dir)
         init_project_dir(apiurl, prj_dir, project)
-    if os.path.exists(os.path.join(prj_dir, package, store, '_packages')):
+
+    if is_project_dir(os.path.join(prj_dir, package)):
         # the thing exists, but is a project directory and not a package directory
         # FIXME: this should be a warning message to discourage package/project clashes
-        e.osc_msg = 'checkout_package: package/project clash. Moving project away not implemented'
-        raise
-        
+        raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving project away not implemented')
+
     if not os.path.exists(os.path.join(prj_dir, package)):
         print statfrmt('A', pathname)
         os.mkdir(os.path.join(prj_dir, package))
