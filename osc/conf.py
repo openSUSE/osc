@@ -440,6 +440,7 @@ def get_config(override_conffile = None,
             raise oscerr.ConfigError('cannot parse \'%s\' setting: ' % i + str(e), conffile)
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
+    config['exclude_glob'] = config['exclude_glob'].split()
 
     re_clist = re.compile('[, ]+')
     config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i ]

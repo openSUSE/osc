@@ -129,9 +129,7 @@ class Osc(cmdln.Cmdln):
             conf.add_section(e.file, e.url, user, passwd)
             if try_again: self.postoptparse(try_again = False)
 
-        self.conf = conf
         self.options.verbose = conf.config['verbose']
-        conf.exclude_glob = conf.config['exclude_glob'].split()
 
 
     def get_cmd_help(self, cmdname):
@@ -225,8 +223,11 @@ class Osc(cmdln.Cmdln):
         """
 
         args = slash_split(args)
-        if (subcmd == 'll'): opts.verbose = True;
-        if (subcmd == 'lL' or subcmd == 'LL'): opts.verbose = True; opts.expand = True;
+        if subcmd == 'll':
+            opts.verbose = True
+        if subcmd == 'lL' or subcmd == 'LL':
+            opts.verbose = True
+            opts.expand = True
 
         if len(args) == 1:
             project = args[0]
@@ -1224,14 +1225,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        if (subcmd == 'branch_co' or subcmd == 'branchco' or subcmd == 'bco'): opts.checkout = True
+        if subcmd == 'branch_co' or subcmd == 'branchco' or subcmd == 'bco': opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
 
-        if (len(args) == 1):
-            print >>sys.stderr, "defaulting to %s/%s" % (conf.config['branch_project'],args[0])
+        if len(args) == 1:
+            print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['branch_project'], args[0])
             # python has no args.unshift ???
-            args = [ conf.config['branch_project'] , args[0] ]
+            args = [ conf.config['branch_project'], args[0] ]
 
 
         if not (len(args) >= 2 and len(args) <= 4):

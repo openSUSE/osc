@@ -283,8 +283,8 @@ class Project:
         if conf.config['do_package_tracking']:
             self.pac_root = self.read_packages().getroot()
             self.pacs_have = [ pac.get('name') for pac in self.pac_root.findall('package') ]
-            self.pacs_excluded = [ i for i in os.listdir(self.dir) 
-                                   for j in conf.exclude_glob 
+            self.pacs_excluded = [ i for i in os.listdir(self.dir)
+                                   for j in conf.config['exclude_glob']
                                    if fnmatch.fnmatch(i, j) ]
             self.pacs_unvers = [ i for i in os.listdir(self.dir) if i not in self.pacs_have and i not in self.pacs_excluded ]
             # store all broken packages (e.g. packages which where removed by a non-osc cmd)
@@ -363,7 +363,7 @@ class Project:
 
     def addPackage(self, pac):
         import fnmatch
-        for i in conf.exclude_glob:
+        for i in conf.config['exclude_glob']:
             if fnmatch.fnmatch(pac, i):
                 return False
         state = self.get_state(pac)
@@ -955,7 +955,7 @@ class Package:
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir) 
-                          for j in conf.exclude_glob 
+                          for j in conf.config['exclude_glob']
                           if fnmatch.fnmatch(i, j) ]
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
                                      if i not in self.excluded
