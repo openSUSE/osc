@@ -141,10 +141,12 @@ class Osc(cmdln.Cmdln):
         doc = doc.rstrip() + '\n' # trim down trailing space
         return self._str(doc)
 
-    # overridden from Cmdln in order to use config values in options' help text
-    def _help_preprocess_cmd_option_list(self, help, cmdname=None):
-        help = cmdln.Cmdln._help_preprocess_cmd_option_list(self, help, cmdname)
+
+    # overridden from class Cmdln() to use config variables in help texts
+    def _help_preprocess(self, help, cmdname):
+        help = cmdln.Cmdln._help_preprocess(self, help, cmdname)
         return help % conf.config
+
 
     def do_init(self, subcmd, opts, project, package=None):
         """${cmd_name}: Initialize a directory as working copy
@@ -1210,7 +1212,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if nothing else specified.
 
         The branched package will come from 
-            openSUSE:Factory
+            %(branch_project)s
         if nothing else specified.
 
         usage:
@@ -1221,8 +1223,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc bco ...
         ${cmd_option_list}
         """
-
-        # FIXME: how can we interpolate conf.config['branch_project'] in the above message?
 
         if (subcmd == 'branch_co' or subcmd == 'branchco' or subcmd == 'bco'): opts.checkout = True
         args = slash_split(args)
