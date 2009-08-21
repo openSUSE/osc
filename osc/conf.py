@@ -44,9 +44,6 @@ try:
 except:
     GNOME_KEYRING = False
 
-# being global to this module, this dict can be accessed from outside
-# it will hold the parsed configuration
-config = { }
 
 DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
@@ -92,6 +89,11 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # check for unversioned/removed files before commit
              'check_filelist': '1',
 }
+
+# being global to this module, this dict can be accessed from outside
+# it will hold the parsed configuration
+config = DEFAULTS.copy()
+
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist']
 
 new_conf_template = """

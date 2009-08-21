@@ -144,9 +144,6 @@ class Osc(cmdln.Cmdln):
     # overridden from Cmdln in order to use config values in options' help text
     def _help_preprocess_cmd_option_list(self, help, cmdname=None):
         help = cmdln.Cmdln._help_preprocess_cmd_option_list(self, help, cmdname)
-	# FIXME: setup.py build has no useful conf.config here.
-	if not conf.config.has_key('request_list_days'): 
-	    conf.config['request_list_days'] = 30
         return help % conf.config
 
     def do_init(self, subcmd, opts, project, package=None):
