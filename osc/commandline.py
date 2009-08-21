@@ -780,6 +780,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
 
+        if opts.all and opts.state:
+            raise oscerr.WrongOptions('Sorry, the options --all and --state ' \
+                     'are mutually exclusive.')
+        if opts.mine and opts.user:
+            raise oscerr.WrongOptions('Sorry, the options --user and --mine ' \
+                     'are mutually exclusive.')
+
         # 'req' defaults to 'req list -M -s all'
         if not args:
             args = [ 'list' ]
@@ -837,17 +844,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             states = ('new', 'accepted', 'rejected', 'revoked', 'declined')
             state_list = opts.state.split(',')
             if opts.state == 'all':
-                state_list = []
-            for s in state_list:
-                if not s in states:
-                    print >>sys.stderr, "Unknown state %s, try one of %s" % (s, ','.join(states))
+                state_list = ['all']
+            else:
+                for s in state_list:
+                    if not s in states:
+                        raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
             who = ''
             if opts.mine:
                 who = conf.get_apiurl_usr(apiurl)
             if opts.user:
                 who = opts.user
             if opts.all:
-                state_list = []
+                state_list = ['all']
 
             results = get_request_list(apiurl,
                                        project, package, who, state_list, opts.type)

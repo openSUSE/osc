@@ -2309,15 +2309,15 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     requests = []
 
     matches = []
-    match=''
-    m=''
+    match = ''
+    m = ''
     if "all" in req_state:
         req_state=('new', 'accepted', 'declined', 'revoked', 'rejected')
     for state in req_state:
         if len(m): m += '%20or%20'
         m += 'state/@name=\'%s\'' % quote_plus(state)
     if len(m): match += "(" + m + ")"
-    m=''
+    m = ''
     if req_who:
         if len(m): m += '%20and%20'
         m += 'state/@who=\'%s\'' % quote_plus(req_who)
