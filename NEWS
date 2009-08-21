@@ -3,6 +3,7 @@
  - added osc my ... pkg/prj/req  shorthand commands
  - add 'osc se' alias for 'osc search -e'
  - add -b -m -M to 'osc search'
+ - hack for _help_preprocess_cmd_option_list to survive setup.py build
 
 0.121.jw02
  - made rresults an alias for results. python decorators are a strange concept...
