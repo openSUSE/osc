@@ -75,13 +75,13 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # default project for branch or bco
              'branch_project': 'openSUSE:Factory',
              # alternate filesystem layout: have multiple subdirs, where colons were.
-             'checkout_no_colon': 0,
+             'checkout_no_colon': '0',
              # local files to ignore with status, addremove, ....
              'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak',
              # keep passwords in plaintext. If you see this comment, your osc 
              # already uses the encrypted password, and only keeps them in plain text
              # for backwards compatibility. Default will change to 0 in future releases.
-             'plaintext_passwd': 1,
+             'plaintext_passwd': '1',
              # limit the age of requests shown with 'osc req list'.
              # this is a default only, can be overridden by 'osc req list -D NNN'
              # Use 0 for unlimted.
@@ -94,7 +94,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 # it will hold the parsed configuration
 config = DEFAULTS.copy()
 
-boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist']
+boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
+    'checkout_no_colon']
 
 new_conf_template = """
 [general]
