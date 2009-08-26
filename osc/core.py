@@ -3920,7 +3920,11 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
         print "osc: an error occured"
 
 def delMaintainer(apiurl, prj, pac, user):
-    """ delete a maintainer from a package or project """
+    # for backward compatibility only
+    delPerson(apiurl, prj, pac, user)
+
+def delPerson(apiurl, prj, pac, user, role="maintainer"):
+    """ delete a person from a package or project """
     path = quote_plus(prj), 
     kind = 'prj'
     if pac:
@@ -3934,7 +3938,7 @@ def delMaintainer(apiurl, prj, pac, user):
         tree = ET.fromstring(''.join(data))
         found = False
         for person in tree.getiterator('person'):
-            if person.get('userid') == user:
+            if person.get('userid') == user and person.get('role') == role:
                 tree.remove(person)
                 found = True
                 print "user \'%s\' removed" % user

@@ -3251,7 +3251,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not url.startswith('http'):
             if not url.startswith('/'):
                 url = '/' + url
-            url = conf.config['apiurl'] + url
+            url = conf.config['apiurl']
 
         if opts.headers:
             opts.headers = dict(opts.headers)
@@ -3299,8 +3299,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         maintainers = []
         pac = None
         tree = None
-        role = opts.role
-        roles = [ 'bugowner', 'maintainer' ]
+        if not opts.role:
+            roles = [ 'bugowner', 'maintainer' ]
+        else:
+            roles = [opts.role]
         if opts.bugowner:
             roles = [ 'bugowner' ]
 
@@ -3329,9 +3331,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('I need at least one argument.')
 
         if opts.add:
-            addPerson(conf.config['apiurl'], prj, pac, opts.add, role)
+            for role in roles:
+                addPerson(conf.config['apiurl'], prj, pac, opts.add, role)
         elif opts.delete:
-            delPerson(conf.config['apiurl'], prj, pac, opts.delete, role)
+            for role in roles:
+                delPerson(conf.config['apiurl'], prj, pac, opts.delete, role)
         elif opts.devel_project:
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
         else:
