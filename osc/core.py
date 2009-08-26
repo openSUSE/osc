@@ -31,6 +31,7 @@ except ImportError:
 
 
 
+DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUFSIZE = 1024*1024
 store = '.osc'
 
@@ -1529,6 +1530,20 @@ def is_project_dir(d):
 def is_package_dir(d):
     return os.path.exists(os.path.join(d, store, '_project')) and \
            os.path.exists(os.path.join(d, store, '_package'))
+
+def parse_disturl(disturl):
+    """Parse a disturl, returns tuple (apiurl, project, source, repository,
+    revision), else raises an oscerr.WrongArgs exception
+    """
+
+    m = DISTURL_RE.match(disturl)
+    if not m:
+        raise oscerr.WrongArgs("`%s' does not look like disturl")
+
+    apiurl = m.group('apiurl')
+    if apiurl.split('.')[0] != 'api':
+        apiurl = 'https://api.' + ".".join(apiurl.split('.')[1:])
+    return (apiurl, m.group('project'), m.group('source'), m.group('repository'), m.group('revision'))
 
         
 def slash_split(l):
