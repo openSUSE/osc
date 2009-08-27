@@ -1,11 +1,9 @@
-0.121.jw03
+0.121
  - fixed osc req list -U to not look into the local dir
  - added osc my ... pkg/prj/req  shorthand commands
  - add 'osc se' alias for 'osc search -e'
  - add -b -m -M to 'osc search'
  - hack for _help_preprocess_cmd_option_list to survive setup.py build
-
-0.121.jw02
  - made rresults an alias for results. python decorators are a strange concept...
  - asserting that ~/.oscrc remains mode 0600
  - no more plain text passwords in ~/.oscrc, we store now as bz2+base64
@@ -34,9 +32,6 @@
  - improved help texts with repairlink to point to osc resolved.
  - improved passx code when creating oscrc.
  - osc sr -l is now a shortcut for 'osc req list -M -a -t submit -D 0'
-
-
-0.121:
  - osc metafromspec allows editing before send
  - allow handling of other roles than "maintainer" with maintainer command
    (-r role)
