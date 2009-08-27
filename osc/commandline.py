@@ -498,10 +498,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
-    @cmdln.option('-d', '--diff', action='store_true',
-                  help='show diff only instead of creating the actual request')
-    @cmdln.option('-l', '--list', action='store_true',
-                  help='show submitrequests. Same as \'osc req list -M -s all -t submit -D 0\'')
     @cmdln.alias("sr")
     @cmdln.alias("submitreq")
     @cmdln.alias("submitpac")
@@ -519,14 +515,6 @@ class Osc(cmdln.Cmdln):
             osc submitreq [OPTIONS] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
         ${cmd_option_list}
         """
-
-        if opts.list:
-           opts.state = "all"
-           opts.user = ""
-           opts.all = True
-           opts.type = "submit"
-           opts.mine = True
-           return self.do_request('list', opts, *args)
 
         args = slash_split(args)
 
@@ -631,7 +619,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if repl == 'y':
                 for req in myreqs:
                     change_request_state(apiurl, str(req.reqid), 'revoked',
-                                         'superseded by %s' % result)
+                                         'superseeded by %s' % result)
 
             print 'created request id', result
 
@@ -730,7 +718,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
     @cmdln.alias("rq")
-    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
@@ -1220,12 +1207,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             home:USERNAME:branches:PROJECT/PACKAGE
         if nothing else specified.
 
-        The branched package will come from 
-            %(branch_project)s
-        if nothing else specified.
-
         usage:
-            osc branch  SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
@@ -1236,12 +1218,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if subcmd == 'branch_co' or subcmd == 'branchco' or subcmd == 'bco': opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
-
-        if len(args) == 1:
-            print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['branch_project'], args[0])
-            # python has no args.unshift ???
-            args = [ conf.config['branch_project'], args[0] ]
-
 
         if not (len(args) >= 2 and len(args) <= 4):
             raise oscerr.WrongArgs('Wrong number of arguments.')
@@ -2147,10 +2123,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     raise e
 
-#    @cmdln.hide(1)
-#    def do_req(self, subcmd, opts, *args):
-#        print "Command req is obsolete. Please use 'osc api'"
-#        sys.exit(1)
+    @cmdln.hide(1)
+    def do_req(self, subcmd, opts, *args):
+        print "Command req is obsolete. Please use 'osc api'"
+        sys.exit(1)
 
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',

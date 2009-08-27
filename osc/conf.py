@@ -72,8 +72,6 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'extra-pkgs': 'vim gdb strace',
              # default platform
              'build_platform': 'openSUSE_Factory',
-             # default project for branch or bco
-             'branch_project': 'openSUSE:Factory',
              # alternate filesystem layout: have multiple subdirs, where colons were.
              'checkout_no_colon': '0',
              # local files to ignore with status, addremove, ....
