@@ -1,5 +1,5 @@
 0.121
- - fixed osc req list -U to not look into the local dir
+ - fixed osc rq list -U to not look into the local dir
  - added osc my ... pkg/prj/req  shorthand commands
  - add 'osc se' alias for 'osc search -e'
  - add -b -m -M to 'osc search'
