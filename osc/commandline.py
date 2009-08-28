@@ -593,35 +593,29 @@ of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package)
                       sys.exit(1)
-        if opts.diff:
-            print 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
-            rdiff = server_diff(apiurl,
-                                dst_project, dst_package, None,
-                                src_project, src_package, None, True)
-            print rdiff
-        else:
-            reqs = get_request_list(apiurl, dst_project, dst_package, 'submit')
-            user = conf.get_apiurl_usr(apiurl)
-            myreqs = [ i for i in reqs if i.state.who == user ]
-            repl = ''
-            if len(myreqs) > 0:
-                print 'You already created the following submit request: %s.' % \
-                      ', '.join([str(i.reqid) for i in myreqs ])
-                repl = raw_input('Revoke the old requests? (y/N) ')
 
-            if not opts.message:
-                opts.message = edit_message()
+    reqs = get_request_list(apiurl, dst_project, dst_package, 'submit')
+    user = conf.get_apiurl_usr(apiurl)
+    myreqs = [ i for i in reqs if i.state.who == user ]
+    repl = ''
+    if len(myreqs) > 0:
+        print 'You already created the following submit request: %s.' % \
+              ', '.join([str(i.reqid) for i in myreqs ])
+        repl = raw_input('Revoke the old requests? (y/N) ')
 
-            result = create_submit_request(apiurl,
-                                           src_project, src_package,
-                                           dst_project, dst_package,
-                                           opts.message, orev=opts.revision)
-            if repl == 'y':
-                for req in myreqs:
-                    change_request_state(apiurl, str(req.reqid), 'revoked',
-                                         'superseeded by %s' % result)
+    if not opts.message:
+        opts.message = edit_message()
 
-            print 'created request id', result
+    result = create_submit_request(apiurl,
+                                   src_project, src_package,
+                                   dst_project, dst_package,
+                                   opts.message, orev=opts.revision)
+    if repl == 'y':
+        for req in myreqs:
+            change_request_state(apiurl, str(req.reqid), 'revoked',
+                                 'superseeded by %s' % result)
+
+    print 'created request id', result
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
