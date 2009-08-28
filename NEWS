@@ -24,6 +24,7 @@
  - moved core.py:exclude_stuff to .oscrc:exclude_glob and expand it to catch *.orig etc.
  - added osc rq list -a; a shorthand for enumerating all states
  - osc rq list -D nnn limit to requests nnn days old.
+ - osc sr --diff option added
  - improved help texts with repairlink to point to osc resolved.
  - improved passx code when creating oscrc.
  - osc metafromspec allows editing before send
