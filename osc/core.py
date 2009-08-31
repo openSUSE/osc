@@ -2376,8 +2376,7 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
         for root in collection.findall('request'):
             r = Request()
             r.read(root)
-            if (r.state.name in req_state) or not len(req_state):
-                requests.append(r)
+            requests.append(r)
 
     return requests
 
