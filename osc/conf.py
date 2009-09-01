@@ -123,9 +123,6 @@ apiurl = %(apiurl)s
 # build platform is used if the platform argument is omitted to osc build
 #build_platform = %(build_platform)s
 
-# default project for branch or bco
-#branch_project = %(branch_project)s
-
 # alternate filesystem layout: have multiple subdirs, where colons were.
 #checkout_no_colon = %(checkout_no_colon)s
 
