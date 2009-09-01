@@ -710,7 +710,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-a', '--all', action='store_true',
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new' otherwise
-                        help='only list requests in one of the comma separated given states (new/accepted/rejected/revoked/declined) or "all" [default=new, or all, if no args given]')
+                        help='only list requests in one of the comma separated given states (new/accepted/revoked/declined) or "all" [default=new, or all, if no args given]')
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests created or changed in the last DAYS. [default=%(request_list_days)s]')
     @cmdln.option('-U', '--user', metavar='USER',
@@ -830,7 +830,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # list
         if cmd == 'list':
-            states = ('new', 'accepted', 'rejected', 'revoked', 'declined')
+            states = ('new', 'accepted', 'revoked', 'declined')
             state_list = opts.state.split(',')
             if opts.state == 'all':
                 state_list = ['all']
