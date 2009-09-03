@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.122pre'
+__version__ = '0.122pre.1'
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
@@ -1730,7 +1730,10 @@ def makeurl(baseurl, l, query=[]):
         query = urlencode(query)
 
     scheme, netloc = urlsplit(baseurl)[0:2]
-    return urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
+    u = urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
+    if conf.config['verbose'] > 2:
+        print "[",u,"]"
+    return u
 
 
 def http_request(method, url, headers={}, data=None, file=None, timeout=100):

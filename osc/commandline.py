@@ -500,6 +500,8 @@ class Osc(cmdln.Cmdln):
                        '(primary project where a package is developed)')
     @cmdln.option('-d', '--diff', action='store_true',
                   help='show diff only instead of creating the actual request')
+    @cmdln.option('-l', '--list', action='store_true',
+                  help='show submitrequests. Same as \'osc req list -M -a -t submit -D 0\'')
     @cmdln.alias("sr")
     @cmdln.alias("submitreq")
     @cmdln.alias("submitpac")
@@ -518,18 +520,29 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        if opts.list:
+           opts.state = ""
+           opts.user = ""
+           opts.all = True
+           opts.brief = False
+           opts.unified = False
+           opts.type = "submit"
+           opts.mine = True
+           opts.days = 30
+           return self.do_request('list', opts, *args)
+
         args = slash_split(args)
 
         # remove this block later again
         oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
         if args and args[0] in oldcmds:
-            print "***********************************************************************"
-            print "* WARNING: It looks that you are using this command with a            *"
-            print "*          deprecated syntax (maybe) !                                *"
-            print "*          Please run \"osc sr --help\" and \"osc req --help\"            *"
-            print "*          to see the new syntax.                                     *"
-            print "* E.g. \"osc sr -l\" is shortcut for \"osc req list -M -s all -t submit\" *"
-            print "***********************************************************************"
+            print "************************************************************************"
+            print "* WARNING: It looks that you are using this command with a             *"
+            print "*          deprecated syntax (maybe) !                                 *"
+            print "*          Please run \"osc sr --help\" and \"osc req --help\"             *"
+            print "*          to see the new syntax.                                      *"
+            print "* E.g. \"osc sr -l\" is shortcut for \"osc req list -M -a -t submit -D 0\" *"
+            print "************************************************************************"
             if args[0] == 'create':
                 args.pop(0)
             else:
@@ -720,6 +733,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
     @cmdln.alias("rq")
+    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
@@ -731,6 +745,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           osc submitrequest
           osc deleterequest
           osc changedevelrequest
+        To send low level requests to the buildservice API, use:
+          osc api
 
         This command has the following sub commands:
 
@@ -741,7 +757,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         "log" will show the history of the given ID
 
         "show" will show the request itself, and generate a diff for review, if
-        used with the --diff option.
+        used with the --diff option. The keyword show can be ommitted if the ID is numeric.
 
         "decline" will change the request state to "declined" and append a
         message that you specify with the --message option.
@@ -759,7 +775,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [PRJ [PKG]]
             osc request log ID
-            osc request show [-d] [-b] ID
+            osc request [show] [-d] [-b] ID
             osc request accept [-m TEXT] ID
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
@@ -777,6 +793,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      'are mutually exclusive.')
 
         # 'req' defaults to 'req list -M -s all'
+        if args and args[0].isdigit():
+            args = [ 'show', args[0] ]
+
         if not args:
             args = [ 'list' ]
             opts.mine = 1
@@ -790,8 +809,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not args or args[0] not in cmds:
             if subcmd == 'req':
                 print >>sys.stderr, 'You may want to try "osc api" instead of "osc req".'
-            raise oscerr.WrongArgs('Unknown request action. Choose one of %s.' \
-                                               % ', '.join(cmds))
+            raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
+                                               % (args[0],', '.join(cmds)))
 
         cmd = args[0]
         del args[0]
@@ -2131,11 +2150,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     raise e
 
-    @cmdln.hide(1)
-    def do_req(self, subcmd, opts, *args):
-        print "Command req is obsolete. Please use 'osc api'"
-        sys.exit(1)
-
     @cmdln.alias('r')
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
@@ -3366,10 +3380,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Examples:
             osc cat project package file
             osc cat project/package/file
+            osc cat http://api.opensuse.org/build/.../_log
+            osc cat http://api.opensuse.org/source/../_link
 
         ${cmd_usage}
         ${cmd_option_list}
         """
+
+        if len(args) == 1 and (args[0].startswith('http://') or
+                               args[0].startswith('https://')):
+           opts.method = 'GET'
+           opts.headers = None
+           opts.data = None
+           opts.file = None
+           return self.do_api('list', opts, *args)
+            
+
 
         args = slash_split(args)
         if len(args) != 3:
