@@ -72,6 +72,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'extra-pkgs': 'vim gdb strace',
              # default platform
              'build_platform': 'openSUSE_Factory',
+             # default project for branch or bco
+             'getpac_default_project': 'openSUSE:Factory',
              # alternate filesystem layout: have multiple subdirs, where colons were.
              'checkout_no_colon': '0',
              # local files to ignore with status, addremove, ....
@@ -122,6 +124,9 @@ apiurl = %(apiurl)s
 
 # build platform is used if the platform argument is omitted to osc build
 #build_platform = %(build_platform)s
+
+# default project for getpac or bco
+#getpac_default_project = %(getpac_default_project)s
 
 # alternate filesystem layout: have multiple subdirs, where colons were.
 #checkout_no_colon = %(checkout_no_colon)s

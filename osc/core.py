@@ -1731,8 +1731,6 @@ def makeurl(baseurl, l, query=[]):
 
     scheme, netloc = urlsplit(baseurl)[0:2]
     u = urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
-    if conf.config['verbose'] > 2:
-        print "[",u,"]"
     return u
 
 

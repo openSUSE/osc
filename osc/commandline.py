@@ -521,15 +521,15 @@ class Osc(cmdln.Cmdln):
         """
 
         if opts.list:
-           opts.state = ""
-           opts.user = ""
-           opts.all = True
-           opts.brief = False
-           opts.unified = False
-           opts.type = "submit"
-           opts.mine = True
-           opts.days = 30
-           return self.do_request('list', opts, *args)
+            opts.state = ""
+            opts.user = ""
+            opts.all = True
+            opts.brief = False
+            opts.unified = False
+            opts.type = "submit"
+            opts.mine = True
+            opts.days = conf.config['request_list_days']
+            return self.do_request('list', opts, *args)
 
         args = slash_split(args)
 
@@ -1204,7 +1204,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print r
 
 
-    @cmdln.alias('branch_co')
     @cmdln.alias('branchco')
     @cmdln.alias('bco')
     @cmdln.alias('getpac')
@@ -1229,17 +1228,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             home:USERNAME:branches:PROJECT/PACKAGE
         if nothing else specified.
 
+        With getpac or bco, the branched package will come from 
+            openSUSE:Factory
+        if nothing else specified.
+
         usage:
             osc branch SOURCEPROJECT SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
+            osc getpac  SOURCEPACKAGE
             osc bco ...
         ${cmd_option_list}
         """
 
-        if subcmd == 'branch_co' or subcmd == 'branchco' or subcmd == 'bco': opts.checkout = True
+        # FIXME: how can we interpolate conf.config['getpac_default_project'] in the above message?
+
+        if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco': opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
+
+        if ((subcmd == 'getpac' or subcmd == 'bco') and len(args) == 1):
+            print >>sys.stderr, "defaulting to %s/%s" % (conf.config['getpac_default_project'],args[0])
+            # python has no args.unshift ???
+            args = [ conf.config['getpac_default_project'] , args[0] ]
 
         if not (len(args) >= 2 and len(args) <= 4):
             raise oscerr.WrongArgs('Wrong number of arguments.')
@@ -2917,36 +2928,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc my rq          osc my ... requests
         ${cmd_option_list}
 
-	  'osc my' implements memonic shorthands for 
-	  specific 'osc search' and 'osc req list' commands.
-	  See there for additional help.
-	"""
+          'osc my' implements memonic shorthands for 
+          specific 'osc search' and 'osc req list' commands.
+          See there for additional help.
+        """
 
         if not args:
             raise oscerr.WrongArgs('Please specify one of projects/packages/requests')
 
-	if args[0] in ('requests', 'request', 'req', 'rq'):
-	    opts.state = 'all'
-	    opts.type = ''
-	    opts.days = conf.config['request_list_days']
-	    opts.mine = False
-	    args = ['list']
-	    if not opts.user: opts.mine = True
-	    return self.do_request('request', opts, *args)
+        if args[0] in ('requests', 'request', 'req', 'rq'):
+            opts.state = 'all'
+            opts.type = ''
+            opts.days = conf.config['request_list_days']
+            opts.mine = False
+            args = ['list']
+            if not opts.user: opts.mine = True
+            return self.do_request('request', opts, *args)
 
-	if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg', 'projects', 'project', 'projs', 'proj', 'prj'):
-	    opts.title = opts.description = opts.project = opts.package = False
-	    opts.involved = opts.mine = opts.bugowner = opts.maintainer = False
-	    opts.verbose = opts.repos_baseurl = opts.csv = False
-	    if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg'): opts.package = True
-	    else: opts.project = True
-	    args = []
-	    if opts.user: args = [ opts.user ]
-	    if opts.all: opts.involved = True
-	    else: opts.bugowner = True
-	    return self.do_search('se', opts, *args)
+        if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg', 'projects', 'project', 'projs', 'proj', 'prj'):
+            opts.title = opts.description = opts.project = opts.package = False
+            opts.involved = opts.mine = opts.bugowner = opts.maintainer = False
+            opts.verbose = opts.repos_baseurl = opts.csv = False
+            if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg'): opts.package = True
+            else: opts.project = True
+            args = []
+            if opts.user: args = [ opts.user ]
+            if opts.all: opts.involved = True
+            else: opts.bugowner = True
+            return self.do_search('se', opts, *args)
 
-	raise oscerr.WrongArgs('Unknown arg "%s": Please specify one of projects/packages/requests' % args[0])
+        raise oscerr.WrongArgs('Unknown arg "%s": Please specify one of projects/packages/requests' % args[0])
 
 
 
@@ -2987,7 +2998,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc search \'search term\' <options>
-	    osc se ...
+            osc se ...
         ${cmd_option_list}
 
         'osc se' is a shorthand for 'osc search -e'
@@ -2995,16 +3006,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         osc search does not find binary rpm names. Use 
         http://software.opensuse.org/search?q=binaryname
         """
-	
-	if subcmd == 'se':
+
+        if subcmd == 'se':
             opts.exact = True
-	if opts.mine:
-	    opts.bugowner = True
-	    opts.package = True
-	    
-	for_user = False
+        if opts.mine:
+            opts.bugowner = True
+            opts.package = True
+            
+        for_user = False
         if opts.involved or opts.bugowner or opts.maintainer:
-	    for_user = True
+            for_user = True
 
         search_term = None
         if len(args) > 1:
@@ -3031,15 +3042,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             search_list.append('@name')
             search_for.append('project')
 
-	role_filter=None
+        role_filter=None
         if for_user:
             search_list = [ 'person/@userid' ]
             search_term = search_term or conf.get_apiurl_usr(conf.config['apiurl'])
             opts.exact = True
-	    if opts.bugowner and not opts.maintainer:
-	        role_filter = search_term+':bugowner'
-	    if not opts.bugowner and opts.maintainer:
-	        role_filter = search_term+':maintainer'
+            if opts.bugowner and not opts.maintainer:
+                role_filter = search_term+':bugowner'
+            if not opts.bugowner and opts.maintainer:
+                role_filter = search_term+':maintainer'
 
         if not search_list:
             search_list = ['title', 'description', '@name']
