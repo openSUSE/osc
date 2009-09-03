@@ -1520,8 +1520,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.unexpand_link: expand_link = False
         else: expand_link = True
-        if opts.source_service_files: service_file = True
-        else: service_file = False
+        if opts.source_service_files: service_files = True
+        else: service_files = False
 
         args = slash_split(args)
         project = package = filename = None
@@ -1554,7 +1554,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir: project_dir = None
 
             checkout_package(apiurl, project, package,
-                             rev, expand_link=expand_link, prj_dir=project_dir, service_file=service_file)
+                             rev, expand_link=expand_link, prj_dir=project_dir, service_files=service_files)
 
         elif project:
             prj_dir = project
@@ -1573,13 +1573,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package,
-                                     expand_link = expand_link, prj_dir = prj_dir, service_file = service_file)
+                                     expand_link = expand_link, prj_dir = prj_dir, service_files = service_files)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package,
-                                     expand_link = False, prj_dir = prj_dir, service_file = service_file)
+                                     expand_link = False, prj_dir = prj_dir, service_files = service_files)
 
         else:
             raise oscerr.WrongArgs('Missing argument.\n\n' \
@@ -1856,6 +1856,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='if a package is an expanded link, update to the raw _link file')
     @cmdln.option('-e', '--expand-link', action='store_true',
                         help='if a package is a link, update to the expanded sources')
+    @cmdln.option('-s', '--source-service-files', action='store_true',
+                        help='Use server side generated sources instead of local generation.' )
     @cmdln.alias('up')
     def do_update(self, subcmd, opts, *args):
         """${cmd_name}: Update a working copy
@@ -1888,6 +1890,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             or (opts.unexpand_link and opts.revision):
             raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
                      '--revision are mutually exclusive.')
+
+        if opts.source_service_files: service_files = True
+        else: service_files = False
 
         args = parseargs(args)
         arg_list = args[:]
@@ -1944,7 +1949,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         'copy has local modifications. Please remove them ' \
                                         'and try again'
                     sys.exit(1)
-            p.update(rev)
+            p.update(rev, service_files)
             rev = None
 
 
@@ -2522,6 +2527,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not arg_platform in platforms:
             raise oscerr.WrongArgs('%s is not a valid platform, use one of: %s' % (arg_platform, ", ".join(platforms)))
+
+        # check for source services
+        if os.listdir('.').count("_service"):
+            p = Package('.')
+            p.run_source_services()
 
         descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') ]
         # FIXME:

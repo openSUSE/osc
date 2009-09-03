@@ -1,5 +1,8 @@
 
 0.122
+ - option to download server side generated _service:* files on update
+ - support for running source services locally. Happens by default on source update
+   and build.
 
 0.121.1
  - fixed creation of new ~/.oscrc files

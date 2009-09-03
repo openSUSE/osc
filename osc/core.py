@@ -208,6 +208,53 @@ class File:
         return self.name
 
 
+class Serviceinfo:
+    """Source service content
+    """
+    def __init__(self):
+        """creates an empty serviceinfo instance"""
+        self.commands = None
+
+    def read(self, serviceinfo_node):
+        """read in the source services <services> element passed as
+        elementtree node.
+        """
+        if serviceinfo_node == None:
+            return
+        self.commands = []
+        services = serviceinfo_node.findall('service')
+
+        for service in services:
+            name = service.get('name')
+            try:
+                for param in service.findall('param'):
+                   option = param.get('name', None)
+                   value = param.text
+                   name += " --" + option + " '" + value + "'"
+                self.commands.append(name)
+            except:
+                msg = 'invalid service format:\n%s' % ET.tostring(root)
+                raise oscerr.APIError(msg)
+
+    def execute(self, dir):
+        import tempfile
+
+        for call in self.commands:
+            temp_dir = tempfile.mkdtemp()
+            name = call.split(None, 1)[0]
+            if not os.path.exists("/usr/lib/obs/service/"+name):
+               msg =  "ERROR: service is not installed !"
+               msg += "Can maybe solved with: zypper in obs-server-" + name
+               raise oscerr.APIError(msg)
+            c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
+            ret = subprocess.call(c, shell=True)
+            if ret != 0:
+               print "ERROR: service call failed: " + c
+
+            for file in os.listdir(temp_dir):
+               os.rename( os.path.join(temp_dir, file), os.path.join(dir, "_service:"+name+":"+file) )
+            os.rmdir(temp_dir)
+
 class Linkinfo:
     """linkinfo metadata (which is part of the xml representing a directory
     """
@@ -423,7 +470,7 @@ class Project:
         else:
             print 'unsupported state'
 
-    def update(self, pacs = (), expand_link=False, unexpand_link=False):
+    def update(self, pacs = (), expand_link=False, unexpand_link=False, service_files=False):
         if len(pacs):
             for pac in pacs:
                 Package(os.path.join(self.dir, pac)).update()
@@ -465,7 +512,7 @@ class Project:
                         elif p.islink() and p.isexpanded():
                             rev = p.latest_rev();
                         print 'Updating %s' % p.name
-                        p.update(rev)
+                        p.update(rev, service_files)
                     elif state == 'D':
                         # TODO: Package::update has to fixed to behave like svn does
                         if pac in self.pacs_broken:
@@ -1191,7 +1238,7 @@ rev: %s
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         return upstream_rev
 
-    def update(self, rev = None):
+    def update(self, rev = None, service_files = False):
         # save filelist and (modified) status before replacing the meta file
         saved_filenames = self.filenamelist
         saved_modifiedfiles = [ f for f in self.filenamelist if self.status(f) == 'M' ]
@@ -1206,7 +1253,7 @@ rev: %s
         pathn = getTransActPath(self.dir)
 
         for filename in saved_filenames:
-            if filename in disappeared:
+            if not filename.startswith('_service:') and filename in disappeared:
                 print statfrmt('D', os.path.join(pathn, filename))
                 # keep file if it has local modifications
                 if oldp.status(filename) == ' ':
@@ -1216,7 +1263,9 @@ rev: %s
         for filename in self.filenamelist:
 
             state = self.status(filename)
-            if state == 'M' and self.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
+            if not service_files and filename.startswith('_service:'):
+                pass
+            elif state == 'M' and self.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
                 # no merge necessary... local file is changed, but upstream isn't
                 pass
             elif state == 'M' and filename in saved_modifiedfiles:
@@ -1238,11 +1287,20 @@ rev: %s
             elif state == ' ':
                 pass
 
-
         self.update_local_pacmeta()
 
         #print ljust(p.name, 45), 'At revision %s.' % p.rev
         print 'At revision %s.' % self.rev
+
+        if not service_files:
+           self.run_source_services()
+
+    def run_source_services(self):
+        if self.filenamelist.count('_service'):
+           service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+           si = Serviceinfo()
+           si.read(service)
+           si.execute(self.absdir)
 
     def prepare_filelist(self):
         """Prepare a list of files, which will be processed by process_filelist
@@ -2762,7 +2820,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package, 
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_file=None):
+                     expand_link=False, prj_dir=None, service_files=None):
 
     try:
         # the project we're in might be deleted.
@@ -2800,7 +2858,7 @@ def checkout_package(apiurl, project, package,
     p = Package(package)
 
     for filename in p.filenamelist:
-        if service_file or not filename.startswith('_service:'):
+        if service_files or not filename.startswith('_service:'):
            p.updatefile(filename, revision)
            #print 'A   ', os.path.join(project, package, filename)
            print statfrmt('A', os.path.join(pathname, filename))
