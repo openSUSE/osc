@@ -1730,8 +1730,7 @@ def makeurl(baseurl, l, query=[]):
         query = urlencode(query)
 
     scheme, netloc = urlsplit(baseurl)[0:2]
-    u = urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
-    return u
+    return urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
 
 
 def http_request(method, url, headers={}, data=None, file=None, timeout=100):

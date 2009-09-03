@@ -1229,7 +1229,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if nothing else specified.
 
         With getpac or bco, the branched package will come from 
-            openSUSE:Factory
+            %(getpac_default_project)s
         if nothing else specified.
 
         usage:
@@ -1241,14 +1241,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        # FIXME: how can we interpolate conf.config['getpac_default_project'] in the above message?
-
         if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco': opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
 
-        if ((subcmd == 'getpac' or subcmd == 'bco') and len(args) == 1):
-            print >>sys.stderr, "defaulting to %s/%s" % (conf.config['getpac_default_project'],args[0])
+        if (subcmd == 'getpac' or subcmd == 'bco') and len(args) == 1:
+            print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['getpac_default_project'], args[0])
             # python has no args.unshift ???
             args = [ conf.config['getpac_default_project'] , args[0] ]
 
