@@ -848,7 +848,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             results = get_request_list(apiurl,
                                        project, package, who, state_list, opts.type)
-
             results.sort(reverse=True)
             import time
             days = opts.days or conf.config['request_list_days']
@@ -865,6 +864,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             ## which allows us to limit the list inside of get_request_list
             ## That would be much faster for coolo. But counting the remainder
             ## is not possible with current xquery implementation.
+
+            ## FIXME: date filtering should become implemented on server side
             for result in results:
                 if days == 0 or result.state.when > since:
                     print result.list_view()
@@ -2889,7 +2890,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc my pkg         osc my [-a] [-U USER] packages
             osc my prj         osc my ... projects
-            osc my req         osc my ... requests
+            osc my rq          osc my ... requests
         ${cmd_option_list}
 
 	  'osc my' implements memonic shorthands for 
@@ -2907,7 +2908,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 	    opts.mine = False
 	    args = ['list']
 	    if not opts.user: opts.mine = True
-	    return self.do_request('req', opts, *args)
+	    return self.do_request('request', opts, *args)
 
 	if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg', 'projects', 'project', 'projs', 'proj', 'prj'):
 	    opts.title = opts.description = opts.project = opts.package = False
