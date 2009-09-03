@@ -157,7 +157,7 @@ class Pac:
 
         self.mp['filename'] = self.filename
         if self.mp['repopackage'] == '_repository':
-	        self.mp['repofilename'] = self.mp['name']
+            self.mp['repofilename'] = self.mp['name']
         else:
             self.mp['repofilename'] = self.mp['filename']
 

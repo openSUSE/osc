@@ -3749,12 +3749,12 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
     result = []
     for node in root.findall(kind):
         if role_filter:
-	    skip = 1
+            skip = 1
             for p in node.findall('person'):
-	        if p.get('userid') == role_filter[0] and p.get('role') == role_filter[1]:
-		    skip = 0
-	    if skip:
-	        continue
+                if p.get('userid') == role_filter[0] and p.get('role') == role_filter[1]:
+                    skip = 0
+            if skip:
+                continue
 
         # TODO: clarify if we need to check if node.get() returns 'None'.
         #       If it returns 'None' something is broken anyway...
