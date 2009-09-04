@@ -4,7 +4,6 @@
  - support for running source services locally. Happens by default on source update
    and build.
  - added missing code for 'osc sr -l [ID]'
- - allow osc req as shortcut for osc request.
  - allow osc cat with one parameter, if it is a url.
  - make osc getpac really get the package (instead of branch only)!
  - expanded several tabs to spaces.

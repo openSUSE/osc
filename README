@@ -1,13 +1,16 @@
 osc -- opensuse-commander with svn like handling
 
 
-Please send patches to poeml@suse.de, or work directly on
-https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/
+Patches can be submitted via
+ * mail to opensuse-buildservice@opensuse.org
+ * Bugzilla: https://bugzilla.novell.com/enter_bug.cgi?product=openSUSE.org&component=BuildService
+ * or work directly on svn, if you got write acces
+   https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/
 
 
 INSTALLATION:
 
-RPM packages are here (yum repository):
+RPM packages are here (rpm-md repository):
 http://download.opensuse.org/repositories/openSUSE:/Tools/
 
 To install from svn, do
@@ -117,12 +120,12 @@ case that some sections already have the correct format).
 
 KEYRING USAGE
 
-Osc now can store passwords in Gnome keyring instead of ~/.oscrc. To use it,
-you need python-gnomekeyring and keyring daemon running.
+Osc now can store passwords in keyrings instead of ~/.oscrc. To use it,
+you need python-keyring and either python-keyring-kde or -gnome.
 
-If you want to switch to using Gnome keyring you need to delete apiurl section
+If you want to switch to using a keyring you need to delete apiurl section
 from ~/.oscrc and you will be asked for credentials again, which will be then
-stored in Gnome keyring.
+stored in the keyring application.
 
 
 USAGE EXAMPLES:
