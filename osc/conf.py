@@ -36,21 +36,26 @@ The configuration dictionary could look like this:
 import OscConfigParser
 from osc import oscerr
 
-try:
-    import gobject
-    gobject.set_application_name('osc')
-    import gnomekeyring
-    if os.environ['KDE_FULL_SESSION']:
-       # otherwise gnome keyring bindings spit out errors, when you have
-       # it installed, but you are not under gnome
-       # (even though hundreds of gnome-keyring daemons got started in parallel)
-       # another option would be to support kwallet here
-       GNOME_KEYRING = False
-    else:
-       GNOME_KEYRING = gnomekeyring.is_available()
-except:
-    GNOME_KEYRING = False
+GENERIC_KEYRING = False
+GNOME_KEYRING = False
 
+try:
+    import keyring
+    GENERIC_KEYRING = True
+
+except:
+	try:
+	    import gobject
+	    gobject.set_application_name('osc')
+	    import gnomekeyring
+	    if os.environ['GNOME_DESKTOP_SESSION_ID']:
+	       # otherwise gnome keyring bindings spit out errors, when you have
+	       # it installed, but you are not under gnome
+	       # (even though hundreds of gnome-keyring daemons got started in parallel)
+	       # another option would be to support kwallet here
+	       GNOME_KEYRING = gnomekeyring.is_available()
+	except:
+            pass
 
 DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
@@ -71,6 +76,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'http_debug': '0',
              'traceback': '0',
              'post_mortem': '0',
+             'use_keyring': '1',
              'gnome_keyring': '1',
              'cookiejar': '~/.osc_cookiejar',
              # enable project tracking by default
@@ -83,6 +89,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'getpac_default_project': 'openSUSE:Factory',
              # alternate filesystem layout: have multiple subdirs, where colons were.
              'checkout_no_colon': '0',
+             # local files to ignore with status, addremove, ....
              # local files to ignore with status, addremove, ....
              'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak',
              # keep passwords in plaintext. If you see this comment, your osc 
@@ -165,8 +172,8 @@ apiurl = %(apiurl)s
 # print call traces in case of errors
 #traceback = 1
 
-# use GNOME keyring for credentials if available
-#gnome_keyring = 0
+# use KDE/Gnome/MacOS/Windows keyring for credentials if available
+#use_keyring = 1
 
 # check for unversioned/removed files before commit
 #check_filelist = 1
@@ -333,7 +340,13 @@ def write_initial_config(conffile, entries, custom_template = ''):
     config = DEFAULTS.copy()
     config.update(entries)
     config['passx'] = config['pass'].encode('bz2').encode('base64')
-    if config['gnome_keyring'] and GNOME_KEYRING:
+    if config['use_keyring'] and GENERIC_KEYRING:
+        protocol, host = \
+            parse_apisrv_url(None, config['apiurl'])
+        keyring.set_password(host, config['user'], config['pass'])
+        config['pass'] = ''
+        config['passx'] = ''
+    elif config['gnome_keyring'] and GNOME_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, config['apiurl'])
         gnomekeyring.set_network_password_sync(
@@ -375,7 +388,15 @@ def add_section(filename, url, user, passwd):
     except OscConfigParser.ConfigParser.DuplicateSectionError:
         # Section might have existed, but was empty
         pass
-    if config['gnome_keyring'] and GNOME_KEYRING:
+    if config['use_keyring'] and GENERIC_KEYRING:
+        protocol, host = \
+            parse_apisrv_url(None, url)
+        keyring.set_password(host, username, password)
+        cp.set(url, 'keyring', '1')
+        cp.set(url, 'user', user)
+        cp.remove_option(url, 'pass')
+        cp.remove_option(url, 'passx')
+    elif config['gnome_keyring'] and GNOME_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, url)
         gnomekeyring.set_network_password_sync(
@@ -384,6 +405,8 @@ def add_section(filename, url, user, passwd):
             protocol = protocol,
             server = host)
         cp.set(url, 'keyring', '1')
+        cp.remove_option(url, 'pass')
+        cp.remove_option(url, 'passx')
     else:
         cp.set(url, 'user', user)
         if not config['plaintext_passwd']:
@@ -400,6 +423,7 @@ def get_config(override_conffile = None,
                override_http_debug = None, 
                override_traceback = None,
                override_post_mortem = None,
+               override_no_keyring = None,
                override_no_gnome_keyring = None,
                override_verbose = None):
     """do the actual work (see module documentation)"""
@@ -467,6 +491,8 @@ def get_config(override_conffile = None,
 
     # override values which we were called with
     # This needs to be done before processing API sections as it might be already used there
+    if override_no_keyring:
+        config['use_keyring'] = False
     if override_no_gnome_keyring:
         config['gnome_keyring'] = False
 
@@ -476,9 +502,16 @@ def get_config(override_conffile = None,
         scheme, host = \
             parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host)
-        user = None
-        # Read from gnome keyring if available
-        if config['gnome_keyring'] and GNOME_KEYRING:
+        user = cp.get( url, 'user' )
+        if config['use_keyring'] and GENERIC_KEYRING:
+            try:
+                # Read from keyring lib if available
+                password = keyring.get_password(host, user)
+            except:
+                # Fallback to file based auth.
+                pass
+        elif config['gnome_keyring'] and GNOME_KEYRING:
+            # Read from gnome keyring if available
             try:
                 gk_data = gnomekeyring.find_network_password_sync(
                     protocol = scheme,

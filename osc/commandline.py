@@ -88,6 +88,8 @@ class Osc(cmdln.Cmdln):
         optparser.add_option('-c', '--config', dest='conffile',
                       metavar='FILE',
                       help='specify alternate configuration file')
+        optparser.add_option('--no-keyring', action='store_true',
+                      help='disable usage of desktop keyring system')
         optparser.add_option('--no-gnome-keyring', action='store_true',
                       help='disable usage of GNOME Keyring')
         optparser.add_option('-v', '--verbose', dest='verbose', action='count', default=0,
@@ -106,6 +108,7 @@ class Osc(cmdln.Cmdln):
                             override_http_debug = self.options.http_debug,
                             override_traceback = self.options.traceback,
                             override_post_mortem = self.options.post_mortem,
+                            override_no_keyring = self.options.no_keyring,
                             override_no_gnome_keyring = self.options.no_gnome_keyring,
                             override_verbose = self.options.verbose)
         except oscerr.NoConfigfile, e:
