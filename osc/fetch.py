@@ -120,10 +120,7 @@ class Fetcher:
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
 
-            if os.path.exists(os.path.join(i.localdir, i.fullfilename)):
-                #print 'cached:', i.fullfilename
-                pass
-            else:
+            if not os.path.exists(os.path.join(i.localdir, i.fullfilename)):
                 self.dirSetup(i)
                 try:
                     # if there isn't a progress bar, there is no output at all
