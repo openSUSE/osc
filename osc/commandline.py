@@ -733,7 +733,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
     @cmdln.alias("rq")
-    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
