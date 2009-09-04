@@ -40,7 +40,14 @@ try:
     import gobject
     gobject.set_application_name('osc')
     import gnomekeyring
-    GNOME_KEYRING = gnomekeyring.is_available()
+    if os.environ['KDE_FULL_SESSION']:
+       # otherwise gnome keyring bindings spit out errors, when you have
+       # it installed, but you are not under gnome
+       # (even though hundreds of gnome-keyring daemons got started in parallel)
+       # another option would be to support kwallet here
+       GNOME_KEYRING = False
+    else:
+       GNOME_KEYRING = gnomekeyring.is_available()
 except:
     GNOME_KEYRING = False
 
