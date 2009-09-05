@@ -391,7 +391,7 @@ def add_section(filename, url, user, passwd):
     if config['use_keyring'] and GENERIC_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, url)
-        keyring.set_password(host, username, password)
+        keyring.set_password(host, user, passwd)
         cp.set(url, 'keyring', '1')
         cp.set(url, 'user', user)
         cp.remove_option(url, 'pass')
