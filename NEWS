@@ -1,8 +1,5 @@
 
 0.122
- - option to download server side generated _service:* files on update
- - support for running source services locally. Happens by default on source update
-   and build.
  - added missing code for 'osc sr -l [ID]'
  - allow osc cat with one parameter, if it is a url.
  - make osc getpac really get the package (instead of branch only)!
@@ -10,6 +7,15 @@
  - added default project to new getpac and bco subcommand. .oscrc:getpac_default_project = OpenSUSE:Factory
    (not added to branch subcommand, to not interfere with its syntax.)
  - add support for generic python-keyring lib, supports KWallet, Gnome keyring, MacOS and Windows.
+ #
+ # Features which require OBS 1.7
+ #
+ - option to download server side generated _service:* files on update
+ - support for running source services locally. Happens by default on source update
+   and build.
+ - support modification flages on creation of submit request
+   (for auto update or clean up packages or to avoid it, when submit request got accepted)
+ - show request ids from package source logs
 
 0.121.1
  - fixed creation of new ~/.oscrc files

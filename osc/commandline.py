@@ -501,6 +501,12 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
+    @cmdln.option('--cleanup', action='store_true',
+                  help='remove package if submission gets accepted (default for home:<id>:branch projects)')
+    @cmdln.option('--no-cleanup', action='store_true',
+                  help='never remove source package on accept, but update its content')
+    @cmdln.option('--no-update', action='store_true',
+                  help='never touch source package on accept (will break source links)')
     @cmdln.option('-d', '--diff', action='store_true',
                   help='show diff only instead of creating the actual request')
     @cmdln.option('-l', '--list', action='store_true',
@@ -533,6 +539,15 @@ class Osc(cmdln.Cmdln):
             opts.mine = True
             opts.days = conf.config['request_list_days']
             return self.do_request('list', opts, *args)
+
+        flags = None
+        # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
+        if opts.cleanup:
+           flags = "cleanup"
+        elif opts.no_cleanup:
+           flags = "update"
+        elif opts.no_update:
+           flags = "noupdate"
 
         args = slash_split(args)
 
@@ -633,7 +648,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             result = create_submit_request(apiurl,
                                            src_project, src_package,
                                            dst_project, dst_package,
-                                           opts.message, orev=opts.revision)
+                                           opts.message, orev=opts.revision, flags=flags)
             if repl == 'y':
                 for req in myreqs:
                     change_request_state(apiurl, str(req.reqid), 'revoked',

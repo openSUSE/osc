@@ -1411,11 +1411,12 @@ class RequestState:
 
 class Action:
     """represents an action"""
-    def __init__(self, type, src_project, src_package, src_rev, dst_project, dst_package):
+    def __init__(self, type, src_project, src_package, src_rev, src_modifier, dst_project, dst_package):
         self.type = type
         self.src_project = src_project
         self.src_package = src_package
         self.src_rev = src_rev
+        self.src_modifier = src_modifier
         self.dst_project = dst_project
         self.dst_package = dst_package
 
@@ -1442,17 +1443,18 @@ class Request:
         for action in actions:
             type = action.get('type', 'submit')
             try:
-                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = None
+                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_modifier = None
                 if action.findall('source'):
                    n = action.find('source')
                    src_prj = n.get('project', None)
                    src_pkg = n.get('package', None)
                    src_rev = n.get('rev', None)
+                   src_modifier = n.get('modifier', None)
                 if action.findall('target'):
                    n = action.find('target')
                    dst_prj = n.get('project', None)
                    dst_pkg = n.get('package', None)
-                self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg)
+                self.add_action(type, src_prj, src_pkg, src_rev, src_modifier, dst_prj, dst_pkg)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
                 raise oscerr.APIError(msg)
@@ -1486,8 +1488,8 @@ class Request:
         except:
             pass
 
-    def add_action(self, type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg):
-        self.actions.append(Action(type, src_prj, src_pkg, src_rev,
+    def add_action(self, type, src_prj, src_pkg, src_rev, src_modifier, dst_prj, dst_pkg):
+        self.actions.append(Action(type, src_prj, src_pkg, src_rev, src_modifier,
                                    dst_prj, dst_pkg)
                            )
 
@@ -1532,7 +1534,10 @@ class Request:
                r=""
                if action.src_rev:
                    r="(r%s)" % (action.src_rev)
-               action_list=action_list+" %s/%s%s -> %s" % ( action.src_project, action.src_package, r, action.dst_project )
+               m=""
+               if action.src_modifier:
+                   m="(%s)" % (action.src_modifier)
+               action_list=action_list+" %s/%s%s%s -> %s" % ( action.src_project, action.src_package, r, m, action.dst_project )
                if action.dst_package:
                    action_list=action_list+"/%s" % ( action.dst_package )
             elif action.type=="delete":
@@ -2337,14 +2342,18 @@ def create_change_devel_request(apiurl,
 def create_submit_request(apiurl, 
                          src_project, src_package, 
                          dst_project, dst_package,
-                         message, orev=None):
+                         message, orev=None, flags=None):
 
     import cgi
+    modifier=""
+    if flags:
+       modifier="""modifier="%s" """ % (flags)
+
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">
     <submit>
-        <source project="%s" package="%s" rev="%s"/>
+        <source project="%s" package="%s" rev="%s" %s/>
         <target project="%s" package="%s" />
     </submit>
     <state name="new"/>
@@ -2353,6 +2362,7 @@ def create_submit_request(apiurl,
 """ % (src_project, 
        src_package,
        orev or show_upstream_rev(apiurl, src_project, src_package),
+       modifier,
        dst_project, 
        dst_package,
        cgi.escape(message or ''))
@@ -2821,7 +2831,6 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 def checkout_package(apiurl, project, package, 
                      revision=None, pathname=None, prj_obj=None,
                      expand_link=False, prj_dir=None, service_files=None):
-
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3459,24 +3468,29 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text'):
             comment = node.find('comment').text.encode(locale.getpreferredencoding(), 'replace')
         except:
             comment = '<no message>'
+        try:
+            requestid = node.find('requestid').text.encode(locale.getpreferredencoding(), 'replace')
+        except:
+            requestid = ""
         t = time.localtime(int(node.find('time').text))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
         if format == 'csv':
-            s = '%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version, 
-                comment.replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'))
+            s = '%s|%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version, 
+                comment.replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'), requestid)
             r.append(s)
         elif format == 'xml':
             r.append('<logentry')
             r.append('   revision="%s" srcmd5="%s">' % (rev, srcmd5))
             r.append('<author>%s</author>' % user)
             r.append('<date>%s</date>' % t)
+            r.append('<requestid>%s</requestid>' % requestid)
             r.append('<msg>%s</msg>' % 
                 comment.replace('&', '&amp;').replace('<', '&gt;').replace('>', '&lt;'))
             r.append('</logentry>')
         else:
             s = '-' * 76 + \
-                '\nr%s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version) + \
+                '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
                 '\n' + comment
             r.append(s)
 
