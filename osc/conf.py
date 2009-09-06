@@ -502,10 +502,11 @@ def get_config(override_conffile = None,
         scheme, host = \
             parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host)
-        user = cp.get( url, 'user' )
+        user = None
         if config['use_keyring'] and GENERIC_KEYRING:
             try:
                 # Read from keyring lib if available
+                user = cp.get(url, 'user', raw=True)
                 password = keyring.get_password(host, user)
             except:
                 # Fallback to file based auth.
@@ -538,12 +539,6 @@ def get_config(override_conffile = None,
                 if not passwordx:
                     print "%s: rewriting from plain pass to encoded pass\n" % url
                     add_section(conffile, url, user, password)
-            if cp.has_option(url, 'keyring') and cp.get(url, 'keyring'):
-                # This APIURL was configured to use keyring by
-                continue
-        email        = ''
-        if cp.has_option(url, 'email'):
-            email    = cp.get(url, 'email')
 
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
@@ -563,8 +558,8 @@ def get_config(override_conffile = None,
         api_host_options[apiurl] = { 'user': user,
                                      'pass': password,
                                      'http_headers': http_headers}
-        if email:
-            api_host_options[apiurl]['email'] = email
+        if cp.has_option(url, 'email'):
+            api_host_options[apiurl]['email'] = cp.get(url, 'email')
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
