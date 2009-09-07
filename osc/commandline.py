@@ -1406,8 +1406,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              'the revision (rev1) on the server. '
                              'If rev1 and rev2 are specified it will compare rev1 against rev2 '
                              '(NOTE: changes in your working copy are ignored in this case)')
-    @cmdln.option('-p', '--pretty', action='store_true',
-                        help='output the diff in the pretty diff format')
+    @cmdln.option('-p', '--plain', action='store_true',
+                        help='output the diff in plain (not unified) diff format')
     def do_diff(self, subcmd, opts, *args):
         """${cmd_name}: Generates a diff
 
@@ -1435,6 +1435,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     return
             except:
+                print >>sys.stderr, 'Revision \'%s\' not an integer' % opts.change
                 return
         else:
             rev1, rev2 = parseRevisionOption(opts.revision)
@@ -1444,7 +1445,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += ''.join(make_diff(pac, rev1))
             else:
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2, not opts.pretty)
+                                    pac.prjname, pac.name, rev2, not opts.plain)
         if len(diff) > 0:
             print diff
 
@@ -1455,8 +1456,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='package to compare against')
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
-    @cmdln.option('-u', '--unified', action='store_true',
-                  help='output the diff in the unified diff format')
+    @cmdln.option('-p', '--plain', action='store_true',
+                  help='output the diff in plain (not unified) diff format')
+    @cmdln.option('-c', '--change', metavar='rev',
+                        help='the change made by revision rev (like -r rev-1:rev).'
+                             'If rev is negative this is like -r rev:rev-1.')
     def do_rdiff(self, subcmd, opts, new_project, new_package):
         """${cmd_name}: Server-side "pretty" diff of two packages
 
@@ -1472,14 +1476,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        old_revision = None
-        new_revision = None
-        if opts.revision:
-            old_revision, new_revision = parseRevisionOption(opts.revision)
+        rev1 = None
+        rev2 = None
+
+        if opts.change:
+            try:
+                rev = int(opts.change)
+                if rev > 0:
+                    rev1 = rev - 1
+                    rev2 = rev
+                elif rev < 0:
+                    rev1 = -rev
+                    rev2 = -rev - 1
+                else:
+                    return
+            except:
+                print >>sys.stderr, 'Revision \'%s\' not an integer' % opts.change
+                return
+        else:
+            if opts.revision:
+                rev1, rev2 = parseRevisionOption(opts.revision)
 
         rdiff = server_diff(conf.config['apiurl'],
-                            opts.oldprj, opts.oldpkg, old_revision,
-                            new_project, new_package, new_revision, opts.unified)
+                            opts.oldprj, opts.oldpkg, rev1,
+                            new_project, new_package, rev2, not opts.plain)
 
         print rdiff
 

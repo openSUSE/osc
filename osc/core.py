@@ -2695,7 +2695,7 @@ def make_diff(wc, revision):
         tempdir = '/tmp'
         if sys.platform[:3] == 'win':
             tempdir = os.getenv('TEMP')
-        tmpdir  = tempfile.mkdtemp(revision, wc.name, dir = tempdir)
+        tmpdir  = tempfile.mkdtemp(str(revision), wc.name, dir = tempdir)
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
         cmp_pac = Package(tmpdir)
