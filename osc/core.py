@@ -3490,7 +3490,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text'):
             r.append('</logentry>')
         else:
             s = '-' * 76 + \
-                '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
+                '\nr%s | %s | %s | %s | %s | sr%s\n' % (rev, user, t, srcmd5, version, requestid) + \
                 '\n' + comment
             r.append(s)
 
