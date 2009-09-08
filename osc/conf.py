@@ -83,8 +83,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'do_package_tracking': '1',
              # default for osc build
              'extra-pkgs': 'vim gdb strace',
-             # default platform
-             'build_platform': 'openSUSE_Factory',
+             # default repository
+             'build_repository': 'openSUSE_Factory',
              # default project for branch or bco
              'getpac_default_project': 'openSUSE:Factory',
              # alternate filesystem layout: have multiple subdirs, where colons were.
@@ -137,7 +137,7 @@ apiurl = %(apiurl)s
 #extra-pkgs = vim gdb strace
 
 # build platform is used if the platform argument is omitted to osc build
-#build_platform = %(build_platform)s
+#build_repository = %(build_repository)s
 
 # default project for getpac or bco
 #getpac_default_project = %(getpac_default_project)s
@@ -464,6 +464,8 @@ def get_config(override_conffile = None,
     if config.has_key('apisrv') or config.has_key('scheme'):
         print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
                             'Warning: See README for migration details.'
+    if config.has_key('build_platform') and not config.has_key('build_repository'):
+        config['build_repository'] = config['build_platform']
 
     for i in boolean_opts:
         try:

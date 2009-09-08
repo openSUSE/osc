@@ -245,7 +245,7 @@ class Osc(cmdln.Cmdln):
 
         if opts.binaries and (not opts.repo or not opts.arch):
             raise oscerr.WrongOptions('Sorry, -r <repo> -a <arch> missing\n'
-                     'You can list repositories with: \'osc platforms <project>\'')
+                     'You can list repositories with: \'osc repositories <project>\'')
         if opts.binaries and opts.expand:
             raise oscerr.WrongOptions('Sorry, --binaries and --expand are mutual exclusive.')
 
@@ -1534,9 +1534,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         url_tmpl = 'http://download.opensuse.org/repositories/%s/%s/%s.repo'
         for p in pacs:
-            platforms = get_platforms_of_project(p.apiurl, p.prjname)
-            for platform in platforms:
-                print url_tmpl % (p.prjname.replace(':', ':/'), platform, p.prjname)
+            repositories = get_repositories_of_project(p.apiurl, p.prjname)
+            for repository in repositories:
+                print url_tmpl % (p.prjname.replace(':', ':/'), repository, p.prjname)
 
 
 
@@ -1623,7 +1623,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         elif project:
             prj_dir = project
-            if sys.platform[:3] == 'win':
+            if sys.repository[:3] == 'win':
                 prj_dir = prj_dir.replace(':', ';')
             if os.path.exists(prj_dir):
                 sys.exit('osc: project \'%s\' already exists' % project)
@@ -2118,15 +2118,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p.clear_from_conflictlist(filename)
 
 
-    def do_platforms(self, subcmd, opts, *args):
-        """${cmd_name}: Shows available platforms
+    @cmdln.alias('platforms')
+    def do_repositories(self, subcmd, opts, *args):
+        """${cmd_name}: Shows available repositories
 
         Examples:
-        1. osc platforms
-                Shows all available platforms/build targets
+        1. osc repositories
+                Shows all available repositories/build targets
 
-        2. osc platforms <project>
-                Shows the configured platforms/build targets of a project
+        2. osc repositories <project>
+                Shows the configured repositories/build targets of a project
 
         ${cmd_usage}
         ${cmd_option_list}
@@ -2134,9 +2135,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if args:
             project = args[0]
-            print '\n'.join(get_platforms_of_project(conf.config['apiurl'], project))
+            print '\n'.join(get_repositories_of_project(conf.config['apiurl'], project))
         else:
-            print '\n'.join(get_platforms(conf.config['apiurl']))
+            print '\n'.join(get_repositories(conf.config['apiurl']))
 
 
     @cmdln.hide(1)
@@ -2293,14 +2294,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('bl')
     @cmdln.option('-s', '--start', metavar='START',
                     help='get log starting from the offset')
-    def do_buildlog(self, subcmd, opts, platform, arch):
+    def do_buildlog(self, subcmd, opts, repository, arch):
         """${cmd_name}: Shows the build log of a package
 
         Shows the log file of the build of a package. Can be used to follow the
         log while it is being written.
         Needs to be called from within a package directory.
 
-        The arguments PLATFORM and ARCH are the first two columns in the 'osc
+        The arguments REPOSITORY and ARCH are the first two columns in the 'osc
         results' output.
 
         ${cmd_usage}
@@ -2316,7 +2317,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.start:
             offset = int(opts.start)
 
-        print_buildlog(apiurl, project, package, platform, arch, offset)
+        print_buildlog(apiurl, project, package, repository, arch, offset)
 
 
     @cmdln.alias('rbl')
@@ -2328,9 +2329,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         log while it is being written.
 
         usage:
-            osc remotebuildlog project package platform arch
+            osc remotebuildlog project package repository arch
             or
-            osc remotebuildlog project/package/platform/arch
+            osc remotebuildlog project/package/repository/arch
         ${cmd_option_list}
         """
         args = slash_split(args)
@@ -2360,11 +2361,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The returned data is XML and contains a list of the packages used in
         building, their source, and the expanded BuildRequires.
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         usage:
-            osc buildinfo PLATFORM ARCH [BUILD_DESCR]
+            osc buildinfo REPOSITORY ARCH [BUILD_DESCR]
         ${cmd_option_list}
         """
 
@@ -2380,7 +2381,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print
             raise oscerr.WrongArgs('Missing argument')
 
-        platform = args[0]
+        repository = args[0]
         arch = args[1]
 
         # were we given a specfile (third argument)?
@@ -2393,12 +2394,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         print ''.join(get_buildinfo(apiurl,
-                                    project, package, platform, arch,
+                                    project, package, repository, arch,
                                     specfile=spec,
                                     addlist=opts.extra_pkgs))
 
 
-    def do_buildconfig(self, subcmd, opts, platform, arch):
+    def do_buildconfig(self, subcmd, opts, repository, arch):
         """${cmd_name}: Shows the build config
 
         Shows the build configuration which is used in building a package.
@@ -2409,7 +2410,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         which is directly readable by the build script. It contains RPM macros
         and BuildRequires expansions, for example.
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         ${cmd_usage}
@@ -2421,7 +2422,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = store_read_project(wd)
         apiurl = store_read_apiurl(wd)
 
-        print ''.join(get_buildconfig(apiurl, project, package, platform, arch))
+        print ''.join(get_buildconfig(apiurl, project, package, repository, arch))
 
 
     def do_repos(self, subcmd, opts, *args):
@@ -2440,8 +2441,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
 
         for arg in args:
-            for platform in get_repos_of_project(store_read_apiurl(arg), store_read_project(arg)):
-                print platform
+            for repository in get_repos_of_project(store_read_apiurl(arg), store_read_project(arg)):
+                print repository
 
 
     @cmdln.option('--clean', action='store_true',
@@ -2499,7 +2500,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         You need to call the command inside a package directory, which should be a
         buildsystem checkout. (Local modifications are fine.)
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output. BUILD_DESCR is either a RPM spec file, or a
         Debian dsc file.
 
@@ -2519,11 +2520,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
         usage:
-            osc build [OPTS] PLATFORM ARCH BUILD_DESCR
-            osc build [OPTS] PLATFORM (ARCH = hostarch, BUILD_DESCR is detected automatically)
-            osc build [OPTS] ARCH (PLATFORM = build_platform (config option), BUILD_DESCR is detected automatically)
-            osc build [OPTS] BUILD_DESCR (PLATFORM = build_platform (config option), ARCH = hostarch)
-            osc build [OPTS] (PLATFORM = build_platform (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
+            osc build [OPTS] REPOSITORY ARCH BUILD_DESCR
+            osc build [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
+            osc build [OPTS] ARCH (REPOSITORY = build_repository (config option), BUILD_DESCR is detected automatically)
+            osc build [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
+            osc build [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
 
         # Note:
         # Configuration can be overridden by envvars, e.g.
@@ -2548,7 +2549,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        arg_arch = arg_platform = arg_descr = None
+        arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
             for arg in args:
                 if arg.endswith('.spec') or arg.endswith('.dsc'):
@@ -2557,36 +2558,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if arg in osc.build.can_also_build.get(osc.build.hostarch, []) or \
                        arg in osc.build.hostarch:
                         arg_arch = arg
-                    elif not arg_platform:
-                        arg_platform = arg
+                    elif not arg_repository:
+                        arg_repository = arg
                     else:
                         raise oscerr.WrongArgs('unexpected argument: \'%s\'' % arg)
         else:
-            arg_platform, arg_arch, arg_descr = args
+            arg_repository, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
 
-        platforms = get_platforms_of_project( \
+        repositories = get_repositories_of_project( \
                 store_read_apiurl('.'), \
                 opts.alternative_project or store_read_project('.'))
-        if not arg_platform:
+        if not arg_repository:
 
-            if len(platforms) == 0:
-                arg_platform = conf.config['build_platform']
+            if len(repositories) == 0:
+                arg_repository = conf.config['build_repository']
 
             else:
 
                 # Use a default value from config, but just even if it's available
                 # unless try standard, or openSUSE_Factory
-                for platform in (conf.config['build_platform'], 'standard', 'openSUSE_Factory'):
-                    if platform in platforms:
-                        arg_platform = platform
+                for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
+                    if repository in repositories:
+                        arg_repository = repository
                         break
 
-                arg_platform = arg_platform or platforms[len(platforms)-1]
+                arg_repository = arg_repository or repositories[len(repositories)-1]
 
-        if not arg_platform in platforms:
-            raise oscerr.WrongArgs('%s is not a valid platform, use one of: %s' % (arg_platform, ", ".join(platforms)))
+        if not arg_repository in repositories:
+            raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ", ".join(repositories)))
 
         # check for source services
         if os.listdir('.').count("_service"):
@@ -2608,7 +2609,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pass
             raise oscerr.WrongArgs(msg)
 
-        args = (arg_platform, arg_arch, arg_descr)
+        args = (arg_repository, arg_arch, arg_descr)
 
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
@@ -2621,7 +2622,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print >> sys.stderr, 'Preferred save location \'%s\' is not a directory' % opts.keep_pkgs
                 return 1
 
-        print 'Building %s for %s/%s' % (arg_descr, arg_platform, arg_arch)
+        print 'Building %s for %s/%s' % (arg_descr, arg_repository, arg_arch)
         return osc.build.main(opts, args)
 
 
@@ -2629,34 +2630,47 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
     @cmdln.alias('buildhist')
-    def do_buildhistory(self, subcmd, opts, platform, arch):
+    def do_buildhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build history of a package
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
-        ${cmd_usage}
+        usage:
+           osc buildhist REPOSITORY ARCHITECTURE
+           osc buildhist PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
 
-        wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        apiurl = store_read_apiurl(wd)
+        if len(args) == 4:
+           apiurl = conf.config['apiurl']
+           project = args[0]
+           package = args[1]
+           repository = args[2]
+           arch = args[3]
+        elif len(args) == 2:
+           wd = os.curdir
+           package = store_read_package(wd)
+           project = store_read_project(wd)
+           repository = args[0]
+           arch = args[1]
+           apiurl = store_read_apiurl(wd)
+        else:
+           raise oscerr.WrongArgs('Wrong number of arguments')
 
         format = 'text'
         if opts.csv:
             format = 'csv'
 
-        print '\n'.join(get_buildhistory(apiurl, project, package, platform, arch, format))
+        print '\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format))
 
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
     @cmdln.alias('jobhist')
-    def do_jobhistory(self, subcmd, opts, platform, arch):
+    def do_jobhistory(self, subcmd, opts, repository, arch):
         """${cmd_name}: Shows the job history of a project
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         ${cmd_usage}
@@ -2676,7 +2690,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.csv:
             format = 'csv'
 
-        print_jobhistory(apiurl, project, package, platform, arch, format)
+        print_jobhistory(apiurl, project, package, repository, arch, format)
 
     @cmdln.hide(1)
     def do_rlog(self, subcmd, opts, *args):
@@ -2744,11 +2758,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Note the --failed option, which can be used to rebuild all failed
         packages.
 
-        The arguments PLATFORM and ARCH can be taken from the first two columns
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         usage:
-            osc rebuild PROJECT [PACKAGE [PLATFORM [ARCH]]]
+            osc rebuild PROJECT [PACKAGE [REPOSITORY [ARCH]]]
         ${cmd_option_list}
         """
 

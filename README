@@ -176,10 +176,10 @@ Generates a diff, to view the changes
 
 Shows the build results of the package
  osc results
- osc results [platform]
+ osc results [repository]
 
 Shows the log file of a package (you need to be inside a package directory)
- osc log <platform> <arch>
+ osc log <repository> <arch>
 
 Shows the URLs of .repo files which are packages sources for Yum/YaST/smart
  osc repourls [dir]
@@ -187,11 +187,11 @@ Shows the URLs of .repo files which are packages sources for Yum/YaST/smart
 Triggers a package rebuild for all repositories/architectures of a package
  osc rebuildpac [dir]
 
-Shows available platforms/build targets
- osc platforms
+Shows available repository/build targets
+ osc repository
 
-Shows the configured platforms/build targets of a project
- osc platforms <project>
+Shows the configured repository/build targets of a project
+ osc repository <project>
 
 Shows meta information
  osc meta Apache

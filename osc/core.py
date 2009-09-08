@@ -3106,7 +3106,11 @@ def delete_files(apiurl, prj, pac, files):
         u = makeurl(apiurl, ['source', prj, pac, file], query={'comment': 'removed %s' % (file, )})
         http_DELETE(u)
 
+# old compat lib call
 def get_platforms(apiurl):
+    return get_repositories(apiurl)
+
+def get_repositories(apiurl):
     f = http_GET(makeurl(apiurl, ['platform']))
     tree = ET.parse(f)
     r = [ node.get('name') for node in tree.getroot() ]
@@ -3114,7 +3118,11 @@ def get_platforms(apiurl):
     return r
 
 
+# old compat lib call
 def get_platforms_of_project(apiurl, prj):
+    return get_repositories_of_project(apiurl, prj)
+
+def get_repositories_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
     tree = ET.parse(StringIO(''.join(f)))
 
@@ -3338,26 +3346,26 @@ def streamfile(url, http_meth = http_GET, bufsize=8192):
     f.close()
 
 
-def print_buildlog(apiurl, prj, package, platform, arch, offset = 0):
+def print_buildlog(apiurl, prj, package, repository, arch, offset = 0):
     """prints out the buildlog on stdout"""
     query = {'nostream' : '1', 'start' : '%s' % offset}
     while True:
         query['start'] = offset
         start_offset = offset
-        u = makeurl(apiurl, ['build', prj, platform, arch, package, '_log'], query=query)
+        u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
         for data in streamfile(u):
             offset += len(data)
             sys.stdout.write(data)
         if start_offset == offset:
             break
 
-def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None, addlist=None):
+def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None):
     query = []
     if addlist:
         for i in addlist:
             query.append('add=%s' % quote_plus(i))
 
-    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_buildinfo'], query=query)
+    u = makeurl(apiurl, ['build', prj, repository, arch, package, '_buildinfo'], query=query)
 
     if specfile:
         f = http_POST(u, data=specfile)
@@ -3366,15 +3374,15 @@ def get_buildinfo(apiurl, prj, package, platform, arch, specfile=None, addlist=N
     return f.read()
 
 
-def get_buildconfig(apiurl, prj, package, platform, arch):
-    u = makeurl(apiurl, ['build', prj, platform, '_buildconfig'])
+def get_buildconfig(apiurl, prj, package, repository, arch):
+    u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'])
     f = http_GET(u)
     return f.read()
 
 
-def get_buildhistory(apiurl, prj, package, platform, arch, format = 'text'):
+def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
     import time
-    u = makeurl(apiurl, ['build', prj, platform, arch, package, '_history'])
+    u = makeurl(apiurl, ['build', prj, repository, arch, package, '_history'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
@@ -3397,12 +3405,12 @@ def get_buildhistory(apiurl, prj, package, platform, arch, format = 'text'):
 
     return r
 
-def print_jobhistory(apiurl, prj, current_package, platform, arch, format = 'text'):
+def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 'text'):
     import time
     if current_package:
-        u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'], "package=%s" % (current_package))
+        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], "package=%s" % (current_package))
     else:
-        u = makeurl(apiurl, ['build', prj, platform, arch, '_jobhistory'])
+        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'])
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
