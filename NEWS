@@ -9,6 +9,9 @@
  - add support for generic python-keyring lib, supports KWallet, Gnome keyring, MacOS and Windows.
  - make buildhist command usable without checked out package
  - rename old "platform/s" names to "repository/ies" (internal cleanup only)
+ - fixed osc diff -c N, it failed with int and string concatenation
+ - made osc diff and rdiff more similar: added -p, -c to rdiff, removed -u from rdiff.
+   made -u default for both, renamed --pretty to --plain as it is the opposite of -u 
  #
  # Features which require OBS 1.7
  #
@@ -18,10 +21,6 @@
  - support modification flages on creation of submit request
    (for auto update or clean up packages or to avoid it, when submit request got accepted)
  - show request ids from package source logs
- # 
- - fixed osc diff -c N, it failed with int and string concatenation
- - made osc diff and rdiff more similar: added -p, -c to rdiff, removed -u from rdiff.
-   made -u default for both, renamed --pretty to --plain as it is the opposite of -u 
 
 0.121.1
  - fixed creation of new ~/.oscrc files
