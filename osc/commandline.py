@@ -1623,7 +1623,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         elif project:
             prj_dir = project
-            if sys.repository[:3] == 'win':
+            if sys.platform[:3] == 'win':
                 prj_dir = prj_dir.replace(':', ';')
             if os.path.exists(prj_dir):
                 sys.exit('osc: project \'%s\' already exists' % project)
