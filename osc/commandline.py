@@ -3314,7 +3314,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not url.startswith('http'):
             if not url.startswith('/'):
                 url = '/' + url
-            url = conf.config['apiurl']
+            url = conf.config['apiurl'] + url
 
         if opts.headers:
             opts.headers = dict(opts.headers)
