@@ -140,6 +140,10 @@ class Pac:
 
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
 
+        if not node.get('project') or not node.get('repository'):
+           raise oscerr.APIError( "incomplete information for package %s, may be caused by a broken project configuration."
+                                  % self.mp['name'] )
+
         self.mp['extproject'] = node.get('project').replace(':', ':/')
         self.mp['extrepository'] = node.get('repository').replace(':', ':/')
         self.mp['repopackage'] = node.get('package') or '_repository'
