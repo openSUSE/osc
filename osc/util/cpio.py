@@ -204,16 +204,17 @@ class CpioWrite:
     def __init__(self):
         self.cpio = ''
 
-    def add(self, name=None, content=None):
+    def add(self, name=None, content=None, perms=0x1a4, type=0x8000):
         namesize = len(name) + 1
         if namesize % 2:
             name += '\0'
         filesize = len(content)
+        mode = perms | type
 
         c = []
         c.append('070701') # magic
         c.append('%08X' % 0) # inode
-        c.append('%08X' % 0) # mode
+        c.append('%08X' % mode) # mode
         c.append('%08X' % 0) # uid
         c.append('%08X' % 0) # gid
         c.append('%08X' % 0) # nlink
@@ -232,10 +233,8 @@ class CpioWrite:
         c.append(content)
     
         c = ''.join(c)
-        sys.stderr.write('%s\n' % len(c))
         if len(c) % 4:
             c += '\0' * (4 - len(c) % 4)
-        sys.stderr.write('%s\n\n' % len(c))
 
         self.cpio += c
     
