@@ -1,1 +1,1 @@
-__all__ = ['ar', 'cpio']
+__all__ = ['ar', 'cpio', 'rpmquery']
