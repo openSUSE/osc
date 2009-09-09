@@ -65,7 +65,7 @@ class CpioHdr:
     def __str__(self):
         return "%s %s %s %s" % (self.filename, self.filesize, self.namesize, self.dataoff)
 
-class Cpio:
+class CpioRead:
     """
     Represents a cpio archive.
     Supported formats:
@@ -197,3 +197,53 @@ class Cpio:
         dest = dest or os.getcwd()
         for h in self.hdrs:
             self._copyin_file(h, dest, h.filename)
+
+class CpioWrite:
+    """cpio archive small files in memory, using new style portable header format"""
+
+    def __init__(self):
+        self.cpio = ''
+
+    def add(self, name=None, content=None):
+        namesize = len(name) + 1
+        if namesize % 2:
+            name += '\0'
+        filesize = len(content)
+
+        c = []
+        c.append('070701') # magic
+        c.append('%08X' % 0) # inode
+        c.append('%08X' % 0) # mode
+        c.append('%08X' % 0) # uid
+        c.append('%08X' % 0) # gid
+        c.append('%08X' % 0) # nlink
+        c.append('%08X' % 0) # mtime
+        c.append('%08X' % filesize)
+        c.append('%08X' % 0) # major
+        c.append('%08X' % 0) # minor
+        c.append('%08X' % 0) # rmajor
+        c.append('%08X' % 0) # rminor
+        c.append('%08X' % namesize)
+        c.append('%08X' % 0) # checksum
+
+        c.append(name + '\0')
+        c.append('\0' * (len(''.join(c)) % 4))
+
+        c.append(content)
+    
+        c = ''.join(c)
+        sys.stderr.write('%s\n' % len(c))
+        if len(c) % 4:
+            c += '\0' * (4 - len(c) % 4)
+        sys.stderr.write('%s\n\n' % len(c))
+
+        self.cpio += c
+    
+    def add_padding(self):
+        if len(self.cpio) % 512:
+            self.cpio += '\0' * (512 - len(self.cpio) % 512)
+
+    def get(self):
+        self.add('TRAILER!!!', '')
+        self.add_padding()
+        return ''.join(self.cpio)
