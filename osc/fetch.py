@@ -7,7 +7,7 @@ import sys, os
 import urllib2
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from core import data_from_rpm
+from util import rpmquery
 try:
     from meter import TextMeter
 except:
@@ -90,18 +90,19 @@ class Fetcher:
             sys.exit(1)
 
         if pac.partname.endswith('.rpm.part'):
-            rpm_data = data_from_rpm(pac.fullpartname, 'Name:', 'Version:', 'Release:', 'Arch:', 'SourceRPM:', 'NoSource:', 'NoPatch:')
-            if rpm_data:
-                arch = rpm_data['Arch:']
-                if not rpm_data['SourceRPM:']:
-                    if rpm_data['NoSource:'] or rpm_data['NoPatch:']:
-                        arch = "nosrc"
-                    else:
-                        arch = "src"
-                canonname = "%s-%s-%s.%s.rpm" % (rpm_data['Name:'], rpm_data['Version:'], rpm_data['Release:'], arch)
-                head, tail = os.path.split(pac.fullfilename)
-                pac.filename = canonname
-                pac.fullfilename = os.path.join(head, canonname)
+            rpmq = rpmquery.RpmQuery.query(pac.fullpartname)
+            arch = rpmq.arch()
+            # SOURCERPM = 1044
+            if not rpmq.getTag(1044):
+                # NOSOURCE = 1051, NOPATCH = 1052
+                if rpmq.getTag(1051) or rpmq.getTag(1052):
+                    arch = "nosrc"
+                else:
+                    arch = "src"
+            canonname = "%s-%s-%s.%s.rpm" % (rpmq.name(), rpmq.version(), rpmq.release(), arch)
+            head, tail = os.path.split(pac.fullfilename)
+            pac.filename = canonname
+            pac.fullfilename = os.path.join(head, canonname)
 
         os.rename(pac.fullpartname, pac.fullfilename);
 

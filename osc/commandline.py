@@ -3171,6 +3171,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         import glob
+        from util import rpmquery
 
         if opts.delete_old_files and conf.config['do_package_tracking']:
             # IMHO the --delete-old-files option doesn't really fit into our
@@ -3200,11 +3201,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             project = store_read_project(project_dir)
 
-        rpm_data = data_from_rpm(srpm, 'Name:', 'Summary:', '%description', 'Url:')
-        if rpm_data:
-            title, pac, descr, url = ( v for k, v in rpm_data.iteritems() )
-        else:
-            title = pac = descr = url = ''
+        rpmq = rpmquery.RpmQuery.query(srpm)
+        title, pac, descr, url = rpmq.summary(), rpmq.name(), rpmq.description(), rpmq.url()
+        if url is None:
+            url = ''
 
         if opts.title:
             title = opts.title

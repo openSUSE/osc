@@ -188,8 +188,16 @@ class RpmQuery():
     def requires(self):
         return self.__reqprov(1049, 1048, 1050)
 
-    def getTag(num):
+    def getTag(self, num):
         return self.header.getTag(num)
+
+    @staticmethod
+    def query(filename):
+        f = open(filename, 'rb')
+        rpmq = RpmQuery(f)
+        rpmq.read()
+        f.close()
+        return rpmq
 
 def unpack_string(data):
     """unpack a '\\0' terminated string from data"""
@@ -203,13 +211,10 @@ def unpack_string(data):
     return val
 
 if __name__ == '__main__':
-    f = open(sys.argv[1], 'rb')
-    rpmq = RpmQuery(f)
     try:
-        rpmq.read()
+        rpmq = RpmQuery.query(sys.argv[1])
     except RpmError, e:
         print e.msg
-    f.close()
     print rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url()
     print rpmq.summary()
     print rpmq.description()

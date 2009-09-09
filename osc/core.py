@@ -3902,58 +3902,6 @@ def unpack_srcrpm(srpm, dir, *files):
         sys.exit(1)
     os.chdir(curdir)
 
-def tag_to_rpmpy(tag):
-    """
-    maps a spec file tag/section to a valid
-    rpm-python RPMTAG
-    """
-
-    try:
-        import rpm
-        tags = { 'Name:' : rpm.RPMTAG_NAME,
-                 'Version:' : rpm.RPMTAG_VERSION,
-                 'Release:' : rpm.RPMTAG_RELEASE,
-                 'Arch:' : rpm.RPMTAG_ARCH,
-                 'SourceRPM:' : rpm.RPMTAG_SOURCERPM,
-                 'NoSource:' : 1051,
-                 'NoPatch:' : 1052,
-                 'Summary:' : rpm.RPMTAG_SUMMARY,
-                 '%description' : rpm.RPMTAG_DESCRIPTION,
-                 'Url:' : rpm.RPMTAG_URL
-               }
-        if tag in tags.keys():
-            return tags[tag]
-        else:
-            return None
-    except ImportError:
-        return None
-
-def data_from_rpm(rpm_file, *rpmdata):
-    """
-    This method reads the given rpmdata
-    from a rpm.
-    """
-
-    try:
-        import rpm
-        ts = rpm.TransactionSet()
-        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
-        file = open(rpm_file, 'rb')
-        header = ts.hdrFromFdno(file.fileno())
-        file.close()
-        data = {}
-        for itm in rpmdata:
-            rpmpy = tag_to_rpmpy(itm)
-            if rpmpy:
-                data[itm] = header[rpmpy]
-            else:
-                print >>sys.stderr, 'invalid data \'%s\'' % itm
-                sys.exit(1)
-        return data
-    except ImportError:
-        print >>sys.stderr, 'warning: rpm-python not found'
-        return None
-
 def is_rpm(f):
     """check if the named file is an RPM package"""
     try:                                                                                                                                
