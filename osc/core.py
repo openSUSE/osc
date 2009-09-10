@@ -1411,14 +1411,14 @@ class RequestState:
 
 class Action:
     """represents an action"""
-    def __init__(self, type, src_project, src_package, src_rev, src_modifier, dst_project, dst_package):
+    def __init__(self, type, src_project, src_package, src_rev, dst_project, dst_package, src_update):
         self.type = type
         self.src_project = src_project
         self.src_package = src_package
         self.src_rev = src_rev
-        self.src_modifier = src_modifier
         self.dst_project = dst_project
         self.dst_package = dst_package
+        self.src_update = src_update
 
 class Request:
     """represent a request and holds its metadata
@@ -1443,18 +1443,21 @@ class Request:
         for action in actions:
             type = action.get('type', 'submit')
             try:
-                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_modifier = None
+                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_update = None
                 if action.findall('source'):
                    n = action.find('source')
                    src_prj = n.get('project', None)
                    src_pkg = n.get('package', None)
                    src_rev = n.get('rev', None)
-                   src_modifier = n.get('modifier', None)
                 if action.findall('target'):
                    n = action.find('target')
                    dst_prj = n.get('project', None)
                    dst_pkg = n.get('package', None)
-                self.add_action(type, src_prj, src_pkg, src_rev, src_modifier, dst_prj, dst_pkg)
+                if action.findall('options'):
+                   n = action.find('options')
+                   if n.findall('sourceupdate'):
+                      src_update = n.find('sourceupdate').text.strip()
+                self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
                 raise oscerr.APIError(msg)
@@ -1488,9 +1491,9 @@ class Request:
         except:
             pass
 
-    def add_action(self, type, src_prj, src_pkg, src_rev, src_modifier, dst_prj, dst_pkg):
-        self.actions.append(Action(type, src_prj, src_pkg, src_rev, src_modifier,
-                                   dst_prj, dst_pkg)
+    def add_action(self, type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update):
+        self.actions.append(Action(type, src_prj, src_pkg, src_rev,
+                                   dst_prj, dst_pkg, src_update)
                            )
 
     def list_view(self):
@@ -1535,8 +1538,8 @@ class Request:
                if action.src_rev:
                    r="(r%s)" % (action.src_rev)
                m=""
-               if action.src_modifier:
-                   m="(%s)" % (action.src_modifier)
+               if action.src_update:
+                   m="(%s)" % (action.src_update)
                action_list=action_list+" %s/%s%s%s -> %s" % ( action.src_project, action.src_package, r, m, action.dst_project )
                if action.dst_package:
                    action_list=action_list+"/%s" % ( action.dst_package )
@@ -2342,19 +2345,20 @@ def create_change_devel_request(apiurl,
 def create_submit_request(apiurl, 
                          src_project, src_package, 
                          dst_project, dst_package,
-                         message, orev=None, flags=None):
+                         message, orev=None, src_update=None):
 
     import cgi
-    modifier=""
-    if flags:
-       modifier="""modifier="%s" """ % (flags)
+    options_block=""
+    if src_update:
+       options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">
     <submit>
-        <source project="%s" package="%s" rev="%s" %s/>
+        <source project="%s" package="%s" rev="%s"/>
         <target project="%s" package="%s" />
+        %s
     </submit>
     <state name="new"/>
     <description>%s</description>
@@ -2362,9 +2366,9 @@ def create_submit_request(apiurl,
 """ % (src_project, 
        src_package,
        orev or show_upstream_rev(apiurl, src_project, src_package),
-       modifier,
        dst_project, 
        dst_package,
+       options_block,
        cgi.escape(message or ''))
 
     u = makeurl(apiurl, ['request'], query='cmd=create')

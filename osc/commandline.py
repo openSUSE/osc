@@ -540,14 +540,14 @@ class Osc(cmdln.Cmdln):
             opts.days = conf.config['request_list_days']
             return self.do_request('list', opts, *args)
 
-        flags = None
+        src_update = None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
         if opts.cleanup:
-           flags = "cleanup"
+           src_update = "cleanup"
         elif opts.no_cleanup:
-           flags = "update"
+           src_update = "update"
         elif opts.no_update:
-           flags = "noupdate"
+           src_update = "noupdate"
 
         args = slash_split(args)
 
@@ -648,7 +648,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             result = create_submit_request(apiurl,
                                            src_project, src_package,
                                            dst_project, dst_package,
-                                           opts.message, orev=opts.revision, flags=flags)
+                                           opts.message, orev=opts.revision, src_update=src_update)
             if repl == 'y':
                 for req in myreqs:
                     change_request_state(apiurl, str(req.reqid), 'revoked',
