@@ -1767,7 +1767,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
 
     # POST requests are application/x-www-form-urlencoded per default
     # since we change the request into PUT, we also need to adjust the content type header
-    if method == 'PUT':
+    if method == 'PUT' or (method == 'POST' and data):
         req.add_header('Content-Type', 'application/octet-stream')
 
     if type(headers) == type({}):
