@@ -53,7 +53,7 @@ if hostarch == 'i686': # FIXME
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
-    def __init__(self, filename, apiurl, buildtype = 'spec'):
+    def __init__(self, filename, apiurl, buildtype = 'spec', localpkgs = []):
         try:
             tree = ET.parse(filename)
         except:
@@ -94,11 +94,8 @@ class Buildinfo:
 
         self.deps = []
         for node in root.findall('bdep'):
-            p = Pac(node,
-                    self.buildarch,       # buildarch is used only for the URL to access the full tree...
-                    self.pacsuffix,
-                    apiurl)
-                    
+            p = Pac(node, self.buildarch, self.pacsuffix,
+                    apiurl, localpkgs)
             self.deps.append(p)
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
@@ -125,7 +122,7 @@ class Pac:
 
     We build a map that's later used to fill our URL templates
     """
-    def __init__(self, node, buildarch, pacsuffix, apiurl):
+    def __init__(self, node, buildarch, pacsuffix, apiurl, localpkgs = []):
 
         self.mp = {}
         for i in ['name', 'package', 
@@ -140,12 +137,15 @@ class Pac:
 
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
 
-        if not node.get('project') or not node.get('repository'):
-           raise oscerr.APIError( "incomplete information for package %s, may be caused by a broken project configuration."
+        # this is not the ideal place to check if the package is a localdep or not
+        localdep = self.mp['name'] in localpkgs
+        if not localdep and not (node.get('project') and node.get('repository')):
+            raise oscerr.APIError('incomplete information for package %s, may be caused by a broken project configuration.'
                                   % self.mp['name'] )
 
-        self.mp['extproject'] = node.get('project').replace(':', ':/')
-        self.mp['extrepository'] = node.get('repository').replace(':', ':/')
+        if not localdep:
+            self.mp['extproject'] = node.get('project').replace(':', ':/')
+            self.mp['extrepository'] = node.get('repository').replace(':', ':/')
         self.mp['repopackage'] = node.get('package') or '_repository'
         self.mp['repoarch'] = node.get('repoarch') or self.mp['buildarch']
 
@@ -223,27 +223,45 @@ def get_built_files(pacdir, pactype):
 def get_prefer_pkgs(dirs, wanted_arch):
     # XXX learn how to do the same for Debian packages
     import glob
+    from util import rpmquery, cpio
     paths = []
     for dir in dirs:
         paths += glob.glob(os.path.join(os.path.abspath(dir), '*.rpm'))
     prefer_pkgs = []
-
+    rpmqs = []
     for path in paths:
         if path.endswith('src.rpm'):
             continue
         if path.find('-debuginfo-') > 0:
             continue
-        arch, name = subprocess.Popen(['rpm', '-qp', 
-                                      '--nosignature', '--nodigest', 
-                                      '--qf', '%{arch} %{name}\n', path], 
-                                      stdout=subprocess.PIPE).stdout.read().split()
+        rpmq = rpmquery.RpmQuery.query(path)
+        arch = rpmq.arch()
+        name = rpmq.name()
         # instead of thip assumption, we should probably rather take the
         # requested arch for this package from buildinfo
         # also, it will ignore i686 packages, how to handle those?
+        # XXX: if multiple versions of a package are encountered we have a
+        # kind of "unpredictable" behaviour: should we always take the newest version?
         if arch == wanted_arch or arch == 'noarch':
             prefer_pkgs.append((name, path))
+            rpmqs.append(rpmq)
+    depfile = create_deps(rpmqs)
+    cpio = cpio.CpioWrite()
+    cpio.add('deps', '\n'.join(depfile))
+    return dict(prefer_pkgs), cpio
 
-    return dict(prefer_pkgs)
+
+def create_deps(pkgqs):
+    """
+    creates a list of requires/provides which corresponds to build's internal
+    dependency file format
+    """
+    depfile = []
+    for p in pkgqs:
+        id = '%s.%s-0/0/0: ' % (p.name(), p.arch())
+        depfile.append('R:%s%s' % (id, ' '.join(p.requires())))
+        depfile.append('P:%s%s' % (id, ' '.join(p.provides())))
+    return depfile
 
 
 def main(opts, argv):
@@ -331,6 +349,13 @@ def main(opts, argv):
     if xp:
         extra_pkgs += xp
 
+    prefer_pkgs = {}
+    build_descr_data = open(build_descr).read()
+    if opts.prefer_pkgs:
+        print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
+        prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch)
+        cpio.add(os.path.basename(build_descr), build_descr_data)
+        build_descr_data = cpio.get()
 
     print 'Getting buildinfo from server'
     tempdir = '/tmp'
@@ -338,12 +363,12 @@ def main(opts, argv):
         tempdir = os.getenv('TEMP')
     bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = tempdir)
     try:
-        bi_text = ''.join(get_buildinfo(apiurl, 
+        bi_text = ''.join(get_buildinfo(apiurl,
                                         prj,
                                         pac,
-                                        repo, 
-                                        arch, 
-                                        specfile=open(build_descr).read(), 
+                                        repo,
+                                        arch,
+                                        specfile=build_descr_data,
                                         addlist=extra_pkgs))
     except urllib2.HTTPError, e:
         if e.code == 404:
@@ -367,7 +392,7 @@ def main(opts, argv):
     bi_file.write(bi_text)
     bi_file.flush()
 
-    bi = Buildinfo(bi_file.name, apiurl, build_type)
+    bi = Buildinfo(bi_file.name, apiurl, build_type, prefer_pkgs.keys())
     if bi.debuginfo and not opts.disable_debuginfo:
         buildargs.append('--debug')
     buildargs = ' '.join(set(buildargs))
@@ -381,12 +406,8 @@ def main(opts, argv):
             return 1
 
     rpmlist_prefers = []
-    if opts.prefer_pkgs:
+    if prefer_pkgs:
         print 'Evaluating preferred packages'
-        # the resulting dict will also contain packages which are not on the install list
-        # but they won't be installed
-        prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, bi.buildarch)
-
         for name, path in prefer_pkgs.iteritems():
             if bi.has_dep(name):
                 # We remove a preferred package from the buildinfo, so that the
