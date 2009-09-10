@@ -21,6 +21,8 @@
  - support modification flages on creation of submit request
    (for auto update or clean up packages or to avoid it, when submit request got accepted)
  - show request ids from package source logs
+ - added support to require local packages which don't exist in the obs for a local build. This
+   fixes #377021, #481193
 
 0.121.1
  - fixed creation of new ~/.oscrc files
