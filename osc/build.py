@@ -378,9 +378,9 @@ def main(opts, argv):
         if e.code == 404:
         # check what caused the 404
             if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
-                           template_args=None, create_new=False):
+                           template_args=None, create_new=False, apiurl=apiurl):
                 if pac == '_repository' or meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
-                                                       template_args=None, create_new=False):
+                                                       template_args=None, create_new=False, apiurl=apiurl):
                     print >>sys.stderr, 'wrong repo/arch?'
                     sys.exit(1)
                 else:
