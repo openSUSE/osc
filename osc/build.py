@@ -220,32 +220,36 @@ def get_built_files(pacdir, pactype):
     return s_built, b_built
 
 
-def get_prefer_pkgs(dirs, wanted_arch):
-    # XXX learn how to do the same for Debian packages
+def get_prefer_pkgs(dirs, wanted_arch, type):
     import glob
-    from util import rpmquery, cpio
+    from util import packagequery, cpio
+    # map debian arches to common obs arches
+    arch_map = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']}
     paths = []
+    suffix = '*.rpm'
+    if type == 'dsc':
+        suffix = '*.deb'
     for dir in dirs:
-        paths += glob.glob(os.path.join(os.path.abspath(dir), '*.rpm'))
+        paths += glob.glob(os.path.join(os.path.abspath(dir), suffix))
     prefer_pkgs = []
-    rpmqs = []
+    pkgqs = []
     for path in paths:
         if path.endswith('src.rpm'):
             continue
         if path.find('-debuginfo-') > 0:
             continue
-        rpmq = rpmquery.RpmQuery.query(path)
-        arch = rpmq.arch()
-        name = rpmq.name()
+        pkgq = packagequery.PackageQuery.query(path)
+        arch = pkgq.arch()
+        name = pkgq.name()
         # instead of thip assumption, we should probably rather take the
         # requested arch for this package from buildinfo
         # also, it will ignore i686 packages, how to handle those?
         # XXX: if multiple versions of a package are encountered we have a
         # kind of "unpredictable" behaviour: should we always take the newest version?
-        if arch == wanted_arch or arch == 'noarch':
+        if arch in [wanted_arch, 'noarch', 'all'] or wanted_arch in arch_map.get(arch, []):
             prefer_pkgs.append((name, path))
-            rpmqs.append(rpmq)
-    depfile = create_deps(rpmqs)
+            pkgqs.append(pkgq)
+    depfile = create_deps(pkgqs)
     cpio = cpio.CpioWrite()
     cpio.add('deps', '\n'.join(depfile))
     return dict(prefer_pkgs), cpio
@@ -353,7 +357,7 @@ def main(opts, argv):
     build_descr_data = open(build_descr).read()
     if opts.prefer_pkgs:
         print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
-        prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch)
+        prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type)
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
 
