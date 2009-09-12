@@ -1,10 +1,9 @@
 import os
-import sys
 import struct
+import packagequery
 
-class RpmError(Exception):
-    def __init__(self, msg):
-        self.msg = msg
+class RpmError(packagequery.PackageError):
+    pass
 
 class RpmHeaderError(RpmError):
     pass
@@ -45,7 +44,7 @@ class RpmHeaderEntry():
         self.count = count
         self.data = None
 
-class RpmQuery():
+class RpmQuery(packagequery.PackageQuery):
     LEAD_SIZE = 96
     LEAD_MAGIC = 0xedabeedb
     HEADER_MAGIC = 0x8eade801
@@ -211,10 +210,12 @@ def unpack_string(data):
     return val
 
 if __name__ == '__main__':
+    import sys
     try:
         rpmq = RpmQuery.query(sys.argv[1])
     except RpmError, e:
         print e.msg
+        sys.exit(2)
     print rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url()
     print rpmq.summary()
     print rpmq.description()

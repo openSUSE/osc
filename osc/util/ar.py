@@ -87,14 +87,22 @@ class Ar:
     hdr_len = 60
     hdr_pat = re.compile('^(.{16})(.{12})(.{6})(.{6})(.{8})(.{10})(.{2})', re.DOTALL)
 
-    def __init__(self, fn):
-        self.filename = fn
-        # file object: will be closed in __del__()
-        self.__file = None
+    def __init__(self, fn = None, fh = None):
+        if fn == None and fh == None:
+            raise ArError('either \'fn\' or \'fh\' must be != None')
+        if fh != None:
+            self.__file = fh
+            self.__closefile = False
+            self.filename = fh.name
+        else:
+            # file object: will be closed in __del__()
+            self.__file = None
+            self.__closefile = True
+            self.filename = fn
         self._init_datastructs()
 
     def __del__(self):
-        if self.__file:
+        if self.__file and self.__closefile:
             self.__file.close()
 
     def _init_datastructs(self):

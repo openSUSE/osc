@@ -1,1 +1,1 @@
-__all__ = ['ar', 'cpio', 'rpmquery']
+__all__ = ['ar', 'cpio', 'debquery', 'packagequery', 'rpmquery']
