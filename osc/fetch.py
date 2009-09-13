@@ -7,7 +7,7 @@ import sys, os
 import urllib2
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from util import rpmquery
+from util import packagequery
 try:
     from meter import TextMeter
 except:
@@ -89,20 +89,21 @@ class Fetcher:
 
             sys.exit(1)
 
-        if pac.partname.endswith('.rpm.part'):
-            rpmq = rpmquery.RpmQuery.query(pac.fullpartname)
-            arch = rpmq.arch()
-            # SOURCERPM = 1044
-            if not rpmq.getTag(1044):
-                # NOSOURCE = 1051, NOPATCH = 1052
-                if rpmq.getTag(1051) or rpmq.getTag(1052):
-                    arch = "nosrc"
-                else:
-                    arch = "src"
-            canonname = "%s-%s-%s.%s.rpm" % (rpmq.name(), rpmq.version(), rpmq.release(), arch)
-            head, tail = os.path.split(pac.fullfilename)
-            pac.filename = canonname
-            pac.fullfilename = os.path.join(head, canonname)
+        pkgq = packagequery.PackageQuery.query(pac.fullpartname)
+        arch = pkgq.arch()
+        # SOURCERPM = 1044
+        if pkgq.filename_suffix == 'rpm' and not pkgq.getTag(1044):
+            # NOSOURCE = 1051, NOPATCH = 1052
+            if pkgq.getTag(1051) or pkgq.getTag(1052):
+                arch = "nosrc"
+            else:
+                arch = "src"
+        if pkgq.release():
+            canonname = '%s-%s-%s.%s.%s' % (pkgq.name(), pkgq.version(), pkgq.release(), arch, pkgq.filename_suffix)
+        else:
+            canonname = '%s-%s.%s.%s' % (pkgq.name(), pkgq.version(), arch, pkgq.filename_suffix)
+        pac.filename = canonname
+        pac.fullfilename = os.path.join(pac.localdir, canonname)
 
         os.rename(pac.fullpartname, pac.fullfilename);
 
@@ -120,15 +121,13 @@ class Fetcher:
     def run(self, buildinfo):
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
-
-            if not os.path.exists(os.path.join(i.localdir, i.fullfilename)):
+            if not os.path.exists(i.fullfilename):
                 self.dirSetup(i)
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
                         print '(%s) %s' % (i.project, i.filename)
                     self.fetch(i)
-
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
                     print 'Exiting.'

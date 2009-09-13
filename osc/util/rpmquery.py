@@ -55,6 +55,7 @@ class RpmQuery(packagequery.PackageQuery):
     EQUAL = 1 << 3
     def __init__(self, fh):
         self.__file = fh
+        self.filename_suffix = 'rpm'
         self.header = None
 
     def read(self, *tags):

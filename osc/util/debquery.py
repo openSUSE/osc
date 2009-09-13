@@ -9,6 +9,7 @@ class DebError(packagequery.PackageError):
 class DebQuery(packagequery.PackageQuery):
     def __init__(self, fh):
         self.__file = fh
+        self.filename_suffix = 'deb'
         self.fields = {}
 
     def read(self):
