@@ -156,7 +156,10 @@ class Pac:
 
         self.mp['apiurl'] = apiurl
 
-        self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
+        if self.mp['release']:
+            self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
+        else:
+            self.filename = '%(name)s-%(version)s.%(arch)s.%(pacsuffix)s' % self.mp
         self.partname = '%s.part' % self.filename
 
         self.mp['filename'] = self.filename
