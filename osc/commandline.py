@@ -788,6 +788,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         the actual submit process. That would normally be a server-side copy of
         the source package to the target package.
 
+        "checkout" will checkout the request's source package. This only works for "submit" requests.
 
         usage:
             osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [PRJ [PKG]]
@@ -797,6 +798,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request wipe ID
+            osc request checkout/co ID
         ${cmd_option_list}
         """
 
@@ -822,7 +824,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke']
+        cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co']
         if not args or args[0] not in cmds:
             if subcmd == 'req':
                 print >>sys.stderr, 'You may want to try "osc api" instead of "osc req".'
@@ -860,9 +862,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['log', 'show', 'decline', 'accept', 'wipe', 'revoke']:
+        elif cmd in ['log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
-
 
         # list
         if cmd == 'list':
@@ -909,12 +910,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     skipped += 1
             if skipped:
                 print "There are %d requests older than %s days.\n" % (skipped, days)
-  
 
         elif cmd == 'log':
             for l in get_request_log(conf.config['apiurl'], reqid):
                 print l
-
 
         # show
         elif cmd == 'show':
@@ -933,6 +932,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     e.osc_msg = 'Diff not possible'
                     raise
 
+        # checkout
+        elif cmd == 'checkout' or cmd == 'co':
+            r = get_request(conf.config['apiurl'], reqid)
+            submits = [ i for i in r.actions if i.type == 'submit' ]
+            if not len(submits):
+                raise oscerr.WrongArgs('\'checkout\' only works for \'submit\' requests')
+            checkout_package(conf.config['apiurl'], submits[0].src_project, submits[0].src_package, \
+                submits[0].src_rev, expand_link=True, prj_dir=submits[0].src_project)
 
         else:
             if not opts.message:
@@ -1556,7 +1563,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='server side generated files of source services' \
                              'gets downloaded as well' )
-
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: Check out content from the repository
@@ -1583,10 +1589,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        if opts.unexpand_link: expand_link = False
-        else: expand_link = True
-        if opts.source_service_files: service_files = True
-        else: service_files = False
+        if opts.unexpand_link:
+            expand_link = False
+        else:
+            expand_link = True
+        if opts.source_service_files:
+            service_files = True
+        else:
+            service_files = False
 
         args = slash_split(args)
         project = package = filename = None
@@ -1616,8 +1626,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             get_source_file(apiurl, project, package, filename, revision=rev)
 
         elif package:
-            if opts.current_dir: project_dir = None
-
+            if opts.current_dir:
+                project_dir = None
             checkout_package(apiurl, project, package,
                              rev, expand_link=expand_link, prj_dir=project_dir, service_files=service_files)
 
