@@ -105,12 +105,12 @@ class SectionLine(Line):
         return None
 
     def _add_option(self, optname, value = None, line = None, sep = '='):
-        if not (value or line):
-            raise Error('Either value or line must be passed in')
+        if value is None and line is None:
+            raise ConfigParser.Error('Either value or line must be passed in')
         elif value and line:
-            raise Error('value and line are mutually exclusive')
+            raise ConfigParser.Error('value and line are mutually exclusive')
 
-        if value:
+        if value is not None:
             line = '%s%s%s' % (optname, sep, value)
         opt = self._find(optname)
         if opt:
