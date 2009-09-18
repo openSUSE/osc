@@ -102,6 +102,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'request_list_days': 30,
              # check for unversioned/removed files before commit
              'check_filelist': '1',
+             # check for pending requests after executing an action (e.g. checkout, update, commit)
+             'check_for_request_on_action': '0',
 }
 
 # being global to this module, this dict can be accessed from outside
@@ -109,7 +111,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
-    'checkout_no_colon']
+    'checkout_no_colon', 'check_for_request_on_action']
 
 new_conf_template = """
 [general]
@@ -177,7 +179,10 @@ apiurl = %(apiurl)s
 
 # check for unversioned/removed files before commit
 #check_filelist = 1
-   
+
+# check for pending requests after executing an action (e.g. checkout, update, commit)
+#check_for_request_on_action = 0
+
 [%(apiurl)s]
 user = %(user)s
 pass = %(pass)s

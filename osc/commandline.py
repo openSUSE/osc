@@ -1630,6 +1630,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project_dir = None
             checkout_package(apiurl, project, package,
                              rev, expand_link=expand_link, prj_dir=project_dir, service_files=service_files)
+            print_request_list(apiurl, project, package)
 
         elif project:
             prj_dir = project
@@ -1655,6 +1656,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package,
                                      expand_link = False, prj_dir = prj_dir, service_files = service_files)
+            print_request_list(apiurl, project)
 
         else:
             raise oscerr.WrongArgs('Missing argument.\n\n' \
@@ -1803,9 +1805,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = findpacs(args)
         for p in pacs:
-
             p.todo = p.filenamelist + p.filenamelist_unvers
-
 
             for filename in p.todo:
                 if os.path.isdir(filename):
@@ -1988,6 +1988,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # (b) fetch new packages
                     prj.checkout_missing_pacs(opts.expand_link)
                     args.remove(arg)
+                print_request_list(prj.apiurl, prj.name)
 
         args.sort()
         pacs = findpacs(args)
@@ -2026,6 +2027,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     sys.exit(1)
             p.update(rev, service_files)
             rev = None
+            print_request_list(p.apiurl, p.prjname, p.name)
 
 
     @cmdln.option('-f', '--force', action='store_true',
@@ -2122,7 +2124,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = findpacs(args)
 
         for p in pacs:
-
             for filename in p.todo:
                 print 'Resolved conflicted state of "%s"' % filename
                 p.clear_from_conflictlist(filename)
@@ -2808,7 +2809,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = parseargs(args)
         pacs = findpacs(args)
-
 
         for p in pacs:
             print p.info()

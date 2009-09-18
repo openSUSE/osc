@@ -883,6 +883,7 @@ class Package:
             for filename in self.todo: 
               if filename.startswith('_service:') and os.path.exists(filename):
                 os.unlink(filename) #remove local files
+        print_request_list(self.apiurl, self.prjname, self.name)
 
     def write_conflictlist(self):
         if len(self.in_conflict) == 0:
@@ -4260,3 +4261,19 @@ def check_filelist_before_commit(pacs):
                     break
                 else:
                     raise oscerr.UserAbort()
+
+def print_request_list(apiurl, project, package = None, states = ('new', ), force = False):
+    """
+    prints list of pending requests for the specified project/package if "check_for_request_on_action"
+    is enabled in the config or if "force" is set to True
+    """
+    if not conf.config['check_for_request_on_action'] and not force:
+        return
+    requests = get_request_list(apiurl, project, package, req_state=states)
+    msg = 'Pending requests for %s: %s (%s)'
+    if package is None and len(requests):
+        print msg % ('project', project, len(requests))
+    elif len(requests):
+        print msg % ('package', package, len(requests))
+    for r in requests:
+        print r.list_view()
