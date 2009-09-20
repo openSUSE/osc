@@ -8,7 +8,7 @@ class RpmError(packagequery.PackageError):
 class RpmHeaderError(RpmError):
     pass
 
-class RpmHeader():
+class RpmHeader:
     """corresponds more or less to the indexEntry_s struct"""
     def __init__(self, offset, length):
         self.offset = offset
@@ -32,7 +32,7 @@ class RpmHeader():
     def __len__(self):
         return len(self.entries)
 
-class RpmHeaderEntry():
+class RpmHeaderEntry:
     """corresponds to the entryInfo_s struct (except the data attribute)"""
 
     # each element represents an int

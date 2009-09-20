@@ -4,7 +4,7 @@ class PackageError(Exception):
         Exception.__init__(self)
         self.msg = msg
 
-class PackageQuery():
+class PackageQuery:
     """abstract base class for all package types"""
     def read(self):
         raise NotImplementedError
