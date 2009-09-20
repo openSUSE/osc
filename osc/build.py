@@ -297,6 +297,10 @@ def main(opts, argv):
         buildargs.append('--changelog')
     if opts.jobs:
         buildargs.append('--jobs %s' % opts.jobs)
+    else:
+        smp_mflags = os.sysconf('SC_NPROCESSORS_ONLN')
+        if smp_mflags > 1:
+            buildargs.append('--jobs %s' % smp_mflags)
     if opts.icecream:
         buildargs.append('--icecream %s' % opts.icecream)
         xp.append('icecream')
