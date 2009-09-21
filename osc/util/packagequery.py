@@ -33,6 +33,9 @@ class PackageQuery:
     def getTag(self):
         raise NotImplementedError
 
+    def vercmp(self, pkgq):
+        raise NotImplementedError
+
     @staticmethod
     def query(filename):
         f = open(filename, 'rb')

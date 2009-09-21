@@ -1,4 +1,5 @@
 import os
+import re
 import struct
 import packagequery
 
@@ -157,6 +158,16 @@ class RpmQuery(packagequery.PackageQuery):
             res.append(name)
         return res
 
+    def vercmp(self, rpmq):
+        res = RpmQuery.rpmvercmp(str(self.epoch()), str(rpmq.epoch()))
+        if res != 0:
+            return res
+        res = RpmQuery.rpmvercmp(self.version(), rpmq.version())
+        if res != 0:
+            return res
+        res = RpmQuery.rpmvercmp(self.release(), rpmq.release())
+        return res
+
     # XXX: create dict for the tag => number mapping?!
     def name(self):
         return self.header.getTag(1000).data
@@ -166,6 +177,12 @@ class RpmQuery(packagequery.PackageQuery):
 
     def release(self):
         return self.header.getTag(1002).data
+
+    def epoch(self):
+        epoch = self.header.getTag(1003)
+        if epoch is None:
+            return 0
+        return epoch.data[0]
 
     def arch(self):
         return self.header.getTag(1022).data
@@ -198,6 +215,53 @@ class RpmQuery(packagequery.PackageQuery):
         rpmq.read()
         f.close()
         return rpmq
+
+    @staticmethod
+    def rpmvercmp(ver1, ver2):
+        """
+        implementation of RPM's version comparison algorithm
+        (as described in rpmio/rpmvercmp.c)
+        """
+        if ver1 == ver2:
+            return 0
+        res = 0
+        while res == 0:
+            # remove all leading non alphanumeric chars
+            ver1 = re.sub('^[^a-zA-z0-9]*', '', ver1)
+            ver2 = re.sub('^[^a-zA-z0-9]*', '', ver2)
+            if not (len(ver1) and len(ver2)):
+                break
+            # check if we have a digits segment
+            mo1 = re.match('(\d+)', ver1)
+            mo2 = re.match('(\d+)', ver2)
+            numeric = True
+            if mo1 is None:
+                mo1 = re.match('([a-zA-Z]+)', ver1)
+                mo2 = re.match('([a-zA-Z]+)', ver2)
+                numeric = False
+            # check for different types: alpha and numeric
+            if mo2 is None:
+                if numeric:
+                    return 1
+                return -1
+            seg1 = mo1.group(0)
+            ver1 = ver1[mo1.end(0):]
+            seg2 = mo2.group(1)
+            ver2 = ver2[mo2.end(1):]
+            if numeric:
+                # remove leading zeros
+                seg1 = re.sub('^0+', '', seg1)
+                seg2 = re.sub('^0+', '', seg2)
+                # longer digit segment wins - if both have the same length
+                # a simple ascii compare decides
+                res = len(seg1) - len(seg2) or cmp(seg1, seg2)
+            else:
+                res = cmp(seg1, seg2)
+        if res > 0:
+            return 1
+        elif res < 0:
+            return -1
+        return cmp(ver1, ver2)
 
 def unpack_string(data):
     """unpack a '\\0' terminated string from data"""

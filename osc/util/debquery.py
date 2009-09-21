@@ -52,6 +52,10 @@ class DebQuery(packagequery.PackageQuery):
         # add self provides entry
         self.fields['provides'].append('%s = %s' % (self.name(), '-'.join(versrel)))
 
+    def vercmp(self, debq):
+        # XXX: just a dummy - the implementation will follow soon
+        return 0
+
     def name(self):
         return self.fields['package']
 
