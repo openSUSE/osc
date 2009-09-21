@@ -234,8 +234,8 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
         suffix = '*.deb'
     for dir in dirs:
         paths += glob.glob(os.path.join(os.path.abspath(dir), suffix))
-    prefer_pkgs = []
-    pkgqs = []
+    prefer_pkgs = {}
+    pkgqs = {}
     for path in paths:
         if path.endswith('src.rpm'):
             continue
@@ -247,15 +247,16 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
         # instead of thip assumption, we should probably rather take the
         # requested arch for this package from buildinfo
         # also, it will ignore i686 packages, how to handle those?
-        # XXX: if multiple versions of a package are encountered we have a
-        # kind of "unpredictable" behaviour: should we always take the newest version?
         if arch in [wanted_arch, 'noarch', 'all'] or wanted_arch in arch_map.get(arch, []):
-            prefer_pkgs.append((name, path))
-            pkgqs.append(pkgq)
-    depfile = create_deps(pkgqs)
+            curpkgq = pkgqs.get(name)
+            if curpkgq is not None and curpkgq.vercmp(pkgq) > 0:
+                continue
+            prefer_pkgs[name] = path
+            pkgqs[name] = pkgq
+    depfile = create_deps(pkgqs.values())
     cpio = cpio.CpioWrite()
     cpio.add('deps', '\n'.join(depfile))
-    return dict(prefer_pkgs), cpio
+    return prefer_pkgs, cpio
 
 
 def create_deps(pkgqs):
