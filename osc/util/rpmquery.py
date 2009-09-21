@@ -220,7 +220,7 @@ class RpmQuery(packagequery.PackageQuery):
     def rpmvercmp(ver1, ver2):
         """
         implementation of RPM's version comparison algorithm
-        (as described in rpmio/rpmvercmp.c)
+        (as described in lib/rpmvercmp.c)
         """
         if ver1 == ver2:
             return 0
