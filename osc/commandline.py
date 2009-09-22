@@ -1292,6 +1292,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             r = expected = r[1]
             print >>sys.stderr, 'Using existing branch project:', r, '\n'
 
+        devloc = None
         if r != expected:
             devloc = r
             if 'branches:' in r:
@@ -1319,7 +1320,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print 'A working copy of the branched package can be checked out with:\n\n' \
                   'osc %sco %s/%s' \
                       % (apiopt, r, package)
-
+        print_request_list(conf.config['apiurl'], args[0], args[1])
+        if devloc:
+            print_request_list(conf.config['apiurl'], devloc, args[1])
 
 
 

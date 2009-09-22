@@ -4273,6 +4273,6 @@ def print_request_list(apiurl, project, package = None, states = ('new', ), forc
     if package is None and len(requests):
         print msg % ('project', project, len(requests))
     elif len(requests):
-        print msg % ('package', package, len(requests))
+        print msg % ('package', '/'.join([project, package]), len(requests))
     for r in requests:
         print r.list_view()
