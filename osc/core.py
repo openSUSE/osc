@@ -3769,7 +3769,6 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
 
     predicate = build_xpath_predicate(search_list, search_term, exact_matches)
     u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus(''.join(predicate))])
-    if conf.config['verbose']: print '>>', unquote(u), '<<'
     f = http_GET(u)
     root = ET.parse(f).getroot()
     result = []
