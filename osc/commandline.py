@@ -633,7 +633,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 src_project, src_package, None, True)
             print rdiff
         else:
-            reqs = get_request_list(apiurl, dst_project, dst_package, 'submit')
+            reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
             user = conf.get_apiurl_usr(apiurl)
             myreqs = [ i for i in reqs if i.state.who == user ]
             repl = ''
