@@ -1,5 +1,12 @@
 
 0.123
+ - 'osc list' option -D now only limits non-'new' requests. In state 'new' all are shown.
+ - suggest 'osc list' --bugowner option. Not implemented.
+ - implemented 'osc ls .' to take proj/pack name from current directory.
+   * Incompatible change: 'osc ls' now defaults to 'osc ls .', 
+   * Use 'osc ls /' if you really want to list all projects.
+   * This is meant as a proof of concept. I intend to generalize this usage of '.'
+     for all osc commands. Feedback welcome.
 
 0.122
  - added missing code for 'osc sr -l [ID]'

@@ -1630,6 +1630,49 @@ def slash_split(l):
         r += i.split('/')
     return r
 
+def expand_proj_pack(args, idx=0, howmany=0):
+    """looks for occurance of '.' at the position idx.
+    If howmany is 2, both proj and pack are expanded together 
+    using the current directory, or none of them, if not possible.
+    If howmany is 0, proj is expanded if possible, then, if there
+    is no idx+1 element in args (or args[idx+1] == '.'), pack is also 
+    expanded, if possible.
+    If howmany is 1, only proj is expanded if possible.
+
+    If args[idx] does not exists, an implicit '.' is assumed.
+    if not enough elements up to idx exist, an error is raised.
+    """
+
+    # print args,idx,howmany
+
+    if len(args) < idx:
+        raise oscerr.WrongArgs('not enough argument, expected at least %d' % idx)
+        
+    if len(args) == idx:
+        args += '.'
+    if args[idx+0] == '.':
+        if howmany == 0 and len(args) > idx+1:
+            if args[idx+1] == '.':
+                # we have two dots.
+                # remove one dot and make sure to expand both proj and pack
+                args.pop(idx+1)
+                howmany = 2
+            else:
+                howmany = 1
+        # print args,idx,howmany
+
+        args[idx+0] = store_read_project('.')
+        if howmany == 0:
+            try:
+                package = store_read_package('.')
+                args.insert(idx+1, package)
+            except:
+                pass
+        elif howmany == 2:
+            package = store_read_package('.')
+            args.insert(idx+1, package)
+    return args
+
 
 def findpacs(files):
     """collect Package objects belonging to the given files
@@ -3551,7 +3594,7 @@ def store_read_package(dir):
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     except IOError:
-        msg = 'Error: \'%s\' is not an osc working copy' % os.path.abspath(dir)
+        msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg += '\nTry svn instead of osc.'
         raise oscerr.NoWorkingCopy(msg)

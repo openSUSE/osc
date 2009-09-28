@@ -178,7 +178,6 @@ class Osc(cmdln.Cmdln):
             init_package_dir(conf.config['apiurl'], project, package, os.path.curdir)
             print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
-
     @cmdln.alias('ls')
     @cmdln.alias('ll')
     @cmdln.alias('lL')
@@ -205,7 +204,12 @@ class Osc(cmdln.Cmdln):
         also required.
 
         Examples:
-           ls                         # list all projects
+           ls /                       # list all projects
+           ls .                       # take name package and/or project name from current 
+                                      # local directory, but list corresponding server contents
+           ls                         # same as 'ls .' if ./.osc/ exists; same as 'ls /' otherwise.
+           ls [-l] . package          # take only project name from local directory.
+
            ls Apache                  # list packages in a project
            ls -b Apache               # list all binaries of a project
            ls Apache apache2          # list source files of package of a project
@@ -226,6 +230,8 @@ class Osc(cmdln.Cmdln):
         """
 
         args = slash_split(args)
+        args = expand_proj_pack(args)
+        
         if subcmd == 'll':
             opts.verbose = True
         if subcmd == 'lL' or subcmd == 'LL':
@@ -743,14 +749,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new' otherwise
                         help='only list requests in one of the comma separated given states (new/accepted/revoked/declined) or "all" [default=new, or all, if no args given]')
     @cmdln.option('-D', '--days', metavar='DAYS',
-                        help='only list requests created or changed in the last DAYS. [default=%(request_list_days)s]')
+                        help='only list requests in state "new" or changed in the last DAYS. [default=%(request_list_days)s]')
     @cmdln.option('-U', '--user', metavar='USER',
                         help='same as -M, but for the specified USER')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
     @cmdln.option('-M', '--mine', action='store_true',
                         help='only show requests created by yourself')
+    @cmdln.option('-B', '--bugowner', action='store_true',
+                        help='also show requests about packages where I am bugowner')
     @cmdln.alias("rq")
+    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
@@ -791,7 +800,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         "checkout" will checkout the request's source package. This only works for "submit" requests.
 
         usage:
-            osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [PRJ [PKG]]
+            osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [-B] [PRJ [PKG]]
             osc request log ID
             osc request [show] [-d] [-b] ID
             osc request accept [-m TEXT] ID
@@ -883,6 +892,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.all:
                 state_list = ['all']
 
+            ## FIXME -B not implemented!
+            if opts.bugowner:
+                if (self.options.debug):
+                    print 'list: option --bugowner ignored: not impl.'
+
             results = get_request_list(apiurl,
                                        project, package, who, state_list, opts.type)
             results.sort(reverse=True)
@@ -900,11 +914,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             ## bs has received 2009-09-20 a new xquery compare() function
             ## which allows us to limit the list inside of get_request_list
             ## That would be much faster for coolo. But counting the remainder
-            ## is not possible with current xquery implementation.
+            ## would not be possible with current xquery implementation.
+            ## Workaround: fetch all, and filter on client side.
 
             ## FIXME: date filtering should become implemented on server side
             for result in results:
-                if days == 0 or result.state.when > since:
+                if days == 0 or result.state.when > since or result.state.name == 'new':
                     print result.list_view()
                 else:
                     skipped += 1
@@ -2987,7 +3002,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc my pkg         osc my [-a] [-U USER] packages
             osc my prj         osc my ... projects
-            osc my rq          osc my ... requests
+            osc my rq          osc my ... requests      (osc req list -a -B)
         ${cmd_option_list}
 
           'osc my' implements memonic shorthands for 
@@ -2999,10 +3014,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Please specify one of projects/packages/requests')
 
         if args[0] in ('requests', 'request', 'req', 'rq'):
+            ## FIXME: involvement bugowner is not reported here.
+            ## this only reports usernames found in request history.
             opts.state = 'all'
             opts.type = ''
             opts.days = conf.config['request_list_days']
             opts.mine = False
+            opts.bugowner = True
             args = ['list']
             if not opts.user: opts.mine = True
             return self.do_request('request', opts, *args)
