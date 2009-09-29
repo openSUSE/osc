@@ -45,7 +45,13 @@ class DebQuery(packagequery.PackageQuery):
             self.fields['version'] = versrel[0]
             self.fields['release'] = versrel[1]
         else:
-            self.fields['release'] = None
+            self.fields['release'] = '0'
+        verep = self.fields['version'].split(':', 1)
+        if len(verep) == 2:
+            self.fields['epoch'] = verep[0]
+            self.fields['version'] = verep[1]
+        else:
+            self.fields['epoch'] = '0'
         self.fields['provides'] = [ i.strip() for i in re.split(',\s*', self.fields.get('provides', '')) if i ]
         self.fields['depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('depends', '')) if i ]
         self.fields['pre_depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('pre_depends', '')) if i ]
@@ -53,8 +59,14 @@ class DebQuery(packagequery.PackageQuery):
         self.fields['provides'].append('%s = %s' % (self.name(), '-'.join(versrel)))
 
     def vercmp(self, debq):
-        # XXX: just a dummy - the implementation will follow soon
-        return 0
+        res = cmp(int(self.epoch()), int(debq.epoch()))
+        if res != 0:
+            return res
+        res = DebQuery.debvercmp(self.version(), debq.version())
+        if res != 0:
+            return res
+        res = DebQuery.debvercmp(self.release(), debq.release())
+        return res
 
     def name(self):
         return self.fields['package']
@@ -64,6 +76,9 @@ class DebQuery(packagequery.PackageQuery):
 
     def release(self):
         return self.fields['release']
+
+    def epoch(self):
+        return self.fields['epoch']
 
     def arch(self):
         return self.fields['architecture']
@@ -87,6 +102,40 @@ class DebQuery(packagequery.PackageQuery):
         debq.read()
         f.close()
         return debq
+
+    @staticmethod
+    def debvercmp(ver1, ver2):
+        """
+        implementation of dpkg's version comparison algorithm
+        """
+        # 32 is arbitrary - it is needed for the "longer digit string wins" handling
+        # (found this nice approach in Build/Deb.pm (build package))
+        ver1 = re.sub('(\d+)', lambda m: (32 * '0' + m.group(1))[-32:], ver1)
+        ver2 = re.sub('(\d+)', lambda m: (32 * '0' + m.group(1))[-32:], ver2)
+        vers = map(lambda x, y: (x or '', y or ''), ver1, ver2)
+        for v1, v2 in vers:
+            if v1 == v2:
+                continue
+            if (v1.isalpha() and v2.isalpha()) or (v1.isdigit() and v2.isdigit()):
+                res = cmp(v1, v2)
+                if res != 0:
+                    return res
+            else:
+                if v1 == '~' or not v1:
+                    return -1
+                elif v2 == '~' or not v2:
+                    return 1
+                ord1 = ord(v1)
+                if not (v1.isalpha() or v1.isdigit()):
+                    ord1 += 256
+                ord2 = ord(v2)
+                if not (v2.isalpha() or v2.isdigit()):
+                    ord2 += 256
+                if ord1 > ord2:
+                    return 1
+                else:
+                    return -1
+        return 0
 
 if __name__ == '__main__':
     import sys

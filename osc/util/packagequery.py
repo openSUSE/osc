@@ -18,6 +18,9 @@ class PackageQuery:
     def release(self):
         raise NotImplementedError
 
+    def epoch(self):
+        raise NotImplementedError
+
     def arch(self):
         raise NotImplementedError
 
