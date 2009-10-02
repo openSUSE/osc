@@ -1,5 +1,8 @@
-
 0.123
+ - IMPORTANT: ssl certificate checks are actually performed now to
+   prevent man-in-the-middle-attacks. python-m2crypto is needed to
+   make this work. Certificate checks can be turned off per server
+   via 'sslcertck = 0' in .oscrc.
  - 'osc list' option -D now only limits non-'new' requests. In state 'new' all are shown.
  - suggest 'osc list' --bugowner option. Not implemented.
  - implemented 'osc ls .' to take proj/pack name from current directory.

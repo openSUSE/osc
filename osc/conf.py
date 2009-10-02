@@ -35,6 +35,7 @@ The configuration dictionary could look like this:
 """
 import OscConfigParser
 from osc import oscerr
+from oschttps import NoSecureSSLError
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False
@@ -72,6 +73,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-memory' : '',# required for VM builds
              'build-swap' : '',  # optional for VM builds
 
+             'sslcertck': '1',
              'debug': '0',
              'http_debug': '0',
              'traceback': '0',
@@ -269,12 +271,50 @@ def get_apiurl_usr(apiurl):
             % (apiurl, config['user'])
         return config['user']
 
+
+def verify_cb(ok, store):
+    # XXX: this is not really smart. It only detects one error.
+    # Potentially in the chain which is not that useful to the user.
+    # We should do this after the ssl handshake.
+    if(not ok):
+        err = store.get_error()
+        cert = store.get_current_cert()
+        print "*** Certificate verify failed (depth=%s) ***" % store.get_error_depth() 
+        print "Subject:     ", cert.get_subject()
+        print "Issuer:      ", cert.get_issuer()
+        print "Fingerprint: ", cert.get_fingerprint()
+        print "Valid:       ", cert.get_not_before(), "-", cert.get_not_before()
+        try:
+            import M2Crypto.Err
+            reason = M2Crypto.Err.get_x509_verify_error(err)
+            print "Reason:      ", reason
+        except:
+            pass
+        while True:
+            r = raw_input("continue anyways (y/p/N)? ")
+            if r == 'y':
+                return 1
+            elif r == 'p':
+                print cert.as_text()
+            else:
+                break
+    return ok
+
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
 
     from osc.core import __version__
-    import os, urllib2
+    import os
     import cookielib
+
+    if config['api_host_options'][config['apiurl']]['sslcertck'] != '0':
+        try:
+            from M2Crypto import m2urllib2, SSL
+        except:
+            raise NoSecureSSLError("M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto." % config['apiurl'])
+
+    import urllib2
+
 
     global cookiejar
 
@@ -308,7 +348,24 @@ def init_basicauth(config):
             #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
             cookiejar = cookielib.CookieJar()
 
-    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+
+    if config['api_host_options'][config['apiurl']]['sslcertck'] != '0':
+        cafile = capath = None
+        if 'capath' in config['api_host_options'][config['apiurl']]:
+            capath = config['api_host_options'][config['apiurl']]['capath']
+        if 'cafile' in config['api_host_options'][config['apiurl']]:
+            cafile = config['api_host_options'][config['apiurl']]['cafile']
+        if not cafile and not capath:
+            capath = '/etc/ssl/certs'
+        ctx = SSL.Context('sslv3')
+        ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=verify_cb)
+        if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
+        opener = m2urllib2.build_opener(ctx, urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+    else:
+        import sys;
+        print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+
     urllib2.install_opener(opener)
 
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
@@ -565,8 +622,14 @@ def get_config(override_conffile = None,
         api_host_options[apiurl] = { 'user': user,
                                      'pass': password,
                                      'http_headers': http_headers}
-        if cp.has_option(url, 'email'):
-            api_host_options[apiurl]['email'] = cp.get(url, 'email')
+
+        optional = ('email', 'sslcertck', 'cafile', 'capath')
+        for key in optional:
+            if cp.has_option(url, key):
+                api_host_options[apiurl][key] = cp.get(url, key)
+
+        if not 'sslcertck' in api_host_options[apiurl]:
+                api_host_options[apiurl]['sslcertck'] = 1
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options

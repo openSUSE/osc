@@ -7,6 +7,14 @@ import sys
 import signal
 from osc import oscerr
 from urllib2 import URLError, HTTPError
+from oschttps import NoSecureSSLError
+try:
+    from M2Crypto.SSL.Checker import SSLVerificationError
+    from M2Crypto.SSL import SSLError as SSLError
+except:
+    SSLError = None
+    SSLVerificationError = None
+
 try:
     # import as RPMError because the class "error" is too generic
     from rpm import error as RPMError
@@ -135,6 +143,18 @@ def run(prg):
         return 1
     
     except RPMError, e:
+        print >>sys.stderr, e
+        return 1
+
+    except SSLError, e:
+        print >>sys.stderr, "SSL Error:", e
+        return 1
+
+    except SSLVerificationError, e:
+        print >>sys.stderr, "Certificate Verification Error:", e
+        return 1
+
+    except NoSecureSSLError, e:
         print >>sys.stderr, e
         return 1
 
