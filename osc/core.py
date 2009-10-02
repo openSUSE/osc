@@ -1845,11 +1845,14 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     if conf.config['debug']: print method, url
 
     old_timeout = socket.getdefaulttimeout()
-    socket.setdefaulttimeout(timeout)
+    # XXX: dirty hack as timeout doesn't work with python-m2crypto
+    if old_timeout != timeout and api_host_options['sslcertck'] == 0:
+        socket.setdefaulttimeout(timeout)
     try:
         fd = urllib2.urlopen(req, data=data)
     finally:
-        socket.setdefaulttimeout(old_timeout)
+        if old_timeout != timeout and api_host_options['sslcertck'] == 0:
+            socket.setdefaulttimeout(old_timeout)
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
 
