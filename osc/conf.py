@@ -73,7 +73,6 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-memory' : '',# required for VM builds
              'build-swap' : '',  # optional for VM builds
 
-             'sslcertck': '1',
              'debug': '0',
              'http_debug': '0',
              'traceback': '0',
@@ -307,7 +306,7 @@ def init_basicauth(config):
     import os
     import cookielib
 
-    if config['api_host_options'][config['apiurl']]['sslcertck'] != '0':
+    if config['api_host_options'][config['apiurl']]['sslcertck']:
         try:
             from M2Crypto import m2urllib2, SSL
         except:
@@ -349,7 +348,7 @@ def init_basicauth(config):
             cookiejar = cookielib.CookieJar()
 
 
-    if config['api_host_options'][config['apiurl']]['sslcertck'] != '0':
+    if config['api_host_options'][config['apiurl']]['sslcertck']:
         cafile = capath = None
         if 'capath' in config['api_host_options'][config['apiurl']]:
             capath = config['api_host_options'][config['apiurl']]['capath']
@@ -626,10 +625,13 @@ def get_config(override_conffile = None,
         optional = ('email', 'sslcertck', 'cafile', 'capath')
         for key in optional:
             if cp.has_option(url, key):
-                api_host_options[apiurl][key] = cp.get(url, key)
+                if key == 'sslcertck':
+                    api_host_options[apiurl][key] = cp.getboolean(url, key)
+                else:
+                    api_host_options[apiurl][key] = cp.get(url, key)
 
         if not 'sslcertck' in api_host_options[apiurl]:
-                api_host_options[apiurl]['sslcertck'] = 1
+            api_host_options[apiurl]['sslcertck'] = True
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
