@@ -83,7 +83,9 @@ class RpmQuery(packagequery.PackageQuery):
         data = self.__file.read(self.header.length)
         for i in self.header:
             if i.tag in tags or len(tags) == 0:
-                self.__read_data(i, data)
+                try: # this may fail for -debug* packages
+                    self.__read_data(i, data)
+                except: pass
 
     def __read_lead(self):
         data = self.__file.read(self.LEAD_SIZE)
