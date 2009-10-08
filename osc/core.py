@@ -1847,12 +1847,12 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
 
     old_timeout = socket.getdefaulttimeout()
     # XXX: dirty hack as timeout doesn't work with python-m2crypto
-    if old_timeout != timeout and api_host_options['sslcertck'] == 0:
+    if old_timeout != timeout and not api_host_options['sslcertck']:
         socket.setdefaulttimeout(timeout)
     try:
         fd = urllib2.urlopen(req, data=data)
     finally:
-        if old_timeout != timeout and api_host_options['sslcertck'] == 0:
+        if old_timeout != timeout and not api_host_options['sslcertck']:
             socket.setdefaulttimeout(old_timeout)
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
