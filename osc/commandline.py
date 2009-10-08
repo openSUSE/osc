@@ -3081,14 +3081,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc se ...
         ${cmd_option_list}
 
-        'osc se' is a shorthand for 'osc search -e'
-
         osc search does not find binary rpm names. Use 
         http://software.opensuse.org/search?q=binaryname
         """
 
-        if subcmd == 'se':
-            opts.exact = True
         if opts.mine:
             opts.bugowner = True
             opts.package = True
