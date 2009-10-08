@@ -2054,18 +2054,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('del')
     @cmdln.alias('remove')
     def do_delete(self, subcmd, opts, *args):
-        """${cmd_name}: Mark files or directories to be deleted upon the next 'checkin'
+        """${cmd_name}: Mark files or package directories to be deleted upon the next 'checkin'
 
         usage:
-            osc delete FILE/DIRECTORY [FILE/DIRECTORY...]
+            cd .../PROJECT/PACKAGE
+            osc delete FILE [...]
+            cd .../PROJECT
+            osc delete PACKAGE [...]
 
         This command works on check out copies. Use "rdelete" for working on server
         side only. This is needed for removing the entire project.
 
-        As a safety measure, package must be empty (i.e., you need to delete all
-        packages first). If you are sure that you want to remove a package and all
-        its files use \'--force\' switch.
-
+        As a safety measure, projects must be empty (i.e., you need to delete all
+        packages first). 
+        
+        If you are sure that you want to remove a package and all
+        its files use \'--force\' switch. Sometimes this also works without --force.
 
         ${cmd_option_list}
         """
