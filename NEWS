@@ -1,3 +1,8 @@
+- added 'osc req help' as convenience alias to 'osc help req'.
+- 'osc in' to be done. Its usage just prints a suggested zypper command line.
+- Incompatible change: osc se now prints Project Package, instead of Package Project
+  for easier copy&paste.
+
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to
    prevent man-in-the-middle-attacks. python-m2crypto is needed to

@@ -833,7 +833,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co']
+        cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
             if subcmd == 'req':
                 print >>sys.stderr, 'You may want to try "osc api" instead of "osc req".'
@@ -842,6 +842,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         cmd = args[0]
         del args[0]
+
+        if cmd == 'help':
+            return self.do_help(['help', 'request'])
 
         if cmd in ['wipe']:
             min_args, max_args = 1, 1
@@ -1528,6 +1531,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print rdiff
 
+    @cmdln.alias('in')
     def do_install(self, subcmd, opts, *args):
         """${cmd_name}: install a package after build via zypper in -r
 
@@ -1535,11 +1539,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         select the url you best like (standard), 
         chop off after the last /, this should work with zypper.
 
+
         ${cmd_usage}
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+        args = expand_proj_pack(args)
+	cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.1', args[1])
         print self.do_install.__doc__
+	print "Example: \n" + cmd
 
 
     def do_repourls(self, subcmd, opts, *args):
@@ -3017,11 +3026,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not args:
             raise oscerr.WrongArgs('Please specify one of projects/packages/requests')
 
-        if args[0] in ('requests', 'request', 'req', 'rq'):
+        if args[0] in ('requests', 'request', 'req', 'rq', 
+	               'submitrequest', 'submitreq', 'submit', 'sr'):
             ## FIXME: involvement bugowner is not reported here.
             ## this only reports usernames found in request history.
             opts.state = 'all'
             opts.type = ''
+	    if args[0] in ('submitrequest', 'submitreq', 'submit', 'sr'):
+	      opts.type = 'submit'
             opts.days = conf.config['request_list_days']
             opts.mine = False
             opts.bugowner = True
@@ -3149,14 +3161,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 result.sort()
             if kind in ['package']:
                 # hm... results is a flat list
+		## FIXME: this messes up with se -v .
                 l = [ (j, i) for i, j in zip(*[iter(result)]*2) ]
                 l.sort()
                 result = []
+		##
+		## search used to report the table as
+		## 'package project', I see no reason for having package before project.
+		## But it definitly hinders copy-paste. 
+		## Changed to more normal 'project package' ordering. 2009-10-05, jw
+		## 
                 for j, i in l:
-                    result.extend([i, j])
+                    result.extend([j, i])
 
             if kind == 'package':
-                headline = [ '# Package', '# Project' ]
+                headline = [ '# Project', '# Package' ]
             else:
                 headline = [ '# Project' ]
             if opts.verbose:

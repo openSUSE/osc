@@ -1642,6 +1642,9 @@ def expand_proj_pack(args, idx=0, howmany=0):
 
     If args[idx] does not exists, an implicit '.' is assumed.
     if not enough elements up to idx exist, an error is raised.
+
+    See also parseargs(args), slash_split(args), findpacs(args)
+    All these need unification, somehow.
     """
 
     # print args,idx,howmany
