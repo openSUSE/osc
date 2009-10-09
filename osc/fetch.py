@@ -22,7 +22,7 @@ def join_url(self, base_url, rel_url):
 
 
 class Fetcher:
-    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False, cookiejar = None):
+    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False, cookiejar = None, offline = False):
 
         __version__ = '0.1'
         __user_agent__ = 'osbuild/%s' % __version__
@@ -37,6 +37,7 @@ class Fetcher:
         self.cachedir = cachedir
         self.urllist = urllist
         self.http_debug = http_debug
+        self.offline = offline
 
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
@@ -65,6 +66,9 @@ class Fetcher:
     def fetch(self, pac):
         # for use by the failure callback
         self.curpac = pac
+
+	if self.offline:
+	    return True
 
         MirrorGroup._join_url = join_url
         mg = MirrorGroup(self.gr, pac.urllist)

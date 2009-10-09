@@ -452,6 +452,7 @@ def main(opts, argv):
     fetcher = Fetcher(cachedir = config['packagecachedir'], 
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
+                      offline = opts.noinit,
                       http_debug = config['http_debug'],
                       cookiejar=cookiejar)
 
