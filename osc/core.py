@@ -3274,7 +3274,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
         r.append(result_line_templ % rmap)
     return r
 
-def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None):
+def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None):
     #print '----------------------------------------'
 
     r = []
@@ -3296,6 +3296,11 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         pacs.append(node.get('package'))
     pacs.sort()
     for node in root.findall('result'):
+        # filter architecture and repository
+        if arch != None and arch != node.get('arch'):
+            continue
+        if repo != None and repo != node.get('repository'):
+            continue
         tg = (node.get('repository'), node.get('arch'))
         targets.append(tg)
         for pacnode in node.findall('status'):

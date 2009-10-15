@@ -2291,6 +2291,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show only packages with buildstatus STATUS (see legend)')
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
                         help='show only packages whose names match EXPR')
+    @cmdln.option('-a', '--arch', metavar='ARCH',
+                        help='show results only for specified architecture(s)')
+    @cmdln.option('-r', '--repo', metavar='REPO',
+                        help='show results only for specified repo(s)')
     @cmdln.option('-p', '--project', metavar='PROJECT',
                         help='show packages in project PROJECT')
     @cmdln.alias('pr')
@@ -2316,7 +2320,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
 
-        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter))
+        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch))
 
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
