@@ -1,8 +1,3 @@
-- added 'osc req help' as convenience alias to 'osc help req'.
-- 'osc in' to be done. Its usage just prints a suggested zypper command line.
-- Incompatible change: osc se now prints Project Package, instead of Package Project
-  for easier copy&paste.
-
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to
    prevent man-in-the-middle-attacks. python-m2crypto is needed to
@@ -15,6 +10,11 @@
    * Use 'osc ls /' if you really want to list all projects.
    * This is meant as a proof of concept. I intend to generalize this usage of '.'
      for all osc commands. Feedback welcome.
+ - added 'osc req help' as convenience alias to 'osc help req'.
+ - 'osc in' to be done. Its usage just prints a suggested zypper command line.
+ - Incompatible change: osc se now prints Project Package, instead of Package Project
+   for easier copy&paste.
+ - fix checkout of packages, which contain not committed files (but uploaded)
 
 0.122
  - added missing code for 'osc sr -l [ID]'
