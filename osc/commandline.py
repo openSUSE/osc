@@ -3743,6 +3743,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print 'fix the conflicts (files marked with \'C\' above),'
         print 'run \'osc resolved ...\', and commit the changes.'
 
+
     @cmdln.option('--create', action='store_true', default=False,
                   help='create new gpg signing key for this project')
     @cmdln.option('--delete', action='store_true', default=False,
@@ -3750,7 +3751,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_signkey(self, subcmd, opts, *args):
         """${cmd_name}: Manage Project Signing Key
 
-        osc key [--create] <PROJECT>
+        osc signkey [--create] <PROJECT>
 
         This command is for managing gpg keys. It shows the public key
         by default. There is no way to download or upload the private 
