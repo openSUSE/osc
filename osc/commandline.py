@@ -3751,7 +3751,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_signkey(self, subcmd, opts, *args):
         """${cmd_name}: Manage Project Signing Key
 
-        osc signkey [--create] <PROJECT>
+        osc signkey [--create|--delete] <PROJECT>
 
         This command is for managing gpg keys. It shows the public key
         by default. There is no way to download or upload the private 
@@ -3759,6 +3759,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         However you can create a new own key. You may want to consider
         to sign the public key with your own existing key.
+        *********************************
+        WARNING: THE OLD KEY WILL BE LOST
+        *********************************
 
         If a project has no key, the key from upper level project will
         be used (eg. when dropping "KDE:KDE4:Community" key, the one from
