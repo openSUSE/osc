@@ -3743,6 +3743,55 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print 'fix the conflicts (files marked with \'C\' above),'
         print 'run \'osc resolved ...\', and commit the changes.'
 
+    @cmdln.option('--create', action='store_true', default=False,
+                  help='create new gpg signing key for this project')
+    @cmdln.option('--delete', action='store_true', default=False,
+                  help='delete the gpg signing key in this project')
+    def do_signkey(self, subcmd, opts, *args):
+        """${cmd_name}: Manage Project Signing Key
+
+        osc key [--create] <PROJECT>
+
+        This command is for managing gpg keys. It shows the public key
+        by default. There is no way to download or upload the private 
+        part of a key by design.
+
+        However you can create a new own key. You may want to consider
+        to sign the public key with your own existing key.
+
+        If a project has no key, the key from upper level project will
+        be used (eg. when dropping "KDE:KDE4:Community" key, the one from
+        "KDE:KDE4" will be used).
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        apiurl = conf.config['apiurl']
+        f = None
+
+        if len(args) == 1:
+            prj = args[0]
+        else:
+            raise oscerr.WrongArgs('Please specify just the project')
+
+        if opts.create:
+           url = makeurl(apiurl, ['source', prj], query='cmd=createkey')
+           f = http_POST(url)
+        elif opts.delete:
+           url = makeurl(apiurl, ['source', prj, "_pubkey"])
+           f = http_DELETE(url)
+        else:
+           url = makeurl(apiurl, ['source', prj, "_pubkey"])
+           f = http_GET(url)
+
+        while 1:
+            buf = f.read(16384)
+            if not buf: break
+            print buf
+
+
+
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (not open an editor)')
     @cmdln.option('-e', '--just-edit', action='store_true', default=False,

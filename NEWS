@@ -15,6 +15,10 @@
  - Incompatible change: osc se now prints Project Package, instead of Package Project
    for easier copy&paste.
  - fix checkout of packages, which contain not committed files (but uploaded)
+ - add signing key management command (osc signkey)
+   * shows public part of project key
+   * allows (re)creation of a project key
+   * allows deletion of a project key
 
 0.122
  - added missing code for 'osc sr -l [ID]'
