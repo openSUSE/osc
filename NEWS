@@ -5,12 +5,7 @@
    via 'sslcertck = 0' in .oscrc.
  - 'osc list' option -D now only limits non-'new' requests. In state 'new' all are shown.
  - suggest 'osc list' --bugowner option. Not implemented.
- - implemented 'osc ls .' to take proj/pack name from current directory.
-   * Incompatible change: 'osc ls' now defaults to 'osc ls .', 
-   * Use 'osc ls /' if you really want to list all projects.
-   * This is meant as a proof of concept. I intend to generalize this usage of '.'
-     for all osc commands. Feedback welcome.
- - added 'osc req help' as convenience alias to 'osc help req'.
+ - added 'osc rq help' as convenience alias to 'osc help rq'.
  - 'osc in' to be done. Its usage just prints a suggested zypper command line.
  - Incompatible change: osc se now prints Project Package, instead of Package Project
    for easier copy&paste.

@@ -204,12 +204,7 @@ class Osc(cmdln.Cmdln):
         also required.
 
         Examples:
-           ls /                       # list all projects
-           ls .                       # take name package and/or project name from current 
-                                      # local directory, but list corresponding server contents
-           ls                         # same as 'ls .' if ./.osc/ exists; same as 'ls /' otherwise.
-           ls [-l] . package          # take only project name from local directory.
-
+           ls                         # list all projects
            ls Apache                  # list packages in a project
            ls -b Apache               # list all binaries of a project
            ls Apache apache2          # list source files of package of a project
@@ -230,8 +225,6 @@ class Osc(cmdln.Cmdln):
         """
 
         args = slash_split(args)
-        args = expand_proj_pack(args)
-        
         if subcmd == 'll':
             opts.verbose = True
         if subcmd == 'lL' or subcmd == 'LL':
