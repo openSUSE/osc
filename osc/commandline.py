@@ -759,7 +759,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-B', '--bugowner', action='store_true',
                         help='also show requests about packages where I am bugowner')
     @cmdln.alias("rq")
-    @cmdln.alias("req")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
@@ -820,10 +819,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('Sorry, the options --user and --mine ' \
                      'are mutually exclusive.')
 
-        # 'req' defaults to 'req list -M -s all'
-        if args and args[0].isdigit():
-            args = [ 'show', args[0] ]
-
         if not args:
             args = [ 'list' ]
             opts.mine = 1
@@ -835,8 +830,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
-            if subcmd == 'req':
-                print >>sys.stderr, 'You may want to try "osc api" instead of "osc req".'
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
 

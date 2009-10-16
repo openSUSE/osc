@@ -5,7 +5,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.122_SVN'
+__version__ = '0.123RC1'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -70,6 +70,11 @@ It also does some weird stuff.
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
+  <repository name="openSUSE_11.2">
+    <path project="openSUSE:11.2" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
   <repository name="openSUSE_11.1">
     <path project="openSUSE:11.1" repository="standard"/>
     <arch>x86_64</arch>
@@ -77,11 +82,6 @@ It also does some weird stuff.
   </repository>
   <repository name="openSUSE_11.0">
     <path project="openSUSE:11.0" repository="standard"/>
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="openSUSE_10.3">
-    <path project="openSUSE:10.3" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
