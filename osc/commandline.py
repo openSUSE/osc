@@ -1644,8 +1644,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 apiurl = Project(localdir).apiurl
 
         rev, dummy = parseRevisionOption(opts.revision)
+        if rev==None:
+           rev="latest"
 
-        if rev and not checkRevision(project, package, rev):
+        if rev and rev != "latest" and not checkRevision(project, package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
