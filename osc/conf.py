@@ -514,19 +514,6 @@ def get_config(override_conffile = None,
         raise oscerr.ConfigError(msg, conffile)
 
     config = dict(cp.items('general', raw=1))
-    config['apiurl'] = urljoin(*parse_apisrv_url(None, config['apiurl']))
-
-    # backward compatibility
-    if config.has_key('apisrv'):
-        apisrv = config['apisrv'].lstrip('http://')
-        apisrv = apisrv.lstrip('https://')
-        scheme = config.get('scheme', 'https')
-        config['apiurl'] = urljoin(scheme, apisrv)
-    if config.has_key('apisrv') or config.has_key('scheme'):
-        print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
-                            'Warning: See README for migration details.'
-    if config.has_key('build_platform') and not config.has_key('build_repository'):
-        config['build_repository'] = config['build_platform']
 
     for i in boolean_opts:
         try:
@@ -635,6 +622,20 @@ def get_config(override_conffile = None,
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
+
+    apiurl = aliases.get(config['apiurl'], config['apiurl'])
+    config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
+    # backward compatibility
+    if config.has_key('apisrv'):
+        apisrv = config['apisrv'].lstrip('http://')
+        apisrv = apisrv.lstrip('https://')
+        scheme = config.get('scheme', 'https')
+        config['apiurl'] = urljoin(scheme, apisrv)
+    if config.has_key('apisrv') or config.has_key('scheme'):
+        print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
+                            'Warning: See README for migration details.'
+    if config.has_key('build_platform') and not config.has_key('build_repository'):
+        config['build_repository'] = config['build_platform']
 
     # override values which we were called with
     if override_verbose:
