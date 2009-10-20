@@ -15,7 +15,7 @@
    * allows (re)creation of a project key
    * allows deletion of a project key
  - support 100% offline build when using "osc build --noinit ..."
-   -> buildinfo gets stored in local directory as .buildinfo.xml
+   -> buildinfo gets cached in local directory as .buildinfo.xml
 
 0.122
  - added missing code for 'osc sr -l [ID]'
