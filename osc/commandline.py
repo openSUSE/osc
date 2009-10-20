@@ -2601,27 +2601,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         arg_arch = arg_arch or osc.build.hostarch
 
-        repositories = get_repositories_of_project( \
-                store_read_apiurl('.'), \
-                opts.alternative_project or store_read_project('.'))
-        if not arg_repository:
+        if not opts.noinit:
+            repositories = get_repositories_of_project( \
+                    store_read_apiurl('.'), \
+                    opts.alternative_project or store_read_project('.'))
+            if not arg_repository:
 
-            if len(repositories) == 0:
-                arg_repository = conf.config['build_repository']
+                if len(repositories) == 0:
+                    arg_repository = conf.config['build_repository']
 
-            else:
+                else:
 
-                # Use a default value from config, but just even if it's available
-                # unless try standard, or openSUSE_Factory
-                for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
-                    if repository in repositories:
-                        arg_repository = repository
-                        break
+                    # Use a default value from config, but just even if it's available
+                    # unless try standard, or openSUSE_Factory
+                    for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
+                        if repository in repositories:
+                            arg_repository = repository
+                            break
 
-                arg_repository = arg_repository or repositories[len(repositories)-1]
+                    arg_repository = arg_repository or repositories[len(repositories)-1]
 
-        if not arg_repository in repositories:
-            raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ", ".join(repositories)))
+            if not arg_repository in repositories:
+                raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ", ".join(repositories)))
 
         # check for source services
         if os.listdir('.').count("_service"):

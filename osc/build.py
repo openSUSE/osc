@@ -369,19 +369,27 @@ def main(opts, argv):
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
 
-    print 'Getting buildinfo from server'
-    tempdir = '/tmp'
-    if sys.platform[:3] == 'win':
-        tempdir = os.getenv('TEMP')
-    bi_file = NamedTemporaryFile(suffix='.xml', prefix='buildinfo.', dir = tempdir)
+    bi_file_name = '.buildinfo.xml'
+    bi_file = None
     try:
-        bi_text = ''.join(get_buildinfo(apiurl,
-                                        prj,
-                                        pac,
-                                        repo,
-                                        arch,
-                                        specfile=build_descr_data,
-                                        addlist=extra_pkgs))
+        if opts.noinit:
+           if not os.path.isfile(bi_file_name):
+               print >>sys.stderr, '--noinit is not possible, no local build info file'
+               sys.exit(1)
+           print 'Use local .buildinfo.xml file as build description'
+           bi_file = open(bi_file_name, 'r')
+        else:
+           print 'Getting buildinfo from server and store to local directory as .buildinfo.xml'
+           bi_file = open(bi_file_name, 'w+')
+           bi_text = ''.join(get_buildinfo(apiurl,
+                                           prj,
+                                           pac,
+                                           repo,
+                                           arch,
+                                           specfile=build_descr_data,
+                                           addlist=extra_pkgs))
+           bi_file.write(bi_text)
+           bi_file.flush()
     except urllib2.HTTPError, e:
         if e.code == 404:
         # check what caused the 404
@@ -401,8 +409,6 @@ def main(opts, argv):
                 sys.exit(1)
         else:
             raise
-    bi_file.write(bi_text)
-    bi_file.flush()
 
     bi = Buildinfo(bi_file.name, apiurl, build_type, prefer_pkgs.keys())
     if bi.debuginfo and not opts.disable_debuginfo:
