@@ -30,7 +30,7 @@ change_personality = {
             's390':  's390',
         }
 
-can_also_build = { 
+can_also_build = {
              'armv4l': [                                         'armv4l'                                 ],
              'armv5el':[                                         'armv4l', 'armv5el'                      ],
              'armv6l' :[                                         'armv4l', 'armv5el'                      ],
@@ -83,7 +83,7 @@ class Buildinfo:
         self.buildarch = root.find('arch').text
         self.release = "0"
         if root.find('release') != None:
-           self.release = root.find('release').text
+            self.release = root.find('release').text
         self.downloadurl = root.get('downloadurl')
         self.debuginfo = 0
         if root.find('debuginfo') != None:
@@ -125,9 +125,9 @@ class Pac:
     def __init__(self, node, buildarch, pacsuffix, apiurl, localpkgs = []):
 
         self.mp = {}
-        for i in ['name', 'package', 
-                  'version', 'release', 
-                  'project', 'repository', 
+        for i in ['name', 'package',
+                  'version', 'release',
+                  'project', 'repository',
                   'preinstall', 'vminstall', 'noinstall', 'runscripts',
                  ]:
             self.mp[i] = node.get(i)
@@ -151,7 +151,7 @@ class Pac:
 
         if pacsuffix == 'deb' and not (self.mp['name'] and self.mp['arch'] and self.mp['version']):
             raise oscerr.APIError(
-                "buildinfo for package %s/%s/%s is incomplete" 
+                "buildinfo for package %s/%s/%s is incomplete"
                     % (self.mp['name'], self.mp['arch'], self.mp['version']))
 
         self.mp['apiurl'] = apiurl
@@ -186,7 +186,7 @@ class Pac:
         self.fullpartname = os.path.join(self.localdir, self.partname)
         self.url_local = 'file://%s/' % self.fullfilename
 
-        # first, add the local URL 
+        # first, add the local URL
         self.urllist.append(self.url_local)
 
         # remote URLs
@@ -203,21 +203,21 @@ class Pac:
 
 def get_built_files(pacdir, pactype):
     if pactype == 'rpm':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'), 
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'),
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'), 
+        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'),
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
     elif pactype == 'kiwi':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'), 
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
     else:
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'), 
+        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
     return s_built, b_built
@@ -338,7 +338,7 @@ def main(opts, argv):
         return 1
 
     # make it possible to override configuration of the rc file
-    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']: 
+    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
         val = os.getenv(var)
         if val:
             if var.startswith('OSC_'): var = var[4:]
@@ -373,23 +373,23 @@ def main(opts, argv):
     bi_file = None
     try:
         if opts.noinit:
-           if not os.path.isfile(bi_file_name):
-               print >>sys.stderr, '--noinit is not possible, no local build info file'
-               sys.exit(1)
-           print 'Use local .buildinfo.xml file as build description'
-           bi_file = open(bi_file_name, 'r')
+            if not os.path.isfile(bi_file_name):
+                print >>sys.stderr, '--noinit is not possible, no local build info file'
+                sys.exit(1)
+            print 'Use local .buildinfo.xml file as build description'
+            bi_file = open(bi_file_name, 'r')
         else:
-           print 'Getting buildinfo from server and store to local directory as .buildinfo.xml'
-           bi_file = open(bi_file_name, 'w+')
-           bi_text = ''.join(get_buildinfo(apiurl,
-                                           prj,
-                                           pac,
-                                           repo,
-                                           arch,
-                                           specfile=build_descr_data,
-                                           addlist=extra_pkgs))
-           bi_file.write(bi_text)
-           bi_file.flush()
+            print 'Getting buildinfo from server and store to local directory as .buildinfo.xml'
+            bi_file = open(bi_file_name, 'w+')
+            bi_text = ''.join(get_buildinfo(apiurl,
+                                            prj,
+                                            pac,
+                                            repo,
+                                            arch,
+                                            specfile=build_descr_data,
+                                            addlist=extra_pkgs))
+            bi_file.write(bi_text)
+            bi_file.flush()
     except urllib2.HTTPError, e:
         if e.code == 404:
         # check what caused the 404
@@ -415,7 +415,7 @@ def main(opts, argv):
         buildargs.append('--debug')
     buildargs = ' '.join(set(buildargs))
 
-    # real arch of this machine 
+    # real arch of this machine
     # vs.
     # arch we are supposed to build for
     if hostarch != bi.buildarch:
@@ -445,7 +445,7 @@ def main(opts, argv):
     # transform 'url1, url2, url3' form into a list
     if 'urllist' in config:
         if type(config['urllist']) == str:
-	    re_clist = re.compile('[, ]+')
+            re_clist = re.compile('[, ]+')
             urllist = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
         else:
             urllist = config['urllist']
@@ -455,7 +455,7 @@ def main(opts, argv):
         urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
     urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
-    fetcher = Fetcher(cachedir = config['packagecachedir'], 
+    fetcher = Fetcher(cachedir = config['packagecachedir'],
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
                       offline = opts.noinit,
@@ -535,18 +535,18 @@ def main(opts, argv):
 
     vm_options=""
     if config['build-device'] and config['build-memory'] and config['build-type']:
-       if config['build-type'] == "kvm":
-          vm_options="--kvm " + config['build-device']
-       elif config['build-type'] == "xen":
-          vm_options="--xen " + config['build-device']
-       else:
-          print "ERROR: unknown VM is set ! (" + config['build-type'] + ")"
-          sys.exit(1)
-       if config['build-swap']:
-          vm_options+=" --swap " + config['build-swap']
-       if config['build-memory']:
-          vm_options+=" --memory " + config['build-memory']
-    
+        if config['build-type'] == "kvm":
+            vm_options="--kvm " + config['build-device']
+        elif config['build-type'] == "xen":
+            vm_options="--xen " + config['build-device']
+        else:
+            print "ERROR: unknown VM is set ! (" + config['build-type'] + ")"
+            sys.exit(1)
+        if config['build-swap']:
+            vm_options+=" --swap " + config['build-swap']
+        if config['build-memory']:
+            vm_options+=" --memory " + config['build-memory']
+
     print 'Running build'
     # special handling for overlay and rsync-src/dest
     specialcmdopts = " "
@@ -583,13 +583,13 @@ def main(opts, argv):
     cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s --release=%s %s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
-                    rpmlist_file.name, 
-                    bc_file.name, 
+                    rpmlist_file.name,
+                    bc_file.name,
                     specialcmdopts,
                     bi.buildarch,
                     bi.release,
                     vm_options,
-                    build_descr, 
+                    build_descr,
                     buildargs)
 
     if config['su-wrapper'].startswith('su '):
@@ -603,7 +603,7 @@ def main(opts, argv):
         cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
 
     rc = subprocess.call(cmd, shell=True)
-    if rc: 
+    if rc:
         print
         print 'The buildroot was:', config['build-root']
         sys.exit(rc)
@@ -615,7 +615,7 @@ def main(opts, argv):
 
     if os.path.exists(pacdir):
         (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
-        
+
         print
         if s_built: print s_built
         print

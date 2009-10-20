@@ -8,7 +8,6 @@
 # 2008-03-25, jw, v0.3 -- go via api using iChains and ~/.oscrc
 # 2008-03-26, jw, v0.4 -- added linked file retrieval and usage.
 
-
 use Data::Dumper;
 use LWP::UserAgent;
 use HTTP::Status;
@@ -34,7 +33,7 @@ my $cfg = {
   @ISA = qw(LWP::UserAgent);
 
   sub new
-  { 
+  {
     my $self = LWP::UserAgent::new(@_);
     $self->agent("osc_expand_link.pl/$version");
     $self;
@@ -46,20 +45,20 @@ my $cfg = {
 
     unless ($self->{auth})
       {
-	print STDERR "Auth for $realm at $netloc\n";
-	unless (open IN, "<", "$ENV{HOME}/.oscrc")
-	  {
-	    print STDERR "$ENV{HOME}/.oscrc: $!\n";
-	    return (undef, undef);
-	  }
-	while (defined (my $line = <IN>))
-	  {
-	    chomp $line;
-	    $self->{auth}{pass} = $1 if $line =~ m{^pass\s*=\s*(\S+)};	
-	    $self->{auth}{user} = $1 if $line =~ m{^user\s*=\s*(\S+)};	
-	  }
-	close IN;
-	print STDERR "~/.oscrc: user=$self->{auth}{user}\n";
+        print STDERR "Auth for $realm at $netloc\n";
+        unless (open IN, "<", "$ENV{HOME}/.oscrc")
+          {
+            print STDERR "$ENV{HOME}/.oscrc: $!\n";
+            return (undef, undef);
+          }
+        while (defined (my $line = <IN>))
+          {
+            chomp $line;
+            $self->{auth}{pass} = $1 if $line =~ m{^pass\s*=\s*(\S+)};
+            $self->{auth}{user} = $1 if $line =~ m{^user\s*=\s*(\S+)};
+          }
+        close IN;
+        print STDERR "~/.oscrc: user=$self->{auth}{user}\n";
       }
     return ($self->{auth}{user},$self->{auth}{pass});
   }
@@ -99,7 +98,7 @@ if (my $url = $ARGV[0])
 
     die qq{osc_expand_link $version;
 
-Usage: 
+Usage:
 
  osc co $cfg->{project} $cfg->{package}
  cd $cfg->{project}/$cfg->{package}
@@ -127,30 +126,30 @@ to retrieve the original specfile behind a link.
     if ($url =~ m{^(.*/)?linked/(.*)$})
       {
         $url = (defined $1) ? $1 : "$cfg->{project}/$cfg->{package}";
-	my $file = $2;
+        my $file = $2;
         $url = "$source/$url" if $cfg->{apiurl} and $url !~ m{://};
-	print STDERR "$url\n";
+        print STDERR "$url\n";
         my $dir = xml_parse(cred_get($url), 'merge');
-	my $li = $dir->{directory}{linkinfo} || die "no linkinfo in $url\n";
-	$url = "$source/$li->{project}/$li->{package}";
-	mkdir("linked");
+        my $li = $dir->{directory}{linkinfo} || die "no linkinfo in $url\n";
+        $url = "$source/$li->{project}/$li->{package}";
+        mkdir("linked");
 
-	if ($file =~ m{\*})
-	  {
+        if ($file =~ m{\*})
+          {
             my $dir = xml_parse(cred_get($url), 'merge');
-	    $dir = $dir->{directory} if $dir->{directory};
-	    my @list = sort map { $_->{name} } @{$dir->{entry}};
-	    my $file_re = "\Q$file\E"; $file_re =~ s{\\\*}{\.\*}g;
-	    my @match = grep { $_ =~ m{^$file_re$} } @list;
-	    die "pattern $file not found in\n @list\n" unless @match;
-	    $file = $match[0];
-	  }
-	$url .= "/$file";
+            $dir = $dir->{directory} if $dir->{directory};
+            my @list = sort map { $_->{name} } @{$dir->{entry}};
+            my $file_re = "\Q$file\E"; $file_re =~ s{\\\*}{\.\*}g;
+            my @match = grep { $_ =~ m{^$file_re$} } @list;
+            die "pattern $file not found in\n @list\n" unless @match;
+            $file = $match[0];
+          }
+        $url .= "/$file";
 
-	print STDERR "$url -> linked/$file\n";
-	my $r = cred_getstore($url, "linked/$file");
+        print STDERR "$url -> linked/$file\n";
+        my $r = cred_getstore($url, "linked/$file");
         print STDERR " Error: $r\n" if $r != RC_OK;
-	exit 0;
+        exit 0;
       }
 
     $url = "$cfg->{project}/$cfg->{package}/$url" unless $url =~ m{/};
@@ -179,19 +178,19 @@ for my $file (@{$dir->{entry}})
     if (-f $file->{name})
       {
         ## check the md5sum of the existing file and be happy.
-	$md5 = Digest::MD5->new;
-	open IN, "<", $file->{name} or die "md5sum($file->{name} failed: $!";
-	$md5->addfile(*IN);
-	close IN;
-	if ($md5->hexdigest eq $file->{md5})
-	  {
-	    print STDERR " - $file->{name} (md5 unchanged)\n";
-	  }
-	else
-	  {
-	    print STDERR "Modified: $file->{name}, please commit changes!\n";
-	  }
-	next;
+        $md5 = Digest::MD5->new;
+        open IN, "<", $file->{name} or die "md5sum($file->{name} failed: $!";
+        $md5->addfile(*IN);
+        close IN;
+        if ($md5->hexdigest eq $file->{md5})
+          {
+            print STDERR " - $file->{name} (md5 unchanged)\n";
+          }
+        else
+          {
+            print STDERR "Modified: $file->{name}, please commit changes!\n";
+          }
+        next;
       }
     print STDERR " get $file->{name}";
     # fixme: xsrcmd5 is obsolete.
@@ -216,10 +215,10 @@ sub slurp_file
 ## xml parser imported from w3dcm.pl and somewhat expanded.
 ## 2006-12-15, jw
 ##
-## xml_parse assumes correct container closing. 
-## Any </...> tag would closes an open <foo>. 
+## xml_parse assumes correct container closing.
+## Any </...> tag would closes an open <foo>.
 ## Thus xml_parse is not suitable for HTML.
-## 
+##
 sub xml_parse
 {
   my ($text, $attr) = @_;
@@ -236,13 +235,13 @@ sub xml_parse
       my $s = $tags[$i]->{offset} + $tags[$i]->{tag_len};
       if (defined $tags[$i+1])
         {
-	  my $l = $tags[$i+1]->{offset} - $s;
-	  $cdata = substr $text, $s, $l;
-	}
+          my $l = $tags[$i+1]->{offset} - $s;
+          $cdata = substr $text, $s, $l;
+        }
       else
         {
-	  $cdata = substr $text, $s;
-	}
+          $cdata = substr $text, $s;
+        }
 
 #      print "tag=$tag\n";
       my $name = $1 if $tag =~ s{<([\?/]?[\w:-]+)\s*}{};
@@ -256,29 +255,29 @@ sub xml_parse
       xml_add_attr($x, $tag, $attr) unless $tag eq '';
 
       if (!$close)
-	{
-	  delete $t->{-cdata} if $t->{-cdata} and $t->{-cdata} =~ m{^\s*$};
-	  unless ($t->{$name})
-	    {
-	      $t->{$name} = $x;
-	    }
-	  else
-	    {
-	      $t->{$name} = [ $t->{$name} ] unless ref $t->{$name} eq 'ARRAY';
-	      push @{$t->{$name}}, $x;
-	    }
-	}
+        {
+          delete $t->{-cdata} if $t->{-cdata} and $t->{-cdata} =~ m{^\s*$};
+          unless ($t->{$name})
+            {
+              $t->{$name} = $x;
+            }
+          else
+            {
+              $t->{$name} = [ $t->{$name} ] unless ref $t->{$name} eq 'ARRAY';
+              push @{$t->{$name}}, $x;
+            }
+        }
 
 
       if ($close)
         {
-	  $t = pop @stack;
-	}
+          $t = pop @stack;
+        }
       elsif ($nest)
         {
-	  push @stack, $t;
-	  $t = $x;
-	}
+          push @stack, $t;
+          $t = $x;
+        }
     }
 
   print "stack=", Data::Dumper::Dumper(\@stack) if $verbose > 2;
@@ -305,7 +304,7 @@ sub xml_slurp_file
   $xml = xml_parse($xml, $opt->{attr});
   if (my $container = $opt->{container})
     {
-      die "xml_slurp($file, '$container') malformed file, should have only one toplevel node.\n" 
+      die "xml_slurp($file, '$container') malformed file, should have only one toplevel node.\n"
         unless scalar keys %$xml == 1;
       $container = (keys %$xml)[0] if $container eq '' or $container eq '*';
       die "xml_slurp($file, '$container') toplevel tag missing or wrong.\n" unless $xml->{$container};
@@ -360,28 +359,27 @@ sub scalar_cdata
       my $val = $hash->{$key};
       if (ref $val eq 'ARRAY')
         {
-	  for my $i (0..$#$val)
-	    {
+          for my $i (0..$#$val)
+            {
               scalar_cdata($hash->{$key}[$i]);
-	    }
-	}
+            }
+        }
       elsif (ref $val eq 'HASH')
         {
-	  my @k = keys %$val;
-	  if (scalar(@k) == 1 && ($k[0] eq '-cdata'))
-	    {
-	      $hash->{$key} = $hash->{$key}{-cdata};
-	    }
-	  else
-	    {
-	      delete $hash->{$key}{-cdata} if exists $val->{-cdata} && $val->{-cdata} =~ m{^\s*$};
+          my @k = keys %$val;
+          if (scalar(@k) == 1 && ($k[0] eq '-cdata'))
+            {
+              $hash->{$key} = $hash->{$key}{-cdata};
+            }
+          else
+            {
+              delete $hash->{$key}{-cdata} if exists $val->{-cdata} && $val->{-cdata} =~ m{^\s*$};
               scalar_cdata($hash->{$key});
-	    }
-	}
+            }
+        }
     }
   delete $hash->{$selftag};
 }
-
 
 ##
 ## find_tags -- a brute force tag finder.
@@ -389,7 +387,7 @@ sub scalar_cdata
 ## An Array containing hashes of { offset, name, tag_len } is returned.
 ## CDATA is skipped, but can be determined from gaps between tags.
 ## The name parser may chop names, so XML-style tag names are
-## unreliable. 
+## unreliable.
 ##
 sub find_tags
 {
@@ -405,39 +403,39 @@ sub find_tags
 
       if ($inquotes)
         {
-	  $inquotes = 0 if $what eq '"';
-	  next;
-	}
-      
+          $inquotes = 0 if $what eq '"';
+          next;
+        }
+
       if ($incomment)
         {
-	  $incomment = 0 if $what eq '-->';
-	  next;
-	}
-      
+          $incomment = 0 if $what eq '-->';
+          next;
+        }
+
       if ($what eq '"')
         {
-	  $inquotes = 1;
-	  next;
-	}
+          $inquotes = 1;
+          next;
+        }
 
       if ($what eq '<!--')
         {
-	  $incomment = 1;
-	  next;
-	}
+          $incomment = 1;
+          next;
+        }
 
-      next if $what eq $last;		# opening and closing angular brackets are polar.
+      next if $what eq $last;        # opening and closing angular brackets are polar.
 
       if ($what eq '>' and scalar @tags)
         {
-	  $tags[$#tags]{tag_len} = 1 + $offset - $tags[$#tags]{offset};
-	}
+          $tags[$#tags]{tag_len} = 1 + $offset - $tags[$#tags]{offset};
+        }
 
       if ($what eq '<')
         {
           push @tags, {name => $name, offset => $offset };
-	}
+        }
 
       $last = $what;
     }
@@ -447,7 +445,7 @@ sub find_tags
 ##
 ## how = undef:         defaults to '-attr plain'
 ## how = '-attr plain': add the attributes as one scalar value to hash-element -attr
-## how = '-attr hash':  add the attributes as a hash-ref to hash-element -attr 
+## how = '-attr hash':  add the attributes as a hash-ref to hash-element -attr
 ## how = 'merge':       add the attributes as direct hash elements. (This is irreversible)
 ##
 ## attributes are either space-separated, or delimited with '' or "".
@@ -470,22 +468,20 @@ sub xml_add_attr
     {
       while ($text =~ m{([\w_:-]+)\s*=("[^"]*"|'[^']'|\S*)\s*}g)
         {
-	  my ($key, $val) = ($1, $2);
-	  $val =~ s{^"(.*)"$}{$1} unless $val =~ s{^'(.*)'$}{$1};
-	  if (defined($hash->{$key}))
-	    {
-	      ## redefinition. promote to array and push.
-	      $hash->{$key} = [ $hash->{$key} ] unless ref $hash->{$key};
-	      push @{$hash->{$key}}, $val;
-	    }
-	  else
-	    {
-	      $hash->{$key} = $val;
-	    }
-	}
+          my ($key, $val) = ($1, $2);
+          $val =~ s{^"(.*)"$}{$1} unless $val =~ s{^'(.*)'$}{$1};
+          if (defined($hash->{$key}))
+            {
+              ## redefinition. promote to array and push.
+              $hash->{$key} = [ $hash->{$key} ] unless ref $hash->{$key};
+              push @{$hash->{$key}}, $val;
+            }
+          else
+            {
+              $hash->{$key} = $val;
+            }
+        }
       return $hash;
     }
   die "xml_expand_attr: unknown method '$how'\n";
 }
-
-#################################################################

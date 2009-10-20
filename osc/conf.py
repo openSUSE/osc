@@ -6,11 +6,11 @@
 """Read osc configuration and store it in a dictionary
 
 This module reads and parses ~/.oscrc. The resulting configuration is stored
-for later usage in a dictionary named 'config'. 
+for later usage in a dictionary named 'config'.
 The .oscrc is kept mode 0600, so that it is not publically readable.
-This gives no real security for storing passwords. 
+This gives no real security for storing passwords.
 If in doubt, use your favourite keyring.
-Password is stored on ~/.oscrc as bz2 compressed and base64 encoded, so that is fairly 
+Password is stored on ~/.oscrc as bz2 compressed and base64 encoded, so that is fairly
 large and not to be recognized or remembered easily by an occasional spectator.
 
 If information is missing, it asks the user questions.
@@ -45,18 +45,18 @@ try:
     GENERIC_KEYRING = True
 
 except:
-	try:
-	    import gobject
-	    gobject.set_application_name('osc')
-	    import gnomekeyring
-	    if os.environ['GNOME_DESKTOP_SESSION_ID']:
-	       # otherwise gnome keyring bindings spit out errors, when you have
-	       # it installed, but you are not under gnome
-	       # (even though hundreds of gnome-keyring daemons got started in parallel)
-	       # another option would be to support kwallet here
-	       GNOME_KEYRING = gnomekeyring.is_available()
-	except:
-            pass
+    try:
+        import gobject
+        gobject.set_application_name('osc')
+        import gnomekeyring
+        if os.environ['GNOME_DESKTOP_SESSION_ID']:
+            # otherwise gnome keyring bindings spit out errors, when you have
+            # it installed, but you are not under gnome
+            # (even though hundreds of gnome-keyring daemons got started in parallel)
+            # another option would be to support kwallet here
+            GNOME_KEYRING = gnomekeyring.is_available()
+    except:
+        pass
 
 DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
@@ -93,7 +93,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # local files to ignore with status, addremove, ....
              # local files to ignore with status, addremove, ....
              'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak',
-             # keep passwords in plaintext. If you see this comment, your osc 
+             # keep passwords in plaintext. If you see this comment, your osc
              # already uses the encrypted password, and only keeps them in plain text
              # for backwards compatibility. Default will change to 0 in future releases.
              'plaintext_passwd': '1',
@@ -278,7 +278,7 @@ def verify_cb(ok, store):
     if(not ok):
         err = store.get_error()
         cert = store.get_current_cert()
-        print "*** Certificate verify failed (depth=%s) ***" % store.get_error_depth() 
+        print "*** Certificate verify failed (depth=%s) ***" % store.get_error_depth()
         print "Subject:     ", cert.get_subject()
         print "Issuer:      ", cert.get_issuer()
         print "Fingerprint: ", cert.get_fingerprint()
@@ -337,7 +337,7 @@ def init_basicauth(config):
 
     cookie_file = os.path.expanduser(config['cookiejar'])
     cookiejar = cookielib.LWPCookieJar(cookie_file)
-    try: 
+    try:
         cookiejar.load(ignore_discard=True)
     except IOError:
         try:
@@ -361,7 +361,7 @@ def init_basicauth(config):
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
         opener = m2urllib2.build_opener(ctx, urllib2.HTTPCookieProcessor(cookiejar), authhandler)
     else:
-        import sys;
+        import sys
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
 
@@ -478,10 +478,10 @@ def add_section(filename, url, user, passwd):
     if file: file.close()
 
 
-def get_config(override_conffile = None, 
+def get_config(override_conffile = None,
                override_apiurl = None,
-               override_debug = None, 
-               override_http_debug = None, 
+               override_debug = None,
+               override_http_debug = None,
                override_traceback = None,
                override_post_mortem = None,
                override_no_keyring = None,
@@ -526,7 +526,7 @@ def get_config(override_conffile = None,
 
     re_clist = re.compile('[, ]+')
     config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i ]
-    if config['extra-pkgs'] == []: 
+    if config['extra-pkgs'] == []:
         config['extra-pkgs'] = None
 
     # collect the usernames, passwords and additional options for each api host
@@ -581,10 +581,10 @@ def get_config(override_conffile = None,
             passwordx    = cp.get(url, 'passx', raw=True) # especially on password!
             if password is None or password == 'your_password':
                 try:
-                    password = passwordx.decode('base64').decode('bz2');
+                    password = passwordx.decode('base64').decode('bz2')
                 except:
-                     print "%s: no credentials known" % url
-                     password = 'your_password'
+                    print "%s: no credentials known" % url
+                    password = 'your_password'
             else:
                 if not passwordx:
                     print "%s: rewriting from plain pass to encoded pass\n" % url
@@ -640,7 +640,8 @@ def get_config(override_conffile = None,
     # override values which we were called with
     if override_verbose:
         config['verbose'] = override_verbose + 1
-    if not config.has_key('verbose') : config['verbose'] = 1;
+    if not config.has_key('verbose'):
+        config['verbose'] = 1
 
     if override_debug:
         config['debug'] = override_debug

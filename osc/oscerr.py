@@ -17,15 +17,15 @@ class UserAbort(OscBaseError):
 
 class ConfigError(OscBaseError):
     """Exception raised when there is an error in the config file"""
-    def __init__(self, msg, file):
+    def __init__(self, msg, fname):
         OscBaseError.__init__(self)
         self.msg = msg
-        self.file = file
+        self.file = fname
 
 class ConfigMissingApiurl(ConfigError):
     """Exception raised when a apiurl does not exist in the config file"""
-    def __init__(self, msg, file, url):
-        ConfigError.__init__(self, msg, file)
+    def __init__(self, msg, fname, url):
+        ConfigError.__init__(self, msg, fname)
         self.url = url
 
 class APIError(OscBaseError):
@@ -60,7 +60,7 @@ class WorkingCopyWrongVersion(OscBaseError):
 
 class WorkingCopyOutdated(OscBaseError):
     """Exception raised when the working copy is outdated.
-    It takes a tuple with three arguments: path to wc, 
+    It takes a tuple with three arguments: path to wc,
     revision that it has, revision that it should have.
     """
     def __str__(self):
@@ -92,7 +92,7 @@ class SignalInterrupt(Exception):
 
 class PackageExists(PackageError):
     """
-    Exception raised when a local object already exists 
+    Exception raised when a local object already exists
     """
     def __init__(self, prj, pac, msg):
         PackageError.__init__(self, prj, pac)

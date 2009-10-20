@@ -1,14 +1,14 @@
 # Copyright 2009 Marcus Huewe <suse-tux@gmx.de>
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License version 2
 # as published by the Free Software Foundation;
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
@@ -231,13 +231,13 @@ class CpioWrite:
         c.append('\0' * (len(''.join(c)) % 4))
 
         c.append(content)
-    
+
         c = ''.join(c)
         if len(c) % 4:
             c += '\0' * (4 - len(c) % 4)
 
         self.cpio += c
-    
+
     def add_padding(self):
         if len(self.cpio) % 512:
             self.cpio += '\0' * (512 - len(self.cpio) % 512)

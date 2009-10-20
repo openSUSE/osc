@@ -15,7 +15,7 @@ if __name__ == '__main__':
     try:
 
         prof = hotshot.Profile(filename)
-        
+
         prof.runcall(commandline.main)
         print 'run complete. analyzing.'
         prof.close()

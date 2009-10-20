@@ -141,7 +141,7 @@ def run(prg):
     except AttributeError, e:
         print >>sys.stderr, e
         return 1
-    
+
     except RPMError, e:
         print >>sys.stderr, e
         return 1

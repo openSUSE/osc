@@ -542,11 +542,11 @@ class Osc(cmdln.Cmdln):
         src_update = None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
         if opts.cleanup:
-           src_update = "cleanup"
+            src_update = "cleanup"
         elif opts.no_cleanup:
-           src_update = "update"
+            src_update = "update"
         elif opts.no_update:
-           src_update = "noupdate"
+            src_update = "noupdate"
 
         args = slash_split(args)
 
@@ -616,15 +616,15 @@ Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                     % (dst_project, dst_package)
                 pass
 
-            if devloc \
-                  and dst_project != devloc \
-                  and src_project != devloc:
-                      print """\
+            if devloc and \
+               dst_project != devloc and \
+               src_project != devloc:
+                print """\
 Sorry, but a different project, %s, is defined as the place where development
 of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package)
-                      sys.exit(1)
+                sys.exit(1)
         if opts.diff:
             print 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
             rdiff = server_diff(apiurl,
@@ -681,7 +681,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = args[0]
         package = None
         if len(args) > 1:
-           package = args[1]
+            package = args[1]
 
         if not opts.message:
             opts.message = edit_message()
@@ -717,7 +717,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         package = args[1]
         devel_package = package
         if len(args) > 3:
-           devel_package = args[3]
+            devel_package = args[3]
 
         if not opts.message:
             opts.message = edit_message()
@@ -892,7 +892,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             import time
             days = opts.days or conf.config['request_list_days']
             since = ''
-            try: 
+            try:
                 days = int(days)
             except ValueError:
                 days = 0
@@ -1036,9 +1036,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for p in packages:
             print "setting revision for package", p
             if opts.unset:
-               rev=-1
+                rev=-1
             else:
-               rev, dummy = parseRevisionOption(opts.revision)
+                rev, dummy = parseRevisionOption(opts.revision)
             set_link_rev(apiurl, project, p, rev)
 
 
@@ -1092,7 +1092,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if opts.current:
-            rev = show_upstream_rev(conf.config['apiurl'], src_project, src_package);
+            rev = show_upstream_rev(conf.config['apiurl'], src_project, src_package)
 
         if rev and not checkRevision(src_project, src_package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
@@ -1207,7 +1207,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if src_project == dst_project and \
            src_package == dst_package and \
            src_apiurl == dst_apiurl:
-                raise oscerr.WrongArgs('Source and destination are the same.')
+            raise oscerr.WrongArgs('Source and destination are the same.')
 
         if src_apiurl != dst_apiurl:
             opts.client_side_copy = True
@@ -1218,7 +1218,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             comment = opts.message
         else:
             if not rev:
-                rev = show_upstream_rev(src_apiurl, src_project, src_package);
+                rev = show_upstream_rev(src_apiurl, src_project, src_package)
             comment = 'osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
 
         r = copy_pac(src_apiurl, src_project, src_package,
@@ -1256,7 +1256,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             home:USERNAME:branches:PROJECT/PACKAGE
         if nothing else specified.
 
-        With getpac or bco, the branched package will come from 
+        With getpac or bco, the branched package will come from
             %(getpac_default_project)s
         if nothing else specified.
 
@@ -1286,8 +1286,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             tpackage = args[3]
 
         r = branch_pkg(conf.config['apiurl'], args[0], args[1],
-                           nodevelproject=opts.nodevelproject, rev=opts.revision, 
-                           target_project=tproject, target_package=tpackage, 
+                           nodevelproject=opts.nodevelproject, rev=opts.revision,
+                           target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout)
 
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
@@ -1311,7 +1311,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         package = args[1]
         if tpackage:
-           package = tpackage
+            package = tpackage
         if opts.checkout:
             checkout_package(conf.config['apiurl'], r, package,
                              expand_link=True, prj_dir=r)
@@ -1353,11 +1353,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pkgs = args[1:]
 
         if pkgs:
-           for pkg in pkgs:
+            for pkg in pkgs:
                # careful: if pkg is an empty string, the package delete request results
                # into a project delete request - which works recursively...
-               if pkg:
-                   delete_package(conf.config['apiurl'], prj, pkg)
+                if pkg:
+                    delete_package(conf.config['apiurl'], prj, pkg)
         elif len(meta_get_packagelist(conf.config['apiurl'], prj)) >= 1 and not opts.force:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
@@ -1521,8 +1521,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_install(self, subcmd, opts, *args):
         """${cmd_name}: install a package after build via zypper in -r
 
-        Not implemented yet. Use osc repourls, 
-        select the url you best like (standard), 
+        Not implemented yet. Use osc repourls,
+        select the url you best like (standard),
         chop off after the last /, this should work with zypper.
 
 
@@ -1532,9 +1532,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         args = expand_proj_pack(args)
-	cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.1', args[1])
+        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.1', args[1])
         print self.do_install.__doc__
-	print "Example: \n" + cmd
+        print "Example: \n" + cmd
 
 
     def do_repourls(self, subcmd, opts, *args):
@@ -1631,7 +1631,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         rev, dummy = parseRevisionOption(opts.revision)
         if rev==None:
-           rev="latest"
+            rev="latest"
 
         if rev and rev != "latest" and not checkRevision(project, package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
@@ -1827,7 +1827,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     continue
                 # ignore foo.rXX, foo.mine for files which are in 'C' state
                 if os.path.splitext(filename)[0] in p.in_conflict:
-                     continue
+                    continue
                 state = p.status(filename)
 
                 if state == '?':
@@ -2063,8 +2063,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         side only. This is needed for removing the entire project.
 
         As a safety measure, projects must be empty (i.e., you need to delete all
-        packages first). 
-        
+        packages first).
+
         If you are sure that you want to remove a package and all
         its files use \'--force\' switch. Sometimes this also works without --force.
 
@@ -2098,11 +2098,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not p.todo:
                 prj_dir, pac_dir = getPrjPacPaths(p.absdir)
                 if is_project_dir(prj_dir):
-                   if conf.config['do_package_tracking']:
-                       prj = Project(prj_dir, False)
-                       prj.delPackage(p, opts.force)
-                   else:
-                       print "WARNING: package tracking is disabled, operation skipped !"
+                    if conf.config['do_package_tracking']:
+                        prj = Project(prj_dir, False)
+                        prj.delPackage(p, opts.force)
+                    else:
+                        print "WARNING: package tracking is disabled, operation skipped !"
             else:
                 pathn = getTransActPath(p.dir)
                 for filename in p.todo:
@@ -2483,9 +2483,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Delete old build root before initializing it')
     @cmdln.option('--no-changelog', action='store_true',
                   help='don\'t update the package changelog from a changes file')
-    @cmdln.option('--rsync-src', metavar='RSYNCSRCPATH', dest='rsyncsrc', 
+    @cmdln.option('--rsync-src', metavar='RSYNCSRCPATH', dest='rsyncsrc',
                   help='Copy folder to buildroot after installing all RPMs. Use together with --rsync-dest. This is the path on the HOST filesystem e.g. /tmp/linux-kernel-tree. It defines RSYNCDONE 1 .')
-    @cmdln.option('--rsync-dest', metavar='RSYNCDESTPATH', dest='rsyncdest', 
+    @cmdln.option('--rsync-dest', metavar='RSYNCDESTPATH', dest='rsyncdest',
                   help='Copy folder to buildroot after installing all RPMs. Use together with --rsync-src. This is the path on the TARGET filesystem e.g. /usr/src/packages/BUILD/linux-2.6 .')
     @cmdln.option('--overlay', metavar='OVERLAY',
                   help='Copy overlay filesystem to buildroot after installing all RPMs .')
@@ -2678,20 +2678,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         if len(args) == 4:
-           apiurl = conf.config['apiurl']
-           project = args[0]
-           package = args[1]
-           repository = args[2]
-           arch = args[3]
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            repository = args[2]
+            arch = args[3]
         elif len(args) == 2:
-           wd = os.curdir
-           package = store_read_package(wd)
-           project = store_read_project(wd)
-           repository = args[0]
-           arch = args[1]
-           apiurl = store_read_apiurl(wd)
+            wd = os.curdir
+            package = store_read_package(wd)
+            project = store_read_project(wd)
+            repository = args[0]
+            arch = args[1]
+            apiurl = store_read_apiurl(wd)
         else:
-           raise oscerr.WrongArgs('Wrong number of arguments')
+            raise oscerr.WrongArgs('Wrong number of arguments')
 
         format = 'text'
         if opts.csv:
@@ -2951,14 +2951,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             architecture = args[3]
         elif len(args) == 2:
             if is_package_dir(os.getcwd()):
-               project = Project(os.getcwd()).name
-               p = Package(os.getcwd())
-               package = p.name
-               apiurl  = p.apiurl
-               repository   = args[0]
-               architecture = args[1]
+                project = Project(os.getcwd()).name
+                p = Package(os.getcwd())
+                package = p.name
+                apiurl  = p.apiurl
+                repository   = args[0]
+                architecture = args[1]
             else:
-               sys.exit('Local directory is no checkout package, neither it is specified. ' )
+                sys.exit('Local directory is no checkout package, neither it is specified. ' )
         else:
             sys.exit('Need either 2 or 4 arguments.' )
 
@@ -3011,7 +3011,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc my rq          osc my ... requests      (osc req list -a -B)
         ${cmd_option_list}
 
-          'osc my' implements memonic shorthands for 
+          'osc my' implements memonic shorthands for
           specific 'osc search' and 'osc req list' commands.
           See there for additional help.
         """
@@ -3019,14 +3019,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not args:
             raise oscerr.WrongArgs('Please specify one of projects/packages/requests')
 
-        if args[0] in ('requests', 'request', 'req', 'rq', 
-	               'submitrequest', 'submitreq', 'submit', 'sr'):
+        if args[0] in ('requests', 'request', 'req', 'rq', 'submitrequest', 'submitreq', 'submit', 'sr'):
             ## FIXME: involvement bugowner is not reported here.
             ## this only reports usernames found in request history.
             opts.state = 'all'
             opts.type = ''
-	    if args[0] in ('submitrequest', 'submitreq', 'submit', 'sr'):
-	      opts.type = 'submit'
+            if args[0] in ('submitrequest', 'submitreq', 'submit', 'sr'):
+                opts.type = 'submit'
             opts.days = conf.config['request_list_days']
             opts.mine = False
             opts.bugowner = True
@@ -3090,14 +3089,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc se ...
         ${cmd_option_list}
 
-        osc search does not find binary rpm names. Use 
+        osc search does not find binary rpm names. Use
         http://software.opensuse.org/search?q=binaryname
         """
 
         if opts.mine:
             opts.bugowner = True
             opts.package = True
-            
+
         for_user = False
         if opts.involved or opts.bugowner or opts.maintainer:
             for_user = True
@@ -3161,9 +3160,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 		##
 		## search used to report the table as
 		## 'package project', I see no reason for having package before project.
-		## But it definitly hinders copy-paste. 
+		## But it definitly hinders copy-paste.
 		## Changed to more normal 'project package' ordering. 2009-10-05, jw
-		## 
+		##
                 for j, i in l:
                     result.extend([j, i])
 
@@ -3422,17 +3421,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             m = show_package_meta(conf.config['apiurl'], prj, pac)
             tree = ET.parse(StringIO(''.join(m)))
             if not opts.nodevelproject and not opts.delete and not opts.add:
-               while tree.findall('devel'):
-                  d = tree.find('devel')
-                  prj = d.get('project', prj)
-                  pac = d.get('package', pac)
-                  print "Following to the development space:", prj, "/", pac
-                  m = show_package_meta(conf.config['apiurl'], prj, pac)
-                  tree = ET.parse(StringIO(''.join(m)))
-               if not tree.findall('person'):
-                  print "No dedicated persons in package defined, showing the project persons !"
-                  m = show_project_meta(conf.config['apiurl'], prj)
-                  tree = ET.parse(StringIO(''.join(m)))
+                while tree.findall('devel'):
+                    d = tree.find('devel')
+                    prj = d.get('project', prj)
+                    pac = d.get('package', pac)
+                    print "Following to the development space:", prj, "/", pac
+                    m = show_package_meta(conf.config['apiurl'], prj, pac)
+                    tree = ET.parse(StringIO(''.join(m)))
+                if not tree.findall('person'):
+                    print "No dedicated persons in package defined, showing the project persons !"
+                    m = show_project_meta(conf.config['apiurl'], prj)
+                    tree = ET.parse(StringIO(''.join(m)))
         else:
             raise oscerr.WrongArgs('I need at least one argument.')
 
@@ -3451,7 +3450,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print role, ":"
                 for person in tree.findall('person'):
                     if person.get('role') == role:
-                       maintainers.append(person.get('userid'))
+                        maintainers.append(person.get('userid'))
 
                 if opts.email:
                     emails = []
@@ -3492,12 +3491,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 1 and (args[0].startswith('http://') or
                                args[0].startswith('https://')):
-           opts.method = 'GET'
-           opts.headers = None
-           opts.data = None
-           opts.file = None
-           return self.do_api('list', opts, *args)
-            
+            opts.method = 'GET'
+            opts.headers = None
+            opts.data = None
+            opts.file = None
+            return self.do_api('list', opts, *args)
+
 
 
         args = slash_split(args)
@@ -3533,7 +3532,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         This command checks out a package with merged source changes. It uses
         a 3-way merge to resolve file conflicts. After reviewing/repairing
-        the merge, use 'osc resolved ...' and 'osc ci' to re-create a 
+        the merge, use 'osc resolved ...' and 'osc ci' to re-create a
         working source link.
 
         usage:
@@ -3555,7 +3554,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = target_package = args[1]
             target_prj = args[2]
             if len(args) == 4:
-               target_package = args[3]
+                target_package = args[3]
         elif len(args) == 2:
             target_prj = prj = args[0]
             target_package = package = args[1]
@@ -3656,8 +3655,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         os.chdir(destdir)
         init_package_dir(apiurl, target_prj, target_package, destdir, files=False)
         os.chdir(olddir)
-        store_write_string(destdir, '_files', ''.join(meta));
-        store_write_string(destdir, '_linkrepair', '');
+        store_write_string(destdir, '_files', ''.join(meta))
+        store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)
 
         storedir = os.path.join(destdir, store)
@@ -3741,7 +3740,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         osc signkey [--create|--delete] <PROJECT>
 
         This command is for managing gpg keys. It shows the public key
-        by default. There is no way to download or upload the private 
+        by default. There is no way to download or upload the private
         part of a key by design.
 
         However you can create a new own key. You may want to consider
@@ -3768,14 +3767,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Please specify just the project')
 
         if opts.create:
-           url = makeurl(apiurl, ['source', prj], query='cmd=createkey')
-           f = http_POST(url)
+            url = makeurl(apiurl, ['source', prj], query='cmd=createkey')
+            f = http_POST(url)
         elif opts.delete:
-           url = makeurl(apiurl, ['source', prj, "_pubkey"])
-           f = http_DELETE(url)
+            url = makeurl(apiurl, ['source', prj, "_pubkey"])
+            f = http_DELETE(url)
         else:
-           url = makeurl(apiurl, ['source', prj, "_pubkey"])
-           f = http_GET(url)
+            url = makeurl(apiurl, ['source', prj, "_pubkey"])
+            f = http_GET(url)
 
         while 1:
             buf = f.read(16384)

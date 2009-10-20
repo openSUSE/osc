@@ -13,7 +13,7 @@ from osc import commandline
 chdir = os.chdir
 mkdir = os.mkdir
 
-# here, all tests will happen... 
+# here, all tests will happen...
 BASEDIR = os.path.join(os.getcwd(), 't')
 
 PRJ = 'home:poeml'
@@ -41,7 +41,7 @@ def checkout_and_clean(self):
 
 
 class TestOsc(unittest.TestCase):
-    
+
     def setUp(self):
 
         if not os.path.isabs(BASEDIR):
@@ -221,7 +221,7 @@ class TestOsc(unittest.TestCase):
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, 'M    foo\n')
 
-        # from wc1, commit a change 
+        # from wc1, commit a change
         chdir(wc1)
         open('foo', 'a').write("""geht aus""")
         runosc('ci')
@@ -236,15 +236,15 @@ class TestOsc(unittest.TestCase):
         self.assertEqual(self.err, '')
         self.assertEqual(self.out, 'M    foo\n')
 
-        # successful merge is one thing, but checking the local modification 
+        # successful merge is one thing, but checking the local modification
         # makes sure that the store copy has been updated to the upstream revision
         self.out, self.err = runosc('diff')
         self.assertEqual(self.err, '')
         expected = dedent("""\
             Index: foo
             ===================================================================
-            --- foo     (revision XX) 
-            +++ foo     (working copy) 
+            --- foo     (revision XX)
+            +++ foo     (working copy)
             @@ -1,4 +1,4 @@
             -ein
             +kein
@@ -342,7 +342,7 @@ Committed revision XX.
         self.out, self.err = runosc('ci -m msg')
         self.assertEqual(self.err, '')
         self.assertEqual(remove_revid(self.out), """Deleting    foo1
-Transmitting file data 
+Transmitting file data
 Committed revision XX.
 """)
 
@@ -472,7 +472,7 @@ def runcmd(cmd, argstring):
 
 
 def touch(filename):
-    open(filename, 'w').close();
+    open(filename, 'w').close()
 
 
 if __name__ == '__main__':

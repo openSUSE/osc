@@ -101,7 +101,7 @@ It also does some weird stuff.
     <arch>i586</arch>
   </repository>
 -->
- 
+
 </project>
 """
 
@@ -111,8 +111,8 @@ new_package_templ = """\
   <title>Title of New Package</title>
 
   <description>
-LONG DESCRIPTION 
-GOES 
+LONG DESCRIPTION
+GOES
 HERE
   </description>
 
@@ -120,11 +120,11 @@ HERE
   <person role="bugowner" userid="%(user)s"/>
   <url>PUT_UPSTREAM_URL_HERE</url>
 
-<!-- 
-  use one of the examples below to disable building of this package 
-  on a certain architecture, in a certain repository, 
+<!--
+  use one of the examples below to disable building of this package
+  on a certain architecture, in a certain repository,
   or a combination thereof:
-  
+
   <disable arch="x86_64"/>
   <disable repository="SUSE_SLE-10"/>
   <disable repository="SUSE_SLE-10" arch="x86_64"/>
@@ -138,10 +138,10 @@ HERE
   </publish>
   <useforbuild>
   </useforbuild>
-  
-  Please have a look at: 
+
+  Please have a look at:
   http://en.opensuse.org/Restricted_Formats
-  Packages containing formats listed there are NOT allowed to 
+  Packages containing formats listed there are NOT allowed to
   be packaged in the openSUSE Buildservice and will be deleted!
 
 -->
@@ -193,10 +193,10 @@ buildstatus_symbols = {'succeeded':       '.',
 
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
-  try:
-      return os.path.samefile(path1, path2)
-  except:
-      return os.path.realpath(path1) == os.path.realpath(path2)
+    try:
+        return os.path.samefile(path1, path2)
+    except:
+        return os.path.realpath(path1) == os.path.realpath(path2)
 
 class File:
     """represent a file, including its metadata"""
@@ -229,9 +229,9 @@ class Serviceinfo:
             name = service.get('name')
             try:
                 for param in service.findall('param'):
-                   option = param.get('name', None)
-                   value = param.text
-                   name += " --" + option + " '" + value + "'"
+                    option = param.get('name', None)
+                    value = param.text
+                    name += " --" + option + " '" + value + "'"
                 self.commands.append(name)
             except:
                 msg = 'invalid service format:\n%s' % ET.tostring(root)
@@ -244,16 +244,16 @@ class Serviceinfo:
             temp_dir = tempfile.mkdtemp()
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
-               msg =  "ERROR: service is not installed !"
-               msg += "Can maybe solved with: zypper in obs-server-" + name
-               raise oscerr.APIError(msg)
+                msg =  "ERROR: service is not installed !"
+                msg += "Can maybe solved with: zypper in obs-server-" + name
+                raise oscerr.APIError(msg)
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             ret = subprocess.call(c, shell=True)
             if ret != 0:
-               print "ERROR: service call failed: " + c
+                print "ERROR: service call failed: " + c
 
             for file in os.listdir(temp_dir):
-               os.rename( os.path.join(temp_dir, file), os.path.join(dir, "_service:"+name+":"+file) )
+                os.rename( os.path.join(temp_dir, file), os.path.join(dir, "_service:"+name+":"+file) )
             os.rmdir(temp_dir)
 
 class Linkinfo:
@@ -332,7 +332,7 @@ class Project:
             self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
         else:
             self.pacs_available = []
-        
+
         if conf.config['do_package_tracking']:
             self.pac_root = self.read_packages().getroot()
             self.pacs_have = [ pac.get('name') for pac in self.pac_root.findall('package') ]
@@ -442,7 +442,7 @@ class Project:
                 if filestate == 'M' or filestate == 'C' or \
                    filestate == 'A' or filestate == '?':
                     can_delete = False
-                else:    
+                else:
                     del_files.append(file)
             if can_delete or force:
                 for file in del_files:
@@ -511,7 +511,7 @@ class Project:
                             rev = p.linkinfo.lsrcmd5
                             print 'Unexpanding to rev', rev
                         elif p.islink() and p.isexpanded():
-                            rev = p.latest_rev();
+                            rev = p.latest_rev()
                         print 'Updating %s' % p.name
                         p.update(rev, service_files)
                     elif state == 'D':
@@ -635,7 +635,7 @@ class Project:
             pac_path = '.'
         else:
             pac_path = os.path.join(self.dir, pac)
- 
+
         project = store_read_project(pac_path)
         package = store_read_package(pac_path)
         apiurl = store_read_apiurl(pac_path)
@@ -689,7 +689,7 @@ class Package:
         self.todo_delete = []
 
     def info(self):
-        source_url = makeurl(self.apiurl, ['source', self.prjname, self.name]) 
+        source_url = makeurl(self.apiurl, ['source', self.prjname, self.name])
         r = info_templ % (self.prjname, self.name, self.absdir, self.apiurl, source_url, self.srcmd5, self.rev, self.linkinfo)
         return r
 
@@ -698,7 +698,7 @@ class Package:
         f = File(n, None, st.st_size, st.st_mtime)
         self.filelist.append(f)
         self.filenamelist.append(n)
-        self.filenamelist_unvers.remove(n) 
+        self.filenamelist_unvers.remove(n)
         shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def delete_file(self, n, force=False):
@@ -749,7 +749,7 @@ class Package:
                 os.unlink(upfilename)
                 if self.islinkrepair():
                     os.unlink(os.path.join(self.dir, n + '.old'))
-            except: 
+            except:
                 pass
 
             self.in_conflict.remove(n)
@@ -779,10 +779,10 @@ class Package:
         query = 'rev=upload'
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_DELETE(u)
- 
+
     def put_source_file(self, n):
-        
-        # escaping '+' in the URL path (note: not in the URL query string) is 
+
+        # escaping '+' in the URL path (note: not in the URL query string) is
         # only a workaround for ruby on rails, which swallows it otherwise
         query = 'rev=upload'
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
@@ -792,27 +792,27 @@ class Package:
 
     def commit(self, msg=''):
         # commit only if the upstream revision is the same as the working copy's
-        upstream_rev = self.latest_rev();
+        upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
             raise oscerr.WorkingCopyOutdated((self.absdir, self.rev, upstream_rev))
 
         if not self.todo:
             self.todo = self.filenamelist_unvers + self.filenamelist
-      
+
         pathn = getTransActPath(self.dir)
 
         have_conflicts = False
         for filename in self.todo:
             if not filename.startswith('_service:') and not filename.startswith('_service_'):
-              st = self.status(filename)
-              if st == 'A' or st == 'M':
-                  self.todo_send.append(filename)
-                  print statfrmt('Sending', os.path.join(pathn, filename))
-              elif st == 'D':
-                  self.todo_delete.append(filename)
-                  print statfrmt('Deleting', os.path.join(pathn, filename))
-              elif st == 'C':
-                  have_conflicts = True
+                st = self.status(filename)
+                if st == 'A' or st == 'M':
+                    self.todo_send.append(filename)
+                    print statfrmt('Sending', os.path.join(pathn, filename))
+                elif st == 'D':
+                    self.todo_delete.append(filename)
+                    print statfrmt('Deleting', os.path.join(pathn, filename))
+                elif st == 'C':
+                    have_conflicts = True
 
         if have_conflicts:
             print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
@@ -829,7 +829,7 @@ class Package:
             u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
             f = http_POST(u)
 
-        print 'Transmitting file data ', 
+        print 'Transmitting file data ',
         try:
             for filename in self.todo_delete:
                 # do not touch local files on commit --
@@ -881,9 +881,9 @@ class Package:
 
         if self.filenamelist.count('_service'):
             print 'The package contains a source service.'
-            for filename in self.todo: 
-              if filename.startswith('_service:') and os.path.exists(filename):
-                os.unlink(filename) #remove local files
+            for filename in self.todo:
+                if filename.startswith('_service:') and os.path.exists(filename):
+                    os.unlink(filename) # remove local files
         print_request_list(self.apiurl, self.prjname, self.name)
 
     def write_conflictlist(self):
@@ -917,24 +917,24 @@ class Package:
         os.rename(filename, myfilename)
 
         mtime = self.findfilebyname(n).mtime
-        get_source_file(self.apiurl, self.prjname, self.name, n, 
+        get_source_file(self.apiurl, self.prjname, self.name, n,
                         revision=self.rev, targetfilename=upfilename)
         os.utime(upfilename, (-1, mtime))
 
         if binary_file(myfilename) or binary_file(upfilename):
-                # don't try merging
-                shutil.copy2(upfilename, filename)
-                shutil.copy2(upfilename, storefilename)
-                self.in_conflict.append(n)
-                self.write_conflictlist()
-                return 'C'
+            # don't try merging
+            shutil.copy2(upfilename, filename)
+            shutil.copy2(upfilename, storefilename)
+            self.in_conflict.append(n)
+            self.write_conflictlist()
+            return 'C'
         else:
             # try merging
             # diff3 OPTIONS... MINE OLDER YOURS
             merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
             # we would rather use the subprocess module, but it is not availablebefore 2.4
             ret = subprocess.call(merge_cmd, shell=True)
-            
+
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
             if ret == 0:
@@ -992,13 +992,13 @@ class Package:
         self.filenamelist = []
         self.filelist = []
         for node in files_tree_root.findall('entry'):
-            try: 
-                f = File(node.get('name'), 
-                         node.get('md5'), 
-                         int(node.get('size')), 
+            try:
+                f = File(node.get('name'),
+                         node.get('md5'),
+                         int(node.get('size')),
                          int(node.get('mtime')))
-            except: 
-                # okay, a very old version of _files, which didn't contain any metadata yet... 
+            except:
+                # okay, a very old version of _files, which didn't contain any metadata yet...
                 f = File(node.get('name'), '', 0, 0)
             self.filelist.append(f)
             self.filenamelist.append(f.name)
@@ -1008,7 +1008,7 @@ class Package:
         self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
 
         # gather unversioned files, but ignore some stuff
-        self.excluded = [ i for i in os.listdir(self.dir) 
+        self.excluded = [ i for i in os.listdir(self.dir)
                           for j in conf.config['exclude_glob']
                           if fnmatch.fnmatch(i, j) ]
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
@@ -1016,13 +1016,13 @@ class Package:
                                      if i not in self.filenamelist ]
 
     def islink(self):
-        """tells us if the package is a link (has 'linkinfo').  
+        """tells us if the package is a link (has 'linkinfo').
         A package with linkinfo is a package which links to another package.
         Returns True if the package is a link, otherwise False."""
         return self.linkinfo.islink()
 
     def isexpanded(self):
-        """tells us if the package is a link which is expanded.  
+        """tells us if the package is a link which is expanded.
         Returns True if the package is expanded, otherwise False."""
         return self.linkinfo.isexpanded()
 
@@ -1114,7 +1114,7 @@ class Package:
         elif not exists and not exists_in_store and not known_by_meta:
             # this case shouldn't happen (except there was a typo in the filename etc.)
             raise IOError('osc: \'%s\' is not under version control' % n)
-        
+
         return state
 
     def comparePac(self, cmp_pac):
@@ -1123,7 +1123,7 @@ class Package:
         the filelist of the passed package to see which files
         were added, removed and changed.
         """
-        
+
         changed_files = []
         added_files = []
         removed_files = []
@@ -1158,12 +1158,12 @@ localfilelist: %s
 linkinfo: %s
 rev: %s
 'todo' files: %s
-""" % (self.name, 
-        self.prjname, 
-        self.dir, 
-        '\n               '.join(self.filenamelist), 
-        self.linkinfo, 
-        self.rev, 
+""" % (self.name,
+        self.prjname,
+        self.dir,
+        '\n               '.join(self.filenamelist),
+        self.linkinfo,
+        self.rev,
         self.todo)
 
         return r
@@ -1187,7 +1187,7 @@ rev: %s
             else:
                 print 'no specfile was found - please specify one ' \
                       'with --specfile'
-                sys.exit(1)     
+                sys.exit(1)
 
         data = read_meta_from_spec(specfile, 'Summary', 'Url', '%description')
         self.summary = data['Summary']
@@ -1210,7 +1210,7 @@ rev: %s
         if url == None:
             url = ET.SubElement(tree, 'url')
         url.text = self.url
-        
+
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
         mf = metafile(u, ET.tostring(tree))
 
@@ -1295,14 +1295,14 @@ rev: %s
         print 'At revision %s.' % self.rev
 
         if not service_files:
-           self.run_source_services()
+            self.run_source_services()
 
     def run_source_services(self):
         if self.filenamelist.count('_service'):
-           service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
-           si = Serviceinfo()
-           si.read(service)
-           si.execute(self.absdir)
+            service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+            si = Serviceinfo()
+            si.read(service)
+            si.execute(self.absdir)
 
     def prepare_filelist(self):
         """Prepare a list of files, which will be processed by process_filelist
@@ -1337,12 +1337,12 @@ rev: %s
         """Opens a package list in editor for eediting. This allows easy
         modifications of it just by simple text editing
         """
-        
+
         import tempfile
         tempdir = '/tmp'
         if sys.platform[:3] == 'win':
             tempdir = os.getenv('TEMP')
-        
+
         (fd, filename) = tempfile.mkstemp(prefix = 'osc-filelist', suffix = '.txt', dir = tempdir)
         f = os.fdopen(fd, 'w')
         f.write(self.prepare_filelist())
@@ -1447,18 +1447,18 @@ class Request:
             try:
                 src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_update = None
                 if action.findall('source'):
-                   n = action.find('source')
-                   src_prj = n.get('project', None)
-                   src_pkg = n.get('package', None)
-                   src_rev = n.get('rev', None)
+                    n = action.find('source')
+                    src_prj = n.get('project', None)
+                    src_pkg = n.get('package', None)
+                    src_rev = n.get('rev', None)
                 if action.findall('target'):
-                   n = action.find('target')
-                   dst_prj = n.get('project', None)
-                   dst_pkg = n.get('package', None)
+                    n = action.find('target')
+                    dst_prj = n.get('project', None)
+                    dst_pkg = n.get('package', None)
                 if action.findall('options'):
-                   n = action.find('options')
-                   if n.findall('sourceupdate'):
-                      src_update = n.find('sourceupdate').text.strip()
+                    n = action.find('options')
+                    if n.findall('sourceupdate'):
+                        src_update = n.find('sourceupdate').text.strip()
                 self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
@@ -1502,18 +1502,18 @@ class Request:
         ret = '%6d  State:%-7s By:%-12s When:%-12s' % (self.reqid, self.state.name, self.state.who, self.state.when)
 
         for a in self.actions:
-           dst = "%s/%s" % (a.dst_project, a.dst_package)
-           if a.src_package == a.dst_package:
-              dst = a.dst_project
+            dst = "%s/%s" % (a.dst_project, a.dst_package)
+            if a.src_package == a.dst_package:
+                dst = a.dst_project
 
-           sr_source=""
-           if a.type=="submit":
-              sr_source="%s/%s  -> " % (a.src_project, a.src_package)
-           if a.type=="change_devel":
-              dst = "developed in %s/%s" % (a.src_project, a.src_package)
-              sr_source="%s/%s" % (a.dst_project, a.dst_package)
+            sr_source=""
+            if a.type=="submit":
+                sr_source="%s/%s  -> " % (a.src_project, a.src_package)
+            if a.type=="change_devel":
+                dst = "developed in %s/%s" % (a.src_project, a.src_package)
+                sr_source="%s/%s" % (a.dst_project, a.dst_package)
 
-           ret += '\n        %s:       %-50s %-20s   ' % \
+            ret += '\n        %s:       %-50s %-20s   ' % \
             (a.type, sr_source, dst)
 
         if self.statehistory and self.statehistory[0]:
@@ -1536,26 +1536,26 @@ class Request:
         for action in self.actions:
             action_list="  %s:  " % (action.type)
             if action.type=="submit":
-               r=""
-               if action.src_rev:
-                   r="(r%s)" % (action.src_rev)
-               m=""
-               if action.src_update:
-                   m="(%s)" % (action.src_update)
-               action_list=action_list+" %s/%s%s%s -> %s" % ( action.src_project, action.src_package, r, m, action.dst_project )
-               if action.dst_package:
-                   action_list=action_list+"/%s" % ( action.dst_package )
+                r=""
+                if action.src_rev:
+                    r="(r%s)" % (action.src_rev)
+                m=""
+                if action.src_update:
+                    m="(%s)" % (action.src_update)
+                action_list=action_list+" %s/%s%s%s -> %s" % ( action.src_project, action.src_package, r, m, action.dst_project )
+                if action.dst_package:
+                    action_list=action_list+"/%s" % ( action.dst_package )
             elif action.type=="delete":
-               action_list=action_list+"  %s" % ( action.dst_project )
-               if action.dst_package:
-                   action_list=action_list+"/%s" % ( action.dst_package )
+                action_list=action_list+"  %s" % ( action.dst_project )
+                if action.dst_package:
+                    action_list=action_list+"/%s" % ( action.dst_package )
             elif action.type=="change_devel":
-               action_list=action_list+" %s/%s developed in %s/%s" % \
+                action_list=action_list+" %s/%s developed in %s/%s" % \
                            ( action.dst_project, action.dst_package, action.src_project, action.src_package )
             action_list=action_list+"\n"
 
         s = """\
-Request #%s: 
+Request #%s:
 
 %s
 
@@ -1598,7 +1598,7 @@ def is_project_dir(d):
     return os.path.exists(os.path.join(d, store, '_project')) and not \
            os.path.exists(os.path.join(d, store, '_package'))
 
-        
+
 def is_package_dir(d):
     return os.path.exists(os.path.join(d, store, '_project')) and \
            os.path.exists(os.path.join(d, store, '_package'))
@@ -1617,12 +1617,12 @@ def parse_disturl(disturl):
         apiurl = 'https://api.' + ".".join(apiurl.split('.')[1:])
     return (apiurl, m.group('project'), m.group('source'), m.group('repository'), m.group('revision'))
 
-        
+
 def slash_split(l):
     """Split command line arguments like 'foo/bar' into 'foo' 'bar'.
     This is handy to allow copy/paste a project/package combination in this form.
 
-    Trailing slashes are removed before the split, because the split would 
+    Trailing slashes are removed before the split, because the split would
     otherwise give an additional empty string.
     """
     r = []
@@ -1633,10 +1633,10 @@ def slash_split(l):
 
 def expand_proj_pack(args, idx=0, howmany=0):
     """looks for occurance of '.' at the position idx.
-    If howmany is 2, both proj and pack are expanded together 
+    If howmany is 2, both proj and pack are expanded together
     using the current directory, or none of them, if not possible.
     If howmany is 0, proj is expanded if possible, then, if there
-    is no idx+1 element in args (or args[idx+1] == '.'), pack is also 
+    is no idx+1 element in args (or args[idx+1] == '.'), pack is also
     expanded, if possible.
     If howmany is 1, only proj is expanded if possible.
 
@@ -1651,7 +1651,7 @@ def expand_proj_pack(args, idx=0, howmany=0):
 
     if len(args) < idx:
         raise oscerr.WrongArgs('not enough argument, expected at least %d' % idx)
-        
+
     if len(args) == idx:
         args += '.'
     if args[idx+0] == '.':
@@ -1694,7 +1694,7 @@ def findpacs(files):
         else:
             pacs.append(p)
     return pacs
-        
+
 
 def read_filemeta(dir):
     try:
@@ -1728,7 +1728,7 @@ def read_inconflict(dir):
 
 def parseargs(list_of_args):
     """Convenience method osc's commandline argument parsing.
-    
+
     If called with an empty tuple (or list), return a list containing the current directory.
     Otherwise, return a list of the arguments."""
     if list_of_args:
@@ -1738,9 +1738,9 @@ def parseargs(list_of_args):
 
 
 def filedir_to_pac(f):
-    """Takes a working copy path, or a path to a file inside a working copy, 
+    """Takes a working copy path, or a path to a file inside a working copy,
     and returns a Package object instance
-    
+
     If the argument was a filename, add it onto the "todo" list of the Package """
 
     if os.path.isdir(f):
@@ -1786,7 +1786,7 @@ def makeurl(baseurl, l, query=[]):
         query = urlencode(query)
 
     scheme, netloc = urlsplit(baseurl)[0:2]
-    return urlunsplit((scheme, netloc, '/'.join(l), query, ''))               
+    return urlunsplit((scheme, netloc, '/'.join(l), query, ''))
 
 
 def http_request(method, url, headers={}, data=None, file=None, timeout=100):
@@ -1796,14 +1796,14 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     filefd = None
 
     if conf.config['http_debug']:
-        print 
+        print
         print
         print '--', method, url
 
     if method == 'POST' and not file and not data:
         # adding data to an urllib2 request transforms it into a POST
         data = ''
-        
+
     req = urllib2.Request(url)
 
     api_host_options=conf.get_apiurl_api_host_options(url)
@@ -1934,12 +1934,12 @@ def check_store_version(dir):
             f = open(versionfile, 'w')
             f.write(__store_version__ + '\n')
             f.close()
-            return 
+            return
         msg = 'The osc metadata of your working copy "%s"' % dir
         msg += '\nhas __store_version__ = %s, but it should be %s' % (v, __store_version__)
         msg += '\nPlease do a fresh checkout or update your client. Sorry about the inconvenience.'
         raise oscerr.WorkingCopyWrongVersion, msg
-    
+
 
 def meta_get_packagelist(apiurl, prj):
 
@@ -1973,9 +1973,9 @@ def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revisio
         # rev = int(root.get('rev'))    # don't force int. also allow srcmd5 here.
         rev = root.get('rev')
         for node in root.findall('entry'):
-            f = File(node.get('name'), 
-                     node.get('md5'), 
-                     int(node.get('size')), 
+            f = File(node.get('name'),
+                     node.get('md5'),
+                     int(node.get('size')),
                      int(node.get('mtime')))
             f.rev = rev
             l.append(f)
@@ -2113,7 +2113,7 @@ class metafile:
             print 'discarding', self.filename
             os.unlink(self.filename)
         return self
-    
+
 
 # different types of metadata
 metatypes = { 'prj':     { 'path': 'source/%s/_meta',
@@ -2171,10 +2171,10 @@ def make_meta_url(metatype, path_args=None, apiurl=None):
     return makeurl(apiurl, [path])
 
 
-def edit_meta(metatype, 
-              path_args=None, 
-              data=None, 
-              template_args=None, 
+def edit_meta(metatype,
+              path_args=None,
+              data=None,
+              template_args=None,
               edit=False,
               change_is_required=False,
               apiurl=None):
@@ -2320,7 +2320,7 @@ def edit_message(footer='', template=''):
     while 1:
         subprocess.call('%s %s' % (editor, filename), shell=True)
         mtime = os.stat(filename).st_mtime
-        
+
         if mtime_orig < mtime:
             msg = open(filename).read()
             os.unlink(filename)
@@ -2343,9 +2343,9 @@ def create_delete_request(apiurl, project, package, message):
     import cgi
 
     if package:
-      package = """package="%s" """ % (package)
+        package = """package="%s" """ % (package)
     else:
-      package = ""
+        package = ""
 
     xml = """\
 <request>
@@ -2365,8 +2365,8 @@ def create_delete_request(apiurl, project, package, message):
     return root.get('id')
 
 
-def create_change_devel_request(apiurl, 
-                                devel_project, devel_package, 
+def create_change_devel_request(apiurl,
+                                devel_project, devel_package,
                                 project, package,
                                 message):
 
@@ -2380,9 +2380,9 @@ def create_change_devel_request(apiurl,
     <state name="new"/>
     <description>%s</description>
 </request>
-""" % (devel_project, 
+""" % (devel_project,
        devel_package,
-       project, 
+       project,
        package,
        cgi.escape(message or ''))
 
@@ -2393,15 +2393,15 @@ def create_change_devel_request(apiurl,
     return root.get('id')
 
 
-def create_submit_request(apiurl, 
-                         src_project, src_package, 
+def create_submit_request(apiurl,
+                         src_project, src_package,
                          dst_project, dst_package,
                          message, orev=None, src_update=None):
 
     import cgi
     options_block=""
     if src_update:
-       options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+        options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
@@ -2414,10 +2414,10 @@ def create_submit_request(apiurl,
     <state name="new"/>
     <description>%s</description>
 </request>
-""" % (src_project, 
+""" % (src_project,
        src_package,
        orev or show_upstream_rev(apiurl, src_project, src_package),
-       dst_project, 
+       dst_project,
        dst_package,
        options_block,
        cgi.escape(message or ''))
@@ -2440,8 +2440,8 @@ def get_request(apiurl, reqid):
 
 
 def change_request_state(apiurl, reqid, newstate, message=''):
-    u = makeurl(apiurl, 
-                ['request', reqid], 
+    u = makeurl(apiurl,
+                ['request', reqid],
                 query={'cmd': 'changestate', 'newstate': newstate})
     f = http_POST(u, data=message)
     return f.read()
@@ -2454,10 +2454,10 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     match = ''
     m = ''
     if not "all" in req_state:
-       for state in req_state:
-           if len(m): m += '%20or%20'
-           m += 'state/@name=\'%s\'' % quote_plus(state)
-       if len(m): match += "(" + m + ")"
+        for state in req_state:
+            if len(m): m += '%20or%20'
+            m += 'state/@name=\'%s\'' % quote_plus(state)
+        if len(m): match += "(" + m + ")"
     m = ''
     if req_who:
         if len(m): m += '%20and%20'
@@ -2564,10 +2564,10 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
     o.close()
 
 
-def get_binary_file(apiurl, prj, repo, arch, 
-                    filename, 
+def get_binary_file(apiurl, prj, repo, arch,
+                    filename,
                     package = None,
-                    target_filename = None, 
+                    target_filename = None,
                     target_mtime = None,
                     progress_meter = False):
 
@@ -2613,7 +2613,7 @@ def get_binary_file(apiurl, prj, repo, arch,
         if target_mtime:
             os.utime(target_filename, (-1, target_mtime))
 
-    # make sure that the temp file is cleaned up when we are interrupted 
+    # make sure that the temp file is cleaned up when we are interrupted
     finally:
         try: os.unlink(tmpfilename)
         except: pass
@@ -2860,12 +2860,12 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
     pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
     if is_package_dir(prj_dir):
-        # we want this to become a project directory, 
+        # we want this to become a project directory,
         # but it already is a package directory.
         raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving myself away not implemented')
 
     if not is_project_dir(prj_dir):
-        # this directory could exist as a parent direory for one of our earlier 
+        # this directory could exist as a parent direory for one of our earlier
         # checked out sub-projects. in this case, we still need to initialize it.
         print statfrmt('A', prj_dir)
         init_project_dir(apiurl, prj_dir, project)
@@ -2883,7 +2883,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
     return(os.path.join(prj_dir, package))
 
 
-def checkout_package(apiurl, project, package, 
+def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
                      expand_link=False, prj_dir=None, service_files=None):
     try:
@@ -2901,14 +2901,14 @@ def checkout_package(apiurl, project, package,
         else:
             if conf.config['checkout_no_colon']:
                 prj_dir = prj_dir.replace(':', '/')
- 
+
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
 
     # before we create directories and stuff, check if the package actually
     # exists
     show_package_meta(apiurl, project, package)
- 
+
     if expand_link:
         # try to read from the linkinfo
         # if it is a link we use the xsrcmd5 as the revision to be
@@ -2923,9 +2923,9 @@ def checkout_package(apiurl, project, package,
 
     for filename in p.filenamelist:
         if service_files or not filename.startswith('_service:'):
-           p.updatefile(filename, revision)
-           #print 'A   ', os.path.join(project, package, filename)
-           print statfrmt('A', os.path.join(pathname, filename))
+            p.updatefile(filename, revision)
+            # print 'A   ', os.path.join(project, package, filename)
+            print statfrmt('A', os.path.join(pathname, filename))
     if conf.config['do_package_tracking']:
         # check if we can re-use an existing project object
         if prj_obj == None:
@@ -2967,9 +2967,9 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
     except:
         src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
         src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
-     
+
         edit_meta('pkg',
-                  path_args=(dst_project, dst_package), 
+                  path_args=(dst_project, dst_package),
                   data=src_meta)
 
     # create the _link file
@@ -2981,7 +2981,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             print >>sys.stderr
             print >>sys.stderr, '_link file already exists...! Aborting'
             sys.exit(1)
-    
+
     if rev:
         rev = 'rev="%s"' % rev
     else:
@@ -3020,7 +3020,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
 
     edit_meta('pkg',
-              path_args=(dst_project, dst_package), 
+              path_args=(dst_project, dst_package),
               data=src_meta)
 
     # create the _aggregate file
@@ -3085,7 +3085,7 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
 
 
 
-def copy_pac(src_apiurl, src_project, src_package, 
+def copy_pac(src_apiurl, src_project, src_package,
              dst_apiurl, dst_project, dst_package,
              client_side_copy = False,
              keep_maintainers = False,
@@ -3205,9 +3205,9 @@ def get_binarylist(apiurl, prj, repo, arch, package=None, verbose=False):
     else:
         l = []
         for node in tree.findall('binary'):
-            f = File(node.get('filename'), 
-                     None, 
-                     int(node.get('size')), 
+            f = File(node.get('filename'),
+                     None,
+                     int(node.get('size')),
                      int(node.get('mtime')))
             l.append(f)
         return l
@@ -3316,7 +3316,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         pacs_to_show = []
         targets_to_show = []
 
-        #filtering for Package Status 
+        #filtering for Package Status
         if status_filter:
             if status_filter in buildstatus_symbols.values():
                 for txt, sym in buildstatus_symbols.items():
@@ -3331,7 +3331,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                             elif name_filter in pkg:
                                 pacs_to_show.append(pkg)
 
-        #filtering for Package Name 
+        #filtering for Package Name
         elif name_filter:
             for pkg in pacs:
                 if name_filter in pkg:
@@ -3449,8 +3449,8 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
     r = []
     for node in root.findall('entry'):
         rev = int(node.get('rev'))
-        srcmd5 = node.get('srcmd5') 
-        versrel = node.get('versrel') 
+        srcmd5 = node.get('srcmd5')
+        versrel = node.get('versrel')
         bcnt = int(node.get('bcnt'))
         t = time.localtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
@@ -3484,7 +3484,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
         bcnt = node.get('bcnt')
         code = node.get('code')
         rev = int(node.get('rev'))
-        srcmd5 = node.get('srcmd5') 
+        srcmd5 = node.get('srcmd5')
         rt = int(node.get('readytime'))
         readyt = time.localtime(rt)
         readyt = time.strftime('%Y-%m-%d %H:%M:%S', readyt)
@@ -3497,7 +3497,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             waitbuild = "%2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
         else:
             waitbuild = "    %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
-        
+
         if format == 'csv':
             print '%s|%s|%s|%s|%s' % (endtime, package, reason, code, waitbuild)
         else:
@@ -3544,7 +3544,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text'):
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
         if format == 'csv':
-            s = '%s|%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version, 
+            s = '%s|%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version,
                 comment.replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'), requestid)
             r.append(s)
         elif format == 'xml':
@@ -3553,7 +3553,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text'):
             r.append('<author>%s</author>' % user)
             r.append('<date>%s</date>' % t)
             r.append('<requestid>%s</requestid>' % requestid)
-            r.append('<msg>%s</msg>' % 
+            r.append('<msg>%s</msg>' %
                 comment.replace('&', '&amp;').replace('<', '&gt;').replace('>', '&lt;'))
             r.append('</logentry>')
         else:
@@ -3730,7 +3730,7 @@ def parseRevisionOption(string):
 
 def checkRevision(prj, pac, revision, apiurl=None):
     """
-    check if revision is valid revision, i.e. it is not 
+    check if revision is valid revision, i.e. it is not
     larger than the upstream revision id
     """
     if len(revision) == 32:
@@ -3789,7 +3789,7 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
     # calculate length for each column
     for i, row in enumerate(longest_col):
         longest_col[i] = row + width
-    # build rows   
+    # build rows
     row = []
     table = []
     i = 0
@@ -3862,21 +3862,21 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
 def set_link_rev(apiurl, project, package, revision = None):
     url = makeurl(apiurl, ['source', project, package, '_link'])
     try:
-       f = http_GET(url)
-       root = ET.parse(f).getroot()
+        f = http_GET(url)
+        root = ET.parse(f).getroot()
     except urllib2.HTTPError, e:
-       e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
-       raise
+        e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
+        raise
 
     # set revision element
     if not revision:
-       src_project = root.attrib['project']
-       src_package = root.attrib['package']
-       root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package);
+        src_project = root.attrib['project']
+        src_package = root.attrib['package']
+        root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package)
     elif revision == -1:
-       del root.attrib['rev']
+        del root.attrib['rev']
     else:
-       root.attrib['rev'] = revision
+        root.attrib['rev'] = revision
 
     l = ET.tostring(root)
     # upload _link file again
@@ -3963,7 +3963,7 @@ def unpack_srcrpm(srpm, dir, *files):
 
 def is_rpm(f):
     """check if the named file is an RPM package"""
-    try:                                                                                                                                
+    try:
         h = open(f, 'rb').read(4)
     except:
         return False
@@ -3987,7 +3987,7 @@ def is_srcrpm(f):
     if h[7] == '\x01':
         return True
     else:
-        return False   
+        return False
 
 def addMaintainer(apiurl, prj, pac, user):
     # for backward compatibility only
@@ -4004,7 +4004,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
                        path_args=path,
                        template_args=None,
                        create_new=False)
-                       
+
     if data and get_user_meta(apiurl, user) != None:
         tree = ET.fromstring(''.join(data))
         found = False
@@ -4029,7 +4029,7 @@ def delMaintainer(apiurl, prj, pac, user):
 
 def delPerson(apiurl, prj, pac, user, role="maintainer"):
     """ delete a person from a package or project """
-    path = quote_plus(prj), 
+    path = quote_plus(prj),
     kind = 'prj'
     if pac:
         path = path + (quote_plus(pac), )
@@ -4062,22 +4062,22 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
                        path_args=path,
                        template_args=None,
                        create_new=False)
-                       
+
     if data and show_project_meta(apiurl, dprj) != None:
         tree = ET.fromstring(''.join(data))
         if not tree.find('devel') != None:
             ET.SubElement(tree, 'devel')
         elem = tree.find('devel')
         if dprj:
-           elem.attrib['project'] = dprj
+            elem.attrib['project'] = dprj
         else:
-           if elem.attrib.has_key('project'):
-              del elem.attrib['project']
+            if elem.attrib.has_key('project'):
+                del elem.attrib['project']
         if dpkg:
-           elem.attrib['package'] = dpkg
+            elem.attrib['package'] = dpkg
         else:
-           if elem.attrib.has_key('package'):
-              del elem.attrib['package']
+            if elem.attrib.has_key('package'):
+                del elem.attrib['package']
         edit_meta(metatype='pkg',
                   path_args=path,
                   data=ET.tostring(tree))
@@ -4230,7 +4230,7 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
         if prj_obj and conf.config['do_package_tracking']:
             state = prj_obj.get_state(p.name)
             if state != None and (state != ' ' or verbose):
-               lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
+                lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
 
         for filename in p.todo:
             if filename in p.excluded:
@@ -4261,7 +4261,7 @@ def get_commit_message_template(pac):
         files = filter(lambda file: '.changes' in file and pac.status(file) in ('A', 'M'), pac.todo)
         if not files:
             return template
-        
+
         for file in files:
             if pac.status(file) == 'M':
                 diff += get_source_file_diff(pac.absdir, file, pac.rev)
@@ -4270,7 +4270,7 @@ def get_commit_message_template(pac):
                 for line in f:
                     diff += '+' + line
                 f.close()
-    
+
     if diff:
         index = 0
         diff = diff.split('\n')
@@ -4287,7 +4287,7 @@ def get_commit_message_template(pac):
                 template.append('')
             else:
                 template.append(line[1:])
-    
+
     return template
 
 def check_filelist_before_commit(pacs):

@@ -9,12 +9,12 @@
 #   Lesser General Public License for more details.
 #
 #   You should have received a copy of the GNU Lesser General Public
-#   License along with this library; if not, write to the 
-#      Free Software Foundation, Inc., 
-#      59 Temple Place, Suite 330, 
+#   License along with this library; if not, write to the
+#      Free Software Foundation, Inc.,
+#      59 Temple Place, Suite 330,
 #      Boston, MA  02111-1307  USA
 
-# this is basically a copy of python-urlgrabber's TextMeter class, 
+# this is basically a copy of python-urlgrabber's TextMeter class,
 # with support added for dynamical sizing according to screen size.
 # it uses getScreenWidth() scrapped from smart.
 # 2007-04-24, poeml
@@ -22,7 +22,7 @@
 
 from urlgrabber.progress import BaseMeter, format_time, format_number
 import sys, os
-    
+
 def getScreenWidth():
     import termios, struct, fcntl
     s = struct.pack('HHHH', 0, 0, 0, 0)

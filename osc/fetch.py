@@ -17,7 +17,7 @@ except:
 def join_url(self, base_url, rel_url):
     """to override _join_url of MirrorGroup, because we want to
     pass full URLs instead of base URL where relative_url is added later...
-    IOW, we make MirrorGroup ignore relative_url""" 
+    IOW, we make MirrorGroup ignore relative_url"""
     return base_url
 
 
@@ -67,8 +67,8 @@ class Fetcher:
         # for use by the failure callback
         self.curpac = pac
 
-	if self.offline:
-	    return True
+        if self.offline:
+            return True
 
         MirrorGroup._join_url = join_url
         mg = MirrorGroup(self.gr, pac.urllist)
@@ -81,7 +81,7 @@ class Fetcher:
 
         try:
             # it returns the filename
-            ret = mg.urlgrab(pac.filename, 
+            ret = mg.urlgrab(pac.filename,
                              filename = pac.fullpartname,
                              text = '(%s) %s' %(pac.project, pac.filename))
 
@@ -109,7 +109,7 @@ class Fetcher:
         pac.filename = canonname
         pac.fullfilename = os.path.join(pac.localdir, canonname)
 
-        os.rename(pac.fullpartname, pac.fullfilename);
+        os.rename(pac.fullpartname, pac.fullfilename)
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
@@ -143,7 +143,7 @@ class Fetcher:
 
 
 def verify_pacs(pac_list):
-    """Take a list of rpm filenames and run rpm -K on them. 
+    """Take a list of rpm filenames and run rpm -K on them.
 
        In case of failure, exit.
 
@@ -154,7 +154,7 @@ def verify_pacs(pac_list):
 
     if not pac_list:
         return
-        
+
     # don't care about the return value because we check the
     # output anyway, and rpm always writes to stdout.
 
@@ -166,19 +166,19 @@ def verify_pacs(pac_list):
                 stderr=subprocess.STDOUT, close_fds=True).stdout
 
     # restore locale
-    if saved_LC_ALL: os.environ['LC_ALL'] = saved_LC_ALL;
+    if saved_LC_ALL: os.environ['LC_ALL'] = saved_LC_ALL
     else: os.environ.pop('LC_ALL')
 
     for line in o.readlines():
 
         if not 'OK' in line:
-            print 
+            print
             print >>sys.stderr, 'The following package could not be verified:'
             print >>sys.stderr, line
             sys.exit(1)
 
         if 'NOT OK' in line:
-            print 
+            print
             print >>sys.stderr, 'The following package could not be verified:'
             print >>sys.stderr, line
 
@@ -198,7 +198,7 @@ def verify_pacs(pac_list):
 - If you do not trust the packages, you should configure osc build for XEN or KVM
 
 - You may use --no-verify to skip the verification (which is a risk for your system).
-""" % {'name': missing_key, 
+""" % {'name': missing_key,
        'dir': os.path.expanduser('~')}
 
             else:
