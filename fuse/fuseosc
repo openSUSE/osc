@@ -23,13 +23,20 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 
-import osc
-import osc.conf
-import osc.core
 import sys
+import os
+try:
+    import osc
+    import osc.conf
+    import osc.core
+except:
+    # allow loading module from working copy if osc is not installed
+    sys.path.append(os.path.abspath(os.path.dirname(sys.argv[0]) + '/../osc'))
+    import osc
+    import osc.conf
+    import osc.core
 import fuse
 import stat
-import os
 import errno
 import tempfile
 
