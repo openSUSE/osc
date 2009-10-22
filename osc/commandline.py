@@ -3370,9 +3370,44 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         out = r.read()
         sys.stdout.write(out)
 
+    @cmdln.option('-v', '--verbose', action='store_true',
+                  help='show more information')
+    @cmdln.option('--nodevelproject', action='store_true',
+                  help='do not follow a defined devel project ' \
+                       '(primary project where a package is developed)')
+    @cmdln.option('-e', '--email', action='store_true',
+                  help='show email addresses instead of user names')
+    def do_bugowner(self, subcmd, opts, *args):
+        """${cmd_name}: Show bugowners of a project/package
 
-    @cmdln.option('-b', '--bugowner', action='store_true',
+            osc bugowner PRJ 
+            osc bugowner PRJ PKG
+
+        Shortcut for osc maintainer -B [PRJ] PKG
+
+	PRJ defaults to '%(getpac_default_project)s'.
+	Prints bugowner if defined, or maintainer otherwise.
+
+        ${cmd_option_list}
+        """
+	opts.role = None
+	opts.bugowner = True
+	opts.bugowner_only = None
+	opts.add = None
+	opts.delete = None
+	opts.devel_project = None
+
+        if len(args) == 1:
+            print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['getpac_default_project'], args[0])
+            # python has no args.unshift ???
+            args = [ conf.config['getpac_default_project'] , args[0] ]
+	return self.do_maintainer(subcmd, opts, *args)
+
+
+    @cmdln.option('-b', '--bugowner_only', action='store_true',
                   help='Show only the bugowner')
+    @cmdln.option('-B', '--bugowner', action='store_true',
+                  help='Show only the bugowner if defined, or maintainer otherwise')
     @cmdln.option('-e', '--email', action='store_true',
                   help='show email addresses instead of user names')
     @cmdln.option('--nodevelproject', action='store_true',
@@ -3408,7 +3443,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             roles = [ 'bugowner', 'maintainer' ]
         else:
             roles = [opts.role]
-        if opts.bugowner:
+        if opts.bugowner_only:
             roles = [ 'bugowner' ]
 
         if len(args) == 1:
@@ -3445,13 +3480,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
         else:
             # showing the maintainers
+	    seen=0
             for role in roles:
-                print ""
-                print role, ":"
+		if opts.bugowner:
+		    if seen:
+		        break;
                 for person in tree.findall('person'):
                     if person.get('role') == role:
+		        seen += 1
                         maintainers.append(person.get('userid'))
-
+		if opts.bugowner:
+		    if seen:
+		    	print role+":",
+		else:
+		    print ""
+		    print role, ":"
+		    
                 if opts.email:
                     emails = []
                     for maintainer in maintainers:
@@ -3836,7 +3880,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if conf.config['api_host_options'][apiurl].has_key('email'):
                 os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
             else:
-                os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
+	        try:
+                    os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
+		except Exception, e:
+                    sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
 
         if opts.message:
             cmd_list.append("-m")

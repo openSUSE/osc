@@ -1,3 +1,7 @@
+JW:
+- german umlaut characters הצü do not work in the message for osc submitpac.
+  404 not found, and no request sent.
+
 CRITICAL:
  - webpage can create a _link in a fully populated package.
    Need to prevent his somehow.

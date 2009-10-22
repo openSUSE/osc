@@ -1,4 +1,17 @@
 0.124
+ - added 'osc bugowner' as a more intelligent version of 'osc maintainer -B'
+ - added option '-B' to osc maintainer, prints bugowner OR maintainer.
+ - added 'osc req help' as convenience alias to 'osc help req'.
+ - 'osc in' to be done. Its usage just prints a suggested zypper command line.
+ - Incompatible change: osc se now prints Project Package, instead of Package Project
+   for easier copy&paste.
+ - give better hint how to use osc vc without network connectivity.
+ - added printing of cache statistices to osc build
+ - implemented 'osc ls .' to take proj/pack name from current directory.
+   * Incompatible change: 'osc ls' now defaults to 'osc ls .',
+   * Use 'osc ls /' if you really want to list all projects.
+   * This is meant as a proof of concept. I intend to generalize this usage of '.'
+     for all osc commands. Feedback welcome.
 
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to

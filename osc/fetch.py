@@ -63,7 +63,7 @@ class Fetcher:
         raise errobj.exception
 
 
-    def fetch(self, pac):
+    def fetch(self, pac, prefix=''):
         # for use by the failure callback
         self.curpac = pac
 
@@ -83,7 +83,7 @@ class Fetcher:
             # it returns the filename
             ret = mg.urlgrab(pac.filename,
                              filename = pac.fullpartname,
-                             text = '(%s) %s' %(pac.project, pac.filename))
+                             text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
 
         except URLGrabError, e:
             print
@@ -123,6 +123,20 @@ class Fetcher:
 
 
     def run(self, buildinfo):
+        all = 0
+	cached = 0
+        for i in buildinfo.deps:
+            i.makeurls(self.cachedir, self.urllist)
+	    all += 1
+            if os.path.exists(i.fullfilename):
+	      cached += 1
+	miss = 0
+	if all:
+	    miss = 100.0*(all-cached)/all
+	print "%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss,cached,all)
+	needed = all-cached
+
+        done = 1
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
             if not os.path.exists(i.fullfilename):
@@ -130,8 +144,8 @@ class Fetcher:
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
-                        print '(%s) %s' % (i.project, i.filename)
-                    self.fetch(i)
+                        print '%d/%d (%s) %s' % (done, needed, i.project, i.filename)
+                    self.fetch(i, "%d/%d " % (done,needed))
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
                     print 'Exiting.'
@@ -139,6 +153,7 @@ class Fetcher:
                         print 'Cleaning up incomplete file', i.fullpartname
                         os.unlink(i.fullpartname)
                     sys.exit(0)
+		done += 1
 
 
 

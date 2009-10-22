@@ -7,6 +7,7 @@
 # 2006-12-15, jw, v0.2 -- {files}{error} gets printed if present.
 # 2008-03-25, jw, v0.3 -- go via api using iChains and ~/.oscrc
 # 2008-03-26, jw, v0.4 -- added linked file retrieval and usage.
+# 2009-10-21, jw,         added obsolete warning, in favour of osc co -e
 
 use Data::Dumper;
 use LWP::UserAgent;
@@ -15,6 +16,9 @@ use Digest::MD5;
 
 my $version = '0.4';
 my $verbose = 1;
+
+print "This $0 is obsolete. Please use instead: osc co -e\n";
+sleep 5;
 
 # curl buildservice:5352/source/home:jnweiger/vim
 # curl 'buildservice:5352/source/home:jnweiger/vim?rev=d90bfab4301f758e0d82cf09aa263d37'
