@@ -3747,19 +3747,23 @@ def checkRevision(prj, pac, revision, apiurl=None):
     except (ValueError, TypeError):
         return False
 
-def build_xpath_predicate(search_list, search_term, exact_matches):
+def build_xpath_predicate(search_list, search_term, exact_matches, extra_limiter):
     """
     Builds and returns a xpath predicate
     """
 
     predicate = ['[']
     for i, elem in enumerate(search_list):
+        predicate.append('(')
         if i > 0 and i < len(search_list):
             predicate.append(' or ')
         if exact_matches:
             predicate.append('%s=\'%s\'' % (elem, search_term))
         else:
             predicate.append('contains(%s, \'%s\')' % (elem, search_term))
+        if extra_limiter:
+            predicate.append(' and %s' % (extra_limiter))
+        predicate.append(')')
     predicate.append(']')
     return predicate
 
@@ -3811,7 +3815,7 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
         separator = ''
     return [separator.join(row) for row in table]
 
-def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False, role_filter = None):
+def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False, role_filter = None, extra_limiter = None):
     """
     Perform a search for 'search_term'. A list which contains the
     results will be returned on success otherwise 'None'. If 'verbose' is true
@@ -3822,7 +3826,7 @@ def search(apiurl, search_list, kind, search_term, verbose = False, exact_matche
     if role_filter:
         role_filter = role_filter.split(':')
 
-    predicate = build_xpath_predicate(search_list, search_term, exact_matches)
+    predicate = build_xpath_predicate(search_list, search_term, exact_matches, extra_limiter)
     u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus(''.join(predicate))])
     f = http_GET(u)
     root = ET.parse(f).getroot()

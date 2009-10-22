@@ -3064,6 +3064,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search for matches in the \'title\' element')
     @cmdln.option('--description', action='store_true',
                         help='search for matches in the \'description\' element')
+    @cmdln.option('-a', '--limit-to-attribute', metavar='ATTRIBUTE',
+                        help='match only when given attribute exists in meta data')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
     @cmdln.option('-i', '--involved', action='store_true',
@@ -3115,6 +3117,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         search_list = []
         search_for = []
+        extra_limiter = ""
         if opts.title:
             search_list.append('title')
         if opts.description:
@@ -3125,6 +3128,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.project:
             search_list.append('@name')
             search_for.append('project')
+        if opts.limit_to_attribute:
+            extra_limiter='attribute/@name="%s"' % (opts.limit_to_attribute)
+            
 
         role_filter=None
         if for_user:
@@ -3141,7 +3147,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not search_for:
             search_for = [ 'project', 'package' ]
         for kind in search_for:
-            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl, role_filter)
+            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl, role_filter, extra_limiter)
 
             if not result:
                 print 'No matches found for \'%s\' in %ss' % (role_filter or search_term, kind)

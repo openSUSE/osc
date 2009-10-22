@@ -12,6 +12,10 @@
    * Use 'osc ls /' if you really want to list all projects.
    * This is meant as a proof of concept. I intend to generalize this usage of '.'
      for all osc commands. Feedback welcome.
+ #
+ # Features which require OBS 1.7
+ #
+ - search: allow to limit results via existing attibutes
 
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to
