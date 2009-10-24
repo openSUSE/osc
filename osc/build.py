@@ -369,8 +369,8 @@ def main(opts, argv):
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
 
-    bi_filename = '.osc/_buildinfo-%s-%s.xml' % (repo, arch)
-    bc_filename = '.osc/_buildconfig-%s-%s' % (repo, arch)
+    bi_filename = os.path.join(os.getcwd(), '.osc/_buildinfo-%s-%s.xml' % (repo, arch))
+    bc_filename = os.path.join(os.getcwd(), '.osc/_buildconfig-%s-%s' % (repo, arch))
     try:
         if opts.noinit:
             if not os.path.isfile(bi_filename):
