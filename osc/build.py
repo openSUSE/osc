@@ -369,18 +369,21 @@ def main(opts, argv):
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
 
-    bi_file_name = '.buildinfo.xml'
-    bi_file = None
+    bi_filename = '.osc/_buildinfo-%s-%s.xml' % (repo, arch)
+    bc_filename = '.osc/_buildconfig-%s-%s' % (repo, arch)
     try:
         if opts.noinit:
-            if not os.path.isfile(bi_file_name):
-                print >>sys.stderr, '--noinit is not possible, no local build info file'
+            if not os.path.isfile(bi_filename):
+                print >>sys.stderr, '--noinit is not possible, no local buildinfo file'
                 sys.exit(1)
-            print 'Use local .buildinfo.xml file as build description'
-            bi_file = open(bi_file_name, 'r')
+            print 'Use local \'%s\' file as buildinfo' % bi_filename
+            if not os.path.isfile(bc_filename):
+                print >>sys.stderr, '--noinit is not possible, no local buildconfig file'
+                sys.exit(1)
+            print 'Use local \'%s\' file as buildconfig' % bc_filename
         else:
-            print 'Getting buildinfo from server and store to local directory as .buildinfo.xml'
-            bi_file = open(bi_file_name, 'w+')
+            print 'Getting buildinfo from server and store to %s' % bi_filename
+            bi_file = open(bi_filename, 'w')
             bi_text = ''.join(get_buildinfo(apiurl,
                                             prj,
                                             pac,
@@ -389,7 +392,11 @@ def main(opts, argv):
                                             specfile=build_descr_data,
                                             addlist=extra_pkgs))
             bi_file.write(bi_text)
-            bi_file.flush()
+            bi_file.close()
+            print 'Getting buildconfig from server and store to %s' % bc_filename
+            bc_file = open(bc_filename, 'w')
+            bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
+            bc_file.close()
     except urllib2.HTTPError, e:
         if e.code == 404:
         # check what caused the 404
@@ -398,19 +405,17 @@ def main(opts, argv):
                 if pac == '_repository' or meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
                                                        template_args=None, create_new=False, apiurl=apiurl):
                     print >>sys.stderr, 'wrong repo/arch?'
-                    sys.exit(1)
                 else:
                     print >>sys.stderr, 'The package \'%s\' does not exists - please ' \
                                         'rerun with \'--local-package\'' % pac
-                    sys.exit(1)
             else:
                 print >>sys.stderr, 'The project \'%s\' does not exists - please ' \
                                     'rerun with \'--alternative-project <alternative_project>\'' % prj
-                sys.exit(1)
+            sys.exit(1)
         else:
             raise
 
-    bi = Buildinfo(bi_file.name, apiurl, build_type, prefer_pkgs.keys())
+    bi = Buildinfo(bi_filename, apiurl, build_type, prefer_pkgs.keys())
     if bi.debuginfo and not opts.disable_debuginfo:
         buildargs.append('--debug')
     buildargs = ' '.join(set(buildargs))
@@ -441,7 +446,6 @@ def main(opts, argv):
     print 'Updating cache of required packages'
 
     urllist = []
-
     # transform 'url1, url2, url3' form into a list
     if 'urllist' in config:
         if type(config['urllist']) == str:
@@ -519,19 +523,9 @@ def main(opts, argv):
     if sys.platform[:3] == 'win':
         tempdir = os.getenv('TEMP')
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = tempdir)
+    rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
-    rpmlist_file.flush()
-    os.fsync(rpmlist_file)
-
-
-
-    print 'Getting buildconfig from server'
-    tempdir = '/tmp'
-    if sys.platform[:3] == 'win':
-        tempdir = os.getenv('TEMP')
-    bc_file = NamedTemporaryFile(prefix='buildconfig.', dir = tempdir)
-    bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
-    bc_file.flush()
+    rpmlist_file.close()
 
     vm_options=""
     if config['build-device'] and config['build-memory'] and config['build-type']:
@@ -578,20 +572,17 @@ def main(opts, argv):
         specialcmdopts += '--overlay=%s' \
                             % (myoverlay)
 
-
-
     cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s --release=%s %s %s %s' \
                  % (config['build-cmd'],
                     config['build-root'],
-                    rpmlist_file.name,
-                    bc_file.name,
+                    rpmlist_filename,
+                    bc_filename,
                     specialcmdopts,
                     bi.buildarch,
                     bi.release,
                     vm_options,
                     build_descr,
                     buildargs)
-
     if config['su-wrapper'].startswith('su '):
         tmpl = '%s \'%s\''
     else:
@@ -625,5 +616,3 @@ def main(opts, argv):
             for i in b_built.splitlines() + s_built.splitlines():
                 import shutil
                 shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
-
-
