@@ -1339,11 +1339,7 @@ rev: %s
         """
 
         import tempfile
-        tempdir = '/tmp'
-        if sys.platform[:3] == 'win':
-            tempdir = os.getenv('TEMP')
-
-        (fd, filename) = tempfile.mkstemp(prefix = 'osc-filelist', suffix = '.txt', dir = tempdir)
+        (fd, filename) = tempfile.mkstemp(prefix = 'osc-filelist', suffix = '.txt')
         f = os.fdopen(fd, 'w')
         f.write(self.prepare_filelist())
         f.close()
@@ -2049,16 +2045,10 @@ class metafile:
 
         self.url = url
         self.change_is_required = change_is_required
-
-        tempdir = '/tmp'
-        if sys.platform[:3] == 'win':
-            tempdir = os.getenv('TEMP')
-        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext, dir = tempdir)
-
+        (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
         f = os.fdopen(fd, 'w')
         f.write(''.join(input))
         f.close()
-
         self.hash_orig = dgst(self.filename)
 
     def sync(self):
@@ -2301,10 +2291,7 @@ def read_meta_from_spec(specfile, *args):
 def edit_message(footer='', template=''):
     delim = '--This line, and those below, will be ignored--\n\n' + footer
     import tempfile
-    tempdir = '/tmp'
-    if sys.platform[:3] == 'win':
-        tempdir = os.getenv('TEMP')
-    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff', dir = tempdir)
+    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff')
     f = os.fdopen(fd, 'w')
     if template != '':
         f.write(template)
@@ -2584,10 +2571,7 @@ def get_binary_file(apiurl, prj, repo, arch,
     binsize = int(f.headers['content-length'])
 
     import tempfile
-    tempdir = '/tmp'
-    if sys.platform[:3] == 'win':
-        tempdir = os.getenv('TEMP')
-    (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc', dir = tempdir)
+    (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc')
     os.chmod(tmpfilename, 0644)
 
     try:
@@ -2747,10 +2731,7 @@ def make_diff(wc, revision):
                 elif state == 'D':
                     removed_files.append(file)
     else:
-        tempdir = '/tmp'
-        if sys.platform[:3] == 'win':
-            tempdir = os.getenv('TEMP')
-        tmpdir  = tempfile.mkdtemp(str(revision), wc.name, dir = tempdir)
+        tmpdir  = tempfile.mkdtemp(str(revision), wc.name)
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
         cmp_pac = Package(tmpdir)
@@ -2774,10 +2755,7 @@ def make_diff(wc, revision):
             cmp_pac.updatefile(file, revision)
             diff.append(get_source_file_diff(wc.absdir, file, revision, file,
                                              cmp_pac.absdir, file))
-    tempdir = '/tmp'
-    if sys.platform[:3] == 'win':
-        tempdir = os.getenv('TEMP')
-    (fd, tmpfile) = tempfile.mkstemp(dir = tempdir)
+    (fd, tmpfile) = tempfile.mkstemp()
     for file in added_files:
         diff.append(diff_hdr % file)
         if cmp_pac == None:
@@ -2791,10 +2769,7 @@ def make_diff(wc, revision):
     #        if a file is deleted via "osc rm file" we should keep the storefile.
     tmp_pac = None
     if cmp_pac == None and removed_files:
-        tempdir = '/tmp'
-        if sys.platform[:3] == 'win':
-            tempdir = os.getenv('TEMP')
-        tmpdir  = tempfile.mkdtemp( dir = tempdir)
+        tmpdir = tempfile.mkdtemp()
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, wc.rev)
         tmp_pac = Package(tmpdir)
@@ -2813,9 +2788,9 @@ def make_diff(wc, revision):
 
     os.chdir(olddir)
     if cmp_pac != None:
-        delete_tmpdir(cmp_pac.absdir)
+        delete_dir(cmp_pac.absdir)
     if tmp_pac != None:
-        delete_tmpdir(tmp_pac.absdir)
+        delete_dir(tmp_pac.absdir)
     return diff
 
 
@@ -3126,10 +3101,7 @@ def copy_pac(src_apiurl, src_project, src_package,
     else:
         # copy one file after the other
         import tempfile
-        tempdir = '/tmp'
-        if sys.platform[:3] == 'win':
-            tempdir = os.getenv('TEMP')
-        tmpdir = tempfile.mkdtemp(prefix='osc_copypac', dir = tempdir)
+        tmpdir = tempfile.mkdtemp(prefix='osc_copypac')
         os.chdir(tmpdir)
         query = {'rev': 'upload'}
         for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand):
@@ -3890,49 +3862,17 @@ def set_link_rev(apiurl, project, package, revision = None):
 def delete_dir(dir):
     # small security checks
     if os.path.islink(dir):
-        return False
+        raise oscerr.OscIOError(None, 'cannot remove linked dir')
     elif os.path.abspath(dir) == '/':
-        return False
-    elif not os.path.isdir(dir):
-        return False
+        raise oscerr.OscIOError(None, 'cannot remove \'/\'')
 
     for dirpath, dirnames, filenames in os.walk(dir, topdown=False):
         for file in filenames:
-            try:
-                os.unlink(os.path.join(dirpath, file))
-            except:
-                return False
+            os.unlink(os.path.join(dirpath, file))
         for dirname in dirnames:
-            try:
-                os.rmdir(os.path.join(dirpath, dirname))
-            except:
-                return False
-    try:
-        os.rmdir(dir)
-    except:
-        return False
-    return True
+            os.rmdir(os.path.join(dirpath, dirname))
+    os.rmdir(dir)
 
-def delete_tmpdir(tmpdir):
-    """
-    This method deletes a tempdir. This tempdir
-    must be located under /tmp/$DIR. If "tmpdir" is not
-    a valid tempdir it'll return False. If os.unlink() / os.rmdir()
-    throws an exception we will return False too - otherwise
-    True.
-    """
-
-    head, tail = os.path.split(tmpdir)
-    if sys.platform == 'win32':
-        if head.upper().startswith(os.getenv('TEMP').upper) and tail:
-            try:
-                os.rmdir(tmpdir)
-            except:
-                return False
-    else:
-        if head.startswith('/tmp') and tail:
-            return delete_dir(tmpdir)
-    return False
 
 def delete_storedir(store_dir):
     """
@@ -3940,9 +3880,7 @@ def delete_storedir(store_dir):
     """
     head, tail = os.path.split(store_dir)
     if tail == '.osc':
-        return delete_dir(store_dir)
-    else:
-        return False
+        delete_dir(store_dir)
 
 def unpack_srcrpm(srpm, dir, *files):
     """

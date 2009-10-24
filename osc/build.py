@@ -519,10 +519,7 @@ def main(opts, argv):
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
-    tempdir = '/tmp'
-    if sys.platform[:3] == 'win':
-        tempdir = os.getenv('TEMP')
-    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = tempdir)
+    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
