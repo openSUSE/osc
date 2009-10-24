@@ -525,7 +525,7 @@ def main(opts, argv):
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.', dir = tempdir)
     rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
-    rpmlist_file.close()
+    rpmlist_file.flush()
 
     vm_options=""
     if config['build-device'] and config['build-memory'] and config['build-type']:
