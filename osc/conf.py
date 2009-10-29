@@ -33,6 +33,7 @@ The configuration dictionary could look like this:
  }
 
 """
+
 import OscConfigParser
 from osc import oscerr
 from oschttps import NoSecureSSLError
@@ -317,6 +318,7 @@ def init_basicauth(config):
 
     global cookiejar
 
+    import sys
     if sys.version_info < (2, 6):
        # HTTPS proxy is not supported in old urllib2. It only leads to an error
        # or, at best, a warning.
