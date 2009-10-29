@@ -12,6 +12,7 @@
    * Use 'osc ls /' if you really want to list all projects.
    * This is meant as a proof of concept. I intend to generalize this usage of '.'
      for all osc commands. Feedback welcome.
+ - support http proxies when using python 2.6 or newer (#551004)
  #
  # Features which require OBS 1.7
  #
