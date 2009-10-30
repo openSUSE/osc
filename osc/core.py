@@ -403,8 +403,9 @@ class Project:
         ET.SubElement(self.pac_root, 'package', name=name, state=state)
 
     def read_packages(self):
-        if os.path.isfile(os.path.join(self.absdir, store, '_packages')):
-            return ET.parse(os.path.join(self.absdir, store, '_packages'))
+        packages_file = os.path.join(self.absdir, store, '_packages')
+        if os.path.isfile(packages_file) and os.path.getsize(packages_file):
+            return ET.parse(packages_file)
         else:
             # scan project for existing packages and migrate them
             cur_pacs = []

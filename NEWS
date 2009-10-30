@@ -1,3 +1,5 @@
+ - partial fix for bnc#551147
+
 0.124
  - added 'osc bugowner' as a more intelligent version of 'osc maintainer -B'
  - added option '-B' to osc maintainer, prints bugowner OR maintainer.
