@@ -17,6 +17,7 @@
  # Features which require OBS 1.7
  #
  - search: allow to limit results via existing attibutes
+ - added "osc meta attribute" for basic attribute creation, deletion, showing and value setting
 
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to

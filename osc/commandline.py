@@ -304,13 +304,19 @@ class Osc(cmdln.Cmdln):
                         print '\n'.join(l)
 
 
+    @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
+                        help='affect only a given attribute')
     @cmdln.option('-F', '--file', metavar='FILE',
                         help='read metadata from FILE, instead of opening an editor. '
                         '\'-\' denotes standard input. ')
     @cmdln.option('-e', '--edit', action='store_true',
                         help='edit metadata')
+    @cmdln.option('-c', '--create', action='store_true',
+                        help='create attribute without values')
+    @cmdln.option('-s', '--set', metavar='ATTRIBUTE_VALUES',
+                        help='set attribute values')
     @cmdln.option('--delete', action='store_true',
-                        help='delete a pattern file')
+                        help='delete a pattern or attribute')
     def do_meta(self, subcmd, opts, *args):
         """${cmd_name}: Show meta information, or edit it
 
@@ -342,11 +348,12 @@ class Osc(cmdln.Cmdln):
             osc meta prj PRJ
             osc meta pkg PRJ PKG
             osc meta pkg PRJ PKG -e
+            osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create|--delete|--set [value_list]]
 
         Usage:
-            osc meta <prj|pkg|prjconf|user|pattern> ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> -e|--edit ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> -F|--file ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern|attribute> ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern|attribute> -e|--edit ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern|attribute> -F|--file ARGS...
             osc meta pattern --delete PRJ PATTERN
         ${cmd_option_list}
         """
@@ -364,6 +371,8 @@ class Osc(cmdln.Cmdln):
             min_args, max_args = 2, 2
         elif cmd in ['pattern']:
             min_args, max_args = 1, 2
+        elif cmd in ['attribute']:
+            min_args, max_args = 1, 3
         else:
             min_args, max_args = 1, 1
         if len(args) < min_args:
@@ -372,10 +381,28 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongArgs('Too many arguments.')
 
         # specific arguments
+        attributepath = []
         if cmd == 'prj':
             project = args[0]
         elif cmd == 'pkg':
             project, package = args[0:2]
+        elif cmd == 'attribute':
+            project = args[0]
+            if len(args) > 1:
+               package = args[1]
+            else:
+               package = None
+            if len(args) > 2:
+               subpackage = args[2]
+            else:
+               subpackage = None
+            attributepath.append('source')
+            attributepath.append(project)
+            if package:
+               attributepath.append(package)
+            if subpackage:
+               attributepath.append(subpackage)
+            attributepath.append('_attribute')
         elif cmd == 'prjconf':
             project = args[0]
         elif cmd == 'user':
@@ -391,11 +418,13 @@ class Osc(cmdln.Cmdln):
                     raise oscerr.WrongArgs('A pattern file argument is required.')
 
         # show
-        if not opts.edit and not opts.file and not opts.delete:
+        if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
                 sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
             elif cmd == 'pkg':
                 sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
+            elif cmd == 'attribute':
+                sys.stdout.write(''.join(show_attribute_meta(conf.config['apiurl'], project, package, subpackage, opts.attribute)))
             elif cmd == 'prjconf':
                 sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
             elif cmd == 'user':
@@ -444,6 +473,23 @@ class Osc(cmdln.Cmdln):
                           path_args=(project, pattern),
                           template_args=None)
 
+        # create attribute entry
+        if opts.create or opts.set:
+            if cmd == 'attribute':
+                if not opts.attribute:
+                    sys.exit('no attribute given to create')
+                values=""
+                if opts.set:
+                   for i in opts.set.split(','):
+                       values+="<value>%s</value>" % i
+                d="""<attributes><attribute name='%s' >%s</attribute></attributes>""" % (opts.attribute, values)
+                url = makeurl(conf.config['apiurl'], attributepath)
+                f=http_POST(url, data=d)
+		while 1:
+		    buf = f.read(16384)
+		    if not buf: break
+		    print buf
+
         # upload file
         if opts.file:
 
@@ -489,6 +535,16 @@ class Osc(cmdln.Cmdln):
                 path = path % (project, pattern)
                 u = makeurl(conf.config['apiurl'], [path])
                 http_DELETE(u)
+            elif cmd == 'attribute':
+                if not opts.attribute:
+                    sys.exit('no attribute given to create')
+                attributepath.append(opts.attribute)
+                u = makeurl(conf.config['apiurl'], attributepath)
+                f=http_DELETE(u)
+		while 1:
+		    buf = f.read(16384)
+		    if not buf: break
+		    print buf
             else:
                 sys.exit('The --delete switch is only for pattern metadata.')
 

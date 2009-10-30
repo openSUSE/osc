@@ -149,6 +149,14 @@ HERE
 </package>
 """
 
+new_attribute_templ = """\
+<attributes>
+  <attribute namespace="" name="">
+    <value><value>
+  </attribute>
+</attributes>
+"""
+
 new_user_template = """\
 <person>
   <login>%(user)s</login>
@@ -1774,7 +1782,7 @@ def makeurl(baseurl, l, query=[]):
     function. In case of a list not -- this is to be backwards compatible.
     """
 
-    #print 'makeurl:', baseurl, l, query
+    print 'makeurl:', baseurl, l, query
 
     if type(query) == type(list()):
         query = '&'.join(query)
@@ -2007,6 +2015,26 @@ def show_package_meta(apiurl, prj, pac):
         raise
 
 
+def show_attribute_meta(apiurl, prj, pac, subpac, attribute):
+    path=[]
+    path.append('source')
+    path.append(prj)
+    if pac:
+       path.append(pac)
+    if pac and subpac:
+       path.append(subpac)
+    path.append('_attribute')
+    if attribute:
+       path.append(attribute)
+    url = makeurl(apiurl, path)
+    try:
+        f = http_GET(url)
+        return f.readlines()
+    except urllib2.HTTPError, e:
+        e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
+        raise
+
+
 def show_develproject(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
     try:
@@ -2112,6 +2140,10 @@ metatypes = { 'prj':     { 'path': 'source/%s/_meta',
                          },
               'pkg':     { 'path'     : 'source/%s/%s/_meta',
                            'template': new_package_templ,
+                           'file_ext': '.xml'
+                         },
+              'attribute':     { 'path'     : 'source/%s/%s/_meta',
+                           'template': new_attribute_templ,
                            'file_ext': '.xml'
                          },
               'prjconf': { 'path': 'source/%s/_config',
