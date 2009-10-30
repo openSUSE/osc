@@ -306,6 +306,10 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
+    @cmdln.option('--attribute-defaults', action='store_true',
+                        help='include defined attribute defaults')
+    @cmdln.option('--attribute-project', action='store_true',
+                        help='include project values, if missing in packages ')
     @cmdln.option('-F', '--file', metavar='FILE',
                         help='read metadata from FILE, instead of opening an editor. '
                         '\'-\' denotes standard input. ')
@@ -392,6 +396,8 @@ class Osc(cmdln.Cmdln):
                package = args[1]
             else:
                package = None
+               if opts.attribute_project:
+                    sys.exit('--attribute-project works only when also a package is given')
             if len(args) > 2:
                subpackage = args[2]
             else:
@@ -424,7 +430,7 @@ class Osc(cmdln.Cmdln):
             elif cmd == 'pkg':
                 sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(conf.config['apiurl'], project, package, subpackage, opts.attribute)))
+                sys.stdout.write(''.join(show_attribute_meta(conf.config['apiurl'], project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
                 sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
             elif cmd == 'user':

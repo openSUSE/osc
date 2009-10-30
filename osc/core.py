@@ -2015,7 +2015,7 @@ def show_package_meta(apiurl, prj, pac):
         raise
 
 
-def show_attribute_meta(apiurl, prj, pac, subpac, attribute):
+def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with_project):
     path=[]
     path.append('source')
     path.append(prj)
@@ -2026,7 +2026,12 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute):
     path.append('_attribute')
     if attribute:
        path.append(attribute)
-    url = makeurl(apiurl, path)
+    query=[]
+    if with_defaults:
+       query.append("with_default=1")
+    if with_project:
+       query.append("with_project=1")
+    url = makeurl(apiurl, path, query)
     try:
         f = http_GET(url)
         return f.readlines()
