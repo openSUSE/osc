@@ -287,7 +287,7 @@ def verify_cb(ok, store):
         print "Subject:     ", cert.get_subject()
         print "Issuer:      ", cert.get_issuer()
         print "Fingerprint: ", cert.get_fingerprint()
-        print "Valid:       ", cert.get_not_before(), "-", cert.get_not_before()
+        print "Valid:       ", cert.get_not_before(), "-", cert.get_not_after()
         try:
             import M2Crypto.Err
             reason = M2Crypto.Err.get_x509_verify_error(err)
