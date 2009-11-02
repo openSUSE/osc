@@ -360,7 +360,13 @@ def init_basicauth(config):
         if 'cafile' in config['api_host_options'][config['apiurl']]:
             cafile = config['api_host_options'][config['apiurl']]['cafile']
         if not cafile and not capath:
-            capath = '/etc/ssl/certs'
+	    for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs' ]:
+		if os.path.isfile(i):
+		    cafile = i
+		    break
+		elif os.path.isdir(i):
+		    capath = i
+		    break
         ctx = SSL.Context('sslv3')
         ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=verify_cb)
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
