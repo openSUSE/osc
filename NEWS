@@ -1,4 +1,3 @@
- - partial fix for bnc#551147
 
 0.124
  - added 'osc bugowner' as a more intelligent version of 'osc maintainer -B'
@@ -15,11 +14,13 @@
    * This is meant as a proof of concept. I intend to generalize this usage of '.'
      for all osc commands. Feedback welcome.
  - support http proxies when using python 2.6 or newer (#551004)
+ - partial fix for checkout problems (bnc#551147)
  #
  # Features which require OBS 1.7
  #
  - search: allow to limit results via existing attibutes
  - added "osc meta attribute" for basic attribute creation, deletion, showing and value setting
+ - implement "osc mbranch" call to create projects with multiple source package (instances)
 
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to

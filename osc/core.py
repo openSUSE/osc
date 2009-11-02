@@ -1783,8 +1783,6 @@ def makeurl(baseurl, l, query=[]):
     function. In case of a list not -- this is to be backwards compatible.
     """
 
-    print 'makeurl:', baseurl, l, query
-
     if type(query) == type(list()):
         query = '&'.join(query)
     elif type(query) == type(dict()):
@@ -3062,6 +3060,37 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_aggregate'])
     http_PUT(u, data=aggregate_template)
     print 'Done.'
+
+
+def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject):
+    """
+    Branch packages defined via attributes (via API call)
+    """
+    query = { 'cmd': 'branch' }
+    query['attribute'] = attribute
+    if targetproject:
+        query['target_project'] = targetproject
+    if package:
+        query['package'] = package
+    if maintained_update_project_attribute:
+        query['update_project_attribute'] = maintained_update_project_attribute
+
+    u = makeurl(apiurl, ['source'], query=query)
+    try:
+        f = http_POST(u)
+    except urllib2.HTTPError, e:
+        if not return_existing:
+            raise
+        msg = ''.join(e.readlines())
+        msg = msg.split('<summary>')[1]
+        msg = msg.split('</summary>')[0]
+        m = re.match(r"branch target package already exists: (\S+)/", msg)
+
+    r = f.read()
+    r = r.split('targetproject">')[1]
+    r = r.split('</data>')[0]
+    return r
+
 
 def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False):
     """

@@ -106,6 +106,10 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'check_filelist': '1',
              # check for pending requests after executing an action (e.g. checkout, update, commit)
              'check_for_request_on_action': '0',
+
+             # Maintenance defaults to OBS instance defaults
+             'maintained_attribute': 'OBS:Maintained',
+             'maintained_update_project_attribute': 'OBS:UpdateProject',
 }
 
 # being global to this module, this dict can be accessed from outside

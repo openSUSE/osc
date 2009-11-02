@@ -1294,6 +1294,67 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print r
 
 
+    @cmdln.option('-c', '--checkout', action='store_true',
+                        help='Checkout branched package afterwards ' \
+                                '(\'osc bco\' is a shorthand for this option)' )
+    @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
+                        help='Use this attribute to find affected packages (default is OBS:Maintained)')
+    @cmdln.option('-u', '--update-project-attribute', metavar='UPDATE_ATTRIBUTE',
+                        help='Use this attribute to find update projects (default is OBS:UpdateProject) ')
+    def do_mbranch(self, subcmd, opts, *args):
+        """${cmd_name}: Multiple branch of a package
+
+        [See http://en.opensuse.org/Build_Service/Concepts/Maintenance for information
+        on this topic.]
+
+        This command is used for creating multiple links of defined version of a package
+        in one project. This is esp. used for maintenance updates.
+
+        The branched package will live in
+            home:USERNAME:branches:ATTRIBUTE:PACKAGE
+        if nothing else specified.
+
+        usage:
+            osc mbranch [ SOURCEPACKAGE [ TARGETPROJECT ] ]
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+        tproject = None
+
+        maintained_attribute = conf.config['maintained_attribute']
+        maintained_update_project_attribute = conf.config['maintained_update_project_attribute']
+
+        if not (len(args) >= 1 and len(args) <= 2):
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+        if len(args) >= 1:
+            package = args[0]
+        if len(args) >= 2:
+            tproject = args[1]
+
+        r = attribute_branch_pkg(conf.config['apiurl'], maintained_attribute, maintained_update_project_attribute, \
+                                 package, tproject)
+
+        if r is None:
+            print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.' 
+            sys.exit(1)
+
+        print "Project " + r + " created."
+
+        if opts.checkout:
+            init_project_dir(conf.config['apiurl'], r, r)
+            print statfrmt('A', r)
+
+            # all packages
+            for package in meta_get_packagelist(conf.config['apiurl'], r):
+                try:
+                    checkout_package(conf.config['apiurl'], r, package, expand_link = True, prj_dir = r)
+                except:
+                    print >>sys.stderr, 'Error while checkout package:\n', package
+
+            if conf.config['verbose']:
+                print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
+
+
     @cmdln.alias('branchco')
     @cmdln.alias('bco')
     @cmdln.alias('getpac')
