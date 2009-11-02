@@ -3201,6 +3201,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='shorthand for --bugowner --package')
     @cmdln.option('--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
+    @cmdln.alias('maintained')
     @cmdln.alias('se')
     def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
@@ -3211,6 +3212,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc search \'search term\' <options>
+            osc maintained \'source package name\'
             osc se ...
         ${cmd_option_list}
 
@@ -3241,6 +3243,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         search_list = []
         search_for = []
         extra_limiter = ""
+        if subcmd == 'maintained':
+            opts.bugowner = True
+            opts.exact = True
+            opts.package = True
+            opts.limit_to_attribute = conf.config['maintained_attribute']
         if opts.title:
             search_list.append('title')
         if opts.description:
