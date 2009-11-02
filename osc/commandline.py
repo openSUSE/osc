@@ -1153,6 +1153,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Error: source and destination are the same.'
             return 1
 
+        if src_project == dst_project and not opts.cicount:
+            # in this case, the user usually wants to build different spec
+            # files from the same source
+            opts.cicount = "copy"
+
         if opts.current:
             rev = show_upstream_rev(conf.config['apiurl'], src_project, src_package)
 
