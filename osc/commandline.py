@@ -255,14 +255,18 @@ class Osc(cmdln.Cmdln):
             if opts.revision:
                 raise oscerr.WrongOptions('Sorry, the --revision option is not supported for binaries.')
 
-            elif len(args) == 1:
-                #if opts.verbose:
-                #    sys.exit('The verbose option is not implemented for projects.')
-                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch)
-                print '\n'.join(r)
+            r = None
+
+            if len(args) == 1:
+                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch, verbose=opts.verbose)
 
             elif len(args) == 2:
-                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch, package=package)
+                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch, package=package, verbose=opts.verbose)
+
+            if opts.verbose:
+                for f in r:
+                    print "%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name)
+            else:
                 print '\n'.join(r)
 
         # list sources
