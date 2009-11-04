@@ -123,19 +123,17 @@ class Fetcher:
 
 
     def run(self, buildinfo):
-        all = 0
-	cached = 0
+        cached = 0
+        all = len(buildinfo.deps)
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
-	    all += 1
             if os.path.exists(i.fullfilename):
-	      cached += 1
-	miss = 0
-	if all:
-	    miss = 100.0*(all-cached)/all
-	print "%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss,cached,all)
-	needed = all-cached
-
+                cached += 1
+        miss = 0
+        needed = all - cached
+        if all:
+            miss = 100.0 * needed / all
+        print "%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss, cached, all)
         done = 1
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
@@ -153,7 +151,7 @@ class Fetcher:
                         print 'Cleaning up incomplete file', i.fullpartname
                         os.unlink(i.fullpartname)
                     sys.exit(0)
-		done += 1
+            done += 1
 
 
 
