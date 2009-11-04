@@ -404,7 +404,7 @@ def main(opts, argv):
                            template_args=None, create_new=False, apiurl=apiurl):
                 if pac == '_repository' or meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
                                                        template_args=None, create_new=False, apiurl=apiurl):
-                    print >>sys.stderr, 'wrong repo/arch?'
+                    print >>sys.stderr, 'ERROR: Either wrong repo/arch as parameter or a parse error of .spec/.dsc/.kiwi file due to syntax error'
                 else:
                     print >>sys.stderr, 'The package \'%s\' does not exists - please ' \
                                         'rerun with \'--local-package\'' % pac
