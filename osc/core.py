@@ -3062,7 +3062,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     print 'Done.'
 
 
-def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject):
+def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False):
     """
     Branch packages defined via attributes (via API call)
     """
