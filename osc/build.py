@@ -498,10 +498,6 @@ def main(opts, argv):
                 os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        """don't know how to verify .deb packages. They are verified on install
-        anyway, I assume... verifying package now saves time though, since we don't
-        even try to set up the buildroot if it wouldn't work."""
-
         if config['build-type'] == "xen" or config['build-type'] == "kvm":
             print 'Skipping verification of package signatures due to secure VM build'
         elif opts.no_verify:
@@ -509,6 +505,13 @@ def main(opts, argv):
         else:
             print 'Verifying integrity of cached packages'
             verify_pacs([ i.fullfilename for i in bi.deps ])
+    elif bi.pacsuffix == 'deb':
+        if config['build-type'] == "xen" or config['build-type'] == "kvm":
+            print 'Skipping verification of package signatures due to secure VM build'
+        else:
+            print 'WARNING: deb packages get not verified, they can compromise your system !'
+    else:
+            print 'WARNING: unknown packages get not verified, they can compromise your system !'
 
     print 'Writing build configuration'
 
