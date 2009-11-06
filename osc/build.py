@@ -498,7 +498,7 @@ def main(opts, argv):
     if bi.pacsuffix == 'rpm':
         if config['build-type'] == "xen" or config['build-type'] == "kvm":
             print 'Skipping verification of package signatures due to secure VM build'
-        elif opts.no_verify:
+        elif opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
