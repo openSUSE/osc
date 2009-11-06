@@ -84,20 +84,21 @@ class Fetcher:
 
         (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
         try:
-            # it returns the filename
-            ret = mg.urlgrab(pac.filename,
-                             filename = tmpfile,
-                             text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
-            self.move_package(tmpfile, pac.localdir, pac)
-        except URLGrabError, e:
-            if e.errno == 256:
-                self.cpio.setdefault(pac.project, {})[pac.name] = pac
-                return
-            print
-            print >>sys.stderr, 'Error:', e.strerror
-            print >>sys.stderr, 'Failed to retrieve %s from the following locations (in order):' % pac.filename
-            print >>sys.stderr, '\n'.join(pac.urllist)
-            sys.exit(1)
+            try:
+                # it returns the filename
+                ret = mg.urlgrab(pac.filename,
+                                 filename = tmpfile,
+                                 text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
+                self.move_package(tmpfile, pac.localdir, pac)
+            except URLGrabError, e:
+                if e.errno == 256:
+                    self.cpio.setdefault(pac.project, {})[pac.name] = pac
+                    return
+                print
+                print >>sys.stderr, 'Error:', e.strerror
+                print >>sys.stderr, 'Failed to retrieve %s from the following locations (in order):' % pac.filename
+                print >>sys.stderr, '\n'.join(pac.urllist)
+                sys.exit(1)
         finally:
             if os.path.exists(tmpfile):
                 os.unlink(tmpfile)
