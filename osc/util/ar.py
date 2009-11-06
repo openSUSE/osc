@@ -19,6 +19,10 @@ import sys
 import StringIO
 import stat
 
+# workaround for python24
+if not hasattr(os, 'SEEK_SET'):
+    os.SEEK_SET = 0
+
 class ArError(Exception):
     """Base class for all ar related errors"""
     def __init__(self, fn, msg):

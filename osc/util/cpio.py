@@ -19,6 +19,10 @@ import stat
 import struct
 import sys
 
+# workaround for python24
+if not hasattr(os, 'SEEK_SET'):
+    os.SEEK_SET = 0
+
 # format implementation is based on src/copyin.c and src/util.c (see cpio sources)
 
 class CpioError(Exception):
