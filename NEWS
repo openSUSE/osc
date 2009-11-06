@@ -17,6 +17,8 @@
  - partial fix for checkout problems (bnc#551147)
  - fixed #477690 ("osc fetching binaries really slow")
  - osc jobhistory accepts also "prj [pkg] repo arch" now
+ - osc buildinfo accepts now also "prj pkg repo arch [spec/dsc]"
+ - osc buildconfig accepts now also "prj pkg repo arch"
  #
  # Features which require OBS 1.7
  #

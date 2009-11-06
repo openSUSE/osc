@@ -2531,24 +2531,40 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output.
 
         usage:
-            osc buildinfo REPOSITORY ARCH [BUILD_DESCR]
+            osc buildinfo REPOSITORY ARCH [BUILD_DESCR]    (in pkg dir)
+            osc buildinfo PROJECT PACKAGE REPOSITORY ARCH [BUILD_DESCR]
+
         ${cmd_option_list}
         """
-
         wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        apiurl = store_read_apiurl(wd)
-
+        args = slash_split(args)
+        
         if args is None or len(args) < 2:
             print 'Valid arguments for this package are:'
             print
             self.do_repos(None, None)
             print
-            raise oscerr.WrongArgs('Missing argument')
+            raise oscerr.WrongArgs('Missing argument.')
 
-        repository = args[0]
-        arch = args[1]
+        if len(args) > 5:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) < 4: # 2 or 3
+            package = store_read_package(wd)
+            project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
+            repository = args[0]
+            arch = args[1]
+
+        if len(args) > 3 and len(args) < 6: # 4 or 5
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            repository = args[2]
+            arch = args[3]
+            # for following specfile detection ...
+            del args[0]
+            del args[0]
 
         # were we given a specfile (third argument)?
         try:
@@ -2565,7 +2581,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     addlist=opts.extra_pkgs))
 
 
-    def do_buildconfig(self, subcmd, opts, repository, arch):
+    def do_buildconfig(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build config
 
         Shows the build configuration which is used in building a package.
@@ -2579,14 +2595,39 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
-        ${cmd_usage}
+        usage:
+            osc buildconfig REPOSITORY ARCH    (in pkg dir)
+            osc buildconfig PROJECT PACKAGE REPOSITORY ARCH
         ${cmd_option_list}
         """
 
         wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        apiurl = store_read_apiurl(wd)
+        args = slash_split(args)
+        
+        if args is None or len(args) < 2:
+            print 'Valid arguments for this package are:'
+            print
+            self.do_repos(None, None)
+            print
+            raise oscerr.WrongArgs('Missing argument.')
+
+        if len(args) > 4:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 2:
+            package = store_read_package(wd)
+            project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
+            repository = args[0]
+            arch = args[1]
+        elif len(args) == 4:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            repository = args[2]
+            arch = args[3]
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
 
         print ''.join(get_buildconfig(apiurl, project, package, repository, arch))
 
