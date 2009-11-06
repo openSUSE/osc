@@ -160,9 +160,9 @@ class Ar:
             self.__file = open(self.filename, 'rb')
             try:
                 if sys.platform[:3] != 'win':
-                    self.__file = mmap.mmap(self.__file.fileno(), 0, prot=mmap.PROT_READ)
+                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name), prot=mmap.PROT_READ)
                 else:
-                    self.__file = mmap.mmap(self.__file.fileno(), 0)
+                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name))
             except EnvironmentError, e:
                 if e.errno == 19 or ( hasattr(e, 'winerror') and e.winerror == 5 ):
                     print >>sys.stderr, 'cannot use mmap to read the file, falling back to the default io'
