@@ -506,6 +506,8 @@ def main(opts, argv):
     elif bi.pacsuffix == 'deb':
         if config['build-type'] == "xen" or config['build-type'] == "kvm":
             print 'Skipping verification of package signatures due to secure VM build'
+        elif opts.no_verify or opts.noinit:
+            print 'Skipping verification of package signatures'
         else:
             print 'WARNING: deb packages get not verified, they can compromise your system !'
     else:

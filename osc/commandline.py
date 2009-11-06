@@ -3206,11 +3206,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='as -i, but only bugowner')
     @cmdln.option('-m', '--maintainer', action='store_true',
                         help='as -i, but only maintainer')
+    @cmdln.option('--maintained', action='store_true',
+                        help='limit search results to packages with maintained attribute set.')
     @cmdln.option('-M', '--mine', action='store_true',
                         help='shorthand for --bugowner --package')
     @cmdln.option('--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
-    @cmdln.alias('maintained')
+    @cmdln.alias('sm')
     @cmdln.alias('se')
     def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
@@ -3252,7 +3254,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         search_list = []
         search_for = []
         extra_limiter = ""
-        if subcmd == 'maintained':
+        if subcmd == 'sm' or opts.maintained:
             opts.bugowner = True
             opts.exact = True
             opts.package = True
