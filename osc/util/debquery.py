@@ -45,7 +45,7 @@ class DebQuery(packagequery.PackageQuery):
             self.fields['version'] = versrel[0]
             self.fields['release'] = versrel[1]
         else:
-            self.fields['release'] = '0'
+            self.fields['release'] = None
         verep = self.fields['version'].split(':', 1)
         if len(verep) == 2:
             self.fields['epoch'] = verep[0]
@@ -63,7 +63,7 @@ class DebQuery(packagequery.PackageQuery):
         if res != 0:
             return res
         res = DebQuery.debvercmp(self.version(), debq.version())
-        if res != 0:
+        if res != None:
             return res
         res = DebQuery.debvercmp(self.release(), debq.release())
         return res
