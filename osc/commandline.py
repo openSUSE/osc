@@ -2834,24 +2834,44 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
     @cmdln.alias('jobhist')
-    def do_jobhistory(self, subcmd, opts, repository, arch):
+    def do_jobhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the job history of a project
 
         The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
-        ${cmd_usage}
+        usage:
+           osc jobhist REPOSITORY ARCHITECTURE  (in project dir)
+           osc jobhist PROJECT [PACKAGE] REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
-
         wd = os.curdir
-        project = store_read_project(wd)
-        package = None
-        try:
-            package = store_read_package(wd)
-        except:
-            pass
-        apiurl = store_read_apiurl(wd)
+        args = slash_split(args)
+
+        if len(args) == 4:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            repository = args[2]
+            arch = args[3]
+        elif len(args) == 3:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = None        # skipped = prj
+            repository = args[1]
+            arch = args[2]
+        elif len(args) == 2:
+            package = None
+            try:
+                package = store_read_package(wd)
+            except:
+                pass
+            project = store_read_project(wd)
+            repository = args[0]
+            arch = args[1]
+            apiurl = store_read_apiurl(wd)
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments')
 
         format = 'text'
         if opts.csv:
