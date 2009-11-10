@@ -3245,7 +3245,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             args = []
             if opts.user: args = [ opts.user ]
             if opts.all: opts.involved = True
-            else: opts.bugowner = True
+            else:
+                opts.bugowner = True
+                opts.maintained = True
             return self.do_search('se', opts, *args)
 
         raise oscerr.WrongArgs('Unknown arg "%s": Please specify one of projects/packages/requests' % args[0])
