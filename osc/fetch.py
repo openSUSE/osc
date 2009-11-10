@@ -157,7 +157,11 @@ class Fetcher:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
                         print '%d/%d (%s) %s' % (done, needed, i.project, i.filename)
-                    self.fetch(i, "%d/%d " % (done,needed))
+                    self.fetch(i)
+                    if self.progress_obj:
+                        print "  %d/%d\r" % (done,needed),
+                        sys.stdout.flush()
+
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
                     print 'Exiting.'

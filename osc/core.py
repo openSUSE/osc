@@ -1783,6 +1783,9 @@ def makeurl(baseurl, l, query=[]):
     function. In case of a list not -- this is to be backwards compatible.
     """
 
+    if conf.config['verbose'] > 1:
+        print 'makeurl:', baseurl, l, query
+
     if type(query) == type(list()):
         query = '&'.join(query)
     elif type(query) == type(dict()):

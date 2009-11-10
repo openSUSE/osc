@@ -495,10 +495,10 @@ class Osc(cmdln.Cmdln):
                 d="""<attributes><attribute name='%s' >%s</attribute></attributes>""" % (opts.attribute, values)
                 url = makeurl(conf.config['apiurl'], attributepath)
                 f=http_POST(url, data=d)
-		while 1:
-		    buf = f.read(16384)
-		    if not buf: break
-		    print buf
+                while 1:
+                    buf = f.read(16384)
+                    if not buf: break
+                    print buf
 
         # upload file
         if opts.file:
@@ -551,10 +551,10 @@ class Osc(cmdln.Cmdln):
                 attributepath.append(opts.attribute)
                 u = makeurl(conf.config['apiurl'], attributepath)
                 f=http_DELETE(u)
-		while 1:
-		    buf = f.read(16384)
-		    if not buf: break
-		    print buf
+                while 1:
+                    buf = f.read(16384)
+                    if not buf: break
+                    print buf
             else:
                 sys.exit('The --delete switch is only for pattern metadata.')
 
@@ -1664,6 +1664,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         args = expand_proj_pack(args)
+
+        ## FIXME: 
+        ## if there is only one argument, and it ends in .ymp
+        ## then fetch it, Parse XML to get the first 
+        ##  metapackage.group.repositories.repository.url
+        ## and construct zypper cmd's for all
+        ##  metapackage.group.software.item.name
+        ##
+        ## if args[0] is already an url, the use it as is.
+
         cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.1', args[1])
         print self.do_install.__doc__
         print "Example: \n" + cmd
@@ -3361,16 +3371,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 result.sort()
             if kind in ['package']:
                 # hm... results is a flat list
-		## FIXME: this messes up with se -v .
+                ## FIXME: this messes up with se -v .
                 l = [ (j, i) for i, j in zip(*[iter(result)]*2) ]
                 l.sort()
                 result = []
-		##
-		## search used to report the table as
-		## 'package project', I see no reason for having package before project.
-		## But it definitly hinders copy-paste.
-		## Changed to more normal 'project package' ordering. 2009-10-05, jw
-		##
+                ##
+                ## search used to report the table as
+                ## 'package project', I see no reason for having package before project.
+                ## But it definitly hinders copy-paste.
+                ## Changed to more normal 'project package' ordering. 2009-10-05, jw
+                ##
                 for j, i in l:
                     result.extend([j, i])
 
@@ -3593,23 +3603,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Shortcut for osc maintainer -B [PRJ] PKG
 
-	PRJ defaults to '%(getpac_default_project)s'.
-	Prints bugowner if defined, or maintainer otherwise.
+        PRJ defaults to '%(getpac_default_project)s'.
+        Prints bugowner if defined, or maintainer otherwise.
 
         ${cmd_option_list}
         """
-	opts.role = None
-	opts.bugowner = True
-	opts.bugowner_only = None
-	opts.add = None
-	opts.delete = None
-	opts.devel_project = None
+        opts.role = None
+        opts.bugowner = True
+        opts.bugowner_only = None
+        opts.add = None
+        opts.delete = None
+        opts.devel_project = None
 
         if len(args) == 1:
             print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['getpac_default_project'], args[0])
             # python has no args.unshift ???
             args = [ conf.config['getpac_default_project'] , args[0] ]
-	return self.do_maintainer(subcmd, opts, *args)
+        return self.do_maintainer(subcmd, opts, *args)
 
 
     @cmdln.option('-b', '--bugowner_only', action='store_true',
@@ -3688,22 +3698,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
         else:
             # showing the maintainers
-	    seen=0
+            seen=0
             for role in roles:
-		if opts.bugowner:
-		    if seen:
-		        break;
+                if opts.bugowner:
+                    if seen:
+                        break;
                 for person in tree.findall('person'):
                     if person.get('role') == role:
-		        seen += 1
+                        seen += 1
                         maintainers.append(person.get('userid'))
-		if opts.bugowner:
-		    if seen:
-		    	print role+":",
-		else:
-		    print ""
-		    print role, ":"
-		    
+                if opts.bugowner:
+                    if seen:
+                        print role+":",
+                else:
+                    print ""
+                    print role, ":"
+                    
                 if opts.email:
                     emails = []
                     for maintainer in maintainers:
@@ -4088,9 +4098,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if conf.config['api_host_options'][apiurl].has_key('email'):
                 os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
             else:
-	        try:
+                try:
                     os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
-		except Exception, e:
+                except Exception, e:
                     sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
 
         if opts.message:

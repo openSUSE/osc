@@ -1,7 +1,3 @@
-JW:
-- german umlaut characters הצü do not work in the message for osc submitpac.
-  404 not found, and no request sent.
-
 CRITICAL:
  - webpage can create a _link in a fully populated package.
    Need to prevent his somehow.
@@ -69,4 +65,9 @@ osc addrepo - obsolete zypper ar
 osc install - obsolete zypper in
   -
 
+- german umlaut characters הצü do not work in the message for osc submitpac.
+  404 not found, and no request sent.
+- implement fedora style 'osc mock'  - this requires anonymous read-only access to the build server.
+  this could use http://tmp.vuntz.net/opensuse-packages/browse.py?project=openSUSE:Factory
+  as a hacky solution, while we are waiting on fate#306192
 
