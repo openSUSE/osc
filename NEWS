@@ -19,6 +19,7 @@
  - osc jobhistory accepts also "prj [pkg] repo arch" now
  - osc buildinfo accepts now also "prj pkg repo arch [spec/dsc]"
  - osc buildconfig accepts now also "prj pkg repo arch"
+ - fixed warning messages regarding SSL certificate on some plattforms (Fedora)
  #
  # Features which require OBS 1.7
  #
