@@ -13,16 +13,12 @@ CRITICAL:
    The current working directory or its descendants should provide defaults 
    for apiurl, prj and/or pkg.
 
-  - _real_ SSL support, with certificate verification
-
 MAJOR:
 
 NORMAL:
 
   - improvements submit requests:
     - create: enforce message
-    - create: check if there is already a request open for that target package
-      (if so, offer to obsolete it?)
     - for done requests, show accept/reject messages also
 
   - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
@@ -62,6 +58,8 @@ FIXME: 'osc rq' shall default to 'osc rq list -M -B -s all',
 FIXME: 'osc log openSUSE:Factory PKG' should also point to the bsdevelproject
 
 osc addrepo - obsolete zypper ar
+ => hm, addrepo could be used also to add a repo to a project. These functionalities
+    should not conflict
 osc install - obsolete zypper in
   -
 
@@ -70,4 +68,6 @@ osc install - obsolete zypper in
 - implement fedora style 'osc mock'  - this requires anonymous read-only access to the build server.
   this could use http://tmp.vuntz.net/opensuse-packages/browse.py?project=openSUSE:Factory
   as a hacky solution, while we are waiting on fate#306192
+  => we will not make rpm downloads anonymous possible, this would create too high load on the server.
+     Please improve build script instead.
 
