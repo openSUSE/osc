@@ -26,6 +26,7 @@
  - search: allow to limit results via existing attibutes
  - added "osc meta attribute" for basic attribute creation, deletion, showing and value setting
  - implement "osc mbranch" call to create projects with multiple source package (instances)
+ - new "osc patchinfo" command: basic patchinfo generation and modification support 
 
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to

@@ -308,6 +308,50 @@ class Osc(cmdln.Cmdln):
                         print '\n'.join(l)
 
 
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='force generation of new patchinfo file')
+    @cmdln.option('--force-update', action='store_true',
+                        help='drops away collected packages from an already built patch and let it collect again')
+    def do_patchinfo(self, subcmd, opts, *args):
+        """${cmd_name}: Generate and edit a patchinfo file.
+
+        A patchinfo file describes the packages for an update and the kind of
+        problem it solves.
+
+        Examples:
+            osc patchinfo
+            osc patchinfo PATCH_NAME
+        ${cmd_option_list}
+        """
+
+        project_dir = localdir = os.getcwd()
+        if is_project_dir(localdir):
+            project = Project(localdir).name
+            apiurl = Project(localdir).apiurl
+        else:
+            sys.exit('This command must be called in a checked out project.')
+        for p in meta_get_packagelist(apiurl, project):
+            if p.startswith("_patchinfo:"):
+                patchinfo = p
+        
+        if opts.force or not patchinfo:
+            print "Creating initial patchinfo..."
+            query='cmd=createpatchinfo'
+            if args[0]:
+               query += "&name=" + args[0]
+            url = makeurl(apiurl, ['source', project], query=query)
+            f = http_POST(url)
+
+        if not os.path.exists(project_dir + "/" + patchinfo):
+            checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
+
+        if sys.platform[:3] != 'win':
+            editor = os.getenv('EDITOR', default='vim')
+        else:
+            editor = os.getenv('EDITOR', default='notepad')
+        subprocess.call('%s %s' % (editor, project_dir + "/" + patchinfo + "/_patchinfo"), shell=True)
+
+
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
     @cmdln.option('--attribute-defaults', action='store_true',

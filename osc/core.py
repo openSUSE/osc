@@ -3079,15 +3079,15 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         query['update_project_attribute'] = maintained_update_project_attribute
 
     u = makeurl(apiurl, ['source'], query=query)
+    f = None
     try:
         f = http_POST(u)
     except urllib2.HTTPError, e:
-        if not return_existing:
-            raise
         msg = ''.join(e.readlines())
         msg = msg.split('<summary>')[1]
         msg = msg.split('</summary>')[0]
-        m = re.match(r"branch target package already exists: (\S+)/", msg)
+        m = re.match(r"attribute branch call failed: (\S+)/", msg)
+        return m
 
     r = f.read()
     r = r.split('targetproject">')[1]
