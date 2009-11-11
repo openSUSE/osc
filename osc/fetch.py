@@ -201,14 +201,19 @@ class Fetcher:
                     os.unlink(tmpfile)
 
         self.nopac = True
-        for i in buildinfo.projects:
-            dest = "%s/%s/_pubkey" % (self.cachedir, i)
+	prjs = buildinfo.projects.keys()
+        for i in prjs:
+            dest = "%s/%s" % (self.cachedir, i)
+            if not os.path.exists(dest):
+		os.makedirs(dest, mode=0755)
+	    dest += '/_pubkey'
+
             if os.path.exists(dest):
                 buildinfo.keys.append(dest)
             else:
                 url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
                 try:
-                    self.gr.urlgrab(url, dest, text="key for %s" % i)
+                    self.gr.urlgrab(url, dest, text="fetching key for %s" % i)
                     buildinfo.keys.append(dest)
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
@@ -217,7 +222,17 @@ class Fetcher:
                         os.unlink(dest)
                     sys.exit(0)
                 except URLGrabError, e:
-                    print "can't fetch key for %s: %s" %(i, e.strerror)
+		    if self.http_debug:
+			print "can't fetch key for %s: %s" %(i, e.strerror)
+			print "url: %s" % url
+		    else:
+			print "%s doesn't have a gpg key" % i
+
+		    l = i.rsplit(':', 1)
+		    # try key from parent project
+                    if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
+			prjs.append(l[0])
+
         self.nopac = False
 
 def verify_pacs_old(pac_list):
@@ -319,6 +334,7 @@ def verify_pacs(pac_list, key_list):
                 failed = True
                 print pkg, ':', e
     except Exception, e:
+	print str(e)
         checker.cleanup()
         sys.exit(1)
 
