@@ -84,7 +84,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # enable project tracking by default
              'do_package_tracking': '1',
              # default for osc build
-             'extra-pkgs': 'vim gdb strace',
+             'extra-pkgs': '',
              # default repository
              'build_repository': 'openSUSE_Factory',
              # default project for branch or bco
