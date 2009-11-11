@@ -210,11 +210,13 @@ class Fetcher:
 
             if os.path.exists(dest):
                 buildinfo.keys.append(dest)
+		buildinfo.prjkeys.append(i)
             else:
                 url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
                 try:
                     self.gr.urlgrab(url, dest, text="fetching key for %s" % i)
                     buildinfo.keys.append(dest)
+                    buildinfo.prjkeys.append(i)
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
                     print 'Exiting.'

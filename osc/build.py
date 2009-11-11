@@ -99,6 +99,7 @@ class Buildinfo:
         self.deps = []
         self.projects = {}
         self.keys = []
+        self.prjkeys = []
         for node in root.findall('bdep'):
             p = Pac(node, self.buildarch, self.pacsuffix,
                     apiurl, localpkgs)
@@ -631,6 +632,19 @@ def main(opts, argv):
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
+	    t = config['api_host_options'][apiurl]['trusted_prj']
+	    for prj in bi.prjkeys:
+		if not prj in t:
+		    print "\nYou are trying to use packages from project '%s'." % prj
+		    print "Note that malicious packages can compromise your system."
+# saving back to config file is complicated
+#		    r = raw_input("Would you like to trust '%s' (a)lways, (t)emorarily or (N)ever? " % prj)
+#		    if r == 'a':
+#			config['api_host_options'][apiurl]['trusted_prj'] += prj
+#		    elif r != 't':
+#			print "Well, good good bye then :-)"
+#			sys.exit(1)
+
             verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
     elif bi.pacsuffix == 'deb':
         if config['build-type'] == "xen" or config['build-type'] == "kvm":

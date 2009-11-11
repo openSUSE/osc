@@ -627,6 +627,11 @@ def get_config(override_conffile = None,
         if not 'sslcertck' in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
+	if cp.has_option(url, 'trusted_prj'):
+	    api_host_options[apiurl]['trusted_prj'] = cp.get(url, key).split(' ')
+	else:
+	    api_host_options[apiurl]['trusted_prj'] = []
+
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
     config['apiurl_aliases'] = aliases
