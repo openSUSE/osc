@@ -22,6 +22,7 @@
  - fixed warning messages regarding SSL certificate on some plattforms (Fedora)
  - support submit requests on project level, osc is checking which packages
    have changed and submits only the changed after asking back.
+ - show worker/id on jobhistory and make it faster by adding a default limit of 20
  #
  # Features which require OBS 1.7
  #

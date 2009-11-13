@@ -3514,19 +3514,20 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
 
     return r
 
-def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 'text'):
+def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 'text', limit=20):
     import time
     if current_package:
-        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], "package=%s" % (current_package))
+        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], "package=%s&limit=%d" % (current_package, limit))
     else:
-        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'])
+        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], "limit=%d" % (limit) )
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
     if format == 'text':
-        print "time                 package                                            reason           code              build time"
+        print "time                 package                                            reason           code              build time      worker"
     for node in root.findall('jobhist'):
         package = node.get('package')
+        worker = node.get('workerid')
         reason = node.get('reason')
         if not reason:
             reason = "unknown"
@@ -3548,9 +3549,9 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             waitbuild = "    %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
 
         if format == 'csv':
-            print '%s|%s|%s|%s|%s' % (endtime, package, reason, code, waitbuild)
+            print '%s|%s|%s|%s|%s|%s' % (endtime, package, reason, code, waitbuild, worker)
         else:
-            print '%s  %-50s %-16s %-16s %s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild)
+            print '%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker)
 
 
 def get_commitlog(apiurl, prj, package, revision, format = 'text'):
