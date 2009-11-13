@@ -36,7 +36,7 @@ The configuration dictionary could look like this:
 
 import OscConfigParser
 from osc import oscerr
-from oschttps import NoSecureSSLError
+from oscsslexcp import NoSecureSSLError
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False
@@ -276,33 +276,6 @@ def get_apiurl_usr(apiurl):
         return config['user']
 
 
-def verify_cb(ok, store):
-    # XXX: this is not really smart. It only detects one error.
-    # Potentially in the chain which is not that useful to the user.
-    # We should do this after the ssl handshake.
-    if(not ok):
-        err = store.get_error()
-        cert = store.get_current_cert()
-        print "*** Certificate verify failed (depth=%s) ***" % store.get_error_depth()
-        print "Subject:     ", cert.get_subject()
-        print "Issuer:      ", cert.get_issuer()
-        print "Fingerprint: ", cert.get_fingerprint()
-        print "Valid:       ", cert.get_not_before(), "-", cert.get_not_after()
-        try:
-            import M2Crypto.Err
-            reason = M2Crypto.Err.get_x509_verify_error(err)
-            print "Reason:      ", reason
-        except:
-            pass
-        while True:
-            r = raw_input("continue anyways (y/p/N)? ")
-            if r == 'y':
-                return 1
-            elif r == 'p':
-                print cert.as_text()
-            else:
-                break
-    return ok
 
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
@@ -313,8 +286,11 @@ def init_basicauth(config):
 
     if config['api_host_options'][config['apiurl']]['sslcertck']:
         try:
-            from M2Crypto import m2urllib2, SSL
-        except:
+            import oscssl
+            oscssl.myHTTPSConnection.appname = 'osc'
+            from M2Crypto import m2urllib2
+        except Exception, e:
+            print e
             raise NoSecureSSLError("M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto." % config['apiurl'])
 
     import urllib2
@@ -367,8 +343,7 @@ def init_basicauth(config):
                 elif os.path.isdir(i):
                     capath = i
                     break
-        ctx = SSL.Context('sslv3')
-        ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=verify_cb)
+        ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
         opener = m2urllib2.build_opener(ctx, urllib2.HTTPCookieProcessor(cookiejar), authhandler)
     else:
@@ -681,3 +656,4 @@ def get_config(override_conffile = None,
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
     init_basicauth(config)
 
+# vim: sw=4 et

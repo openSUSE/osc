@@ -7,7 +7,7 @@ import sys
 import signal
 from osc import oscerr
 from urllib2 import URLError, HTTPError
-from oschttps import NoSecureSSLError
+from oscsslexcp import NoSecureSSLError
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError
     from M2Crypto.SSL import SSLError as SSLError
