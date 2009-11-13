@@ -330,6 +330,7 @@ class Osc(cmdln.Cmdln):
             apiurl = Project(localdir).apiurl
         else:
             sys.exit('This command must be called in a checked out project.')
+        patchinfo = None
         for p in meta_get_packagelist(apiurl, project):
             if p.startswith("_patchinfo:"):
                 patchinfo = p
@@ -337,7 +338,7 @@ class Osc(cmdln.Cmdln):
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
             query='cmd=createpatchinfo'
-            if args[0]:
+            if args and args[0]:
                query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
@@ -620,6 +621,8 @@ class Osc(cmdln.Cmdln):
                   help='show diff only instead of creating the actual request')
     @cmdln.option('-l', '--list', action='store_true',
                   help='show submitrequests. Same as \'osc req list -M -a -t submit -D 0\'')
+    @cmdln.option('--yes', action='store_true',
+                  help='proceed without asking.')
     @cmdln.alias("sr")
     @cmdln.alias("submitreq")
     @cmdln.alias("submitpac")
@@ -678,9 +681,92 @@ class Osc(cmdln.Cmdln):
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        apiurl = conf.config['apiurl']
+        if len(args) > 0 and len(args) <= 2 and is_project_dir(os.getcwd()):
+                sys.exit('osc submitrequest from project directory is only working without target specs and for source linked files\n')
 
-        if len(args) <= 2:
+        if len(args) == 0 and is_project_dir(os.getcwd()):
+            import cgi
+            # submit requests for multiple packages are currently handled via multiple requests
+            # They could be also one request with multiple actions, but that avoids to accepts parts of it.
+            project = Project(os.getcwd())
+            apiurl = project.apiurl
+
+            sr_ids = []
+            pi = []
+            pac = []
+            targetprojects = []
+            # loop via all packages for checking their state
+            for p in meta_get_packagelist(apiurl, project.name):
+                if p.startswith("_patchinfo:"):
+                   pi.append(p)
+                else:
+                   # get _link info from server, who knows about the local state ...
+                   u = makeurl(apiurl, ['source', project.name, p])
+                   f = http_GET(u)
+                   root = ET.parse(f).getroot()
+                   linkinfo = root.find('linkinfo')
+                   if linkinfo == None:
+                       print "Package ", p, " is not a source link."
+                       sys.exit("This is currently not supported.")
+                   if linkinfo.get('error'):
+                       print "Package ", p, " is a broken source link."
+                       sys.exit("Please fix this first")
+                   t = linkinfo.get('project')
+                   if t:
+                       if len(root.findall('entry')) > 1: # This is not really correct, but should work mostly
+                                                          # Real fix is to ask the api if sources are modificated
+                                                          # but there is no such call yet.
+                          targetprojects.append(t)
+                          pac.append(p)
+                          print "Submitting package ", p
+                       else:
+                          print "  Skipping package ", p
+                   else:
+                       print "Skipping package ", p,  " since it is a source link pointing inside to the project."
+
+            if not opts.yes:
+                if pi:
+                   str=", "
+                   print "Submitting patchinfo ", str.join(pi), " to ", str.join(targetprojects)
+                print "\nEverything fine? Can we create the requests ? [y/n]"
+                if sys.stdin.read(1) != "y":
+                   sys.exit("Aborted...")
+
+            # loop via all packages to do the action
+            for p in pac:
+                result = create_submit_request(apiurl, project.name, p)
+                if not result:
+#                   sys.exit(result)
+                   sys.exit("submit request creation failed")
+                sr_ids.append(result)
+
+            # create submit requests for all found patchinfos
+            actionxml=""
+            options_block=""
+            if src_update:
+                options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+
+            for p in pi:
+                for t in targetprojects:
+                    s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
+                           (project.name, p, t, p, options_block)
+                    actionxml += s
+
+            if actionxml != "":
+                xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
+                      (actionxml, cgi.escape(opts.message or ""))
+                u = makeurl(apiurl, ['request'], query='cmd=create')
+                f = http_POST(u, data=xml)
+         
+                root = ET.parse(f).getroot()
+                sr_ids.append(root.get('id'))
+
+            print "Requests created: ",
+            for i in sr_ids:
+               print i,
+            sys.exit('Successfull finished')
+
+        elif len(args) <= 2:
             # try using the working copy at hand
             p = findpacs(os.curdir)[0]
             src_project = p.prjname

@@ -2419,22 +2419,30 @@ def create_change_devel_request(apiurl,
     return root.get('id')
 
 
+# This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
                          src_project, src_package,
-                         dst_project, dst_package,
-                         message, orev=None, src_update=None):
+                         dst_project=None, dst_package=None,
+                         message=None, orev=None, src_update=None):
 
     import cgi
     options_block=""
     if src_update:
         options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
+    # Yes, this kind of xml construction is horrible
+    targetxml = ""
+    if dst_project:
+       packagexml = ""
+       if dst_package:
+          packagexml = """package="%s" """ %( dst_package )
+       targetxml = """<target project="%s" %s /> """ %( dst_project, packagexml )
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">
     <submit>
         <source project="%s" package="%s" rev="%s"/>
-        <target project="%s" package="%s" />
+        %s
         %s
     </submit>
     <state name="new"/>
@@ -2443,10 +2451,9 @@ def create_submit_request(apiurl,
 """ % (src_project,
        src_package,
        orev or show_upstream_rev(apiurl, src_project, src_package),
-       dst_project,
-       dst_package,
+       targetxml,
        options_block,
-       cgi.escape(message or ''))
+       cgi.escape(message or ""))
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
     f = http_POST(u, data=xml)
