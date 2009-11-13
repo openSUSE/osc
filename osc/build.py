@@ -350,11 +350,10 @@ def main(opts, argv):
                                                     'project' : prj, 'package' : pac
                                                   }
 
+    extra_pkgs = []
     if not opts.extra_pkgs:
         extra_pkgs = config['extra-pkgs']
-    elif opts.extra_pkgs == ['']:
-        extra_pkgs = None
-    else:
+    elif opts.extra_pkgs != ['']:
         extra_pkgs = opts.extra_pkgs
 
     if xp:

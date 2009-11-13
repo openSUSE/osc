@@ -512,8 +512,6 @@ def get_config(override_conffile = None,
 
     re_clist = re.compile('[, ]+')
     config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i ]
-    if config['extra-pkgs'] == []:
-        config['extra-pkgs'] = None
 
     # collect the usernames, passwords and additional options for each api host
     api_host_options = {}
