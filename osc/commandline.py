@@ -684,6 +684,8 @@ class Osc(cmdln.Cmdln):
         if len(args) > 0 and len(args) <= 2 and is_project_dir(os.getcwd()):
                 sys.exit('osc submitrequest from project directory is only working without target specs and for source linked files\n')
 
+        apiurl = conf.config['apiurl']
+
         if len(args) == 0 and is_project_dir(os.getcwd()):
             import cgi
             # submit requests for multiple packages are currently handled via multiple requests
