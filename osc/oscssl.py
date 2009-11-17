@@ -60,11 +60,13 @@ class TrustedCertStore:
 # verify_cb is called for each error once
 # we only collect the errors and return suceess
 # connection will be aborted later if it needs to
-def verify_cb(verrs, ok, store):
+def verify_cb(ctx, ok, store):
+    if not ctx.verrs:
+	ctx.verrs = ValidationErrors()
 
     try:
         if not ok:
-            verrs.record(store.get_current_cert(), store.get_error(), store.get_error_depth())
+            ctx.verrs.record(store.get_current_cert(), store.get_error(), store.get_error_depth())
         return 1
 
     except Exception, e:
@@ -147,9 +149,9 @@ class mySSLContext(SSL.Context):
     def __init__(self):
         SSL.Context.__init__(self, 'sslv23')
         self.set_options(m2.SSL_OP_ALL | m2.SSL_OP_NO_SSLv2) # m2crypto does this for us but better safe than sorry
-        self.verrs = ValidationErrors()
+        self.verrs = None
         #self.set_info_callback() # debug
-        self.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=lambda ok, store: verify_cb(self.verrs, ok, store))
+        self.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=lambda ok, store: verify_cb(self, ok, store))
 
 
 class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
@@ -161,6 +163,9 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
 
     def connect(self, *args):
         r = M2Crypto.httpslib.origHTTPSConnection.connect(self, *args)
+	ctx = self.sock.ctx
+	verrs = ctx.verrs
+	ctx.verrs = None
         cert = self.sock.get_peer_cert()
         if not cert:
             self.close()
@@ -169,7 +174,6 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         # XXX: should be check if the certificate is known anyways?
         # Maybe it changed to something valid.
         if not self.sock.verify_ok():
-            ctx = self.sock.ctx
 
             tc = TrustedCertStore(self.host, self.port, self.appname, cert)
 
@@ -183,16 +187,16 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
                     print "offending certificate is at '%s'" % tc.file
                     raise SSLVerificationError("remote host identification has changed")
 
-            ctx.verrs.show()
+            verrs.show()
 
             print
 
-            if not ctx.verrs.could_ignore():
+            if not verrs.could_ignore():
                 raise SSLVerificationError("Certificate validation error cannot be ignored")
 
-            if not ctx.verrs.chain_ok:
+            if not verrs.chain_ok:
                 print "A certificate in the chain failed verification"
-            if not ctx.verrs.cert_ok:
+            if not verrs.cert_ok:
                 print "The server certificate failed verification"
 
             while True:
