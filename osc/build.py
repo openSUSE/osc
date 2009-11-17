@@ -346,8 +346,11 @@ def main(opts, argv):
                 print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
             config[var] = val
 
+    pacname = pac
+    if pacname == '_repository':
+        pacname = os.path.splitext(build_descr)[0]
     config['build-root'] = config['build-root'] % { 'repo': repo, 'arch': arch,
-                                                    'project' : prj, 'package' : pac
+                                                    'project' : prj, 'package' : pacname
                                                   }
 
     extra_pkgs = []
