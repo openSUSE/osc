@@ -26,6 +26,7 @@
  - implement "osc mbranch" call to create projects with multiple source package (instances)
  - new "osc patchinfo" command: basic patchinfo generation and modification support 
  - add support for _patchinfo package submissions in "osc sr" on project level
+ - support review handling of requests (new "osc review accept/decline $REQUEST_ID" command
 
 0.123
  - IMPORTANT: ssl certificate checks are actually performed now to

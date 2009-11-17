@@ -640,6 +640,8 @@ class Osc(cmdln.Cmdln):
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
                   help='for "create", specify a certain source revision ID (the md5 sum)')
+    @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
+                  help='Superseding another request by this one')
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
@@ -880,8 +882,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                            opts.message, orev=opts.revision, src_update=src_update)
             if repl == 'y':
                 for req in myreqs:
-                    change_request_state(apiurl, str(req.reqid), 'revoked',
-                                         'superseeded by %s' % result)
+                    change_request_state(apiurl, str(req.reqid), 'superseded',
+                                         'superseded by %s' % result, result)
+
+            if opts.supersede:
+                r = change_request_state(conf.config['apiurl'],
+                        opts.supersede, 'superseded', opts.message or '', result)
 
             print 'created request id', result
 
@@ -982,6 +988,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-B', '--bugowner', action='store_true',
                         help='also show requests about packages where I am bugowner')
     @cmdln.alias("rq")
+    @cmdln.alias("review")
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
@@ -1030,6 +1037,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request revoke [-m TEXT] ID
             osc request wipe ID
             osc request checkout/co ID
+            osc review accept [-m TEXT] ID
+            osc review decline [-m TEXT] ID
         ${cmd_option_list}
         """
 
@@ -1179,26 +1188,41 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.message:
                 opts.message = edit_message()
 
-            # decline
-            if cmd == 'decline':
-                r = change_request_state(conf.config['apiurl'],
-                        reqid, 'declined', opts.message or '')
-                print r
-            # accept
-            elif cmd == 'accept':
-                r = change_request_state(conf.config['apiurl'],
-                        reqid, 'accepted', opts.message or '')
-                print r
-            # delete/wipe
-            elif cmd == 'wipe':
-                r = change_request_state(conf.config['apiurl'],
-                        reqid, 'deleted', opts.message or '')
-                print r
-            # revoke
-            elif cmd == 'revoke':
-                r = change_request_state(conf.config['apiurl'],
-                        reqid, 'revoked', opts.message or '')
-                print r
+            # Change review state only
+            if subcmd == 'review':
+              # decline
+              if cmd == 'decline':
+                  r = change_review_state(conf.config['apiurl'],
+                          reqid, 'declined', conf.config['user'], '', opts.message or '')
+                  print r
+              # accept
+              elif cmd == 'accept':
+                  r = change_review_state(conf.config['apiurl'],
+                          reqid, 'accepted', conf.config['user'], '', opts.message or '')
+                  print r
+
+            # Change state of entire request
+            else:
+              # accept
+              if cmd == 'accept':
+                  r = change_request_state(conf.config['apiurl'],
+                          reqid, 'accepted', opts.message or '')
+                  print r
+              # decline
+              elif cmd == 'decline':
+                  r = change_request_state(conf.config['apiurl'],
+                          reqid, 'declined', opts.message or '')
+                  print r
+              # delete/wipe
+              elif cmd == 'wipe':
+                  r = change_request_state(conf.config['apiurl'],
+                          reqid, 'deleted', opts.message or '')
+                  print r
+              # revoke
+              elif cmd == 'revoke':
+                  r = change_request_state(conf.config['apiurl'],
+                          reqid, 'revoked', opts.message or '')
+                  print r
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")

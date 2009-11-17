@@ -1408,6 +1408,16 @@ rev: %s
         if not loop:
             raise ValueError("Empty filelist")
 
+class ReviewState:
+    """for objects to represent the review state in a request"""
+    def __init__(self, state=None, by_user=None, by_group=None, who=None, when=None, comment=None):
+        self.state = state
+        self.by_user  = by_user
+        self.by_group = by_group
+        self.who  = who
+        self.when = when
+        self.comment = comment
+
 class RequestState:
     """for objects to represent the "state" of a request"""
     def __init__(self, name=None, who=None, when=None, comment=None):
@@ -1440,6 +1450,7 @@ class Request:
         self.descr       = None
         self.actions     = []
         self.statehistory = []
+        self.reviews      = []
 
     def read(self, root):
         self.reqid = int(root.get('id'))
@@ -1477,6 +1488,20 @@ class Request:
             self.state.comment = n.find('comment').text.strip()
         except:
             self.state.comment = None
+
+        # read the review states
+        for r in root.findall('review'):
+            s = ReviewState()
+            s.state    = r.get('state')
+            s.by_user  = r.get('by_user')
+            s.by_group = r.get('by_group')
+            s.who      = r.get('who')
+            s.when     = r.get('when')
+            try:
+                s.comment = r.find('comment').text.strip()
+            except:
+                s.comment = None
+            self.reviews.append(s)
 
         # read the state history
         for h in root.findall('history'):
@@ -1575,11 +1600,18 @@ Comment: %s
                self.state.name, self.state.when, self.state.who,
                self.state.comment)
 
+        if len(self.reviews):
+            reviewitems = [ '%-10s  %s %s %s %s   %s' \
+                    % (i.state, i.by_user, i.by_group, i.when, i.who, i.comment) \
+                    for i in self.reviews ]
+            s += '\nReview:  ' + '\n         '.join(reviewitems)
+
+        s += '\n'
         if len(self.statehistory):
             histitems = [ '%-10s   %s %s' \
                     % (i.name, i.when, i.who) \
                     for i in self.statehistory ]
-            s += 'History: ' + '\n         '.join(histitems)
+            s += '\nHistory: ' + '\n         '.join(histitems)
 
         s += '\n'
         return s
@@ -2472,10 +2504,17 @@ def get_request(apiurl, reqid):
     return r
 
 
-def change_request_state(apiurl, reqid, newstate, message=''):
+def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', message='', supersed=''):
     u = makeurl(apiurl,
                 ['request', reqid],
-                query={'cmd': 'changestate', 'newstate': newstate})
+                query={'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user, 'superseded_by': supersed})
+    f = http_POST(u, data=message)
+    return f.read()
+
+def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
+    u = makeurl(apiurl,
+                ['request', reqid],
+                query={'cmd': 'changestate', 'newstate': newstate, 'superseded_by': supersed})
     f = http_POST(u, data=message)
     return f.read()
 
