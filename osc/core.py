@@ -3234,15 +3234,23 @@ def get_repositories_of_project(apiurl, prj):
     return r
 
 
+class Repo:
+    repo_line_templ = '%-15s %-10s'
+
+    def __init__(self, name, arch):
+        self.name = name
+        self.arch = arch
+
+    def __str__(self):
+        return self.repo_line_templ % (self.name, self.arch)
+
 def get_repos_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
     tree = ET.parse(StringIO(''.join(f)))
 
-    repo_line_templ = '%-15s %-10s'
     for node in tree.findall('repository'):
         for node2 in node.findall('arch'):
-            yield repo_line_templ % (node.get('name'), node2.text)
-
+            yield Repo(node.get('name'), node2.text)
 
 def get_binarylist(apiurl, prj, repo, arch, package=None, verbose=False):
     what = package or '_repository'

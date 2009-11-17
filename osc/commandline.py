@@ -200,8 +200,9 @@ class Osc(cmdln.Cmdln):
         """${cmd_name}: List existing content on the server
 
         This command is used to list sources, or binaries (when used with the
-        --binaries option). To use the --binary option, --repo and --arch are
-        also required.
+        --binaries option). When using the --binary option, --repo
+        and --arch can be used to limit output to specific repos
+        and/or architectures.
 
         Examples:
            ls                         # list all projects
@@ -224,6 +225,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        apiurl = conf.config['apiurl']
         args = slash_split(args)
         if subcmd == 'll':
             opts.verbose = True
@@ -231,8 +233,11 @@ class Osc(cmdln.Cmdln):
             opts.verbose = True
             opts.expand = True
 
+        project = None
+        package = None
         if len(args) == 1:
             project = args[0]
+            package = None
         elif len(args) == 2 or len(args) == 3:
             project = args[0]
             package = args[1]
@@ -242,32 +247,59 @@ class Osc(cmdln.Cmdln):
         elif len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        if opts.binaries and (not opts.repo or not opts.arch):
-            raise oscerr.WrongOptions('Sorry, -r <repo> -a <arch> missing\n'
-                     'You can list repositories with: \'osc repositories <project>\'')
         if opts.binaries and opts.expand:
             raise oscerr.WrongOptions('Sorry, --binaries and --expand are mutual exclusive.')
 
         # list binaries
         if opts.binaries:
-            if not args:
+            # ls -b toplevel doesn't make sense, so use info from
+            # current dir if available
+            if len(args) == 0:
+                dir = os.getcwd()
+                if is_project_dir(dir):
+                    project = store_read_project(dir)
+                    apiurl = store_read_apiurl(dir)
+                elif is_package_dir(dir):
+                    project = store_read_project(dir)
+                    package = store_read_package(dir)
+                    apiurl = store_read_apiurl(dir)
+
+            if not project:
                 raise oscerr.WrongArgs('There are no binaries to list above project level.')
             if opts.revision:
                 raise oscerr.WrongOptions('Sorry, the --revision option is not supported for binaries.')
 
-            r = None
+            repos = []
 
-            if len(args) == 1:
-                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch, verbose=opts.verbose)
-
-            elif len(args) == 2:
-                r = get_binarylist(conf.config['apiurl'], project, opts.repo, opts.arch, package=package, verbose=opts.verbose)
-
-            if opts.verbose:
-                for f in r:
-                    print "%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name)
+            if opts.repo and opts.arch:
+                repos.append(Repo(opts.repo, opts.arch))
+            elif opts.repo and not opts.arch:
+                for repo in get_repos_of_project(apiurl, project):
+                    if repo.name == opts.repo:
+                        repos.append(repo)
+            elif opts.arch and not opts.repo:
+                for repo in get_repos_of_project(apiurl, project):
+                    if repo.arch == opts.arch:
+                        repos.append(repo)
             else:
-                print '\n'.join(r)
+                repos = get_repos_of_project(apiurl, project)
+
+            results = []
+            for repo in repos:
+                results.append((repo, get_binarylist(apiurl, project, repo.name, repo.arch, package=package, verbose=opts.verbose)))
+
+            for result in results:
+                indent = ''
+                if len(results) > 1:
+                    print '%s/%s' % (result[0].name, result[0].arch)
+                    indent = ' '
+
+                if opts.verbose:
+                    for f in result[1]:
+                        print "%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name)
+                else:
+                    for f in result[1]:
+                        print indent+f
 
         # list sources
         elif not opts.binaries:
