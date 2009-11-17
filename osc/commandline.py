@@ -3870,7 +3870,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     d = tree.find('devel')
                     prj = d.get('project', prj)
                     pac = d.get('package', pac)
-                    print "Following to the development space:", prj, "/", pac
+                    if opts.verbose:
+                        print "Following to the development space:", prj, "/", pac
                     m = show_package_meta(conf.config['apiurl'], prj, pac)
                     tree = ET.parse(StringIO(''.join(m)))
                 if not tree.findall('person'):
