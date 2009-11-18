@@ -638,8 +638,7 @@ def get_config(override_conffile = None,
     if override_apiurl:
         apiurl = aliases.get(override_apiurl, override_apiurl)
         # check if apiurl is a valid url
-        parse_apisrv_url(None, apiurl)
-        config['apiurl'] = apiurl
+        config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
 
     # XXX unless config['user'] goes away (and is replaced with a handy function, or
     # config becomes an object, even better), set the global 'user' here as well,

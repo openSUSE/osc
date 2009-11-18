@@ -4289,12 +4289,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             user = conf.get_apiurl_usr(apiurl)
 
             # work with all combinations of URL with or withouth the ending slash
-            apiurl2 = apiurl[:-1] if apiurl[-1] == '/' else ("%s/" % apiurl)
-            host_opts = conf.config['api_host_options'].get(apiurl) or \
-                        conf.config['api_host_options'].get(apiurl2)
-
-            if host_opts and host_opts.has_key('email'):
-                os.environ['mailaddr'] = host_opts['email']
+            if conf.config['api_host_options'][apiurl].has_key('email'):
+                os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
             else:
                 try:
                     os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
