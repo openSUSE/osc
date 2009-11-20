@@ -971,7 +971,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='output the diff in the unified diff format')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
-    @cmdln.option('-t', '--type', metavar='TEXT',
+    @cmdln.option('-t', '--type', metavar='TYPE',
                   help='limit to requests which contain a given action type (submit/delete/change_devel)')
     @cmdln.option('-a', '--all', action='store_true',
                         help='all states. Same as\'-s all\'')
