@@ -3353,7 +3353,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 sys.exit('Local directory is no checkout package, neither it is specified. ' )
         else:
-            sys.exit('Need either 2 or 4 arguments.' )
+            print 'Valid arguments for this package are:'
+            print
+            self.do_repos(None, None)
+	    print
+            raise oscerr.WrongArgs('Need either 2 or 4 arguments')
 
         # Get package list
         binaries = get_binarylist(apiurl,
