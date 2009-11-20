@@ -200,7 +200,7 @@ class Osc(cmdln.Cmdln):
         """${cmd_name}: List existing content on the server
 
         This command is used to list sources, or binaries (when used with the
-        --binaries option). When using the --binary option, --repo
+        --binaries option). When using the --binaries option, --repo
         and --arch can be used to limit output to specific repos
         and/or architectures.
 
