@@ -18,6 +18,7 @@
  - support submit requests on project level, osc is checking which packages
    have changed and submits only the changed after asking back.
  - show worker/id on jobhistory and make it faster by adding a default limit of 20
+ - add "osc build --root" option to allow to specify build root directory
  #
  # Features which require OBS 1.7
  #

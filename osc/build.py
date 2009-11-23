@@ -277,6 +277,7 @@ def main(opts, argv):
     arch = argv[1]
     build_descr = argv[2]
     xp = []
+    build_root = None
 
     build_type = os.path.splitext(build_descr)[1][1:]
     if build_type not in ['spec', 'dsc', 'kiwi']:
@@ -295,6 +296,8 @@ def main(opts, argv):
         buildargs.append('--no-checks')
     if not opts.no_changelog:
         buildargs.append('--changelog')
+    if opts.root:
+        build_root = opts.root
     if opts.jobs:
         buildargs.append('--jobs %s' % opts.jobs)
     else:
@@ -349,7 +352,8 @@ def main(opts, argv):
     pacname = pac
     if pacname == '_repository':
         pacname = os.path.splitext(build_descr)[0]
-    config['build-root'] = config['build-root'] % { 'repo': repo, 'arch': arch,
+    if not build_root:
+        build_root = config['build-root'] % { 'repo': repo, 'arch': arch,
                                                     'project' : prj, 'package' : pacname
                                                   }
 
@@ -576,7 +580,7 @@ def main(opts, argv):
 
     cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s --release=%s %s %s %s' \
                  % (config['build-cmd'],
-                    config['build-root'],
+                    build_root,
                     rpmlist_filename,
                     bc_filename,
                     specialcmdopts,
@@ -598,13 +602,13 @@ def main(opts, argv):
     rc = subprocess.call(cmd, shell=True)
     if rc:
         print
-        print 'The buildroot was:', config['build-root']
+        print 'The buildroot was:', build_root
         sys.exit(rc)
 
-    pacdir = os.path.join(config['build-root'], '.build.packages')
+    pacdir = os.path.join(build_root, '.build.packages')
     if os.path.islink(pacdir):
         pacdir = os.readlink(pacdir)
-        pacdir = os.path.join(config['build-root'], pacdir)
+        pacdir = os.path.join(build_root, pacdir)
 
     if os.path.exists(pacdir):
         (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)

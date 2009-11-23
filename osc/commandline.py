@@ -2887,6 +2887,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Save built packages into this directory')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
+    @cmdln.option('--root', metavar='ROOT',
+                  help='Build in specified directory')
     @cmdln.option('-j', '--jobs', metavar='N',
                   help='Compile with N jobs')
     @cmdln.option('--icecream', metavar='N',
