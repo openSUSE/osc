@@ -2658,7 +2658,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('bl')
     @cmdln.option('-s', '--start', metavar='START',
                     help='get log starting from the offset')
-    def do_buildlog(self, subcmd, opts, repository, arch):
+    def do_buildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
         Shows the log file of the build of a package. Can be used to follow the
@@ -2668,7 +2668,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The arguments REPOSITORY and ARCH are the first two columns in the 'osc
         results' output.
 
-        ${cmd_usage}
+        ${cmd_usage} REPOSITORY ARCH
         ${cmd_option_list}
         """
 
@@ -2681,8 +2681,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.start:
             offset = int(opts.start)
 
+        if args is None or len(args) < 2:
+            self.print_repos()
+
+        repository = args[0]
+        arch = args[1]
+
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
+
+    def print_repos(self):
+            wd = os.curdir
+            doprint = False
+            if is_package_dir(wd):
+                str = "package"
+                doprint = True
+            elif is_project_dir(wd):
+                str = "project"
+                doprint = True
+            
+            if doprint:
+                print 'Valid arguments for this %s are:' % str
+                print
+                self.do_repos(None, None)
+                print
+            raise oscerr.WrongArgs('Missing arguments')
 
     @cmdln.alias('rbl')
     @cmdln.alias('rbuildlog')
@@ -2737,12 +2760,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         
-        if args is None or len(args) < 2:
-            print 'Valid arguments for this package are:'
-            print
-            self.do_repos(None, None)
-            print
-            raise oscerr.WrongArgs('Missing argument.')
+        if ( args is None or len(args) < 2) and is_package_dir('.'):
+            self.print_repos()
 
         if len(args) > 5:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -2802,12 +2821,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         
-        if args is None or len(args) < 2:
-            print 'Valid arguments for this package are:'
-            print
-            self.do_repos(None, None)
-            print
-            raise oscerr.WrongArgs('Missing argument.')
+        if ( args is None or len(args) < 2) and is_package_dir('.'):
+            self.print_repos()
 
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -3048,6 +3063,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        if ( args is None or len(args) < 2) and is_package_dir('.'):
+            self.print_repos()
+
         if len(args) == 4:
             apiurl = conf.config['apiurl']
             project = args[0]
@@ -3088,6 +3106,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         wd = os.curdir
         args = slash_split(args)
+
+        if (args is None or len(args) < 2) \
+            and (is_project_dir('.') or is_package_dir('.')):
+            self.print_repos()
 
         if len(args) == 4:
             apiurl = conf.config['apiurl']
@@ -3337,6 +3359,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = conf.config['apiurl']
 
+        if ( args is None or len(args) < 2) and is_package_dir('.'):
+            self.print_repos()
+
         if len(args) == 4:
             project = args[0]
             package = args[1]
@@ -3353,10 +3378,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 sys.exit('Local directory is no checkout package, neither it is specified. ' )
         else:
-            print 'Valid arguments for this package are:'
-            print
-            self.do_repos(None, None)
-	    print
             raise oscerr.WrongArgs('Need either 2 or 4 arguments')
 
         # Get package list
