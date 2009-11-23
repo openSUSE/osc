@@ -3566,10 +3566,12 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
 
 def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 'text', limit=20):
     import time
+    query = {}
     if current_package:
-        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], "package=%s&limit=%d" % (current_package, limit))
-    else:
-        u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], "limit=%d" % (limit) )
+	query['package'] = current_package
+    if limit != None and int(limit) > 0:
+	query['limit'] = int(limit)
+    u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], query )
     f = http_GET(u)
     root = ET.parse(f).getroot()
 

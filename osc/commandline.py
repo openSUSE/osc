@@ -3118,7 +3118,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.csv:
             format = 'csv'
 
-        print_jobhistory(apiurl, project, package, repository, arch, format, int(opts.limit or 20))
+        print_jobhistory(apiurl, project, package, repository, arch, format, opts.limit)
 
     @cmdln.hide(1)
     def do_rlog(self, subcmd, opts, *args):
