@@ -3477,7 +3477,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--repos-baseurl', action='store_true',
                         help='show base URLs of download repositories')
     @cmdln.option('-e', '--exact', action='store_true',
-                        help='show only exact matches')
+                        help='show only exact matches, this is default now')
+    @cmdln.option('-s', '--substring', action='store_true',
+                        help='Show also results where the search term is a sub string, slower search')
     @cmdln.option('--package', action='store_true',
                         help='search for a package')
     @cmdln.option('--project', action='store_true',
@@ -3540,13 +3542,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if (opts.title or opts.description) and for_user:
             raise oscerr.WrongArgs('Sorry, the options \'--title\' and/or \'--description\' ' \
                                    'are mutually exclusive with \'-i\'/\'-b\'/\'-m\'/\'-M\'')
-
         search_list = []
         search_for = []
         extra_limiter = ""
         if subcmd == 'sm' or opts.maintained:
             opts.bugowner = True
-            opts.exact = True
             opts.package = True
             opts.limit_to_attribute = conf.config['maintained_attribute']
         if opts.title:
@@ -3561,13 +3561,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             search_for.append('project')
         if opts.limit_to_attribute:
             extra_limiter='attribute/@name="%s"' % (opts.limit_to_attribute)
+        if not opts.substring:
+            opts.exact = True
             
 
         role_filter=None
         if for_user:
             search_list = [ 'person/@userid' ]
             search_term = search_term or conf.get_apiurl_usr(conf.config['apiurl'])
-            opts.exact = True
             if opts.bugowner and not opts.maintainer:
                 role_filter = search_term+':bugowner'
             if not opts.bugowner and opts.maintainer:
