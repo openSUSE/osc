@@ -370,6 +370,21 @@ def main(opts, argv):
 
     prefer_pkgs = {}
     build_descr_data = open(build_descr).read()
+
+    # XXX: dirty hack but there's no api to provide custom defines
+    if opts.without:
+        s = ''
+        for i in opts.without:
+            s += "%%define _without_%s 1\n" % i
+            s += "%%define _with_%s 0\n" % i
+        build_descr_data = s + build_descr_data
+    if opts._with:
+        s = ''
+        for i in opts._with:
+            s += "%%define _without_%s 0\n" % i
+            s += "%%define _with_%s 1\n" % i
+        build_descr_data = s + build_descr_data
+
     if opts.prefer_pkgs:
         print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
         prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type)
