@@ -4339,6 +4339,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         vc.wait()
         sys.exit(vc.returncode)
 
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='forces removal of entire package and its files')
+    def do_mv(self, subcmd, opts, source, dest):
+        """${cmd_name}: Move SOURCE file to DEST and keep it under version control
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+
+        if not os.path.isfile(source):
+            raise oscerr.WrongArgs("Source file ``%s'' does not exists" % source)
+        if not opts.force and os.path.isfile(dest):
+            raise oscerr.WrongArgs("Dest file ``%s'' already exists" % dest)
+        if not is_package_dir('.'):
+            raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath(dir))
+
+        p = findpacs('.')[0]
+        os.rename(source, dest)
+        self.do_add(subcmd, opts, dest)
+        self.do_delete(subcmd, opts, source)
+
+
 # fini!
 ###############################################################################
 
