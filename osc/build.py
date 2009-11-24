@@ -316,9 +316,11 @@ def main(opts, argv):
     if opts.debuginfo:
         buildargs.append('--debug')
     if opts._with:
-        buildargs.append('--with %s' % opts._with)
+        for o in opts._with:
+            buildargs.append('--with %s' % o)
     if opts.without:
-        buildargs.append('--without %s' % opts.without)
+        for o in opts.without:
+            buildargs.append('--without %s' % o)
 # FIXME: quoting
 #    if opts.define:
 #        buildargs.append('--define "%s"' % opts.define)

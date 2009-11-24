@@ -2895,12 +2895,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use N parallel build jobs with icecream')
     @cmdln.option('--ccache', action='store_true',
                   help='use ccache to speed up rebuilds')
-    @cmdln.option('--with', metavar='X', dest='_with',
+    @cmdln.option('--with', metavar='X', dest='_with', action='append',
                   help='enable feature X for build')
-    @cmdln.option('--without', metavar='X',
+    @cmdln.option('--without', metavar='X', action='append',
                   help='disable feature X for build')
 # will not work as build.py does not support proper quoting
-#    @cmdln.option('--define', metavar='\'X Y\'',
+#    @cmdln.option('--define', metavar='\'X Y\'', action='append',
 #                  help='define macro X with value Y')
     @cmdln.option('--userootforbuild', action='store_true',
                   help='Run build as root. The default is to build as '
