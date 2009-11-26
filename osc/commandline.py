@@ -3012,6 +3012,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not arg_repository in repositories:
                 raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ", ".join(repositories)))
 
+        if not arg_repository:
+                raise oscerr.WrongArgs('please specify a repository')
+
         # check for source services
         if os.listdir('.').count("_service"):
             p = Package('.')

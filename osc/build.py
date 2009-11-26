@@ -391,8 +391,19 @@ def main(opts, argv):
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
 
-    bi_filename = os.path.join(os.getcwd(), '.osc/_buildinfo-%s-%s.xml' % (repo, arch))
-    bc_filename = os.path.join(os.getcwd(), '.osc/_buildconfig-%s-%s' % (repo, arch))
+    bi_file = None
+    bc_file = None
+    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
+    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
+    if os.path.isdir(osc.core.store) and os.access(osc.core.store, os.W_OK):
+        bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
+        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
+    elif not os.access('.', os.W_OK):
+        bi_file = NamedTemporaryFile(prefix=bi_filename)
+        bi_filename = bi_file.name
+        bc_file = NamedTemporaryFile(prefix=bc_filename)
+        bc_filename = bc_file.name
+
     try:
         if opts.noinit:
             if not os.path.isfile(bi_filename):
@@ -405,7 +416,8 @@ def main(opts, argv):
             print 'Use local \'%s\' file as buildconfig' % bc_filename
         else:
             print 'Getting buildinfo from server and store to %s' % bi_filename
-            bi_file = open(bi_filename, 'w')
+            if not bi_file:
+                bi_file = open(bi_filename, 'w')
             bi_text = ''.join(get_buildinfo(apiurl,
                                             prj,
                                             pac,
@@ -414,11 +426,12 @@ def main(opts, argv):
                                             specfile=build_descr_data,
                                             addlist=extra_pkgs))
             bi_file.write(bi_text)
-            bi_file.close()
+            bi_file.flush()
             print 'Getting buildconfig from server and store to %s' % bc_filename
-            bc_file = open(bc_filename, 'w')
+            if not bc_file:
+                bc_file = open(bc_filename, 'w')
             bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
-            bc_file.close()
+            bc_file.flush()
     except urllib2.HTTPError, e:
         if e.code == 404:
         # check what caused the 404
@@ -639,3 +652,9 @@ def main(opts, argv):
             for i in b_built.splitlines() + s_built.splitlines():
                 import shutil
                 shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
+
+    if bi_file:
+        bi_file.close()
+    if bc_file:
+        bc_file.close()
+    rpmlist_file.close()
