@@ -4220,10 +4220,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='create new gpg signing key for this project')
     @cmdln.option('--delete', action='store_true', default=False,
                   help='delete the gpg signing key in this project')
+    @cmdln.option('--notraverse', action='store_true', default=False,
+                  help='don\' traverse projects upwards to find key')
     def do_signkey(self, subcmd, opts, *args):
         """${cmd_name}: Manage Project Signing Key
 
         osc signkey [--create|--delete] <PROJECT>
+        osc signkey [--notraverse] <PROJECT>
 
         This command is for managing gpg keys. It shows the public key
         by default. There is no way to download or upload the private
@@ -4247,9 +4250,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = conf.config['apiurl']
         f = None
 
+        prj = None
+        if len(args) == 0:
+            dir = os.getcwd()
+            if is_project_dir(dir) or is_package_dir(dir):
+                prj = store_read_project(dir)
+                apiurl = store_read_apiurl(dir)
         if len(args) == 1:
             prj = args[0]
-        else:
+
+        if not prj:
             raise oscerr.WrongArgs('Please specify just the project')
 
         if opts.create:
@@ -4259,8 +4269,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
             f = http_DELETE(url)
         else:
-            url = makeurl(apiurl, ['source', prj, "_pubkey"])
-            f = http_GET(url)
+            prjs = [ prj ]
+            for prj in prjs:
+                try:
+                    url = makeurl(apiurl, ['source', prj, "_pubkey"])
+                    f = http_GET(url)
+                    break
+                except Exception, e:
+                    l = prj.rsplit(':', 1)
+                    # try key from parent project
+                    if not opts.notraverse and len(l) > 1 and l[1]:
+                        print "%s has no key, trying %s" % (prj, l[0])
+                        prjs.append(l[0])
+                    else:
+                        raise e
 
         while 1:
             buf = f.read(16384)
