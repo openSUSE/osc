@@ -1874,21 +1874,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Shows URLs on which to access the project .repos files (yum-style
         metadata) on download.opensuse.org.
 
-        ARG, if specified, is a package working copy.
+        usage:
+           osc repourls [PROJECT]
 
-        ${cmd_usage}
         ${cmd_option_list}
         """
 
-        args = parseargs(args)
-        pacs = findpacs(args)
+        apiurl = conf.config['apiurl']
 
+        if len(args) == 1:
+            project = args[0]
+        elif len(args) == 0:
+            project = store_read_project('.')
+            apiurl = store_read_apiurl('.')
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments')
+
+        # XXX: API should somehow tell that
         url_tmpl = 'http://download.opensuse.org/repositories/%s/%s/%s.repo'
-        for p in pacs:
-            repositories = get_repositories_of_project(p.apiurl, p.prjname)
-            for repository in repositories:
-                print url_tmpl % (p.prjname.replace(':', ':/'), repository, p.prjname)
-
+        repos = get_repositories_of_project(apiurl, project)
+        for repo in repos:
+            print url_tmpl % (project.replace(':', ':/'), repo, project)
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
