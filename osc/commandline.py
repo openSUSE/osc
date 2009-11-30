@@ -2853,24 +2853,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     def do_repos(self, subcmd, opts, *args):
-        """${cmd_name}: Shows the repositories which are defined for a package or a project
+        """${cmd_name}: shows repositories configured for a project
 
-        ARG, if specified, is a package working copy or a project dir.
+        usage:
+            osc repos
+            osc repos [PROJECT]
 
-        examples: 1. osc repos                   # project/package = current dir
-                  2. osc repos <packagedir>
-                  3. osc repos <projectdir>
-
-        ${cmd_usage}
         ${cmd_option_list}
         """
 
-        args = parseargs(args)
+        apiurl = conf.config['apiurl']
 
-        for arg in args:
-            for repository in get_repos_of_project(store_read_apiurl(arg), store_read_project(arg)):
-                print repository
+        if len(args) == 1:
+            project = args[0]
+        elif len(args) == 0:
+            project = store_read_project('.')
+            apiurl = store_read_apiurl('.')
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments')
 
+        data = []
+        for repo in get_repos_of_project(apiurl, project):
+            data += [repo.name, repo.arch]
+        for row in build_table(2, data, width=2):
+            print row
 
     @cmdln.option('--clean', action='store_true',
                   help='Delete old build root before initializing it')

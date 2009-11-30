@@ -25,6 +25,8 @@
      substring search
    * osc repourls neither needs nor accepts a path to a package
      working dir anymore
+   * osc repo neither needs nor accepts a path to a package or
+     project working dir anymore
  #
  # Features which require OBS 1.7
  #
