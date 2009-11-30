@@ -1837,6 +1837,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print rdiff
 
+    @cmdln.hide(1)
     @cmdln.alias('in')
     def do_install(self, subcmd, opts, *args):
         """${cmd_name}: install a package after build via zypper in -r
