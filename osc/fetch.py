@@ -100,6 +100,7 @@ class Fetcher:
                 print >>sys.stderr, '\n'.join(pac.urllist)
                 sys.exit(1)
         finally:
+            os.close(fd)
             if os.path.exists(tmpfile):
                 os.unlink(tmpfile)
 
