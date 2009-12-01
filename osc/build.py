@@ -82,9 +82,10 @@ class Buildinfo:
             self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
-        self.release = "0"
         if root.find('release') != None:
             self.release = root.find('release').text
+        else:
+            self.release = None
         self.downloadurl = root.get('downloadurl')
         self.debuginfo = 0
         if root.find('debuginfo') != None:
@@ -451,8 +452,16 @@ def main(opts, argv):
             raise
 
     bi = Buildinfo(bi_filename, apiurl, build_type, prefer_pkgs.keys())
+
     if bi.debuginfo and not opts.disable_debuginfo:
         buildargs.append('--debug')
+
+    if opts.release:
+        bi.release = opts.release
+
+    if bi.release:
+        buildargs.append('--release %s' % bi.release)
+
     buildargs = ' '.join(set(buildargs))
 
     # real arch of this machine
@@ -608,14 +617,13 @@ def main(opts, argv):
         specialcmdopts += '--overlay=%s' \
                             % (myoverlay)
 
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s --release=%s %s %s %s' \
+    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s %s %s %s' \
                  % (config['build-cmd'],
                     build_root,
                     rpmlist_filename,
                     bc_filename,
                     specialcmdopts,
                     bi.buildarch,
-                    bi.release,
                     vm_options,
                     build_descr,
                     buildargs)
