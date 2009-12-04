@@ -3109,7 +3109,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             p = Package('.')
             p.run_source_services()
 
-        descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') ]
+        descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') or i.endswith('.kiwi') ]
         # FIXME:
         # * request repos from server and select by build type.
         if not arg_descr and len(descr) == 1:
