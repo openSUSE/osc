@@ -4254,9 +4254,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         be used (eg. when dropping "KDE:KDE4:Community" key, the one from
         "KDE:KDE4" will be used).
 
-        ***********************************************************************
         WARNING: THE OLD KEY WILL NOT BE RESTORABLE WHEN USING DELETE OR CREATE
-        ***********************************************************************
 
         ${cmd_usage}
         ${cmd_option_list}
