@@ -3518,6 +3518,21 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset = 0):
         if start_offset == offset:
             break
 
+def get_dependson(apiurl, project, repository, arch, packages=None, reverse=None):
+    query = []
+    if packages:
+        for i in packages:
+            query.append('package=%s' % quote_plus(i))
+
+    if reverse:
+        query.append('view=revpkgnames')
+    else:
+        query.append('view=pkgnames')
+
+    u = makeurl(apiurl, ['build', project, repository, arch, '_builddepinfo'], query=query)
+    f = http_GET(u)
+    return f.read()
+
 def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None):
     query = []
     if addlist:

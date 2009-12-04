@@ -2737,6 +2737,80 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(conf.config['apiurl'], *args)
 
 
+    # FIXME: the new osc syntax should allow to specify multiple packages
+    # FIXME: the command should optionally use buildinfo data to show all dependencies
+    @cmdln.alias('whatdependson')
+    def do_dependson(self, subcmd, opts, *args):
+        """${cmd_name}: Show the build dependencies
+
+        The command dependson and whatdependson can be used to find out what
+        will be triggered when a certain package changes.
+        This is no guarantee, since the new build might have changed dependencies.
+
+        dependson shows the build dependencies inside of a project, valid for a 
+        given repository and architecture.
+        NOTE: to see all binary packages, which can trigger a build you need to 
+              refer the buildinfo, since this command shows only the dependencies
+              inside of a project.
+
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
+        of the 'osc repos' output.
+
+        usage in package or project directory:
+            osc dependson REPOSITORY ARCH
+            osc whatdependson REPOSITORY ARCH
+
+        usage:
+            osc dependson PROJECT [PACKAGE] REPOSITORY ARCH
+            osc whatdependson PROJECT [PACKAGE] REPOSITORY ARCH
+
+        ${cmd_option_list}
+        """
+        wd = os.curdir
+        args = slash_split(args)
+        project = packages = repository = arch = reverse = None
+        
+        if ( args is None or len(args) < 2) and (is_package_dir('.') or is_project_dir('.')):
+            self.print_repos()
+
+        if len(args) > 5:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) < 3: # 2
+            if is_package_dir('.'):
+                 packages = [store_read_package(wd)]
+            elif not is_project_dir('.'):
+                 raise oscerr.WrongArgs('Project and package is not specified.')
+            project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
+            repository = args[0]
+            arch = args[1]
+
+        if len(args) == 3:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            repository = args[1]
+            arch = args[2]
+
+        if len(args) == 4:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            packages = [args[1]]
+            repository = args[2]
+            arch = args[3]
+
+        if subcmd == 'whatdependson':
+            reverse = 1
+
+        xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
+
+        tree = ET.fromstring(xml)
+        for package in tree.findall('package'):
+            print package.get('name'), ":"
+            for dep in package.findall('pkgdep'):
+               print "  ", dep.text
+
+
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     def do_buildinfo(self, subcmd, opts, *args):

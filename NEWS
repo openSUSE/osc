@@ -19,6 +19,8 @@
  - add "osc build --root" option to allow to specify build root directory
  - add "osc build --release" option to allow to specify a package release number
  - added osc mv command which can rename file and leave them under version control
+ - added new commands "dependson" and "whatdependson" to find out which packages get
+   triggered before checkin/request accept.
  - Incompatible changes:
    * osc se now prints Project Package, instead of Package Project
      for easier copy&paste.
