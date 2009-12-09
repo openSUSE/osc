@@ -2039,6 +2039,16 @@ def show_project_conf(apiurl, prj):
     return f.readlines()
 
 
+def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
+    url = makeurl(apiurl, ['build', prj, repo, arch, pac, '_reason'])
+    try:
+        f = http_GET(url)
+        return f.read()
+    except urllib2.HTTPError, e:
+        e.osc_msg = 'Error getting trigger reason for project \'%s\' package \'%s\'' % (prj, pac)
+        raise
+
+
 def show_package_meta(apiurl, prj, pac):
     url = makeurl(apiurl, ['source', prj, pac, '_meta'])
     try:

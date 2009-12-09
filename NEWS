@@ -22,6 +22,7 @@
  - added new commands "dependson" and "whatdependson" to find out which packages get
    triggered before checkin/request accept.
  - add new "osc build --linksource" option, speeds up esp. image building a lot
+ - add "osc triggerreason" command to show detail reason, why a package got triggered for build
  - Incompatible changes:
    * osc se now prints Project Package, instead of Package Project
      for easier copy&paste.

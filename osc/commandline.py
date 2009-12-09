@@ -2737,6 +2737,62 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(conf.config['apiurl'], *args)
 
 
+    @cmdln.alias('tr')
+    def do_triggerreason(self, subcmd, opts, *args):
+        """${cmd_name}: Show reason why a package got triggered to build
+
+        The server decides when a package needs to get rebuild, this command
+        shows the detailed reason for a package. A brief reason is also stored
+        in the jobhistory, which can be accessed via "osc jobhistory".
+
+        Trigger reasons might be:
+          - new build (never build yet or rebuild manually forced)
+          - source change (eg. on updating sources)
+          - meta change (packages which are used for building have changed)
+          - rebuild count sync (In case that it is configured to sync release numbers)
+
+        usage in package or project directory:
+            osc reason REPOSITORY ARCH
+            osc reason PROJECT PACKAGE REPOSITORY ARCH
+
+        ${cmd_option_list}
+        """
+        wd = os.curdir
+        args = slash_split(args)
+        project = package = repository = arch = None
+        
+        if ( args is None or len(args) < 2):
+            self.print_repos()
+
+        if len(args) == 2: # 2
+            if is_package_dir('.'):
+                 package = store_read_package(wd)
+            else:
+                 raise oscerr.WrongArgs('package is not specified.')
+            project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
+            repository = args[0]
+            arch = args[1]
+        elif len(args) == 4:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            repository = args[2]
+            arch = args[3]
+        else:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        print apiurl, project, package, repository, arch
+        xml = show_package_trigger_reason(apiurl, project, package, repository, arch)
+        tree = ET.fromstring(xml)
+        reason = tree.find('explain').text
+        print reason
+        if reason == "meta change":
+           print "changed keys:"
+           for package in tree.findall('packagechange'):
+               print "  ", package.get('change'), package.get('key')
+
+
     # FIXME: the new osc syntax should allow to specify multiple packages
     # FIXME: the command should optionally use buildinfo data to show all dependencies
     @cmdln.alias('whatdependson')
