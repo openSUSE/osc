@@ -2995,6 +2995,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   'in the spec file will invalidate this option.')
     @cmdln.option('--local-package', action='store_true',
                   help='build a package which does not exist on the server')
+    @cmdln.option('--linksources', action='store_true',
+                  help='use hard links instead of a deep copied source')
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
     @cmdln.option('-d', '--debuginfo', action='store_true',
