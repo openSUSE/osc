@@ -341,6 +341,7 @@ def main(opts, argv):
             pac = store_read_package(os.curdir)
         apiurl = store_read_apiurl(os.curdir)
 
+    build_descr = os.path.abspath(build_descr)
     if not os.path.exists(build_descr):
         print >>sys.stderr, 'Error: build description named \'%s\' does not exist.' % build_descr
         return 1
