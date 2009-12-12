@@ -2631,10 +2631,8 @@ def get_user_data(apiurl, user, *tags):
             except AttributeError:
                 # this part is reached if the tags tuple contains an invalid tag
                 print 'The xml file for user \'%s\' seems to be broken' % user
-                return None
-        return data
-    else:
-        return None
+                return []
+    return data
 
 
 def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision = None):

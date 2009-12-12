@@ -4089,16 +4089,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     emails = []
                     for maintainer in maintainers:
                         user = get_user_data(conf.config['apiurl'], maintainer, 'email')
-                        if user != None:
+                        if len(user):
                             emails.append(''.join(user))
                     print ', '.join(emails)
                 elif opts.verbose:
                     userdata = []
                     for maintainer in maintainers:
                         user = get_user_data(conf.config['apiurl'], maintainer, 'realname', 'login', 'email')
-                        if user != None:
-                            for itm in user:
-                                userdata.append(itm)
+                        userdata.extend(user)
                     for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
                         print row
                 else:
@@ -4420,14 +4418,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     url = makeurl(apiurl, ['source', prj, "_pubkey"])
                     f = http_GET(url)
                     break
-                except Exception, e:
+                except:
                     l = prj.rsplit(':', 1)
                     # try key from parent project
                     if not opts.notraverse and len(l) > 1 and l[1]:
                         print "%s has no key, trying %s" % (prj, l[0])
                         prjs.append(l[0])
                     else:
-                        raise e
+                        raise
 
         while 1:
             buf = f.read(16384)
@@ -4492,7 +4490,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 try:
                     os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
-                except Exception, e:
+                except:
                     sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
 
         if opts.message:
