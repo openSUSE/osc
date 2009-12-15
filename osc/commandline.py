@@ -1459,7 +1459,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         src_apiurl = conf.config['apiurl']
         if opts.to_apiurl:
-            dst_apiurl = opts.to_apiurl
+            dst_apiurl = conf.config['apiurl_aliases'].get(opts.to_apiurl, opts.to_apiurl)
         else:
             dst_apiurl = src_apiurl
 

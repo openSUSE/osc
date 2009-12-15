@@ -606,6 +606,7 @@ def get_config(override_conffile = None,
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
+    config['apiurl_aliases'] = aliases
 
     apiurl = aliases.get(config['apiurl'], config['apiurl'])
     config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
