@@ -807,10 +807,10 @@ class Osc(cmdln.Cmdln):
             p = findpacs(os.curdir)[0]
             src_project = p.prjname
             src_package = p.name
+            apiurl = p.apiurl
             if len(args) == 0 and p.islink():
                 dst_project = p.linkinfo.project
                 dst_package = p.linkinfo.package
-                apiurl = p.apiurl
             elif len(args) > 0:
                 dst_project = args[0]
                 if len(args) == 2:
