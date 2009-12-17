@@ -1,5 +1,6 @@
 
 0.125
+ - add "osc pull" command to fetch and merge changes in the link target
 
 0.124
  - added 'osc bugowner' as a more intelligent version of 'osc maintainer -B'
