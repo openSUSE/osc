@@ -857,8 +857,8 @@ class Package:
                       'comment': msg }
             if self.islink() and self.isexpanded():
                 query['keeplink'] = '1'
-		if conf.config['linkcontrol']:
-		    query['linkrev'] = self.linkinfo.srcmd5
+                if conf.config['linkcontrol']:
+                    query['linkrev'] = self.linkinfo.srcmd5
             if self.islinkrepair():
                 query['repairlink'] = '1'
             u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
@@ -878,7 +878,8 @@ class Package:
         print
         print 'Committed revision %s.' % self.rev
 
-	os.unlink(os.path.join(self.storedir, '_pulled'))
+        if self.ispulled():
+            os.unlink(os.path.join(self.storedir, '_pulled'))
         if self.islinkrepair():
             os.unlink(os.path.join(self.storedir, '_linkrepair'))
             self.linkrepair = False
@@ -1251,10 +1252,10 @@ rev: %s
         if self.islinkrepair():
             upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1)
         elif self.islink() and self.isexpanded():
-	    if conf.config['linkcontrol'] and self.ispulled():
-		upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
-	    else:
-		upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+            if conf.config['linkcontrol'] and self.ispulled():
+                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
+            else:
+                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
         else:
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         return upstream_rev
