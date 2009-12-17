@@ -106,6 +106,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'check_filelist': '1',
              # check for pending requests after executing an action (e.g. checkout, update, commit)
              'check_for_request_on_action': '0',
+             'linkcontrol': '0',
 
              # Maintenance defaults to OBS instance defaults
              'maintained_attribute': 'OBS:Maintained',
@@ -117,7 +118,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
-    'checkout_no_colon', 'check_for_request_on_action']
+    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol']
 
 new_conf_template = """
 [general]

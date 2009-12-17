@@ -827,7 +827,7 @@ class Package:
             print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
             return 1
 
-        if not self.todo_send and not self.todo_delete and not self.rev == "upload" and not self.islinkrepair():
+        if not self.todo_send and not self.todo_delete and not self.rev == "upload" and not self.islinkrepair() and not self.ispulled():
             print 'nothing to do for package %s' % self.name
             return 1
 
@@ -857,6 +857,8 @@ class Package:
                       'comment': msg }
             if self.islink() and self.isexpanded():
                 query['keeplink'] = '1'
+		if conf.config['linkcontrol']:
+		    query['linkrev'] = self.linkinfo.srcmd5
             if self.islinkrepair():
                 query['repairlink'] = '1'
             u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
@@ -876,6 +878,7 @@ class Package:
         print
         print 'Committed revision %s.' % self.rev
 
+	os.unlink(os.path.join(self.storedir, '_pulled'))
         if self.islinkrepair():
             os.unlink(os.path.join(self.storedir, '_linkrepair'))
             self.linkrepair = False
@@ -1038,6 +1041,10 @@ class Package:
     def islinkrepair(self):
         """tells us if we are repairing a broken source link."""
         return self.linkrepair
+
+    def ispulled(self):
+        """tells us if we have pulled a link."""
+        return os.path.isfile(os.path.join(self.storedir, '_pulled'))
 
     def haslinkerror(self):
         """
@@ -1244,7 +1251,10 @@ rev: %s
         if self.islinkrepair():
             upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1)
         elif self.islink() and self.isexpanded():
-            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+	    if conf.config['linkcontrol'] and self.ispulled():
+		upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
+	    else:
+		upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
         else:
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         return upstream_rev
@@ -2279,6 +2289,8 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
         query['rev'] = 'latest'
     if linkrev:
         query['linkrev'] = linkrev
+    elif conf.config['linkcontrol']:
+        query['linkrev'] = 'base'
     if expand:
         query['expand'] = 1
     if linkrepair:

@@ -4361,6 +4361,39 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print 'run \'osc resolved ...\', and commit the changes.'
 
 
+    def do_pull(self, subcmd, opts, *args):
+        """${cmd_name}: merge the changes of the link target into your working copy.
+
+        ${cmd_option_list}
+        """
+
+        if not is_package_dir('.'):
+            raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath("."))
+	p = Package('.')
+        # check if everything is committed
+	for filename in p.filenamelist:
+            st = p.status(filename)
+            if st != ' ':
+		raise oscerr.WrongArgs('Please commit your local changes first!')
+        # check if we need to update
+        upstream_rev = p.latest_rev()
+        if p.rev != upstream_rev:
+	    raise oscerr.WorkingCopyOutdated((p.absdir, p.rev, upstream_rev))
+        if not p.islink():
+	    raise oscerr.WrongArgs('osc pull only works on linked packages.')
+        if not p.isexpanded():
+	    raise oscerr.WrongArgs('osc pull only works on expanded links.')
+
+	# hack
+	conf.config['linkcontrol'] = 0
+	# do the update
+	pulledrev=p.latest_rev()
+	if pulledrev == p.rev:
+	    raise oscerr.WrongArgs('Already up-to-date.')
+	p.update(rev=pulledrev)
+        store_write_string(p.absdir, '_pulled', '')
+
+
     @cmdln.option('--create', action='store_true', default=False,
                   help='create new gpg signing key for this project')
     @cmdln.option('--delete', action='store_true', default=False,
