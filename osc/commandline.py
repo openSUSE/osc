@@ -686,7 +686,7 @@ class Osc(cmdln.Cmdln):
             opts.days = conf.config['request_list_days']
             return self.do_request('list', opts, *args)
 
-        src_update = None
+        src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
         if opts.cleanup:
             src_update = "cleanup"

@@ -106,6 +106,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'check_filelist': '1',
              # check for pending requests after executing an action (e.g. checkout, update, commit)
              'check_for_request_on_action': '0',
+             # what to do with the source package if the submitrequest has been accepted
+             'submitrequest_on_accept_action': '',
              'linkcontrol': '0',
 
              # Maintenance defaults to OBS instance defaults
@@ -189,6 +191,10 @@ apiurl = %(apiurl)s
 
 # check for pending requests after executing an action (e.g. checkout, update, commit)
 #check_for_request_on_action = 0
+
+# what to do with the source package if the submitrequest has been accepted. If
+# nothing is specified the API default is used
+#submitrequest_on_accept_action = cleanup|update|noupdate
 
 [%(apiurl)s]
 user = %(user)s
