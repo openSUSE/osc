@@ -2,6 +2,12 @@
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
 
+ #
+ # Features which require OBS 1.7
+ #
+ - new config option 'submitrequest_on_accept_action' to specify a default action
+   if a submitrequest has been accepted
+
 0.124
  - added 'osc bugowner' as a more intelligent version of 'osc maintainer -B'
  - added option '-B' to osc maintainer, prints bugowner OR maintainer.
