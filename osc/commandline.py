@@ -4522,7 +4522,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 try:
                     os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
-                except:
+                except Exception, e:
                     sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
 
         if opts.message:
