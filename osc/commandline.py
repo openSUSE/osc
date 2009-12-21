@@ -358,8 +358,8 @@ class Osc(cmdln.Cmdln):
 
         project_dir = localdir = os.getcwd()
         if is_project_dir(localdir):
-            project = Project(localdir).name
-            apiurl = Project(localdir).apiurl
+            project = store_read_project(localdir)
+            apiurl = store_read_apiurl(localdir)
         else:
             sys.exit('This command must be called in a checked out project.')
         patchinfo = None
@@ -724,20 +724,20 @@ class Osc(cmdln.Cmdln):
             import cgi
             # submit requests for multiple packages are currently handled via multiple requests
             # They could be also one request with multiple actions, but that avoids to accepts parts of it.
-            project = Project(os.getcwd())
-            apiurl = project.apiurl
+            project = store_read_project(os.curdir)
+            apiurl = store_read_apiurl(os.curdir)
 
             sr_ids = []
             pi = []
             pac = []
             targetprojects = []
             # loop via all packages for checking their state
-            for p in meta_get_packagelist(apiurl, project.name):
+            for p in meta_get_packagelist(apiurl, project):
                 if p.startswith("_patchinfo:"):
                    pi.append(p)
                 else:
                    # get _link info from server, who knows about the local state ...
-                   u = makeurl(apiurl, ['source', project.name, p])
+                   u = makeurl(apiurl, ['source', project, p])
                    f = http_GET(u)
                    root = ET.parse(f).getroot()
                    linkinfo = root.find('linkinfo')
@@ -770,7 +770,7 @@ class Osc(cmdln.Cmdln):
 
             # loop via all packages to do the action
             for p in pac:
-                result = create_submit_request(apiurl, project.name, p)
+                result = create_submit_request(apiurl, project, p)
                 if not result:
 #                   sys.exit(result)
                    sys.exit("submit request creation failed")
@@ -785,7 +785,7 @@ class Osc(cmdln.Cmdln):
             for p in pi:
                 for t in targetprojects:
                     s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
-                           (project.name, p, t, p, options_block)
+                           (project, p, t, p, options_block)
                     actionxml += s
 
             if actionxml != "":
@@ -1965,10 +1965,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if args and len(args) == 1:
             localdir = os.getcwd()
             if is_project_dir(localdir):
-                project = Project(localdir).name
+                project = store_read_project(localdir)
                 project_dir = localdir
                 package = args[0]
-                apiurl = Project(localdir).apiurl
+                apiurl = store_read_apiurl(localdir)
 
         rev, dummy = parseRevisionOption(opts.revision)
         if rev==None:
@@ -3525,10 +3525,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             architecture = args[3]
         elif len(args) == 2:
             if is_package_dir(os.getcwd()):
-                project = Project(os.getcwd()).name
-                p = Package(os.getcwd())
-                package = p.name
-                apiurl  = p.apiurl
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                apiurl  = store_read_apiurl(os.curdir)
                 repository   = args[0]
                 architecture = args[1]
             else:
