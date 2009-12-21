@@ -2236,6 +2236,7 @@ def meta_exists(metatype,
             data = metatypes[metatype]['template']
             if template_args:
                 data = data % template_args
+                data = data.split('\n')
         else:
             raise e
     return data
