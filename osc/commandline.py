@@ -1304,6 +1304,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='link the specified revision.')
     @cmdln.option('-f', '--force', action='store_true',
                   help='overwrite an existing link file if it is there.')
+    @cmdln.option('-d', '--disable-publish', action='store_true',
+                  help='disable publishing of the linked package')
     def do_linkpac(self, subcmd, opts, *args):
         """${cmd_name}: "Link" a package to another package
 
@@ -1357,10 +1359,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
-        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount)
+        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish)
 
     @cmdln.option('-m', '--map-repo', metavar='SRC=TARGET[,SRC=TARGET]',
                   help='Allows repository mapping(s) to be given as SRC=TARGET[,SRC=TARGET]')
+    @cmdln.option('-d', '--disable-publish', action='store_true',
+                  help='disable publishing of the aggregated package')
     def do_aggregatepac(self, subcmd, opts, *args):
         """${cmd_name}: "Aggregate" a package to another package
 
@@ -1407,7 +1411,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     return 1
                 repo_map[src_tgt[0]] = src_tgt[1]
 
-        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map)
+        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map, opts.disable_publish)
 
 
     @cmdln.option('-c', '--client-side-copy', action='store_true',

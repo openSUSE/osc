@@ -3037,25 +3037,37 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
             root.remove(dp)
     return ET.tostring(root)
 
-def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount=''):
+def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False):
     """
     create a linked package
      - "src" is the original package
      - "dst" is the "link" package that we are creating here
     """
-
-    try: meta_exists(metatype='pkg',
-                       path_args=(quote_plus(dst_project), quote_plus(dst_package)),
-                       template_args=None,
-                       create_new=False, apiurl=conf.config['apiurl'])
+    meta_change = False
+    dst_meta = ''
+    try:
+        dst_meta = meta_exists(metatype='pkg',
+                               path_args=(quote_plus(dst_project), quote_plus(dst_package)),
+                               template_args=None,
+                               create_new=False, apiurl=conf.config['apiurl'])
     except:
         src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
-        src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+        dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+        meta_change = True
 
+    if disable_publish:
+        meta_change = True
+        root = ET.fromstring(''.join(dst_meta))
+        elm = root.find('publish')
+        if not elm:
+            elm = ET.SubElement(root, 'publish')
+        elm.clear()
+        ET.SubElement(elm, 'disable')
+        dst_meta = ET.tostring(root)
+    if meta_change:
         edit_meta('pkg',
                   path_args=(dst_project, dst_package),
-                  data=src_meta)
-
+                  data=dst_meta)
     # create the _link file
     # but first, make sure not to overwrite an existing one
     if '_link' in meta_get_filelist(conf.config['apiurl'], dst_project, dst_package):
@@ -3092,20 +3104,38 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
     http_PUT(u, data=link_template)
     print 'Done.'
 
-def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map = {}):
+def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map = {}, disable_publish = False):
     """
     aggregate package
      - "src" is the original package
      - "dst" is the "aggregate" package that we are creating here
      - "map" is a dictionary SRC => TARGET repository mappings
     """
+    meta_change = False
+    dst_meta = ''
+    try:
+        dst_meta = meta_exists(metatype='pkg',
+                               path_args=(quote_plus(dst_project), quote_plus(dst_package)),
+                               template_args=None,
+                               create_new=False, apiurl=conf.config['apiurl'])
+    except:
+        src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
+        dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+        meta_change = True
 
-    src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
-    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
-
-    edit_meta('pkg',
-              path_args=(dst_project, dst_package),
-              data=src_meta)
+    if disable_publish:
+        meta_change = True
+        root = ET.fromstring(''.join(dst_meta))
+        elm = root.find('publish')
+        if not elm:
+            elm = ET.SubElement(root, 'publish')
+        elm.clear()
+        ET.SubElement(elm, 'disable')
+        dst_meta = ET.tostring(root)
+    if meta_change:
+        edit_meta('pkg',
+                  path_args=(dst_project, dst_package),
+                  data=dst_meta)
 
     # create the _aggregate file
     # but first, make sure not to overwrite an existing one
