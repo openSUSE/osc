@@ -2563,9 +2563,6 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     if len(m):
         if len(match): match += "%20and%20"
         match += "(" + m + ")"
-    if req_type:
-        if len(match): match += '%20and%20'
-        match += '@type=\'%s\'' % quote_plus(req_type)
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend
@@ -2586,6 +2583,9 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
 
             matches.append(m)
     else:
+        if req_type:
+            if len(match): match += '%20and%20'
+            match += 'action/@type=\'%s\'' % quote_plus(req_type)
         matches.append(match)
 
     for match in matches:
