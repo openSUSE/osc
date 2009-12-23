@@ -1187,42 +1187,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             if not opts.message:
                 opts.message = edit_message()
-
+            state_map = {'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
             # Change review state only
             if subcmd == 'review':
-              # decline
-              if cmd == 'decline':
-                  r = change_review_state(conf.config['apiurl'],
-                          reqid, 'declined', conf.config['user'], '', opts.message or '')
-                  print r
-              # accept
-              elif cmd == 'accept':
-                  r = change_review_state(conf.config['apiurl'],
-                          reqid, 'accepted', conf.config['user'], '', opts.message or '')
-                  print r
-
+                if cmd in ['accept', 'decline']:
+                    r = change_review_state(conf.config['apiurl'],
+                            reqid, state_map[cmd], conf.config['user'], '', opts.message or '')
+                    print r
             # Change state of entire request
-            else:
-              # accept
-              if cmd == 'accept':
-                  r = change_request_state(conf.config['apiurl'],
-                          reqid, 'accepted', opts.message or '')
-                  print r
-              # decline
-              elif cmd == 'decline':
-                  r = change_request_state(conf.config['apiurl'],
-                          reqid, 'declined', opts.message or '')
-                  print r
-              # delete/wipe
-              elif cmd == 'wipe':
-                  r = change_request_state(conf.config['apiurl'],
-                          reqid, 'deleted', opts.message or '')
-                  print r
-              # revoke
-              elif cmd == 'revoke':
-                  r = change_request_state(conf.config['apiurl'],
-                          reqid, 'revoked', opts.message or '')
-                  print r
+            elif cmd in ['accept', 'decline', 'wipe', 'revoke']:
+                r = change_request_state(conf.config['apiurl'],
+                        reqid, state_map[cmd], opts.message or '')
+                print r
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
