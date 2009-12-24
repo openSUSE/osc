@@ -716,7 +716,7 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongArgs('Too many arguments.')
 
         if len(args) > 0 and len(args) <= 2 and is_project_dir(os.getcwd()):
-                sys.exit('osc submitrequest from project directory is only working without target specs and for source linked files\n')
+            sys.exit('osc submitrequest from project directory is only working without target specs and for source linked files\n')
 
         apiurl = conf.config['apiurl']
 
@@ -2525,22 +2525,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for file in files:
             if not opts.force:
-                resp = raw_input("rm: remove source file `%s' from `%s/%s'? " % (file, project, package))
+                resp = raw_input("rm: remove source file `%s' from `%s/%s'? (yY|nN) " % (file, project, package))
                 if resp not in ('y', 'Y'):
                     continue
             try:
                 delete_files(conf.config['apiurl'], project, package, (file, ))
             except urllib2.HTTPError, e:
-                print >>sys.stderr, e.msg
-
                 if opts.force:
+                    print >>sys.stderr, e
                     body = e.read()
                     if e.code in [ 400, 403, 404, 500 ]:
                         if '<summary>' in body:
                             msg = body.split('<summary>')[1]
                             msg = msg.split('</summary>')[0]
                             print >>sys.stderr, msg
-                    continue
                 else:
                     raise e
 
