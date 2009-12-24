@@ -3830,10 +3830,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         olddir = os.getcwd()
         if conf.config['do_package_tracking']:
-            if createPackageDir(os.path.join(project.dir, pac), project):
-                os.chdir(os.path.join(project.dir, pac))
-            else:
-                sys.exit(1)
+            createPackageDir(os.path.join(project.dir, pac), project)
+            os.chdir(os.path.join(project.dir, pac))
         else:
             if not os.path.exists(os.path.join(project_dir, pac)):
                 apiurl = store_read_apiurl(project_dir)

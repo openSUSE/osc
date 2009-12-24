@@ -427,7 +427,8 @@ class Project:
         import fnmatch
         for i in conf.config['exclude_glob']:
             if fnmatch.fnmatch(pac, i):
-                return False
+                msg = 'invalid package name: \'%s\' (see \'exclude_glob\' config option)' % pac
+                raise oscerr.OscIOError(None, msg)
         state = self.get_state(pac)
         if state == None or state == 'D':
             self.new_package_entry(pac, 'A')
@@ -436,10 +437,8 @@ class Project:
             # it would take too much time to update all data structs regularly
             if pac in self.pacs_unvers:
                 self.pacs_unvers.remove(pac)
-            return True
         else:
-            print 'package \'%s\' is already under version control' % pac
-            return False
+            raise oscerr.PackageExists(self.name, pac, 'package \'%s\' is already under version control' % pac)
 
     def delPackage(self, pac, force = False):
         state = self.get_state(pac.name)
@@ -4232,39 +4231,32 @@ def createPackageDir(pathname, prj_obj=None):
     if is_project_dir(prj_dir):
         if not os.path.exists(pac_dir):
             prj = prj_obj or Project(prj_dir, False)
-            if prj.addPackage(pac_dir):
-                os.mkdir(pathname)
-                os.chdir(pathname)
-                init_package_dir(prj.apiurl,
-                                 prj.name,
-                                 pac_dir, pac_dir, files=False)
-                os.chdir(prj.absdir)
-                print statfrmt('A', os.path.normpath(pathname))
-                return True
-            else:
-                return False
+            prj.addPackage(pac_dir)
+            os.mkdir(pathname)
+            os.chdir(pathname)
+            init_package_dir(prj.apiurl,
+                             prj.name,
+                             pac_dir, pac_dir, files=False)
+            os.chdir(prj.absdir)
+            print statfrmt('A', os.path.normpath(pathname))
         else:
-            print '\'%s\' already exists' % pathname
-            return False
+            raise oscerr.OscIOError(None, 'file or directory \'%s\' already exists' % pathname)
     else:
-        print '\'%s\' is not a working copy' % prj_dir
+        msg = '\'%s\' is not a working copy' % prj_dir
         if os.path.exists(os.path.join(prj_dir, '.svn')):
-            print 'try svn instead of osc.'
-        return False
+            msg += '\ntry svn instead of osc.'
+        raise oscerr.NoWorkingCopy(msg)
 
 
 def addFiles(filenames, prj_obj = None):
     for filename in filenames:
         if not os.path.exists(filename):
-            print >>sys.stderr, "file '%s' does not exist" % filename
-            return 1
+            raise oscerr.OscIOError(None, 'file \'%s\' does not exist' % filename)
 
     # init a package dir if we have a normal dir in the "filenames"-list
     # so that it will be find by findpacs() later
     for filename in filenames:
-
         prj_dir, pac_dir = getPrjPacPaths(filename)
-
         if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
            and conf.config['do_package_tracking']:
             old_dir = os.getcwd()
@@ -4274,21 +4266,17 @@ def addFiles(filenames, prj_obj = None):
             init_package_dir(prj_apiurl, prj_name, pac_dir, pac_dir, files=False)
             os.chdir(old_dir)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
-            print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
-            return 1
+            raise oscerr.PackageExists(store_read_project(filename), store_read_package(filename),
+                                       'osc: warning: \'%s\' is already under version control' % filename)
         elif os.path.isdir(filename) and is_project_dir(prj_dir):
-            print >>sys.stderr, 'osc: cannot add a directory to a project unless ' \
-                                '\'do_package_tracking\' is enabled in the configuration file'
-            return 1
-
+            raise oscerr.WrongArgs('osc: cannot add a directory to a project unless ' \
+                                   '\'do_package_tracking\' is enabled in the configuration file')
     pacs = findpacs(filenames)
-
     for pac in pacs:
         if conf.config['do_package_tracking'] and not pac.todo:
             prj = prj_obj or Project(os.path.dirname(pac.absdir), False)
             if pac.name in prj.pacs_unvers:
-                if not prj.addPackage(pac.name):
-                    sys.exit(1)
+                prj.addPackage(pac.name)
                 print statfrmt('A', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
                 for filename in pac.filenamelist_unvers:
                     pac.todo.append(filename)
