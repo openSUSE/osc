@@ -4285,7 +4285,7 @@ def addFiles(filenames, prj_obj = None):
 
     for pac in pacs:
         if conf.config['do_package_tracking'] and not pac.todo:
-            prj = prj_obj or Project(os.path.dirname(pac.absdir))
+            prj = prj_obj or Project(os.path.dirname(pac.absdir), False)
             if pac.name in prj.pacs_unvers:
                 if not prj.addPackage(pac.name):
                     sys.exit(1)
