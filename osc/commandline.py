@@ -3967,7 +3967,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         return self.do_maintainer(subcmd, opts, *args)
 
 
-    @cmdln.option('-b', '--bugowner_only', action='store_true',
+    @cmdln.option('-b', '--bugowner-only', action='store_true',
                   help='Show only the bugowner')
     @cmdln.option('-B', '--bugowner', action='store_true',
                   help='Show only the bugowner if defined, or maintainer otherwise')
@@ -3999,14 +3999,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        maintainers = []
         pac = None
         tree = None
-        if not opts.role:
-            roles = [ 'bugowner', 'maintainer' ]
-        else:
+        roles = [ 'bugowner', 'maintainer' ]
+        if opts.role:
             roles = [opts.role]
-        if opts.bugowner_only:
+        if opts.bugowner_only or opts.bugowner:
             roles = [ 'bugowner' ]
 
         if len(args) == 1:
@@ -4041,41 +4039,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for role in roles:
                 delPerson(conf.config['apiurl'], prj, pac, opts.delete, role)
         elif opts.devel_project:
+            # XXX: does it really belong to this command?
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
         else:
             # showing the maintainers
-            seen=0
+            maintainers = {}
+            for person in tree.findall('person'):
+                maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
             for role in roles:
-                if opts.bugowner:
-                    if seen:
-                        break;
-                for person in tree.findall('person'):
-                    if person.get('role') == role:
-                        seen += 1
-                        maintainers.append(person.get('userid'))
-                if opts.bugowner:
-                    if seen:
-                        print role+":",
-                else:
-                    print ""
-                    print role, ":"
-                    
+                if opts.bugowner and not len(maintainers.get(role, [])):
+                    role = 'maintainer'
+                print role + ':'
                 if opts.email:
                     emails = []
-                    for maintainer in maintainers:
+                    for maintainer in maintainers.get(role, []):
                         user = get_user_data(conf.config['apiurl'], maintainer, 'email')
                         if len(user):
                             emails.append(''.join(user))
-                    print ', '.join(emails)
+                    print ', '.join(emails) or '-'
                 elif opts.verbose:
                     userdata = []
-                    for maintainer in maintainers:
+                    for maintainer in maintainers.get(role, []):
                         user = get_user_data(conf.config['apiurl'], maintainer, 'realname', 'login', 'email')
                         userdata.extend(user)
                     for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
                         print row
                 else:
-                    print ', '.join(maintainers)
+                    print ', '.join(maintainers.get(role, [])) or '-'
+                print
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
