@@ -3748,7 +3748,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('-p', '--project', metavar='project',
-                        help='specify a project name')
+                        help='specify the path to a project')
     @cmdln.option('-n', '--name', metavar='name',
                         help='specify a package name')
     @cmdln.option('-t', '--title', metavar='title',
