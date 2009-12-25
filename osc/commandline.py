@@ -3984,7 +3984,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='add a new maintainer')
     @cmdln.option('-d', '--delete', metavar='user',
                   help='delete a maintainer from a project or package')
-    @cmdln.option('-r', '--role', metavar='role',
+    @cmdln.option('-r', '--role', metavar='role', action='append', default=[],
                   help='Specify user role')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
@@ -4002,8 +4002,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pac = None
         tree = None
         roles = [ 'bugowner', 'maintainer' ]
-        if opts.role:
-            roles = [opts.role]
+        if len(opts.role):
+            roles = opts.role
         if opts.bugowner_only or opts.bugowner:
             roles = [ 'bugowner' ]
 
