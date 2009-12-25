@@ -2234,8 +2234,7 @@ def meta_exists(metatype,
         if e.code == 404 and create_new:
             data = metatypes[metatype]['template']
             if template_args:
-                data = data % template_args
-                data = data.split('\n')
+                data = StringIO(data % template_args).readlines()
         else:
             raise e
     return data
