@@ -2097,7 +2097,7 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
 def show_develproject(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
     try:
-        return ET.parse(StringIO(''.join(m))).getroot().find('devel').get('project')
+        return ET.fromstring(''.join(m)).getroot().find('devel').get('project')
     except:
         return None
 
@@ -2301,14 +2301,14 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision)
-    return ET.parse(StringIO(''.join(m))).getroot().get('srcmd5')
+    return ET.fromstring(''.join(m)).getroot().get('srcmd5')
 
 
 def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair)
     try:
         # only source link packages have a <linkinfo> element.
-        li_node = ET.parse(StringIO(''.join(m))).getroot().find('linkinfo')
+        li_node = ET.fromstring(''.join(m)).getroot().find('linkinfo')
     except:
         return None
 
@@ -2322,7 +2322,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
 
 def show_upstream_rev(apiurl, prj, pac):
     m = show_files_meta(apiurl, prj, pac)
-    return ET.parse(StringIO(''.join(m))).getroot().get('rev')
+    return ET.fromstring(''.join(m)).getroot().get('rev')
 
 
 def read_meta_from_spec(specfile, *args):
@@ -3320,7 +3320,7 @@ def get_platforms_of_project(apiurl, prj):
 
 def get_repositories_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    tree = ET.parse(StringIO(''.join(f)))
+    tree = ET.fromstring(''.join(f))
 
     r = [ node.get('name') for node in tree.findall('repository')]
     return r
@@ -3338,7 +3338,7 @@ class Repo:
 
 def get_repos_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    tree = ET.parse(StringIO(''.join(f)))
+    tree = ET.fromstring(''.join(f))
 
     for node in tree.findall('repository'):
         for node2 in node.findall('arch'):
@@ -3396,7 +3396,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
     f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch)
-    tree = ET.parse(StringIO(''.join(f)))
+    tree = ET.fromstring(''.join(f))
     root = tree.getroot()
 
     for node in root.findall('result'):
@@ -3431,7 +3431,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
     f = show_prj_results_meta(apiurl, prj)
-    tree = ET.parse(StringIO(''.join(f)))
+    tree = ET.fromstring(''.join(f))
     root = tree.getroot()
 
     pacs = []
