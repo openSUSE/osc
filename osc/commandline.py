@@ -2762,12 +2762,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print apiurl, project, package, repository, arch
         xml = show_package_trigger_reason(apiurl, project, package, repository, arch)
-        tree = ET.fromstring(xml)
-        reason = tree.find('explain').text
+        root = ET.fromstring(xml)
+        reason = root.find('explain').text
         print reason
         if reason == "meta change":
            print "changed keys:"
-           for package in tree.findall('packagechange'):
+           for package in root.findall('packagechange'):
                print "  ", package.get('change'), package.get('key')
 
 
@@ -2838,8 +2838,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
 
-        tree = ET.fromstring(xml)
-        for package in tree.findall('package'):
+        root = ET.fromstring(xml)
+        for package in root.findall('package'):
             print package.get('name'), ":"
             for dep in package.findall('pkgdep'):
                print "  ", dep.text
@@ -4000,7 +4000,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         pac = None
-        tree = None
+        root = None
         roles = [ 'bugowner', 'maintainer' ]
         if len(opts.role):
             roles = opts.role
@@ -4010,25 +4010,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) == 1:
             prj = args[0]
             m = show_project_meta(conf.config['apiurl'], prj)
-            tree = ET.fromstring(''.join(m))
+            root = ET.fromstring(''.join(m))
         elif len(args) == 2:
             prj = args[0]
             pac = args[1]
             m = show_package_meta(conf.config['apiurl'], prj, pac)
-            tree = ET.fromstring(''.join(m))
+            root = ET.fromstring(''.join(m))
             if not opts.nodevelproject and not opts.delete and not opts.add:
-                while tree.findall('devel'):
-                    d = tree.find('devel')
+                while root.findall('devel'):
+                    d = root.find('devel')
                     prj = d.get('project', prj)
                     pac = d.get('package', pac)
                     if opts.verbose:
                         print "Following to the development space:", prj, "/", pac
                     m = show_package_meta(conf.config['apiurl'], prj, pac)
-                    tree = ET.fromstring(''.join(m))
-                if not tree.findall('person'):
+                    root = ET.fromstring(''.join(m))
+                if not root.findall('person'):
                     print "No dedicated persons in package defined, showing the project persons !"
                     m = show_project_meta(conf.config['apiurl'], prj)
-                    tree = ET.fromstring(''.join(m))
+                    root = ET.fromstring(''.join(m))
         else:
             raise oscerr.WrongArgs('I need at least one argument.')
 
@@ -4044,7 +4044,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             # showing the maintainers
             maintainers = {}
-            for person in tree.findall('person'):
+            for person in root.findall('person'):
                 maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
             for role in roles:
                 if opts.bugowner and not len(maintainers.get(role, [])):
@@ -4205,7 +4205,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
         meta = f.readlines()
-        root_new = ET.fromstring(''.join(meta)).getroot()
+        root_new = ET.fromstring(''.join(meta))
         dir_new = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_new['srcmd5'] = root_new.get('srcmd5')
         dir_new['entries'] = [[n.get('name'), n.get('md5')] for n in root_new.findall('entry')]

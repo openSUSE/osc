@@ -1219,22 +1219,22 @@ rev: %s
 
         m = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
 
-        tree = ET.fromstring(m)
-        tree.find('title').text = self.summary
-        tree.find('description').text = ''.join(self.descr)
-        url = tree.find('url')
+        root = ET.fromstring(m)
+        root.find('title').text = self.summary
+        root.find('description').text = ''.join(self.descr)
+        url = root.find('url')
         if url == None:
-            url = ET.SubElement(tree, 'url')
+            url = ET.SubElement(root, 'url')
         url.text = self.url
 
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
-        mf = metafile(u, ET.tostring(tree))
+        mf = metafile(u, ET.tostring(root))
 
         if not force:
             print '*' * 36, 'old', '*' * 36
             print m
             print '*' * 36, 'new', '*' * 36
-            print ET.tostring(tree)
+            print ET.tostring(root)
             print '*' * 72
             repl = raw_input('Write? (y/N/e) ')
         else:
@@ -2097,7 +2097,7 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
 def show_develproject(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
     try:
-        return ET.fromstring(''.join(m)).getroot().find('devel').get('project')
+        return ET.fromstring(''.join(m)).find('devel').get('project')
     except:
         return None
 
@@ -2301,14 +2301,14 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision)
-    return ET.fromstring(''.join(m)).getroot().get('srcmd5')
+    return ET.fromstring(''.join(m)).get('srcmd5')
 
 
 def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair)
     try:
         # only source link packages have a <linkinfo> element.
-        li_node = ET.fromstring(''.join(m)).getroot().find('linkinfo')
+        li_node = ET.fromstring(''.join(m)).find('linkinfo')
     except:
         return None
 
@@ -2322,7 +2322,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
 
 def show_upstream_rev(apiurl, prj, pac):
     m = show_files_meta(apiurl, prj, pac)
-    return ET.fromstring(''.join(m)).getroot().get('rev')
+    return ET.fromstring(''.join(m)).get('rev')
 
 
 def read_meta_from_spec(specfile, *args):
@@ -3320,9 +3320,9 @@ def get_platforms_of_project(apiurl, prj):
 
 def get_repositories_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    tree = ET.fromstring(''.join(f))
+    root = ET.fromstring(''.join(f))
 
-    r = [ node.get('name') for node in tree.findall('repository')]
+    r = [ node.get('name') for node in root.findall('repository')]
     return r
 
 
@@ -3338,9 +3338,9 @@ class Repo:
 
 def get_repos_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    tree = ET.fromstring(''.join(f))
+    root = ET.fromstring(''.join(f))
 
-    for node in tree.findall('repository'):
+    for node in root.findall('repository'):
         for node2 in node.findall('arch'):
             yield Repo(node.get('name'), node2.text)
 
@@ -3396,8 +3396,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
     f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch)
-    tree = ET.fromstring(''.join(f))
-    root = tree.getroot()
+    root = ET.fromstring(''.join(f))
 
     for node in root.findall('result'):
         rmap = {}
@@ -3431,8 +3430,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
     f = show_prj_results_meta(apiurl, prj)
-    tree = ET.fromstring(''.join(f))
-    root = tree.getroot()
+    root = ET.fromstring(''.join(f))
 
     pacs = []
     # sequence of (repo,arch) tuples
@@ -4143,20 +4141,20 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
                        create_new=False)
 
     if data and get_user_meta(apiurl, user) != None:
-        tree = ET.fromstring(''.join(data))
+        root = ET.fromstring(''.join(data))
         found = False
-        for person in tree.getiterator('person'):
+        for person in root.getiterator('person'):
             if person.get('userid') == user and person.get('role') == role:
                 found = True
                 print "user already exists"
                 break
         if not found:
             # the xml has a fixed structure
-            tree.insert(2, ET.Element('person', role=role, userid=user))
+            root.insert(2, ET.Element('person', role=role, userid=user))
             print 'user \'%s\' added to \'%s\'' % (user, pac or prj)
             edit_meta(metatype=kind,
                       path_args=path,
-                      data=ET.tostring(tree))
+                      data=ET.tostring(root))
     else:
         print "osc: an error occured"
 
@@ -4176,17 +4174,17 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
                        template_args=None,
                        create_new=False)
     if data:
-        tree = ET.fromstring(''.join(data))
+        root = ET.fromstring(''.join(data))
         found = False
-        for person in tree.getiterator('person'):
+        for person in root.getiterator('person'):
             if person.get('userid') == user and person.get('role') == role:
-                tree.remove(person)
+                root.remove(person)
                 found = True
                 print "user \'%s\' removed" % user
         if found:
             edit_meta(metatype=kind,
                       path_args=path,
-                      data=ET.tostring(tree))
+                      data=ET.tostring(root))
         else:
             print "user \'%s\' not found in \'%s\'" % (user, pac or prj)
     else:
@@ -4201,10 +4199,10 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
                        create_new=False)
 
     if data and show_project_meta(apiurl, dprj) != None:
-        tree = ET.fromstring(''.join(data))
-        if not tree.find('devel') != None:
-            ET.SubElement(tree, 'devel')
-        elem = tree.find('devel')
+        root = ET.fromstring(''.join(data))
+        if not root.find('devel') != None:
+            ET.SubElement(root, 'devel')
+        elem = root.find('devel')
         if dprj:
             elem.attrib['project'] = dprj
         else:
@@ -4217,7 +4215,7 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
                 del elem.attrib['package']
         edit_meta(metatype='pkg',
                   path_args=path,
-                  data=ET.tostring(tree))
+                  data=ET.tostring(root))
     else:
         print "osc: an error occured"
 
