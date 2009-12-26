@@ -762,8 +762,7 @@ class Osc(cmdln.Cmdln):
 
             if not opts.yes:
                 if pi:
-                   str=", "
-                   print "Submitting patchinfo ", str.join(pi), " to ", str.join(targetprojects)
+                   print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
                 print "\nEverything fine? Can we create the requests ? [y/n]"
                 if sys.stdin.read(1) != "y":
                    sys.exit("Aborted...")
