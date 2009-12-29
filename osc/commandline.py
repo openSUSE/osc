@@ -565,13 +565,14 @@ class Osc(cmdln.Cmdln):
             if cmd == 'attribute':
                 if not opts.attribute:
                     sys.exit('no attribute given to create')
-                values=""
+                values= ''
                 if opts.set:
-                   for i in opts.set.split(','):
-                       values+="<value>%s</value>" % i
-                d="""<attributes><attribute name='%s' >%s</attribute></attributes>""" % (opts.attribute, values)
+                    opts.set = opts.set.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                    for i in opts.set.split(','):
+                        values += '<value>%s</value>' % i
+                d = '<attributes><attribute name=\'%s\' >%s</attribute></attributes>' % (opts.attribute, values)
                 url = makeurl(conf.config['apiurl'], attributepath)
-                f=http_POST(url, data=d)
+                f = http_POST(url, data=d)
                 while 1:
                     buf = f.read(16384)
                     if not buf: break
