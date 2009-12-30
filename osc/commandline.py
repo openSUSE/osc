@@ -474,21 +474,21 @@ class Osc(cmdln.Cmdln):
         elif cmd == 'attribute':
             project = args[0]
             if len(args) > 1:
-               package = args[1]
+                package = args[1]
             else:
-               package = None
-               if opts.attribute_project:
-                    sys.exit('--attribute-project works only when also a package is given')
+                package = None
+                if opts.attribute_project:
+                    raise oscerr.WrongOptions('--attribute-project works only when also a package is given')
             if len(args) > 2:
-               subpackage = args[2]
+                subpackage = args[2]
             else:
-               subpackage = None
+                subpackage = None
             attributepath.append('source')
             attributepath.append(project)
             if package:
-               attributepath.append(package)
+                attributepath.append(package)
             if subpackage:
-               attributepath.append(subpackage)
+                attributepath.append(subpackage)
             attributepath.append('_attribute')
         elif cmd == 'prjconf':
             project = args[0]
@@ -561,22 +561,18 @@ class Osc(cmdln.Cmdln):
                           template_args=None)
 
         # create attribute entry
-        if opts.create or opts.set:
-            if cmd == 'attribute':
-                if not opts.attribute:
-                    sys.exit('no attribute given to create')
-                values= ''
-                if opts.set:
-                    opts.set = opts.set.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-                    for i in opts.set.split(','):
-                        values += '<value>%s</value>' % i
-                d = '<attributes><attribute name=\'%s\' >%s</attribute></attributes>' % (opts.attribute, values)
-                url = makeurl(conf.config['apiurl'], attributepath)
-                f = http_POST(url, data=d)
-                while 1:
-                    buf = f.read(16384)
-                    if not buf: break
-                    print buf
+        if (opts.create or opts.set) and cmd == 'attribute':
+            if not opts.attribute:
+                raise oscerr.WrongOptions('no attribute given to create')
+            values = ''
+            if opts.set:
+                opts.set = opts.set.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                for i in opts.set.split(','):
+                    values += '<value>%s</value>' % i
+            d = '<attributes><attribute name=\'%s\' >%s</attribute></attributes>' % (opts.attribute, values)
+            url = makeurl(conf.config['apiurl'], attributepath)
+            for data in streamfile(url, http_POST, data=d):
+                sys.stdout.write(data)
 
         # upload file
         if opts.file:
@@ -625,16 +621,13 @@ class Osc(cmdln.Cmdln):
                 http_DELETE(u)
             elif cmd == 'attribute':
                 if not opts.attribute:
-                    sys.exit('no attribute given to create')
+                    raise oscerr.WrongOptions('no attribute given to create')
                 attributepath.append(opts.attribute)
                 u = makeurl(conf.config['apiurl'], attributepath)
-                f=http_DELETE(u)
-                while 1:
-                    buf = f.read(16384)
-                    if not buf: break
-                    print buf
+                for data in streamfile(u, http_DELETE):
+                    sys.stdout.write(data)
             else:
-                sys.exit('The --delete switch is only for pattern metadata.')
+                raise oscerr.WrongOptions('The --delete switch is only for pattern metadata or attributes.')
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',

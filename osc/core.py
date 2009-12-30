@@ -3539,13 +3539,13 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-def streamfile(url, http_meth = http_GET, bufsize=8192):
+def streamfile(url, http_meth = http_GET, bufsize=8192, data=None):
     """
     performs http_meth on url and read bufsize bytes from the response
     until EOF is reached. After each read bufsize bytes are yielded to the
     caller.
     """
-    f = http_meth.__call__(url)
+    f = http_meth.__call__(url, data = data)
     data = f.read(bufsize)
     while len(data):
         yield data
