@@ -3974,9 +3974,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-D', '--devel-project', metavar='devel_project',
                   help='define the project where this package is primarily developed')
     @cmdln.option('-a', '--add', metavar='user',
-                  help='add a new maintainer')
+                  help='add a new maintainer/bugowner (can be specified via --role)')
     @cmdln.option('-d', '--delete', metavar='user',
-                  help='delete a maintainer from a project or package')
+                  help='delete a maintainer/bugowner (can be specified via --role)')
     @cmdln.option('-r', '--role', metavar='role', action='append', default=[],
                   help='Specify user role')
     def do_maintainer(self, subcmd, opts, *args):
