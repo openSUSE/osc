@@ -1005,7 +1005,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         "log" will show the history of the given ID
 
         "show" will show the request itself, and generate a diff for review, if
-        used with the --diff option. The keyword show can be ommitted if the ID is numeric.
+        used with the --diff option. The keyword show can be omitted if the ID is numeric.
 
         "decline" will change the request state to "declined" and append a
         message that you specify with the --message option.
@@ -4436,7 +4436,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         If no <filename> is given, exactly one *.changes or *.spec file has to
         be in the cwd or in path.
 
-        The email adress used in .changes file is read from BuildService
+        The email address used in .changes file is read from BuildService
         instance, or should be defined in ~/.oscrc
         [https://api.opensuse.org/]
         user = login
