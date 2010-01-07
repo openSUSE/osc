@@ -2266,7 +2266,7 @@ def edit_meta(metatype,
         data = meta_exists(metatype,
                            path_args,
                            template_args,
-                           create_new=True,
+                           create_new = metatype != 'prjconf', # prjconf always exists, 404 => unknown prj
                            apiurl=apiurl)
 
     if edit:
