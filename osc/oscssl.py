@@ -6,6 +6,10 @@
 import M2Crypto.httpslib
 from M2Crypto.SSL.Checker import SSLVerificationError
 from M2Crypto import m2, SSL
+import M2Crypto.m2urllib2
+import urlparse
+import socket
+import urllib
 
 class TrustedCertStore:
     _tmptrusted = {}
@@ -153,77 +157,165 @@ class mySSLContext(SSL.Context):
         #self.set_info_callback() # debug
         self.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=lambda ok, store: verify_cb(self, ok, store))
 
+class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
+    handler_order = 499
+
+    # copied from M2Crypto.m2urllib2.HTTPSHandler
+    # it's sole purpose is to use our myHTTPSHandler/myHTTPSProxyHandler class
+    # ideally the m2urllib2.HTTPSHandler.https_open() method would be split into
+    # "do_open()" and "https_open()" so that we just need to override
+    # the small "https_open()" method...)
+    def https_open(self, req):
+        host = req.get_host()
+        if not host:
+            raise URLError('no host given')
+
+        # Our change: Check to see if we're using a proxy.
+        # Then create an appropriate ssl-aware connection.
+        full_url = req.get_full_url() 
+        target_host = urlparse.urlparse(full_url)[1]
+
+        if (target_host != host):
+            h = myProxyHTTPSConnection(host = host, ssl_context = self.ctx)
+        else:
+            h = myHTTPSConnection(host = host, ssl_context = self.ctx)
+        # End our change
+        h.set_debuglevel(self._debuglevel)
+
+        headers = dict(req.headers)
+        headers.update(req.unredirected_hdrs)
+        # We want to make an HTTP/1.1 request, but the addinfourl
+        # class isn't prepared to deal with a persistent connection.
+        # It will try to read all remaining data from the socket,
+        # which will block while the server waits for the next request.
+        # So make sure the connection gets closed after the (only)
+        # request.
+        headers["Connection"] = "close"
+        try:
+            h.request(req.get_method(), req.get_full_url(), req.data, headers)
+            r = h.getresponse()
+        except socket.error, err: # XXX what error?
+            raise URLError(err)
+
+        # Pick apart the HTTPResponse object to get the addinfourl
+        # object initialized properly.
+
+        # Wrap the HTTPResponse object in socket's file object adapter
+        # for Windows.  That adapter calls recv(), so delegate recv()
+        # to read().  This weird wrapping allows the returned object to
+        # have readline() and readlines() methods.
+
+        # XXX It might be better to extract the read buffering code
+        # out of socket._fileobject() and into a base class.
+
+        r.recv = r.read
+        fp = socket._fileobject(r)
+
+        resp = urllib.addinfourl(fp, r.msg, req.get_full_url())
+        resp.code = r.status
+        resp.msg = r.reason
+        return resp
 
 class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
-    
-    appname = 'generic'
-
-    def __init__(self, *args, **kwargs):
-        M2Crypto.httpslib.origHTTPSConnection.__init__(self, *args, **kwargs)
-
     def connect(self, *args):
-        r = M2Crypto.httpslib.origHTTPSConnection.connect(self, *args)
-	ctx = self.sock.ctx
-	verrs = ctx.verrs
-	ctx.verrs = None
-        cert = self.sock.get_peer_cert()
-        if not cert:
-            self.close()
-            raise SSLVerificationError("server did not present a certificate")
+        M2Crypto.httpslib.HTTPSConnection.connect(self, *args)
+        verify_certificate(self)
 
-        # XXX: should be check if the certificate is known anyways?
-        # Maybe it changed to something valid.
-        if not self.sock.verify_ok():
+    def getHost(self):
+        return self.host
 
-            tc = TrustedCertStore(self.host, self.port, self.appname, cert)
+    def getPort(self):
+        return self.port
 
-            if tc.is_known():
+class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection):
+    def _start_ssl(self):
+        M2Crypto.httpslib.ProxyHTTPSConnection._start_ssl(self)
+        verify_certificate(self)
 
-                if tc.is_trusted(): # ok, same cert as the stored one
-                    return
-                else:
-                    print "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
-                    print "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!"
-                    print "offending certificate is at '%s'" % tc.file
-                    raise SSLVerificationError("remote host identification has changed")
+    # broken in m2crypto: port needs to be an int
+    def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
+        #putrequest is called before connect, so can interpret url and get
+        #real host/port to be used to make CONNECT request to proxy
+        proto, rest = urllib.splittype(url)
+        if proto is None:
+            raise ValueError, "unknown URL type: %s" % url
+        #get host
+        host, rest = urllib.splithost(rest)
+        #try to get port
+        host, port = urllib.splitport(host)
+        #if port is not defined try to get from proto
+        if port is None:
+            try:
+                port = self._ports[proto]
+            except KeyError:
+                raise ValueError, "unknown protocol for: %s" % url
+        self._real_host = host
+        self._real_port = int(port)
+        M2Crypto.httpslib.HTTPSConnection.putrequest(self, method, url, skip_host, skip_accept_encoding)
 
-            verrs.show()
+    def getHost(self):
+        return self._real_host
 
-            print
+    def getPort(self):
+        return self._real_port
 
-            if not verrs.could_ignore():
-                raise SSLVerificationError("Certificate validation error cannot be ignored")
+def verify_certificate(connection):
+    ctx = connection.sock.ctx
+    verrs = ctx.verrs
+    ctx.verrs = None
+    cert = connection.sock.get_peer_cert()
+    if not cert:
+        connection.close()
+        raise SSLVerificationError("server did not present a certificate")
 
-            if not verrs.chain_ok:
-                print "A certificate in the chain failed verification"
-            if not verrs.cert_ok:
-                print "The server certificate failed verification"
+    # XXX: should be check if the certificate is known anyways?
+    # Maybe it changed to something valid.
+    if not connection.sock.verify_ok():
 
-            while True:
-                print """
+        tc = TrustedCertStore(connection.getHost(), connection.getPort(), 'generic', cert)
+
+        if tc.is_known():
+
+            if tc.is_trusted(): # ok, same cert as the stored one
+                return
+            else:
+                print "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
+                print "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!"
+                print "offending certificate is at '%s'" % tc.file
+                raise SSLVerificationError("remote host identification has changed")
+
+        verrs.show()
+
+        print
+
+        if not verrs.could_ignore():
+            raise SSLVerificationError("Certificate validation error cannot be ignored")
+
+        if not verrs.chain_ok:
+            print "A certificate in the chain failed verification"
+        if not verrs.cert_ok:
+            print "The server certificate failed verification"
+
+        while True:
+            print """
 Would you like to
-    0 - quit (default)
-    1 - continue anyways
-    2 - trust the server certificate permanently
-    9 - review the server certificate
-    """
+0 - quit (default)
+1 - continue anyways
+2 - trust the server certificate permanently
+9 - review the server certificate
+"""
 
-                r = raw_input("Enter choice [0129]: ")
-                if not r or r == '0':
-                    self.close()
-                    raise SSLVerificationError("Untrusted Certificate")
-                elif r == '1':
-                    tc.trust_tmp()
-                    return
-                elif r == '2':
-                    tc.trust_always()
-                    return
-                elif r == '9':
-                    print cert.as_text()
-
-# XXX: do we really need to override m2crypto's httpslib to be able
-# to check certificates after connect?
-M2Crypto.httpslib.origHTTPSConnection = M2Crypto.httpslib.HTTPSConnection
-M2Crypto.httpslib.HTTPSConnection = myHTTPSConnection
+            r = raw_input("Enter choice [0129]: ")
+            if not r or r == '0':
+                connection.close()
+                raise SSLVerificationError("Untrusted Certificate")
+            elif r == '1':
+                tc.trust_tmp()
+                return
+            elif r == '2':
+                tc.trust_always()
+                return
+            elif r == '9':
+                print cert.as_text()
 
 # vim: syntax=python sw=4 et

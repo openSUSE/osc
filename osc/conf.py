@@ -352,7 +352,7 @@ def init_basicauth(config):
                     break
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
-        opener = m2urllib2.build_opener(ctx, urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ctx), urllib2.HTTPCookieProcessor(cookiejar), authhandler)
     else:
         import sys
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
