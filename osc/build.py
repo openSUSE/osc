@@ -613,7 +613,7 @@ def main(opts, argv):
             print "--rsync-dest " + str(opts.rsyncsrc) + " is no absolute path (starting with '/')!"
             sys.exit(1)
         myrsyncdest = os.path.expandvars(opts.rsyncdest)
-        specialcmdopts += '--rsync-src=%s --rsync-dest=%s' \
+        specialcmdopts += '--rsync-src="%s" --rsync-dest="%s"' \
                             % (myrsyncsrc,
                                myrsyncdest)
     if opts.overlay:
@@ -622,10 +622,10 @@ def main(opts, argv):
             print "--overlay " + str(opts.overlay) + " is no valid directory!"
             sys.exit(1)
         myoverlay = os.path.abspath(myoverlay)
-        specialcmdopts += '--overlay=%s' \
+        specialcmdopts += '--overlay="%s"' \
                             % (myoverlay)
 
-    cmd = '%s --root=%s --rpmlist=%s --dist=%s %s --arch=%s %s %s %s' \
+    cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s "%s" %s' \
                  % (config['build-cmd'],
                     build_root,
                     rpmlist_filename,
