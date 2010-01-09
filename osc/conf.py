@@ -37,6 +37,7 @@ The configuration dictionary could look like this:
 import OscConfigParser
 from osc import oscerr
 from oscsslexcp import NoSecureSSLError
+import os
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False
@@ -68,11 +69,12 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 
              # build type settings
              'build-cmd': '/usr/bin/build',
-             'build-type' : '', # may be empty for chroot, kvm or xen
+             'build-type': '', # may be empty for chroot, kvm or xen
              'build-root': '/var/tmp/build-root',
              'build-device': '', # required for VM builds
-             'build-memory' : '',# required for VM builds
-             'build-swap' : '',  # optional for VM builds
+             'build-memory': '',# required for VM builds
+             'build-swap': '',  # optional for VM builds
+             'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN'), # compile with N jobs
 
              'debug': '0',
              'http_debug': '0',
@@ -140,6 +142,9 @@ apiurl = %(apiurl)s
 # /srv/oscbuild/%%(repo)s-%%(arch)s or
 # /srv/oscbuild/%%(repo)s-%%(arch)s-%%(project)s-%%(package)s
 #build-root = %(build-root)s
+
+# compile with N jobs (default: "getconf _NPROCESSORS_ONLN")
+#build-jobs = N
 
 # extra packages to install when building packages locally (osc build)
 # this corresponds to osc build's -x option and can be overridden with that
@@ -288,7 +293,6 @@ def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
 
     from osc.core import __version__
-    import os
     import cookielib
 
     if config['api_host_options'][config['apiurl']]['sslcertck']:
@@ -374,7 +378,6 @@ def get_configParser(conffile=None, force_read=False):
     ConfigParser object is stored in a method attribute and this attribute
     is returned unless you pass force_read=True.
     """
-    import os
     conffile = conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
     conffile = os.path.expanduser(conffile)
     if force_read or not get_configParser.__dict__.has_key('cp'):
@@ -389,7 +392,7 @@ def write_initial_config(conffile, entries, custom_template = ''):
     for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
     custom_template is an optional configuration template.
     """
-    import os, StringIO, sys
+    import StringIO, sys
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
@@ -481,7 +484,6 @@ def get_config(override_conffile = None,
                override_no_gnome_keyring = None,
                override_verbose = None):
     """do the actual work (see module documentation)"""
-    import os
     import sys
     import re
     global config
