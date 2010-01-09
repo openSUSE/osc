@@ -281,11 +281,14 @@ def main(opts, argv):
     xp = []
     build_root = None
 
+    build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
     if build_type not in ['spec', 'dsc', 'kiwi']:
         raise oscerr.WrongArgs(
-                "Unknown build type: '%s'. Build description should end in .spec, .dsc or .kiwi." \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc or .kiwi.' \
                         % build_type)
+    if not os.path.isfile(build_descr):
+        raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
 
     buildargs = []
     if not opts.userootforbuild:
@@ -341,11 +344,6 @@ def main(opts, argv):
             pac = store_read_package(os.curdir)
         apiurl = store_read_apiurl(os.curdir)
 
-    build_descr = os.path.abspath(build_descr)
-    if not os.path.exists(build_descr):
-        print >>sys.stderr, 'Error: build description named \'%s\' does not exist.' % build_descr
-        return 1
-
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
         val = os.getenv(var)
@@ -396,6 +394,25 @@ def main(opts, argv):
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
 
+    # special handling for overlay and rsync-src/dest
+    specialcmdopts = ''
+    if opts.rsyncsrc or opts.rsyncdest :
+        if not opts.rsyncsrc or not opts.rsyncdest:
+            raise oscerr.WrongOptions('When using --rsync-{src,dest} both parameters have to be specified.')
+        myrsyncsrc = os.path.abspath(os.path.expanduser(os.path.expandvars(opts.rsyncsrc)))
+        if not os.path.isdir(myrsyncsrc):
+            raise oscerr.WrongOptions('--rsync-src %s is no valid directory!' % opts.rsyncsrc)
+        # can't check destination - its in the target chroot ;) - but we can check for sanity
+        myrsyncdest = os.path.expandvars(opts.rsyncdest)
+        if not os.path.isabs(myrsyncdest):
+            raise oscerr.WrongOptions('--rsync-dest %s is no absolute path (starting with \'/\')!' % opts.rsyncdest)
+        specialcmdopts = '--rsync-src="%s" --rsync-dest="%s"' % (myrsyncsrc, myrsyncdest)
+    if opts.overlay:
+        myoverlay = os.path.abspath(os.path.expanduser(os.path.expandvars(opts.overlay)))
+        if not os.path.isdir(myoverlay):
+            raise oscerr.WrongOptions('--overlay %s is no valid directory!' % opts.overlay)
+        specialcmdopts += '--overlay="%s"' % myoverlay
+
     bi_file = None
     bc_file = None
     bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
@@ -412,12 +429,10 @@ def main(opts, argv):
     try:
         if opts.noinit:
             if not os.path.isfile(bi_filename):
-                print >>sys.stderr, '--noinit is not possible, no local buildinfo file'
-                sys.exit(1)
+                raise oscerr.WrongOptions('--noinit is not possible, no local buildinfo file')
             print 'Use local \'%s\' file as buildinfo' % bi_filename
             if not os.path.isfile(bc_filename):
-                print >>sys.stderr, '--noinit is not possible, no local buildconfig file'
-                sys.exit(1)
+                raise oscerr.WrongOptions('--noinit is not possible, no local buildconfig file')
             print 'Use local \'%s\' file as buildconfig' % bc_filename
         else:
             print 'Getting buildinfo from server and store to %s' % bi_filename
@@ -580,51 +595,20 @@ def main(opts, argv):
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
 
-    vm_options=""
+    vm_options = ''
     if config['build-device'] and config['build-memory'] and config['build-type']:
-        if config['build-type'] == "kvm":
-            vm_options="--kvm " + config['build-device']
-        elif config['build-type'] == "xen":
-            vm_options="--xen " + config['build-device']
+        if config['build-type'] == 'kvm':
+            vm_options = '--kvm ' + config['build-device']
+        elif config['build-type'] == 'xen':
+            vm_options = '--xen ' + config['build-device']
         else:
-            print "ERROR: unknown VM is set ! (" + config['build-type'] + ")"
-            sys.exit(1)
+            raise oscerr.WrongArgs('ERROR: unknown VM is set ! ("%s")' % config['build-type'])
         if config['build-swap']:
-            vm_options+=" --swap " + config['build-swap']
+            vm_options += ' --swap ' + config['build-swap']
         if config['build-memory']:
-            vm_options+=" --memory " + config['build-memory']
+            vm_options += ' --memory ' + config['build-memory']
 
     print 'Running build'
-    # special handling for overlay and rsync-src/dest
-    specialcmdopts = " "
-    if opts.rsyncsrc or opts.rsyncdest :
-        if not opts.rsyncsrc or not opts.rsyncdest:
-            print "When using --rsync-{src,dest} both parameters have to be specified."
-            sys.exit(1)
-        myrsyncsrc = os.path.expanduser(os.path.expandvars(opts.rsyncsrc))
-        myrsyncdest = ""
-        if os.path.isdir(myrsyncsrc):
-            myrsyncsrc = os.path.abspath(myrsyncsrc)
-        else:
-            print "--rsync-src " + str(opts.rsyncsrc) + " is no valid directory!"
-            sys.exit(1)
-        # can't check destination - its in the target chroot ;) - but we can check for sanity
-        if not opts.rsyncdest.startswith("/"):
-            print "--rsync-dest " + str(opts.rsyncsrc) + " is no absolute path (starting with '/')!"
-            sys.exit(1)
-        myrsyncdest = os.path.expandvars(opts.rsyncdest)
-        specialcmdopts += '--rsync-src="%s" --rsync-dest="%s"' \
-                            % (myrsyncsrc,
-                               myrsyncdest)
-    if opts.overlay:
-        myoverlay = os.path.expanduser(os.path.expandvars(opts.overlay))
-        if not os.path.isdir(myoverlay):
-            print "--overlay " + str(opts.overlay) + " is no valid directory!"
-            sys.exit(1)
-        myoverlay = os.path.abspath(myoverlay)
-        specialcmdopts += '--overlay="%s"' \
-                            % (myoverlay)
-
     cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s "%s" %s' \
                  % (config['build-cmd'],
                     build_root,

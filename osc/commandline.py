@@ -1313,8 +1313,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             dst_package = src_package
 
         if src_project == dst_project and src_package == dst_package:
-            print >>sys.stderr, 'Error: source and destination are the same.'
-            return 1
+            raise oscerr.WrongArgs('Error: source and destination are the same.')
 
         if src_project == dst_project and not opts.cicount:
             # in this case, the user usually wants to build different spec
@@ -1368,16 +1367,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             dst_package = src_package
 
         if src_project == dst_project and src_package == dst_package:
-            print >>sys.stderr, 'Error: source and destination are the same.'
-            return 1
+            raise oscerr.WrongArgs('Error: source and destination are the same.')
 
         repo_map = {}
         if opts.map_repo:
             for pair in opts.map_repo.split(','):
                 src_tgt = pair.split('=')
                 if len(src_tgt) != 2:
-                    print >>sys.stderr, 'map "%s" must be SRC=TARGET[,SRC=TARGET]' % opts.map_repo
-                    return 1
+                    raise oscerr.WrongOptions('map "%s" must be SRC=TARGET[,SRC=TARGET]' % opts.map_repo)
                 repo_map[src_tgt[0]] = src_tgt[1]
 
         aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map, opts.disable_publish)
@@ -3158,13 +3155,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
                 if not os.path.isdir(d):
-                    print >> sys.stderr, 'Preferred package location \'%s\' is not a directory' % d
-                    return 1
+                    raise oscerr.WrongOptions('Preferred package location \'%s\' is not a directory' % d)
 
-        if opts.keep_pkgs:
-            if not os.path.isdir(opts.keep_pkgs):
-                print >> sys.stderr, 'Preferred save location \'%s\' is not a directory' % opts.keep_pkgs
-                return 1
+        if opts.keep_pkgs and not os.path.isdir(opts.keep_pkgs):
+            raise oscerr.WrongOptions('Preferred save location \'%s\' is not a directory' % opts.keep_pkgs)
 
         print 'Building %s for %s/%s' % (arg_descr, arg_repository, arg_arch)
         return osc.build.main(opts, args)
@@ -3452,8 +3446,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             codes.append(None)
 
         if len(codes) == 0:
-            print 'No option has been provided. If you want to delete all binaries, use --all option.'
-            return 1
+            raise oscerr.WrongOptions('No option has been provided. If you want to delete all binaries, use --all option.')
 
         # make a new request for each code= parameter
         for code in codes:
