@@ -1755,33 +1755,65 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('--oldprj', metavar='OLDPRJ',
-                  help='project to compare against')
+                  help='project to compare against'
+                  ' (deprecated, use 3 argument form)')
     @cmdln.option('--oldpkg', metavar='OLDPKG',
-                  help='package to compare against')
+                  help='package to compare against'
+                  ' (deprecated, use 3 argument form)')
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
     @cmdln.option('-p', '--plain', action='store_true',
                   help='output the diff in plain (not unified) diff format')
     @cmdln.option('-c', '--change', metavar='rev',
-                        help='the change made by revision rev (like -r rev-1:rev).'
+                        help='the change made by revision rev (like -r rev-1:rev). '
                              'If rev is negative this is like -r rev:rev-1.')
-    def do_rdiff(self, subcmd, opts, new_project, new_package):
+    def do_rdiff(self, subcmd, opts, *args):
         """${cmd_name}: Server-side "pretty" diff of two packages
 
-        If neither OLDPRJ nor OLDPKG are specified, the diff is against the
-        last revision, thus showing the latest change.
+        Compares two packages (three or four arguments) or shows the
+        changes of a specified revision of a package (two arguments)
+
+        If no revision is specified the latest revision is used.
 
         Note that this command doesn't return a normal diff (which could be
         applied as patch), but a "pretty" diff, which also compares the content
         of tarballs.
 
 
-        ${cmd_usage}
+        usage:
+            osc ${cmd_name} OLDPRJ OLDPAC NEWPRJ [NEWPAC]
+            osc ${cmd_name} PROJECT PACKAGE
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         rev1 = None
         rev2 = None
+
+        old_project = None
+        old_package = None
+        new_project = None
+        new_package = None
+
+        if len(args) == 2:
+            new_project = args[0]
+            new_package = args[1]
+            if opts.oldprj:
+                old_project = opts.oldprj
+            if opts.oldpkg:
+                old_package = opts.oldpkg
+        elif len(args) == 3 or len(args) == 4:
+            if opts.oldprj or opts.oldpkg:
+                raise oscerr.WrongArgs('--oldpkg and --oldprj are only valid with two arguments')
+            old_project = args[0]
+            old_package = args[1]
+            new_project = args[2]
+            if len(args) == 4:
+                new_package = args[3]
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments')
+
 
         if opts.change:
             try:
@@ -1802,7 +1834,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rev1, rev2 = parseRevisionOption(opts.revision)
 
         rdiff = server_diff(conf.config['apiurl'],
-                            opts.oldprj, opts.oldpkg, rev1,
+                            old_project, old_package, rev1,
                             new_project, new_package, rev2, not opts.plain)
 
         print rdiff
