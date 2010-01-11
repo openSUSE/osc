@@ -2667,15 +2667,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show results only for specified architecture(s)')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='show results only for specified repo(s)')
-    @cmdln.option('-p', '--project', metavar='PROJECT',
-                        help='show packages in project PROJECT')
+    @cmdln.option('-V', '--vertical', action='store_true',
+                        help='list packages vertically instead horizontally')
     @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
 
         Usage:
             osc prjresults (inside working copy)
-            osc prjresults project
+            osc prjresults PROJECT
 
         ${cmd_option_list}
         """
@@ -2685,14 +2685,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) == 1:
                 project = args[0]
             else:
-                print >>sys.stderr, 'getting results for more than one project is not supported'
-                return 2
+                raise oscerr.WrongArgs('Wrong number of arguments.')
         else:
             wd = os.curdir
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
 
-        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch))
+        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical))
 
 
     @cmdln.option('-q', '--hide-legend', action='store_true',

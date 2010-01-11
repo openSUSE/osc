@@ -3470,12 +3470,10 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
         r.append(result_line_templ % rmap)
     return r
 
-def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None):
+def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None):
     #print '----------------------------------------'
 
     r = []
-    #result_line_templ = '%(prj)-15s %(pac)-15s %(rep)-15s %(arch)-10s %(status)s'
-    result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
 
     f = show_prj_results_meta(apiurl, prj)
     root = ET.fromstring(''.join(f))
@@ -3550,18 +3548,48 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             r.append(';'.join(row))
         return r
 
-    # human readable output
-    max_pacs = 40
-    for startpac in range(0, len(pacs), max_pacs):
+    if not vertical:
+        # human readable output
+        max_pacs = 40
+        for startpac in range(0, len(pacs), max_pacs):
+            offset = 0
+            for pac in pacs[startpac:startpac+max_pacs]:
+                r.append(' |' * offset + ' ' + pac)
+                offset += 1
+
+            for tg in targets:
+                line = []
+                line.append(' ')
+                for pac in pacs[startpac:startpac+max_pacs]:
+                    st = ''
+                    if not status.has_key(pac) or not status[pac].has_key(tg):
+                        # for newly added packages, status may be missing
+                        st = '?'
+                    else:
+                        try:
+                            st = buildstatus_symbols[status[pac][tg]]
+                        except:
+                            print 'osc: warn: unknown status \'%s\'...' % status[pac][tg]
+                            print 'please edit osc/core.py, and extend the buildstatus_symbols dictionary.'
+                            st = '?'
+                            buildstatus_symbols[status[pac][tg]] = '?'
+                    line.append(st)
+                    line.append(' ')
+                line.append(' %s %s (%s)' % tg)
+                line = ''.join(line)
+
+                r.append(line)
+
+            r.append('')
+    else:
         offset = 0
-        for pac in pacs[startpac:startpac+max_pacs]:
-            r.append(' |' * offset + ' ' + pac)
+        for tg in targets:
+            r.append('| ' * offset + '%s %s (%s)'%tg )
             offset += 1
 
-        for tg in targets:
+        for pac in pacs:
             line = []
-            line.append(' ')
-            for pac in pacs[startpac:startpac+max_pacs]:
+            for tg in targets:
                 st = ''
                 if not status.has_key(pac) or not status[pac].has_key(tg):
                     # for newly added packages, status may be missing
@@ -3575,18 +3603,31 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                         st = '?'
                         buildstatus_symbols[status[pac][tg]] = '?'
                 line.append(st)
-                line.append(' ')
-            line.append(' %s %s (%s)' % tg)
-            line = ''.join(line)
+            line.append(' '+pac)
+            r.append(' '.join(line))
 
-            r.append(line)
-
+        line = []
+        for i in range(0, len(targets)):
+            line.append(str(i%10))
+        r.append(' '.join(line))
+            
         r.append('')
 
     if not hide_legend and len(pacs):
         r.append(' Legend:')
+        legend = []
         for i, j in buildstatus_symbols.items():
-            r.append('  %s %s' % (j, i))
+            legend.append('%3s %-20s' % (j, i))
+
+        if vertical:
+            for i in range(0, len(targets)):
+                s = '%1d %s %s (%s)' % (i%10, targets[i][0], targets[i][1], targets[i][2])
+                if i < len(legend):
+                    legend[i] += s
+                else:
+                    legend.append(' '*24 + s)
+
+        r += legend
 
     return r
 
