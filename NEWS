@@ -1,6 +1,7 @@
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
+ - new proxy support via SSL
 
  #
  # Features which require OBS 1.7
