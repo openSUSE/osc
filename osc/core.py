@@ -3036,6 +3036,19 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
             root.remove(dp)
     return ET.tostring(root)
 
+def link_to_branch(project,  package):
+    """
+     convert a package with a _link + project.diff to a branch
+    """
+
+    if '_link' in meta_get_filelist(conf.config['apiurl'], project, package):
+        # FIXME, verify that it is no branch already
+        u = makeurl(conf.config['apiurl'], ['source', project, package], 'cmd=linktobranch')
+        http_POST(u)
+    else:
+        e.osc_msg = 'no _link file inside project \'%s\' package \'%s\'' % (project, package)
+        raise
+
 def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False):
     """
     create a linked package

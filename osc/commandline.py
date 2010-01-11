@@ -1265,6 +1265,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             set_link_rev(apiurl, project, p, rev)
 
 
+    def do_linktobranch(self, subcmd, opts, *args):
+        """${cmd_name}: Convert a package containing a classic link with patch to a branch
+
+        This command tells the server to convert a _link with or without a project.diff
+        to a branch. This is a full copy with a _link file pointing to the branched place.
+
+        usage:
+            osc linkpac PROJECT PACKAGE
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        if not args or len(args) != 2:
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('linktobranch'))
+
+        project = args[0]
+        package = args[1]
+
+        link_to_branch(project, package)
+
+
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
                   help='cicount attribute in the link, known values are add, copy, and local, default in buildservice is currently add.')
     @cmdln.option('-c', '--current', action='store_true',
