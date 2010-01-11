@@ -3054,8 +3054,7 @@ def link_to_branch(project,  package):
         u = makeurl(conf.config['apiurl'], ['source', project, package], 'cmd=linktobranch')
         http_POST(u)
     else:
-        e.osc_msg = 'no _link file inside project \'%s\' package \'%s\'' % (project, package)
-        raise
+        raise oscerr.OscIOError(None, 'no _link file inside project \'%s\' package \'%s\'' % (project, package))
 
 def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False):
     """
