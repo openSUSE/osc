@@ -4389,16 +4389,102 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('osc pull only works on linked packages.')
         elif not p.isexpanded():
             raise oscerr.WrongArgs('osc pull only works on expanded links.')
+        linkinfo = p.linkinfo
+        baserev = linkinfo.baserev
+        if baserev == None:
+            raise oscerr.WrongArgs('osc pull only works on links containing a base revision.')
 
-        # hack
-        conf.config['linkcontrol'] = 0
-        # do the update
-        pulledrev=p.latest_rev()
-        if pulledrev == p.rev:
-            raise oscerr.WrongArgs('Already up-to-date.')
-        p.update(rev=pulledrev)
-        store_write_string(p.absdir, '_pulled', '')
+        # get revisions we need
+        query = { 'expand': 1, 'emptylink': 1 }
+        u = makeurl(p.apiurl, ['source', p.prjname, p.name], query=query)
+        f = http_GET(u)
+        meta = f.readlines()
+        root_new = ET.fromstring(''.join(meta))
+        linkinfo_new = root_new.find('linkinfo')
+        if linkinfo_new == None:
+            raise oscerr.APIError('link is not a really a link?')
+        if linkinfo_new.get('error') != None:
+            raise oscerr.APIError('link target is broken')
+	if linkinfo_new.get('srcmd5') == baserev:
+            print "Already up-to-date."
+            return
+        dir_new = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name }
+        dir_new['srcmd5'] = root_new.get('srcmd5')
+        dir_new['entries'] = [[n.get('name'), n.get('md5')] for n in root_new.findall('entry')]
 
+        dir_oldpatched = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name, 'srcmd5': p.srcmd5 }
+        dir_oldpatched['entries'] = map(lambda f: [f.name, f.md5], p.filelist)
+        
+        query = { 'rev': linkinfo.srcmd5 }
+        u = makeurl(p.apiurl, ['source', linkinfo.project, linkinfo.package], query=query)
+        f = http_GET(u)
+        root_old = ET.parse(f).getroot()
+        dir_old = { 'apiurl': p.apiurl, 'project': linkinfo.project, 'package': linkinfo.package, 'srcmd5': linkinfo.srcmd5 }
+        dir_old['entries'] = [[n.get('name'), n.get('md5')] for n in root_old.findall('entry')]
+
+        # now do 3-way merge
+        entries_old = dict(dir_old['entries'])
+        entries_oldpatched = dict(dir_oldpatched['entries'])
+        entries_new = dict(dir_new['entries'])
+        entries = {}
+        entries.update(entries_old)
+        entries.update(entries_oldpatched)
+        entries.update(entries_new)
+        for name in sorted(entries.keys()):
+            md5_old = entries_old.get(name, '')
+            md5_new = entries_new.get(name, '')
+            md5_oldpatched = entries_oldpatched.get(name, '')
+            if md5_old == md5_new or md5_oldpatched == md5_new:
+		continue
+            if md5_old == md5_oldpatched:
+                if md5_new == '':
+		    print statfrmt('D', name)
+                    p.put_on_deletelist(name)
+		    os.unlink(name)
+                else:
+		    print statfrmt('U', name)
+                    self.download(name, md5_new, dir_new, name)
+		continue
+	    # need diff3 to resolve issue
+	    if md5_oldpatched == '':
+		open(name, 'w').write('')
+	    os.rename(name, name + '.mine')
+	    self.download(name, md5_new, dir_new, name + '.new')
+            self.download(name, md5_old, dir_old, name + '.old')
+            if binary_file(name + '.mine') or binary_file(name + '.old') or binary_file(name + '.new'):
+                shutil.copy2(name + '.new', name)
+                print statfrmt('C', name)
+                p.put_on_conflictlist(name)
+                continue
+
+            o = open(name, 'wb')
+            code = subprocess.call(['diff3', '-m',
+              '-L', '.mine', name + '.mine',
+              '-L', '.old', name + '.old',
+              '-L', '.new', name + '.new',
+            ], stdout=o)
+            if code == 0:
+                print statfrmt('G', name)
+                os.unlink(name + '.mine')
+                os.unlink(name + '.old')
+                os.unlink(name + '.new')
+            elif code == 1:
+                print statfrmt('C', name)
+                p.put_on_conflictlist(name)
+            else:
+                print statfrmt('?', name)
+                p.put_on_conflictlist(name)
+        p.write_deletelist()
+        p.write_conflictlist()
+        # store new linkrev
+        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
+        print
+	if len(p.in_conflict):
+            print 'Please fix the conflicts (files marked with \'C\' above),'
+            print 'run \'osc resolved ...\', and commit the changes'
+	    print 'to update the link information.'
+	else:
+	    print 'Please commit the changes to update the link information.'
 
     @cmdln.option('--create', action='store_true', default=False,
                   help='create new gpg signing key for this project')

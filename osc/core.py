@@ -276,6 +276,7 @@ class Linkinfo:
         self.srcmd5 = None
         self.error = None
         self.rev = None
+        self.baserev = None
 
     def read(self, linkinfo_node):
         """read in the linkinfo metadata from the <linkinfo> element passed as
@@ -291,6 +292,7 @@ class Linkinfo:
         self.srcmd5  = linkinfo_node.get('srcmd5')
         self.error   = linkinfo_node.get('error')
         self.rev     = linkinfo_node.get('rev')
+        self.baserev = linkinfo_node.get('baserev')
 
     def islink(self):
         """returns True if the linkinfo is not empty, otherwise False"""
@@ -745,7 +747,7 @@ class Package:
             filename = os.path.join(self.dir, n)
             storefilename = os.path.join(self.storedir, n)
             myfilename = os.path.join(self.dir, n + '.mine')
-            if self.islinkrepair():
+            if self.islinkrepair() or self.ispulled():
                 upfilename = os.path.join(self.dir, n + '.new')
             else:
                 upfilename = os.path.join(self.dir, n + '.r' + self.rev)
@@ -755,7 +757,7 @@ class Package:
                 # the working copy may be updated, so the .r* ending may be obsolete...
                 # then we don't care
                 os.unlink(upfilename)
-                if self.islinkrepair():
+                if self.islinkrepair() or self.ispulled():
                     os.unlink(os.path.join(self.dir, n + '.old'))
             except:
                 pass
@@ -858,6 +860,12 @@ class Package:
                 query['keeplink'] = '1'
                 if conf.config['linkcontrol']:
                     query['linkrev'] = self.linkinfo.srcmd5
+                if self.ispulled():
+		    for line in open(os.path.join(self.storedir, '_pulled'), 'r'):
+			pulledrev = line.strip()
+		if pulledrev:
+                    query['repairlink'] = '1'
+                    query['linkrev'] = pulledrev
             if self.islinkrepair():
                 query['repairlink'] = '1'
             u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
