@@ -183,37 +183,31 @@ class Osc(cmdln.Cmdln):
     @cmdln.alias('lL')
     @cmdln.alias('LL')
     @cmdln.option('-a', '--arch', metavar='ARCH',
-                        help='specify architecture')
-    @cmdln.option('-R', '--revision', metavar='REVISION',
-                        help='specify revision')
+                        help='specify architecture (only for binaries)')
     @cmdln.option('-r', '--repo', metavar='REPO',
-                        help='specify repository')
+                        help='specify repository (only for binaries)')
     @cmdln.option('-b', '--binaries', action='store_true',
-                        help='list built binaries, instead of sources')
+                        help='list built binaries instead of sources')
+    @cmdln.option('-R', '--revision', metavar='REVISION',
+                        help='specify revision (only for sources)')
+    @cmdln.option('-e', '--expand', action='store_true',
+                        help='expand linked package (only for sources)')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='print extra information')
     @cmdln.option('-l', '--long', action='store_true', dest='verbose',
                         help='print extra information')
-    @cmdln.option('-e', '--expand', action='store_true',
-                        help='expand linked package')
     def do_list(self, subcmd, opts, *args):
-        """${cmd_name}: List existing content on the server
+        """${cmd_name}: List sources or binaries on the server
 
-        This command is used to list sources, or binaries (when used with the
-        --binaries option). When using the --binaries option, --repo
-        and --arch can be used to limit output to specific repos
-        and/or architectures.
-
-        Examples:
+        Examples for listing sources:
            ls                         # list all projects
-           ls Apache                  # list packages in a project
-           ls -b Apache               # list all binaries of a project
-           ls Apache apache2          # list source files of package of a project
-           ls Apache apache2 <file>   # list <file> if this file exists
-           ls -v Apache apache2       # verbosely list source files of package
-           ls -l Apache apache2       # verbosely list source files of package
-           ll Apache apache2          # verbosely list source files of package
-           LL Apache apache2          # verbosely list source files of expanded link
+           ls PROJECT                  # list packages in a project
+           ls PROJECT PACKAGE          # list source files of package of a project
+           ls PROJECT PACKAGE <file>   # list <file> if this file exists
+           ls -v PROJECT PACKAGE       # verbosely list source files of package
+           ls -l PROJECT PACKAGE       # verbosely list source files of package
+           ll PROJECT PACKAGE          # verbosely list source files of package
+           LL PROJECT PACKAGE          # verbosely list source files of expanded link
 
         With --verbose, the following fields will be shown for each item:
            MD5 hash of file
@@ -221,7 +215,15 @@ class Osc(cmdln.Cmdln):
            Size (in bytes)
            Date and time of the last commit
 
-        ${cmd_usage}
+        Examples for listing binaries:
+           ls -b PROJECT               # list all binaries of a project
+           ls -b PROJECT -a ARCH       # list ARCH binaries of a project
+           ls -b PROJECT -r REPO       # list binaries in REPO
+           ls -b PROJECT PACKAGE REPO ARCH
+
+        Usage:
+           ${cmd_name} [PROJECT [PACKAGE]]
+           ${cmd_name} -b [PROJECT [PACKAGE [REPO [ARCH]]]]
         ${cmd_option_list}
         """
 
@@ -235,17 +237,30 @@ class Osc(cmdln.Cmdln):
 
         project = None
         package = None
-        if len(args) == 1:
+        fname = None
+        if len(args) > 0:
             project = args[0]
-            package = None
-        elif len(args) == 2 or len(args) == 3:
-            project = args[0]
+        if len(args) > 1:
             package = args[1]
-            fname = None
-            if len(args) == 3:
+        if len(args) > 2:
+            if opts.binaries:
+                if opts.repo:
+                    if opts.repo != args[2]:
+                        raise oscerr.WrongArgs("conflicting repos specified ('%s' vs '%s')"%(opts.repo, args[2]))
+                else:
+                    opts.repo = args[2]
+            else:
                 fname = args[2]
-        elif len(args) > 3:
-            raise oscerr.WrongArgs('Too many arguments')
+
+        if len(args) > 3:
+            if not opts.binaries:
+                raise oscerr.WrongArgs('Too many arguments')
+            if opts.arch:
+                if opts.arch != args[3]:
+                    raise oscerr.WrongArgs("conflicting archs specified ('%s' vs '%s')"%(opts.arch, args[3]))
+            else:
+                opts.arch = args[3]
+
 
         if opts.binaries and opts.expand:
             raise oscerr.WrongOptions('Sorry, --binaries and --expand are mutual exclusive.')
