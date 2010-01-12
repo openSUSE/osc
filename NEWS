@@ -2,6 +2,10 @@
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
  - new proxy support via SSL
+ - when a broken link is encountered automatically switch to last working
+   version. use 'osc pull' to repair the broken link.
+ - osc my request is showing now also requests from other people target to
+   myself
 
  #
  # Features which require OBS 1.7
