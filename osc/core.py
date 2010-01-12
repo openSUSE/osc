@@ -858,14 +858,11 @@ class Package:
                       'comment': msg }
             if self.islink() and self.isexpanded():
                 query['keeplink'] = '1'
-                if conf.config['linkcontrol']:
+                if conf.config['linkcontrol'] or self.isfrozen():
                     query['linkrev'] = self.linkinfo.srcmd5
                 if self.ispulled():
-		    for line in open(os.path.join(self.storedir, '_pulled'), 'r'):
-			pulledrev = line.strip()
-		if pulledrev:
                     query['repairlink'] = '1'
-                    query['linkrev'] = pulledrev
+                    query['linkrev'] = self.get_pulled_srcmd5()
             if self.islinkrepair():
                 query['repairlink'] = '1'
             u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
@@ -1053,6 +1050,16 @@ class Package:
     def ispulled(self):
         """tells us if we have pulled a link."""
         return os.path.isfile(os.path.join(self.storedir, '_pulled'))
+
+    def isfrozen(self):
+        """tells us if the link is frozen."""
+        return os.path.isfile(os.path.join(self.storedir, '_frozenlink'))
+
+    def get_pulled_srcmd5(self):
+        pulledrev = None
+        for line in open(os.path.join(self.storedir, '_pulled'), 'r'):
+            pulledrev = line.strip()
+        return pulledrev
 
     def haslinkerror(self):
         """
@@ -1259,10 +1266,19 @@ rev: %s
         if self.islinkrepair():
             upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1)
         elif self.islink() and self.isexpanded():
-            if conf.config['linkcontrol'] and self.ispulled():
+            if self.isfrozen() or self.ispulled():
                 upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
             else:
-                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+                try:
+                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+                except:
+                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
+                    store_write_string(self.absdir, '_frozenlink', '')
+                    print
+                    print "The link in this package is currently broken. I have checked"
+                    print "out the last working version instead, please use 'osc pull'"
+                    print "to repair the link."
+                    print
         else:
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         return upstream_rev
@@ -3004,14 +3020,25 @@ def checkout_package(apiurl, project, package,
         # try to read from the linkinfo
         # if it is a link we use the xsrcmd5 as the revision to be
         # checked out
-        x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision)
+        try:
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision)
+        except:
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, linkrev='base')
+            if x:
+                isfrozen = 1
         if x:
             revision = x
     os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
     init_package_dir(apiurl, project, package, store, revision)
     os.chdir(os.pardir)
     p = Package(package)
-
+    if isfrozen:
+        store_write_string(p.absdir, '_frozenlink', '')
+        print
+        print "The link in this package is currently broken. I have checked"
+        print "out the last working version instead, please use 'osc pull'"
+        print "to repair the link."
+        print
     for filename in p.filenamelist:
         if service_files or not filename.startswith('_service:'):
             p.updatefile(filename, revision)
@@ -3651,9 +3678,9 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
     import time
     query = {}
     if current_package:
-	query['package'] = current_package
+        query['package'] = current_package
     if limit != None and int(limit) > 0:
-	query['limit'] = int(limit)
+        query['limit'] = int(limit)
     u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], query )
     f = http_GET(u)
     root = ET.parse(f).getroot()

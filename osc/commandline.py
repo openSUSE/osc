@@ -4567,6 +4567,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('link target is broken')
 	if linkinfo_new.get('srcmd5') == baserev:
             print "Already up-to-date."
+            if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
+                os.unlink(os.path.join(p.storedir, '_frozenlink'))
             return
         dir_new = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name }
         dir_new['srcmd5'] = root_new.get('srcmd5')
@@ -4638,6 +4640,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p.write_conflictlist()
         # store new linkrev
         store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
+	if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
+	    os.unlink(os.path.join(p.storedir, '_frozenlink'))
         print
 	if len(p.in_conflict):
             print 'Please fix the conflicts (files marked with \'C\' above),'
