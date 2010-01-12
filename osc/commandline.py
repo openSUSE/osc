@@ -3586,59 +3586,219 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             progress_meter = not opts.quiet)
 
 
-    @cmdln.option('-U', '--user', metavar='USER',
-                        help='search not for yourself, but for the specified USER')
+    @cmdln.option('-b', '--bugowner', action='store_true',
+                        help='restrict listing to items where the user is bugowner')
+
+    @cmdln.option('-m', '--maintainer', action='store_true',
+                        help='restrict listing to items where the user is maintainer')
+
     @cmdln.option('-a', '--all', action='store_true',
-                        help='all involvements. No effect for requests. Default: bugowner')
-    def do_my(self, subcmd, opts, *args):
-        """${cmd_name}: Show your projects, packages, or requests.
+                        help='all involvements')
 
-        usage:
-            osc my pkg         osc my [-a] [-U USER] packages
-            osc my prj         osc my ... projects
-            osc my rq          osc my ... requests      (osc req list -a -B)
-        ${cmd_option_list}
+    @cmdln.option('-U', '--user', metavar='USER',
+                        help='search for USER instead of yourself')
 
-          'osc my' implements memonic shorthands for
-          specific 'osc search' and 'osc req list' commands.
-          See there for additional help.
+    @cmdln.option('--exclude-project', metavar='exclude_project',
+                        help='exclude requests for specified project')
+
+    @cmdln.option('-v', '--verbose', action='store_true',
+                        help='verbose listing')
+
+    def do_my(self, subcmd, opts, type):
+        """${cmd_name}: show packages, projects or requests involving yourself
+
+            Examples:
+                # list packages where I am bugowner
+                osc ${cmd_name} pkg -b
+                # list projects where I am maintainer
+                osc ${cmd_name} prj -m
+                # list request for all my projects and packages
+                osc ${cmd_name} rq
+                # list requests, excluding project 'foo' and 'bar'
+                osc ${cmd_name} rq --exclude-project foo,bar
+                # list submitrequests I made
+                osc ${cmd_name} sr
+
+            ${cmd_usage}
+                where TYPE is one of requests, submitrequests,
+                projects or packages (rq, sr, prj or pkg)
+
+            ${cmd_option_list}
         """
 
-        if not args:
-            raise oscerr.WrongArgs('Please specify one of projects/packages/requests')
+        args_rq = ('requests', 'request', 'req', 'rq')
+        args_sr = ('submitrequests', 'submitrequest', 'submitreq', 'submit', 'sr')
+        args_prj = ('projects', 'project', 'projs', 'proj', 'prj')
+        args_pkg = ('packages', 'package', 'pack', 'pkgs', 'pkg')
 
-        if args[0] in ('requests', 'request', 'req', 'rq', 'submitrequest', 'submitreq', 'submit', 'sr'):
-            ## FIXME: involvement bugowner is not reported here.
-            ## this only reports usernames found in request history.
-            opts.state = 'all'
-            opts.type = ''
-            if args[0] in ('submitrequest', 'submitreq', 'submit', 'sr'):
-                opts.type = 'submit'
-            opts.days = conf.config['request_list_days']
-            opts.mine = False
-            opts.bugowner = True
-            args = ['list']
-            if not opts.user: opts.mine = True
-            return self.do_request('request', opts, *args)
+        apiurl = conf.config['apiurl']
 
-        if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg', 'projects', 'project', 'projs', 'proj', 'prj'):
-            opts.title = opts.description = opts.project = opts.package = False
-            opts.involved = opts.mine = opts.bugowner = opts.maintainer = False
-            opts.verbose = opts.repos_baseurl = opts.csv = False
-            if args[0] in ('packages', 'package', 'pack', 'pkgs', 'pkg'): opts.package = True
-            else: opts.project = True
-            args = []
-            if opts.user: args = [ opts.user ]
-            if opts.all: opts.involved = True
+        project_exclude = {}
+        if opts.exclude_project:
+            for p in opts.exclude_project.split(','):
+                project_exclude[p] = True
+
+        if not opts.user:
+            user = conf.get_apiurl_usr(apiurl)
+        else:
+            user = opts.user
+
+        list_requests = False
+        my_requests_only = False
+        if type in args_rq:
+            list_requests = True
+            query_types = [ 'project', 'package' ]
+        elif type in args_sr:
+            list_requests = True
+            my_requests_only = True
+            query_types = []
+        elif type in args_prj:
+            query_types = [ 'project' ]
+        elif type in args_pkg:
+            query_types = [ 'project', 'package' ]
+        else:
+            raise oscerr.WrongArgs("invalid type %s" % type)
+
+        if opts.all:
+            roles = ['bugowner', 'maintainer']
+            role_filter = None
+        elif opts.maintainer:
+            roles = [ 'maintainer' ]
+            role_filter = 'maintainer'
+        elif opts.bugowner:
+            role_filter = 'bugowner'
+            roles = [ 'bugowner' ]
+        else:
+            if list_requests:
+                roles = [ 'maintainer' ]
+                role_filter = 'maintainer'
             else:
-                opts.bugowner = True
-                opts.maintained = True
-            return self.do_search('se', opts, *args)
+                roles = ['bugowner', 'maintainer']
+                role_filter = None
 
-        raise oscerr.WrongArgs('Unknown arg "%s": Please specify one of projects/packages/requests' % args[0])
+        # prjname => {
+        #   'maintainer' : True,
+        #   'bugowner' : True,
+        #   'packages' : {
+        #     'pkgname' : {
+        #        'maintainer' : True,
+        #        'bugowner' : True
+        #       }
+        #    }
+        # }
+        p = {}
+        # find projects and packages we're involved in
+        for kind in query_types:
+            u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus("person/@userid='%s'"%user)])
+            f = http_GET(u)
 
+            root = ET.parse(f).getroot()
+            for node in root.findall(kind):
+                if kind == 'package':
+                    project = node.get('project')
+                    package = node.get('name')
+                    if not project in p:
+                        p[project] = {}
+                    if not 'packages' in p[project]:
+                        p[project]['packages'] = {}
+                    if not package in p[project]['packages']:
+                        p[project]['packages'][package] = {}
+                    for person in node.findall('person'):
+                        if person.get('userid') == user:
+                            role = person.get('role')
+                            if role in roles:
+                                p[project]['packages'][package][role] = True
+                    if role_filter and not role_filter in p[project]['packages'][package]:
+                        del p[project]['packages'][package]
 
+                else:
+                    project = node.get('name')
+                    if not project in project_exclude:
+                        if not project in p:
+                            p[project] = {}
+                        for person in node.findall('person'):
+                            if person.get('userid') == user:
+                                role = person.get('role')
+                                if role in roles:
+                                    p[project][role] = True
 
+        if role_filter:
+            for prj in p.keys():
+                if ( not 'packages' in p[prj] or \
+                        len(p[prj]['packages']) == 0
+                    ) and \
+                    not role_filter in p[prj]:
+                        del p[prj]
+
+        if list_requests:
+            req_state = ('new',)
+            req_type = None
+            req_user = None
+            results = []
+            query = ''
+            if my_requests_only:
+                query = "state/@name='new' and (state/@who='%(user)s' or history/@who='%(user)s')" % { 'user':user }
+            else:
+                predicate = []
+                for prj in p.keys():
+                    involved = False
+                    for role in roles:
+                        if role in p[prj]:
+                            involved = True
+                            break
+                    if involved:
+                        pkg = None
+                        predicate.append("action/target/@project='%s'" % prj)
+                    elif 'packages' in p[prj] and len(p[prj]['packages']) != 0:
+                        q = "(action/target/@project='%s'" % prj
+                        for pkg in p[prj]['packages'].keys():
+                            q += " and action/target/@package='%s'" % pkg
+                        q += ')'
+                        predicate.append(q)
+                    else: # not supposed to happen
+                        True
+                query = '(' + ' or '.join(predicate) + ')' + " and state/@name='new'"
+
+            u = makeurl(apiurl, ['search', 'request'], ['match=%s' % quote_plus(query)])
+            f = http_GET(u)
+            collection = ET.parse(f).getroot()
+
+            for root in collection.findall('request'):
+                r = Request()
+                r.read(root)
+                results.append(r)
+
+            for result in results:
+                print result.list_view()
+        else:
+            def _get_role_string(p):
+                roles = []
+                for role in ['bugowner', 'maintainer']:
+                    if role in p:
+                        roles.append(role)
+                if roles:
+                    return '(' + ','.join(roles)+ ')'
+                return None
+
+            for prj in sorted(p.keys()):
+                if opts.verbose:
+                    s = prj
+                    rs = _get_role_string(p[prj])
+                    if rs:
+                        s += '  ' + rs
+                    print s
+                elif 'project' in query_types and not 'package' in query_types:
+                    print prj
+                if 'package' in query_types and 'packages' in p[prj]:
+                    for pkg in sorted(p[prj]['packages'].keys()):
+                        if opts.verbose:
+                            s = pkg
+                            rs = _get_role_string(p[prj]['packages'][pkg])
+                            if rs:
+                                s += '  ' + rs
+                            print '  ', s
+                        else:
+                            print "%s/%s" % (prj, pkg)
 
 
 
