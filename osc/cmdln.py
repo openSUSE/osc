@@ -854,7 +854,7 @@ class RawCmdln(cmd.Cmd):
             usage += ' ' + tail
 
         block_lines = [
-            self.helpindent + "usage:",
+            self.helpindent + "Usage:",
             self.helpindent + ' '*4 + usage
         ]
         block = '\n'.join(block_lines) + '\n\n'
