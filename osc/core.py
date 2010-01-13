@@ -3016,6 +3016,7 @@ def checkout_package(apiurl, project, package,
     # exists
     show_package_meta(apiurl, project, package)
 
+    isfrozen = 0
     if expand_link:
         # try to read from the linkinfo
         # if it is a link we use the xsrcmd5 as the revision to be
