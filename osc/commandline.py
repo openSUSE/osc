@@ -4154,7 +4154,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
-        opts.role = None
+        opts.role = ()
         opts.bugowner = True
         opts.bugowner_only = None
         opts.add = None
