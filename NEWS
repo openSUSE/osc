@@ -13,6 +13,7 @@
  - new config option 'submitrequest_on_accept_action' to specify a default action
    if a submitrequest has been accepted
  - add "osc linktobranch" command to convert a classic link to a branch package
+ - show scheduler state for each repo with "results" and "prjresults"
 
 0.124
  - added 'osc bugowner' as a more intelligent version of 'osc maintainer -B'

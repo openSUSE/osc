@@ -3452,6 +3452,8 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
         rmap['pac'] = package
         rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
+        rmap['state'] = node.get('state')
+        rmap['dirty'] = node.get('dirty')
 
         statusnode =  node.find('status')
         try:
@@ -3466,6 +3468,11 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
         if rmap['status'] == 'failed':
             rmap['status'] += ': %s' % apiurl + \
                 '/build/%(prj)s/%(rep)s/%(arch)s/%(pac)s/_log' % rmap
+
+        if rmap['dirty'] == 'true':
+            rmap['status'] += ' (outdated)'
+	else:
+            rmap['status'] += '   (repository is %s)' % rmap['state']
 
         r.append(result_line_templ % rmap)
     return r
@@ -3496,7 +3503,11 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             continue
         if repo != None and repo != node.get('repository'):
             continue
-        tg = (node.get('repository'), node.get('arch'))
+        if node.get('dirty') == "true":
+            state = "outdated"
+        else:
+            state = node.get('state')
+        tg = (node.get('repository'), node.get('arch'), state)
         targets.append(tg)
         for pacnode in node.findall('status'):
             pac = pacnode.get('package')
@@ -3572,7 +3583,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                         buildstatus_symbols[status[pac][tg]] = '?'
                 line.append(st)
                 line.append(' ')
-            line.append(' %s %s' % tg)
+            line.append(' %s %s (%s)' % tg)
             line = ''.join(line)
 
             r.append(line)
