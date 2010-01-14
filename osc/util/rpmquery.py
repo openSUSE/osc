@@ -54,12 +54,18 @@ class RpmQuery(packagequery.PackageQuery):
     LESS = 1 << 1
     GREATER = 1 << 2
     EQUAL = 1 << 3
+
+    default_tags = (1000, 1001, 1002, 1003, 1004, 1022, 1005, 1020,
+        1047, 1112, 1113, # provides
+        1049, 1048, 1050 # requires
+    )
+
     def __init__(self, fh):
         self.__file = fh
         self.filename_suffix = 'rpm'
         self.header = None
 
-    def read(self, *tags):
+    def read(self, all_tags = False, *extra_tags):
         self.__read_lead()
         data = self.__file.read(RpmHeaderEntry.ENTRY_SIZE)
         hdrmgc, reserved, il, dl = struct.unpack('!I3i', data)
@@ -82,7 +88,7 @@ class RpmQuery(packagequery.PackageQuery):
             data = data[RpmHeaderEntry.ENTRY_SIZE:]
         data = self.__file.read(self.header.length)
         for i in self.header:
-            if i.tag in tags or len(tags) == 0:
+            if i.tag in self.default_tags + extra_tags or all_tags:
                 try: # this may fail for -debug* packages
                     self.__read_data(i, data)
                 except: pass

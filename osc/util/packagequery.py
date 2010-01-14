@@ -6,7 +6,7 @@ class PackageError(Exception):
 
 class PackageQuery:
     """abstract base class for all package types"""
-    def read(self):
+    def read(self, all_tags = False, *extra_tags):
         raise NotImplementedError
 
     def name(self):
@@ -40,20 +40,23 @@ class PackageQuery:
         raise NotImplementedError
 
     @staticmethod
-    def query(filename):
+    def query(filename, all_tags = False, extra_rpmtags = (), extra_debtags = ()):
         f = open(filename, 'rb')
         magic = f.read(7)
         f.seek(0)
+        extra_tags = ()
         pkgq = None
         if magic[:4] == '\xed\xab\xee\xdb':
             import rpmquery
             pkgq = rpmquery.RpmQuery(f)
+            extra_tags = extra_rpmtags
         elif magic == '!<arch>':
             import debquery
             pkgq = debquery.DebQuery(f)
+            extra_tags = extra_debtags
         else:
             raise PackageError('unsupported package type. magic: \'%s\' (%s)' % (magic, filename))
-        pkgq.read()
+        pkgq.read(all_tags, *extra_tags)
         f.close()
         return pkgq
 

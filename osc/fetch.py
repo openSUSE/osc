@@ -90,7 +90,7 @@ class Fetcher:
             print >>sys.stderr, '\n'.join(pac.urllist)
             sys.exit(1)
 
-        pkgq = packagequery.PackageQuery.query(pac.fullpartname)
+        pkgq = packagequery.PackageQuery.query(pac.fullpartname, extra_rpmtags=(1044, 1051, 1052))
         arch = pkgq.arch()
         # SOURCERPM = 1044
         if pkgq.filename_suffix == 'rpm' and not pkgq.getTag(1044):

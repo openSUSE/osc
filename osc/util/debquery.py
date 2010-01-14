@@ -7,12 +7,16 @@ class DebError(packagequery.PackageError):
     pass
 
 class DebQuery(packagequery.PackageQuery):
+
+    default_tags = ('package', 'version', 'release', 'epoch', 'architecture', 'description',
+        'provides', 'depends', 'pre_depends')
+
     def __init__(self, fh):
         self.__file = fh
         self.filename_suffix = 'deb'
         self.fields = {}
 
-    def read(self):
+    def read(self, all_tags = False, *extra_tags):
         arfile = ar.Ar(fh = self.__file)
         arfile.read()
         debbin = arfile.get_file('debian-binary')
@@ -29,9 +33,9 @@ class DebQuery(packagequery.PackageQuery):
             control = tar.extractfile('./control')
         except KeyError:
             raise DebError('missing \'control\' file in control.tar.gz')
-        self.__parse_control(control)
+        self.__parse_control(control, all_tags, *extra_tags)
 
-    def __parse_control(self, control):
+    def __parse_control(self, control, all_tags = False, *extra_tags):
         data = control.readline().strip()
         while data:
             field, val = re.split(':\s*', data.strip(), 1)
@@ -39,8 +43,10 @@ class DebQuery(packagequery.PackageQuery):
             while data and re.match('\s+', data):
                 val += '\n' + data.strip()
                 data = control.readline().rstrip()
-            # a hyphen is not allowed in dict keys
-            self.fields[field.replace('-', '_').lower()] = val
+            field = field.replace('-', '_').lower()
+            if field in self.default_tags + extra_tags or all_tags:
+                # a hyphen is not allowed in dict keys
+                self.fields[field] = val
         versrel = self.fields['version'].rsplit('-', 1)
         if len(versrel) == 2:
             self.fields['version'] = versrel[0]
@@ -97,10 +103,10 @@ class DebQuery(packagequery.PackageQuery):
         return self.fields.get(num, None)
 
     @staticmethod
-    def query(filename):
+    def query(filename, all_tags = False, *extra_tags):
         f = open(filename, 'rb')
         debq = DebQuery(f)
-        debq.read()
+        debq.read(all_tags, *extra_tags)
         f.close()
         return debq
 
