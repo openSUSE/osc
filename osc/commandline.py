@@ -1283,7 +1283,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
             package = store_read_package(wd)
             apiurl = store_read_apiurl(wd)
-            update_local_dir = 1
+            update_local_dir = True
         elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
@@ -1292,13 +1292,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
-            update_local_dir = 0
+            update_local_dir = False
 
         # execute
         link_to_branch(apiurl, project, package)
-        if update_local_dir == 1:
-           pac = findpacs(wd)[0]
-           pac.update()
+        if update_local_dir:
+            pac = findpacs(wd)[0]
+            pac.update()
 
 
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
@@ -2625,16 +2625,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) == 0:
             wd = os.curdir
             if is_project_dir(wd):
-               opts.csv=0
-               opts.hide_legend=0
-               opts.name_filter=0
-               opts.status_filter=0
-               self.do_prjresults('prjresults', opts, *args);
-               sys.exit(0)
+                opts.csv = 0
+                opts.hide_legend = 0
+                opts.name_filter = 0
+                opts.status_filter = 0
+                self.do_prjresults('prjresults', opts, *args);
+                sys.exit(0)
             else:
-               project = store_read_project(wd)
-               package = store_read_package(wd)
-               apiurl = store_read_apiurl(wd)
+                project = store_read_project(wd)
+                package = store_read_package(wd)
+                apiurl = store_read_apiurl(wd)
         elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
