@@ -4589,7 +4589,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('link is not a really a link?')
         if linkinfo_new.get('error') != None:
             raise oscerr.APIError('link target is broken')
-	if linkinfo_new.get('srcmd5') == baserev:
+        if linkinfo_new.get('srcmd5') == baserev:
             print "Already up-to-date."
             if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
                 os.unlink(os.path.join(p.storedir, '_frozenlink'))
@@ -4599,7 +4599,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         dir_new['entries'] = [[n.get('name'), n.get('md5')] for n in root_new.findall('entry')]
 
         dir_oldpatched = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name, 'srcmd5': p.srcmd5 }
-        dir_oldpatched['entries'] = map(lambda f: [f.name, f.md5], p.filelist)
+        dir_oldpatched['entries'] = [[f.name, f.md5] for f in p.filelist]
         
         query = { 'rev': linkinfo.srcmd5 }
         u = makeurl(p.apiurl, ['source', linkinfo.project, linkinfo.package], query=query)
@@ -4621,21 +4621,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             md5_new = entries_new.get(name, '')
             md5_oldpatched = entries_oldpatched.get(name, '')
             if md5_old == md5_new or md5_oldpatched == md5_new:
-		continue
+                continue
             if md5_old == md5_oldpatched:
                 if md5_new == '':
-		    print statfrmt('D', name)
+                    print statfrmt('D', name)
                     p.put_on_deletelist(name)
-		    os.unlink(name)
+                    os.unlink(name)
                 else:
-		    print statfrmt('U', name)
+                    print statfrmt('U', name)
                     self.download(name, md5_new, dir_new, name)
-		continue
-	    # need diff3 to resolve issue
-	    if md5_oldpatched == '':
-		open(name, 'w').write('')
-	    os.rename(name, name + '.mine')
-	    self.download(name, md5_new, dir_new, name + '.new')
+                continue
+            # need diff3 to resolve issue
+            if md5_oldpatched == '':
+                open(name, 'w').write('')
+            os.rename(name, name + '.mine')
+            self.download(name, md5_new, dir_new, name + '.new')
             self.download(name, md5_old, dir_old, name + '.old')
             if binary_file(name + '.mine') or binary_file(name + '.old') or binary_file(name + '.new'):
                 shutil.copy2(name + '.new', name)
@@ -4664,15 +4664,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p.write_conflictlist()
         # store new linkrev
         store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
-	if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
-	    os.unlink(os.path.join(p.storedir, '_frozenlink'))
+        if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
+            os.unlink(os.path.join(p.storedir, '_frozenlink'))
         print
-	if len(p.in_conflict):
+        if len(p.in_conflict):
             print 'Please fix the conflicts (files marked with \'C\' above),'
             print 'run \'osc resolved ...\', and commit the changes'
-	    print 'to update the link information.'
-	else:
-	    print 'Please commit the changes to update the link information.'
+            print 'to update the link information.'
+        else:
+            print 'Please commit the changes to update the link information.'
 
     @cmdln.option('--create', action='store_true', default=False,
                   help='create new gpg signing key for this project')

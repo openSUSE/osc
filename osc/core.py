@@ -3470,7 +3470,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
 
         if rmap['dirty'] == 'true':
             rmap['status'] += ' (outdated)'
-	else:
+        else:
             rmap['status'] += '   (repository is %s)' % rmap['state']
 
         r.append(result_line_templ % rmap)
