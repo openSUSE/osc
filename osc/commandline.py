@@ -1272,20 +1272,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         to a branch. This is a full copy with a _link file pointing to the branched place.
 
         usage:
-            osc linkpac PROJECT PACKAGE
+            osc linktobranch                    # can be used in checked out package
+            osc linktobranch PROJECT PACKAGE
         ${cmd_option_list}
         """
 
         args = slash_split(args)
+        if len(args) == 0:
+            wd = os.curdir
+            project = store_read_project(wd)
+            package = store_read_package(wd)
+            apiurl = store_read_apiurl(wd)
+            update_local_dir = 1
+        elif len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments (required none or two)')
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        else:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            update_local_dir = 0
 
-        if not args or len(args) != 2:
-            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
-                  + self.get_cmd_help('linktobranch'))
-
-        project = args[0]
-        package = args[1]
-
-        link_to_branch(project, package)
+        # execute
+        link_to_branch(apiurl, project, package)
+        if update_local_dir == 1:
+           pac = findpacs(wd)[0]
+           pac.update()
 
 
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
@@ -3373,6 +3386,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      apiurl, project, package,
                      revision=rev, comment=message)
         print r
+        if update_local_dir == 1:
+           pac = findpacs(wd)[0]
+           pac.update()
 
 
     @cmdln.option('-r', '--revision', metavar='rev',

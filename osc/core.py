@@ -3072,14 +3072,13 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
             root.remove(dp)
     return ET.tostring(root)
 
-def link_to_branch(project,  package):
+def link_to_branch(apiurl, project,  package):
     """
      convert a package with a _link + project.diff to a branch
     """
 
     if '_link' in meta_get_filelist(conf.config['apiurl'], project, package):
-        # FIXME, verify that it is no branch already
-        u = makeurl(conf.config['apiurl'], ['source', project, package], 'cmd=linktobranch')
+        u = makeurl(apiurl, ['source', project, package], 'cmd=linktobranch')
         http_POST(u)
     else:
         raise oscerr.OscIOError(None, 'no _link file inside project \'%s\' package \'%s\'' % (project, package))
