@@ -2624,9 +2624,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = conf.config['apiurl']
         if len(args) == 0:
             wd = os.curdir
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-            apiurl = store_read_apiurl(wd)
+            if is_project_dir(wd):
+               opts.csv=0
+               opts.hide_legend=0
+               opts.name_filter=0
+               opts.status_filter=0
+               self.do_prjresults('prjresults', opts, *args);
+               sys.exit(0)
+            else:
+               project = store_read_project(wd)
+               package = store_read_package(wd)
+               apiurl = store_read_apiurl(wd)
         elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
@@ -2644,6 +2652,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print delim.join(func(apiurl, project, package, opts.last_build, opts.repo, opts.arch))
 
+    # WARNING: this function is also called by do_results. You need to set a default there
+    #          as well when adding a new option!
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
     @cmdln.option('-c', '--csv', action='store_true',
