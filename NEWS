@@ -6,7 +6,6 @@
    version. use 'osc pull' to repair the broken link.
  - osc my request is showing now also requests from other people target to
    myself
- - new "osc revert" command to make a server side revert of code
 
  #
  # Features which require OBS 1.7
