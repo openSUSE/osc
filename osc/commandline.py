@@ -3319,6 +3319,62 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print "Command rlog is obsolete. Please use 'osc log'"
         sys.exit(1)
 
+
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='show log of the specified revision')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
+    def do_revert(self, subcmd, opts, *args):
+        """${cmd_name}: Revert package sources to a former state
+
+        The command revert to a former state. It goes back just one
+        revision when no other is specified.
+
+        Usage:
+            osc revert (inside working copy)
+            osc revert remote_project remote_package
+
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        if len(args) == 0:
+            wd = os.curdir
+            project = store_read_project(wd)
+            package = store_read_package(wd)
+            apiurl = store_read_apiurl(wd)
+            update_local_dir = 1
+        elif len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments (required none or two)')
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        else:
+            apiurl = conf.config['apiurl']
+            project = args[0]
+            package = args[1]
+            update_local_dir = 0
+
+        rev, dummy = parseRevisionOption(opts.revision)
+        if not rev:
+            rev = int(show_upstream_rev(apiurl, project, package)) - 1
+            if not rev or int(rev) <= 0:
+               print >>sys.stderr, 'Can not revert for %s %s' % (project, package)
+               sys.exit(1)
+        elif not checkRevision(project, package, rev, apiurl):
+            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            sys.exit(1)
+
+        if opts.message:
+            message=opts.message
+        else:
+            message="Revert to revsion %s" % rev
+
+        r = copy_pac(apiurl, project, package,
+                     apiurl, project, package,
+                     revision=rev, comment=message)
+        print r
+
+
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
     @cmdln.option('', '--csv', action='store_true',
