@@ -3440,7 +3440,7 @@ def show_prj_results_meta(apiurl, prj):
 
 def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     r = []
-    result_line_templ = '%(rep)-15s %(arch)-10s %(status)s'
+    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
 
     f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch)
     root = ET.fromstring(''.join(f))
@@ -3464,14 +3464,8 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
         if rmap['status'] in ['expansion error', 'broken', 'blocked']:
             rmap['status'] += ': ' + statusnode.find('details').text
 
-        if rmap['status'] == 'failed':
-            rmap['status'] += ': %s' % apiurl + \
-                '/build/%(prj)s/%(rep)s/%(arch)s/%(pac)s/_log' % rmap
-
         if rmap['dirty'] == 'true':
-            rmap['status'] += ' (outdated)'
-        else:
-            rmap['status'] += '   (repository is %s)' % rmap['state']
+            rmap['status'] = 'outdated (was: %s)' % rmap['status']
 
         r.append(result_line_templ % rmap)
     return r
