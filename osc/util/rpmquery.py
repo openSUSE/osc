@@ -235,8 +235,8 @@ class RpmQuery(packagequery.PackageQuery):
         res = 0
         while res == 0:
             # remove all leading non alphanumeric chars
-            ver1 = re.sub('^[^a-zA-z0-9]*', '', ver1)
-            ver2 = re.sub('^[^a-zA-z0-9]*', '', ver2)
+            ver1 = re.sub('^[^a-zA-Z0-9]*', '', ver1)
+            ver2 = re.sub('^[^a-zA-Z0-9]*', '', ver2)
             if not (len(ver1) and len(ver2)):
                 break
             # check if we have a digits segment
