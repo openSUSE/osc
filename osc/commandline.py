@@ -1604,10 +1604,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # python has no args.unshift ???
             args = [ conf.config['getpac_default_project'] , args[0] ]
 
+        expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if not (len(args) >= 2 and len(args) <= 4):
             raise oscerr.WrongArgs('Wrong number of arguments.')
         if len(args) >= 3:
-            tproject = args[2]
+            expected = tproject = args[2]
         if len(args) >= 4:
             tpackage = args[3]
 
@@ -1615,8 +1616,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout)
-
-        expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
 
         if r[0] is None:
             r = expected = r[1]
@@ -2625,10 +2624,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) == 0:
             wd = os.curdir
             if is_project_dir(wd):
-                opts.csv = 0
-                opts.hide_legend = 0
-                opts.name_filter = 0
-                opts.status_filter = 0
+                opts.csv = None
+                opts.arch = None
+                opts.repo = None
+                opts.hide_legend = None
+                opts.name_filter = None
+                opts.status_filter = None
                 self.do_prjresults('prjresults', opts, *args);
                 sys.exit(0)
             else:
