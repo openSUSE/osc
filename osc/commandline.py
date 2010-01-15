@@ -2645,6 +2645,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.hide_legend = None
                 opts.name_filter = None
                 opts.status_filter = None
+                opts.vertical = None
                 self.do_prjresults('prjresults', opts, *args);
                 sys.exit(0)
             else:
