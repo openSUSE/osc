@@ -3469,7 +3469,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
                 '/build/%(prj)s/%(rep)s/%(arch)s/%(pac)s/_log' % rmap
 
         if rmap['dirty'] == 'true':
-            rmap['status'] += ' (outdated)'
+            rmap['status'] = 'state is outdated (was: %s)' % rmap['status']
         else:
             rmap['status'] += '   (repository is %s)' % rmap['state']
 
