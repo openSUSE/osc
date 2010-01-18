@@ -62,6 +62,7 @@ class RpmQuery(packagequery.PackageQuery):
 
     def __init__(self, fh):
         self.__file = fh
+        self.__file = os.path.abspath(fh.name)
         self.filename_suffix = 'rpm'
         self.header = None
 
@@ -207,6 +208,9 @@ class RpmQuery(packagequery.PackageQuery):
             return None
         return entry.data
 
+    def path(self):
+        return self.__path
+    
     def provides(self):
         return self.__reqprov(1047, 1112, 1113)
 

@@ -4,6 +4,43 @@ class PackageError(Exception):
         Exception.__init__(self)
         self.msg = msg
 
+class PackageQueries(dict):
+    """Dict of package name keys and package query values.  When assigning a
+    package query, to a name, the package is evaluated to see if it matches the
+    wanted architecture and if it has a greater version than the current value.
+    """
+    
+    # map debian arches to common obs arches
+    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']} 
+    
+    def __init__(self, wantedArchitecture):
+        self.wantedArchitecture = wantedArchitecture
+        super(PackageQueries, self).__init__()
+    
+    def add(self, query):
+        """Adds package query to dict if it is of the correct architecture and
+        is newer (has a greater version) than the currently assigned package.
+        
+        @param a PackageQuery
+        """
+        self.__setitem__(query.name(), query)
+    
+    def __setitem__(self, name, query):
+        if name != query.name():
+            raise ValueError("key '%s' does not match "
+                             "package query name '%s'" % (name, query.name()))
+        
+        architecture = query.arch()
+        
+        if (architecture in [self.wantedArchitecture, 'noarch', 'all'] or
+            self.wantedArchitecture in self.architectureMap.get(architecture,
+                                                                [])):
+            currentQuery = self.get(name)
+            
+            # if current query does not exist or is older than this new query
+            if currentQuery is None or currentQuery.vercmp(query) <= 0:
+                super(PackageQueries, self).__setitem__(name, query)
+
 class PackageQuery:
     """abstract base class for all package types"""
     def read(self, all_tags = False, *extra_tags):
@@ -26,7 +63,10 @@ class PackageQuery:
 
     def description(self):
         raise NotImplementedError
-
+    
+    def path(self):
+        raise NotImplementedError
+    
     def provides(self):
         raise NotImplementedError
 

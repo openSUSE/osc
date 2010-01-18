@@ -223,38 +223,68 @@ def get_built_files(pacdir, pactype):
                                    stdout=subprocess.PIPE).stdout.read().strip()
     return s_built, b_built
 
+def get_repo(path):
+    """Walks up path looking for any repodata directories.
+    
+    @param path path to a directory
+    @return str path to repository directory containing repodata directory
+    """
+    oldDirectory = None
+    currentDirectory = os.path.abspath(path)
+    repositoryDirectory = None
+    
+    # while there are still parent directories
+    while currentDirectory != oldDirectory:
+        children = os.listdir(currentDirectory)
+        
+        if "repodata" in children:
+            repositoryDirectory = currentDirectory
+            break
+        
+        # ascend
+        oldDirectory = currentDirectory
+        currentDirectory = os.path.abspath(os.path.join(oldDirectory,
+                                                        os.pardir))
+    
+    return repositoryDirectory
 
 def get_prefer_pkgs(dirs, wanted_arch, type):
     import glob
-    from util import packagequery, cpio
-    # map debian arches to common obs arches
-    arch_map = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']}
+    from util import repodata, packagequery, cpio
     paths = []
+    
     suffix = '*.rpm'
     if type == 'dsc':
         suffix = '*.deb'
+    
     for dir in dirs:
-        paths += glob.glob(os.path.join(os.path.abspath(dir), suffix))
-    prefer_pkgs = {}
-    pkgqs = {}
+        # check for repodata
+        repository = get_repo(dir)
+        if repository is None:
+            paths += glob.glob(os.path.join(os.path.abspath(dir), suffix))
+        else:
+            repositories.append(repository)
+    
+    packageQueries = osc.util.packagequery.PackageQueries(wanted_arch)
+    
+    for repository in repositories:
+        repodataPackageQueries = osc.util.repodata.queries(repository)
+        
+        for packageQuery in repodataPackageQueries:
+            packageQueries.add(packageQuery)
+    
     for path in paths:
         if path.endswith('src.rpm'):
             continue
         if path.find('-debuginfo-') > 0:
             continue
-        pkgq = packagequery.PackageQuery.query(path)
-        arch = pkgq.arch()
-        name = pkgq.name()
-        # instead of thip assumption, we should probably rather take the
-        # requested arch for this package from buildinfo
-        # also, it will ignore i686 packages, how to handle those?
-        if arch in [wanted_arch, 'noarch', 'all'] or wanted_arch in arch_map.get(arch, []):
-            curpkgq = pkgqs.get(name)
-            if curpkgq is not None and curpkgq.vercmp(pkgq) > 0:
-                continue
-            prefer_pkgs[name] = path
-            pkgqs[name] = pkgq
-    depfile = create_deps(pkgqs.values())
+        packageQuery = packagequery.PackageQuery.query(path)
+        packageQueries.add(packageQuery)
+    
+    prefer_pkgs = dict((name, packageQuery.path())
+                       for (name, packageQuery) in packageQueries.iteritems())
+    
+    depfile = create_deps(packageQueries.values())
     cpio = cpio.CpioWrite()
     cpio.add('deps', '\n'.join(depfile))
     return prefer_pkgs, cpio
