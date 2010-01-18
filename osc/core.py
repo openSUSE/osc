@@ -3465,7 +3465,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
             rmap['status'] += ': ' + statusnode.find('details').text
 
         if rmap['dirty'] == 'true':
-            rmap['status'] = 'outdated (was: %s)' % rmap['status']
+            rmap['status'] = 'state is outdated (was: %s)' % rmap['status']
 
         r.append(result_line_templ % rmap)
     return r

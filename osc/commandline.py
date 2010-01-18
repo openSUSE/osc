@@ -1857,7 +1857,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.oldprj or opts.oldpkg:
                 raise oscerr.WrongArgs('--oldpkg and --oldprj are only valid with two arguments')
             old_project = args[0]
-            old_package = args[1]
+            new_package = old_package = args[1]
             new_project = args[2]
             if len(args) == 4:
                 new_package = args[3]
