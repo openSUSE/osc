@@ -272,7 +272,7 @@ def verify_certificate(connection):
     # Maybe it changed to something valid.
     if not connection.sock.verify_ok():
 
-        tc = TrustedCertStore(connection.getHost(), connection.getPort(), 'generic', cert)
+        tc = TrustedCertStore(connection.getHost(), connection.getPort(), connection.appname, cert)
 
         if tc.is_known():
 

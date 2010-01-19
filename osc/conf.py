@@ -299,6 +299,7 @@ def init_basicauth(config):
         try:
             import oscssl
             oscssl.myHTTPSConnection.appname = 'osc'
+            oscssl.myProxyHTTPSConnection.appname = 'osc'
             from M2Crypto import m2urllib2
         except Exception, e:
             print e
