@@ -1619,9 +1619,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # python has no args.unshift ???
             args = [ conf.config['getpac_default_project'] , args[0] ]
 
-        expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if not (len(args) >= 2 and len(args) <= 4):
             raise oscerr.WrongArgs('Wrong number of arguments.')
+        expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if len(args) >= 3:
             expected = tproject = args[2]
         if len(args) >= 4:
