@@ -298,8 +298,6 @@ def init_basicauth(config):
     if config['api_host_options'][config['apiurl']]['sslcertck']:
         try:
             import oscssl
-            oscssl.myHTTPSConnection.appname = 'osc'
-            oscssl.myProxyHTTPSConnection.appname = 'osc'
             from M2Crypto import m2urllib2
         except Exception, e:
             print e
@@ -357,7 +355,7 @@ def init_basicauth(config):
                     break
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
-        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ctx), urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context = ctx, appname = 'osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler)
     else:
         import sys
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"

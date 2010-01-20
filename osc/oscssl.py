@@ -160,6 +160,10 @@ class mySSLContext(SSL.Context):
 class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
     handler_order = 499
 
+    def __init__(self, *args, **kwargs):
+        self.appname = kwargs.pop('appname', 'generic')
+        M2Crypto.m2urllib2.HTTPSHandler.__init__(self, *args, **kwargs)
+
     # copied from M2Crypto.m2urllib2.HTTPSHandler
     # it's sole purpose is to use our myHTTPSHandler/myHTTPSProxyHandler class
     # ideally the m2urllib2.HTTPSHandler.https_open() method would be split into
@@ -176,9 +180,9 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         target_host = urlparse.urlparse(full_url)[1]
 
         if (target_host != host):
-            h = myProxyHTTPSConnection(host = host, ssl_context = self.ctx)
+            h = myProxyHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
         else:
-            h = myHTTPSConnection(host = host, ssl_context = self.ctx)
+            h = myHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
         # End our change
         h.set_debuglevel(self._debuglevel)
 
@@ -217,6 +221,10 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         return resp
 
 class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
+    def __init__(self, *args, **kwargs):
+        self.appname = kwargs.pop('appname', 'generic')
+        M2Crypto.httpslib.HTTPSConnection.__init__(self, *args, **kwargs)
+
     def connect(self, *args):
         M2Crypto.httpslib.HTTPSConnection.connect(self, *args)
         verify_certificate(self)
@@ -228,6 +236,10 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         return self.port
 
 class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection):
+    def __init__(self, *args, **kwargs):
+        self.appname = kwargs.pop('appname', 'generic')
+        M2Crypto.httpslib.ProxyHTTPSConnection.__init__(self, *args, **kwargs)
+
     def _start_ssl(self):
         M2Crypto.httpslib.ProxyHTTPSConnection._start_ssl(self)
         verify_certificate(self)
