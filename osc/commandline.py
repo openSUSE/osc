@@ -2409,27 +2409,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(pacs) > 1:
                 print 'Updating %s' % p.name
 
-            if opts.expand_link and p.haslinkerror() and not p.islinkrepair():
-                raise oscerr.LinkExpandError(p.prjname, p.name, p.linkerror())
+            # FIXME: ugly workaround for #399247
+            if opts.expand_link or opts.unexpand_link:
+                if [ i for i in p.filenamelist+p.filenamelist_unvers if p.status(i) != ' ' and p.status(i) != '?']:
+                    print >>sys.stderr, 'osc: cannot expand/unexpand because your working ' \
+                                        'copy has local modifications.\nPlease revert/commit them ' \
+                                        'and try again.'
+                    sys.exit(1)
 
             if not rev:
                 if opts.expand_link and p.islink() and not p.isexpanded():
-                    print 'Expanding to rev', p.linkinfo.xsrcmd5
-                    rev = p.linkinfo.xsrcmd5
+                    if p.haslinkerror():
+                        try:
+                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
+                        except:
+                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev="base")
+                            p.mark_frozen()
+                    else:
+                        rev = p.linkinfo.xsrcmd5
+                    print 'Expanding to rev', rev
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     print 'Unexpanding to rev', p.linkinfo.lsrcmd5
                     rev = p.linkinfo.lsrcmd5
                 elif p.islink() and p.isexpanded():
                     rev = p.latest_rev()
 
-            # FIXME: ugly workaround for #399247
-            if opts.expand_link or opts.unexpand_link:
-                if [ i for i in p.filenamelist+p.filenamelist_unvers if p.status(i) != ' ' and p.status(i) != '?']:
-                    print >>sys.stderr, 'osc: cannot expand/unexpand because your working ' \
-                                        'copy has local modifications. Please remove them ' \
-                                        'and try again'
-                    sys.exit(1)
             p.update(rev, service_files)
+            if opts.unexpand_link:
+                p.unmark_frozen()
             rev = None
             print_request_list(p.apiurl, p.prjname, p.name)
 
@@ -4607,8 +4614,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('link target is broken')
         if linkinfo_new.get('srcmd5') == baserev:
             print "Already up-to-date."
-            if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
-                os.unlink(os.path.join(p.storedir, '_frozenlink'))
+            p.unmark_frozen()
             return
         dir_new = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name }
         dir_new['srcmd5'] = root_new.get('srcmd5')
@@ -4680,8 +4686,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p.write_conflictlist()
         # store new linkrev
         store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
-        if os.path.exists(os.path.join(p.storedir, '_frozenlink')):
-            os.unlink(os.path.join(p.storedir, '_frozenlink'))
+        p.unmark_frozen()
         print
         if len(p.in_conflict):
             print 'Please fix the conflicts (files marked with \'C\' above),'

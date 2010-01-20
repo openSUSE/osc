@@ -1262,6 +1262,18 @@ rev: %s
 
         mf.discard()
 
+    def mark_frozen(self):
+        store_write_string(self.absdir, '_frozenlink', '')
+        print
+        print "The link in this package is currently broken. I have checked"
+        print "out the last working version instead, please use 'osc pull'"
+        print "to repair the link."
+        print
+
+    def unmark_frozen(self):
+        if os.path.exists(os.path.join(self.storedir, '_frozenlink')):
+            os.unlink(os.path.join(self.storedir, '_frozenlink'))
+
     def latest_rev(self):
         if self.islinkrepair():
             upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1)
@@ -1272,13 +1284,11 @@ rev: %s
                 try:
                     upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
                 except:
-                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
-                    store_write_string(self.absdir, '_frozenlink', '')
-                    print
-                    print "The link in this package is currently broken. I have checked"
-                    print "out the last working version instead, please use 'osc pull'"
-                    print "to repair the link."
-                    print
+                    try:
+                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
+                    except:
+                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev="base")
+                        self.mark_frozen()
         else:
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         return upstream_rev
@@ -3034,12 +3044,7 @@ def checkout_package(apiurl, project, package,
     os.chdir(os.pardir)
     p = Package(package)
     if isfrozen:
-        store_write_string(p.absdir, '_frozenlink', '')
-        print
-        print "The link in this package is currently broken. I have checked"
-        print "out the last working version instead, please use 'osc pull'"
-        print "to repair the link."
-        print
+        p.mark_frozen()
     for filename in p.filenamelist:
         if service_files or not filename.startswith('_service:'):
             p.updatefile(filename, revision)
