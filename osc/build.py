@@ -550,23 +550,27 @@ def main(opts, argv):
     print 'Updating cache of required packages'
 
     urllist = []
-    # transform 'url1, url2, url3' form into a list
-    if 'urllist' in config:
-        if type(config['urllist']) == str:
-            re_clist = re.compile('[, ]+')
-            urllist = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
-        else:
-            urllist = config['urllist']
+    if not opts.download_api_only:
+        # transform 'url1, url2, url3' form into a list
+        if 'urllist' in config:
+            if type(config['urllist']) == str:
+                re_clist = re.compile('[, ]+')
+                urllist = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
+            else:
+                urllist = config['urllist']
 
-    # OBS 1.5 and before has no downloadurl defined in buildinfo
-    if bi.downloadurl:
-        urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
+        # OBS 1.5 and before has no downloadurl defined in buildinfo
+        if bi.downloadurl:
+            urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
+        elif not opts.cpio_bulk_download: 
+            urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'],
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
                       offline = opts.noinit,
                       http_debug = config['http_debug'],
+                      enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
 
     # now update the package cache

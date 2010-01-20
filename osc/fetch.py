@@ -24,7 +24,8 @@ def join_url(self, base_url, rel_url):
 
 
 class Fetcher:
-    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False, cookiejar = None, offline = False):
+    def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False,
+		    cookiejar = None, offline = False, enable_cpio = False):
 
         __version__ = '0.1'
         __user_agent__ = 'osbuild/%s' % __version__
@@ -41,6 +42,7 @@ class Fetcher:
         self.http_debug = http_debug
         self.offline = offline
         self.cpio = {}
+	self.enable_cpio = enable_cpio
 
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
@@ -91,7 +93,7 @@ class Fetcher:
                                  text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
                 self.move_package(tmpfile, pac.localdir, pac)
             except URLGrabError, e:
-                if e.errno == 256:
+                if self.enable_cpio and e.errno == 256:
                     self.cpio.setdefault(pac.project, {})[pac.name] = pac
                     return
                 print
@@ -157,10 +159,10 @@ class Fetcher:
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
-                        print '%d/%d (%s) %s' % (done, needed, i.project, i.filename)
+                        print '%d/%d (%s) %s' % (done, all, i.project, i.filename)
                     self.fetch(i)
                     if self.progress_obj:
-                        print "  %d/%d\r" % (done,needed),
+                        print "  %d/%d\r" % (done,all),
                         sys.stdout.flush()
 
                 except KeyboardInterrupt:

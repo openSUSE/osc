@@ -11,6 +11,7 @@ import cmdln
 import conf
 import oscerr
 import urlgrabber.progress
+from optparse import SUPPRESS_HELP
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -3241,6 +3242,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Create -32bit/-64bit/-x86 rpms for other architectures')
     @cmdln.option('--release', metavar='N',
                   help='set release number of the package to N')
+    @cmdln.option('--cpio-bulk-download', action='store_true',
+                  help='enable downloading packages as cpio archive from api')
+    @cmdln.option('--download-api-only', action='store_true',
+                  help=SUPPRESS_HELP)
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
