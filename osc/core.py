@@ -509,13 +509,20 @@ class Project:
                     if pac in self.pacs_broken:
                         if self.get_state(pac) != 'A':
                             checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir, expand_link=expand_link)
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir, expand_link=not unexpand_link)
                     elif state == ' ':
                         # do a simple update
                         p = Package(os.path.join(self.dir, pac))
                         rev = None
                         if expand_link and p.islink() and not p.isexpanded():
-                            rev = p.linkinfo.xsrcmd5
+                            if p.haslinkerror():
+                               try:
+                                   rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
+                               except:
+                                   rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev="base")
+                                   p.mark_frozen()
+                            else:
+                               rev = p.linkinfo.xsrcmd5
                             print 'Expanding to rev', rev
                         elif unexpand_link and p.islink() and p.isexpanded():
                             rev = p.linkinfo.lsrcmd5
@@ -524,6 +531,8 @@ class Project:
                             rev = p.latest_rev()
                         print 'Updating %s' % p.name
                         p.update(rev, service_files)
+                        if unexpand_link:
+                            p.unmark_frozen()
                     elif state == 'D':
                         # TODO: Package::update has to fixed to behave like svn does
                         if pac in self.pacs_broken:
@@ -541,7 +550,7 @@ class Project:
                     else:
                         print 'unexpected state.. package \'%s\'' % pac
 
-                self.checkout_missing_pacs()
+                self.checkout_missing_pacs(expand_link=not unexpand_link)
             finally:
                 self.write_packages()
 

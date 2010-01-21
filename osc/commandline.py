@@ -2390,7 +2390,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # (a) update all packages
                     args += prj.pacs_have
                     # (b) fetch new packages
-                    prj.checkout_missing_pacs(opts.expand_link)
+                    prj.checkout_missing_pacs(expand_link = not opts.unexpand_link)
                     args.remove(arg)
                 print_request_list(prj.apiurl, prj.name)
 
