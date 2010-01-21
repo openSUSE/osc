@@ -1,4 +1,8 @@
 
+0.125.3
+ - fixed SSL proxy support
+ - fixed meta attribute create and set calls
+
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
  - new proxy support via SSL

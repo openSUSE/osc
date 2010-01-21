@@ -569,7 +569,8 @@ class Osc(cmdln.Cmdln):
                 opts.set = opts.set.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
                 for i in opts.set.split(','):
                     values += '<value>%s</value>' % i
-            d = '<attributes><attribute name=\'%s\' >%s</attribute></attributes>' % (opts.attribute, values)
+            aname = opts.attribute.split(":")
+            d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
             url = makeurl(conf.config['apiurl'], attributepath)
             for data in streamfile(url, http_POST, data=d):
                 sys.stdout.write(data)
