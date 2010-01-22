@@ -391,11 +391,11 @@ def write_initial_config(conffile, entries, custom_template = ''):
     for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
     custom_template is an optional configuration template.
     """
-    import StringIO, sys
+    import StringIO, sys, base64
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
-    config['passx'] = config['pass'].encode('bz2').encode('base64')
+    config['passx'] = base64.b64encode(config['pass'].encode('bz2'))
     if config['use_keyring'] and GENERIC_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, config['apiurl'])
@@ -437,6 +437,7 @@ def add_section(filename, url, user, passwd):
     """
     Add a section to config file for new api url.
     """
+    import base64
     global config
     cp = get_configParser(filename)
     try:
@@ -467,7 +468,7 @@ def add_section(filename, url, user, passwd):
         cp.set(url, 'user', user)
         if not config['plaintext_passwd']:
             cp.remove_option(url, 'pass')
-        cp.set(url, 'passx', passwd.encode('bz2').encode('base64'))
+        cp.set(url, 'passx', base64.b64encode(passwd.encode('bz2')))
     file = open(filename, 'w')
     cp.write(file, True)
     if file: file.close()
