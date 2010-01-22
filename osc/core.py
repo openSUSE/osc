@@ -43,12 +43,10 @@ exclude_stuff = [store, 'CVS', '*~', '#*#', '.*', '_linkerror']
 new_project_templ = """\
 <project name="%(name)s">
 
-  <title>Short title of NewProject</title>
-
-  <description>This project aims at providing some foo and bar.
-
-It also does some weird stuff.
-</description>
+  <title></title> <!-- Short title of NewProject -->
+  <description>
+    <!-- This is for a longer description of the purpose of the project -->
+  </description>
 
   <person role="maintainer" userid="%(user)s" />
   <person role="bugowner" userid="%(user)s" />
@@ -108,17 +106,17 @@ It also does some weird stuff.
 new_package_templ = """\
 <package name="%(name)s">
 
-  <title>Title of New Package</title>
+  <title></title> <!-- Title of package -->
 
   <description>
-LONG DESCRIPTION
-GOES
-HERE
+<!-- for long description -->
   </description>
 
   <person role="maintainer" userid="%(user)s"/>
   <person role="bugowner" userid="%(user)s"/>
+<!--
   <url>PUT_UPSTREAM_URL_HERE</url>
+-->
 
 <!--
   use one of the examples below to disable building of this package
