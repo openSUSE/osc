@@ -3484,9 +3484,9 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
             rmap['status'] = statusnode.get('code')
         except:
             # code can be missing when package is too new:
-            return {}
+            rmap['status'] = ''
 
-        if rmap['status'] in ['expansion error', 'broken', 'blocked']:
+        if rmap['status'] in ['expansion error', 'broken', 'blocked', 'finished']:
             rmap['status'] += ': ' + statusnode.find('details').text
 
         if rmap['dirty'] == 'true':
