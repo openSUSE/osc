@@ -17,10 +17,6 @@ MAJOR:
 
 NORMAL:
 
-  - improvements submit requests:
-    - create: enforce message
-    - for done requests, show accept/reject messages also
-
   - split functionality that needs prj/pac as commandline arguments into a seperate tool (oscremote? osc -r?)
     (update: we have some commands meanwhile which exist in an alternate form,
     prefixed with r, which works remotely. E.g. rbuildlog, rprjresults, rresults)
@@ -37,13 +33,6 @@ NORMAL:
 MINOR: 
 
   - osc checkout should display file download progress (bnc#442115)
-  - new command: osc listbinaries [<project>] [<package>]
-    listing the built package, either as URLs or just the filenames?        	[1]
-    there is ls -b:
-     % osc ls -b home:poeml scapy -r openSUSE_Factory -a x86_64
-    scapy-1.0.4-12.13.noarch.rpm
-    scapy-1.0.4-12.13.src.rpm
-    but it works packagewise. A project wide binary listing would also be cool
   - adjust zsh completion to work with cmdln.py implementation
   - add support for adding tags to packages?
 
