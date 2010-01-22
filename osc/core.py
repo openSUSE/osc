@@ -514,13 +514,13 @@ class Project:
                         rev = None
                         if expand_link and p.islink() and not p.isexpanded():
                             if p.haslinkerror():
-                               try:
-                                   rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
-                               except:
-                                   rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev="base")
-                                   p.mark_frozen()
+                                try:
+                                    rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
+                                except:
+                                    rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev="base")
+                                    p.mark_frozen()
                             else:
-                               rev = p.linkinfo.xsrcmd5
+                                rev = p.linkinfo.xsrcmd5
                             print 'Expanding to rev', rev
                         elif unexpand_link and p.islink() and p.isexpanded():
                             rev = p.linkinfo.lsrcmd5
