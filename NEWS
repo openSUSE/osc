@@ -1,5 +1,6 @@
 
 0.126
+ - fix "osc patchinfo" command (crashed before)
  - fixed SSL proxy support
  - fixed meta attribute create and set calls
 

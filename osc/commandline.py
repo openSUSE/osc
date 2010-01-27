@@ -389,6 +389,9 @@ class Osc(cmdln.Cmdln):
                query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
+       	    for p in meta_get_packagelist(apiurl, project):
+       	        if p.startswith("_patchinfo:"):
+       	            patchinfo = p
 
         if not os.path.exists(project_dir + "/" + patchinfo):
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
