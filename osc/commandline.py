@@ -2803,7 +2803,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc remotebuildlog project/package/repository/arch
         ${cmd_option_list}
         """
-        if len(args) == 1:
+        if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
         else:
             args = slash_split(args)

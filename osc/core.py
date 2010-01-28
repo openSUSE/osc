@@ -33,7 +33,7 @@ except ImportError:
 
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
-BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
+BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
 BUFSIZE = 1024*1024
 store = '.osc'
 
@@ -1714,7 +1714,7 @@ def parse_buildlogurl(buildlogurl):
 
     m = BUILDLOGURL_RE.match(buildlogurl)
     if not m:
-        raise oscerr.WrongArgs("`%s' does not look like url with a build log" % buildlogurl)
+        raise oscerr.WrongArgs('\'%s\' does not look like url with a build log' % buildlogurl)
     
     return (m.group('apiurl'), m.group('project'), m.group('package'), m.group('repository'), m.group('arch'))
 
