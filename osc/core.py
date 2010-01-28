@@ -1699,7 +1699,7 @@ def parse_disturl(disturl):
 
     m = DISTURL_RE.match(disturl)
     if not m:
-        raise oscerr.WrongArgs("`%s' does not look like disturl")
+        raise oscerr.WrongArgs("`%s' does not look like disturl" % disturl)
 
     apiurl = m.group('apiurl')
     if apiurl.split('.')[0] != 'api':
