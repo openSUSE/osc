@@ -2789,6 +2789,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('rbl')
     @cmdln.alias('rbuildlog')
+    @cmdln.option('-s', '--start', metavar='START',
+                    help='get log starting from the offset')
     def do_remotebuildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
@@ -2801,13 +2803,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc remotebuildlog project/package/repository/arch
         ${cmd_option_list}
         """
-        args = slash_split(args)
-        if len(args) < 4:
-            raise oscerr.WrongArgs('Too few arguments.')
-        elif len(args) > 4:
-            raise oscerr.WrongArgs('Too many arguments.')
+        if len(args) == 1:
+            apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
+        else:
+            args = slash_split(args)
+            apiurl = conf.config['apiurl']
+            if len(args) < 4:
+                raise oscerr.WrongArgs('Too few arguments.')
+            elif len(args) > 4:
+                raise oscerr.WrongArgs('Too many arguments.')
+            else:
+                project, package, repository, arch = args
+        
+        offset=0
+        if opts.start:
+            offset = int(opts.start)
 
-        print_buildlog(conf.config['apiurl'], *args)
+        print_buildlog(apiurl, project, package, repository, arch, offset)
 
 
     @cmdln.alias('tr')

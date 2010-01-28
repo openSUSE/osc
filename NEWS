@@ -3,6 +3,7 @@
  - fix "osc patchinfo" command (crashed before)
  - fixed SSL proxy support
  - fixed meta attribute create and set calls
+ - osc remotebuildlog supports a buildlogurl
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target

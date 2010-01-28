@@ -33,6 +33,7 @@ except ImportError:
 
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
+BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
 BUFSIZE = 1024*1024
 store = '.osc'
 
@@ -1705,6 +1706,17 @@ def parse_disturl(disturl):
         apiurl = 'https://api.' + ".".join(apiurl.split('.')[1:])
     return (apiurl, m.group('project'), m.group('source'), m.group('repository'), m.group('revision'))
 
+def parse_buildlogurl(buildlogurl):
+    """Parse a build log url, returns a tuple (apiurl, project, package,
+    repository, arch), else raises oscerr.WrongArgs exception"""
+
+    global BUILDLOGURL_RE
+
+    m = BUILDLOGURL_RE.match(buildlogurl)
+    if not m:
+        raise oscerr.WrongArgs("`%s' does not look like url with a build log" % buildlogurl)
+    
+    return (m.group('apiurl'), m.group('project'), m.group('package'), m.group('repository'), m.group('arch'))
 
 def slash_split(l):
     """Split command line arguments like 'foo/bar' into 'foo' 'bar'.
