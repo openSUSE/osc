@@ -2959,7 +2959,8 @@ def server_diff(apiurl,
                 old_project, old_package, old_revision,
                 new_project, new_package, new_revision, unified=False):
 
-    query = {'cmd': 'diff', 'expand': '1'}
+    # we default to the baserev here. an option to try to use the current base rev might be nice
+    query = {'cmd': 'diff', 'expand': '1', 'linkrev': 'base', 'olinkrev': 'base'}
     if old_project:
         query['oproject'] = old_project
     if old_package:

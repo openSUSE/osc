@@ -4,6 +4,7 @@
  - fixed SSL proxy support
  - fixed meta attribute create and set calls
  - osc remotebuildlog supports a buildlogurl
+ - use the baserev on links by default for diffing
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
