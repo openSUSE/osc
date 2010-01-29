@@ -3206,7 +3206,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
             for arg in args:
-                if arg.endswith('.spec') or arg.endswith('.dsc'):
+                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi'):
                     arg_descr = arg
                 else:
                     if arg in osc.build.can_also_build.get(osc.build.hostarch, []) or \
