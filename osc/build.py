@@ -355,7 +355,10 @@ def main(opts, argv):
 
     pacname = pac
     if pacname == '_repository':
-        pacname = os.path.splitext(build_descr)[0]
+        if opts.local_package:
+            pacname = os.path.splitext(build_descr)[0]
+        else:
+            pacname = store_read_package(os.curdir)
     if not build_root:
         build_root = config['build-root'] % { 'repo': repo, 'arch': arch,
                                                     'project' : prj, 'package' : pacname
