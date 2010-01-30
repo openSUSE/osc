@@ -3321,10 +3321,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not os.path.isdir(buildroot):
             raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
 
-        suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split()
-        cmd = '%s chroot \'%s\' su - %s' % (' '.join(suwrapper[1:]), buildroot, user)
-        print 'running: %s %s' % (suwrapper[0], cmd)
-        os.execlp(suwrapper[0], suwrapper[0], cmd)
+        suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper'])
+        sucmd = suwrapper.split()[0]
+        suargs = ' '.join(suwrapper.split()[1:])
+        if suwrapper.startswith('su '):
+            cmd = [sucmd, '%s chroot "%s" su - %s' % (suargs, buildroot, user)]
+        else:
+            cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
+            if suargs:
+                cmd.insert(1, suargs)
+        print 'running: %s' % ' '.join(cmd)
+        os.execvp(sucmd, cmd)
 
 
     @cmdln.option('', '--csv', action='store_true',
