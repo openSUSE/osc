@@ -3093,6 +3093,63 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for row in build_table(2, data, width=2):
             print row
 
+
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None):
+        """helper to parse the repo, arch and build description from args"""
+        import osc.build
+        arg_arch = arg_repository = arg_descr = None
+        if len(args) < 3:
+            for arg in args:
+                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi'):
+                    arg_descr = arg
+                else:
+                    if arg in osc.build.can_also_build.get(osc.build.hostarch, []) or \
+                       arg in osc.build.hostarch:
+                        arg_arch = arg
+                    elif not arg_repository:
+                        arg_repository = arg
+                    else:
+                        raise oscerr.WrongArgs('unexpected argument: \'%s\'' % arg)
+        else:
+            arg_repository, arg_arch, arg_descr = args
+
+        arg_arch = arg_arch or osc.build.hostarch
+
+        if not noinit:
+            project = alternative_project or store_read_project('.')
+            repositories = get_repositories_of_project(store_read_apiurl('.'), project)
+            if not len(repositories):
+                raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
+            if not arg_repository:
+                # Use a default value from config, but just even if it's available
+                # unless try standard, or openSUSE_Factory
+                arg_repository = repositories[-1]
+                for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
+                    if repository in repositories:
+                        arg_repository = repository
+                        break
+            if not arg_repository in repositories:
+                raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ', '.join(repositories)))
+        elif not arg_repository:
+            raise oscerr.WrongArgs('please specify a repository')
+
+        descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') or i.endswith('.kiwi') ]
+        # FIXME:
+        # * request repos from server and select by build type.
+        if not arg_descr and len(descr) == 1:
+            arg_descr = descr[0]
+        elif not arg_descr:
+            msg = 'Missing argument: build description (spec, dsc or kiwi file)'
+            try:
+                p = Package('.')
+                if p.islink() and not p.isexpanded():
+                    msg += ' (this package is not expanded - you might want to try osc up --expand)'
+            except:
+                pass
+            raise oscerr.WrongArgs(msg)
+        return arg_repository, arg_arch, arg_descr
+
+
     @cmdln.option('--clean', action='store_true',
                   help='Delete old build root before initializing it')
     @cmdln.option('--no-changelog', action='store_true',
@@ -3203,63 +3260,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        arg_arch = arg_repository = arg_descr = None
-        if len(args) < 3:
-            for arg in args:
-                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi'):
-                    arg_descr = arg
-                else:
-                    if arg in osc.build.can_also_build.get(osc.build.hostarch, []) or \
-                       arg in osc.build.hostarch:
-                        arg_arch = arg
-                    elif not arg_repository:
-                        arg_repository = arg
-                    else:
-                        raise oscerr.WrongArgs('unexpected argument: \'%s\'' % arg)
-        else:
-            arg_repository, arg_arch, arg_descr = args
-
-        arg_arch = arg_arch or osc.build.hostarch
-
-        if not opts.noinit:
-            project = opts.alternative_project or store_read_project('.')
-            repositories = get_repositories_of_project(store_read_apiurl('.'), project)
-            if not len(repositories):
-                raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
-            if not arg_repository:
-                # Use a default value from config, but just even if it's available
-                # unless try standard, or openSUSE_Factory
-                arg_repository = repositories[-1]
-                for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
-                    if repository in repositories:
-                        arg_repository = repository
-                        break
-            if not arg_repository in repositories:
-                raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ', '.join(repositories)))
-        elif not arg_repository:
-            raise oscerr.WrongArgs('please specify a repository')
+        args = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
 
         # check for source services
         if os.listdir('.').count("_service"):
             p = Package('.')
             p.run_source_services()
-
-        descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') or i.endswith('.kiwi') ]
-        # FIXME:
-        # * request repos from server and select by build type.
-        if not arg_descr and len(descr) == 1:
-            arg_descr = descr[0]
-        elif not arg_descr:
-            msg = 'Missing argument: build description (spec, dsc or kiwi file)'
-            try:
-                p = Package('.')
-                if p.islink() and not p.isexpanded():
-                    msg += ' (this package is not expanded - you might want to try osc up --expand)'
-            except:
-                pass
-            raise oscerr.WrongArgs(msg)
-
-        args = (arg_repository, arg_arch, arg_descr)
 
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
@@ -3269,9 +3275,56 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.keep_pkgs and not os.path.isdir(opts.keep_pkgs):
             raise oscerr.WrongOptions('Preferred save location \'%s\' is not a directory' % opts.keep_pkgs)
 
-        print 'Building %s for %s/%s' % (arg_descr, arg_repository, arg_arch)
+        print 'Building %s for %s/%s' % (args[2], args[0], args[1])
         return osc.build.main(opts, args)
 
+
+    @cmdln.option('--local-package', action='store_true',
+                  help='package doesn\'t exist on the server')
+    @cmdln.option('--alternative-project', metavar='PROJECT',
+                  help='specify the used build target project')
+    @cmdln.option('--noinit', '--no-init', action='store_true',
+                  help='do not guess/verify specified repository')
+    @cmdln.option('-r', '--root', action='store_true',
+                  help='login as root instead of abuild')
+    def do_chroot(self, subcmd, opts, *args):
+        """${cmd_name}: chroot into the buildchroot
+
+        chroot into the buildchroot for the given repository, arch and build description
+        (NOTE: this command does not work if "build-type" is set in the config)
+
+        usage:
+            osc chroot [OPTS] REPOSITORY ARCH BUILD_DESCR
+            osc chroot [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
+            osc chroot [OPTS] ARCH (REPOSITORY = build_repository (config option), BUILD_DESCR is detected automatically)
+            osc chroot [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
+            osc chroot [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
+        ${cmd_option_list}
+        """
+        if len(args) > 3:
+            raise oscerr.WrongArgs('Too many arguments')
+        if conf.config['build-type']:
+            print >>sys.stderr, 'Not implemented for VMs'
+            sys.exit(1)
+
+        user = 'abuild'
+        if opts.root:
+            user = ''
+        repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
+        project = opts.alternative_project or store_read_project('.')
+        if opts.local_package:
+            package = os.path.splitext(descr)[0]
+        else:
+            package = store_read_package('.')
+        buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
+            % {'repo': repository, 'arch': arch, 'project': project, 'package': package}
+        if not os.path.isdir(buildroot):
+            raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
+
+        suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split()
+        cmd = '%s /usr/bin/chroot \'%s\' su - %s' % (' '.join(suwrapper[1:]), buildroot, user)
+        print 'running: %s %s' % (suwrapper[0], cmd)
+        os.execlp(suwrapper[0], suwrapper[0], cmd)
 
 
     @cmdln.option('', '--csv', action='store_true',
