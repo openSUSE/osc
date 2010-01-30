@@ -3322,7 +3322,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
 
         suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split()
-        cmd = '%s /usr/bin/chroot \'%s\' su - %s' % (' '.join(suwrapper[1:]), buildroot, user)
+        cmd = '%s chroot \'%s\' su - %s' % (' '.join(suwrapper[1:]), buildroot, user)
         print 'running: %s %s' % (suwrapper[0], cmd)
         os.execlp(suwrapper[0], suwrapper[0], cmd)
 
