@@ -417,8 +417,8 @@ def main(opts, argv):
 
     bi_file = None
     bc_file = None
-    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
-    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
+    bi_filename = os.path.abspath('_buildinfo-%s-%s.xml' % (repo, arch))
+    bc_filename = os.path.abspath('_buildconfig-%s-%s' % (repo, arch))
     if os.path.isdir(osc.core.store) and os.access(osc.core.store, os.W_OK):
         bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
         bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
