@@ -717,7 +717,7 @@ class Package:
         self.filelist.append(f)
         self.filenamelist.append(n)
         self.filenamelist_unvers.remove(n)
-        shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def delete_file(self, n, force=False):
         """deletes a file if possible and marks the file as deleted"""
@@ -806,7 +806,7 @@ class Package:
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_PUT(u, file = os.path.join(self.dir, n))
 
-        shutil.copy2(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def commit(self, msg=''):
         # commit only if the upstream revision is the same as the working copy's
@@ -932,7 +932,7 @@ class Package:
         get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename, revision=revision)
         os.utime(filename, (-1, mtime))
 
-        shutil.copy2(filename, storefilename)
+        shutil.copyfile(filename, storefilename)
 
     def mergefile(self, n):
         filename = os.path.join(self.dir, n)
@@ -948,8 +948,8 @@ class Package:
 
         if binary_file(myfilename) or binary_file(upfilename):
             # don't try merging
-            shutil.copy2(upfilename, filename)
-            shutil.copy2(upfilename, storefilename)
+            shutil.copyfile(upfilename, filename)
+            shutil.copyfile(upfilename, storefilename)
             self.in_conflict.append(n)
             self.write_conflictlist()
             return 'C'
@@ -964,13 +964,13 @@ class Package:
             #   conflicts were found, and 2 means trouble."
             if ret == 0:
                 # merge was successful... clean up
-                shutil.copy2(upfilename, storefilename)
+                shutil.copyfile(upfilename, storefilename)
                 os.unlink(upfilename)
                 os.unlink(myfilename)
                 return 'G'
             elif ret == 1:
                 # unsuccessful merge
-                shutil.copy2(upfilename, storefilename)
+                shutil.copyfile(upfilename, storefilename)
                 self.in_conflict.append(n)
                 self.write_conflictlist()
                 return 'C'
