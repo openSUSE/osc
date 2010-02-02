@@ -4329,28 +4329,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 1:
             prj = args[0]
-            m = show_project_meta(conf.config['apiurl'], prj)
-            root = ET.fromstring(''.join(m))
         elif len(args) == 2:
             prj = args[0]
             pac = args[1]
-            m = show_package_meta(conf.config['apiurl'], prj, pac)
-            root = ET.fromstring(''.join(m))
-            if not opts.nodevelproject and not opts.delete and not opts.add:
-                while root.findall('devel'):
-                    d = root.find('devel')
-                    prj = d.get('project', prj)
-                    pac = d.get('package', pac)
-                    if opts.verbose:
-                        print "Following to the development space:", prj, "/", pac
-                    m = show_package_meta(conf.config['apiurl'], prj, pac)
-                    root = ET.fromstring(''.join(m))
-                if not root.findall('person'):
-                    print "No dedicated persons in package defined, showing the project persons !"
-                    m = show_project_meta(conf.config['apiurl'], prj)
-                    root = ET.fromstring(''.join(m))
         else:
-            raise oscerr.WrongArgs('I need at least one argument.')
+            raise oscerr.WrongArgs('Wrong number of arguments.')
 
         if opts.add:
             for role in roles:
@@ -4362,6 +4345,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # XXX: does it really belong to this command?
             setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
         else:
+            if pac:
+                m = show_package_meta(conf.config['apiurl'], prj, pac)
+                root = ET.fromstring(''.join(m))
+                if not opts.nodevelproject:
+                    while root.findall('devel'):
+                        d = root.find('devel')
+                        prj = d.get('project', prj)
+                        pac = d.get('package', pac)
+                        if opts.verbose:
+                            print "Following to the development space: %s/%s" % (prj, pac)
+                        m = show_package_meta(conf.config['apiurl'], prj, pac)
+                        root = ET.fromstring(''.join(m))
+                    if not root.findall('person'):
+                        if opts.verbose:
+                            print "No dedicated persons in package defined, showing the project persons."
+                        pac = None
+                        m = show_project_meta(conf.config['apiurl'], prj)
+                        root = ET.fromstring(''.join(m))
+            else:
+                m = show_project_meta(conf.config['apiurl'], prj)
+                root = ET.fromstring(''.join(m))
+
             # showing the maintainers
             maintainers = {}
             for person in root.findall('person'):
