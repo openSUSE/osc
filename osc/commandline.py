@@ -666,8 +666,6 @@ class Osc(cmdln.Cmdln):
                   help='never touch source package on accept (will break source links)')
     @cmdln.option('-d', '--diff', action='store_true',
                   help='show diff only instead of creating the actual request')
-    @cmdln.option('-l', '--list', action='store_true',
-                  help='show submitrequests. Same as \'osc req list -M -a -t submit -D 0\'')
     @cmdln.option('--yes', action='store_true',
                   help='proceed without asking.')
     @cmdln.alias("sr")
@@ -688,17 +686,6 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        if opts.list:
-            opts.state = ""
-            opts.user = ""
-            opts.all = True
-            opts.brief = False
-            opts.unified = False
-            opts.type = "submit"
-            opts.mine = True
-            opts.days = conf.config['request_list_days']
-            return self.do_request('list', opts, *args)
-
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
         if opts.cleanup:
@@ -715,10 +702,9 @@ class Osc(cmdln.Cmdln):
         if args and args[0] in oldcmds:
             print "************************************************************************"
             print "* WARNING: It looks that you are using this command with a             *"
-            print "*          deprecated syntax (maybe) !                                 *"
-            print "*          Please run \"osc sr --help\" and \"osc req --help\"             *"
+            print "*          deprecated syntax.                                          *"
+            print "*          Please run \"osc sr --help\" and \"osc rq --help\"              *"
             print "*          to see the new syntax.                                      *"
-            print "* E.g. \"osc sr -l\" is shortcut for \"osc req list -M -a -t submit -D 0\" *"
             print "************************************************************************"
             if args[0] == 'create':
                 args.pop(0)
