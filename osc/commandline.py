@@ -855,11 +855,17 @@ of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package)
                 sys.exit(1)
+
+        rdiff = None
+        if opts.diff or not opts.message:
+            try:
+                rdiff = 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
+                rdiff += server_diff(apiurl,
+                                    dst_project, dst_package, opts.revision,
+                                    src_project, src_package, None, True)
+            except:
+                rdiff = ''
         if opts.diff:
-            print 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
-            rdiff = server_diff(apiurl,
-                                dst_project, dst_package, None,
-                                src_project, src_package, None, True)
             print rdiff
         else:
             reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
@@ -872,7 +878,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repl = raw_input('Revoke the old requests? (y/N) ')
 
             if not opts.message:
-                opts.message = edit_message()
+                difflines = []
+                doappend = False
+                changes_re = re.compile(r'^--- .*\.changes ')
+                for line in rdiff.split('\n'):
+                    if line.startswith('--- '):
+                        if changes_re.match(line):
+                            doappend = True
+                        else:
+                            doappend = False
+                    if doappend:
+                        difflines.append(line)
+                opts.message = edit_message(footer=rdiff, template='\n'.join(parse_diff_for_commit_message('\n'.join(difflines))))
 
             result = create_submit_request(apiurl,
                                            src_project, src_package,
