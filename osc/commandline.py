@@ -850,11 +850,12 @@ Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                dst_project != devloc and \
                src_project != devloc:
                 print """\
-Sorry, but a different project, %s, is defined as the place where development
+A different project, %s, is defined as the place where development
 of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package)
-                sys.exit(1)
+                if not opts.diff:
+                    sys.exit(1)
 
         rdiff = None
         if opts.diff or not opts.message:
