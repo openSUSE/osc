@@ -4374,7 +4374,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for role in roles:
                 if opts.bugowner and not len(maintainers.get(role, [])):
                     role = 'maintainer'
-                print role + ':'
+                if pac:
+                    print "%s of %s/%s : " %(role, prj, pac)
+                else:
+                    print "%s of %s : " %(role, prj)
                 if opts.email:
                     emails = []
                     for maintainer in maintainers.get(role, []):
@@ -4385,9 +4388,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 elif opts.verbose:
                     userdata = []
                     for maintainer in maintainers.get(role, []):
-                        user = get_user_data(conf.config['apiurl'], maintainer, 'realname', 'login', 'email')
-                        userdata.extend(user)
-                    for row in build_table(3, userdata, ['realname', 'userid', 'email\n']):
+                        user = get_user_data(conf.config['apiurl'], maintainer, 'login', 'realname', 'email')
+                        userdata.append(user[0])
+                        if user[1] !=  '-':
+                            userdata.append("%s <%s>"%(user[1], user[2]))
+                        else:
+                            userdata.append(user[2])
+                    for row in build_table(2, userdata, None, 3):
                         print row
                 else:
                     print ', '.join(maintainers.get(role, [])) or '-'
