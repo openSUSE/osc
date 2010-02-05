@@ -96,7 +96,7 @@ class RepoDataQuery(object):
             
             release = element.get("rel")
             if release is not None:
-                entry += "-%s" % (release,)
+                entry += "-%s" % release
         
         return entry
     

@@ -62,7 +62,7 @@ class RpmQuery(packagequery.PackageQuery):
 
     def __init__(self, fh):
         self.__file = fh
-        self.__filename = os.path.abspath(fh.name)
+        self.__path = os.path.abspath(fh.name)
         self.filename_suffix = 'rpm'
         self.header = None
 

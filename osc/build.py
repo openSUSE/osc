@@ -252,6 +252,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
     import glob
     from util import repodata, packagequery, cpio
     paths = []
+    repositories = []
     
     suffix = '*.rpm'
     if type == 'dsc':
@@ -265,10 +266,10 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
         else:
             repositories.append(repository)
     
-    packageQueries = osc.util.packagequery.PackageQueries(wanted_arch)
+    packageQueries = packagequery.PackageQueries(wanted_arch)
     
     for repository in repositories:
-        repodataPackageQueries = osc.util.repodata.queries(repository)
+        repodataPackageQueries = repodata.queries(repository)
         
         for packageQuery in repodataPackageQueries:
             packageQueries.add(packageQuery)
@@ -282,7 +283,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
         packageQueries.add(packageQuery)
     
     prefer_pkgs = dict((name, packageQuery.path())
-                       for (name, packageQuery) in packageQueries.iteritems())
+                       for name, packageQuery in packageQueries.iteritems())
     
     depfile = create_deps(packageQueries.values())
     cpio = cpio.CpioWrite()
