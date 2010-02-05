@@ -62,7 +62,7 @@ class RpmQuery(packagequery.PackageQuery):
 
     def __init__(self, fh):
         self.__file = fh
-        self.__file = os.path.abspath(fh.name)
+        self.__filename = os.path.abspath(fh.name)
         self.filename_suffix = 'rpm'
         self.header = None
 
@@ -224,7 +224,11 @@ class RpmQuery(packagequery.PackageQuery):
     def query(filename):
         f = open(filename, 'rb')
         rpmq = RpmQuery(f)
-        rpmq.read()
+        if rpmq:
+           rpmq.read()
+        else:
+           print "Failed to read", filename, "as rpm"
+           sys.exit(2)
         f.close()
         return rpmq
 
