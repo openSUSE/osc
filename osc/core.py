@@ -4555,7 +4555,7 @@ def check_filelist_before_commit(pacs):
             p.todo = p.filenamelist + p.filenamelist_unvers
         p.todo.sort()
         for f in (f for f in p.todo if not os.path.isdir(f)):
-            if p.status(f) in ('?', '!'):
+            if not f.startswith('_service:') and not f.startswith('_service_') and p.status(f) in ('?', '!'):
                 resp = raw_input("File `%s' is not in package meta. Would you like skip/remove/edit file lists/commit/abort? (s/r/e/c/A) "% (f, ))
                 if resp in ('s', 'S'):
                     continue
