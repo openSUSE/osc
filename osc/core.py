@@ -2707,19 +2707,20 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
         query = { 'rev': revision }
     o = None
     try:
-        (fd, tmpfile) = tempfile.mkstemp(prefix = filename, suffix = '.osc')
-        o = os.fdopen(fd, 'wb')
-        u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
-        for buf in streamfile(u, http_GET, BUFSIZE):
-            o.write(buf)
-        o.close()
-        shutil.move(tmpfile, targetfilename or filename)
-    except:
+        try:
+            (fd, tmpfile) = tempfile.mkstemp(prefix = filename, suffix = '.osc')
+            o = os.fdopen(fd, 'wb')
+            u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
+            for buf in streamfile(u, http_GET, BUFSIZE):
+                o.write(buf)
+            o.close()
+            shutil.move(tmpfile, targetfilename or filename)
+        except:
+            os.unlink(tmpfile)
+            raise
+    finally:
         if o is not None:
             o.close()
-        os.unlink(tmpfile)
-        raise
-
 
 def get_binary_file(apiurl, prj, repo, arch,
                     filename,
