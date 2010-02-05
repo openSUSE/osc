@@ -1,4 +1,5 @@
 import ar
+import os.path
 import re
 import tarfile
 import packagequery
@@ -13,6 +14,7 @@ class DebQuery(packagequery.PackageQuery):
 
     def __init__(self, fh):
         self.__file = fh
+        self.__path = os.path.abspath(fh.name)
         self.filename_suffix = 'deb'
         self.fields = {}
 
@@ -92,6 +94,9 @@ class DebQuery(packagequery.PackageQuery):
 
     def description(self):
         return self.fields['description']
+
+    def path(self):
+        return self.__path
 
     def provides(self):
         return self.fields['provides']
