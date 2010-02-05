@@ -3170,6 +3170,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Do not run post build checks on the resulting packages.')
     @cmdln.option('--no-verify', action='store_true',
                   help='Skip signature verification of packages used for build.')
+    @cmdln.option('--noservice', '--no-service', action='store_true',
+                  help='Skip run of local source services as specified in _service file.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
@@ -3267,7 +3269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
 
         # check for source services
-        if os.listdir('.').count("_service"):
+        if not opts.noservice and not opts.noinit and os.listdir('.').count("_service"):
             p = Package('.')
             p.run_source_services()
 
