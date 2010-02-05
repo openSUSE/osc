@@ -224,11 +224,7 @@ class RpmQuery(packagequery.PackageQuery):
     def query(filename):
         f = open(filename, 'rb')
         rpmq = RpmQuery(f)
-        if rpmq:
-           rpmq.read()
-        else:
-           print "Failed to read", filename, "as rpm"
-           sys.exit(2)
+        rpmq.read()
         f.close()
         return rpmq
 
