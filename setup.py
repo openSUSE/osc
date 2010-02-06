@@ -59,7 +59,7 @@ setup(name='osc',
       platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME'],
       keywords = ['openSUSE', 'SUSE', 'RPM', 'build', 'buildservice'],
       url = 'http://en.opensuse.org/Build_Service/CLI',
-      download_url = 'https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/',
+      download_url = 'http://gitorious.org/opensuse/osc',
 
       packages = ['osc', 'osc.util'],
       scripts = ['osc_hotshot.py', 'osc-wrapper.py'],

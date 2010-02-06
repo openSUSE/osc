@@ -4,8 +4,8 @@ osc -- opensuse-commander with svn like handling
 Patches can be submitted via
  * mail to opensuse-buildservice@opensuse.org
  * Bugzilla: https://bugzilla.novell.com/enter_bug.cgi?product=openSUSE.org&component=BuildService
- * or work directly on svn, if you got write acces
-   https://forgesvn1.novell.com/svn/opensuse/trunk/buildservice/src/clientlib/python/osc/
+ * or the official Git repository on Gitorious:
+   http://gitorious.org/opensuse/osc
 
 
 INSTALLATION:
