@@ -1,4 +1,7 @@
 
+0.125.5
+ - use the baserev on links by default for diffing
+
 0.125.4
  - fix "osc patchinfo" command (crashed before)
 
