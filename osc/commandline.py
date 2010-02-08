@@ -1261,7 +1261,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = conf.config['apiurl']
         package = None
-        if not args or len(args) == 0:
+        if len(args) == 0:
             p = findpacs(os.curdir)[0]
             project = p.prjname
             package = p.name
@@ -1553,7 +1553,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         maintained_attribute = conf.config['maintained_attribute']
         maintained_update_project_attribute = conf.config['maintained_update_project_attribute']
 
-        if not (len(args) >= 1 and len(args) <= 2):
+        if not len(args) or len(args) > 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
         if len(args) >= 1:
             package = args[0]
@@ -1750,7 +1750,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = parseargs(args)
-        if opts.specfile and (len(args) == 1):
+        if opts.specfile and len(args) == 1:
             specfile = opts.specfile
         else:
             specfile = None
@@ -2406,7 +2406,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args.sort()
         pacs = findpacs(args)
 
-        if opts.revision and ( len(args) == 1):
+        if opts.revision and len(args) == 1:
             rev, dummy = parseRevisionOption(opts.revision)
             if not checkRevision(pacs[0].prjname, pacs[0].name, rev, pacs[0].apiurl):
                 print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
@@ -2766,7 +2766,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.start:
             offset = int(opts.start)
 
-        if args is None or len(args) < 2:
+        if len(args) < 2:
             self.print_repos()
 
         repository = args[0]
@@ -2851,7 +2851,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         project = package = repository = arch = None
         
-        if ( args is None or len(args) < 2):
+        if len(args) < 2:
             self.print_repos()
 
         if len(args) == 2: # 2
@@ -2916,7 +2916,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         project = packages = repository = arch = reverse = None
         
-        if ( args is None or len(args) < 2) and (is_package_dir('.') or is_project_dir('.')):
+        if len(args) < 2 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
 
         if len(args) > 5:
@@ -2987,7 +2987,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         
-        if ( args is None or len(args) < 2) and is_package_dir('.'):
+        if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
         if len(args) > 5:
@@ -3048,7 +3048,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         
-        if ( args is None or len(args) < 2) and is_package_dir('.'):
+        if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
         if len(args) > 4:
@@ -3356,7 +3356,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        if ( args is None or len(args) < 2) and is_package_dir('.'):
+        if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
         if len(args) == 4:
@@ -3400,8 +3400,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
 
-        if (args is None or len(args) < 2) \
-            and (is_project_dir('.') or is_package_dir('.')):
+        if len(args) < 2) and (is_project_dir('.') or is_package_dir('.')):
             self.print_repos()
 
         if len(args) == 4:
@@ -3652,7 +3651,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = conf.config['apiurl']
 
-        if ( args is None or len(args) < 2) and is_package_dir('.'):
+        if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
         if len(args) == 4:
