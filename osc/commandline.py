@@ -1635,20 +1635,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-        r = branch_pkg(conf.config['apiurl'], args[0], args[1],
+        exists, targetprj, targetpkg, srcprj, srcpkg = \
+                branch_pkg(conf.config['apiurl'], args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout)
-
-        if r[0] is None:
-            r = expected = r[1]
-            print >>sys.stderr, 'Using existing branch project:', r, '\n'
+        if exists:
+            print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
         devloc = None
-        if r != expected:
-            devloc = r
-            if 'branches:' in r:
-                devloc = r.split('branches:')[1]
+        if not exists and (srcprj is not None and srcprj != args[0] or \
+                           srcprj is None and targetprj != expected):
+            devloc = srcprj or targetprj
+            if not srcprj and 'branches:' in targetprj:
+                devloc = targetprj.split('branches:')[1]
             print '\nNote: The branch has been created of a different project,\n' \
                   '              %s,\n' \
                   '      which is the primary location of where development for\n' \
@@ -1657,12 +1657,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   '      A direct branch of the specified package can be forced\n' \
                   '      with the --nodevelproject option.\n' % devloc
 
-        package = args[1]
-        if tpackage:
-            package = tpackage
+        package = tpackage or args[1]
         if opts.checkout:
-            checkout_package(conf.config['apiurl'], r, package,
-                             expand_link=True, prj_dir=r)
+            checkout_package(conf.config['apiurl'], targetprj, package,
+                             expand_link=True, prj_dir=targetprj)
             if conf.config['verbose']:
                 print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
         else:
@@ -1671,7 +1669,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 apiopt = '-A %s ' % conf.config['apiurl']
             print 'A working copy of the branched package can be checked out with:\n\n' \
                   'osc %sco %s/%s' \
-                      % (apiopt, r, package)
+                      % (apiopt, targetprj, package)
         print_request_list(conf.config['apiurl'], args[0], args[1])
         if devloc:
             print_request_list(conf.config['apiurl'], devloc, args[1])

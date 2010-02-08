@@ -3298,17 +3298,17 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         msg = ''.join(e.readlines())
         msg = msg.split('<summary>')[1]
         msg = msg.split('</summary>')[0]
-        m = re.match(r"branch target package already exists: (\S+)/", msg)
+        m = re.match(r"branch target package already exists: (\S+)/(\S+)", msg)
         if not m:
             e.msg += '\n' + msg
             raise
-        return (None, m.group(1))
+        return (True, m.group(1), m.group(2), None, None)
 
-    r = f.read()
-    r = r.split('targetproject">')[1]
-    r = r.split('</data>')[0]
-    return r
-
+    data = {}
+    for i in ET.fromstring(f.read()).findall('data'):
+        data[i.get('name')] = i.text
+    return (False, data.get('targetproject', None), data.get('targetpackage', None),
+            data.get('sourceproject', None), data.get('sourcepackage', None))
 
 
 def copy_pac(src_apiurl, src_project, src_package,
