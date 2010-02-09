@@ -3400,7 +3400,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
 
-        if len(args) < 2) and (is_project_dir('.') or is_package_dir('.')):
+        if len(args) < 2 and (is_project_dir('.') or is_package_dir('.')):
             self.print_repos()
 
         if len(args) == 4:
