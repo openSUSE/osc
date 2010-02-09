@@ -11,7 +11,7 @@ import sys
 from tempfile import NamedTemporaryFile
 from shutil import rmtree
 from osc.fetch import *
-from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig
+from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
 import osc.conf
 import oscerr
 import subprocess
@@ -448,9 +448,9 @@ def main(opts, argv):
 
     bi_file = None
     bc_file = None
-    bi_filename = os.path.abspath('_buildinfo-%s-%s.xml' % (repo, arch))
-    bc_filename = os.path.abspath('_buildconfig-%s-%s' % (repo, arch))
-    if os.path.isdir(osc.core.store) and os.access(osc.core.store, os.W_OK):
+    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
+    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
+    if is_package_dir('.') and os.access(osc.core.store, os.W_OK):
         bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
         bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
     elif not os.access('.', os.W_OK):
@@ -458,6 +458,9 @@ def main(opts, argv):
         bi_filename = bi_file.name
         bc_file = NamedTemporaryFile(prefix=bc_filename)
         bc_filename = bc_file.name
+    else:
+        bi_filename = os.path.abspath(bi_filename)
+        bc_filename = os.path.abspath(bc_filename)
 
     try:
         if opts.noinit:
