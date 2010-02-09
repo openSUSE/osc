@@ -329,10 +329,11 @@ class Linkinfo:
 
 class Project:
     """represent a project directory, holding packages"""
-    def __init__(self, dir, getPackageList=True):
+    def __init__(self, dir, getPackageList=True, progress_obj=None):
         import fnmatch
         self.dir = dir
         self.absdir = os.path.abspath(dir)
+        self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
         self.apiurl = store_read_apiurl(self.dir)
@@ -373,7 +374,7 @@ class Project:
                 print 'checking out new package %s' % pac
                 checkout_package(self.apiurl, self.name, pac, \
                                  pathname=getTransActPath(os.path.join(self.dir, pac)), \
-                                 prj_obj=self, prj_dir=self.dir, expand_link=expand_link)
+                                 prj_obj=self, prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
 
     def set_state(self, pac, state):
         node = self.get_package_node(pac)
@@ -483,7 +484,7 @@ class Project:
     def update(self, pacs = (), expand_link=False, unexpand_link=False, service_files=False):
         if len(pacs):
             for pac in pacs:
-                Package(os.path.join(self.dir, pac)).update()
+                Package(os.path.join(self.dir, pac, progress_obj=self.progress_obj)).update()
         else:
             # we need to make sure that the _packages file will be written (even if an exception
             # occurs)
@@ -508,10 +509,11 @@ class Project:
                     if pac in self.pacs_broken:
                         if self.get_state(pac) != 'A':
                             checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir, expand_link=not unexpand_link)
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, \
+                                             prj_dir=self.dir, expand_link=not unexpand_link, progress_obj=self.progress_obj)
                     elif state == ' ':
                         # do a simple update
-                        p = Package(os.path.join(self.dir, pac))
+                        p = Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj)
                         rev = None
                         if expand_link and p.islink() and not p.isexpanded():
                             if p.haslinkerror():
@@ -536,9 +538,10 @@ class Project:
                         # TODO: Package::update has to fixed to behave like svn does
                         if pac in self.pacs_broken:
                             checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, prj_dir=self.dir, expand_link=expand_link)
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, \
+                                             prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
                         else:
-                            Package(os.path.join(self.dir, pac)).update()
+                            Package(os.path.join(self.dir, pac, progress_obj=self.progress_obj)).update()
                     elif state == 'A' and pac in self.pacs_available:
                         # file/dir called pac already exists and is under version control
                         msg = 'can\'t add package \'%s\': Object already exists' % pac
@@ -689,10 +692,11 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir):
+    def __init__(self, workingdir, progress_obj=None):
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
+        self.progress_obj = progress_obj
 
         check_store_version(self.dir)
 
@@ -929,7 +933,7 @@ class Package:
         storefilename = os.path.join(self.storedir, n)
         mtime = self.findfilebyname(n).mtime
 
-        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename, revision=revision)
+        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename, revision=revision, progress_obj=self.progress_obj)
         os.utime(filename, (-1, mtime))
 
         shutil.copyfile(filename, storefilename)
@@ -943,7 +947,7 @@ class Package:
 
         mtime = self.findfilebyname(n).mtime
         get_source_file(self.apiurl, self.prjname, self.name, n,
-                        revision=self.rev, targetfilename=upfilename)
+                        revision=self.rev, targetfilename=upfilename, progress_obj=self.progress_obj)
         os.utime(upfilename, (-1, mtime))
 
         if binary_file(myfilename) or binary_file(upfilename):
@@ -1308,7 +1312,7 @@ rev: %s
 
         oldp = self
         self.update_local_filesmeta(rev)
-        self = Package(self.dir)
+        self = Package(self.dir, progress_obj=self.progress_obj)
 
         # which files do no longer exist upstream?
         disappeared = [ f for f in saved_filenames if f not in self.filenamelist ]
@@ -1778,12 +1782,12 @@ def expand_proj_pack(args, idx=0, howmany=0):
     return args
 
 
-def findpacs(files):
+def findpacs(files, progress_obj=None):
     """collect Package objects belonging to the given files
     and make sure each Package is returned only once"""
     pacs = []
     for f in files:
-        p = filedir_to_pac(f)
+        p = filedir_to_pac(f, progress_obj)
         known = None
         for i in pacs:
             if i.name == p.name:
@@ -1837,7 +1841,7 @@ def parseargs(list_of_args):
         return [os.curdir]
 
 
-def filedir_to_pac(f):
+def filedir_to_pac(f, progress_obj=None):
     """Takes a working copy path, or a path to a file inside a working copy,
     and returns a Package object instance
 
@@ -1845,13 +1849,13 @@ def filedir_to_pac(f):
 
     if os.path.isdir(f):
         wd = f
-        p = Package(wd)
+        p = Package(wd, progress_obj=progress_obj)
 
     else:
         wd = os.path.dirname(f)
         if wd == '':
             wd = os.curdir
-        p = Package(wd)
+        p = Package(wd, progress_obj=progress_obj)
         p.todo = [ os.path.basename(f) ]
 
     return p
@@ -2700,7 +2704,7 @@ def get_user_data(apiurl, user, *tags):
     return data
 
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision = None):
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None):
     import tempfile, shutil
     query = None
     if revision:
@@ -2711,7 +2715,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
             (fd, tmpfile) = tempfile.mkstemp(prefix = filename, suffix = '.osc')
             o = os.fdopen(fd, 'wb')
             u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
-            for buf in streamfile(u, http_GET, BUFSIZE):
+            for buf in streamfile(u, http_GET, BUFSIZE, progress_obj=progress_obj):
                 o.write(buf)
             o.close()
             shutil.move(tmpfile, targetfilename or filename)
@@ -3032,7 +3036,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_files=None):
+                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3072,7 +3076,7 @@ def checkout_package(apiurl, project, package,
     os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
     init_package_dir(apiurl, project, package, store, revision)
     os.chdir(os.pardir)
-    p = Package(package)
+    p = Package(package, progress_obj=progress_obj)
     if isfrozen:
         p.mark_frozen()
     for filename in p.filenamelist:
@@ -3667,17 +3671,27 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-def streamfile(url, http_meth = http_GET, bufsize=8192, data=None):
+def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None):
     """
     performs http_meth on url and read bufsize bytes from the response
     until EOF is reached. After each read bufsize bytes are yielded to the
     caller.
     """
     f = http_meth.__call__(url, data = data)
+    if progress_obj:
+        import urlparse
+        basename = os.path.basename(urlparse.urlsplit(url)[2])
+        progress_obj.start(basename=basename, size=int(f.info().get('Content-Length', -1)))
     data = f.read(bufsize)
+    read = len(data)
     while len(data):
+        if progress_obj:
+            progress_obj.update(read)
         yield data
         data = f.read(bufsize)
+        read += len(data)
+    if progress_obj:
+        progress_obj.end(read)
     f.close()
 
 

@@ -133,6 +133,10 @@ class Osc(cmdln.Cmdln):
             if try_again: self.postoptparse(try_again = False)
 
         self.options.verbose = conf.config['verbose']
+        self.download_progress = None
+        if conf.config.get('show_download_progress', False):
+            import urlgrabber.progress
+            self.download_progress = urlgrabber.progress.TextMeter()
 
 
     def get_cmd_help(self, cmdname):
@@ -2036,13 +2040,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit(1)
 
         if filename:
-            get_source_file(apiurl, project, package, filename, revision=rev)
+            get_source_file(apiurl, project, package, filename, revision=rev, progress_obj=self.download_progress)
 
         elif package:
             if opts.current_dir:
                 project_dir = None
-            checkout_package(apiurl, project, package,
-                             rev, expand_link=expand_link, prj_dir=project_dir, service_files=service_files)
+            checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
+                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -2061,14 +2065,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # all packages
             for package in meta_get_packagelist(apiurl, project):
                 try:
-                    checkout_package(apiurl, project, package,
-                                     expand_link = expand_link, prj_dir = prj_dir, service_files = service_files)
+                    checkout_package(apiurl, project, package, expand_link = expand_link, \
+                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
-                    checkout_package(apiurl, project, package,
-                                     expand_link = False, prj_dir = prj_dir, service_files = service_files)
+                    checkout_package(apiurl, project, package, expand_link = False, \
+                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress)
             print_request_list(apiurl, project)
 
         else:
@@ -2387,7 +2391,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for arg in arg_list:
             if is_project_dir(arg):
-                prj = Project(arg)
+                prj = Project(arg, progress_obj=self.download_progress)
 
                 if conf.config['do_package_tracking']:
                     prj.update(expand_link=opts.expand_link,
@@ -2404,7 +2408,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print_request_list(prj.apiurl, prj.name)
 
         args.sort()
-        pacs = findpacs(args)
+        pacs = findpacs(args, progress_obj=self.download_progress)
 
         if opts.revision and len(args) == 1:
             rev, dummy = parseRevisionOption(opts.revision)

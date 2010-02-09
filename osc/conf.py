@@ -115,6 +115,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # Maintenance defaults to OBS instance defaults
              'maintained_attribute': 'OBS:Maintained',
              'maintained_update_project_attribute': 'OBS:UpdateProject',
+             'show_download_progress': '0',
 }
 
 # being global to this module, this dict can be accessed from outside
@@ -122,7 +123,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
-    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol']
+    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress']
 
 new_conf_template = """
 [general]
