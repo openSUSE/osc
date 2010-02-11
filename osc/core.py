@@ -4639,6 +4639,7 @@ def request_interactive_review(apiurl, request):
                 else:
                     msg = msg.strip('\'').strip('"')
                 change_request_state(apiurl, str(request.reqid), state, msg)
+                break
     finally:
         if tmpfile is not None:
             tmpfile.close()
