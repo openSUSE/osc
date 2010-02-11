@@ -339,10 +339,16 @@ def main(opts, argv):
     else:
         if config['build-jobs'] > 1:
             buildargs.append('--jobs %s' % config['build-jobs'])
-    if opts.icecream:
-        buildargs.append('--icecream %s' % opts.icecream)
-        xp.append('icecream')
-        xp.append('gcc-c++')
+    if opts.icecream or 'icecream' in config:
+        if opts.icecream:
+            num = opts.icecream
+        else:
+            num = config['icecream']
+
+	if num > 0:
+	    buildargs.append('--icecream %s' % num)
+	    xp.append('icecream')
+	    xp.append('gcc-c++')
     if opts.ccache:
         buildargs.append('--ccache')
         xp.append('ccache')
