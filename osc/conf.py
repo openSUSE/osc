@@ -110,6 +110,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'check_for_request_on_action': '0',
              # what to do with the source package if the submitrequest has been accepted
              'submitrequest_on_accept_action': '',
+             'request_show_interactive': '0',
              'linkcontrol': '0',
 
              # Maintenance defaults to OBS instance defaults
@@ -123,7 +124,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
-    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress']
+    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive']
 
 new_conf_template = """
 [general]
@@ -201,6 +202,9 @@ apiurl = %(apiurl)s
 # what to do with the source package if the submitrequest has been accepted. If
 # nothing is specified the API default is used
 #submitrequest_on_accept_action = cleanup|update|noupdate
+
+#review requests interactively (default: off)
+#request_show_review = 1
 
 [%(apiurl)s]
 user = %(user)s

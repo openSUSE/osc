@@ -4602,3 +4602,43 @@ def print_request_list(apiurl, project, package = None, states = ('new', ), forc
         print msg % ('package', '/'.join([project, package]), len(requests))
     for r in requests:
         print r.list_view()
+
+def request_interactive_review(apiurl, request):
+    """review the request interactively"""
+    import tempfile, subprocess, re
+
+    tmpfile = None
+    print request
+    try:
+        while True:
+            repl = raw_input('d(i)ff/(a)ccept/(d)ecline/(r)evoke/(c)ancel > ')
+            if repl == 'i':
+                if tmpfile is None:
+                    tmpfile = tempfile.NamedTemporaryFile()
+                    tmpfile.write(server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
+                                  request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True))
+                pager = os.getenv('EDITOR', default='less')
+                subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+            elif repl == 'c':
+                print >>sys.stderr, 'Aborting'
+                sys.exit(1)
+            else:
+                state_map = {'a': 'accepted', 'd': 'decline', 'r': 'revoke'}
+                mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
+                if mo is None:
+                    raise oscerr.WrongOptions('invalid choice: \'%s\'' % repl)
+                state = state_map[mo.group(1)]
+                msg = mo.group(2)
+                footer = str(request)
+                if tmpfile is not None:
+                    tmpfile.seek(0)
+                    # the read bytes probably have a moderate size so the str won't be too large
+                    footer += '\n\n' + tmpfile.read()
+                if msg is None:
+                    msg = edit_message(footer = footer)
+                else:
+                    msg = msg.strip('\'').strip('"')
+                change_request_state(apiurl, str(request.reqid), state, msg)
+    finally:
+        if tmpfile is not None:
+            tmpfile.close()

@@ -1015,6 +1015,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='only show requests created by yourself')
     @cmdln.option('-B', '--bugowner', action='store_true',
                         help='also show requests about packages where I am bugowner')
+    @cmdln.option('-i', '--interactive', action='store_true',
+                        help='interactive review of request')
     @cmdln.alias("rq")
     @cmdln.alias("review")
     def do_request(self, subcmd, opts, *args):
@@ -1191,6 +1193,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             r = get_request(conf.config['apiurl'], reqid)
             if opts.brief:
                 print r.list_view()
+            elif opts.interactive or conf.config['request_show_interactive']:
+                return request_interactive_review(conf.config['apiurl'], r)
             else:
                 print r
             # fixme: will inevitably fail if the given target doesn't exist
