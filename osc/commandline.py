@@ -2311,20 +2311,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             check_filelist_before_commit(pacs)
 
         if not msg:
+            template = store_read_file(os.path.abspath('.'), '_commit_msg')
             # open editor for commit message
             # but first, produce status and diff to append to the template
             footer = diffs = []
-            template = []
+            lines = []
             for pac in pacs:
                 changed = getStatus([pac], quiet=True)
                 if changed:
                     footer += changed
                     diffs += ['\nDiff for working copy: %s' % pac.dir]
                     diffs += make_diff(pac, 0)
-                    template.extend(get_commit_message_template(pac))
+                    lines.extend(get_commit_message_template(pac))
+            if template == None:
+                template='\n'.join(lines)
             # if footer is empty, there is nothing to commit, and no edit needed.
             if footer:
-                msg = edit_message(footer='\n'.join(footer), template='\n'.join(template))
+                msg = edit_message(footer='\n'.join(footer), template=template)
+
+            if msg:
+                store_write_string(os.path.abspath('.'), '_commit_msg', msg)
+            else:
+                store_unlink_file(os.path.abspath('.'), '_commit_msg')
 
         if conf.config['do_package_tracking'] and len(pacs) > 0:
             prj_paths = {}
@@ -2348,6 +2356,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for p in pacs:
                 p.commit(msg)
 
+        store_unlink_file(os.path.abspath('.'), '_commit_msg')
 
     @cmdln.option('-r', '--revision', metavar='REV',
                         help='update to specified revision (this option will be ignored '

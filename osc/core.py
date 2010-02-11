@@ -3943,6 +3943,17 @@ def store_write_apiurl(dir, apiurl):
     fname = os.path.join(dir, store, '_apiurl')
     open(fname, 'w').write(apiurl + '\n')
 
+def store_unlink_file(dir, file):
+    try: os.unlink(os.path.join(dir, store, file))
+    except: pass
+
+def store_read_file(dir, file):
+    try:
+        content = open(os.path.join(dir, store, file)).read()
+        return content
+    except:
+        return None
+
 def store_write_initial_packages(dir, project, subelements):
     fname = os.path.join(dir, store, '_packages')
     root = ET.Element('project', name=project)
