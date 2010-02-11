@@ -971,17 +971,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
-        if len(args) < 3:
-            raise oscerr.WrongArgs('Too few arguments.')
 
-        apiurl = conf.config['apiurl']
+        if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
+            wd = os.curdir
+            project = store_read_project(wd)
+            package = store_read_package(wd)
+            apiurl = store_read_apiurl(wd)
+        else:
+            if len(args) < 3:
+                raise oscerr.WrongArgs('Too few arguments.')
 
-        devel_project = args[2]
-        project = args[0]
-        package = args[1]
-        devel_package = package
-        if len(args) > 3:
-            devel_package = args[3]
+            apiurl = conf.config['apiurl']
+
+            devel_project = args[2]
+            project = args[0]
+            package = args[1]
+            devel_package = package
+            if len(args) > 3:
+                devel_package = args[3]
 
         if not opts.message:
             opts.message = edit_message()
