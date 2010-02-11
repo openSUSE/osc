@@ -202,8 +202,7 @@ def verify_pacs(pac_list):
                 print >>sys.stderr, """
 - If the key is missing, install it first.
   For example, do the following:
-    gpg --keyserver pgp.mit.edu --recv-keys %(name)s
-    gpg --armor --export %(name)s > %(dir)s/keyfile-%(name)s
+    gpg signkey PROJECT > file
   and, as root:
     rpm --import %(dir)s/keyfile-%(name)s
 
