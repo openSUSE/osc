@@ -4,7 +4,6 @@
  - fixed SSL proxy support
  - fixed meta attribute create and set calls
  - osc remotebuildlog supports a buildlogurl
- - use the baserev on links by default for diffing
  - Allow --prefer-pkgs to parse repodata
  - new "osc build --no-service" option to skip source service update
 
