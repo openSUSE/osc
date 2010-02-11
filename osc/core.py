@@ -1609,7 +1609,17 @@ class Request:
             who.reverse()
             ret += "\n        From: %s" % (' -> '.join(who))
         if self.descr:
-            ret += "\n        Descr: %s" % (repr(self.descr))
+            txt = re.sub(r'[^[:isprint:]]', '_', self.descr)
+            import textwrap
+            lines = txt.splitlines()
+            wrapper = textwrap.TextWrapper( width = 80,
+                    initial_indent='        Descr: ',
+                    subsequent_indent='               ')
+            ret += "\n" + wrapper.fill(lines[0])
+            wrapper.initial_indent = '               '
+            for line in lines[1:]:
+                ret += "\n" + wrapper.fill(line)
+
         ret += "\n"
 
         return ret
