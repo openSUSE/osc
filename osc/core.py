@@ -2458,21 +2458,23 @@ def edit_message(footer='', template=''):
         subprocess.call('%s %s' % (editor, filename), shell=True)
         mtime = os.stat(filename).st_mtime
 
-        if mtime_orig < mtime:
-            msg = open(filename).read()
-            os.unlink(filename)
-            return msg.split(delim)[0].rstrip()
+        msg = open(filename).read().split(delim)[0].rstrip()
+
+        if len(msg):
+            break
         else:
-            input = raw_input('Log message unchanged or not specified\n'
+            input = raw_input('Log message not specified\n'
                               'a)bort, c)ontinue, e)dit: ')
             if input in 'aA':
                 os.unlink(filename)
                 raise oscerr.UserAbort
             elif input in 'cC':
-                os.unlink(filename)
-                return ''
+                break
             elif input in 'eE':
                 pass
+
+    os.unlink(filename)
+    return msg
 
 
 def create_delete_request(apiurl, project, package, message):
