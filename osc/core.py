@@ -2200,7 +2200,6 @@ class metafile:
         if self.change_is_required == True and hash == self.hash_orig:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
-            return True
 
         print 'Sending meta data...'
         # don't do any exception handling... it's up to the caller what to do in case
@@ -2208,18 +2207,18 @@ class metafile:
         http_PUT(self.url, file=self.filename)
         os.unlink(self.filename)
         print 'Done.'
-        return True
 
     def edit(self):
         if sys.platform[:3] != 'win':
             editor = os.getenv('EDITOR', default='vim')
         else:
             editor = os.getenv('EDITOR', default='notepad')
-        while 1:
-            subprocess.call('%s %s' % (editor, self.filename), shell=True)
-            if self.change_is_required == True:
+        try:
+            while 1:
+                subprocess.call('%s %s' % (editor, self.filename), shell=True)
                 try:
                     self.sync()
+                    break
                 except urllib2.HTTPError, e:
                     error_help = "%d" % e.code
                     if e.headers.get('X-Opensuse-Errorcode'):
@@ -2232,21 +2231,15 @@ class metafile:
                     if '<summary>' in data:
                         print >>sys.stderr, data.split('<summary>')[1].split('</summary>')[0]
                     input = raw_input('Try again? ([y/N]): ')
-                    if input != 'y' and input != 'Y':
+                    if input not in ['y', 'Y']:
                         break
-                else:
-                    break
-            else:
-                self.sync()
-                break
-        self.discard()
-        return self
+        finally:
+            self.discard()
 
     def discard(self):
         if os.path.exists(self.filename):
-            print 'discarding', self.filename
+            print 'discarding %s' % self.filename
             os.unlink(self.filename)
-        return self
 
 
 # different types of metadata
@@ -2453,24 +2446,24 @@ def edit_message(footer='', template=''):
         editor = os.getenv('EDITOR', default='vim')
     else:
         editor = os.getenv('EDITOR', default='notepad')
-    while 1:
-        subprocess.call('%s %s' % (editor, filename), shell=True)
-        msg = open(filename).read().split(delim)[0].rstrip()
+    try:
+        while 1:
+            subprocess.call('%s %s' % (editor, filename), shell=True)
+            msg = open(filename).read().split(delim)[0].rstrip()
 
-        if len(msg):
-            break
-        else:
-            input = raw_input('Log message not specified\n'
-                              'a)bort, c)ontinue, e)dit: ')
-            if input in 'aA':
-                os.unlink(filename)
-                raise oscerr.UserAbort
-            elif input in 'cC':
+            if len(msg):
                 break
-            elif input in 'eE':
-                pass
-
-    os.unlink(filename)
+            else:
+                input = raw_input('Log message not specified\n'
+                                  'a)bort, c)ontinue, e)dit: ')
+                if input in 'aA':
+                    raise oscerr.UserAbort()
+                elif input in 'cC':
+                    break
+                elif input in 'eE':
+                    pass
+    finally:
+        os.unlink(filename)
     return msg
 
 
