@@ -2448,7 +2448,6 @@ def edit_message(footer='', template=''):
     f.write('\n')
     f.write(delim)
     f.close()
-    mtime_orig = os.stat(filename).st_mtime
 
     if sys.platform[:3] != 'win':
         editor = os.getenv('EDITOR', default='vim')
@@ -2456,8 +2455,6 @@ def edit_message(footer='', template=''):
         editor = os.getenv('EDITOR', default='notepad')
     while 1:
         subprocess.call('%s %s' % (editor, filename), shell=True)
-        mtime = os.stat(filename).st_mtime
-
         msg = open(filename).read().split(delim)[0].rstrip()
 
         if len(msg):
