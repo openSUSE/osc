@@ -7,7 +7,9 @@ import sys, os
 import urllib2
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from util import packagequery
+from core import makeurl
+from util import packagequery, cpio
+import tempfile
 try:
     from meter import TextMeter
 except:
@@ -38,6 +40,7 @@ class Fetcher:
         self.urllist = urllist
         self.http_debug = http_debug
         self.offline = offline
+        self.cpio = {}
 
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
@@ -79,18 +82,31 @@ class Fetcher:
             print '\n'.join(pac.urllist)
             print
 
+        (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
         try:
-            # it returns the filename
-            ret = mg.urlgrab(pac.filename,
-                             filename = pac.fullpartname,
-                             text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
-        except URLGrabError, e:
-            print >>sys.stderr, 'Error:', e.strerror
-            print >>sys.stderr, 'Failed to retrieve %s from the following locations (in order):' % pac.filename
-            print >>sys.stderr, '\n'.join(pac.urllist)
-            sys.exit(1)
+            try:
+                # it returns the filename
+                ret = mg.urlgrab(pac.filename,
+                                 filename = tmpfile,
+                                 text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
+                self.move_package(tmpfile, pac.localdir, pac)
+            except URLGrabError, e:
+                if e.errno == 256:
+                    self.cpio.setdefault(pac.project, {})[pac.name] = pac
+                    return
+                print
+                print >>sys.stderr, 'Error:', e.strerror
+                print >>sys.stderr, 'Failed to retrieve %s from the following locations (in order):' % pac.filename
+                print >>sys.stderr, '\n'.join(pac.urllist)
+                sys.exit(1)
+        finally:
+            os.close(fd)
+            if os.path.exists(tmpfile):
+                os.unlink(tmpfile)
 
-        pkgq = packagequery.PackageQuery.query(pac.fullpartname, extra_rpmtags=(1044, 1051, 1052))
+    def move_package(self, tmpfile, destdir, pac_obj = None):
+        import shutil
+        pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
         arch = pkgq.arch()
         # SOURCERPM = 1044
         if pkgq.filename_suffix == 'rpm' and not pkgq.getTag(1044):
@@ -103,10 +119,11 @@ class Fetcher:
             canonname = '%s-%s-%s.%s.%s' % (pkgq.name(), pkgq.version(), pkgq.release(), arch, pkgq.filename_suffix)
         else:
             canonname = '%s-%s.%s.%s' % (pkgq.name(), pkgq.version(), arch, pkgq.filename_suffix)
-        pac.filename = canonname
-        pac.fullfilename = os.path.join(pac.localdir, canonname)
-
-        os.rename(pac.fullpartname, pac.fullfilename)
+        fullfilename = os.path.join(destdir, canonname)
+        if pac_obj is not None:
+            pac_obj.filename = canonname
+            pac_obj.fullfilename = fullfilename
+        shutil.move(tmpfile, fullfilename)
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
@@ -120,6 +137,7 @@ class Fetcher:
 
 
     def run(self, buildinfo):
+        from urllib import quote_plus
         cached = 0
         all = len(buildinfo.deps)
         for i in buildinfo.deps:
@@ -148,13 +166,34 @@ class Fetcher:
                 except KeyboardInterrupt:
                     print 'Cancelled by user (ctrl-c)'
                     print 'Exiting.'
-                    if os.path.exists(i.fullpartname):
-                        print 'Cleaning up incomplete file', i.fullpartname
-                        os.unlink(i.fullpartname)
                     sys.exit(0)
             done += 1
-
-
+        for project, pkgs in self.cpio.iteritems():
+            repo = pkgs.values()[0].repository
+            query = [ 'binary=%s' % quote_plus(i) for i in pkgs.keys() ]
+            query.append('view=cpio')
+            try:
+                (fd, tmparchive) = tempfile.mkstemp(prefix='osc_build_cpio')
+                (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
+                url = makeurl(buildinfo.apiurl,
+                              ['public/build', project, repo, buildinfo.buildarch, '_repository'],
+                              query=query)
+                self.gr.urlgrab(url, filename = tmparchive, text = 'fetching cpio for \'%s\'' % project)
+                archive = cpio.CpioRead(tmparchive)
+                archive.read()
+                for hdr in archive:
+                    if hdr.filename == '.errors':
+                        import oscerr
+                        archive.copyin_file(hdr.filename)
+                        raise oscerr.APIError('CPIO archive is incomplete (see .errors file)')
+                    pac = pkgs[hdr.filename.rsplit('.', 1)[0]]
+                    archive.copyin_file(hdr.filename, os.path.dirname(tmpfile), os.path.basename(tmpfile))
+                    self.move_package(tmpfile, pac.localdir, pac)
+            finally:
+                if os.path.exists(tmparchive):
+                    os.unlink(tmparchive)
+                if os.path.exists(tmpfile):
+                    os.unlink(tmpfile)
 
 def verify_pacs(pac_list):
     """Take a list of rpm filenames and run rpm -K on them.

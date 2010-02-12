@@ -73,6 +73,7 @@ class Buildinfo:
             raise urllib2.URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
 
         self.buildtype = buildtype
+        self.apiurl = apiurl
 
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
@@ -161,7 +162,6 @@ class Pac:
             self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
         else:
             self.filename = '%(name)s-%(version)s.%(arch)s.%(pacsuffix)s' % self.mp
-        self.partname = '%s.part' % self.filename
 
         self.mp['filename'] = self.filename
         if self.mp['repopackage'] == '_repository':
@@ -184,7 +184,6 @@ class Pac:
         # that the filename is suitable as identifier)
         self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
         self.fullfilename = os.path.join(self.localdir, self.filename)
-        self.fullpartname = os.path.join(self.localdir, self.partname)
         self.url_local = 'file://%s/' % self.fullfilename
 
         # first, add the local URL
@@ -562,7 +561,6 @@ def main(opts, argv):
     # OBS 1.5 and before has no downloadurl defined in buildinfo
     if bi.downloadurl:
         urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
-    urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'],
                       urllist = urllist,
