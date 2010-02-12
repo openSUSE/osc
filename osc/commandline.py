@@ -885,7 +885,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(myreqs) > 0:
                 print 'You already created the following submit request: %s.' % \
                       ', '.join([str(i.reqid) for i in myreqs ])
-                repl = raw_input('Revoke the old requests? (y/n/c) ')
+                repl = raw_input('Supersed the old requests? (y/n/c) ')
                 if repl.lower() == 'c':
                     print >>sys.stderr, 'Aborting'
                     sys.exit(1)
