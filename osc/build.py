@@ -335,19 +335,18 @@ def main(opts, argv):
         build_root = opts.root
     if opts.jobs:
         buildargs.append('--jobs %s' % opts.jobs)
-    else:
-        if config['build-jobs'] > 1:
-            buildargs.append('--jobs %s' % config['build-jobs'])
-    if opts.icecream or 'icecream' in config:
+    elif config['build-jobs'] > 1:
+        buildargs.append('--jobs %s' % config['build-jobs'])
+    if opts.icecream or config['icecream']:
         if opts.icecream:
             num = opts.icecream
         else:
             num = config['icecream']
 
-	if num > 0:
-	    buildargs.append('--icecream %s' % num)
-	    xp.append('icecream')
-	    xp.append('gcc-c++')
+        if num > 0:
+            buildargs.append('--icecream %s' % num)
+            xp.append('icecream')
+            xp.append('gcc-c++')
     if opts.ccache:
         buildargs.append('--ccache')
         xp.append('ccache')

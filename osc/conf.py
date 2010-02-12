@@ -75,6 +75,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-memory': '',# required for VM builds
              'build-swap': '',  # optional for VM builds
              'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN'), # compile with N jobs
+             'icecream': '0',
 
              'debug': '0',
              'http_debug': '0',
