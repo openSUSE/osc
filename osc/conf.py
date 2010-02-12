@@ -71,6 +71,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-cmd': '/usr/bin/build',
              'build-type': '', # may be empty for chroot, kvm or xen
              'build-root': '/var/tmp/build-root',
+             'build-uid': '', # use the default provided by build
              'build-device': '', # required for VM builds
              'build-memory': '',# required for VM builds
              'build-swap': '',  # optional for VM builds
@@ -148,6 +149,13 @@ apiurl = %(apiurl)s
 
 # compile with N jobs (default: "getconf _NPROCESSORS_ONLN")
 #build-jobs = N
+
+# Numeric uid:gid to assign to the "abuild" user in the build-root
+# or "caller" to use the current users uid:gid
+# This is convenient when sharing the buildroot with ordinary userids
+# on the host.
+# This should not be 0
+# build-uid = 
 
 # extra packages to install when building packages locally (osc build)
 # this corresponds to osc build's -x option and can be overridden with that

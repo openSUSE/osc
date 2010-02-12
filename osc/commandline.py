@@ -3269,6 +3269,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Run build as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
                   'in the spec file will invalidate this option.')
+    @cmdln.option('--build-uid', metavar='uid:gid|"caller"',
+                  help='specify the numeric uid:gid pair to assign to the '
+                  'unprivileged "abuild" user or use "caller" to use the current user uid:gid')
     @cmdln.option('--local-package', action='store_true',
                   help='build a package which does not exist on the server')
     @cmdln.option('--linksources', action='store_true',
@@ -3297,9 +3300,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output. BUILD_DESCR is either a RPM spec file, or a
         Debian dsc file.
 
-        The command honours packagecachedir and build-root settings in .oscrc,
-        if present. You may want to set su-wrapper = 'sudo' in .oscrc, and
-        configure sudo with option NOPASSWD for /usr/bin/build.
+        The command honours packagecachedir, build-root and build-uid
+        settings in .oscrc, if present. You may want to set su-wrapper = 'sudo'
+        in .oscrc, and configure sudo with option NOPASSWD for /usr/bin/build.
 
         If neither --clean nor --noinit is given, build will reuse an existing
         build-root again, removing unneeded packages and add missing ones. This

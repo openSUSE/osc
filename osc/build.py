@@ -362,6 +362,20 @@ def main(opts, argv):
     if opts.without:
         for o in opts.without:
             buildargs.append('--without %s' % o)
+    build_uid=''
+    if config['build-uid']:
+        build_uid = config['build-uid']
+    if opts.build_uid:
+        build_uid = opts.build_uid
+    if build_uid:
+        buildidre = re.compile('^[0-9]{1,5}:[0-9]{1,5}$')
+        if build_uid == 'caller':
+            buildargs.append('--uid %s:%s' % (os.getuid(), os.getgid()))
+        elif buildidre.match(build_uid):
+            buildargs.append('--uid %s' % build_uid)
+        else:
+            print >>sys.stderr, 'Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"'
+            return 1
 # FIXME: quoting
 #    if opts.define:
 #        buildargs.append('--define "%s"' % opts.define)
