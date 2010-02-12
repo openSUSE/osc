@@ -2856,6 +2856,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
+    @cmdln.alias('lbl')
+    @cmdln.option('-s', '--start', metavar='START',
+                  help='get log starting from offset')
+    def do_localbuildlog(self, subcmd, opts, *args):
+        if len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments')
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments')
+        if conf.config['build-type']:
+            print >>sys.stderr, 'Not implemented for VMs'
+            sys.exit(1)
+        buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root'])
+        buildroot = buildroot % {'project': store_read_project('.'), 'package': store_read_package('.'),
+                                 'repo': args[0], 'arch': args[1]}
+        offset = 0
+        if opts.start:
+            offset = int(opts.start)
+        logfile = os.path.join(buildroot, '.build.log')
+        if not os.path.isfile(logfile):
+            raise oscerr.OscIOError(None, 'logfile \'%s\' does not exist' % logfile)
+        f = open(logfile, 'r')
+        f.seek(offset)
+        data = f.read(BUFSIZE)
+        while len(data):
+            sys.stdout.write(data)
+            data = f.read(BUFSIZE)
+        f.close()
 
     @cmdln.alias('tr')
     def do_triggerreason(self, subcmd, opts, *args):
