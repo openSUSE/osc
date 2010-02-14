@@ -2861,8 +2861,8 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
         d = difflib.unified_diff(\
             s1.splitlines(1), \
             s2.splitlines(1), \
-            fromfile = '%s     (revision %s)' % (origfilename, rev), \
-            tofile = '%s     (working copy)' % origfilename)
+            fromfile = '%s\t(revision %s)' % (origfilename, rev), \
+            tofile = '%s\t(working copy)' % origfilename)
 
         # if file doesn't end with newline, we need to append one in the diff result
         d = list(d)
