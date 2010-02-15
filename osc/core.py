@@ -4629,6 +4629,7 @@ def request_interactive_review(apiurl, request):
                     tmpfile = tempfile.NamedTemporaryFile()
                     tmpfile.write(server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
                                   request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True))
+                    tmpfile.flush()
                 pager = os.getenv('EDITOR', default='less')
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
             elif repl == 'c':
