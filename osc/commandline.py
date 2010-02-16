@@ -2836,6 +2836,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc remotebuildlog project package repository arch
             or
             osc remotebuildlog project/package/repository/arch
+            or
+            osc remotebuildlog buildlogurl
         ${cmd_option_list}
         """
         if len(args) == 1 and args[0].startswith('http'):
