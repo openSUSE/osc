@@ -2781,26 +2781,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Needs to be called from within a package directory.
 
         The arguments REPOSITORY and ARCH are the first two columns in the 'osc
-        results' output.
+        results' output. If the buildlog url is used buildlog command has the
+        same behavior as remotebuildlog.
 
-        ${cmd_usage} REPOSITORY ARCH
+        ${cmd_usage} [REPOSITORY ARCH | BUILDLOGURL]
         ${cmd_option_list}
         """
 
-        wd = os.curdir
-        package = store_read_package(wd)
-        project = store_read_project(wd)
-        apiurl = store_read_apiurl(wd)
+        repository = arch = None
+
+        if len(args) == 1 and args[0].startswith('http'):
+            apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
+        else:
+            wd = os.curdir
+            package = store_read_package(wd)
+            project = store_read_project(wd)
+            apiurl = store_read_apiurl(wd)
 
         offset=0
         if opts.start:
             offset = int(opts.start)
 
-        if len(args) < 2:
-            self.print_repos()
-
-        repository = args[0]
-        arch = args[1]
+        if not repository or not arch:
+            if len(args) < 2:
+                self.print_repos()
+            else:
+                repository = args[0]
+                arch = args[1]
 
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
