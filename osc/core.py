@@ -4406,6 +4406,7 @@ def addFiles(filenames, prj_obj = None):
 
     # init a package dir if we have a normal dir in the "filenames"-list
     # so that it will be find by findpacs() later
+    pacs = list(filenames)
     for filename in filenames:
         prj_dir, pac_dir = getPrjPacPaths(filename)
         if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
@@ -4422,7 +4423,10 @@ def addFiles(filenames, prj_obj = None):
         elif os.path.isdir(filename) and is_project_dir(prj_dir):
             raise oscerr.WrongArgs('osc: cannot add a directory to a project unless ' \
                                    '\'do_package_tracking\' is enabled in the configuration file')
-    pacs = findpacs(filenames)
+        elif os.path.isdir(filename):
+            print 'skipping directory \'%s\'' % filename
+            pacs.remove(filename)
+    pacs = findpacs(pacs)
     for pac in pacs:
         if conf.config['do_package_tracking'] and not pac.todo:
             prj = prj_obj or Project(os.path.dirname(pac.absdir), False)
@@ -4430,7 +4434,10 @@ def addFiles(filenames, prj_obj = None):
                 prj.addPackage(pac.name)
                 print statfrmt('A', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
                 for filename in pac.filenamelist_unvers:
-                    pac.todo.append(filename)
+                    if os.path.isdir(os.path.join(pac.dir, filename)):
+                        print 'skipping directory \'%s\'' % os.path.join(pac.dir, filename)
+                    else:
+                        pac.todo.append(filename)
             elif pac.name in prj.pacs_have:
                 print 'osc: warning: \'%s\' is already under version control' % pac.name
         for filename in pac.todo:
