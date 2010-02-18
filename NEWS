@@ -6,6 +6,7 @@
  - osc remotebuildlog supports a buildlogurl
  - Allow --prefer-pkgs to parse repodata
  - new "osc build --no-service" option to skip source service update
+ - fix linktobranch apiurl usage
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
