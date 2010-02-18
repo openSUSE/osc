@@ -634,7 +634,8 @@ def get_config(override_conffile = None,
     if config.has_key('apisrv') or config.has_key('scheme'):
         print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
                             'Warning: See README for migration details.'
-    if config.has_key('build_platform') and not config.has_key('build_repository'):
+    if config.has_key('build_platform'):
+        print >>sys.stderr, 'Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)'
         config['build_repository'] = config['build_platform']
 
     # override values which we were called with
