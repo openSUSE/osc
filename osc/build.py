@@ -521,7 +521,7 @@ def main(opts, argv):
     if bi.release:
         buildargs.append('--release %s' % bi.release)
 
-    buildargs = ' '.join(set(buildargs))
+    buildargs = ' '.join(buildargs)
 
     # real arch of this machine
     # vs.
