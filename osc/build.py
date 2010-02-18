@@ -337,7 +337,7 @@ def main(opts, argv):
         buildargs.append('--jobs %s' % opts.jobs)
     elif config['build-jobs'] > 1:
         buildargs.append('--jobs %s' % config['build-jobs'])
-    if opts.icecream or config['icecream']:
+    if opts.icecream or config['icecream'] != '0':
         if opts.icecream:
             num = opts.icecream
         else:
