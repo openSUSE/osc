@@ -3075,7 +3075,7 @@ def link_to_branch(apiurl, project,  package):
      convert a package with a _link + project.diff to a branch
     """
 
-    if '_link' in meta_get_filelist(conf.config['apiurl'], project, package):
+    if '_link' in meta_get_filelist(apiurl, project, package):
         u = makeurl(apiurl, ['source', project, package], 'cmd=linktobranch')
         http_POST(u)
     else:

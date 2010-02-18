@@ -1,4 +1,7 @@
 
+0.125.6
+ - fix linktobranch apiurl usage
+
 0.125.5
  - use the baserev on links by default for diffing
  - fixed "osc build --local-package

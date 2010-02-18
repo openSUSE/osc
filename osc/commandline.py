@@ -1287,8 +1287,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # execute
         link_to_branch(apiurl, project, package)
         if update_local_dir:
-            pac = findpacs(wd)[0]
-            pac.update()
+            pac = Package(wd)
+            pac.update(rev=pac.latest_rev())
 
 
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
