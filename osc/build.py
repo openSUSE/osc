@@ -512,7 +512,7 @@ def main(opts, argv):
 
     bi = Buildinfo(bi_filename, apiurl, build_type, prefer_pkgs.keys())
 
-    if bi.debuginfo and not opts.disable_debuginfo:
+    if bi.debuginfo and not (opts.disable_debuginfo or '--debug' in buildargs):
         buildargs.append('--debug')
 
     if opts.release:
