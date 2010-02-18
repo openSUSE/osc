@@ -343,7 +343,7 @@ def main(opts, argv):
         else:
             num = config['icecream']
 
-        if num > 0:
+        if int(num) > 0:
             buildargs.append('--icecream %s' % num)
             xp.append('icecream')
             xp.append('gcc-c++')
