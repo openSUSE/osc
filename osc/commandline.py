@@ -2868,17 +2868,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('lbl')
     @cmdln.option('-s', '--start', metavar='START',
                   help='get log starting from offset')
-    def do_localbuildlog(self, subcmd, opts, *args):
-        if len(args) < 2:
-            raise oscerr.WrongArgs('Too few arguments')
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments')
+    def do_localbuildlog(self, subcmd, opts, repo, arch):
+        """${cmd_name}: Shows the build log of a buildchroot
+
+        The arguments REPOSITORY and ARCH are the first two columns in the 'osc
+        results' output.
+        (NOTE: this command does not work if "build-type" is set in the config)
+
+        ${cmd_usage} REPOSITORY ARCH
+        ${cmd_option_list}
+        """
         if conf.config['build-type']:
             print >>sys.stderr, 'Not implemented for VMs'
             sys.exit(1)
         buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root'])
         buildroot = buildroot % {'project': store_read_project('.'), 'package': store_read_package('.'),
-                                 'repo': args[0], 'arch': args[1]}
+                                 'repo': repo, 'arch': arch}
         offset = 0
         if opts.start:
             offset = int(opts.start)
