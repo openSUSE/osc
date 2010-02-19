@@ -4643,7 +4643,7 @@ def request_interactive_review(apiurl, request):
                 print >>sys.stderr, 'Aborting'
                 sys.exit(1)
             else:
-                state_map = {'a': 'accepted', 'd': 'decline', 'r': 'revoke'}
+                state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
                 if mo is None:
                     raise oscerr.WrongOptions('invalid choice: \'%s\'' % repl)
