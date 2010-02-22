@@ -2210,6 +2210,7 @@ class metafile:
         if self.change_is_required == True and hash == self.hash_orig:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
+            return
 
         print 'Sending meta data...'
         # don't do any exception handling... it's up to the caller what to do in case
