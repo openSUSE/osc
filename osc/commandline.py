@@ -2868,21 +2868,48 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('lbl')
     @cmdln.option('-s', '--start', metavar='START',
                   help='get log starting from offset')
-    def do_localbuildlog(self, subcmd, opts, repo, arch):
-        """${cmd_name}: Shows the build log of a buildchroot
+    def do_localbuildlog(self, subcmd, opts, *args):
+        """${cmd_name}: Shows the build log of a local buildchroot
 
-        The arguments REPOSITORY and ARCH are the first two columns in the 'osc
-        results' output.
-        (NOTE: this command does not work if "build-type" is set in the config)
+        usage:
+            osc lbl [REPOSITORY ARCH]
+            osc lbl # show log of newest last local build
 
-        ${cmd_usage} REPOSITORY ARCH
         ${cmd_option_list}
         """
         if conf.config['build-type']:
+            # FIXME: raise Exception instead
             print >>sys.stderr, 'Not implemented for VMs'
             sys.exit(1)
+
+        if len(args) == 0:
+            package = store_read_package('.')
+            import glob
+            files = glob.glob(os.path.join(os.getcwd(), store, "_buildinfo-*"))
+            if not files:
+                self.print_repos()
+                raise oscerr.WrongArgs('No buildconfig found, please specify repo and arch manually.')
+            cfg = files[0]
+            # find newest file
+            for f in files[1:]:
+                if os.stat(f).st_mtime > os.stat(cfg).st_mtime:
+                    cfg = f
+            root = ET.parse(cfg).getroot()
+            project = root.get("project")
+            repo = root.get("repository")
+            arch = root.find("arch").text
+        elif len(args) == 2:
+            project = store_read_project('.')
+            package = store_read_package('.')
+            repo = args[0]
+            arch = args[1]
+        else:
+            if is_package_dir(os.curdir):
+                self.print_repos()
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+
         buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root'])
-        buildroot = buildroot % {'project': store_read_project('.'), 'package': store_read_package('.'),
+        buildroot = buildroot % {'project': project, 'package': package,
                                  'repo': repo, 'arch': arch}
         offset = 0
         if opts.start:
