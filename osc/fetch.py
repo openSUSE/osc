@@ -243,7 +243,7 @@ def verify_pacs(pac_list):
                 print >>sys.stderr, """
 - If the key is missing, install it first.
   For example, do the following:
-    gpg signkey PROJECT > file
+    osc signkey PROJECT > file
   and, as root:
     rpm --import %(dir)s/keyfile-%(name)s
 
