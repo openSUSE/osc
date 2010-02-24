@@ -2443,7 +2443,7 @@ def read_meta_from_spec(specfile, *args):
 
 
 def edit_message(footer='', template=''):
-    delim = '--This line, and those below, will be ignored--\n\n' + footer
+    delim = '--This line, and those below, will be ignored--\n'
     import tempfile
     (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff')
     f = os.fdopen(fd, 'w')
@@ -2451,6 +2451,8 @@ def edit_message(footer='', template=''):
         f.write(template)
     f.write('\n')
     f.write(delim)
+    f.write('\n')
+    f.write(footer)
     f.close()
 
     if sys.platform[:3] != 'win':
