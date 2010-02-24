@@ -63,7 +63,7 @@ class Buildinfo:
 
         root = tree.getroot()
 
-	self.apiurl = apiurl
+        self.apiurl = apiurl
 
         if root.find('error') != None:
             sys.stderr.write('buildinfo is broken... it says:\n')
@@ -632,18 +632,18 @@ def main(opts, argv):
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
-	    t = config['api_host_options'][apiurl]['trusted_prj']
-	    for prj in bi.prjkeys:
-		if not prj in t:
-		    print "\nYou are trying to use packages from project '%s'." % prj
-		    print "Note that malicious packages can compromise your system."
+            t = config['api_host_options'][apiurl]['trusted_prj']
+            for prj in bi.prjkeys:
+                if not prj in t:
+                    print "\nYou are trying to use packages from project '%s'." % prj
+                    print "Note that malicious packages can compromise your system."
 # saving back to config file is complicated
-#		    r = raw_input("Would you like to trust '%s' (a)lways, (t)emorarily or (N)ever? " % prj)
-#		    if r == 'a':
-#			config['api_host_options'][apiurl]['trusted_prj'] += prj
-#		    elif r != 't':
-#			print "Well, good good bye then :-)"
-#			sys.exit(1)
+#                    r = raw_input("Would you like to trust '%s' (a)lways, (t)emorarily or (N)ever? " % prj)
+#                    if r == 'a':
+#                        config['api_host_options'][apiurl]['trusted_prj'] += prj
+#                    elif r != 't':
+#                        print "Well, good good bye then :-)"
+#                        sys.exit(1)
 
             verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
     elif bi.pacsuffix == 'deb':

@@ -26,7 +26,7 @@ def join_url(self, base_url, rel_url):
 
 class Fetcher:
     def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False,
-		    cookiejar = None, offline = False, enable_cpio = False):
+                 cookiejar = None, offline = False, enable_cpio = False):
 
         __version__ = '0.1'
         __user_agent__ = 'osbuild/%s' % __version__
@@ -38,13 +38,13 @@ class Fetcher:
             self.progress_obj = None
 
 
-	self.nopac = False
+        self.nopac = False
         self.cachedir = cachedir
         self.urllist = urllist
         self.http_debug = http_debug
         self.offline = offline
         self.cpio = {}
-	self.enable_cpio = enable_cpio
+        self.enable_cpio = enable_cpio
 
         passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
@@ -65,9 +65,9 @@ class Fetcher:
 
         #log(0, '%s: %s' % (errobj.url, str(errobj.exception)))
         #log(0, 'Trying other mirror.')
-	if not self.nopac:
-		print 'Trying openSUSE Build Service server for %s (%s), since it is not on %s.' \
-			% (self.curpac, self.curpac.project, errobj.url.split('/')[2])
+        if not self.nopac:
+            print 'Trying openSUSE Build Service server for %s (%s), since it is not on %s.' \
+                  % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
         raise errobj.exception
 
 
@@ -201,16 +201,16 @@ class Fetcher:
                     os.unlink(tmpfile)
 
         self.nopac = True
-	prjs = buildinfo.projects.keys()
+        prjs = buildinfo.projects.keys()
         for i in prjs:
             dest = "%s/%s" % (self.cachedir, i)
             if not os.path.exists(dest):
-		os.makedirs(dest, mode=0755)
-	    dest += '/_pubkey'
+                os.makedirs(dest, mode=0755)
+                dest += '/_pubkey'
 
             if os.path.exists(dest):
                 buildinfo.keys.append(dest)
-		buildinfo.prjkeys.append(i)
+                buildinfo.prjkeys.append(i)
             else:
                 url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
                 try:
@@ -224,16 +224,16 @@ class Fetcher:
                         os.unlink(dest)
                     sys.exit(0)
                 except URLGrabError, e:
-		    if self.http_debug:
-			print "can't fetch key for %s: %s" %(i, e.strerror)
-			print "url: %s" % url
-		    else:
-			print "%s doesn't have a gpg key" % i
+                    if self.http_debug:
+                        print "can't fetch key for %s: %s" %(i, e.strerror)
+                        print "url: %s" % url
+                    else:
+                        print "%s doesn't have a gpg key" % i
 
-		    l = i.rsplit(':', 1)
-		    # try key from parent project
+                    l = i.rsplit(':', 1)
+                    # try key from parent project
                     if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
-			prjs.append(l[0])
+                        prjs.append(l[0])
 
         self.nopac = False
 
@@ -318,7 +318,7 @@ def verify_pacs(pac_list, key_list):
         return
 
     if not key_list:
-	print "no keys"
+        print "no keys"
         sys.exit(1)
         return
 
@@ -328,7 +328,7 @@ def verify_pacs(pac_list, key_list):
     failed = False
     checker = checker.Checker()
     try:
-	checker.readkeys(key_list)
+        checker.readkeys(key_list)
         for pkg in pac_list:
             try:
                 checker.check(pkg)
@@ -336,7 +336,7 @@ def verify_pacs(pac_list, key_list):
                 failed = True
                 print pkg, ':', e
     except Exception, e:
-	print str(e)
+        print str(e)
         checker.cleanup()
         sys.exit(1)
 

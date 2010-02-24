@@ -394,9 +394,9 @@ class Osc(cmdln.Cmdln):
                query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
-       	    for p in meta_get_packagelist(apiurl, project):
-       	        if p.startswith("_patchinfo:"):
-       	            patchinfo = p
+            for p in meta_get_packagelist(apiurl, project):
+                if p.startswith("_patchinfo:"):
+                    patchinfo = p
 
         if not os.path.exists(project_dir + "/" + patchinfo):
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
@@ -738,38 +738,38 @@ class Osc(cmdln.Cmdln):
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
                 if p.startswith("_patchinfo:"):
-                   pi.append(p)
+                    pi.append(p)
                 else:
-                   # get _link info from server, who knows about the local state ...
-                   u = makeurl(apiurl, ['source', project, p])
-                   f = http_GET(u)
-                   root = ET.parse(f).getroot()
-                   linkinfo = root.find('linkinfo')
-                   if linkinfo == None:
-                       print "Package ", p, " is not a source link."
-                       sys.exit("This is currently not supported.")
-                   if linkinfo.get('error'):
-                       print "Package ", p, " is a broken source link."
-                       sys.exit("Please fix this first")
-                   t = linkinfo.get('project')
-                   if t:
-                       if len(root.findall('entry')) > 1: # This is not really correct, but should work mostly
-                                                          # Real fix is to ask the api if sources are modificated
-                                                          # but there is no such call yet.
-                          targetprojects.append(t)
-                          pac.append(p)
-                          print "Submitting package ", p
-                       else:
-                          print "  Skipping package ", p
-                   else:
-                       print "Skipping package ", p,  " since it is a source link pointing inside to the project."
+                    # get _link info from server, who knows about the local state ...
+                    u = makeurl(apiurl, ['source', project, p])
+                    f = http_GET(u)
+                    root = ET.parse(f).getroot()
+                    linkinfo = root.find('linkinfo')
+                    if linkinfo == None:
+                        print "Package ", p, " is not a source link."
+                        sys.exit("This is currently not supported.")
+                    if linkinfo.get('error'):
+                        print "Package ", p, " is a broken source link."
+                        sys.exit("Please fix this first")
+                    t = linkinfo.get('project')
+                    if t:
+                        if len(root.findall('entry')) > 1: # This is not really correct, but should work mostly
+                                                           # Real fix is to ask the api if sources are modificated
+                                                           # but there is no such call yet.
+                            targetprojects.append(t)
+                            pac.append(p)
+                            print "Submitting package ", p
+                        else:
+                            print "  Skipping package ", p
+                    else:
+                        print "Skipping package ", p,  " since it is a source link pointing inside to the project."
 
             if not opts.yes:
                 if pi:
-                   print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
+                    print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
                 print "\nEverything fine? Can we create the requests ? [y/n]"
                 if sys.stdin.read(1) != "y":
-                   sys.exit("Aborted...")
+                    sys.exit("Aborted...")
 
             # loop via all packages to do the action
             for p in pac:

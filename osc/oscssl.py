@@ -66,7 +66,7 @@ class TrustedCertStore:
 # connection will be aborted later if it needs to
 def verify_cb(ctx, ok, store):
     if not ctx.verrs:
-	ctx.verrs = ValidationErrors()
+        ctx.verrs = ValidationErrors()
 
     try:
         if not ok:
