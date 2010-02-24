@@ -39,12 +39,6 @@ You can modify osc commands, or roll you own, via the plugin API:
 osc was written by several authors. This man page is automatically generated.
 """
 
-class OscTextMeter(urlgrabber.progress.TextMeter):
-    """show the progress bar immediately"""
-    def _do_start(self, *args, **kwargs):
-        urlgrabber.progress.TextMeter._do_start(self, *args, **kwargs)
-        self._do_update(0)
-
 class Osc(cmdln.Cmdln):
     """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
     or: osc help SUBCOMMAND
@@ -142,7 +136,8 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            self.download_progress = OscTextMeter()
+            from meter import TextMeter
+            self.download_progress = TextMeter()
 
 
     def get_cmd_help(self, cmdname):

@@ -50,6 +50,9 @@ class TextMeter(BaseMeter):
         self.sized_templ = '\r%%-%s.%ss %%3i%%%% |%%-%s.%ss| %%5sB %%8s ' %(width*4/10, width*4/10, self.bar_length, self.bar_length)
 
 
+    def _do_start(self, *args, **kwargs):
+        BaseMeter._do_start(self, *args, **kwargs)
+        self._do_update(0)
 
     def _do_update(self, amount_read, now=None):
         etime = self.re.elapsed_time()
