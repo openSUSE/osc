@@ -975,9 +975,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
             wd = os.curdir
-            project = store_read_project(wd)
-            package = store_read_package(wd)
+            devel_project = store_read_project(wd)
+            devel_package = package = store_read_package(wd)
             apiurl = store_read_apiurl(wd)
+            project = conf.config['getpac_default_project']
         else:
             if len(args) < 3:
                 raise oscerr.WrongArgs('Too few arguments.')
@@ -992,7 +993,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 devel_package = args[3]
 
         if not opts.message:
-            opts.message = edit_message()
+            import textwrap
+            footer=textwrap.TextWrapper(width = 66).fill(
+                    'please explain why you like to change the devel project of %s/%s to %s/%s'
+                    % (project,package,devel_project,devel_package))
+            opts.message = edit_message(footer)
 
         result = create_change_devel_request(apiurl,
                                        devel_project, devel_package,
