@@ -2724,6 +2724,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
                 o.write(buf)
             o.close()
             shutil.move(tmpfile, targetfilename or filename)
+            os.chmod(targetfilename or filename, 0644)
         except:
             os.unlink(tmpfile)
             raise
