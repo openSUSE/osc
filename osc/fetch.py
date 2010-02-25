@@ -206,7 +206,7 @@ class Fetcher:
             dest = "%s/%s" % (self.cachedir, i)
             if not os.path.exists(dest):
                 os.makedirs(dest, mode=0755)
-                dest += '/_pubkey'
+            dest += '/_pubkey'
 
             if os.path.exists(dest):
                 buildinfo.keys.append(dest)
