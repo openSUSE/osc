@@ -161,3 +161,5 @@ def run(prg):
     except OSError, e:
         print >>sys.stderr, e
         return 1
+
+# vim: sw=4 et

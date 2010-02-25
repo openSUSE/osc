@@ -330,4 +330,4 @@ Would you like to
             elif r == '9':
                 print cert.as_text()
 
-# vim: syntax=python sw=4 et
+# vim: sw=4 et

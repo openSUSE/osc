@@ -1535,3 +1535,5 @@ def _get_trailing_whitespace(marker, s):
         i += 1
     return suffix
 
+
+# vim: sw=4 et

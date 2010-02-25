@@ -98,3 +98,5 @@ if __name__ == "__main__":
 		checker.cleanup()
 		raise e
 
+
+# vim: sw=4 et

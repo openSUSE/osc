@@ -1,5 +1,3 @@
-# vim: sw=4 et
-
 # Copyright (C) 2006 Novell Inc.  All rights reserved.
 # This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
@@ -4668,3 +4666,6 @@ def request_interactive_review(apiurl, request):
     finally:
         if tmpfile is not None:
             tmpfile.close()
+
+# vim: sw=4 et
+

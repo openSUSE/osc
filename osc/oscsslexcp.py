@@ -5,3 +5,5 @@ class NoSecureSSLError(Exception):
         self.msg = msg
     def __str__(self):
         return self.msg
+
+# vim: sw=4 et

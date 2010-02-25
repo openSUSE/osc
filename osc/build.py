@@ -733,3 +733,5 @@ def main(opts, argv):
     if bc_file:
         bc_file.close()
     rpmlist_file.close()
+
+# vim: sw=4 et

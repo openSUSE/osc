@@ -330,3 +330,5 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
             else:
                 ret.append(str(line))
         return '\n'.join(ret)
+
+# vim: sw=4 et

@@ -94,3 +94,5 @@ class TextMeter(BaseMeter):
                   (text, 100, bar, total_size, total_time) + '    '
         self.fo.write(out + '\n')
         self.fo.flush()
+
+# vim: sw=4 et

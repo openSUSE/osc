@@ -105,3 +105,5 @@ class PackageMissing(PackageError):
     def __init__(self, prj, pac, msg):
         PackageError.__init__(self, prj, pac)
         self.msg = msg
+
+# vim: sw=4 et
