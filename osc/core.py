@@ -2767,22 +2767,22 @@ def get_user_data(apiurl, user, *tags):
     return data
 
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None):
+def download(url, filename, progress_obj = None):
     import tempfile, shutil
-    query = None
-    if revision:
-        query = { 'rev': revision }
     o = None
     try:
+        if filename[0] != '/':
+            prefix = os.getcwd() + '/' + filename
+        else:
+            prefix = filename
+	(fd, tmpfile) = tempfile.mkstemp(prefix = prefix, suffix = '.osc')
+	os.chmod(tmpfile, 0644)
         try:
-            (fd, tmpfile) = tempfile.mkstemp(prefix = filename, suffix = '.osc')
             o = os.fdopen(fd, 'wb')
-            u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
-            for buf in streamfile(u, http_GET, BUFSIZE, progress_obj=progress_obj):
+            for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
                 o.write(buf)
             o.close()
-            shutil.move(tmpfile, targetfilename or filename)
-            os.chmod(targetfilename or filename, 0644)
+            shutil.move(tmpfile, filename)
         except:
             os.unlink(tmpfile)
             raise
@@ -2790,56 +2790,30 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
         if o is not None:
             o.close()
 
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None):
+    targetfilename = targetfilename or filename
+    query = None
+    if revision:
+        query = { 'rev': revision }
+    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
+    return download(u, targetfilename, progress_obj)
+
 def get_binary_file(apiurl, prj, repo, arch,
                     filename,
                     package = None,
                     target_filename = None,
                     target_mtime = None,
                     progress_meter = False):
+    progress_obj = None
+    if progress_meter:
+        from meter import TextMeter
+        progress_obj = TextMeter()
 
     target_filename = target_filename or filename
 
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
-
-    if progress_meter:
-        sys.stdout.write("Downloading %s [  0%%]" % filename)
-        sys.stdout.flush()
-
-    f = http_GET(u)
-    binsize = int(f.headers['content-length'])
-
-    import tempfile
-    (fd, tmpfilename) = tempfile.mkstemp(prefix = filename + '.', suffix = '.osc')
-    os.chmod(tmpfilename, 0644)
-
-    try:
-        o = os.fdopen(fd, 'wb')
-
-        downloaded = 0
-        while 1:
-            #buf = f.read(BUFSIZE)
-            buf = f.read(16384)
-            if not buf: break
-            o.write(buf)
-            downloaded += len(buf)
-            if progress_meter:
-                completion = str(int((float(downloaded)/binsize)*100))
-                sys.stdout.write('%s%*s%%]' % ('\b'*5, 3, completion))
-                sys.stdout.flush()
-        o.close()
-
-        if progress_meter:
-            sys.stdout.write('\n')
-
-        shutil.move(tmpfilename, target_filename)
-        if target_mtime:
-            os.utime(target_filename, (-1, target_mtime))
-
-    # make sure that the temp file is cleaned up when we are interrupted
-    finally:
-        try: os.unlink(tmpfilename)
-        except: pass
+    return download(u, target_filename, progress_obj)
 
 def dgst_from_string(str):
     # Python 2.5 depracates the md5 modules
@@ -4818,4 +4792,3 @@ def filter_role(meta, user, role):
             root.remove(node)
 
 # vim: sw=4 et
-
