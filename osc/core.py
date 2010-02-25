@@ -4649,7 +4649,8 @@ def request_interactive_review(apiurl, request):
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
                 if mo is None:
-                    raise oscerr.WrongOptions('invalid choice: \'%s\'' % repl)
+                    print >>sys.stderr, 'invalid choice: \'%s\'' % repl
+                    continue
                 state = state_map[mo.group(1)]
                 msg = mo.group(2)
                 footer = str(request)
