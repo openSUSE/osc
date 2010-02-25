@@ -117,6 +117,10 @@ class Osc(cmdln.Cmdln):
             config = {}
             config['user'] = raw_input('Username: ')
             config['pass'] = getpass.getpass()
+            if self.options.no_keyring:
+                config['use_keyring'] = '0'
+            if self.options.no_gnome_keyring:
+                config['gnome_keyring'] = '0'
             if self.options.apiurl:
                 config['apiurl'] = self.options.apiurl
 

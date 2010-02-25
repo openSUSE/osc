@@ -126,7 +126,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
-    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive']
+    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
+    'use_keyring', 'gnome_keyring']
 
 new_conf_template = """
 [general]
@@ -410,13 +411,14 @@ def write_initial_config(conffile, entries, custom_template = ''):
     config = DEFAULTS.copy()
     config.update(entries)
     config['passx'] = base64.b64encode(config['pass'].encode('bz2'))
-    if config['use_keyring'] and GENERIC_KEYRING:
+    # at this point use_keyring and gnome_keyring are str objects
+    if config['use_keyring'] == '1' and GENERIC_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, config['apiurl'])
         keyring.set_password(host, config['user'], config['pass'])
         config['pass'] = ''
         config['passx'] = ''
-    elif config['gnome_keyring'] and GNOME_KEYRING:
+    elif config['gnome_keyring'] == '1' and GNOME_KEYRING:
         protocol, host = \
             parse_apisrv_url(None, config['apiurl'])
         gnomekeyring.set_network_password_sync(
