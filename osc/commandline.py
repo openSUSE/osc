@@ -139,7 +139,7 @@ class Osc(cmdln.Cmdln):
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
             from meter import TextMeter
-            self.download_progress = TextMeter()
+            self.download_progress = TextMeter(hide_finished=True)
 
 
     def get_cmd_help(self, cmdname):

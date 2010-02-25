@@ -34,9 +34,10 @@ def getScreenWidth():
 
 
 class TextMeter(BaseMeter):
-    def __init__(self, fo=sys.stderr):
+    def __init__(self, fo=sys.stderr, hide_finished=False):
         BaseMeter.__init__(self)
         self.fo = fo
+        self.hide_finished = hide_finished
         try:
             width = int(os.environ['COLUMNS'])
         except (KeyError, ValueError):
@@ -92,7 +93,10 @@ class TextMeter(BaseMeter):
             bar = '=' * self.bar_length
             out = self.sized_templ % \
                   (text, 100, bar, total_size, total_time) + '    '
-        self.fo.write(out + '\n')
+        if self.hide_finished:
+            self.fo.write('\r'+ ' '*len(out) + '\r')
+        else:
+            self.fo.write(out + '\n')
         self.fo.flush()
 
 # vim: sw=4 et
