@@ -1027,6 +1027,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='also show requests about packages where I am bugowner')
     @cmdln.option('-i', '--interactive', action='store_true',
                         help='interactive review of request')
+    @cmdln.option('--exclude-target-project', action='append',
+                        help='exclude target project from request list')
     @cmdln.alias("rq")
     @cmdln.alias("review")
     def do_request(self, subcmd, opts, *args):
@@ -1165,8 +1167,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if (self.options.debug):
                     print 'list: option --bugowner ignored: not impl.'
 
-            results = get_request_list(apiurl,
-                                       project, package, who, state_list, opts.type)
+            results = get_request_list(apiurl, project, package, who,
+                                       state_list, opts.type, opts.exclude_target_project or [])
             results.sort(reverse=True)
             import time
             days = opts.days or conf.config['request_list_days']

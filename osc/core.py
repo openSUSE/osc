@@ -2601,62 +2601,52 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
     return f.read()
 
 
-def get_request_list(apiurl, project, package, req_who='', req_state=('new',), req_type=None ):
-    requests = []
-
-    matches = []
+def get_request_list(apiurl, project, package, req_who='', req_state=('new',), req_type=None, exclude_target_projects=[]):
     match = ''
-    m = ''
-    if not "all" in req_state:
+    if not 'all' in req_state:
         for state in req_state:
-            if len(m): m += '%20or%20'
-            m += 'state/@name=\'%s\'' % quote_plus(state)
-        if len(m): match += "(" + m + ")"
-    m = ''
+            if len(match):
+                match += ' or '
+            match += '(state/@name=\'%s\')' % quote_plus(state)
     if req_who:
-        if len(m): m += '%20and%20'
-        m += 'state/@who=\'%s\'' % quote_plus(req_who)
-        m += '%20or%20'
-        m += 'history/@who=\'%s\'' % quote_plus(req_who)
-    if len(m):
-        if len(match): match += "%20and%20"
-        match += "(" + m + ")"
+        if len(match):
+            match += ' and '
+        match += '(state/@who=\'%(who)s\' or history/@who=\'%(who)s\')' % {'who': quote_plus(req_who)}
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend
-    if project or package:
-        for what in ['action', 'submit']:
-            m = match
-            if project:
-                if len(m): m += '%20and%20'
-                m += '(%s/target/@project=\'%s\'%%20or%%20' % (what, quote_plus(project))
-                m +=  '%s/source/@project=\'%s\')' % (what, quote_plus(project))
-            if package:
-                if len(m): m += '%20and%20'
-                m += '(%s/target/@package=\'%s\'%%20or%%20' % (what, quote_plus(package))
-                m +=  '%s/source/@package=\'%s\')' % (what, quote_plus(package))
-            if req_type:
-                if len(m): m += '%20and%20'
-                m += '%s/@type=\'%s\'' % (what, quote_plus(req_type))
+    todo = {}
+    if project:
+        todo['project'] = project
+    if package:
+        todo['package'] = package
+    for kind, val in todo.iteritems():
+        if len(match):
+            match += ' and '
+        match += '(action/target/@%(kind)s=\'%(val)s\' or ' \
+                  'action/source/@%(kind)s=\'%(val)s\' or ' \
+                  'submit/target/@%(kind)s=\'%(val)s\' or ' \
+                  'submit/source/@%(kind)s=\'%(val)s\')' % {'kind': kind, 'val': val}
+    if req_type:
+        if len(match):
+            match += ' and '
+        match += '(action/@type=\'%s\')' % req_type
+    for i in exclude_target_projects:
+        if len(match):
+            match += ' and '
+        match += '(not(action/target/@project=\'%(prj)s\' or ' \
+                  'submit/target/@project=\'%(prj)s\'))' % {'prj': quote_plus(i)}
 
-            matches.append(m)
-    else:
-        if req_type:
-            if len(match): match += '%20and%20'
-            match += 'action/@type=\'%s\'' % quote_plus(req_type)
-        matches.append(match)
-
-    for match in matches:
-        if conf.config['verbose'] > 1:
-            print "[",match,"]"
-        u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match])
-        f = http_GET(u)
-        collection = ET.parse(f).getroot()
-
-        for root in collection.findall('request'):
-            r = Request()
-            r.read(root)
-            requests.append(r)
+    if conf.config['verbose'] > 1:
+        print '[ %s ]' % match
+    u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match.replace(' ', '%20')])
+    f = http_GET(u)
+    collection = ET.parse(f).getroot()
+    requests = []
+    for root in collection.findall('request'):
+        r = Request()
+        r.read(root)
+        requests.append(r)
 
     return requests
 
