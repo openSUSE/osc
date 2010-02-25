@@ -335,10 +335,9 @@ def verify_pacs(pac_list, key_list):
             except Exception, e:
                 failed = True
                 print pkg, ':', e
-    except Exception, e:
-        print str(e)
+    except:
         checker.cleanup()
-        sys.exit(1)
+        raise
 
     if failed:
         checker.cleanup()
