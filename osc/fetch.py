@@ -206,7 +206,7 @@ class Fetcher:
             dest = "%s/%s" % (self.cachedir, i)
             if not os.path.exists(dest):
                 os.makedirs(dest, mode=0755)
-                dest += '/_pubkey'
+            dest += '/_pubkey'
 
             if os.path.exists(dest):
                 buildinfo.keys.append(dest)
@@ -335,10 +335,9 @@ def verify_pacs(pac_list, key_list):
             except Exception, e:
                 failed = True
                 print pkg, ':', e
-    except Exception, e:
-        print str(e)
+    except:
         checker.cleanup()
-        sys.exit(1)
+        raise
 
     if failed:
         checker.cleanup()

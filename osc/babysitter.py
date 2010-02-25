@@ -134,10 +134,6 @@ def run(prg):
         print >>sys.stderr, e.msg
         return 1
 
-    except IOError, e:
-        print >>sys.stderr, e
-        return 1
-
     except AttributeError, e:
         print >>sys.stderr, e
         return 1
