@@ -1546,21 +1546,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='print the buildstatus of the source package (only works with "show")')
     @cmdln.alias("rq")
     @cmdln.alias("review")
+    # FIXME: rewrite this mess and split request and review
     def do_request(self, subcmd, opts, *args):
-        """${cmd_name}: Show and modify requests
+        """${cmd_name}: Show or modify requests and reviews
 
         [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration
         for information on this topic.]
 
-        This command shows and modifies existing requests. To create new requests
-        you need to call one of the following:
-          osc submitrequest
-          osc deleterequest
-          osc changedevelrequest
-        To send low level requests to the buildservice API, use:
-          osc api
-
-        This command has the following sub commands:
+        The 'request' command has the following sub commands:
 
         "list" lists open requests attached to a project or package or person.
         Uses the project/package of the current directory if none of
@@ -1571,19 +1564,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         "show" will show the request itself, and generate a diff for review, if
         used with the --diff option. The keyword show can be omitted if the ID is numeric.
 
-        "decline" will change the request state to "declined" and append a
-        message that you specify with the --message option.
+        "decline" will change the request state to "declined"
 
-        "wipe" will permanently delete a request.
+        "wipe" will permanently delete a request
 
-        "revoke" will set the request state to "revoked" and append a
-        message that you specify with the --message option.
+        "revoke" will set the request state to "revoked"
 
         "accept" will change the request state to "accepted" and will trigger
         the actual submit process. That would normally be a server-side copy of
         the source package to the target package.
 
-        "checkout" will checkout the request's source package. This only works for "submit" requests.
+        "checkout" will checkout the request's source package ("submit" requests only).
+
+        The 'review' command has the following sub commands:
+
+        "list" lists open requests that need to be reviewed by the
+        specified user or group 
+
+        "add" adds a person or group as reviewer to a request
+
+        "accept" mark the review positive
+
+        "decline" mark the review negative. A negative review will
+        decline the request.
 
         usage:
             osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [-B] [PRJ [PKG]]
@@ -1604,8 +1607,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc review add [-m TEXT] [-U USER] [-G GROUP] ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
-            osc my sr                              # for submit requests I made
-            osc my rq                              # for requests for my packages/projects
 
         ${cmd_option_list}
         """
@@ -1694,7 +1695,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.message:
                 opts.message = edit_message()
             r = http_POST(url, data=opts.message)
-            print r.read()
+            print ET.parse(r).getroot().attrib['code']
 
         # list and approvenew
         elif cmd == 'list' or cmd == 'approvenew':

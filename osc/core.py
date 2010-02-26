@@ -3300,7 +3300,8 @@ def change_review_state(apiurl, reqid, newstate, by_user='', message='', superse
                 ['request', reqid],
                 query={'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user, 'superseded_by': supersed})
     f = http_POST(u, data=message)
-    return f.read()
+    root = ET.parse(f).getroot()
+    return root.attrib['code']
 
 def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
     u = makeurl(apiurl,
