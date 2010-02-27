@@ -28,11 +28,11 @@ MAN_FOOTER = r"""
 Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
 .PP
 For additional information, see
- * http://www.opensuse.org/Build_Service_Tutorial
- * http://www.opensuse.org/Build_Service/CLI
+ * http://en.opensuse.org/Build_Service_Tutorial
+ * http://en.opensuse.org/Build_Service/CLI
 .PP
 You can modify osc commands, or roll you own, via the plugin API:
- * http://www.opensuse.org/Build_Service/osc_plugins
+ * http://en.opensuse.org/Build_Service/osc_plugins
 .SH AUTHOR
 osc was written by several authors. This man page is automatically generated.
 """
@@ -48,11 +48,11 @@ class Osc(cmdln.Cmdln):
     ${help_list}
     global ${option_list}
     For additional information, see
-    * http://www.opensuse.org/Build_Service_Tutorial
-    * http://www.opensuse.org/Build_Service/CLI
+    * http://en.opensuse.org/Build_Service_Tutorial
+    * http://en.opensuse.org/Build_Service/CLI
 
     You can modify osc commands, or roll you own, via the plugin API:
-    * http://www.opensuse.org/Build_Service/osc_plugins
+    * http://en.opensuse.org/Build_Service/osc_plugins
     """
     name = 'osc'
     conf = None
