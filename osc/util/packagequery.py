@@ -13,8 +13,8 @@ class PackageQueries(dict):
     # map debian arches to common obs arches
     architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']} 
     
-    def __init__(self, wantedArchitecture):
-        self.wantedArchitecture = wantedArchitecture
+    def __init__(self, wanted_architecture):
+        self.wanted_architecture = wanted_architecture
         super(PackageQueries, self).__init__()
     
     def add(self, query):
@@ -32,13 +32,13 @@ class PackageQueries(dict):
         
         architecture = query.arch()
         
-        if (architecture in [self.wantedArchitecture, 'noarch', 'all'] or
-            self.wantedArchitecture in self.architectureMap.get(architecture,
+        if (architecture in [self.wanted_architecture, 'noarch', 'all'] or
+            self.wanted_architecture in self.architectureMap.get(architecture,
                                                                 [])):
-            currentQuery = self.get(name)
+            current_query = self.get(name)
             
             # if current query does not exist or is older than this new query
-            if currentQuery is None or currentQuery.vercmp(query) <= 0:
+            if current_query is None or current_query.vercmp(query) <= 0:
                 super(PackageQueries, self).__setitem__(name, query)
 
 class PackageQuery:
@@ -73,10 +73,10 @@ class PackageQuery:
     def requires(self):
         raise NotImplementedError
 
-    def getTag(self):
+    def gettag(self):
         raise NotImplementedError
 
-    def vercmp(self, pkgq):
+    def vercmp(self, pkgquery):
         raise NotImplementedError
 
     @staticmethod
@@ -85,20 +85,20 @@ class PackageQuery:
         magic = f.read(7)
         f.seek(0)
         extra_tags = ()
-        pkgq = None
+        pkgquery = None
         if magic[:4] == '\xed\xab\xee\xdb':
             import rpmquery
-            pkgq = rpmquery.RpmQuery(f)
+            pkgquery = rpmquery.RpmQuery(f)
             extra_tags = extra_rpmtags
         elif magic == '!<arch>':
             import debquery
-            pkgq = debquery.DebQuery(f)
+            pkgquery = debquery.DebQuery(f)
             extra_tags = extra_debtags
         else:
             raise PackageError('unsupported package type. magic: \'%s\' (%s)' % (magic, filename))
-        pkgq.read(all_tags, *extra_tags)
+        pkgquery.read(all_tags, *extra_tags)
         f.close()
-        return pkgq
+        return pkgquery
 
 if __name__ == '__main__':
     import sys

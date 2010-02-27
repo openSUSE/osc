@@ -2139,17 +2139,17 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
     path.append('source')
     path.append(prj)
     if pac:
-       path.append(pac)
+        path.append(pac)
     if pac and subpac:
-       path.append(subpac)
+        path.append(subpac)
     path.append('_attribute')
     if attribute:
-       path.append(attribute)
+        path.append(attribute)
     query=[]
     if with_defaults:
-       query.append("with_default=1")
+        query.append("with_default=1")
     if with_project:
-       query.append("with_project=1")
+        query.append("with_project=1")
     url = makeurl(apiurl, path, query)
     try:
         f = http_GET(url)
@@ -2547,10 +2547,10 @@ def create_submit_request(apiurl,
     # Yes, this kind of xml construction is horrible
     targetxml = ""
     if dst_project:
-       packagexml = ""
-       if dst_package:
-          packagexml = """package="%s" """ %( dst_package )
-       targetxml = """<target project="%s" %s /> """ %( dst_project, packagexml )
+        packagexml = ""
+        if dst_package:
+            packagexml = """package="%s" """ %( dst_package )
+        targetxml = """<target project="%s" %s /> """ %( dst_project, packagexml )
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">

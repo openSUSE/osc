@@ -20,7 +20,7 @@ class RpmHeader:
     def append(self, entry):
         self.entries.append(entry)
 
-    def getTag(self, tag):
+    def gettag(self, tag):
         for i in self.entries:
             if i.tag == tag:
                 return i
@@ -131,7 +131,7 @@ class RpmQuery(packagequery.PackageQuery):
                 entry.data = entry.data[0]
                 return
             # get private i18n table
-            table = self.header.getTag(100)
+            table = self.header.gettag(100)
             # just care about the country code
             lang = lang.split('_', 1)[0]
             cnt = 0
@@ -147,9 +147,9 @@ class RpmQuery(packagequery.PackageQuery):
             raise RpmHeaderError('unsupported tag type \'%d\' (tag: \'%s\'' % (entry.type, entry.tag))
 
     def __reqprov(self, tag, flags, version):
-        pnames = self.header.getTag(tag).data
-        pflags = self.header.getTag(flags).data
-        pvers = self.header.getTag(version).data
+        pnames = self.header.gettag(tag).data
+        pflags = self.header.gettag(flags).data
+        pvers = self.header.gettag(version).data
         if not (pnames and pflags and pvers):
             raise RpmError('cannot get provides/requires, tags are missing')
         res = []
@@ -179,31 +179,31 @@ class RpmQuery(packagequery.PackageQuery):
 
     # XXX: create dict for the tag => number mapping?!
     def name(self):
-        return self.header.getTag(1000).data
+        return self.header.gettag(1000).data
 
     def version(self):
-        return self.header.getTag(1001).data
+        return self.header.gettag(1001).data
 
     def release(self):
-        return self.header.getTag(1002).data
+        return self.header.gettag(1002).data
 
     def epoch(self):
-        epoch = self.header.getTag(1003)
+        epoch = self.header.gettag(1003)
         if epoch is None:
             return 0
         return epoch.data[0]
 
     def arch(self):
-        return self.header.getTag(1022).data
+        return self.header.gettag(1022).data
 
     def summary(self):
-        return self.header.getTag(1004).data
+        return self.header.gettag(1004).data
 
     def description(self):
-        return self.header.getTag(1005).data
+        return self.header.gettag(1005).data
 
     def url(self):
-        entry = self.header.getTag(1020)
+        entry = self.header.gettag(1020)
         if entry is None:
             return None
         return entry.data
@@ -217,8 +217,8 @@ class RpmQuery(packagequery.PackageQuery):
     def requires(self):
         return self.__reqprov(1049, 1048, 1050)
 
-    def getTag(self, num):
-        return self.header.getTag(num)
+    def gettag(self, num):
+        return self.header.gettag(num)
 
     @staticmethod
     def query(filename):

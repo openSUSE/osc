@@ -104,7 +104,7 @@ class DebQuery(packagequery.PackageQuery):
     def requires(self):
         return self.fields['depends']
 
-    def getTag(self, num):
+    def gettag(self, num):
         return self.fields.get(num, None)
 
     @staticmethod
