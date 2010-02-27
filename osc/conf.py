@@ -325,12 +325,12 @@ def init_basicauth(config):
 
     import sys
     if sys.version_info < (2, 6):
-       # HTTPS proxy is not supported in old urllib2. It only leads to an error
-       # or, at best, a warning.
-       if 'https_proxy' in os.environ:
-           del os.environ['https_proxy']
-       if 'HTTPS_PROXY' in os.environ:
-           del os.environ['HTTPS_PROXY']
+        # HTTPS proxy is not supported in old urllib2. It only leads to an error
+        # or, at best, a warning.
+        if 'https_proxy' in os.environ:
+            del os.environ['https_proxy']
+        if 'HTTPS_PROXY' in os.environ:
+            del os.environ['HTTPS_PROXY']
 
     if config['http_debug']:
         # brute force

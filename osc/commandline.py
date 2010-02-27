@@ -393,7 +393,7 @@ class Osc(cmdln.Cmdln):
             print "Creating initial patchinfo..."
             query='cmd=createpatchinfo'
             if args and args[0]:
-               query += "&name=" + args[0]
+                query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
@@ -777,8 +777,8 @@ class Osc(cmdln.Cmdln):
             for p in pac:
                 result = create_submit_request(apiurl, project, p)
                 if not result:
-#                   sys.exit(result)
-                   sys.exit("submit request creation failed")
+#                    sys.exit(result)
+                    sys.exit("submit request creation failed")
                 sr_ids.append(result)
 
             # create submit requests for all found patchinfos
@@ -804,7 +804,7 @@ class Osc(cmdln.Cmdln):
 
             print "Requests created: ",
             for i in sr_ids:
-               print i,
+                print i,
             sys.exit('Successfull finished')
 
         elif len(args) <= 2:
@@ -2696,7 +2696,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.name_filter = None
                 opts.status_filter = None
                 opts.vertical = None
-                self.do_prjresults('prjresults', opts, *args);
+                self.do_prjresults('prjresults', opts, *args)
                 sys.exit(0)
             else:
                 project = store_read_project(wd)
@@ -2817,21 +2817,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     def print_repos(self):
-            wd = os.curdir
-            doprint = False
-            if is_package_dir(wd):
-                str = "package"
-                doprint = True
-            elif is_project_dir(wd):
-                str = "project"
-                doprint = True
-            
-            if doprint:
-                print 'Valid arguments for this %s are:' % str
-                print
-                self.do_repos(None, None)
-                print
-            raise oscerr.WrongArgs('Missing arguments')
+        wd = os.curdir
+        doprint = False
+        if is_package_dir(wd):
+            str = "package"
+            doprint = True
+        elif is_project_dir(wd):
+            str = "project"
+            doprint = True
+
+        if doprint:
+            print 'Valid arguments for this %s are:' % str
+            print
+            self.do_repos(None, None)
+            print
+        raise oscerr.WrongArgs('Missing arguments')
 
     @cmdln.alias('rbl')
     @cmdln.alias('rbuildlog')
@@ -2958,9 +2958,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 2: # 2
             if is_package_dir('.'):
-                 package = store_read_package(wd)
+                package = store_read_package(wd)
             else:
-                 raise oscerr.WrongArgs('package is not specified.')
+                raise oscerr.WrongArgs('package is not specified.')
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
             repository = args[0]
@@ -2980,9 +2980,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         reason = root.find('explain').text
         print reason
         if reason == "meta change":
-           print "changed keys:"
-           for package in root.findall('packagechange'):
-               print "  ", package.get('change'), package.get('key')
+            print "changed keys:"
+            for package in root.findall('packagechange'):
+                print "  ", package.get('change'), package.get('key')
 
 
     # FIXME: the new osc syntax should allow to specify multiple packages
@@ -3026,9 +3026,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 3: # 2
             if is_package_dir('.'):
-                 packages = [store_read_package(wd)]
+                packages = [store_read_package(wd)]
             elif not is_project_dir('.'):
-                 raise oscerr.WrongArgs('Project and package is not specified.')
+                raise oscerr.WrongArgs('Project and package is not specified.')
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
             repository = args[0]
@@ -3056,7 +3056,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for package in root.findall('package'):
             print package.get('name'), ":"
             for dep in package.findall('pkgdep'):
-               print "  ", dep.text
+                print "  ", dep.text
 
 
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',

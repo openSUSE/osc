@@ -96,8 +96,8 @@ def run(prg):
         body = e.read()
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
-                print >>sys.stderr, e.hdrs
-                print >>sys.stderr, body
+            print >>sys.stderr, e.hdrs
+            print >>sys.stderr, body
 
         if e.code in [ 400, 403, 404, 500 ]:
             if '<summary>' in body:
@@ -119,7 +119,7 @@ def run(prg):
         print >>sys.stderr, e.msg
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
-                print >>sys.stderr, e.e
+            print >>sys.stderr, e.e
         return 1
 
     except (oscerr.WrongOptions, oscerr.WrongArgs), e:

@@ -623,9 +623,9 @@ def main(opts, argv):
                 os.makedirs(os.path.join(pradir))
             if not os.path.exists(tffn):
                 if opts.linksources:
-                   os.link(sffn, tffn)
+                    os.link(sffn, tffn)
                 else:
-                   os.symlink(sffn, tffn)
+                    os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
         if opts.no_verify or opts.noinit:
@@ -654,7 +654,7 @@ def main(opts, argv):
         else:
             print 'WARNING: deb packages get not verified, they can compromise your system !'
     else:
-            print 'WARNING: unknown packages get not verified, they can compromise your system !'
+        print 'WARNING: unknown packages get not verified, they can compromise your system !'
 
     print 'Writing build configuration'
 
