@@ -162,7 +162,7 @@ rq|request)
     show)
         if ((count == 3)) ; then
             builtin compgen -W '--diff' -- "${cmdline[3]}"
-        else    
+        else
             builtin echo -n 'ID'
         fi
         ;;

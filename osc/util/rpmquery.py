@@ -210,7 +210,7 @@ class RpmQuery(packagequery.PackageQuery):
 
     def path(self):
         return self.__path
-    
+
     def provides(self):
         return self.__reqprov(1047, 1112, 1113)
 

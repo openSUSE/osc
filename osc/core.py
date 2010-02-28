@@ -1727,7 +1727,7 @@ def parse_buildlogurl(buildlogurl):
     m = BUILDLOGURL_RE.match(buildlogurl)
     if not m:
         raise oscerr.WrongArgs('\'%s\' does not look like url with a build log' % buildlogurl)
-    
+
     return (m.group('apiurl'), m.group('project'), m.group('package'), m.group('repository'), m.group('arch'))
 
 def slash_split(l):
@@ -3642,7 +3642,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         for i in range(0, len(targets)):
             line.append(str(i%10))
         r.append(' '.join(line))
-            
+
         r.append('')
 
     if not hide_legend and len(pacs):

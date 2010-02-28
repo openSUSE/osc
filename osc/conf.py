@@ -156,7 +156,7 @@ apiurl = %(apiurl)s
 # This is convenient when sharing the buildroot with ordinary userids
 # on the host.
 # This should not be 0
-# build-uid = 
+# build-uid =
 
 # extra packages to install when building packages locally (osc build)
 # this corresponds to osc build's -x option and can be overridden with that

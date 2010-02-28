@@ -388,7 +388,7 @@ class Osc(cmdln.Cmdln):
         for p in meta_get_packagelist(apiurl, project):
             if p.startswith("_patchinfo:"):
                 patchinfo = p
-        
+
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
             query='cmd=createpatchinfo'
@@ -798,7 +798,7 @@ class Osc(cmdln.Cmdln):
                       (actionxml, cgi.escape(opts.message or ""))
                 u = makeurl(apiurl, ['request'], query='cmd=create')
                 f = http_POST(u, data=xml)
-         
+
                 root = ET.parse(f).getroot()
                 sr_ids.append(root.get('id'))
 
@@ -1589,7 +1589,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  package, tproject)
 
         if r is None:
-            print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.' 
+            print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.'
             sys.exit(1)
 
         print "Project " + r + " created."
@@ -1940,9 +1940,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         args = expand_proj_pack(args)
 
-        ## FIXME: 
+        ## FIXME:
         ## if there is only one argument, and it ends in .ymp
-        ## then fetch it, Parse XML to get the first 
+        ## then fetch it, Parse XML to get the first
         ##  metapackage.group.repositories.repository.url
         ## and construct zypper cmd's for all
         ##  metapackage.group.software.item.name
@@ -2862,7 +2862,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too many arguments.')
             else:
                 project, package, repository, arch = args
-        
+
         offset=0
         if opts.start:
             offset = int(opts.start)
@@ -2952,7 +2952,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         project = package = repository = arch = None
-        
+
         if len(args) < 2:
             self.print_repos()
 
@@ -2995,9 +2995,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         will be triggered when a certain package changes.
         This is no guarantee, since the new build might have changed dependencies.
 
-        dependson shows the build dependencies inside of a project, valid for a 
+        dependson shows the build dependencies inside of a project, valid for a
         given repository and architecture.
-        NOTE: to see all binary packages, which can trigger a build you need to 
+        NOTE: to see all binary packages, which can trigger a build you need to
               refer the buildinfo, since this command shows only the dependencies
               inside of a project.
 
@@ -3017,7 +3017,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         project = packages = repository = arch = reverse = None
-        
+
         if len(args) < 2 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
 
@@ -3088,7 +3088,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         wd = os.curdir
         args = slash_split(args)
-        
+
         if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
@@ -3149,7 +3149,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         wd = os.curdir
         args = slash_split(args)
-        
+
         if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
@@ -4121,7 +4121,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             extra_limiter='attribute/@name="%s"' % (opts.limit_to_attribute)
         if not opts.substring:
             opts.exact = True
-            
+
 
         role_filter=None
         if for_user:
@@ -4374,7 +4374,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_bugowner(self, subcmd, opts, *args):
         """${cmd_name}: Show bugowners of a project/package
 
-            osc bugowner PRJ 
+            osc bugowner PRJ
             osc bugowner PRJ PKG
 
         Shortcut for osc maintainer -B [PRJ] PKG
@@ -4817,7 +4817,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         dir_oldpatched = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name, 'srcmd5': p.srcmd5 }
         dir_oldpatched['entries'] = [[f.name, f.md5] for f in p.filelist]
-        
+
         query = { 'rev': linkinfo.srcmd5 }
         u = makeurl(p.apiurl, ['source', linkinfo.project, linkinfo.package], query=query)
         f = http_GET(u)

@@ -9,34 +9,34 @@ class PackageQueries(dict):
     package query, to a name, the package is evaluated to see if it matches the
     wanted architecture and if it has a greater version than the current value.
     """
-    
+
     # map debian arches to common obs arches
-    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']} 
-    
+    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']}
+
     def __init__(self, wanted_architecture):
         self.wanted_architecture = wanted_architecture
         super(PackageQueries, self).__init__()
-    
+
     def add(self, query):
         """Adds package query to dict if it is of the correct architecture and
         is newer (has a greater version) than the currently assigned package.
-        
+
         @param a PackageQuery
         """
         self.__setitem__(query.name(), query)
-    
+
     def __setitem__(self, name, query):
         if name != query.name():
             raise ValueError("key '%s' does not match "
                              "package query name '%s'" % (name, query.name()))
-        
+
         architecture = query.arch()
-        
+
         if (architecture in [self.wanted_architecture, 'noarch', 'all'] or
             self.wanted_architecture in self.architectureMap.get(architecture,
                                                                 [])):
             current_query = self.get(name)
-            
+
             # if current query does not exist or is older than this new query
             if current_query is None or current_query.vercmp(query) <= 0:
                 super(PackageQueries, self).__setitem__(name, query)
@@ -63,10 +63,10 @@ class PackageQuery:
 
     def description(self):
         raise NotImplementedError
-    
+
     def path(self):
         raise NotImplementedError
-    
+
     def provides(self):
         raise NotImplementedError
 

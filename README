@@ -14,17 +14,18 @@ RPM packages are here (rpm-md repository):
 http://download.opensuse.org/repositories/openSUSE:/Tools/
 
 To install from svn, do
-	python setup.py build
-	python setup.py install
-	# create a symlink 'osc' in your path pointing to osc.py.
-	ln -s osc-wrapper.py /usr/bin/osc
+
+        python setup.py build
+        python setup.py install
+        # create a symlink 'osc' in your path pointing to osc.py.
+        ln -s osc-wrapper.py /usr/bin/osc
 
 Alternatively, you can directly use osc-wrapper.py from the source dir
 (which is easier if you develop on osc).
 
 
 The program needs the cElementTree python module installed. On SUSE, the
-respective package is called python-elementtree (before 10.2: python-xml). 
+respective package is called python-elementtree (before 10.2: python-xml).
 For local building, you will need python-urlgrabber in addition. Those are
 standard package on SUSE Linux since a while. If your version is too old, you
 can find python-elementtree and python-urlgrabber here:
@@ -132,29 +133,29 @@ USAGE EXAMPLES:
 (online at http://en.opensuse.org/Build_Service/CLI )
 
 To list existing content on the server
- osc ls 				# list projects
- osc ls Apache 			# list packages in a project 
- osc ls Apache subversion 	# list files of package of a project
+ osc ls                                # list projects
+ osc ls Apache                         # list packages in a project
+ osc ls Apache subversion              # list files of package of a project
 
 Check out content
- osc co Apache 			# entire project
- osc co Apache subversion	# a package
- osc co Apache subversion foo	# single file
+ osc co Apache                         # entire project
+ osc co Apache subversion              # a package
+ osc co Apache subversion foo          # single file
 
 Update a working copy
  osc up
- osc up [pac_dir]		# update a single package by its path
- osc up * 			# from within a project dir, update all packages
- osc up  			# from within a project dir, update all packages
-				   AND check out all newly added packages
+ osc up [pac_dir]                      # update a single package by its path
+ osc up *                              # from within a project dir, update all packages
+ osc up                                # from within a project dir, update all packages
+                                       #   AND check out all newly added packages
 
 If an update can't be merged automatically, a file is in 'C' (conflict)
-state, and conflicts are marked with special <<<<<<< and >>>>>>> lines. 
+state, and conflicts are marked with special <<<<<<< and >>>>>>> lines.
 After manually resolving the problem, use
  osc resolved foo
 
 Upload change content
- osc ci				# current dir
+ osc ci                                # current dir
  osc ci <dir>
  osc ci file1 file2 ...
 
@@ -171,7 +172,7 @@ Adds all new files in local copy and removes all disappeared files.
  osc addremove
 
 Generates a diff, to view the changes
- osc diff 			# current dir
+ osc diff                              # current dir
  osc diff file1 file2 ...
 
 Shows the build results of the package

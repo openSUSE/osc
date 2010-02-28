@@ -231,27 +231,27 @@ def get_built_files(pacdir, pactype):
 
 def get_repo(path):
     """Walks up path looking for any repodata directories.
-    
+
     @param path path to a directory
     @return str path to repository directory containing repodata directory
     """
     oldDirectory = None
     currentDirectory = os.path.abspath(path)
     repositoryDirectory = None
-    
+
     # while there are still parent directories
     while currentDirectory != oldDirectory:
         children = os.listdir(currentDirectory)
-        
+
         if "repodata" in children:
             repositoryDirectory = currentDirectory
             break
-        
+
         # ascend
         oldDirectory = currentDirectory
         currentDirectory = os.path.abspath(os.path.join(oldDirectory,
                                                         os.pardir))
-    
+
     return repositoryDirectory
 
 def get_prefer_pkgs(dirs, wanted_arch, type):
@@ -259,11 +259,11 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
     from util import repodata, packagequery, cpio
     paths = []
     repositories = []
-    
+
     suffix = '*.rpm'
     if type == 'dsc':
         suffix = '*.deb'
-    
+
     for dir in dirs:
         # check for repodata
         repository = get_repo(dir)
@@ -271,15 +271,15 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
             paths += glob.glob(os.path.join(os.path.abspath(dir), suffix))
         else:
             repositories.append(repository)
-    
+
     packageQueries = packagequery.PackageQueries(wanted_arch)
-    
+
     for repository in repositories:
         repodataPackageQueries = repodata.queries(repository)
-        
+
         for packageQuery in repodataPackageQueries:
             packageQueries.add(packageQuery)
-    
+
     for path in paths:
         if path.endswith('src.rpm'):
             continue
@@ -287,10 +287,10 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
             continue
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
-    
+
     prefer_pkgs = dict((name, packageQuery.path())
                        for name, packageQuery in packageQueries.iteritems())
-    
+
     depfile = create_deps(packageQueries.values())
     cpio = cpio.CpioWrite()
     cpio.add('deps', '\n'.join(depfile))
@@ -582,7 +582,7 @@ def main(opts, argv):
         # OBS 1.5 and before has no downloadurl defined in buildinfo
         if bi.downloadurl:
             urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
-    if not opts.cpio_bulk_download: 
+    if not opts.cpio_bulk_download:
         urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'],
