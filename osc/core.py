@@ -1727,7 +1727,7 @@ def parse_buildlogurl(buildlogurl):
     m = BUILDLOGURL_RE.match(buildlogurl)
     if not m:
         raise oscerr.WrongArgs('\'%s\' does not look like url with a build log' % buildlogurl)
-    
+
     return (m.group('apiurl'), m.group('project'), m.group('package'), m.group('repository'), m.group('arch'))
 
 def slash_split(l):
@@ -2139,17 +2139,17 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
     path.append('source')
     path.append(prj)
     if pac:
-       path.append(pac)
+        path.append(pac)
     if pac and subpac:
-       path.append(subpac)
+        path.append(subpac)
     path.append('_attribute')
     if attribute:
-       path.append(attribute)
+        path.append(attribute)
     query=[]
     if with_defaults:
-       query.append("with_default=1")
+        query.append("with_default=1")
     if with_project:
-       query.append("with_project=1")
+        query.append("with_project=1")
     url = makeurl(apiurl, path, query)
     try:
         f = http_GET(url)
@@ -2547,10 +2547,10 @@ def create_submit_request(apiurl,
     # Yes, this kind of xml construction is horrible
     targetxml = ""
     if dst_project:
-       packagexml = ""
-       if dst_package:
-          packagexml = """package="%s" """ %( dst_package )
-       targetxml = """<target project="%s" %s /> """ %( dst_project, packagexml )
+        packagexml = ""
+        if dst_package:
+            packagexml = """package="%s" """ %( dst_package )
+        targetxml = """<target project="%s" %s /> """ %( dst_project, packagexml )
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">
@@ -3496,7 +3496,9 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
             rmap['status'] = ''
 
         if rmap['status'] in ['expansion error', 'broken', 'blocked', 'finished']:
-            rmap['status'] += ': ' + statusnode.find('details').text
+            details = statusnode.find('details')
+            if details != None:
+                rmap['status'] += ': ' + details.text
 
         if rmap['dirty'] == 'true':
             rmap['status'] = 'state is outdated (was: %s)' % rmap['status']
@@ -3644,7 +3646,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         for i in range(0, len(targets)):
             line.append(str(i%10))
         r.append(' '.join(line))
-            
+
         r.append('')
 
     if not hide_legend and len(pacs):

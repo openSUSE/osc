@@ -10,7 +10,7 @@ CRITICAL:
    -A apiurl prj/pkg
    -A apiurl prj:pkg
    apiurl/source/prj/pkg
-   The current working directory or its descendants should provide defaults 
+   The current working directory or its descendants should provide defaults
    for apiurl, prj and/or pkg.
 
 MAJOR:
@@ -24,13 +24,13 @@ NORMAL:
   - implement (svn-like) switch command
   - implement 'mv' command
   - commit: check if errors during PUT are handled sensibly, so the change is
-    not committed to localmeta	
+    not committed to localmeta
   - add switch to commit to change repository options, like to e.g. disable publishing?
   - implement optional logging to .osc/log, which could be useful for debugging bugs like
     the one where api.opensuse.org sends empty replies (a hard-to-catch one)
 
 
-MINOR: 
+MINOR:
 
   - osc checkout should display file download progress (bnc#442115)
   - adjust zsh completion to work with cmdln.py implementation
@@ -42,7 +42,7 @@ MINOR:
 JW:
 FIXME: osc co overwrites local changes without warning.
 FIXME: when branching, the user should be added to bugowner, for the branch project.
-FIXME: 'osc rq' shall default to 'osc rq list -M -B -s all', 
+FIXME: 'osc rq' shall default to 'osc rq list -M -B -s all',
        where -B shows requests related to packages where I am the bugowner.
 FIXME: 'osc log openSUSE:Factory PKG' should also point to the bsdevelproject
 

@@ -63,7 +63,7 @@
  - search: allow to limit results via existing attibutes
  - added "osc meta attribute" for basic attribute creation, deletion, showing and value setting
  - implement "osc mbranch" call to create projects with multiple source package (instances)
- - new "osc patchinfo" command: basic patchinfo generation and modification support 
+ - new "osc patchinfo" command: basic patchinfo generation and modification support
  - add support for _patchinfo package submissions in "osc sr" on project level
  - support review handling of requests (new "osc review accept/decline $REQUEST_ID" command
 
@@ -98,7 +98,7 @@
  - rename old "platform/s" names to "repository/ies" (internal cleanup only)
  - fixed osc diff -c N, it failed with int and string concatenation
  - made osc diff and rdiff more similar: added -p, -c to rdiff, removed -u from rdiff.
-   made -u default for both, renamed --pretty to --plain as it is the opposite of -u 
+   made -u default for both, renamed --pretty to --plain as it is the opposite of -u
  #
  # Features which require OBS 1.7
  #
@@ -167,7 +167,7 @@
 0.119:
 - Support new request types
   - "submitreq" command has a new syntax (incompatible !)
-  - new "deleterequest" command 
+  - new "deleterequest" command
   - new "changedevelrequest" command
   - new "request" command for showing/modifing requests
   - Multiple actions in one request is not yet supported by osc
@@ -231,7 +231,7 @@
 - fixed support for accessing download repositories (worked only for download.o.o so far)
 
 0.114:
-- the .oscrc config handling has been cleaned up: 
+- the .oscrc config handling has been cleaned up:
    * use "apiurl" for everything now (== <protocol>://<host>)
    * added aliases support for [apiurl] sections in the ~/.oscrc.
      Example:
@@ -243,14 +243,14 @@
    * when writing a new ~/.oscrc, store the apiurl in the conffile (bnc#478054)
    * fixed bug that made osc ask for credentials when -A was used (bnc#478054)
    * fixed crash upon password entry (first startup) (bnc#478052)
-- osc build: 
+- osc build:
    * make product builds work
    * speed up by using a cookie when fetching the binaries (bnc#477690)
    * support for VM (kvm or xen) builds
    * obsolete the need to configure download server, get it from the build
      service instance instead.
    * be a bit more verbose if the linked package isn't expanded (bnc#470948)
-- osc branch: 
+- osc branch:
    * --develproject option fixed (the API calls it 'ignoredevel' instead of 'nodevelproject')
    * --revision option added
 - osc jobhistory: new command to see build job history of a project or a package
@@ -277,14 +277,14 @@
 - don't use a hardcoded path for the rpm binary otherwise it fails on
   distributions like debian
 - osc meta: be more verbose in case of failure (bnc#459292)
-- osc mkpac: add info how to enable the package tracking feature (bnc#459288) 
+- osc mkpac: add info how to enable the package tracking feature (bnc#459288)
 
 0.112:
 important bugfix:
 - osc deletepac: prevent recursive deletion of a whole project [bnc#458535]
 - osc build: support more options: --icecream, --ccache, --with, --without
 - osc build: --keep-pkgs also saves the src.rpm now
-- osc build: small fix in debuginfo handling 
+- osc build: small fix in debuginfo handling
 - osc build: new armv7el arch for all binaries for up to ARMv7 EABI with VFP
 
 
@@ -331,7 +331,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 - osc sr show: show the current state's comment
 - osc sr log: new command to show the history of a given id
 - osc sr: enable requests for submitting new packages
-- osc build: implement --no-checks 
+- osc build: implement --no-checks
 - osc build: be less strict on the arguments, and guess what's needed. For instance:
   * osc build PLATFORM ARCH BUILD_DESCR
   * osc build PLATFORM (ARCH = hostarch, BUILD_DESCR guessed)
@@ -339,7 +339,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
   * osc build BUILD_DESCR (PLATFORM = build_platform (config option), ARCH = hostarch)
   * osc build (PLATFORM = build_platform (config option), ARCH = hostarch, BUILD_DESCR guessed)
 - osc build: download after the target architecture check
-- osc addremove: bugfixes, --recursive option 
+- osc addremove: bugfixes, --recursive option
 - osc init: added support to initialize a project dir
 - osc metafromspec: new alias for 'updatepacmetafromspec' which is hard to remember
 - osc updatepacmetafromspec: also update URL
@@ -356,20 +356,20 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 - osc build: the --extra-pkgs option is now a configurable setting in .oscrc.
   Default is "extra-pkgs = vim gdb strace"
 - .oscrc: make tilde expansion work on the packagecachedir setting
-- osc update / checkout: don't check out a working copy, or update an existing 
+- osc update / checkout: don't check out a working copy, or update an existing
   one, when a source link cannot be applied [bnc#409373]
 
 
 0.106:
 
 - osc rdiff / osc submitreq show: diff the _expanded_ sources [bnc#408267]
-- osc submitreq list: show author's name 
+- osc submitreq list: show author's name
 - osc submitreq: shortcut alias 'sr' added
 
 
 0.105:
 
-- osc submitreq list: 
+- osc submitreq list:
    - can now be called without parameters, applying to the working copy then.
    - calling it in a project directory is also possible now.
    - output was improved. Newest requests are listed first.
@@ -411,7 +411,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 
 0.103:
 
-- osc submitreq create: simplify by make osc guess needed parameters, if 
+- osc submitreq create: simplify by make osc guess needed parameters, if
   there is a working copy and it is a source link.
 - osc submitreq create: don't stop on packages that have a devel project
   defined, if the submit actually comes from that project.
@@ -459,7 +459,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 - osc maintainer: new -D/--devel-project switch
 - BUILD_DIST environment variable will be ignored (bnc#359846)
   The following environment variables can still be used:
-  * OSC_SU_WRAPPER overrides the setting of su-wrapper. 
+  * OSC_SU_WRAPPER overrides the setting of su-wrapper.
   * OSC_BUILD_ROOT overrides the setting of build-root.
   * OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
 
@@ -560,7 +560,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 0.96:
 - following suggestions by Christian Boltz and Michal Marek, osc now memorizes
   where a working copy was checked out from, saving the api server url to
-  .osc/_apiurl. 
+  .osc/_apiurl.
 - implement 'info' subcommand
 - use new api routes in all places
 - buildhistory works again
@@ -571,7 +571,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 - applied patch from Michael Marek, fixing all places where error
   messages were printed to stdout instead of stderr. [#239404]
 - osc is now easier to work with when using alternative API servers. The
-  configured server can be overriden with -A <url> on the commandline. 
+  configured server can be overriden with -A <url> on the commandline.
   "apisrv" in the config takes a URL now, so the variable "scheme" which was
   needed in addition before becomes obsolete. For backward compatibility, a
   hostname (and scheme variable) are accepted like before. Likewise, the auth
@@ -588,7 +588,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
     5 times in an iChain setup
   - adding http_GET/POST/PUT/DELETE() functions, which dispatch to
     http_request(), and use them everywhere
-  - removing othermethods.py 
+  - removing othermethods.py
   - keeping urlopen(), in case it is used from externally, but have it print out
     a "depracated" message
   - finally, global option -H enables HTTP traffic debugging
@@ -598,7 +598,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 - suppress the legend in prjresults by default (show with -l)
 - --version shows the program version number
 - fix the commit subcommand's argument handling. The following works correctly
-  now: osc ci ../test/onlyinwc `pwd` fstab ../test/f2 
+  now: osc ci ../test/onlyinwc `pwd` fstab ../test/f2
 - fix the download progress meter to work with small terminals [#266989]
 - update: when updating multiple packages, print each package name
 - make 'results' subcommand many times faster, by making only a single request
@@ -643,7 +643,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 
 0.8:
 - build: use configuration from *local* specfile (e.g. BuildRequires)
-- build: let envvars OSC_SU_WRAPPER and OSC_BUILD_ROOT override config 
+- build: let envvars OSC_SU_WRAPPER and OSC_BUILD_ROOT override config
 - build: allow 'dynamical' build-root setting by using %(repo)s and %(arch)s
 - add 'createpac/editpac' and 'createprj/editprj' subcommands which
   are similar to 'editmeta' but should be more logical to find
@@ -672,7 +672,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
   metadata from a specfile
 - fix profiling wrapper
 - set User-agent
-- bugfixes: 
+- bugfixes:
   - fix handling of filenames with '+' signs
   - make 'resolved' more robust
   - fix merge on 'update' if called from another directory
@@ -703,7 +703,7 @@ Changes were from Marcus_H, poeml, dmueller, tpatzig.
 
 0.4:
 - allow 'up' inside a project directory (will automatically pull in all new
-  packages). (For past checkouts, you may need to put the project name into 
+  packages). (For past checkouts, you may need to put the project name into
   $prjdir/.osc/_project yourself).
 - checkout: preserve mtimes
 - add diff3 merge support. Locally modified files are merged with upstream changes

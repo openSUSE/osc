@@ -114,9 +114,9 @@ class Fetcher:
         pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
         arch = pkgq.arch()
         # SOURCERPM = 1044
-        if pkgq.filename_suffix == 'rpm' and not pkgq.getTag(1044):
+        if pkgq.filename_suffix == 'rpm' and not pkgq.gettag(1044):
             # NOSOURCE = 1051, NOPATCH = 1052
-            if pkgq.getTag(1051) or pkgq.getTag(1052):
+            if pkgq.gettag(1051) or pkgq.gettag(1052):
                 arch = "nosrc"
             else:
                 arch = "src"

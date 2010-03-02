@@ -1,10 +1,10 @@
-		jw, Tue Oct 20 22:09:16 CEST 2009
+                jw, Tue Oct 20 22:09:16 CEST 2009
 
 This is a feature suggestion for easier osc commandline handling.
 Many commands require specifying Project and/or Package names.
 
 The current situation is not satisfying for the following reasons:
- - inconsistent defaults. Some osc subcommands can take project 
+ - inconsistent defaults. Some osc subcommands can take project
    and/or package names from the current directory, if run inside a checkout
    tree. If both project and package can use this default or only one, and if
    one, which, depends on the command. Users have a hard time memorizing
@@ -12,22 +12,22 @@ The current situation is not satisfying for the following reasons:
      Examples as of osc version 0.123:
        osc maintainer PRJ [PKG]
          - does not look in the current directory.
-	 - need at least PRJ.
+         - need at least PRJ.
        osc list [PRJ [PKG]]
-	 - Never looks at the current directory.
-         - lists all projects, if run without parameters. 
+         - Never looks at the current directory.
+         - lists all projects, if run without parameters.
        osc checkout [PRJ] PKG
        osc checkout PRJ
          - takes project from current directory, if inside a checkout tree
-	 - else operates on an entire project.
+         - else operates on an entire project.
        osc checkin [ARG]
-         - defaults to current project and package, 
-	 - if arg is a subdirectory, project is taken from current directory
-	 - if arg is a file, both project and package are taken from current
-	   directory.
+         - defaults to current project and package,
+         - if arg is a subdirectory, project is taken from current directory
+         - if arg is a file, both project and package are taken from current
+           directory.
        osc results [PRJ PKG]
          - takes either both or none from current directory.
- - many commands do not look into the current directory, 
+ - many commands do not look into the current directory,
    they are cumbersome to use.
  - sometimes PRJ/PKG can be used instead of PRJ PKG
 
@@ -50,25 +50,25 @@ used in parallel.
 --pkg, --pack, --package are synonyms.
 
 osc shall support aliases, to save typing. Some implicit aliases exist,
-with well defined magic effects. Aliases substitution is literal. 
+with well defined magic effects. Aliases substitution is literal.
 They can replace options including their parameters, or just the option, or
 just the parameters.
- -	(a dash) expands to --prj openSUSE:Factory 
-        (or --prj followed by any other project as defined in 
+ -        (a dash) expands to --prj openSUSE:Factory
+        (or --prj followed by any other project as defined in
         ~/.oscrc:default_project )
-	--prj - 	is synonymous to just -, for consistency.
+        --prj -         is synonymous to just -, for consistency.
 
  .      (a dot) evaluates the current working directory, searching for
-        .osc/_apiurl, .osc/_project, and .osc/_package 
-	Implicit --apiurl, --prj, or --pkg options are constructed as far
-	as available from the current directory and as far as not already 
-	present in the command line. 
-	If a dot is used as parameter to an option, it has a more 
-	deterministic meaning.
-        --apiurl .	Substitute only the current apiurl,
-        --prj .		Substitute the current project name, and provides 
-	                a default for --apiurl unless given.
-        --pkg . 	Substitures current package name likewise.
+        .osc/_apiurl, .osc/_project, and .osc/_package
+        Implicit --apiurl, --prj, or --pkg options are constructed as far
+        as available from the current directory and as far as not already
+        present in the command line.
+        If a dot is used as parameter to an option, it has a more
+        deterministic meaning.
+        --apiurl .        Substitute only the current apiurl,
+        --prj .                Substitute the current project name, and provides
+                        a default for --apiurl unless given.
+        --pkg .         Substitures current package name likewise.
 
  ./.    expands to --prj . --pkg .
  ./PKG  expands to --prj . --pkg PKG
@@ -83,10 +83,10 @@ printed as debug output.
 
 online help of osc commands shall refer to the above syntax like this:
 
-	osc CMD ... PROJ/PACK
+        osc CMD ... PROJ/PACK
 
-An additional help entry 
+An additional help entry
 
-	osc help 'PROJ/PACK' 
+        osc help 'PROJ/PACK'
 
 shall explain the relevant details as presented herein.

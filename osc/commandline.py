@@ -28,11 +28,11 @@ MAN_FOOTER = r"""
 Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
 .PP
 For additional information, see
- * http://www.opensuse.org/Build_Service_Tutorial
- * http://www.opensuse.org/Build_Service/CLI
+ * http://en.opensuse.org/Build_Service_Tutorial
+ * http://en.opensuse.org/Build_Service/CLI
 .PP
 You can modify osc commands, or roll you own, via the plugin API:
- * http://www.opensuse.org/Build_Service/osc_plugins
+ * http://en.opensuse.org/Build_Service/osc_plugins
 .SH AUTHOR
 osc was written by several authors. This man page is automatically generated.
 """
@@ -48,11 +48,11 @@ class Osc(cmdln.Cmdln):
     ${help_list}
     global ${option_list}
     For additional information, see
-    * http://www.opensuse.org/Build_Service_Tutorial
-    * http://www.opensuse.org/Build_Service/CLI
+    * http://en.opensuse.org/Build_Service_Tutorial
+    * http://en.opensuse.org/Build_Service/CLI
 
     You can modify osc commands, or roll you own, via the plugin API:
-    * http://www.opensuse.org/Build_Service/osc_plugins
+    * http://en.opensuse.org/Build_Service/osc_plugins
     """
     name = 'osc'
     conf = None
@@ -388,12 +388,12 @@ class Osc(cmdln.Cmdln):
         for p in meta_get_packagelist(apiurl, project):
             if p.startswith("_patchinfo:"):
                 patchinfo = p
-        
+
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
             query='cmd=createpatchinfo'
             if args and args[0]:
-               query += "&name=" + args[0]
+                query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
@@ -777,8 +777,8 @@ class Osc(cmdln.Cmdln):
             for p in pac:
                 result = create_submit_request(apiurl, project, p)
                 if not result:
-#                   sys.exit(result)
-                   sys.exit("submit request creation failed")
+#                    sys.exit(result)
+                    sys.exit("submit request creation failed")
                 sr_ids.append(result)
 
             # create submit requests for all found patchinfos
@@ -798,13 +798,13 @@ class Osc(cmdln.Cmdln):
                       (actionxml, cgi.escape(opts.message or ""))
                 u = makeurl(apiurl, ['request'], query='cmd=create')
                 f = http_POST(u, data=xml)
-         
+
                 root = ET.parse(f).getroot()
                 sr_ids.append(root.get('id'))
 
             print "Requests created: ",
             for i in sr_ids:
-               print i,
+                print i,
             sys.exit('Successfull finished')
 
         elif len(args) <= 2:
@@ -1589,7 +1589,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  package, tproject)
 
         if r is None:
-            print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.' 
+            print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.'
             sys.exit(1)
 
         print "Project " + r + " created."
@@ -1942,9 +1942,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         args = expand_proj_pack(args)
 
-        ## FIXME: 
+        ## FIXME:
         ## if there is only one argument, and it ends in .ymp
-        ## then fetch it, Parse XML to get the first 
+        ## then fetch it, Parse XML to get the first
         ##  metapackage.group.repositories.repository.url
         ## and construct zypper cmd's for all
         ##  metapackage.group.software.item.name
@@ -2698,7 +2698,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.name_filter = None
                 opts.status_filter = None
                 opts.vertical = None
-                self.do_prjresults('prjresults', opts, *args);
+                self.do_prjresults('prjresults', opts, *args)
                 sys.exit(0)
             else:
                 project = store_read_project(wd)
@@ -2819,21 +2819,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     def print_repos(self):
-            wd = os.curdir
-            doprint = False
-            if is_package_dir(wd):
-                str = "package"
-                doprint = True
-            elif is_project_dir(wd):
-                str = "project"
-                doprint = True
-            
-            if doprint:
-                print 'Valid arguments for this %s are:' % str
-                print
-                self.do_repos(None, None)
-                print
-            raise oscerr.WrongArgs('Missing arguments')
+        wd = os.curdir
+        doprint = False
+        if is_package_dir(wd):
+            str = "package"
+            doprint = True
+        elif is_project_dir(wd):
+            str = "project"
+            doprint = True
+
+        if doprint:
+            print 'Valid arguments for this %s are:' % str
+            print
+            self.do_repos(None, None)
+            print
+        raise oscerr.WrongArgs('Missing arguments')
 
     @cmdln.alias('rbl')
     @cmdln.alias('rbuildlog')
@@ -2864,7 +2864,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too many arguments.')
             else:
                 project, package, repository, arch = args
-        
+
         offset=0
         if opts.start:
             offset = int(opts.start)
@@ -2954,15 +2954,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         project = package = repository = arch = None
-        
+
         if len(args) < 2:
             self.print_repos()
 
         if len(args) == 2: # 2
             if is_package_dir('.'):
-                 package = store_read_package(wd)
+                package = store_read_package(wd)
             else:
-                 raise oscerr.WrongArgs('package is not specified.')
+                raise oscerr.WrongArgs('package is not specified.')
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
             repository = args[0]
@@ -2982,9 +2982,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         reason = root.find('explain').text
         print reason
         if reason == "meta change":
-           print "changed keys:"
-           for package in root.findall('packagechange'):
-               print "  ", package.get('change'), package.get('key')
+            print "changed keys:"
+            for package in root.findall('packagechange'):
+                print "  ", package.get('change'), package.get('key')
 
 
     # FIXME: the new osc syntax should allow to specify multiple packages
@@ -2997,9 +2997,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         will be triggered when a certain package changes.
         This is no guarantee, since the new build might have changed dependencies.
 
-        dependson shows the build dependencies inside of a project, valid for a 
+        dependson shows the build dependencies inside of a project, valid for a
         given repository and architecture.
-        NOTE: to see all binary packages, which can trigger a build you need to 
+        NOTE: to see all binary packages, which can trigger a build you need to
               refer the buildinfo, since this command shows only the dependencies
               inside of a project.
 
@@ -3019,7 +3019,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
         project = packages = repository = arch = reverse = None
-        
+
         if len(args) < 2 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
 
@@ -3028,9 +3028,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 3: # 2
             if is_package_dir('.'):
-                 packages = [store_read_package(wd)]
+                packages = [store_read_package(wd)]
             elif not is_project_dir('.'):
-                 raise oscerr.WrongArgs('Project and package is not specified.')
+                raise oscerr.WrongArgs('Project and package is not specified.')
             project = store_read_project(wd)
             apiurl = store_read_apiurl(wd)
             repository = args[0]
@@ -3058,7 +3058,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for package in root.findall('package'):
             print package.get('name'), ":"
             for dep in package.findall('pkgdep'):
-               print "  ", dep.text
+                print "  ", dep.text
 
 
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
@@ -3090,7 +3090,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         wd = os.curdir
         args = slash_split(args)
-        
+
         if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
@@ -3151,7 +3151,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         wd = os.curdir
         args = slash_split(args)
-        
+
         if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
@@ -4123,7 +4123,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             extra_limiter='attribute/@name="%s"' % (opts.limit_to_attribute)
         if not opts.substring:
             opts.exact = True
-            
+
 
         role_filter=None
         if for_user:
@@ -4376,7 +4376,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_bugowner(self, subcmd, opts, *args):
         """${cmd_name}: Show bugowners of a project/package
 
-            osc bugowner PRJ 
+            osc bugowner PRJ
             osc bugowner PRJ PKG
 
         Shortcut for osc maintainer -B [PRJ] PKG
@@ -4819,7 +4819,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         dir_oldpatched = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name, 'srcmd5': p.srcmd5 }
         dir_oldpatched['entries'] = [[f.name, f.md5] for f in p.filelist]
-        
+
         query = { 'rev': linkinfo.srcmd5 }
         u = makeurl(p.apiurl, ['source', linkinfo.project, linkinfo.package], query=query)
         f = http_GET(u)

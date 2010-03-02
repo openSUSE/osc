@@ -176,7 +176,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
 
         # Our change: Check to see if we're using a proxy.
         # Then create an appropriate ssl-aware connection.
-        full_url = req.get_full_url() 
+        full_url = req.get_full_url()
         target_host = urlparse.urlparse(full_url)[1]
 
         if (target_host != host):
