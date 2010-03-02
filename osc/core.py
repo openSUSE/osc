@@ -3273,7 +3273,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg=''):
     """
     Branch a package (via API call)
     """
@@ -3286,6 +3286,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['target_project'] = target_project
     if target_package:
         query['target_package'] = target_package
+    if msg:
+        query['comment'] = msg
     u = makeurl(apiurl, ['source', src_project, src_package], query=query)
     try:
         f = http_POST(u)

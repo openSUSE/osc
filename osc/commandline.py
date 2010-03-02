@@ -1620,6 +1620,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='branch against a specific revision')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify message TEXT')
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
@@ -1667,7 +1669,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 branch_pkg(conf.config['apiurl'], args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
-                           return_existing=opts.checkout)
+                           return_existing=opts.checkout, msg=opts.message or '')
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
