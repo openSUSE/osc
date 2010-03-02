@@ -4108,17 +4108,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if subcmd == 'sm' or opts.maintained:
             opts.bugowner = True
             opts.package = True
+            opts.project = True
             opts.limit_to_attribute = conf.config['maintained_attribute']
         if opts.title:
             search_list.append('title')
         if opts.description:
             search_list.append('description')
-        if opts.package:
-            search_list.append('@name')
-            search_for.append('package')
         if opts.project:
             search_list.append('@name')
             search_for.append('project')
+        if opts.package:
+            search_list.append('@name')
+            search_for.append('package')
         if opts.limit_to_attribute:
             extra_limiter='attribute/@name="%s"' % (opts.limit_to_attribute)
         if not opts.substring:
@@ -4138,7 +4139,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             search_list = ['title', 'description', '@name']
         if not search_for:
             search_for = [ 'project', 'package' ]
+
         for kind in search_for:
+            # special mode only for maintainted search, search for projects based on package names
+            if subcmd == 'sm' or opts.maintained:
+               if kind == 'project':
+                  search_list.append('package/@name')
+               else:
+                  search_list.remove('package/@name')
+                  search_list.append('@name')
+
             result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl, role_filter, extra_limiter)
 
             if not result:

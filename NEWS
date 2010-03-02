@@ -7,6 +7,8 @@
  - Allow --prefer-pkgs to parse repodata
  - new "osc build --no-service" option to skip source service update
  - fix linktobranch apiurl usage
+ - "maintained package" search is telling relevant projects now
+   * requires OBS 1.7.2 or 2.0
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
