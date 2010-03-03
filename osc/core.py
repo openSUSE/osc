@@ -990,15 +990,7 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision))
-        try:
-            f = open(os.path.join(self.storedir, '_files.new'), 'w')
-            f.write(meta)
-            f.close()
-            os.rename(os.path.join(self.storedir, '_files.new'), os.path.join(self.storedir, '_files'))
-        except:
-            if os.path.exists(os.path.join(self.storedir, '_files.new')):
-                os.unlink(os.path.join(self.storedir, '_files.new'))
-            raise
+        store_write_string(self.absdir, '_files', meta)
 
     def update_datastructs(self):
         """
@@ -1091,9 +1083,7 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
-        f = open(os.path.join(self.storedir, '_meta'), 'w')
-        f.write(meta)
-        f.close()
+        store_write_string(self.absdir, '_meta', meta)
 
     def findfilebyname(self, n):
         for i in self.filelist:
@@ -3929,15 +3919,21 @@ def store_read_apiurl(dir):
 
 def store_write_string(dir, file, string):
     fname = os.path.join(dir, store, file)
-    open(fname, 'w').write(string)
+    try:
+        f = open(fname + '.new', 'w')
+        f.write(string)
+        f.close()
+        os.rename(fname + '.new', fname)
+    except:
+        if os.path.exists(fname + '.new'):
+            os.unlink(fname + '.new')
+        raise
 
 def store_write_project(dir, project):
-    fname = os.path.join(dir, store, '_project')
-    open(fname, 'w').write(project + '\n')
+    store_write_string(dir, '_project', project + '\n')
 
 def store_write_apiurl(dir, apiurl):
-    fname = os.path.join(dir, store, '_apiurl')
-    open(fname, 'w').write(apiurl + '\n')
+    store_write_string(dir, '_apiurl', apiurl + '\n')
 
 def store_unlink_file(dir, file):
     try: os.unlink(os.path.join(dir, store, file))
