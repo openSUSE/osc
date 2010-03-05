@@ -4754,7 +4754,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
 
             o = open(os.path.join(destdir,  name), 'wb')
-            code = subprocess.call(['diff3', '-m',
+            code = subprocess.call(['diff3', '-m', '-E',
               '-L', '.mine',
               os.path.join(destdir, name + '.mine'),
               '-L', '.old',
@@ -4873,7 +4873,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
 
             o = open(name, 'wb')
-            code = subprocess.call(['diff3', '-m',
+            code = subprocess.call(['diff3', '-m', '-E',
               '-L', '.mine', name + '.mine',
               '-L', '.old', name + '.old',
               '-L', '.new', name + '.new',
