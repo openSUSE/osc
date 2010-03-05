@@ -66,7 +66,7 @@ class Fetcher:
         #log(0, '%s: %s' % (errobj.url, str(errobj.exception)))
         #log(0, 'Trying other mirror.')
         if not self.nopac:
-            print 'Trying openSUSE Build Service server for %s (%s), since it is not on %s.' \
+            print 'Trying openSUSE Build Service server for %s (%s), not found at %s.' \
                   % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
         raise errobj.exception
 

@@ -742,7 +742,7 @@ class Osc(cmdln.Cmdln):
                 if p.startswith("_patchinfo:"):
                     pi.append(p)
                 else:
-                    # get _link info from server, who knows about the local state ...
+                    # get _link info from server, that knows about the local state ...
                     u = makeurl(apiurl, ['source', project, p])
                     f = http_GET(u)
                     root = ET.parse(f).getroot()
@@ -764,7 +764,7 @@ class Osc(cmdln.Cmdln):
                         else:
                             print "  Skipping package ", p
                     else:
-                        print "Skipping package ", p,  " since it is a source link pointing inside to the project."
+                        print "Skipping package ", p,  " since it is a source link pointing inside the project."
 
             if not opts.yes:
                 if pi:
