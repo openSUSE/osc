@@ -80,6 +80,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 
              'debug': '0',
              'http_debug': '0',
+             'verbose': '1',
              'traceback': '0',
              'post_mortem': '0',
              'use_keyring': '1',
@@ -128,6 +129,8 @@ config = DEFAULTS.copy()
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'use_keyring', 'gnome_keyring']
+
+api_host_options = ['user', 'pass', 'passx', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
 new_conf_template = """
 [general]
@@ -653,11 +656,10 @@ def get_config(override_conffile = None,
         print >>sys.stderr, 'Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)'
         config['build_repository'] = config['build_platform']
 
+    config['verbose'] = int(config['verbose'])
     # override values which we were called with
     if override_verbose:
         config['verbose'] = override_verbose + 1
-    if not config.has_key('verbose'):
-        config['verbose'] = 1
 
     if override_debug:
         config['debug'] = override_debug
