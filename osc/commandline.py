@@ -5069,6 +5069,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         self.do_add(subcmd, opts, dest)
         self.do_delete(subcmd, opts, source)
 
+    @cmdln.option('-d', '--delete', action='store_true',
+                        help='delete option from config or reset option to the default)')
+    def do_config(self, subcmd, opts, section, opt, *val):
+        """${cmd_name}: get/set a config option
+
+        Examples:
+            osc config section option (get current value)
+            osc config section option value (set to value)
+            osc config section option --delete (delete option/reset to the default)
+            (section is either an apiurl or an alias or 'generic')
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=False)
+        if newval is None and opts.delete:
+            print '\'%s\': \'%s\' got removed' % (section, opt)
+        elif newval is None:
+            print '\'%s\': \'%s\' is not set' % (section, opt)
+        else:
+            print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
 
 # fini!
 ###############################################################################

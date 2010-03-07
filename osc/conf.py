@@ -130,7 +130,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'use_keyring', 'gnome_keyring']
 
-api_host_options = ['user', 'pass', 'passx', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
+api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
 new_conf_template = """
 [general]
@@ -397,11 +397,60 @@ def get_configParser(conffile=None, force_read=False):
     """
     conffile = conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
     conffile = os.path.expanduser(conffile)
-    if force_read or not get_configParser.__dict__.has_key('cp'):
+    if not get_configParser.__dict__.has_key('conffile'):
+        get_configParser.conffile = conffile
+    if force_read or not get_configParser.__dict__.has_key('cp') or conffile != get_configParser.conffile:
         get_configParser.cp = OscConfigParser.OscConfigParser(DEFAULTS)
         get_configParser.cp.read(conffile)
+        get_configParser.conffile = conffile
     return get_configParser.cp
 
+def config_set_option(section, opt, val=None, delete=False, update=True, **kwargs):
+    """
+    Sets a config option. If val is not specified the current/default value is
+    returned. If val is specified, opt is set to val and the new value is returned.
+    If an option was modified get_config is called with **kwargs unless update is set
+    to False (override_conffile defaults to config['conffile']).
+    If val is not specified and delete is True then the option is removed from the
+    config/reset to the default value.
+    """
+    def write_config(fname, cp):
+        """write new configfile in a safe way"""
+        try:
+            f = open(fname + '.new', 'w')
+            cp.write(f, comments=True)
+            f.close()
+            os.rename(fname + '.new', fname)
+        except:
+            if os.path.exists(fname + '.new'):
+                os.unlink(fname + '.new')
+            raise
+
+    cp = get_configParser(config['conffile'])
+    # don't allow "internal" options
+    general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
+    section = config['apiurl_aliases'].get(section, section)
+    if not section in cp.sections():
+        raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
+    if section == 'general' and not opt in general_opts or \
+       section != 'general' and not opt in api_host_options:
+        raise oscerr.ConfigError('unknown config option \'%s\'' % opt, config['conffile'])
+    run = False
+    if val:
+        cp.set(section, opt, val)
+        write_config(config['conffile'], cp)
+        run = True
+    elif delete and cp.has_option(section, opt):
+        cp.remove_option(section, opt)
+        write_config(config['conffile'], cp)
+        run = True
+    if run and update:
+        kw = {'override_conffile': config['conffile']}
+        kw.update(kwargs)
+        get_config(**kw)
+    if cp.has_option(section, opt):
+        return (opt, cp.get(section, opt, raw=True))
+    return (opt, None)
 
 def write_initial_config(conffile, entries, custom_template = ''):
     """
@@ -528,6 +577,7 @@ def get_config(override_conffile = None,
         raise oscerr.ConfigError(msg, conffile)
 
     config = dict(cp.items('general', raw=1))
+    config['conffile'] = conffile
 
     for i in boolean_opts:
         try:
