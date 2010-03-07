@@ -4437,7 +4437,14 @@ def addFiles(filenames, prj_obj = None):
                 print >>sys.stderr, 'osc: warning: \'%s\' is excluded from a working copy' % filename
                 continue
             if filename in pac.filenamelist:
-                print >>sys.stderr, 'osc: warning: \'%s\' is already under version control' % filename
+                # check if this is a re-add after delete.
+                pac.to_be_deleted = read_tobedeleted(pac.dir)
+                try:
+                    pac.to_be_deleted.remove(filename)
+                    print >>sys.stderr, 'osc: Note: \'%s\' was deleted, is now re-added' % filename
+                    pac.write_deletelist()
+                except:
+                    print >>sys.stderr, 'osc: Warning: \'%s\' is already under version control' % filename
                 continue
             if pac.dir != '.':
                 pathname = os.path.join(pac.dir, filename)
