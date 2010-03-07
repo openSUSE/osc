@@ -108,7 +108,7 @@ def run(prg):
         return 1
 
     except URLError, e:
-        print >>sys.stderr, 'Failed to reach a server:', e.reason
+        print >>sys.stderr, 'Failed to reach a server:\n', e.reason
         return 1
 
     except (oscerr.ConfigError, oscerr.NoConfigfile), e:

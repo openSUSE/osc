@@ -172,7 +172,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
     def https_open(self, req):
         host = req.get_host()
         if not host:
-            raise URLError('no host given')
+            raise M2Crypto.m2urllib2.URLError('no host given: ' + req.get_full_url())
 
         # Our change: Check to see if we're using a proxy.
         # Then create an appropriate ssl-aware connection.
@@ -199,7 +199,8 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             h.request(req.get_method(), req.get_full_url(), req.data, headers)
             r = h.getresponse()
         except socket.error, err: # XXX what error?
-            raise URLError(err)
+            err.filename = full_url
+            raise M2Crypto.m2urllib2.URLError(err)
 
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
