@@ -515,11 +515,19 @@ def main(opts, argv):
             bc_file.flush()
     except urllib2.HTTPError, e:
         if e.code == 404:
-        # check what caused the 404
+            # check what caused the 404
             if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
                            template_args=None, create_new=False, apiurl=apiurl):
-                if pac == '_repository' or meta_exists(metatype='pkg', path_args=(quote_plus(prj), quote_plus(pac)),
-                                                       template_args=None, create_new=False, apiurl=apiurl):
+                pkg_meta_e = None
+                try:
+                    # take care, not to run into double trouble.
+                    pkg_meta_e = meta_exists(metatype='pkg', path_args=(quote_plus(prj), 
+                                        quote_plus(pac)), template_args=None, create_new=False, 
+                                        apiurl=apiurl)
+                except:
+                    pass
+
+                if pac == '_repository' or pkg_meta_e:
                     print >>sys.stderr, 'ERROR: Either wrong repo/arch as parameter or a parse error of .spec/.dsc/.kiwi file due to syntax error'
                 else:
                     print >>sys.stderr, 'The package \'%s\' does not exists - please ' \
