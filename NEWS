@@ -1,3 +1,5 @@
+ - "osc cat" now auto-expands through link.
+ - fixed "osc add" after "osc delete".
 
 0.126
  - fix "osc patchinfo" command (crashed before)
