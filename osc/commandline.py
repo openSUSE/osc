@@ -199,6 +199,8 @@ class Osc(cmdln.Cmdln):
                         help='specify revision (only for sources)')
     @cmdln.option('-e', '--expand', action='store_true',
                         help='expand linked package (only for sources)')
+    @cmdln.option('-u', '--unexpand', action='store_true',
+                        help='always work with unexpanded (source) packages')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='print extra information')
     @cmdln.option('-l', '--long', action='store_true', dest='verbose',
@@ -338,28 +340,40 @@ class Osc(cmdln.Cmdln):
                 print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
 
             elif len(args) == 2 or len(args) == 3:
-                l = meta_get_filelist(conf.config['apiurl'],
+                link_seen = False
+                print_not_found = True
+                for i in [ 1, 2 ]:
+                    l = meta_get_filelist(conf.config['apiurl'],
                                       project,
                                       package,
                                       verbose=opts.verbose,
                                       expand=opts.expand,
                                       revision=opts.revision)
-                if opts.verbose:
-                    out = [ '%s %7s %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
+                    if opts.verbose:
+                        for i in l: 
+                            if i.name == '_link': 
+                                link_seen = True
+                        out = [ '%s %7s %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
                             for i in l if not fname or fname == i.name ]
-                    if len(out) == 0:
+                        if len(out) > 0:
+                            print_not_found = False
+                            print '\n'.join(out)
+                    else:
+                        if '_link' in l: 
+                            link_seen = True
                         if fname:
-                            print 'file \'%s\' does not exist' % fname
-                    else:
-                        print '\n'.join(out)
-                else:
-                    if fname:
-                        if fname in l:
-                            print fname
+                            if fname in l:
+                                print fname
+                                print_not_found = False
                         else:
-                            print 'file \'%s\' does not exist' % fname
-                    else:
-                        print '\n'.join(l)
+                            print '\n'.join(l)
+                    if opts.expand or opts.unexpand or link_seen == 0: break
+                    m = show_files_meta(conf.config['apiurl'], project, package)
+                    xml = ET.fromstring(''.join(m)).find('linkinfo')
+                    print "# -> %s %s" % (xml.get('project'), xml.get('package'))
+                    opts.expand = True
+                if fname and print_not_found:
+                    print 'file \'%s\' does not exist' % fname
 
 
     @cmdln.option('-f', '--force', action='store_true',
