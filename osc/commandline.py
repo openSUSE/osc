@@ -4527,9 +4527,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='print out the specified revision')
     @cmdln.option('-e', '--expand', action='store_true',
-                  help='force expand linked package. Use with -n')
-    @cmdln.option('-n', '--no-auto-expand', action='store_true',
-                  help='expand link only when -e given. Default: try without expansion, then with.')
+                  help='force expansion of linked packages.')
+    @cmdln.option('-u', '--unexpand', action='store_true',
+                  help='always work with unexpanded packages.')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
 
@@ -4568,7 +4568,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for data in streamfile(u):
                 sys.stdout.write(data)
         except urllib2.HTTPError, e:
-            if e.code == 404 and not opts.expand and not opts.no_auto_expand:
+            if e.code == 404 and not opts.expand and not opts.unexpand:
                 print >>sys.stderr, 'expanding link...'
                 query['rev'] = show_upstream_srcmd5(conf.config['apiurl'], args[0], args[1], expand=True, revision=opts.revision)
                 u = makeurl(conf.config['apiurl'], ['source', args[0], args[1], args[2]], query=query)
