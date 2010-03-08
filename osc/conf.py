@@ -430,6 +430,8 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
     # don't allow "internal" options
     general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
     section = config['apiurl_aliases'].get(section, section)
+    sections = dict([[i.rstrip('/'), i] for i in cp.sections()])
+    section = sections.get(section.rstrip('/'), section)
     if not section in cp.sections():
         raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
     if section == 'general' and not opt in general_opts or \
