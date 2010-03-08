@@ -1,3 +1,4 @@
+ - suggest git, svn, ... if indicated, after oscerr.NoWorkingCopy
  - "osc cat" now auto-expands through link.
  - fixed "osc add" after "osc delete".
 

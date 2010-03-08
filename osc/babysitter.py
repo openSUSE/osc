@@ -3,6 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+import os.path
 import sys
 import signal
 from osc import oscerr
@@ -84,8 +85,15 @@ def run(prg):
         print >>sys.stderr, 'Use "osc repairlink" to fix merge conflicts.\n'
         return 1
 
-    except (oscerr.NoWorkingCopy, oscerr.WorkingCopyWrongVersion), e:
+    except oscerr.WorkingCopyWrongVersion, e:
         print >>sys.stderr, e
+
+    except oscerr.NoWorkingCopy, e:
+        print >>sys.stderr, e
+        if os.path.isdir('.git'): print >>sys.stderr, "Current directory looks like git."
+        if os.path.isdir('.hg'):  print >>sys.stderr, "Current directory looks like mercurial."
+        if os.path.isdir('.svn'): print >>sys.stderr, "Current directory looks like svn."
+        if os.path.isdir('CVS'):  print >>sys.stderr, "Current directory looks like cvs."
         return 1
 
     except HTTPError, e:
