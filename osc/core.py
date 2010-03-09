@@ -1265,8 +1265,8 @@ rev: %s
     def mark_frozen(self):
         store_write_string(self.absdir, '_frozenlink', '')
         print
-        print "The link in this package is currently broken. I have checked"
-        print "out the last working version instead, please use 'osc pull'"
+        print "The link in this package is currently broken. Checking"
+        print "out the last working version instead; please use 'osc pull'"
         print "to repair the link."
         print
 
