@@ -5110,6 +5110,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        if len(val) and opts.delete:
+            raise oscerr.WrongOptions('Sorry, --delete and the specification of a value argument are mutually exclusive')
         opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=False)
         if newval is None and opts.delete:
             print '\'%s\': \'%s\' got removed' % (section, opt)
