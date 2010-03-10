@@ -4089,7 +4089,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc search \'search term\' <options>
-            osc maintained \'source package name\'
+            osc sm \'source package name\'
             osc se ...
         ${cmd_option_list}
 
