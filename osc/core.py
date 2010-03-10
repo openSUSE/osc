@@ -2592,16 +2592,12 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
 
 
 def get_request_list(apiurl, project, package, req_who='', req_state=('new',), req_type=None, exclude_target_projects=[]):
-    match = ''
+    xpath = ''
     if not 'all' in req_state:
         for state in req_state:
-            if len(match):
-                match += ' or '
-            match += '(state/@name=\'%s\')' % quote_plus(state)
+            xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, inner=True)
     if req_who:
-        if len(match):
-            match += ' and '
-        match += '(state/@who=\'%(who)s\' or history/@who=\'%(who)s\')' % {'who': quote_plus(req_who)}
+        xpath = xpath_join(xpath, '(state/@who=\'%(who)s\' or history/@who=\'%(who)s\')' % {'who': req_who}, op='and')
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend
@@ -2611,33 +2607,25 @@ def get_request_list(apiurl, project, package, req_who='', req_state=('new',), r
     if package:
         todo['package'] = package
     for kind, val in todo.iteritems():
-        if len(match):
-            match += ' and '
-        match += '(action/target/@%(kind)s=\'%(val)s\' or ' \
-                  'action/source/@%(kind)s=\'%(val)s\' or ' \
-                  'submit/target/@%(kind)s=\'%(val)s\' or ' \
-                  'submit/source/@%(kind)s=\'%(val)s\')' % {'kind': kind, 'val': val}
+        xpath = xpath_join(xpath, '(action/target/@%(kind)s=\'%(val)s\' or ' \
+                                  'action/source/@%(kind)s=\'%(val)s\' or ' \
+                                  'submit/target/@%(kind)s=\'%(val)s\' or ' \
+                                  'submit/source/@%(kind)s=\'%(val)s\')' % {'kind': kind, 'val': val}, op='and')
     if req_type:
-        if len(match):
-            match += ' and '
-        match += '(action/@type=\'%s\')' % req_type
+        xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
     for i in exclude_target_projects:
-        if len(match):
-            match += ' and '
-        match += '(not(action/target/@project=\'%(prj)s\' or ' \
-                  'submit/target/@project=\'%(prj)s\'))' % {'prj': quote_plus(i)}
+        xpath = xpath_join(xpath, '(not(action/target/@project=\'%(prj)s\' or ' \
+                                  'submit/target/@project=\'%(prj)s\'))' % {'prj': i}, op='and')
 
     if conf.config['verbose'] > 1:
-        print '[ %s ]' % match
-    u = makeurl(apiurl, ['search', 'request'], ['match=%s' % match.replace(' ', '%20')])
-    f = http_GET(u)
-    collection = ET.parse(f).getroot()
+        print '[ %s ]' % xpath
+    res = search(apiurl, request=xpath)
+    collection = res['request']
     requests = []
     for root in collection.findall('request'):
         r = Request()
         r.read(root)
         requests.append(r)
-
     return requests
 
 
