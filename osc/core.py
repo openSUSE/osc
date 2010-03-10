@@ -4058,26 +4058,6 @@ def checkRevision(prj, pac, revision, apiurl=None):
     except (ValueError, TypeError):
         return False
 
-def build_xpath_predicate(search_list, search_term, exact_matches, extra_limiter):
-    """
-    Builds and returns a xpath predicate
-    """
-
-    predicate = ['[']
-    for i, elem in enumerate(search_list):
-        predicate.append('(')
-        if i > 0 and i < len(search_list):
-            predicate.append(' or ')
-        if exact_matches:
-            predicate.append('%s=\'%s\'' % (elem, search_term))
-        else:
-            predicate.append('contains(%s, \'%s\')' % (elem, search_term))
-        if extra_limiter:
-            predicate.append(' and %s' % (extra_limiter))
-        predicate.append(')')
-    predicate.append(']')
-    return predicate
-
 def build_table(col_num, data = [], headline = [], width=1, csv = False):
     """
     This method builds a simple table.
@@ -4126,53 +4106,53 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
         separator = ''
     return [separator.join(row) for row in table]
 
-def search(apiurl, search_list, kind, search_term, verbose = False, exact_matches = False, repos_baseurl = False, role_filter = None, extra_limiter = None):
+def xpath_join(expr, new_expr, op='or', inner=False):
     """
-    Perform a search for 'search_term'. A list which contains the
-    results will be returned on success otherwise 'None'. If 'verbose' is true
-    and the title-tag-text (<title>TEXT</title>) is longer than 60 chars it'll we
-    truncated.
+    Join two xpath expressions. If inner is False expr will
+    be surrounded with parentheses (unless it's not already
+    surrounded).
     """
-
-    if role_filter:
-        role_filter = role_filter.split(':')
-
-    predicate = build_xpath_predicate(search_list, search_term, exact_matches, extra_limiter)
-    u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus(''.join(predicate))])
-    f = http_GET(u)
-    root = ET.parse(f).getroot()
-    result = []
-    for node in root.findall(kind):
-        if role_filter:
-            skip = 1
-            for p in node.findall('person'):
-                if p.get('userid') == role_filter[0] and p.get('role') == role_filter[1]:
-                    skip = 0
-            if skip:
+    if not expr:
+        return new_expr
+    # NOTE: this is NO syntax check etc. (e.g. if a literal contains a '(' or ')'
+    #       the check might fail and expr will be surrounded with parentheses or NOT)
+    parentheses = not inner
+    if not inner and expr.startswith('(') and expr.endswith(')'):
+        parentheses = False
+        braces = [i for i in expr if i == '(' or i == ')']
+        closed = 0
+        while len(braces):
+            if braces.pop() == ')':
+                closed += 1
                 continue
+            else:
+                closed += -1
+            while len(braces):
+                if braces.pop() == '(':
+                    closed += -1
+                else:
+                    closed += 1
+            if closed != 0:
+                parentheses = True
+                break
+    if parentheses:
+        expr = '(%s)' % expr
+    return '%s %s %s' % (expr, op, new_expr)
 
-        # TODO: clarify if we need to check if node.get() returns 'None'.
-        #       If it returns 'None' something is broken anyway...
-        if kind == 'package':
-            project = node.get('project')
-            package = node.get('name')
-            result.append(package)
-        else:
-            project = node.get('name')
-        result.append(project)
-        if verbose:
-            title = node.findtext('title').strip()
-            if len(title) > 60:
-                title = title[:61] + '...'
-            result.append(title)
-        if repos_baseurl:
-            # FIXME: no hardcoded URL of instance
-            result.append('http://download.opensuse.org/repositories/%s/' % project.replace(':', ':/'))
-    if result:
-        return result
-    else:
-        return None
-
+def search(apiurl, **kwargs):
+    """
+    Perform a search request. The requests are constructed as follows:
+    kwargs = {'kind1' => xpath1, 'kind2' => xpath2, ..., 'kindN' => xpathN}
+    GET /search/kind1?match=xpath1
+    ...
+    GET /search/kindN?match=xpathN
+    """
+    res = {}
+    for urlpath, xpath in kwargs.iteritems():
+        u = makeurl(apiurl, ['search', urlpath], ['match=%s' % quote_plus(xpath)])
+        f = http_GET(u)
+        res[urlpath] = ET.parse(f).getroot()
+    return res
 
 def set_link_rev(apiurl, project, package, revision = None):
     url = makeurl(apiurl, ['source', project, package, '_link'])

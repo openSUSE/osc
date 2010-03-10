@@ -4080,7 +4080,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.alias('sm')
     @cmdln.alias('se')
-    def do_search(self, subcmd, opts, *args):
+    def do_search(self, subcmd, opts, search_term):
         """${cmd_name}: Search for a project and/or package.
 
         If no option is specified osc will search for projects and
@@ -4096,98 +4096,94 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         osc search does not find binary rpm names. Use
         http://software.opensuse.org/search?q=binaryname
         """
+        def build_xpath(attr, what, substr = False):
+            if substr:
+                return 'contains(%s, \'%s\')' % (attr, what)
+            else:
+                return '%s = \'%s\'' % (attr, what)
 
         if opts.mine:
             opts.bugowner = True
             opts.package = True
 
-        for_user = False
-        if opts.involved or opts.bugowner or opts.maintainer:
-            for_user = True
+        if (opts.title or opts.description) and (opts.involved or opts.bugowner or opts.maintainer):
+            raise oscerr.WrongOptions('Sorry, the options \'--title\' and/or \'--description\' ' \
+                                      'are mutually exclusive with \'-i\'/\'-b\'/\'-m\'/\'-M\'')
+        if opts.substring and opts.exact:
+            raise oscerr.WrongOptions('Sorry, the options \'--substring\' and \'--exact\' are mutually exclusive')
 
-        search_term = None
-        if len(args) > 1:
-            raise oscerr.WrongArgs('Too many arguments.')
-        elif len(args) < 1 and not for_user:
-            raise oscerr.WrongArgs('Too few arguments.')
-        elif len(args) == 1:
-            search_term = args[0]
-
-        if (opts.title or opts.description) and for_user:
-            raise oscerr.WrongArgs('Sorry, the options \'--title\' and/or \'--description\' ' \
-                                   'are mutually exclusive with \'-i\'/\'-b\'/\'-m\'/\'-M\'')
-        search_list = []
-        search_for = []
-        extra_limiter = ""
         if subcmd == 'sm' or opts.maintained:
-            opts.bugowner = True
             opts.package = True
-            opts.project = True
-            opts.limit_to_attribute = conf.config['maintained_attribute']
-        if opts.title:
-            search_list.append('title')
-        if opts.description:
-            search_list.append('description')
-        if opts.project:
-            search_list.append('@name')
-            search_for.append('project')
-        if opts.package:
-            search_list.append('@name')
-            search_for.append('package')
-        if opts.limit_to_attribute:
-            extra_limiter='attribute/@name="%s"' % (opts.limit_to_attribute)
         if not opts.substring:
             opts.exact = True
 
+        xpath = ''
+        if opts.title:
+            xpath = xpath_join(xpath, build_xpath('title', search_term, opts.substring), inner=True)
+        if opts.description:
+            xpath = xpath_join(xpath, build_xpath('description', search_term, opts.substring), inner=True)
+        if opts.project or opts.package:
+            xpath = xpath_join(xpath, build_xpath('@name', search_term, opts.substring), inner=True)
+        # role filter
+        role_filter = ''
+        if opts.bugowner or opts.maintainer or opts.involved:
+            xpath = xpath_join(xpath, 'person/@userid = \'%s\'' % search_term, inner=True)
+            role_filter = '%s (%s)' % (search_term, 'person')
+        if opts.bugowner and not opts.maintainer:
+            xpath = xpath_join(xpath, 'person/@role=\'bugowner\'', op='and')
+            role_filter = '%s (%s)' % (search_term, 'bugowner')
+        elif not opts.bugowner and opts.maintainer:
+            xpath = xpath_join(xpath, 'person/@role=\'maintainer\'', op='and')
+            role_filter = '%s (%s)' % (search_term, 'maintainer')
+        if opts.limit_to_attribute:
+            xpath = xpath_join(xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
 
-        role_filter=None
-        if for_user:
-            search_list = [ 'person/@userid' ]
-            search_term = search_term or conf.get_apiurl_usr(conf.config['apiurl'])
-            if opts.bugowner and not opts.maintainer:
-                role_filter = search_term+':bugowner'
-            if not opts.bugowner and opts.maintainer:
-                role_filter = search_term+':maintainer'
+        if not xpath:
+            xpath = xpath_join(xpath, build_xpath('@name', search_term, opts.substring), inner=True)
+            xpath = xpath_join(xpath, build_xpath('title', search_term, opts.substring), inner=True)
+            xpath = xpath_join(xpath, build_xpath('description', search_term, opts.substring), inner=True)
+        what = {'project': xpath, 'package': xpath}
+        if subcmd == 'sm' or opts.maintained:
+            xpath = xpath_join(xpath, '(project/attribute/@name=\'%(attr)s\' or attribute/@name=\'%(attr)s\')' % {'attr': conf.config['maintained_attribute']}, op='and')
+            what = {'package': xpath}
+        elif opts.project and not opts.package:
+            what = {'project': xpath}
+        elif not opts.project and opts.package:
+            what = {'package': xpath}
+        res = search(conf.config['apiurl'], **what)
+        for kind, root in res.iteritems():
+            results = []
+            for node in root.findall(kind):
+                result = []
+                project = node.get('project')
+                package = None
+                if project is None:
+                    project = node.get('name')
+                else:
+                    package = node.get('name')
+                result.append(project)
+                if not package is None:
+                    result.append(package)
+                if opts.verbose:
+                    title = node.findtext('title').strip()
+                    if len(title) > 60:
+                        title = title[:61] + '...'
+                    result.append(title)
+                if opts.repos_baseurl:
+                    # FIXME: no hardcoded URL of instance
+                    result.append('http://download.opensuse.org/repositories/%s/' % project.replace(':', ':/'))
+                results.append(result)
 
-        if not search_list:
-            search_list = ['title', 'description', '@name']
-        if not search_for:
-            search_for = [ 'project', 'package' ]
-
-        for kind in search_for:
-            # special mode only for maintainted search, search for projects based on package names
-            if subcmd == 'sm' or opts.maintained:
-               if kind == 'project':
-                  search_list.append('package/@name')
-               else:
-                  search_list.remove('package/@name')
-                  search_list.append('@name')
-
-            result = search(conf.config['apiurl'], set(search_list), kind, search_term, opts.verbose, opts.exact, opts.repos_baseurl, role_filter, extra_limiter)
-
-            if not result:
+            if not len(results):
                 print 'No matches found for \'%s\' in %ss' % (role_filter or search_term, kind)
                 continue
-
-            # unfortunately, there is no sort support in the api.
-            # we can do it here. Maybe it would be better done in osc.core.search() already.
-            if kind in ['project']:
-                result.sort()
-            if kind in ['package']:
-                # hm... results is a flat list
-                ## FIXME: this messes up with se -v .
-                l = [ (j, i) for i, j in zip(*[iter(result)]*2) ]
-                l.sort()
-                result = []
-                ##
-                ## search used to report the table as
-                ## 'package project', I see no reason for having package before project.
-                ## But it definitly hinders copy-paste.
-                ## Changed to more normal 'project package' ordering. 2009-10-05, jw
-                ##
-                for j, i in l:
-                    result.extend([j, i])
-
+            # construct a sorted, flat list
+            results.sort(lambda x, y: cmp(x[0], y[0]))
+            new = []
+            for i in results:
+                new.extend(i)
+            results = new
+            headline = []
             if kind == 'package':
                 headline = [ '# Project', '# Package' ]
             else:
@@ -4197,10 +4193,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.repos_baseurl:
                 headline.append('# URL')
             if not opts.csv:
-                if len(search_for) > 1:
+                if len(what.keys()) > 1:
                     print '#' * 68
                 print 'matches for \'%s\' in %ss:\n' % (role_filter or search_term, kind)
-            for row in build_table(len(headline), result, headline, 2, csv = opts.csv):
+            for row in build_table(len(headline), results, headline, 2, csv = opts.csv):
                 print row
 
 
