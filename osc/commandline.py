@@ -4129,12 +4129,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.bugowner or opts.maintainer or opts.involved:
             xpath = xpath_join(xpath, 'person/@userid = \'%s\'' % search_term, inner=True)
             role_filter = '%s (%s)' % (search_term, 'person')
+        role_filter_xpath = xpath
         if opts.bugowner and not opts.maintainer:
             xpath = xpath_join(xpath, 'person/@role=\'bugowner\'', op='and')
-            role_filter = '%s (%s)' % (search_term, 'bugowner')
+            role_filter = 'bugowner'
         elif not opts.bugowner and opts.maintainer:
             xpath = xpath_join(xpath, 'person/@role=\'maintainer\'', op='and')
-            role_filter = '%s (%s)' % (search_term, 'maintainer')
+            role_filter = 'maintainer'
         if opts.limit_to_attribute:
             xpath = xpath_join(xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
 
@@ -4150,7 +4151,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': xpath}
         elif not opts.project and opts.package:
             what = {'package': xpath}
-        res = search(conf.config['apiurl'], **what)
+        try:
+            res = search(conf.config['apiurl'], **what)
+        except urllib2.HTTPError, e:
+            if e.code != 400 or not role_filter:
+                raise e
+            # backward compatibility: local role filtering
+            if opts.limit_to_attribute:
+                role_filter_xpath = xpath_join(role_filter_xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
+            what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+            res = search(conf.config['apiurl'], **what)
+            for kind, root in res.iteritems():
+                delete = []
+                for node in root.findall(kind):
+                    found = False
+                    for p in node.findall('person'):
+                        if p.get('userid') == search_term and p.get('role') == role_filter:
+                            found = True
+                            break
+                    if not found:
+                        delete.append(node)
+                for node in delete:
+                    root.remove(node)
+        if role_filter:
+            role_filter = '%s (%s)' % (search_term, role_filter)
         for kind, root in res.iteritems():
             results = []
             for node in root.findall(kind):
