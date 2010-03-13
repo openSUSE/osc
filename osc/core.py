@@ -2591,7 +2591,7 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
     return f.read()
 
 
-def get_request_list(apiurl, project, package, req_who='', req_state=('new',), req_type=None, exclude_target_projects=[]):
+def get_request_list(apiurl, project='', package='', req_who='', req_state=('new',), req_type=None, exclude_target_projects=[]):
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -4102,6 +4102,8 @@ def xpath_join(expr, new_expr, op='or', inner=False):
     """
     if not expr:
         return new_expr
+    elif not new_expr:
+        return expr
     # NOTE: this is NO syntax check etc. (e.g. if a literal contains a '(' or ')'
     #       the check might fail and expr will be surrounded with parentheses or NOT)
     parentheses = not inner
@@ -4632,6 +4634,25 @@ def request_interactive_review(apiurl, request):
     finally:
         if tmpfile is not None:
             tmpfile.close()
+
+# backward compatibility: local role filtering
+def filter_role(meta, user, role):
+    """
+    remove all project/package nodes if no person node exists
+    where @userid=user and @role=role
+    """
+    for kind, root in meta.iteritems():
+        delete = []
+        for node in root.findall(kind):
+            found = False
+            for p in node.findall('person'):
+                if p.get('userid') == user and p.get('role') == role:
+                    found = True
+                    break
+            if not found:
+                delete.append(node)
+        for node in delete:
+            root.remove(node)
 
 # vim: sw=4 et
 
