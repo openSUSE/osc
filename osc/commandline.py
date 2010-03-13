@@ -3834,22 +3834,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-b', '--bugowner', action='store_true',
                         help='restrict listing to items where the user is bugowner')
-
     @cmdln.option('-m', '--maintainer', action='store_true',
                         help='restrict listing to items where the user is maintainer')
-
     @cmdln.option('-a', '--all', action='store_true',
                         help='all involvements')
-
     @cmdln.option('-U', '--user', metavar='USER',
                         help='search for USER instead of yourself')
-
-    @cmdln.option('--exclude-project', metavar='exclude_project',
+    @cmdln.option('--exclude-project', action='append',
                         help='exclude requests for specified project')
-
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='verbose listing')
-
     def do_my(self, subcmd, opts, type):
         """${cmd_name}: show packages, projects or requests involving yourself
 
@@ -3877,175 +3871,119 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args_prj = ('projects', 'project', 'projs', 'proj', 'prj')
         args_pkg = ('packages', 'package', 'pack', 'pkgs', 'pkg')
 
-        apiurl = conf.config['apiurl']
+        if opts.bugowner and opts.maintainer:
+            raise oscerr.WrongOptions('Sorry, \'--bugowner\' and \'maintainer\' are mutually exclusive')
+        elif opts.all and (opts.bugowner or opts.maintainer):
+            raise oscerr.WrongOptions('Sorry, \'--all\' and \'--bugowner\' or \'--maintainer\' are mutually exclusive')
 
-        project_exclude = {}
-        if opts.exclude_project:
-            for p in opts.exclude_project.split(','):
-                project_exclude[p] = True
-
+        exclude_projects = []
+        for i in opts.exclude_project or []:
+            prj = i.split(',')
+            if len(prj) == 1:
+                exclude_projects.append(i)
+            else:
+                exclude_projects.extend(prj)
         if not opts.user:
-            user = conf.get_apiurl_usr(apiurl)
+            user = conf.get_apiurl_usr(conf.config['apiurl'])
         else:
             user = opts.user
 
         list_requests = False
-        my_requests_only = False
+        what = {'project': '', 'package': ''}
         if type in args_rq:
             list_requests = True
-            query_types = [ 'project', 'package' ]
-        elif type in args_sr:
-            list_requests = True
-            my_requests_only = True
-            query_types = []
         elif type in args_prj:
-            query_types = [ 'project' ]
-        elif type in args_pkg:
-            query_types = [ 'project', 'package' ]
-        else:
+            what = {'project': ''}
+        elif type in args_sr:
+            requests = get_request_list(conf.config['apiurl'], req_who=user, exclude_target_projects=exclude_projects)
+            for r in requests:
+                print r.list_view()
+            return
+        elif not type in args_pkg:
             raise oscerr.WrongArgs("invalid type %s" % type)
 
-        if opts.all:
-            roles = ['bugowner', 'maintainer']
-            role_filter = None
-        elif opts.maintainer:
-            roles = [ 'maintainer' ]
+        role_filter = ''
+        if opts.maintainer:
             role_filter = 'maintainer'
         elif opts.bugowner:
             role_filter = 'bugowner'
-            roles = [ 'bugowner' ]
-        else:
-            if list_requests:
-                roles = [ 'maintainer' ]
-                role_filter = 'maintainer'
-            else:
-                roles = ['bugowner', 'maintainer']
-                role_filter = None
+        elif list_requests:
+            role_filter = 'maintainer'
+        if opts.all:
+            role_filter = ''
 
-        # prjname => {
-        #   'maintainer' : True,
-        #   'bugowner' : True,
-        #   'packages' : {
-        #     'pkgname' : {
-        #        'maintainer' : True,
-        #        'bugowner' : True
-        #       }
-        #    }
-        # }
-        p = {}
-        # find projects and packages we're involved in
-        for kind in query_types:
-            u = makeurl(apiurl, ['search', kind], ['match=%s' % quote_plus("person/@userid='%s'"%user)])
-            f = http_GET(u)
-
-            root = ET.parse(f).getroot()
-            for node in root.findall(kind):
-                if kind == 'package':
-                    project = node.get('project')
-                    package = node.get('name')
-                    if not project in p:
-                        p[project] = {}
-                    if not 'packages' in p[project]:
-                        p[project]['packages'] = {}
-                    if not package in p[project]['packages']:
-                        p[project]['packages'][package] = {}
-                    for person in node.findall('person'):
-                        if person.get('userid') == user:
-                            role = person.get('role')
-                            if role in roles:
-                                p[project]['packages'][package][role] = True
-                    if role_filter and not role_filter in p[project]['packages'][package]:
-                        del p[project]['packages'][package]
-
-                else:
-                    project = node.get('name')
-                    if not project in project_exclude:
-                        if not project in p:
-                            p[project] = {}
-                        for person in node.findall('person'):
-                            if person.get('userid') == user:
-                                role = person.get('role')
-                                if role in roles:
-                                    p[project][role] = True
-
+        xpath = 'person/@userid = \'%s\'' % user
+        excl_prj = ''
+        excl_pkg = ''
+        for i in exclude_projects:
+            excl_prj = xpath_join(excl_prj, 'not(@name = \'%s\')' % i, op='and')
+            excl_pkg = xpath_join(excl_pkg, 'not(@project = \'%s\')' % i, op='and')
+        role_filter_xpath = xpath
         if role_filter:
-            for prj in p.keys():
-                if ( not 'packages' in p[prj] or \
-                        len(p[prj]['packages']) == 0
-                    ) and \
-                    not role_filter in p[prj]:
-                        del p[prj]
+            xpath = xpath_join(xpath, 'person/@role = \'%s\'' % role_filter, inner=True, op='and')
+        xpath_pkg = xpath_join(xpath, excl_pkg, op='and')
+        xpath_prj = xpath_join(xpath, excl_prj, op='and')
+        if what.has_key('package'):
+            what['package'] = xpath_pkg
+        if what.has_key('project'):
+            what['project'] = xpath_prj
+        try:
+            res = search(conf.config['apiurl'], **what)
+        except urllib2.HTTPError, e:
+            if e.code != 400 or not role_filter:
+                raise e
+            # backward compatibility: local role filtering
+            what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+            if what.has_key('package'):
+                what['package'] = xpath_join(role_filter_xpath, excl_pkg, op='and')
+            if what.has_key('project'):
+                what['project'] = xpath_join(role_filter_xpath, excl_prj, op='and')
+            res = search(conf.config['apiurl'], **what)
+            filter_role(res, user, role_filter)
+
+        request_todo = {}
+        roles = {}
+        if len(what.keys()) == 2:
+            for i in res['project'].findall('project'):
+                request_todo[i.get('name')] = []
+                roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
+            for i in res['package'].findall('package'):
+                roles['/'.join([i.get('project'), i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
+                if not i.get('project') in request_todo.keys():
+                    request_todo.setdefault(i.get('project'), []).append(i.get('name'))
+        else:
+            request_todo = dict([[i.get('name'), []] for i in res['project'].findall('project')])
+            for i in res['project'].findall('project'):
+                roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
-            req_state = ('new',)
-            req_type = None
-            req_user = None
-            results = []
-            query = ''
-            if my_requests_only:
-                query = "state/@name='new' and (state/@who='%(user)s' or history/@who='%(user)s')" % { 'user':user }
-            else:
-                predicate = []
-                for prj in p.keys():
-                    involved = False
-                    for role in roles:
-                        if role in p[prj]:
-                            involved = True
-                            break
-                    if involved:
-                        pkg = None
-                        predicate.append("action/target/@project='%s'" % prj)
-                    elif 'packages' in p[prj] and len(p[prj]['packages']) != 0:
-                        q = "(action/target/@project='%s'" % prj
-                        for pkg in p[prj]['packages'].keys():
-                            q += " and action/target/@package='%s'" % pkg
-                        q += ')'
-                        predicate.append(q)
-                    else: # not supposed to happen
-                        True
-                query = '(' + ' or '.join(predicate) + ')' + " and state/@name='new'"
-
-            u = makeurl(apiurl, ['search', 'request'], ['match=%s' % quote_plus(query)])
-            f = http_GET(u)
-            collection = ET.parse(f).getroot()
-
-            for root in collection.findall('request'):
+            xpath = ''
+            for prj, pacs in request_todo.iteritems():
+                if not len(pacs):
+                    xpath = xpath_join(xpath, 'action/target/@project=\'%s\'' % prj, inner=True)
+                else:
+                    xp = ''
+                    for p in pacs:
+                        xp = xpath_join(xp, 'action/target/@package=\'%s\'' % p, inner=True)
+                    xp = xpath_join(xp, 'action/target/@project=\'%s\'' % prj, op='and')
+                    xpath = xpath_join(xpath, xp, inner=True)
+            xpath = xpath_join(xpath, 'state/@name = \'new\'', op='and')
+            res = search(conf.config['apiurl'], request=xpath)
+            for root in res['request'].findall('request'):
                 r = Request()
                 r.read(root)
-                results.append(r)
-
-            for result in results:
-                print result.list_view()
+                print r.list_view()
         else:
-            def _get_role_string(p):
-                roles = []
-                for role in ['bugowner', 'maintainer']:
-                    if role in p:
-                        roles.append(role)
-                if roles:
-                    return '(' + ','.join(roles)+ ')'
-                return None
-
-            for prj in sorted(p.keys()):
+            for i in sorted(roles.keys()):
+                out = '%s' % i
+                prjpac = i.split('/')
+                if type in args_pkg and len(prjpac) == 1 and not opts.verbose:
+                    continue
                 if opts.verbose:
-                    s = prj
-                    rs = _get_role_string(p[prj])
-                    if rs:
-                        s += '  ' + rs
-                    print s
-                elif 'project' in query_types and not 'package' in query_types:
-                    print prj
-                if 'package' in query_types and 'packages' in p[prj]:
-                    for pkg in sorted(p[prj]['packages'].keys()):
-                        if opts.verbose:
-                            s = pkg
-                            rs = _get_role_string(p[prj]['packages'][pkg])
-                            if rs:
-                                s += '  ' + rs
-                            print '  ', s
-                        else:
-                            print "%s/%s" % (prj, pkg)
-
+                    out = '%s (%s)' % (i, ', '.join(sorted(roles[i])))
+                    if len(prjpac) == 2:
+                        out = '   %s (%s)' % (prjpac[1], ', '.join(sorted(roles[i])))
+                print out
 
 
     @cmdln.option('--repos-baseurl', action='store_true',
@@ -4161,18 +4099,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 role_filter_xpath = xpath_join(role_filter_xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
             what = dict([[kind, role_filter_xpath] for kind in what.keys()])
             res = search(conf.config['apiurl'], **what)
-            for kind, root in res.iteritems():
-                delete = []
-                for node in root.findall(kind):
-                    found = False
-                    for p in node.findall('person'):
-                        if p.get('userid') == search_term and p.get('role') == role_filter:
-                            found = True
-                            break
-                    if not found:
-                        delete.append(node)
-                for node in delete:
-                    root.remove(node)
+            filter_role(res, search_term, role_filter)
         if role_filter:
             role_filter = '%s (%s)' % (search_term, role_filter)
         for kind, root in res.iteritems():
