@@ -2628,6 +2628,39 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
         requests.append(r)
     return requests
 
+def get_user_projpkgs_request_list(apiurl, user, req_state=('new',), req_type=None, exclude_projects=[], projpkgs={}):
+    """Return all new requests for all projects/packages where is user is involved"""
+    if not projpkgs:
+        res = get_user_projpkgs(apiurl, user, exclude_projects=exclude_projects)
+        for i in res['project'].findall('project'):
+            projpkgs[i.get('name')] = []
+        for i in res['package'].findall('package'):
+            if not i.get('project') in projpkgs.keys():
+                projpkgs.setdefault(i.get('project'), []).append(i.get('name'))
+    xpath = ''
+    for prj, pacs in projpkgs.iteritems():
+        if not len(pacs):
+            xpath = xpath_join(xpath, 'action/target/@project=\'%s\'' % prj, inner=True)
+        else:
+            xp = ''
+            for p in pacs:
+                xp = xpath_join(xp, 'action/target/@package=\'%s\'' % p, inner=True)
+            xp = xpath_join(xp, 'action/target/@project=\'%s\'' % prj, op='and')
+            xpath = xpath_join(xpath, xp, inner=True)
+    if req_type:
+        xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
+    if not 'all' in req_state:
+        xp = ''
+        for state in req_state:
+            xp = xpath_join(xp, 'state/@name=\'%s\'' % state)
+        xpath = xpath_join(xpath, '(%s)' % xp, op='and')
+    res = search(apiurl, request=xpath)
+    result = []
+    for root in res['request'].findall('request'):
+        r = Request()
+        r.read(root)
+        result.append(r)
+    return result
 
 def get_request_log(apiurl, reqid):
     r = get_request(conf.config['apiurl'], reqid)
@@ -4634,6 +4667,39 @@ def request_interactive_review(apiurl, request):
     finally:
         if tmpfile is not None:
             tmpfile.close()
+
+def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True):
+    """Return all project/packages where user is involved."""
+    xpath = 'person/@userid = \'%s\'' % user
+    excl_prj = ''
+    excl_pkg = ''
+    for i in exclude_projects:
+        excl_prj = xpath_join(excl_prj, 'not(@name = \'%s\')' % i, op='and')
+        excl_pkg = xpath_join(excl_pkg, 'not(@project = \'%s\')' % i, op='and')
+    role_filter_xpath = xpath
+    if role:
+        xpath = xpath_join(xpath, 'person/@role = \'%s\'' % role, inner=True, op='and')
+    xpath_pkg = xpath_join(xpath, excl_pkg, op='and')
+    xpath_prj = xpath_join(xpath, excl_prj, op='and')
+    what = {}
+    if pkg:
+        what['package'] = xpath_pkg
+    if proj:
+        what['project'] = xpath_prj
+    try:
+        res = search(apiurl, **what)
+    except urllib2.HTTPError, e:
+        if e.code != 400 or not role_filter:
+            raise e
+        # backward compatibility: local role filtering
+        what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+        if what.has_key('package'):
+            what['package'] = xpath_join(role_filter_xpath, excl_pkg, op='and')
+        if what.has_key('project'):
+            what['project'] = xpath_join(role_filter_xpath, excl_prj, op='and')
+        res = search(apiurl, **what)
+        filter_role(res, user, role)
+    return res
 
 # backward compatibility: local role filtering
 def filter_role(meta, user, role):

@@ -1043,6 +1043,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
                         help='exclude target project from request list')
+    @cmdln.option('--involved-projects', action='store_true',
+                        help='show all requests for project/packages where USER is involved in')
     @cmdln.alias("rq")
     @cmdln.alias("review")
     def do_request(self, subcmd, opts, *args):
@@ -1181,8 +1183,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if (self.options.debug):
                     print 'list: option --bugowner ignored: not impl.'
 
-            results = get_request_list(apiurl, project, package, who,
-                                       state_list, opts.type, opts.exclude_target_project or [])
+            if opts.involved_projects:
+                who = who or conf.get_apiurl_usr(apiurl)
+                results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
+                                                         req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
+            else:
+                results = get_request_list(apiurl, project, package, who,
+                                           state_list, opts.type, opts.exclude_target_project or [])
             results.sort(reverse=True)
             import time
             days = opts.days or conf.config['request_list_days']
@@ -3912,35 +3919,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.all:
             role_filter = ''
 
-        xpath = 'person/@userid = \'%s\'' % user
-        excl_prj = ''
-        excl_pkg = ''
-        for i in exclude_projects:
-            excl_prj = xpath_join(excl_prj, 'not(@name = \'%s\')' % i, op='and')
-            excl_pkg = xpath_join(excl_pkg, 'not(@project = \'%s\')' % i, op='and')
-        role_filter_xpath = xpath
-        if role_filter:
-            xpath = xpath_join(xpath, 'person/@role = \'%s\'' % role_filter, inner=True, op='and')
-        xpath_pkg = xpath_join(xpath, excl_pkg, op='and')
-        xpath_prj = xpath_join(xpath, excl_prj, op='and')
-        if what.has_key('package'):
-            what['package'] = xpath_pkg
-        if what.has_key('project'):
-            what['project'] = xpath_prj
-        try:
-            res = search(conf.config['apiurl'], **what)
-        except urllib2.HTTPError, e:
-            if e.code != 400 or not role_filter:
-                raise e
-            # backward compatibility: local role filtering
-            what = dict([[kind, role_filter_xpath] for kind in what.keys()])
-            if what.has_key('package'):
-                what['package'] = xpath_join(role_filter_xpath, excl_pkg, op='and')
-            if what.has_key('project'):
-                what['project'] = xpath_join(role_filter_xpath, excl_prj, op='and')
-            res = search(conf.config['apiurl'], **what)
-            filter_role(res, user, role_filter)
-
+        res = get_user_projpkgs(conf.config['apiurl'], user, role_filter,
+                                exclude_projects, what.has_key('project'), what.has_key('package'))
         request_todo = {}
         roles = {}
         if len(what.keys()) == 2:
@@ -3952,26 +3932,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not i.get('project') in request_todo.keys():
                     request_todo.setdefault(i.get('project'), []).append(i.get('name'))
         else:
-            request_todo = dict([[i.get('name'), []] for i in res['project'].findall('project')])
             for i in res['project'].findall('project'):
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
-            xpath = ''
-            for prj, pacs in request_todo.iteritems():
-                if not len(pacs):
-                    xpath = xpath_join(xpath, 'action/target/@project=\'%s\'' % prj, inner=True)
-                else:
-                    xp = ''
-                    for p in pacs:
-                        xp = xpath_join(xp, 'action/target/@package=\'%s\'' % p, inner=True)
-                    xp = xpath_join(xp, 'action/target/@project=\'%s\'' % prj, op='and')
-                    xpath = xpath_join(xpath, xp, inner=True)
-            xpath = xpath_join(xpath, 'state/@name = \'new\'', op='and')
-            res = search(conf.config['apiurl'], request=xpath)
-            for root in res['request'].findall('request'):
-                r = Request()
-                r.read(root)
+            requests = get_user_projpkgs_request_list(conf.config['apiurl'], user, projpkgs=request_todo)
+            for r in requests:
                 print r.list_view()
         else:
             for i in sorted(roles.keys()):
