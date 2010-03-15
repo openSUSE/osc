@@ -1044,7 +1044,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--exclude-target-project', action='append',
                         help='exclude target project from request list')
     @cmdln.option('--involved-projects', action='store_true',
-                        help='show all requests for project/packages where USER is involved in')
+                        help='show all requests for project/packages where USER is involved')
     @cmdln.alias("rq")
     @cmdln.alias("review")
     def do_request(self, subcmd, opts, *args):
