@@ -2632,9 +2632,9 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new',), req_type=No
     """Return all new requests for all projects/packages where is user is involved"""
     if not projpkgs:
         res = get_user_projpkgs(apiurl, user, exclude_projects=exclude_projects)
-        for i in res['project'].findall('project'):
+        for i in res['project_id'].findall('project'):
             projpkgs[i.get('name')] = []
-        for i in res['package'].findall('package'):
+        for i in res['package_id'].findall('package'):
             if not i.get('project') in projpkgs.keys():
                 projpkgs.setdefault(i.get('project'), []).append(i.get('name'))
     xpath = ''
@@ -4683,9 +4683,9 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
     xpath_prj = xpath_join(xpath, excl_prj, op='and')
     what = {}
     if pkg:
-        what['package'] = xpath_pkg
+        what['package_id'] = xpath_pkg
     if proj:
-        what['project'] = xpath_prj
+        what['project_id'] = xpath_prj
     try:
         res = search(apiurl, **what)
     except urllib2.HTTPError, e:
