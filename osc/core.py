@@ -2652,8 +2652,8 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new',), req_type=No
     if not 'all' in req_state:
         xp = ''
         for state in req_state:
-            xp = xpath_join(xp, 'state/@name=\'%s\'' % state)
-        xpath = xpath_join(xpath, '(%s)' % xp, op='and')
+            xp = xpath_join(xp, 'state/@name=\'%s\'' % state, inner=True)
+        xpath = xpath_join("(%s)" % xp, "(%s)" % xpath, op='and')
     res = search(apiurl, request=xpath)
     result = []
     for root in res['request'].findall('request'):
