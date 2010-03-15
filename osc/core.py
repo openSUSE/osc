@@ -877,7 +877,7 @@ class Package:
                 query['repairlink'] = '1'
             u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
             f = http_POST(u)
-        except urllib2.HTTPError, e:
+        except Exception, e:
             # delete upload revision
             try:
                 query = { 'cmd': 'deleteuploadrev' }
