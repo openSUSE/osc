@@ -3982,6 +3982,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='shorthand for --bugowner --package')
     @cmdln.option('--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
+    @cmdln.option('--binary', action='store_true',
+                        help='search binary packages')
+    @cmdln.option('-B', '--baseproject', metavar='PROJECT',
+                        help='search packages built for PROJECT (implies --binary)')
     @cmdln.alias('sm')
     @cmdln.alias('se')
     def do_search(self, subcmd, opts, search_term):
@@ -3996,9 +4000,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc sm \'source package name\'
             osc se ...
         ${cmd_option_list}
-
-        osc search does not find binary rpm names. Use
-        http://software.opensuse.org/search?q=binaryname
         """
         def build_xpath(attr, what, substr = False):
             if substr:
@@ -4020,13 +4021,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.package = True
         if not opts.substring:
             opts.exact = True
+        if opts.baseproject:
+            opts.binary = True
+
+        if opts.binary and (opts.title or opts.description or opts.involved or opts.bugowner or opts.maintainer
+                            or opts.project or opts.package):
+            raise oscerr.WrongOptions('Sorry, \'--binary\' and \'--title\' or \'--description\' or \'--involved ' \
+                                      'or \'--bugowner\' or \'--maintainer\' or \'--limit-to-attribute <attr>\ ' \
+                                      'or \'--project\' or \'--package\' are mutually exclusive')
 
         xpath = ''
         if opts.title:
             xpath = xpath_join(xpath, build_xpath('title', search_term, opts.substring), inner=True)
         if opts.description:
             xpath = xpath_join(xpath, build_xpath('description', search_term, opts.substring), inner=True)
-        if opts.project or opts.package:
+        if opts.project or opts.package or opts.binary:
             xpath = xpath_join(xpath, build_xpath('@name', search_term, opts.substring), inner=True)
         # role filter
         role_filter = ''
@@ -4042,6 +4051,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             role_filter = 'maintainer'
         if opts.limit_to_attribute:
             xpath = xpath_join(xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
+        if opts.baseproject:
+            xpath = xpath_join(xpath, 'path/@project=\'%s\'' % opts.baseproject, op='and')
 
         if not xpath:
             xpath = xpath_join(xpath, build_xpath('@name', search_term, opts.substring), inner=True)
@@ -4055,6 +4066,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': xpath}
         elif not opts.project and opts.package:
             what = {'package': xpath}
+        else:
+            what = {'published/binary/id': xpath}
         try:
             res = search(conf.config['apiurl'], **what)
         except urllib2.HTTPError, e:
@@ -4068,9 +4081,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             filter_role(res, search_term, role_filter)
         if role_filter:
             role_filter = '%s (%s)' % (search_term, role_filter)
+        kind_map = {'published/binary/id': 'binary'}
         for kind, root in res.iteritems():
             results = []
-            for node in root.findall(kind):
+            for node in root.findall(kind_map.get(kind, kind)):
                 result = []
                 project = node.get('project')
                 package = None
@@ -4089,6 +4103,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.repos_baseurl:
                     # FIXME: no hardcoded URL of instance
                     result.append('http://download.opensuse.org/repositories/%s/' % project.replace(':', ':/'))
+                if kind == 'published/binary/id':
+                    result.append(node.get('filepath'))
                 results.append(result)
 
             if not len(results):
@@ -4101,7 +4117,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 new.extend(i)
             results = new
             headline = []
-            if kind == 'package':
+            if kind == 'package' or kind == 'published/binary/id':
                 headline = [ '# Project', '# Package' ]
             else:
                 headline = [ '# Project' ]
@@ -4109,6 +4125,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 headline.append('# Title')
             if opts.repos_baseurl:
                 headline.append('# URL')
+            if opts.binary:
+                headline.append('# filepath')
             if not opts.csv:
                 if len(what.keys()) > 1:
                     print '#' * 68
