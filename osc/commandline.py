@@ -3924,15 +3924,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         request_todo = {}
         roles = {}
         if len(what.keys()) == 2:
-            for i in res['project'].findall('project'):
+            for i in res['project_id'].findall('project'):
                 request_todo[i.get('name')] = []
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
-            for i in res['package'].findall('package'):
+            for i in res['package_id'].findall('package'):
                 roles['/'.join([i.get('project'), i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
                 if not i.get('project') in request_todo.keys():
                     request_todo.setdefault(i.get('project'), []).append(i.get('name'))
         else:
-            for i in res['project'].findall('project'):
+            for i in res['project_id'].findall('project'):
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
