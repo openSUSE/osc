@@ -188,6 +188,8 @@ class Fetcher:
                 url = makeurl(buildinfo.apiurl,
                               ['public/build', project, repo, buildinfo.buildarch, '_repository'],
                               query=query)
+                sys.stdout.write("preparing download ...\r")
+                sys.stdout.flush()
                 self.gr.urlgrab(url, filename = tmparchive, text = 'fetching cpio for \'%s\'' % project)
                 archive = cpio.CpioRead(tmparchive)
                 archive.read()
