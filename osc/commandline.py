@@ -4926,10 +4926,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     else:
                         raise
 
-        while 1:
+        while True:
             buf = f.read(16384)
-            if not buf: break
-            print buf
+            if not buf:
+                break
+            sys.stdout.write(buf)
 
 
 
