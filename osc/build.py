@@ -682,16 +682,22 @@ def main(opts, argv):
     rpmlist_file.flush()
 
     vm_options = ''
-    if config['build-device'] and config['build-memory'] and config['build-type']:
+    # XXX check if build-device present
+    my_build_device = ''
+    if config['build-device']:
         my_build_device = config['build-device'] % { 'repo': repo, 'arch': arch,
                                                      'project' : prj, 'package' : pacname
                                                    }
+    if config['build-type']:
         if config['build-type'] == 'kvm':
             vm_options = '--kvm ' + my_build_device
         elif config['build-type'] == 'xen':
             vm_options = '--xen ' + my_build_device
+        elif config['build-type'] == 'lxc':
+            vm_options = '--lxc'
         else:
             raise oscerr.WrongArgs('ERROR: unknown VM is set ! ("%s")' % config['build-type'])
+
         if config['build-swap']:
             my_build_swap = config['build-swap'] % { 'repo': repo, 'arch': arch,
                                                      'project' : prj, 'package' : pacname
