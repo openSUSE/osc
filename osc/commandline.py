@@ -4066,7 +4066,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': xpath}
         elif not opts.project and opts.package:
             what = {'package': xpath}
-        else:
+        elif opts.binary:
             what = {'published/binary/id': xpath}
         try:
             res = search(conf.config['apiurl'], **what)
