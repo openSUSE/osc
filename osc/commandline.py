@@ -3988,6 +3988,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search packages built for PROJECT (implies --binary)')
     @cmdln.alias('sm')
     @cmdln.alias('se')
+    @cmdln.alias('bse')
     def do_search(self, subcmd, opts, search_term):
         """${cmd_name}: Search for a project and/or package.
 
@@ -3997,7 +3998,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc search \'search term\' <options>
-            osc sm \'source package name\'
+            osc sm \'source package name\'      ('osc search --maintained')
+            osc bse ...                         ('osc search --binary')
             osc se ...
         ${cmd_option_list}
         """
@@ -4021,7 +4023,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.package = True
         if not opts.substring:
             opts.exact = True
-        if opts.baseproject:
+        if subcmd == 'bse' or opts.baseproject:
             opts.binary = True
 
         if opts.binary and (opts.title or opts.description or opts.involved or opts.bugowner or opts.maintainer
