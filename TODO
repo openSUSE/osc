@@ -1,3 +1,16 @@
+FIXME: 
+ - more command inconsistencies:
+     osc request show
+       -B, --bugowner      also show requests about packages where I am bugowner
+     osc my 
+       -b, --bugowner      restrict listing to items where the user is bugowner
+     osc list
+       -b, --binaries      list built binaries instead of sources
+     osc search
+       -B PROJECT, --baseproject=PROJECT
+       --binary            search binary packages
+       -b, --bugowner      as -i, but only bugowner
+
 CRITICAL:
  - webpage can create a _link in a fully populated package.
    Need to prevent his somehow.
