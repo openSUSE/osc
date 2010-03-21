@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from tempfile import mkdtemp
 import os
 from shutil import rmtree
