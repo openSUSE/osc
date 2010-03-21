@@ -1367,7 +1367,7 @@ rev: %s
         self.todo.sort()
 
         ret = ""
-        for f in (f for f in self.todo if not os.path.isdir(f)):
+        for f in [f for f in self.todo if not os.path.isdir(f)]:
             action = 'leave'
             status = self.status(f)
             if status == '!':
@@ -1420,7 +1420,7 @@ rev: %s
         """
 
         loop = False
-        for line in (l.strip() for l in filelist if (l[0] != "#" or l.strip() != '')):
+        for line in [l.strip() for l in filelist if (l[0] != "#" or l.strip() != '')]:
 
             foo = line.split(' ')
             if len(foo) == 4:
@@ -4590,7 +4590,7 @@ def check_filelist_before_commit(pacs):
         if not p.todo:
             p.todo = p.filenamelist + p.filenamelist_unvers
         p.todo.sort()
-        for f in (f for f in p.todo if not os.path.isdir(f)):
+        for f in [f for f in p.todo if not os.path.isdir(f)]:
             if not f.startswith('_service:') and not f.startswith('_service_') and p.status(f) in ('?', '!'):
                 print 'File "%s" is not in package meta.'%f
                 resp = raw_input("(s)kip/(r)emove/(e)dit file lists/(c)ommit/(A)bort? ")
