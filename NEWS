@@ -1,8 +1,7 @@
+0.126
  - suggest git, svn, ... if indicated, after oscerr.NoWorkingCopy
  - "osc cat" & "osc ls" now auto-expands through link.
  - fixed "osc add" after "osc delete".
-
-0.126
  - fix "osc patchinfo" command (crashed before)
  - fixed SSL proxy support
  - fixed meta attribute create and set calls
@@ -12,6 +11,18 @@
  - fix linktobranch apiurl usage
  - "maintained package" search is telling relevant projects now
    * requires OBS 1.7.2 or 2.0
+ - added "osc chroot" command
+ - fixed #547005 ("osc co could show download progress")
+ - added "--interactive" option to "osc request"
+ - store commit message so it doesn't get lost on failure
+ - added "--cpio-bulk-download" and "--download-api-only" options to "osc build"
+ - added "osc localbuildlog" command
+ - added "--build-uid uid:gid|caller" option to "osc build" to specify abuild id in chroot
+ - verify files using rpm bindings and keys supplied by buildservice
+ - added "--exclude-target-project <prj>" option to "osc rq list"
+ - added "--message" option to "osc branch"
+ - added "osc config" command to set/get/delete a config option
+ - added "--binary" and "--baseproject" options to "osc search"
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target
