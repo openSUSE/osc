@@ -11,6 +11,16 @@ FIXME:
        --binary            search binary packages
        -b, --bugowner      as -i, but only bugowner
 
+     osc checkout
+       -c, --current-dir   place PACKAGE folder in the current directory instead
+                           of a PROJECT/PACKAGE directory
+     osc branch
+       -c, --checkout      Checkout branched package afterwards ('osc bco' is a
+                           shorthand for this option)
+     # that means the branch checkout to cwd is not possible
+
+
+
 CRITICAL:
  - webpage can create a _link in a fully populated package.
    Need to prevent his somehow.
