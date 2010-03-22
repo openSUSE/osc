@@ -723,7 +723,12 @@ class Package:
 
     def delete_file(self, n, force=False):
         """deletes a file if possible and marks the file as deleted"""
-        state = self.status(n)
+        state = '?'
+        try:
+            state = self.status(n)
+        except IOError, ioe:
+            if not force:
+                raise ioe
         if state in ['?', 'A', 'M'] and not force:
             return (False, state)
         self.delete_localfile(n)
