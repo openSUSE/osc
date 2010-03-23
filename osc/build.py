@@ -390,14 +390,13 @@ def main(opts, argv):
     if opts.alternative_project:
         prj = opts.alternative_project
         pac = '_repository'
-        apiurl = config['apiurl']
     else:
         prj = store_read_project(os.curdir)
         if opts.local_package:
             pac = '_repository'
         else:
             pac = store_read_package(os.curdir)
-        apiurl = store_read_apiurl(os.curdir)
+    apiurl = store_read_apiurl(os.curdir)
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
