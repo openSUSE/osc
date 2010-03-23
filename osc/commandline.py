@@ -1041,6 +1041,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='also show requests about packages where I am bugowner')
     @cmdln.option('-i', '--interactive', action='store_true',
                         help='interactive review of request')
+    @cmdln.option('--non-interactive', action='store_true',
+                        help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
                         help='exclude target project from request list')
     @cmdln.option('--involved-projects', action='store_true',
@@ -1103,11 +1105,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         if opts.all and opts.state:
-            raise oscerr.WrongOptions('Sorry, the options --all and --state ' \
-                     'are mutually exclusive.')
+            raise oscerr.WrongOptions('Sorry, the options \'--all\' and \'--state\' ' \
+                    'are mutually exclusive.')
         if opts.mine and opts.user:
-            raise oscerr.WrongOptions('Sorry, the options --user and --mine ' \
-                     'are mutually exclusive.')
+            raise oscerr.WrongOptions('Sorry, the options \'--user\' and \'--mine\' ' \
+                    'are mutually exclusive.')
+        if opts.interactive and opts.non_interactive:
+            raise oscerr.WrongOptions('Sorry, the options \'--interactive\' and ' \
+                    '\'--non-interactive\' are mutually exclusive')
 
         if not args:
             args = [ 'list' ]
@@ -1226,7 +1231,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             r = get_request(conf.config['apiurl'], reqid)
             if opts.brief:
                 print r.list_view()
-            elif opts.interactive or conf.config['request_show_interactive']:
+            elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                 return request_interactive_review(conf.config['apiurl'], r)
             else:
                 print r
