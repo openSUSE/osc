@@ -107,6 +107,9 @@ class DebQuery(packagequery.PackageQuery):
     def gettag(self, num):
         return self.fields.get(num, None)
 
+    def canonname(self):
+        return DebQuery.filename(self.name(), self.version(), self.release(), self.arch())
+
     @staticmethod
     def query(filename, all_tags = False, *extra_tags):
         f = open(filename, 'rb')
@@ -148,6 +151,13 @@ class DebQuery(packagequery.PackageQuery):
                 else:
                     return -1
         return 0
+
+    @staticmethod
+    def filename(name, version, release, arch):
+        if release:
+            return '%s_%s-%s_%s.deb' % (name, version, release, arch)
+        else:
+            return '%s_%s_%s.deb' % (name, version, arch)
 
 if __name__ == '__main__':
     import sys

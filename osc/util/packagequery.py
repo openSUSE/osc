@@ -79,6 +79,9 @@ class PackageQuery:
     def vercmp(self, pkgquery):
         raise NotImplementedError
 
+    def canonname(self):
+        raise NotImplementedError
+
     @staticmethod
     def query(filename, all_tags = False, extra_rpmtags = (), extra_debtags = ()):
         f = open(filename, 'rb')

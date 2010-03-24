@@ -220,6 +220,9 @@ class RpmQuery(packagequery.PackageQuery):
     def gettag(self, num):
         return self.header.gettag(num)
 
+    def canonname(self):
+        return RpmQuery.filename(self.name(), self.version(), self.release(), self.arch())
+
     @staticmethod
     def query(filename):
         f = open(filename, 'rb')
@@ -274,6 +277,10 @@ class RpmQuery(packagequery.PackageQuery):
         elif res < 0:
             return -1
         return cmp(ver1, ver2)
+
+    @staticmethod
+    def filename(name, version, release, arch):
+        return '%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
 def unpack_string(data):
     """unpack a '\\0' terminated string from data"""

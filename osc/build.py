@@ -12,6 +12,7 @@ from tempfile import NamedTemporaryFile
 from shutil import rmtree
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
+from osc.util import rpmquery, debquery
 import osc.conf
 import oscerr
 import subprocess
@@ -165,10 +166,10 @@ class Pac:
 
         self.mp['apiurl'] = apiurl
 
-        if self.mp['release']:
-            self.filename = '%(name)s-%(version)s-%(release)s.%(arch)s.%(pacsuffix)s' % self.mp
+        if pacsuffix == 'deb':
+            self.filename = debquery.DebQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
         else:
-            self.filename = '%(name)s-%(version)s.%(arch)s.%(pacsuffix)s' % self.mp
+            self.filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
 
         self.mp['filename'] = self.filename
         if self.mp['repopackage'] == '_repository':

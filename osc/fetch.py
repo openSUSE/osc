@@ -120,10 +120,7 @@ class Fetcher:
                 arch = "nosrc"
             else:
                 arch = "src"
-        if pkgq.release():
-            canonname = '%s-%s-%s.%s.%s' % (pkgq.name(), pkgq.version(), pkgq.release(), arch, pkgq.filename_suffix)
-        else:
-            canonname = '%s-%s.%s.%s' % (pkgq.name(), pkgq.version(), arch, pkgq.filename_suffix)
+        canonname = pkgq.canonname()
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
             pac_obj.filename = canonname
