@@ -317,7 +317,7 @@ def init_basicauth(config):
         try:
             import oscssl
             from M2Crypto import m2urllib2
-        except Exception, e:
+        except ImportError, e:
             print e
             raise NoSecureSSLError("M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto." % config['apiurl'])
 
