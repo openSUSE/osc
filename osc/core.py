@@ -715,10 +715,6 @@ class Package:
 
     def addfile(self, n):
         st = os.stat(os.path.join(self.dir, n))
-        f = File(n, None, st.st_size, st.st_mtime)
-        self.filelist.append(f)
-        self.filenamelist.append(n)
-        self.filenamelist_unvers.remove(n)
         shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def delete_file(self, n, force=False):
@@ -1380,14 +1376,14 @@ rev: %s
             ret += "%s %s %s\n" % (action, status, f)
 
         ret += """
-# Edit a filelist for package %s
+# Edit a filelist for package \'%s\'
 # Commands:
 # l, leave = leave a file as is
 # r, remove = remove a file
 # a, add   = add a file
 #
 # If you remove file from a list, it will be unchanged
-# If you remove all, commit will be aborted"""
+# If you remove all, commit will be aborted""" % self.name
 
         return ret
 
