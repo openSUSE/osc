@@ -34,15 +34,18 @@ change_personality = {
 can_also_build = {
              'armv4l': [                                         'armv4l'                                 ],
              'armv5el':[                                         'armv4l', 'armv5el'                      ],
-             'armv6l' :[                                         'armv4l', 'armv5el'                      ],
-             'armv7el':[                                         'armv4l', 'armv5el', 'armv7el'           ],
-             'armv7l' :[                                         'armv4l', 'armv5el', 'armv7el'           ],
+             'armv6el':[                                         'armv4l', 'armv5el', 'armv6el'           ],
+             'armv6l' :[                                         'armv4l', 'armv5el', 'armv6el'           ],
+             'armv7el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'           ],
+             'armv7l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'           ],
+             'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el'],
+             'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el'],
              's390x':  ['s390'                                                                            ],
              'ppc64':  [                        'ppc', 'ppc64',                                           ],
-             'i386':   [        'i586',                          'armv4l', 'armv5el', 'armv7el',    'sh4' ],
-             'i586':   [                'i386',                  'armv4l', 'armv5el', 'armv7el',    'sh4' ],
-             'i686':   [        'i586',                          'armv4l', 'armv5el', 'armv7el',    'sh4' ],
-             'x86_64': ['i686', 'i586', 'i386',                  'armv4l', 'armv5el', 'armv7el',    'sh4' ],
+             'i386':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
+             'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
+             'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
+             'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
              }
 
 # real arch of this machine
