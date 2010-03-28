@@ -683,16 +683,29 @@ def main(opts, argv):
 
     vm_options = ''
     if config['build-device'] and config['build-memory'] and config['build-type']:
+        my_build_device = config['build-device'] % { 'repo': repo, 'arch': arch,
+                                                     'project' : prj, 'package' : pacname
+                                                   }
         if config['build-type'] == 'kvm':
-            vm_options = '--kvm ' + config['build-device']
+            vm_options = '--kvm ' + my_build_device
         elif config['build-type'] == 'xen':
-            vm_options = '--xen ' + config['build-device']
+            vm_options = '--xen ' + my_build_device
         else:
             raise oscerr.WrongArgs('ERROR: unknown VM is set ! ("%s")' % config['build-type'])
         if config['build-swap']:
-            vm_options += ' --swap ' + config['build-swap']
+            my_build_swap = config['build-swap'] % { 'repo': repo, 'arch': arch,
+                                                     'project' : prj, 'package' : pacname
+                                                   }
+            vm_options += ' --swap ' + my_build_swap
         if config['build-memory']:
             vm_options += ' --memory ' + config['build-memory']
+        if config['build-vmdisk-autosetup'] and config['build-vmdisk-autosetup'] == '1':
+                if config['build-vmdisk-rootsize'] and config['build-vmdisk-swapsize']:
+                        vm_options += ' --vmdisk-autosetup '
+                        vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
+                        vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
+                        if config['build-vmdisk-force']:
+                                vm_options += ' --vmdisk-force '
 
     print 'Running build'
     cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s "%s" %s' \
