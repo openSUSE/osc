@@ -699,13 +699,13 @@ def main(opts, argv):
             vm_options += ' --swap ' + my_build_swap
         if config['build-memory']:
             vm_options += ' --memory ' + config['build-memory']
-        if config['build-vmdisk-autosetup'] and config['build-vmdisk-autosetup'] == '1':
-                if config['build-vmdisk-rootsize'] and config['build-vmdisk-swapsize']:
-                        vm_options += ' --vmdisk-autosetup '
-                        vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
-                        vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
-                        if config['build-vmdisk-force']:
-                                vm_options += ' --vmdisk-force '
+        if config['build-vmdisk-autosetup']:
+            if config['build-vmdisk-rootsize'] and config['build-vmdisk-swapsize']:
+                vm_options += ' --vmdisk-autosetup '
+                vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
+                vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
+                if config['build-vmdisk-force']:
+                    vm_options += ' --vmdisk-force '
 
     print 'Running build'
     cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s "%s" %s' \

@@ -75,10 +75,10 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-device': '', # required for VM builds
              'build-memory': '',# required for VM builds
              'build-swap': '',  # optional for VM builds
-             'build-vmdisk-autosetup': '', # optional for VM builds
+             'build-vmdisk-autosetup': '0', # optional for VM builds
              'build-vmdisk-rootsize': '', # optional for VM builds
              'build-vmdisk-swapsize': '', # optional for VM builds
-             'build-vmdisk-force': '', # optional for VM builds
+             'build-vmdisk-force': '0', # optional for VM builds
 
              'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN'), # compile with N jobs
              'icecream': '0',
@@ -133,7 +133,7 @@ config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'use_keyring', 'gnome_keyring']
+    'use_keyring', 'gnome_keyring', 'build-vmdisk-autosetup', 'build-vmdisk-force']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -184,7 +184,7 @@ apiurl = %(apiurl)s
 
 # build-vmdisk-autosetup enabled the automatic creation of VM build disks
 # possible values: 0 / 1
-build-vmdisk-autosetup = 0
+#build-vmdisk-autosetup = 0
 
 # build-vmdisk-rootsize is the size of the disk-image used as root in a VM build
 # values in MB - e.g. 4096
