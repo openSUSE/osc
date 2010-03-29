@@ -4636,6 +4636,9 @@ def request_interactive_review(apiurl, request):
         while True:
             repl = raw_input('d(i)ff/(a)ccept/(d)ecline/(r)evoke/(c)ancel > ')
             if repl == 'i':
+                if request.actions[0].type != 'submit':
+                    print >>sys.stderr, 'diff is not possible for request type: \'%s\'' % request.actions[0].type
+                    continue
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
                     tmpfile.write(server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,

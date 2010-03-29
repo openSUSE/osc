@@ -1236,7 +1236,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print r
             # fixme: will inevitably fail if the given target doesn't exist
-            if opts.diff:
+            if opts.diff and r.actions[0].type != 'submit':
+                raise oscerr.WrongOptions('\'--diff\' is not possible for request type: \'%s\'' % r.actions[0].type)
+            elif opts.diff:
                 try:
                     print server_diff(conf.config['apiurl'],
                                       r.actions[0].dst_project, r.actions[0].dst_package, None,
