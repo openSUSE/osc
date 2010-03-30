@@ -693,6 +693,7 @@ def main(opts, argv):
         # before
         my_build_device = build_root + '/img'
 
+    need_root = True
     if config['build-type']:
         if config['build-swap']:
             my_build_swap = config['build-swap'] % subst
@@ -702,6 +703,10 @@ def main(opts, argv):
         if config['build-type'] in ('kvm', 'xen'):
             vm_options = '--%s %s' % (config['build-type'], my_build_device)
             vm_options += ' --swap ' + my_build_swap
+            if config['build-type'] == 'kvm':
+                if os.access(build_root, os.W_OK) and os.access('/dev/kvm', os.W_OK):
+                    # so let's hope there's also an fstab entry
+                    need_root = False
             build_root += '/.mount'
         elif config['build-type'] == 'lxc':
             vm_options = '--lxc'
@@ -727,13 +732,14 @@ def main(opts, argv):
                     buildargs,
                     build_descr)
 
-    if config['su-wrapper'].startswith('su '):
-        tmpl = '%s \'%s\''
-    else:
-        tmpl = '%s %s'
+    if need_root:
+        if config['su-wrapper'].startswith('su '):
+            tmpl = '%s \'%s\''
+        else:
+            tmpl = '%s %s'
+        cmd = tmpl % (config['su-wrapper'], cmd)
 
     # change personality, if needed
-    cmd = tmpl % (config['su-wrapper'], cmd)
     if hostarch != bi.buildarch:
         cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
 
