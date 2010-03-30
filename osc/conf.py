@@ -75,10 +75,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-device': '', # required for VM builds
              'build-memory': '',# required for VM builds
              'build-swap': '',  # optional for VM builds
-             'build-vmdisk-autosetup': '0', # optional for VM builds
              'build-vmdisk-rootsize': '', # optional for VM builds
              'build-vmdisk-swapsize': '', # optional for VM builds
-             'build-vmdisk-force': '0', # optional for VM builds
 
              'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN'), # compile with N jobs
              'icecream': '0',
@@ -133,7 +131,7 @@ config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'use_keyring', 'gnome_keyring', 'build-vmdisk-autosetup', 'build-vmdisk-force']
+    'use_keyring', 'gnome_keyring']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -170,21 +168,15 @@ apiurl = %(apiurl)s
 
 # build-device is the disk-image file to use as root for VM builds
 # e.g. /var/tmp/FILE.root
-# if no build-vmdisk-autosetup is used, the file must be present/created
 #build-device = /var/tmp/FILE.root
 
 # build-swap is the disk-image to use as swap for VM builds
-# if no build-vmdisk-autosetup is used, the file must be present/created
 # e.g. /var/tmp/FILE.swap
 #build-swap = /var/tmp/FILE.swap
 
 # build-memory is the amount of memory used in the VM
 # value in MB - e.g. 512
 #build-memory = 512
-
-# build-vmdisk-autosetup enabled the automatic creation of VM build disks
-# possible values: 0 / 1
-#build-vmdisk-autosetup = 0
 
 # build-vmdisk-rootsize is the size of the disk-image used as root in a VM build
 # values in MB - e.g. 4096
@@ -193,10 +185,6 @@ apiurl = %(apiurl)s
 # build-vmdisk-swapsize is the size of the disk-image used as swap in a VM build
 # values in MB - e.g. 1024
 #build-vmdisk-swapsize = 1024
-
-# build-vmdisk-force can be set to 1 to force the (re-)setup of the VM disk images
-# possible values: 0 / 1
-#build-vmdisk-force = 0
 
 # Numeric uid:gid to assign to the "abuild" user in the build-root
 # or "caller" to use the current users uid:gid
