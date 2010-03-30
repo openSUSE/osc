@@ -681,40 +681,42 @@ def main(opts, argv):
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
 
+    subst = { 'repo': repo, 'arch': arch, 'project' : prj, 'package' : pacname }
     vm_options = ''
     # XXX check if build-device present
     my_build_device = ''
     if config['build-device']:
-        my_build_device = config['build-device'] % { 'repo': repo, 'arch': arch,
-                                                     'project' : prj, 'package' : pacname
-                                                   }
+        my_build_device = config['build-device'] % subst
+    else:
+        # obs worker uses /root here but that collides with the
+        # /root directory if the build root was used without vm
+        # before
+        my_build_device = build_root + '/img'
+
     if config['build-type']:
-        if config['build-type'] == 'kvm':
-            vm_options = '--kvm ' + my_build_device
-        elif config['build-type'] == 'xen':
-            vm_options = '--xen ' + my_build_device
+        if config['build-swap']:
+            my_build_swap = config['build-swap'] % subst
+        else:
+            my_build_swap = build_root + '/swap'
+
+        if config['build-type'] in ('kvm', 'xen'):
+            vm_options = '--%s %s' % (config['build-type'], my_build_device)
+            vm_options += ' --swap ' + my_build_swap
+            build_root += '/.mount'
         elif config['build-type'] == 'lxc':
             vm_options = '--lxc'
         else:
             raise oscerr.WrongArgs('ERROR: unknown VM is set ! ("%s")' % config['build-type'])
 
-        if config['build-swap']:
-            my_build_swap = config['build-swap'] % { 'repo': repo, 'arch': arch,
-                                                     'project' : prj, 'package' : pacname
-                                                   }
-            vm_options += ' --swap ' + my_build_swap
         if config['build-memory']:
             vm_options += ' --memory ' + config['build-memory']
-        if config['build-vmdisk-autosetup']:
-            if config['build-vmdisk-rootsize'] and config['build-vmdisk-swapsize']:
-                vm_options += ' --vmdisk-autosetup '
-                vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
-                vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
-                if config['build-vmdisk-force']:
-                    vm_options += ' --vmdisk-force '
+        if config['build-vmdisk-rootsize']:
+            vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
+        if config['build-vmdisk-swapsize']:
+            vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
 
     print 'Running build'
-    cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s "%s" %s' \
+    cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s %s "%s"' \
                  % (config['build-cmd'],
                     build_root,
                     rpmlist_filename,
@@ -722,8 +724,9 @@ def main(opts, argv):
                     specialcmdopts,
                     bi.buildarch,
                     vm_options,
-                    build_descr,
-                    buildargs)
+                    buildargs,
+                    build_descr)
+
     if config['su-wrapper'].startswith('su '):
         tmpl = '%s \'%s\''
     else:
@@ -734,6 +737,7 @@ def main(opts, argv):
     if hostarch != bi.buildarch:
         cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
 
+    print cmd
     rc = subprocess.call(cmd, shell=True)
     if rc:
         print
