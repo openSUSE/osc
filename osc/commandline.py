@@ -349,18 +349,14 @@ class Osc(cmdln.Cmdln):
                                       verbose=opts.verbose,
                                       expand=opts.expand,
                                       revision=opts.revision)
+                    link_seen = '_link' in l
                     if opts.verbose:
-                        for i in l: 
-                            if i.name == '_link': 
-                                link_seen = True
                         out = [ '%s %7s %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
                             for i in l if not fname or fname == i.name ]
                         if len(out) > 0:
                             print_not_found = False
                             print '\n'.join(out)
                     else:
-                        if '_link' in l: 
-                            link_seen = True
                         if fname:
                             if fname in l:
                                 print fname
