@@ -366,7 +366,8 @@ class Osc(cmdln.Cmdln):
                     if opts.expand or opts.unexpand or not link_seen: break
                     m = show_files_meta(conf.config['apiurl'], project, package)
                     xml = ET.fromstring(''.join(m)).find('linkinfo')
-                    print "# -> %s %s" % (xml.get('project'), xml.get('package'))
+                    project, package = xml.get('project'), xml.get('package')
+                    print "# -> %s %s" % (project, package)
                     opts.expand = True
                 if fname and print_not_found:
                     print 'file \'%s\' does not exist' % fname
