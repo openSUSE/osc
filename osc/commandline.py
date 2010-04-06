@@ -363,7 +363,7 @@ class Osc(cmdln.Cmdln):
                                 print_not_found = False
                         else:
                             print '\n'.join(l)
-                    if opts.expand or opts.unexpand or link_seen == 0: break
+                    if opts.expand or opts.unexpand or not link_seen: break
                     m = show_files_meta(conf.config['apiurl'], project, package)
                     xml = ET.fromstring(''.join(m)).find('linkinfo')
                     print "# -> %s %s" % (xml.get('project'), xml.get('package'))
