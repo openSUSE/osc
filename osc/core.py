@@ -1909,11 +1909,14 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
         data = ''
 
     req = urllib2.Request(url)
-
-    api_host_options=conf.get_apiurl_api_host_options(url)
-
-    for header, value in api_host_options['http_headers']:
-        req.add_header(header, value)
+    api_host_options = {}
+    try:
+        api_host_options = conf.get_apiurl_api_host_options(url)
+        for header, value in api_host_options['http_headers']:
+            req.add_header(header, value)
+    except:
+        # "external" request (url is no apiurl)
+        pass
 
     req.get_method = lambda: method
 
@@ -1954,12 +1957,12 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
 
     old_timeout = socket.getdefaulttimeout()
     # XXX: dirty hack as timeout doesn't work with python-m2crypto
-    if old_timeout != timeout and not api_host_options['sslcertck']:
+    if old_timeout != timeout and not api_host_options.get('sslcertck'):
         socket.setdefaulttimeout(timeout)
     try:
         fd = urllib2.urlopen(req, data=data)
     finally:
-        if old_timeout != timeout and not api_host_options['sslcertck']:
+        if old_timeout != timeout and not api_host_options.get('sslcertck'):
             socket.setdefaulttimeout(old_timeout)
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
@@ -3680,7 +3683,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None):
+def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None, text=None):
     """
     performs http_meth on url and read bufsize bytes from the response
     until EOF is reached. After each read bufsize bytes are yielded to the
@@ -3690,7 +3693,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     if progress_obj:
         import urlparse
         basename = os.path.basename(urlparse.urlsplit(url)[2])
-        progress_obj.start(basename=basename, size=int(f.info().get('Content-Length', -1)))
+        progress_obj.start(basename=basename, text=text, size=int(f.info().get('Content-Length', -1)))
     data = f.read(bufsize)
     read = len(data)
     while len(data):

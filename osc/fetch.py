@@ -5,9 +5,9 @@
 
 import sys, os
 import urllib2
-from urlgrabber.grabber import URLGrabber, URLGrabError
+from urlgrabber.grabber import URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from core import makeurl
+from core import makeurl, streamfile
 from util import packagequery, cpio
 import conf
 import tempfile
@@ -23,22 +23,41 @@ def join_url(self, base_url, rel_url):
     IOW, we make MirrorGroup ignore relative_url"""
     return base_url
 
+class OscFileGrabber:
+    def __init__(self, progress_obj = None):
+        self.progress_obj = progress_obj
+
+    def urlgrab(self, url, filename, text = None, **kwargs):
+        if url.startswith('file://'):
+            file = url.replace('file://', '', 1)
+            if os.path.isfile(file):
+                return file
+            else:
+                raise URLGrabError(2, 'Local file \'%s\' does not exist' % file)
+        f = open(filename, 'wb')
+        try:
+            try:
+                for i in streamfile(url, progress_obj=self.progress_obj, text=text):
+                    f.write(i)
+            except urllib2.HTTPError, e:
+                exc = URLGrabError(14, str(e))
+                exc.url = url
+                exc.exception = e
+                exc.code = e.code
+                raise exc
+        finally:
+            f.close()
+        return filename
 
 class Fetcher:
     def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False,
                  cookiejar = None, offline = False, enable_cpio = False):
-
-        __version__ = '0.1'
-        __user_agent__ = 'osbuild/%s' % __version__
-
         # set up progress bar callback
         if sys.stdout.isatty() and TextMeter:
             self.progress_obj = TextMeter(fo=sys.stdout)
         else:
             self.progress_obj = None
 
-
-        self.nopac = False
         self.cachedir = cachedir
         self.urllist = urllist
         self.http_debug = http_debug
@@ -52,24 +71,15 @@ class Fetcher:
         openers = (urllib2.HTTPBasicAuthHandler(passmgr), )
         if cookiejar:
             openers += (urllib2.HTTPCookieProcessor(cookiejar), )
-        self.gr = URLGrabber(user_agent=__user_agent__,
-                            keepalive=1,
-                            opener = urllib2.build_opener(*openers),
-                            progress_obj=self.progress_obj,
-                            failure_callback=(self.failureReport,(),{}),
-                            )
-
+        self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
     def failureReport(self, errobj):
         """failure output for failovers from urlgrabber"""
-
-        #log(0, '%s: %s' % (errobj.url, str(errobj.exception)))
-        #log(0, 'Trying other mirror.')
-        if not self.nopac:
-            print 'Trying openSUSE Build Service server for %s (%s), not found at %s.' \
-                  % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
-        raise errobj.exception
-
+        if errobj.url.startswith('file://'):
+            return {}
+        print 'Trying openSUSE Build Service server for %s (%s), not found at %s.' \
+              % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
+        return {}
 
     def fetch(self, pac, prefix=''):
         # for use by the failure callback
@@ -79,7 +89,7 @@ class Fetcher:
             return True
 
         MirrorGroup._join_url = join_url
-        mg = MirrorGroup(self.gr, pac.urllist)
+        mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport,(),{}))
 
         if self.http_debug:
             print
@@ -90,10 +100,9 @@ class Fetcher:
         (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
         try:
             try:
-                # it returns the filename
-                ret = mg.urlgrab(pac.filename,
-                                 filename = tmpfile,
-                                 text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
+                mg.urlgrab(pac.filename,
+                           filename = tmpfile,
+                           text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
                 self.move_package(tmpfile, pac.localdir, pac)
             except URLGrabError, e:
                 if self.enable_cpio and e.errno == 256:
@@ -136,7 +145,6 @@ class Fetcher:
                 print >>sys.stderr, 'packagecachedir is not writable for you?'
                 print >>sys.stderr, e
                 sys.exit(1)
-
 
     def run(self, buildinfo):
         from urllib import quote_plus
@@ -197,7 +205,6 @@ class Fetcher:
                 if os.path.exists(tmpfile):
                     os.unlink(tmpfile)
 
-        self.nopac = True
         prjs = buildinfo.projects.keys()
         for i in prjs:
             dest = "%s/%s" % (self.cachedir, i)
@@ -231,8 +238,6 @@ class Fetcher:
                     # try key from parent project
                     if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
                         prjs.append(l[0])
-
-        self.nopac = False
 
 def verify_pacs_old(pac_list):
     """Take a list of rpm filenames and run rpm -K on them.

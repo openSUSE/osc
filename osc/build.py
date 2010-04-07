@@ -195,7 +195,7 @@ class Pac:
         # that the filename is suitable as identifier)
         self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
         self.fullfilename = os.path.join(self.localdir, self.filename)
-        self.url_local = 'file://%s/' % self.fullfilename
+        self.url_local = 'file://%s' % self.fullfilename
 
         # first, add the local URL
         self.urllist.append(self.url_local)
