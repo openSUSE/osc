@@ -342,13 +342,14 @@ class Osc(cmdln.Cmdln):
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False
                 print_not_found = True
+                rev = opts.revision
                 for i in [ 1, 2 ]:
                     l = meta_get_filelist(conf.config['apiurl'],
                                       project,
                                       package,
                                       verbose=opts.verbose,
                                       expand=opts.expand,
-                                      revision=opts.revision)
+                                      revision=rev)
                     link_seen = '_link' in l
                     if opts.verbose:
                         out = [ '%s %7s %9d %s %s' % (i.md5, i.rev, i.size, shorttime(i.mtime), i.name) \
@@ -365,9 +366,15 @@ class Osc(cmdln.Cmdln):
                             print '\n'.join(l)
                     if opts.expand or opts.unexpand or not link_seen: break
                     m = show_files_meta(conf.config['apiurl'], project, package)
-                    xml = ET.fromstring(''.join(m)).find('linkinfo')
-                    project, package = xml.get('project'), xml.get('package')
-                    print "# -> %s %s" % (project, package)
+                    li = Linkinfo()
+                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
+                    if li.haserror():
+                        raise oscerr.LinkExpandError(project, package, li.error)
+                    project, package, rev = li.project, li.package, li.rev
+                    if rev:
+                        print '# -> %s %s (%s)' % (project, package, rev)
+                    else:
+                        print '# -> %s %s (latest)' % (project, package)
                     opts.expand = True
                 if fname and print_not_found:
                     print 'file \'%s\' does not exist' % fname
