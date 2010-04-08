@@ -3457,7 +3457,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         user = 'abuild'
         if opts.root:
-            user = ''
+            user = 'root'
         repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
         project = opts.alternative_project or store_read_project('.')
         if opts.local_package:
