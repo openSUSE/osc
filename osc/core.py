@@ -3279,8 +3279,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         msg = ''.join(e.readlines())
         msg = msg.split('<summary>')[1]
         msg = msg.split('</summary>')[0]
-        m = re.match(r"attribute branch call failed: (\S+)/", msg)
-        return m
+        raise oscerr.APIError(msg)
 
     r = f.read()
     r = r.split('targetproject">')[1]
