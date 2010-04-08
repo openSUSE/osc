@@ -1,4 +1,5 @@
 0.126
+ - added VM diskimage autosetup hooks to osc
  - suggest git, svn, ... if indicated, after oscerr.NoWorkingCopy
  - "osc cat" & "osc ls" now auto-expands through link.
  - fixed "osc add" after "osc delete".
