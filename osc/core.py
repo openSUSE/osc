@@ -698,8 +698,8 @@ class Package:
 
         check_store_version(self.dir)
 
-        self.name = store_read_package(self.dir)
         self.prjname = store_read_project(self.dir)
+        self.name = store_read_package(self.dir)
         self.apiurl = store_read_apiurl(self.dir)
 
         self.update_datastructs()
@@ -2026,7 +2026,7 @@ def check_store_version(dir):
         v = ''
 
     if v == '':
-        msg = 'Error: "%s" is not an osc working copy.' % os.path.abspath(dir)
+        msg = 'Error: "%s" is not an osc package working copy.' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg = msg + '\nTry svn instead of osc.'
         raise oscerr.NoWorkingCopy(msg)
