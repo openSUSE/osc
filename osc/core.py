@@ -698,8 +698,8 @@ class Package:
 
         check_store_version(self.dir)
 
-        self.prjname = store_read_project(self.dir)
         self.name = store_read_package(self.dir)
+        self.prjname = store_read_project(self.dir)
         self.apiurl = store_read_apiurl(self.dir)
 
         self.update_datastructs()
@@ -1799,6 +1799,22 @@ def findpacs(files, progress_obj=None):
     return pacs
 
 
+def filedir_to_pac(f, progress_obj=None):
+    """Takes a working copy path, or a path to a file inside a working copy,
+    and returns a Package object instance
+
+    If the argument was a filename, add it onto the "todo" list of the Package """
+
+    if os.path.isdir(f):
+        wd = f
+        p = Package(wd, progress_obj=progress_obj)
+    else:
+        wd = os.path.dirname(f) or os.curdir
+        p = Package(wd, progress_obj=progress_obj)
+        p.todo = [ os.path.basename(f) ]
+    return p
+
+
 def read_filemeta(dir):
     try:
         r = ET.parse(os.path.join(dir, store, '_files'))
@@ -1838,26 +1854,6 @@ def parseargs(list_of_args):
         return list(list_of_args)
     else:
         return [os.curdir]
-
-
-def filedir_to_pac(f, progress_obj=None):
-    """Takes a working copy path, or a path to a file inside a working copy,
-    and returns a Package object instance
-
-    If the argument was a filename, add it onto the "todo" list of the Package """
-
-    if os.path.isdir(f):
-        wd = f
-        p = Package(wd, progress_obj=progress_obj)
-
-    else:
-        wd = os.path.dirname(f)
-        if wd == '':
-            wd = os.curdir
-        p = Package(wd, progress_obj=progress_obj)
-        p.todo = [ os.path.basename(f) ]
-
-    return p
 
 
 def statfrmt(statusletter, filename):
