@@ -298,13 +298,9 @@ class Osc(cmdln.Cmdln):
             if opts.repo and opts.arch:
                 repos.append(Repo(opts.repo, opts.arch))
             elif opts.repo and not opts.arch:
-                for repo in get_repos_of_project(apiurl, project):
-                    if repo.name == opts.repo:
-                        repos.append(repo)
+                repos = [repo for repo in get_repos_of_project(apiurl, project) if repo.name == opts.repo]
             elif opts.arch and not opts.repo:
-                for repo in get_repos_of_project(apiurl, project):
-                    if repo.arch == opts.arch:
-                        repos.append(repo)
+                repos = [repo for repo in get_repos_of_project(apiurl, project) if repo.arch == opts.arch]
             else:
                 repos = get_repos_of_project(apiurl, project)
 
@@ -357,13 +353,12 @@ class Osc(cmdln.Cmdln):
                         if len(out) > 0:
                             print_not_found = False
                             print '\n'.join(out)
+                    elif fname:
+                        if fname in l:
+                            print fname
+                            print_not_found = False
                     else:
-                        if fname:
-                            if fname in l:
-                                print fname
-                                print_not_found = False
-                        else:
-                            print '\n'.join(l)
+                        print '\n'.join(l)
                     if opts.expand or opts.unexpand or not link_seen: break
                     m = show_files_meta(conf.config['apiurl'], project, package)
                     li = Linkinfo()
