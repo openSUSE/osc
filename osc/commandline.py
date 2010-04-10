@@ -1241,7 +1241,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     print server_diff(conf.config['apiurl'],
                                       r.actions[0].dst_project, r.actions[0].dst_package, None,
-                                      r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified)
+                                      r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
                 except urllib2.HTTPError, e:
                     e.osc_msg = 'Diff not possible'
                     raise
@@ -1830,6 +1830,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              '(NOTE: changes in your working copy are ignored in this case)')
     @cmdln.option('-p', '--plain', action='store_true',
                         help='output the diff in plain (not unified) diff format')
+    @cmdln.option('--missingok', action='store_true',
+                        help='do not fail if the source or target project/package does not exist on the server')
     def do_diff(self, subcmd, opts, *args):
         """${cmd_name}: Generates a diff
 
@@ -1867,7 +1869,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += ''.join(make_diff(pac, rev1))
             else:
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2, not opts.plain)
+                                    pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
         if len(diff) > 0:
             print diff
 
@@ -1885,6 +1887,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-c', '--change', metavar='rev',
                         help='the change made by revision rev (like -r rev-1:rev). '
                              'If rev is negative this is like -r rev:rev-1.')
+    @cmdln.option('--missingok', action='store_true',
+                        help='do not fail if the source or target project/package does not exist on the server')
     def do_rdiff(self, subcmd, opts, *args):
         """${cmd_name}: Server-side "pretty" diff of two packages
 
@@ -1953,8 +1957,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         rdiff = server_diff(conf.config['apiurl'],
                             old_project, old_package, rev1,
-                            new_project, new_package, rev2, not opts.plain)
-
+                            new_project, new_package, rev2, not opts.plain, opts.missingok)
         print rdiff
 
     @cmdln.hide(1)

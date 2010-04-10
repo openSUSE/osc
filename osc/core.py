@@ -2976,8 +2976,7 @@ def make_diff(wc, revision):
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision, unified=False):
-
+                new_project, new_package, new_revision, unified=False, missingok=False):
     query = {'cmd': 'diff', 'expand': '1'}
     if old_project:
         query['oproject'] = old_project
@@ -2989,6 +2988,8 @@ def server_diff(apiurl,
         query['rev'] = new_revision
     if unified:
         query['unified'] = 1
+    if missingok:
+        query['missingok'] = 1
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
 
@@ -4640,7 +4641,7 @@ def request_interactive_review(apiurl, request):
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
                     tmpfile.write(server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
-                                  request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True))
+                                  request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, True))
                     tmpfile.flush()
                 pager = os.getenv('EDITOR', default='less')
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
