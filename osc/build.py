@@ -639,7 +639,7 @@ def main(opts, argv):
                     os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        if config['build-type'] == "xen" or config['build-type'] == "kvm":
+        if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'
         elif opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
@@ -660,7 +660,7 @@ def main(opts, argv):
 
             verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
     elif bi.pacsuffix == 'deb':
-        if config['build-type'] == "xen" or config['build-type'] == "kvm":
+        if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'
         elif opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
