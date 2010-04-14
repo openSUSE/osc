@@ -639,7 +639,9 @@ def main(opts, argv):
                     os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        if opts.no_verify or opts.noinit:
+        if config['build-type'] == "xen" or config['build-type'] == "kvm":
+            print 'Skipping verification of package signatures due to secure VM build'
+        elif opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
