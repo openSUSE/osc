@@ -606,8 +606,7 @@ def main(opts, argv):
     fetcher = Fetcher(cachedir = config['packagecachedir'],
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
-                      noinit = opts.noinit,
-                      offline = opts.offline,
+                      offline = opts.noinit or opts.offline,
                       http_debug = config['http_debug'],
                       enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
