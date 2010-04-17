@@ -3434,11 +3434,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.noinit and opts.offline:
             raise oscerr.WrongOptions('--noinit and --offline are mutually exclusive')
-            sys.exit(1)
 
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
-            sys.exit(1)
 
         print 'Building %s for %s/%s' % (args[2], args[0], args[1])
         return osc.build.main(opts, args)
