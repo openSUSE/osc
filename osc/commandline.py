@@ -3296,6 +3296,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('--clean', action='store_true',
                   help='Delete old build root before initializing it')
+    @cmdln.option('-o', '--offline', action='store_true',
+                  help='Start with cached prjconf and packages without contacting the api server')
+    @cmdln.option('-l', '--preload', action='store_true',
+                  help='Preload all files into the chache for offline operation')
     @cmdln.option('--no-changelog', action='store_true',
                   help='don\'t update the package changelog from a changes file')
     @cmdln.option('--rsync-src', metavar='RSYNCSRCPATH', dest='rsyncsrc',
@@ -3413,7 +3417,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
 
         # check for source services
         if not opts.noservice and not opts.noinit and os.listdir('.').count("_service"):
@@ -3428,6 +3432,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.keep_pkgs and not os.path.isdir(opts.keep_pkgs):
             raise oscerr.WrongOptions('Preferred save location \'%s\' is not a directory' % opts.keep_pkgs)
 
+        if opts.noinit and opts.offline:
+            raise oscerr.WrongOptions('--noinit and --offline are mutually exclusive')
+            sys.exit(1)
+
+        if opts.offline and opts.preload:
+            raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
+            sys.exit(1)
+
         print 'Building %s for %s/%s' % (args[2], args[0], args[1])
         return osc.build.main(opts, args)
 
@@ -3440,6 +3452,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='do not guess/verify specified repository')
     @cmdln.option('-r', '--root', action='store_true',
                   help='login as root instead of abuild')
+    @cmdln.option('-o', '--offline', action='store_true',
+                  help='Use cached data without contacting the api server')
     def do_chroot(self, subcmd, opts, *args):
         """${cmd_name}: chroot into the buildchroot
 
@@ -3463,7 +3477,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         user = 'abuild'
         if opts.root:
             user = 'root'
-        repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
+        repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
         project = opts.alternative_project or store_read_project('.')
         if opts.local_package:
             package = os.path.splitext(descr)[0]

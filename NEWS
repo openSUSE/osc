@@ -25,6 +25,9 @@
  - added "--message" option to "osc branch"
  - added "osc config" command to set/get/delete a config option
  - added "--binary" and "--baseproject" options to "osc search"
+ - added "-o/--offline" and "-l/--preload" options to osc build
+   * osc build -l standard i586 foo.spec (to cache all dependencies)
+   * osc build -o standard i586 foo.spec (to build without contacting the api)
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target

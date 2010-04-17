@@ -499,6 +499,12 @@ def main(opts, argv):
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--noinit is not possible, no local buildconfig file')
             print 'Use local \'%s\' file as buildconfig' % bc_filename
+        elif opts.offline:
+            if not os.path.isfile(bi_filename):
+                raise oscerr.WrongOptions('--offline is not possible, no local buildinfo file')
+            print 'Use local \'%s\' file as buildinfo' % bi_filename
+            if not os.path.isfile(bc_filename):
+                raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
             print 'Getting buildinfo from server and store to %s' % bi_filename
             if not bi_file:
@@ -600,7 +606,8 @@ def main(opts, argv):
     fetcher = Fetcher(cachedir = config['packagecachedir'],
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
-                      offline = opts.noinit,
+                      noinit = opts.noinit,
+                      offline = opts.offline,
                       http_debug = config['http_debug'],
                       enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
@@ -642,7 +649,7 @@ def main(opts, argv):
     if bi.pacsuffix == 'rpm':
         if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'
-        elif opts.no_verify or opts.noinit:
+        elif opts.no_verify or opts.noinit or opts.offline:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
@@ -722,6 +729,10 @@ def main(opts, argv):
             vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
         if config['build-vmdisk-swapsize']:
             vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
+
+    if opts.preload:
+        print "Preload done for selected repo/arch."
+        sys.exit(0)
 
     print 'Running build'
     cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s %s "%s"' \

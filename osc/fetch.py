@@ -51,7 +51,7 @@ class OscFileGrabber:
 
 class Fetcher:
     def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False,
-                 cookiejar = None, offline = False, enable_cpio = False):
+                 cookiejar = None, noinit = False, offline = False, enable_cpio = False):
         # set up progress bar callback
         if sys.stdout.isatty() and TextMeter:
             self.progress_obj = TextMeter(fo=sys.stdout)
@@ -61,6 +61,7 @@ class Fetcher:
         self.cachedir = cachedir
         self.urllist = urllist
         self.http_debug = http_debug
+        self.noinit = noinit
         self.offline = offline
         self.cpio = {}
         self.enable_cpio = enable_cpio
@@ -85,7 +86,7 @@ class Fetcher:
         # for use by the failure callback
         self.curpac = pac
 
-        if self.offline:
+        if self.noinit or self.offline:
             return True
 
         MirrorGroup._join_url = join_url
@@ -163,6 +164,9 @@ class Fetcher:
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
             if not os.path.exists(i.fullfilename):
+                if self.offline:
+                    print "Missing package '%s' in cache: --offline not possible." % i.fullfilename
+                    sys.exit(1)
                 self.dirSetup(i)
                 try:
                     # if there isn't a progress bar, there is no output at all
