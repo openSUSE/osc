@@ -233,6 +233,9 @@ class Fetcher:
                     else:
                         print "%s doesn't have a gpg key" % i
 
+                    if os.path.exists(dest):
+                        os.unlink(dest)
+
                     l = i.rsplit(':', 1)
                     # try key from parent project
                     if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
