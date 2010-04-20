@@ -3483,9 +3483,9 @@ def show_prj_results_meta(apiurl, prj):
     return f.readlines()
 
 
-def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+    """ return a package results as a list of dicts """
     r = []
-    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
 
     f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch)
     root = ET.fromstring(''.join(f))
@@ -3500,21 +3500,32 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
         rmap['dirty'] = node.get('dirty')
 
         statusnode =  node.find('status')
-        try:
-            rmap['status'] = statusnode.get('code')
-        except:
-            # code can be missing when package is too new:
-            rmap['status'] = ''
+        rmap['code'] = statusnode.get('code') if 'code' in statusnode.keys() else ''
+        rmap['details'] = ''
 
-        if rmap['status'] in ['expansion error', 'broken', 'blocked', 'finished']:
+        if rmap['code'] in ('expansion error', 'broken', 'blocked', 'finished'):
             details = statusnode.find('details')
             if details != None:
-                rmap['status'] += ': ' + details.text
+                rmap['details'] = details.text
 
-        if rmap['dirty'] == 'true':
-            rmap['status'] = 'state is outdated (was: %s)' % rmap['status']
+        rmap['dirty'] = rmap['dirty'] == 'true'
 
-        r.append(result_line_templ % rmap)
+        r.append(rmap)
+    return r
+
+def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+    r = []
+    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
+
+    for res in get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+        res['status'] = res['code']
+        if res['details'] != '':
+            res['status'] += ': %s' % (res['details'], )
+        if res['dirty']:
+            res['status'] = 'state is outdated (was: %s)' % res['status']
+
+        r.append(result_line_templ % res)
+
     return r
 
 def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None):
