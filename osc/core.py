@@ -3492,9 +3492,9 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
 
     for node in root.findall('result'):
         rmap = {}
-        rmap['prj'] = prj
-        rmap['pac'] = package
-        rmap['rep'] = node.get('repository')
+        rmap['project'] = rmap['prj'] = prj
+        rmap['pkg'] = rmap['package'] = rmap['pac'] = package
+        rmap['repository'] = rmap['repo'] = rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
         rmap['dirty'] = node.get('dirty')
