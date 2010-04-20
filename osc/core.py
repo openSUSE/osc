@@ -3513,6 +3513,10 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
         r.append(rmap)
     return r
 
+def format_results(results, format):
+    """apply selected format on each dict in results and return it as a list of strings"""
+    return (format % r for r in results)
+
 def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     r = []
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
