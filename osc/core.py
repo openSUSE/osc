@@ -4647,7 +4647,7 @@ def request_interactive_review(apiurl, request):
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
-                sys.exit(1)
+                raise oscerr.UserAbort()
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)

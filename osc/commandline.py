@@ -784,7 +784,8 @@ class Osc(cmdln.Cmdln):
                     print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
                 print "\nEverything fine? Can we create the requests ? [y/n]"
                 if sys.stdin.read(1) != "y":
-                    sys.exit("Aborted...")
+                    print >>sys.stderr, 'Aborted...'
+                    raise oscerr.UserAbort()
 
             # loop via all packages to do the action
             for p in pac:
@@ -844,7 +845,7 @@ class Osc(cmdln.Cmdln):
                 print 'Your working copy has local modifications.'
                 repl = raw_input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
-                    sys.exit(1)
+                    raise oscerr.UserAbort()
         elif len(args) >= 3:
             # get the arguments from the commandline
             src_project, src_package, dst_project = args[0:3]
@@ -899,7 +900,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repl = raw_input('Supersede the old requests? (y/n/c) ')
                 if repl.lower() == 'c':
                     print >>sys.stderr, 'Aborting'
-                    sys.exit(1)
+                    raise oscerr.UserAbort()
 
             if not opts.message:
                 difflines = []
