@@ -2709,8 +2709,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified repo(s)')
     @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
-    @cmdln.option('', '--xml', action='store_true',
+    @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
+    @cmdln.option('', '--csv', action='store_true', default=False,
+                        help='generate output in CSV format')
+    @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
+                        help='format string for csv output')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
@@ -2748,12 +2752,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = args[0]
             package = args[1]
 
-        if not opts.xml:
-            func = get_results
-            delim = '\n'
-        else:
+        if opts.xml and opts.csv:
+            raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
+
+        if opts.xml:
             func = show_results_meta
             delim = ''
+        elif opts.csv:
+            def _func(*args):
+                return format_results(get_package_results(*args), opts.format)
+            func = _func
+            delim = '\n'
+        else:
+            func = get_results
+            delim = '\n'
 
         print delim.join(func(apiurl, project, package, opts.last_build, opts.repo, opts.arch))
 

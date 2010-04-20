@@ -1,3 +1,6 @@
+0.127
+  - --csv/--format options for results command - using format user can explicitly specify what he wants print
+
 0.126
  - added VM autosetup to osc. This requires appropriate OBS version and build script version.
  - enhanced QEMU cross build support with 'armv4l' 'armv5el' 'armv6el' 'armv7el' 'armv8el' 'mips' 'mips64' 'ppc' 'ppc64' 'sh4' arch strings now supported on x86 host
