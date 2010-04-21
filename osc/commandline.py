@@ -1243,8 +1243,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                       r.actions[0].dst_project, r.actions[0].dst_package, None,
                                       r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
                 except urllib2.HTTPError, e:
-                    e.osc_msg = 'Diff not possible'
-                    raise
+                    if e.code != 400:
+                        e.osc_msg = 'Diff not possible'
+                        raise
+                    # backward compatiblity: only a recent api/backend supports the missingok parameter
+                    try:
+                        print server_diff(conf.config['apiurl'],
+                                          r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                          r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, False)
+                    except urllib2.HTTPError, e:
+                        e.osc_msg = 'Diff not possible'
+                        raise
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
