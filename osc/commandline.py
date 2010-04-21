@@ -4027,6 +4027,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.all and (opts.bugowner or opts.maintainer):
             raise oscerr.WrongOptions('Sorry, \'--all\' and \'--bugowner\' or \'--maintainer\' are mutually exclusive')
 
+        if is_package_dir(os.getcwd()) and not self.options.apiurl:
+           apiurl = store_read_apiurl(os.curdir)
+        else:
+           apiurl = conf.config['apiurl']
+
         exclude_projects = []
         for i in opts.exclude_project or []:
             prj = i.split(',')
@@ -4035,7 +4040,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 exclude_projects.extend(prj)
         if not opts.user:
-            user = conf.get_apiurl_usr(conf.config['apiurl'])
+            user = conf.get_apiurl_usr(apiurl)
         else:
             user = opts.user
 
@@ -4046,7 +4051,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif type in args_prj:
             what = {'project': ''}
         elif type in args_sr:
-            requests = get_request_list(conf.config['apiurl'], req_who=user, exclude_target_projects=exclude_projects)
+            requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
             for r in requests:
                 print r.list_view()
             return
@@ -4063,7 +4068,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.all:
             role_filter = ''
 
-        res = get_user_projpkgs(conf.config['apiurl'], user, role_filter,
+        res = get_user_projpkgs(apiurl, user, role_filter,
                                 exclude_projects, what.has_key('project'), what.has_key('package'))
         request_todo = {}
         roles = {}
@@ -4080,7 +4085,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
-            requests = get_user_projpkgs_request_list(conf.config['apiurl'], user, projpkgs=request_todo)
+            requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in requests:
                 print r.list_view()
         else:
