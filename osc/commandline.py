@@ -3863,6 +3863,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         others even when they are not "published" yet.
 
         usage:
+           osc getbinaries REPOSITORY                                      # works in checked out package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out package
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
@@ -3871,7 +3872,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = conf.config['apiurl']
 
-        if len(args) < 2 and is_package_dir('.'):
+        if len(args) < 1 and is_package_dir('.'):
             self.print_repos()
 
         if len(args) == 4:
@@ -3888,43 +3889,98 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 architecture = args[1]
             else:
                 sys.exit('Local directory is no checkout package, neither it is specified. ' )
+        elif len(args) == 1:
+            if is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                apiurl  = store_read_apiurl(os.curdir)
+                repository = args[0]
+            else:
+                sys.exit('Local directory is no checkout package, neither it is specified. ' )
         else:
-            raise oscerr.WrongArgs('Need either 2 or 4 arguments')
+            raise oscerr.WrongArgs('Need either 1, 2 or 4 arguments')
 
         # Get package list
-        binaries = get_binarylist(apiurl,
-                                   project, repository, architecture,
-                                   package = package, verbose=True)
+        if len(args) == 1:
+            data = []
+            for repo in get_repos_of_project(apiurl, project):
+                if repo.name == repository: 
+                   data.append(repo.arch)
 
-        if not os.path.isdir(opts.destdir):
-            print "Creating %s" % opts.destdir
-            os.makedirs(opts.destdir, 0755)
+            for arch in data:
+                binaries = get_binarylist(apiurl,
+                                         project, repository, arch,
+                                         package = package, verbose=True)
 
-        if binaries == [ ]:
-            sys.exit('no binaries found. Either the package does not '
-                     'exist or no binaries have been built.')
+                if opts.destdir:
+                   print "Creating %s/%s" % (opts.destdir, arch)
+                   target_dir = '%s/%s' % (opts.destdir, arch)
+                else:
+                   target_dir = '%s' % arch
 
-        for binary in binaries:
+                if not os.path.isdir(target_dir):
+                    os.makedirs(target_dir, 0755)
 
-            # skip source rpms
-            if not opts.sources and binary.name.endswith('.src.rpm'):
-                continue
+                if binaries == [ ]:
+                   sys.exit('no binaries found. Either the package does not '
+                            'exist or no binaries have been built.')
 
-            target_filename = '%s/%s' % (opts.destdir, binary.name)
+                for binary in binaries:
+                    target_filename = []
+                    if os.path.isdir(opts.destdir):
+                       target_filename = '%s/%s/%s' % (opts.destdir, arch, binary.name)
+                    else:
+                       target_filename = '%s/%s' % (arch, binary.name)
 
-            if os.path.exists(target_filename):
-                st = os.stat(target_filename)
-                if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                    if os.path.exists(target_filename):
+                       st = os.stat(target_filename)
+                       if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                          continue
+
+                    get_binary_file(apiurl,
+                                project,
+                                repository, arch,
+                                binary.name,
+                                package = package,
+                                target_filename = target_filename,
+                                target_mtime = binary.mtime,
+                                progress_meter = not opts.quiet)
+
+
+        else:
+            binaries = get_binarylist(apiurl,
+                                      project, repository, architecture,
+                                      package = package, verbose=True)
+
+            if not os.path.isdir(opts.destdir):
+               print "Creating %s" % opts.destdir
+               os.makedirs(opts.destdir, 0755)
+
+            if binaries == [ ]:
+               sys.exit('no binaries found. Either the package does not '
+                        'exist or no binaries have been built.')
+
+            for binary in binaries:
+
+                # skip source rpms
+                if not opts.sources and binary.name.endswith('.src.rpm'):
                     continue
 
-            get_binary_file(apiurl,
-                            project,
-                            repository, architecture,
-                            binary.name,
-                            package = package,
-                            target_filename = target_filename,
-                            target_mtime = binary.mtime,
-                            progress_meter = not opts.quiet)
+                target_filename = '%s/%s' % (opts.destdir, binary.name)
+
+                if os.path.exists(target_filename):
+                    st = os.stat(target_filename)
+                    if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                       continue
+
+                get_binary_file(apiurl,
+                                project,
+                                repository, architecture,
+                                binary.name,
+                                package = package,
+                                target_filename = target_filename,
+                                target_mtime = binary.mtime,
+                                progress_meter = not opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
