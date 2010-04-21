@@ -1,5 +1,9 @@
+0.127
+  - --csv/--format options for results command - using format user can explicitly specify what he wants print
+
 0.126
- - added VM diskimage autosetup hooks to osc
+ - added VM autosetup to osc. This requires appropriate OBS version and build script version.
+ - enhanced QEMU cross build support with 'armv4l' 'armv5el' 'armv6el' 'armv7el' 'armv8el' 'mips' 'mips64' 'ppc' 'ppc64' 'sh4' arch strings now supported on x86 host
  - suggest git, svn, ... if indicated, after oscerr.NoWorkingCopy
  - "osc cat" & "osc ls" now auto-expands through link.
  - fixed "osc add" after "osc delete".
@@ -24,6 +28,9 @@
  - added "--message" option to "osc branch"
  - added "osc config" command to set/get/delete a config option
  - added "--binary" and "--baseproject" options to "osc search"
+ - added "-o/--offline" and "-l/--preload" options to osc build
+   * osc build -l standard i586 foo.spec (to cache all dependencies)
+   * osc build -o standard i586 foo.spec (to build without contacting the api)
 
 0.125
  - add "osc pull" command to fetch and merge changes in the link target

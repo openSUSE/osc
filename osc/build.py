@@ -32,20 +32,21 @@ change_personality = {
         }
 
 can_also_build = {
-             'armv4l': [                                         'armv4l'                                 ],
-             'armv5el':[                                         'armv4l', 'armv5el'                      ],
-             'armv6el':[                                         'armv4l', 'armv5el', 'armv6el'           ],
-             'armv6l' :[                                         'armv4l', 'armv5el', 'armv6el'           ],
-             'armv7el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'           ],
-             'armv7l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'           ],
-             'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el'],
-             'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el'],
-             's390x':  ['s390'                                                                            ],
-             'ppc64':  [                        'ppc', 'ppc64',                                           ],
-             'i386':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
-             'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
-             'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
-             'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4' ,'mips' ],
+             'armv4l': [                                         'armv4l'                                             ],
+             'armv5el':[                                         'armv4l', 'armv5el'                                  ],
+             'armv6el':[                                         'armv4l', 'armv5el', 'armv6el'                       ],
+             'armv6l' :[                                         'armv4l', 'armv5el', 'armv6el'                       ],
+             'armv7el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'            ],
+             'armv7l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'            ],
+             'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ],
+             'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ],
+             's390x':  ['s390' ],
+             'ppc64':  [                        'ppc', 'ppc64' ],
+             'sh4':    [                                                                                               'sh4' ],
+             'i386':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
+             'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
+             'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
+             'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
              }
 
 # real arch of this machine
@@ -498,6 +499,12 @@ def main(opts, argv):
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--noinit is not possible, no local buildconfig file')
             print 'Use local \'%s\' file as buildconfig' % bc_filename
+        elif opts.offline:
+            if not os.path.isfile(bi_filename):
+                raise oscerr.WrongOptions('--offline is not possible, no local buildinfo file')
+            print 'Use local \'%s\' file as buildinfo' % bi_filename
+            if not os.path.isfile(bc_filename):
+                raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
             print 'Getting buildinfo from server and store to %s' % bi_filename
             if not bi_file:
@@ -599,7 +606,7 @@ def main(opts, argv):
     fetcher = Fetcher(cachedir = config['packagecachedir'],
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
-                      offline = opts.noinit,
+                      offline = opts.noinit or opts.offline,
                       http_debug = config['http_debug'],
                       enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
@@ -639,7 +646,9 @@ def main(opts, argv):
                     os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        if opts.no_verify or opts.noinit:
+        if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
+            print 'Skipping verification of package signatures due to secure VM build'
+        elif opts.no_verify or opts.noinit or opts.offline:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
@@ -658,7 +667,7 @@ def main(opts, argv):
 
             verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
     elif bi.pacsuffix == 'deb':
-        if config['build-type'] == "xen" or config['build-type'] == "kvm":
+        if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'
         elif opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
@@ -719,6 +728,10 @@ def main(opts, argv):
             vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
         if config['build-vmdisk-swapsize']:
             vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
+
+    if opts.preload:
+        print "Preload done for selected repo/arch."
+        sys.exit(0)
 
     print 'Running build'
     cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s %s "%s"' \

@@ -10,6 +10,7 @@ from urlgrabber.mirror import MirrorGroup
 from core import makeurl, streamfile
 from util import packagequery, cpio
 import conf
+import oscerr
 import tempfile
 try:
     from meter import TextMeter
@@ -84,9 +85,6 @@ class Fetcher:
     def fetch(self, pac, prefix=''):
         # for use by the failure callback
         self.curpac = pac
-
-        if self.offline:
-            return True
 
         MirrorGroup._join_url = join_url
         mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport,(),{}))
@@ -163,6 +161,8 @@ class Fetcher:
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
             if not os.path.exists(i.fullfilename):
+                if self.offline:
+                    raise oscerr.OscIOError(None, 'Missing package \'%s\' in cache: --offline not possible.' % i.fullfilename)
                 self.dirSetup(i)
                 try:
                     # if there isn't a progress bar, there is no output at all
@@ -193,7 +193,6 @@ class Fetcher:
                 archive.read()
                 for hdr in archive:
                     if hdr.filename == '.errors':
-                        import oscerr
                         archive.copyin_file(hdr.filename)
                         raise oscerr.APIError('CPIO archive is incomplete (see .errors file)')
                     pac = pkgs[hdr.filename.rsplit('.', 1)[0]]
@@ -233,6 +232,9 @@ class Fetcher:
                         print "url: %s" % url
                     else:
                         print "%s doesn't have a gpg key" % i
+
+                    if os.path.exists(dest):
+                        os.unlink(dest)
 
                     l = i.rsplit(':', 1)
                     # try key from parent project

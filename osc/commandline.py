@@ -784,7 +784,8 @@ class Osc(cmdln.Cmdln):
                     print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
                 print "\nEverything fine? Can we create the requests ? [y/n]"
                 if sys.stdin.read(1) != "y":
-                    sys.exit("Aborted...")
+                    print >>sys.stderr, 'Aborted...'
+                    raise oscerr.UserAbort()
 
             # loop via all packages to do the action
             for p in pac:
@@ -844,7 +845,7 @@ class Osc(cmdln.Cmdln):
                 print 'Your working copy has local modifications.'
                 repl = raw_input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
-                    sys.exit(1)
+                    raise oscerr.UserAbort()
         elif len(args) >= 3:
             # get the arguments from the commandline
             src_project, src_package, dst_project = args[0:3]
@@ -899,7 +900,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repl = raw_input('Supersede the old requests? (y/n/c) ')
                 if repl.lower() == 'c':
                     print >>sys.stderr, 'Aborting'
-                    sys.exit(1)
+                    raise oscerr.UserAbort()
 
             if not opts.message:
                 difflines = []
@@ -2717,8 +2718,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified repo(s)')
     @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
-    @cmdln.option('', '--xml', action='store_true',
+    @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
+    @cmdln.option('', '--csv', action='store_true', default=False,
+                        help='generate output in CSV format')
+    @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
+                        help='format string for csv output')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package
 
@@ -2756,12 +2761,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = args[0]
             package = args[1]
 
-        if not opts.xml:
-            func = get_results
-            delim = '\n'
-        else:
+        if opts.xml and opts.csv:
+            raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
+
+        if opts.xml:
             func = show_results_meta
             delim = ''
+        elif opts.csv:
+            def _func(*args):
+                return format_results(get_package_results(*args), opts.format)
+            func = _func
+            delim = '\n'
+        else:
+            func = get_results
+            delim = '\n'
 
         print delim.join(func(apiurl, project, package, opts.last_build, opts.repo, opts.arch))
 
@@ -3305,6 +3318,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('--clean', action='store_true',
                   help='Delete old build root before initializing it')
+    @cmdln.option('-o', '--offline', action='store_true',
+                  help='Start with cached prjconf and packages without contacting the api server')
+    @cmdln.option('-l', '--preload', action='store_true',
+                  help='Preload all files into the chache for offline operation')
     @cmdln.option('--no-changelog', action='store_true',
                   help='don\'t update the package changelog from a changes file')
     @cmdln.option('--rsync-src', metavar='RSYNCSRCPATH', dest='rsyncsrc',
@@ -3422,7 +3439,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
 
         # check for source services
         if not opts.noservice and not opts.noinit and os.listdir('.').count("_service"):
@@ -3437,6 +3454,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.keep_pkgs and not os.path.isdir(opts.keep_pkgs):
             raise oscerr.WrongOptions('Preferred save location \'%s\' is not a directory' % opts.keep_pkgs)
 
+        if opts.noinit and opts.offline:
+            raise oscerr.WrongOptions('--noinit and --offline are mutually exclusive')
+
+        if opts.offline and opts.preload:
+            raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
+
         print 'Building %s for %s/%s' % (args[2], args[0], args[1])
         return osc.build.main(opts, args)
 
@@ -3449,6 +3472,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='do not guess/verify specified repository')
     @cmdln.option('-r', '--root', action='store_true',
                   help='login as root instead of abuild')
+    @cmdln.option('-o', '--offline', action='store_true',
+                  help='Use cached data without contacting the api server')
     def do_chroot(self, subcmd, opts, *args):
         """${cmd_name}: chroot into the buildchroot
 
@@ -3472,7 +3497,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         user = 'abuild'
         if opts.root:
             user = 'root'
-        repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit, opts.alternative_project)
+        repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
         project = opts.alternative_project or store_read_project('.')
         if opts.local_package:
             package = os.path.splitext(descr)[0]

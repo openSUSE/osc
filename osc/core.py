@@ -3,7 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.125git'
+__version__ = '0.126git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -3483,38 +3483,53 @@ def show_prj_results_meta(apiurl, prj):
     return f.readlines()
 
 
-def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+    """ return a package results as a list of dicts """
     r = []
-    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
 
     f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch)
     root = ET.fromstring(''.join(f))
 
     for node in root.findall('result'):
         rmap = {}
-        rmap['prj'] = prj
-        rmap['pac'] = package
-        rmap['rep'] = node.get('repository')
+        rmap['project'] = rmap['prj'] = prj
+        rmap['pkg'] = rmap['package'] = rmap['pac'] = package
+        rmap['repository'] = rmap['repo'] = rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
         rmap['dirty'] = node.get('dirty')
 
         statusnode =  node.find('status')
-        try:
-            rmap['status'] = statusnode.get('code')
-        except:
-            # code can be missing when package is too new:
-            rmap['status'] = ''
+        rmap['code'] = statusnode.get('code') if 'code' in statusnode.keys() else ''
+        rmap['details'] = ''
 
-        if rmap['status'] in ['expansion error', 'broken', 'blocked', 'finished']:
+        if rmap['code'] in ('expansion error', 'broken', 'blocked', 'finished'):
             details = statusnode.find('details')
             if details != None:
-                rmap['status'] += ': ' + details.text
+                rmap['details'] = details.text
 
-        if rmap['dirty'] == 'true':
-            rmap['status'] = 'state is outdated (was: %s)' % rmap['status']
+        rmap['dirty'] = rmap['dirty'] == 'true'
 
-        r.append(result_line_templ % rmap)
+        r.append(rmap)
+    return r
+
+def format_results(results, format):
+    """apply selected format on each dict in results and return it as a list of strings"""
+    return (format % r for r in results)
+
+def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+    r = []
+    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
+
+    for res in get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+        res['status'] = res['code']
+        if res['details'] != '':
+            res['status'] += ': %s' % (res['details'], )
+        if res['dirty']:
+            res['status'] = 'state is outdated (was: %s)' % res['status']
+
+        r.append(result_line_templ % res)
+
     return r
 
 def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None):
@@ -4632,12 +4647,12 @@ def request_interactive_review(apiurl, request):
     tmpfile = None
     print request
     try:
+        msg = '(a)ccept/(d)ecline/(r)evoke/(c)ancel > '
+        if request.actions[0].type == 'submit':
+            msg = 'd(i)ff/%s' % msg
         while True:
-            repl = raw_input('d(i)ff/(a)ccept/(d)ecline/(r)evoke/(c)ancel > ')
-            if repl == 'i':
-                if request.actions[0].type != 'submit':
-                    print >>sys.stderr, 'diff is not possible for request type: \'%s\'' % request.actions[0].type
-                    continue
+            repl = raw_input(msg)
+            if repl == 'i' and request.actions[0].type == 'submit':
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
                     tmpfile.write(server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
@@ -4647,7 +4662,7 @@ def request_interactive_review(apiurl, request):
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
-                sys.exit(1)
+                raise oscerr.UserAbort()
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
