@@ -2046,6 +2046,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='server side generated files of source services' \
                              'gets downloaded as well' )
+    @cmdln.option('-l', '--limit-size', metavar='limit_size',
+                        help='Skip all files with a given size')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """${cmd_name}: Check out content from the repository
@@ -2114,7 +2116,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress)
+                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress, limit_size=opts.limit_size)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -2134,13 +2136,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress)
+                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress)
+                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size)
             print_request_list(apiurl, project)
 
         else:
@@ -2427,6 +2429,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='if a package is a link, update to the expanded sources')
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='Use server side generated sources instead of local generation.' )
+    @cmdln.option('-l', '--limit-size', metavar='limit_size',
+                        help='Skip all files with a given size')
     @cmdln.alias('up')
     def do_update(self, subcmd, opts, *args):
         """${cmd_name}: Update a working copy
@@ -2524,7 +2528,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 elif p.islink() and p.isexpanded():
                     rev = p.latest_rev()
 
-            p.update(rev, service_files)
+            p.update(rev, service_files, opts.limit_size)
             if opts.unexpand_link:
                 p.unmark_frozen()
             rev = None

@@ -690,11 +690,14 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir, progress_obj=None):
+    def __init__(self, workingdir, progress_obj=None, limit_size=None):
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
+        self.limit_size = limit_size
+        if limit_size and limit_size == 0:
+           self.limit_size = None
 
         check_store_version(self.dir)
 
@@ -777,6 +780,18 @@ class Package:
 
             self.write_conflictlist()
 
+    def write_sizelimit(self):
+        if self.size_limit and self.size_limit <= 0:
+            try:
+                os.unlink(os.path.join(self.storedir, '_size_limit'))
+            except:
+                pass
+        else:
+            fname = os.path.join(self.storedir, '_size_limit')
+            f = open(fname, 'w')
+            f.write(str(self.size_limit))
+            f.close()
+
     def write_deletelist(self):
         if len(self.to_be_deleted) == 0:
             try:
@@ -826,7 +841,9 @@ class Package:
         for filename in self.todo:
             if not filename.startswith('_service:') and not filename.startswith('_service_'):
                 st = self.status(filename)
-                if st == 'A' or st == 'M':
+                if st == 'S':
+                    self.todo.remove(filename)
+                elif st == 'A' or st == 'M':
                     self.todo_send.append(filename)
                     print statfrmt('Sending', os.path.join(pathn, filename))
                 elif st == 'D':
@@ -990,7 +1007,7 @@ class Package:
         Update the local _files file in the store.
         It is replaced with the version pulled from upstream.
         """
-        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision))
+        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, limit_size=self.limit_size))
         store_write_string(self.absdir, '_files', meta)
 
     def update_datastructs(self):
@@ -1011,12 +1028,15 @@ class Package:
 
         self.filenamelist = []
         self.filelist = []
+        self.skipped = []
         for node in files_tree_root.findall('entry'):
             try:
                 f = File(node.get('name'),
                          node.get('md5'),
                          int(node.get('size')),
                          int(node.get('mtime')))
+                if node.get('skipped'):
+                    self.skipped.append(f.name)
             except:
                 # okay, a very old version of _files, which didn't contain any metadata yet...
                 f = File(node.get('name'), '', 0, 0)
@@ -1026,6 +1046,7 @@ class Package:
         self.to_be_deleted = read_tobedeleted(self.dir)
         self.in_conflict = read_inconflict(self.dir)
         self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
+        self.size_limit = read_sizelimit(self.dir)
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir)
@@ -1121,7 +1142,9 @@ class Package:
             exists_in_store = True
 
 
-        if exists and not exists_in_store and known_by_meta:
+        if n in self.skipped:
+            state = 'S'
+        elif exists and not exists_in_store and known_by_meta:
             state = 'D'
         elif n in self.to_be_deleted:
             state = 'D'
@@ -1162,6 +1185,8 @@ class Package:
 
         for file in self.filenamelist+self.filenamelist_unvers:
             state = self.status(file)
+            if file in self.skipped:
+                continue
             if state == 'A' and (not file in cmp_pac.filenamelist):
                 added_files.append(file)
             elif file in cmp_pac.filenamelist and state == 'D':
@@ -1294,12 +1319,16 @@ rev: %s
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
         return upstream_rev
 
-    def update(self, rev = None, service_files = False):
+    def update(self, rev = None, service_files = False, limit_size = None):
         # save filelist and (modified) status before replacing the meta file
         saved_filenames = self.filenamelist
         saved_modifiedfiles = [ f for f in self.filenamelist if self.status(f) == 'M' ]
 
         oldp = self
+        if limit_size:
+            self.limit_size = limit_size
+        else:
+            self.limit_size = read_sizelimit(self.dir)
         self.update_local_filesmeta(rev)
         self = Package(self.dir, progress_obj=self.progress_obj)
 
@@ -1309,6 +1338,8 @@ rev: %s
         pathn = getTransActPath(self.dir)
 
         for filename in saved_filenames:
+            if filename in self.skipped:
+                continue
             if not filename.startswith('_service:') and filename in disappeared:
                 print statfrmt('D', os.path.join(pathn, filename))
                 # keep file if it has local modifications
@@ -1317,6 +1348,8 @@ rev: %s
                 self.delete_storefile(filename)
 
         for filename in self.filenamelist:
+            if filename in self.skipped:
+                continue
 
             state = self.status(filename)
             if not service_files and filename.startswith('_service:'):
@@ -1371,6 +1404,8 @@ rev: %s
         for f in [f for f in self.todo if not os.path.isdir(f)]:
             action = 'leave'
             status = self.status(f)
+            if status == 'S':
+                continue
             if status == '!':
                 action = 'remove'
             ret += "%s %s %s\n" % (action, status, f)
@@ -1388,7 +1423,7 @@ rev: %s
         return ret
 
     def edit_filelist(self):
-        """Opens a package list in editor for eediting. This allows easy
+        """Opens a package list in editor for editing. This allows easy
         modifications of it just by simple text editing
         """
 
@@ -1835,6 +1870,18 @@ def read_tobedeleted(dir):
     return r
 
 
+def read_sizelimit(dir):
+    r = None
+    fname = os.path.join(dir, store, '_size_limit')
+
+    if os.path.exists(fname):
+        r = open(fname).readline()
+
+    if r and not r.isdigit():
+        return None
+
+    return int(r)
+
 def read_inconflict(dir):
     r = []
     fname = os.path.join(dir, store, '_in_conflict')
@@ -1989,7 +2036,7 @@ def init_project_dir(apiurl, dir, project):
     if conf.config['do_package_tracking']:
         store_write_initial_packages(dir, project, [])
 
-def init_package_dir(apiurl, project, package, dir, revision=None, files=True):
+def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -2000,9 +2047,14 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True):
     f.write(package + '\n')
     f.close
 
+    if limit_size:
+        f = open('_size_limit', 'w')
+        f.write(str(limit_size))
+        f.close()
+
     if files:
         f = open('_files', 'w')
-        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision)))
+        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size)))
         f.close()
     else:
         # create dummy
@@ -2330,7 +2382,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None):
     query = {}
     if revision:
         query['rev'] = revision
@@ -2345,7 +2397,14 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    return f.readlines()
+
+    # look for "too large" files according to size limit and mark them
+    root = ET.fromstring(''.join(f.readlines()))
+    for e in root.findall('entry'):
+        size = e.get('size')
+        if size and limit_size and int(size) > int(limit_size):
+             e.set('skipped', 'true')
+    return ET.tostring(root)
 
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None):
@@ -2891,6 +2950,8 @@ def make_diff(wc, revision):
         # normal diff
         if wc.todo:
             for file in wc.todo:
+                if file in wc.skipped:
+                    continue
                 if file in wc.filenamelist+wc.filenamelist_unvers:
                     state = wc.status(file)
                     if state == 'A':
@@ -2903,6 +2964,8 @@ def make_diff(wc, revision):
                     diff.append('osc: \'%s\' is not under version control' % file)
         else:
             for file in wc.filenamelist+wc.filenamelist_unvers:
+                if file in wc.skipped:
+                    continue
                 state = wc.status(file)
                 if state == 'M' or state == 'C':
                     changed_files.append(file)
@@ -2917,6 +2980,8 @@ def make_diff(wc, revision):
         cmp_pac = Package(tmpdir)
         if wc.todo:
             for file in wc.todo:
+                if file in cmp_pac.skipped:
+                    continue
                 if file in cmp_pac.filenamelist:
                     if file in wc.filenamelist:
                         changed_files.append(file)
@@ -3041,7 +3106,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None):
+                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3079,12 +3144,14 @@ def checkout_package(apiurl, project, package,
         if x:
             revision = x
     os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
-    init_package_dir(apiurl, project, package, store, revision)
+    init_package_dir(apiurl, project, package, store, revision, limit_size=limit_size)
     os.chdir(os.pardir)
     p = Package(package, progress_obj=progress_obj)
     if isfrozen:
         p.mark_frozen()
     for filename in p.filenamelist:
+        if filename in p.skipped:
+            continue
         if service_files or not filename.startswith('_service:'):
             p.updatefile(filename, revision)
             # print 'A   ', os.path.join(project, package, filename)
@@ -4451,6 +4518,8 @@ def addFiles(filenames, prj_obj = None):
             elif pac.name in prj.pacs_have:
                 print 'osc: warning: \'%s\' is already under version control' % pac.name
         for filename in pac.todo:
+            if filename in pac.skipped:
+                continue
             if filename in pac.excluded:
                 print >>sys.stderr, 'osc: warning: \'%s\' is excluded from a working copy' % filename
                 continue
@@ -4536,6 +4605,8 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
 
         for filename in p.todo:
             if filename in p.excluded:
+                continue
+            if filename in p.skipped:
                 continue
             s = p.status(filename)
             if s == 'F':

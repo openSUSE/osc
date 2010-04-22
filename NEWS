@@ -1,4 +1,5 @@
 0.127
+  - add size limit mode, files can be ignored on checkout or update given a certain size limit.
   - --csv/--format options for results command - using format user can explicitly specify what he wants print
 
 0.126
