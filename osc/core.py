@@ -1877,9 +1877,8 @@ def read_sizelimit(dir):
     if os.path.exists(fname):
         r = open(fname).readline()
 
-    if r and not r.isdigit():
+    if r is None or not r.isdigit():
         return None
-
     return int(r)
 
 def read_inconflict(dir):
