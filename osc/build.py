@@ -415,10 +415,13 @@ def main(opts, argv):
 
     pacname = pac
     if pacname == '_repository':
+        if not opts.local_package:
+            try:
+                pacname = store_read_package(os.curdir)
+            except oscerr.NoWorkingCopy:
+                opts.local_package = True
         if opts.local_package:
             pacname = os.path.splitext(build_descr)[0]
-        else:
-            pacname = store_read_package(os.curdir)
     if not build_root:
         build_root = config['build-root'] % { 'repo': repo, 'arch': arch,
                                                     'project' : prj, 'package' : pacname
