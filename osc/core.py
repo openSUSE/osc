@@ -3566,7 +3566,7 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
         rmap['dirty'] = node.get('dirty')
 
         statusnode =  node.find('status')
-        rmap['code'] = statusnode.get('code') if 'code' in statusnode.keys() else ''
+        rmap['code'] = statusnode.get('code', '')
         rmap['details'] = ''
 
         if rmap['code'] in ('expansion error', 'broken', 'blocked', 'finished'):
@@ -3581,7 +3581,7 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
 
 def format_results(results, format):
     """apply selected format on each dict in results and return it as a list of strings"""
-    return (format % r for r in results)
+    return [format % r for r in results]
 
 def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     r = []
