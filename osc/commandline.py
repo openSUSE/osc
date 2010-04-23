@@ -3767,8 +3767,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Delete all binaries of packages for which the build failed')
     @cmdln.option('--broken', action='store_true',
                         help='Delete all binaries of packages for which the package source is bad')
-    @cmdln.option('--expansion', action='store_true',
-                        help='Delete all binaries of packages which have expansion errors')
+    @cmdln.option('--unresolvable', action='store_true',
+                        help='Delete all binaries of packages which have dependency errors')
     @cmdln.option('--all', action='store_true',
                         help='Delete all binaries regardless of the package status (previously default)')
     def do_wipebinaries(self, subcmd, opts, *args):
@@ -3801,8 +3801,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             codes.append('failed')
         if opts.broken:
             codes.append('broken')
-        if opts.expansion:
-            codes.append('expansion error')
+        if opts.unresolvable:
+            codes.append('unresolvable')
         if opts.all or opts.repo or opts.arch:
             codes.append(None)
 

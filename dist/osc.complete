@@ -353,7 +353,7 @@ pr|prjresults)
             ;;
         -s|--status-filter*)
             OIFS="$IFS"; IFS=:
-            builtin compgen -W 'disabled:failed:finished:building:succeeded:broken:scheduled:expansion error:blocked' -- "${cmdline[$count]}"
+            builtin compgen -W 'disabled:failed:finished:building:succeeded:broken:scheduled:unresolvable:signing:blocked' -- "${cmdline[$count]}"
             IFS="$OIFS"
             ;;
         -p|--project*)

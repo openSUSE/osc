@@ -185,7 +185,8 @@ new_pattern_template = """\
 
 buildstatus_symbols = {'succeeded':       '.',
                        'disabled':        ' ',
-                       'expansion error': 'E',
+                       'expansion error': 'E',  # obsolete with OBS 2.0
+                       'unresolvable':    'U',
                        'failed':          'F',
                        'broken':          'B',
                        'blocked':         'b',
@@ -3569,7 +3570,7 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
         rmap['code'] = statusnode.get('code', '')
         rmap['details'] = ''
 
-        if rmap['code'] in ('expansion error', 'broken', 'blocked', 'finished'):
+        if rmap['code'] in ('unresolvable', 'expansion error', 'broken', 'blocked', 'finished'):
             details = statusnode.find('details')
             if details != None:
                 rmap['details'] = details.text
