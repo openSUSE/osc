@@ -3672,36 +3672,37 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='rebuild all failed packages')
     @cmdln.alias('rebuildpac')
     def do_rebuild(self, subcmd, opts, *args):
-        """${cmd_name}: Triggers package rebuilds
-
-        With the optional <repo> and <arch> arguments, the rebuild can be limited
-        to a certain repository or architecture.
+        """${cmd_name}: Trigger package rebuilds
 
         Note that it is normally NOT needed to kick off rebuilds like this, because
         they principally happen in a fully automatic way, triggered by source
         check-ins. In particular, the order in which packages are built is handled
         by the build service.
 
-        Note the --failed option, which can be used to rebuild all failed
-        packages.
-
         The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
         usage:
+            osc rebuild (inside working copy)
             osc rebuild PROJECT [PACKAGE [REPOSITORY [ARCH]]]
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
-        if len(args) < 1:
-            raise oscerr.WrongArgs('Missing argument.')
-
         package = repo = arch = code = None
-        project = args[0]
-        if len(args) > 1:
-            package = args[1]
+
+        if len(args) < 1:
+	    if is_package_dir('.'):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+	    else:
+                raise oscerr.WrongArgs('Too few arguments.')
+	else:
+	    project = args[0]
+	    if len(args) > 1:
+		package = args[1]
+
         if len(args) > 2:
             repo = args[2]
         if len(args) > 3:
