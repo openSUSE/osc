@@ -1246,7 +1246,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 except urllib2.HTTPError, e:
                     if e.code != 400:
                         e.osc_msg = 'Diff not possible'
-                        raise
+                        raise e
                     # backward compatiblity: only a recent api/backend supports the missingok parameter
                     try:
                         print server_diff(conf.config['apiurl'],

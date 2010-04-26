@@ -4726,8 +4726,16 @@ def request_interactive_review(apiurl, request):
             if repl == 'i' and request.actions[0].type == 'submit':
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
-                    tmpfile.write(server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
-                                  request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, True))
+                    # backward compatiblity: only a recent api/backend supports the missingok parameter
+                    try:
+                        diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
+                                           request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, True)
+                    except urllib2.HTTPError, e:
+                        if e.code != 400:
+                            raise e
+                        diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
+                                           request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
+                    tmpfile.write(diff)
                     tmpfile.flush()
                 pager = os.getenv('EDITOR', default='less')
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
