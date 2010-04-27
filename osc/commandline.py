@@ -3272,6 +3272,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def parse_repoarchdescr(self, args, noinit = False, alternative_project = None):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
+        import glob
         arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
             for arg in args:
@@ -3308,7 +3309,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif not arg_repository:
             raise oscerr.WrongArgs('please specify a repository')
 
-        descr = [ i for i in os.listdir('.') if i.endswith('.spec') or i.endswith('.dsc') or i.endswith('.kiwi') ]
+        # can be implemented using
+        # reduce(lambda x, y: x + y, (glob.glob(x) for x in (g for g in ('*.spec', '*.dsc', '*.kiwi'))))
+        # but be a bit more readable :)
+        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi')
         # FIXME:
         # * request repos from server and select by build type.
         if not arg_descr and len(descr) == 1:
