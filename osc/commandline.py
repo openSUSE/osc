@@ -3313,19 +3313,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in (g for g in ('*.spec', '*.dsc', '*.kiwi'))))
         # but be a bit more readable :)
         descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi')
+        
         # FIXME:
         # * request repos from server and select by build type.
         if not arg_descr and len(descr) == 1:
             arg_descr = descr[0]
-        elif not arg_descr:
-            msg = 'Missing argument: build description (spec, dsc or kiwi file)'
-            try:
-                p = Package('.')
-                if p.islink() and not p.isexpanded():
-                    msg += ' (this package is not expanded - you might want to try osc up --expand)'
-            except:
-                pass
+
+        if not arg_descr:
+            if len(descr) > 1:
+                msg = 'Multiple build description files found: %s' % (", ".join(descr), )
+            else:
+                msg = 'Missing argument: build description (spec, dsc or kiwi file)'
+                try:
+                    p = Package('.')
+                    if p.islink() and not p.isexpanded():
+                        msg += ' (this package is not expanded - you might want to try osc up --expand)'
+                except:
+                    pass
             raise oscerr.WrongArgs(msg)
+
         return arg_repository, arg_arch, arg_descr
 
 
