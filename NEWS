@@ -2,6 +2,7 @@
   - add size limit mode, files can be ignored on checkout or update given a certain size limit.
   - --csv/--format options for results command - using format user can explicitly specify what he wants print
   - support for "unresolvable" state of OBS 2.0
+  - osc branch reads project/package in package directory
 
 0.126
  - added VM autosetup to osc. This requires appropriate OBS version and build script version.

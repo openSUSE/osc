@@ -1677,6 +1677,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if nothing else specified.
 
         usage:
+            osc branch
             osc branch SOURCEPROJECT SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
@@ -1693,9 +1694,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['getpac_default_project'], args[0])
             # python has no args.unshift ???
             args = [ conf.config['getpac_default_project'] , args[0] ]
+            
+        if len(args) == 0 and is_package_dir('.'):
+            args = (store_read_project('.'), store_read_package('.'))
 
         if len(args) < 2 or len(args) > 4:
             raise oscerr.WrongArgs('Wrong number of arguments.')
+
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if len(args) >= 3:
             expected = tproject = args[2]
