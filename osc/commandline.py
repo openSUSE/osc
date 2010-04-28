@@ -491,13 +491,16 @@ class Osc(cmdln.Cmdln):
         del args[0]
 
         if cmd in ['pkg']:
-            min_args, max_args = 2, 2
+            min_args, max_args = 0, 2
         elif cmd in ['pattern']:
             min_args, max_args = 1, 2
         elif cmd in ['attribute']:
             min_args, max_args = 1, 3
+        elif cmd in ['prj', 'prjconf']:
+            min_args, max_args = 0, 1
         else:
             min_args, max_args = 1, 1
+
         if len(args) < min_args:
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > max_args:
@@ -505,10 +508,18 @@ class Osc(cmdln.Cmdln):
 
         # specific arguments
         attributepath = []
-        if cmd == 'prj':
-            project = args[0]
-        elif cmd == 'pkg':
-            project, package = args[0:2]
+	if cmd in ['pkg', 'prj', 'prjconf' ]:
+	    if len(args) == 0:
+		project = store_read_project(os.curdir)
+	    else:
+		project = args[0]
+
+	    if cmd == 'pkg':
+		if len(args) < 2:
+		    package = store_read_package(os.curdir)
+		else:
+		    package = args[1]
+
         elif cmd == 'attribute':
             project = args[0]
             if len(args) > 1:
@@ -528,8 +539,6 @@ class Osc(cmdln.Cmdln):
             if subpackage:
                 attributepath.append(subpackage)
             attributepath.append('_attribute')
-        elif cmd == 'prjconf':
-            project = args[0]
         elif cmd == 'user':
             user = args[0]
         elif cmd == 'pattern':
