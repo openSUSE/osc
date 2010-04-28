@@ -416,11 +416,8 @@ class Osc(cmdln.Cmdln):
         if not os.path.exists(project_dir + "/" + patchinfo):
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
 
-        if sys.platform[:3] != 'win':
-            editor = os.getenv('EDITOR', default='vim')
-        else:
-            editor = os.getenv('EDITOR', default='notepad')
-        subprocess.call('%s %s' % (editor, project_dir + "/" + patchinfo + "/_patchinfo"), shell=True)
+	filename = project_dir + "/" + patchinfo + "/_patchinfo"
+	run_editor(filename)
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',

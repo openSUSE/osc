@@ -1435,12 +1435,8 @@ rev: %s
         f.close()
         mtime_orig = os.stat(filename).st_mtime
 
-        if sys.platform[:3] != 'win':
-            editor = os.getenv('EDITOR', default='vim')
-        else:
-            editor = os.getenv('EDITOR', default='notepad')
         while 1:
-            subprocess.call('%s %s' % (editor, filename), shell=True)
+            run_editor(filename)
             mtime = os.stat(filename).st_mtime
             if mtime_orig < mtime:
                 filelist = open(filename).readlines()
@@ -2260,13 +2256,9 @@ class metafile:
         print 'Done.'
 
     def edit(self):
-        if sys.platform[:3] != 'win':
-            editor = os.getenv('EDITOR', default='vim')
-        else:
-            editor = os.getenv('EDITOR', default='notepad')
         try:
             while 1:
-                subprocess.call('%s %s' % (editor, self.filename), shell=True)
+                run_editor(self.filename)
                 try:
                     self.sync()
                     break
@@ -2488,6 +2480,13 @@ def read_meta_from_spec(specfile, *args):
 
     return spec_data
 
+def run_editor(filename):
+    if sys.platform[:3] != 'win':
+        editor = os.getenv('EDITOR', default='vim')
+    else:
+        editor = os.getenv('EDITOR', default='notepad')
+
+    return subprocess.call([ editor, filename ])
 
 def edit_message(footer='', template=''):
     delim = '--This line, and those below, will be ignored--\n'
@@ -2502,13 +2501,9 @@ def edit_message(footer='', template=''):
     f.write(footer)
     f.close()
 
-    if sys.platform[:3] != 'win':
-        editor = os.getenv('EDITOR', default='vim')
-    else:
-        editor = os.getenv('EDITOR', default='notepad')
     try:
         while 1:
-            subprocess.call('%s %s' % (editor, filename), shell=True)
+            run_editor(filename)
             msg = open(filename).read().split(delim)[0].rstrip()
 
             if len(msg):
