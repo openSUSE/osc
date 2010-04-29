@@ -322,6 +322,7 @@ def main(opts, argv):
     build_descr = argv[2]
     xp = []
     build_root = None
+    vm_type = config['build-type']
 
     build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
@@ -649,7 +650,7 @@ def main(opts, argv):
                     os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
+        if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'
         elif opts.no_verify or opts.noinit or opts.offline:
             print 'Skipping verification of package signatures'
@@ -671,7 +672,7 @@ def main(opts, argv):
 
             verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
     elif bi.pacsuffix == 'deb':
-        if config['build-type'] == "xen" or config['build-type'] == "kvm" or config['build-type'] == "lxc":
+        if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'
         elif opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
@@ -707,24 +708,21 @@ def main(opts, argv):
         my_build_device = build_root + '/img'
 
     need_root = True
-    if config['build-type']:
+    if vm_type:
         if config['build-swap']:
             my_build_swap = config['build-swap'] % subst
         else:
             my_build_swap = build_root + '/swap'
 
-        if config['build-type'] in ('kvm', 'xen'):
-            vm_options = '--%s %s' % (config['build-type'], my_build_device)
-            vm_options += ' --swap ' + my_build_swap
-            if config['build-type'] == 'kvm':
+        vm_options = '--vm-type=%s'%vm_type
+        if vm_type != 'lxc':
+            vm_options += ' --vm-disk=' + my_build_device
+            vm_options += ' --vm-swap=' + my_build_swap
+            if vm_type == 'kvm':
                 if os.access(build_root, os.W_OK) and os.access('/dev/kvm', os.W_OK):
                     # so let's hope there's also an fstab entry
                     need_root = False
             build_root += '/.mount'
-        elif config['build-type'] == 'lxc':
-            vm_options = '--lxc'
-        else:
-            raise oscerr.WrongArgs('ERROR: unknown VM is set ! ("%s")' % config['build-type'])
 
         if config['build-memory']:
             vm_options += ' --memory ' + config['build-memory']
