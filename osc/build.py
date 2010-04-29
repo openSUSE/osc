@@ -719,6 +719,7 @@ def main(opts, argv):
         if vm_type != 'lxc':
             vm_options += ' --vm-disk=' + my_build_device
             vm_options += ' --vm-swap=' + my_build_swap
+            vm_options += ' --logfile=%s/.build.log' % build_root
             if vm_type == 'kvm':
                 if os.access(build_root, os.W_OK) and os.access('/dev/kvm', os.W_OK):
                     # so let's hope there's also an fstab entry
