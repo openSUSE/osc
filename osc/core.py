@@ -3176,10 +3176,17 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
                                path_args=(quote_plus(dst_project), quote_plus(dst_package)),
                                template_args=None,
                                create_new=False, apiurl=conf.config['apiurl'])
+        root = ET.fromstring(''.join(dst_meta))
+        print root.attrib['project']
+        if root.attrib['project'] != dst_project:
+           # The source comes from a different project via a project link, we need to create this instance
+           meta_change = True
     except:
+        meta_change = True
+
+    if meta_change:
         src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
         dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
-        meta_change = True
 
     if disable_publish:
         meta_change = True
@@ -3190,6 +3197,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
         elm.clear()
         ET.SubElement(elm, 'disable')
         dst_meta = ET.tostring(root)
+
     if meta_change:
         edit_meta('pkg',
                   path_args=(dst_project, dst_package),
