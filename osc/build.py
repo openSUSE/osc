@@ -392,7 +392,8 @@ def main(opts, argv):
 # FIXME: quoting
 #    if opts.define:
 #        buildargs.append('--define "%s"' % opts.define)
-
+    if opts.vm_type:
+        vm_type = opts.vm_type
     if opts.alternative_project:
         prj = opts.alternative_project
         pac = '_repository'
