@@ -3324,10 +3324,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # * request repos from server and select by build type.
         if not arg_descr and len(descr) == 1:
             arg_descr = descr[0]
-
-        if not arg_descr:
+        elif not arg_descr:
             if len(descr) > 1:
-                msg = 'Multiple build description files found: %s' % (", ".join(descr), )
+                msg = 'Multiple build description files found: %s' % ', '.join(descr)
             else:
                 msg = 'Missing argument: build description (spec, dsc or kiwi file)'
                 try:
