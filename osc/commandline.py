@@ -3316,7 +3316,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('please specify a repository')
 
         # can be implemented using
-        # reduce(lambda x, y: x + y, (glob.glob(x) for x in (g for g in ('*.spec', '*.dsc', '*.kiwi'))))
+        # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
         descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi')
         
