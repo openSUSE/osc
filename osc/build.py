@@ -659,7 +659,8 @@ def main(opts, argv):
             for prj in bi.prjkeys:
                 if not prj in t:
                     print "\nYou are trying to use packages from project '%s'." % prj
-                    print "Note that malicious packages can compromise your system."
+                    print "Note that malicious packages can compromise your system when using chroot build enviroment."
+                    print "Use kvm or xen builds for a safe enviroment."
 # saving back to config file is complicated
 #                    r = raw_input("Would you like to trust '%s' (a)lways, (t)emorarily or (N)ever? " % prj)
 #                    if r == 'a':
