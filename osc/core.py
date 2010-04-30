@@ -2766,12 +2766,9 @@ def download(url, filename, progress_obj = None):
     import tempfile, shutil
     o = None
     try:
-        if filename[0] != '/':
-            prefix = os.getcwd() + '/' + filename
-        else:
-            prefix = filename
-	(fd, tmpfile) = tempfile.mkstemp(prefix = prefix, suffix = '.osc')
-	os.chmod(tmpfile, 0644)
+        prefix = os.path.basename(filename)
+        (fd, tmpfile) = tempfile.mkstemp(prefix = prefix, suffix = '.osc')
+        os.chmod(tmpfile, 0644)
         try:
             o = os.fdopen(fd, 'wb')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
@@ -2791,7 +2788,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
     if revision:
         query = { 'rev': revision }
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
-    return download(u, targetfilename, progress_obj)
+    download(u, targetfilename, progress_obj)
 
 def get_binary_file(apiurl, prj, repo, arch,
                     filename,
@@ -2808,7 +2805,7 @@ def get_binary_file(apiurl, prj, repo, arch,
 
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
-    return download(u, target_filename, progress_obj)
+    download(u, target_filename, progress_obj)
 
 def dgst_from_string(str):
     # Python 2.5 depracates the md5 modules
