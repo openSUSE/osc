@@ -1894,7 +1894,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
         if len(diff) > 0:
-            print diff
+            run_pager(diff)
 
 
     @cmdln.option('--oldprj', metavar='OLDPRJ',
@@ -3699,7 +3699,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        print '\n'.join(get_commitlog(apiurl, project, package, rev, format))
+        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format))        
+        run_pager(log)
 
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')

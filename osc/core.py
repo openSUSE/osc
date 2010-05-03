@@ -2480,6 +2480,23 @@ def read_meta_from_spec(specfile, *args):
 
     return spec_data
 
+def run_pager(message):
+        import tempfile
+
+        tmpfile = None
+
+        if tmpfile is None:
+            tmpfile = tempfile.NamedTemporaryFile()
+
+        tmpfile.write(message)
+        tmpfile.flush()
+        pager = os.getenv('PAGER', default='less')
+        subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+
+        if tmpfile is not None:
+            tmpfile.close()
+
+
 def run_editor(filename):
     if sys.platform[:3] != 'win':
         editor = os.getenv('EDITOR', default='vim')
