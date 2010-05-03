@@ -2038,10 +2038,10 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
     os.chdir(store)
     f = open('_project', 'w')
     f.write(project + '\n')
-    f.close
+    f.close()
     f = open('_package', 'w')
     f.write(package + '\n')
-    f.close
+    f.close()
 
     if limit_size:
         f = open('_size_limit', 'w')
