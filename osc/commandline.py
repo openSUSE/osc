@@ -4622,7 +4622,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], pathname2url(name)], query=query)
             for buf in streamfile(u, http_GET, BUFSIZE):
                 o.write(buf)
-        o.close
+        o.close()
 
 
     @cmdln.option('-d', '--destdir', default='repairlink', metavar='DIR',
