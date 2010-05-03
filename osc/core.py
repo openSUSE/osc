@@ -3540,9 +3540,12 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
         rmap['state'] = node.get('state')
         rmap['dirty'] = node.get('dirty')
 
-        statusnode =  node.find('status')
-        rmap['code'] = statusnode.get('code', '')
         rmap['details'] = ''
+        statusnode =  node.find('status')
+        if statusnode != None:
+            rmap['code'] = statusnode.get('code', '')
+        else:
+            rmap['code'] = ''
 
         if rmap['code'] in ('unresolvable', 'expansion error', 'broken', 'blocked', 'finished'):
             details = statusnode.find('details')
