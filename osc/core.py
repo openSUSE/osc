@@ -2481,20 +2481,23 @@ def read_meta_from_spec(specfile, *args):
     return spec_data
 
 def run_pager(message):
-        import tempfile
+        import tempfile, sys
 
-        tmpfile = None
+        if not sys.stdout.isatty: 
+            print message
+        else:
+            tmpfile = None
 
-        if tmpfile is None:
-            tmpfile = tempfile.NamedTemporaryFile()
+            if tmpfile is None:
+                tmpfile = tempfile.NamedTemporaryFile()
 
-        tmpfile.write(message)
-        tmpfile.flush()
-        pager = os.getenv('PAGER', default='less')
-        subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+            tmpfile.write(message)
+            tmpfile.flush()
+            pager = os.getenv('PAGER', default='less')
+            subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
 
-        if tmpfile is not None:
-            tmpfile.close()
+            if tmpfile is not None:
+                tmpfile.close()
 
 
 def run_editor(filename):
