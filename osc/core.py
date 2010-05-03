@@ -2243,7 +2243,7 @@ class metafile:
 
     def sync(self):
         hash = dgst(self.filename)
-        if self.change_is_required == True and hash == self.hash_orig:
+        if self.change_is_required and hash == self.hash_orig:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
             return
