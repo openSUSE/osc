@@ -422,8 +422,8 @@ class Osc(cmdln.Cmdln):
         if not os.path.exists(project_dir + "/" + patchinfo):
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
 
-	filename = project_dir + "/" + patchinfo + "/_patchinfo"
-	run_editor(filename)
+        filename = project_dir + "/" + patchinfo + "/_patchinfo"
+        run_editor(filename)
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -511,17 +511,17 @@ class Osc(cmdln.Cmdln):
 
         # specific arguments
         attributepath = []
-	if cmd in ['pkg', 'prj', 'prjconf' ]:
-	    if len(args) == 0:
-		project = store_read_project(os.curdir)
-	    else:
-		project = args[0]
+        if cmd in ['pkg', 'prj', 'prjconf' ]:
+            if len(args) == 0:
+                project = store_read_project(os.curdir)
+            else:
+                project = args[0]
 
-	    if cmd == 'pkg':
-		if len(args) < 2:
-		    package = store_read_package(os.curdir)
-		else:
-		    package = args[1]
+            if cmd == 'pkg':
+                if len(args) < 2:
+                    package = store_read_package(os.curdir)
+                else:
+                    package = args[1]
 
         elif cmd == 'attribute':
             project = args[0]
@@ -1715,10 +1715,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-	if not opts.message:
-		footer='please specify the purpose of your branch'
-		template='This package was branched from %s in order to ...\n' % args[0]
-		opts.message = edit_message(footer, template)
+        if not opts.message:
+                footer='please specify the purpose of your branch'
+                template='This package was branched from %s in order to ...\n' % args[0]
+                opts.message = edit_message(footer, template)
 
         exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(conf.config['apiurl'], args[0], args[1],
@@ -3727,15 +3727,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         package = repo = arch = code = None
 
         if len(args) < 1:
-	    if is_package_dir('.'):
+            if is_package_dir('.'):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
-	    else:
+            else:
                 raise oscerr.WrongArgs('Too few arguments.')
-	else:
-	    project = args[0]
-	    if len(args) > 1:
-		package = args[1]
+        else:
+            project = args[0]
+            if len(args) > 1:
+                package = args[1]
 
         if len(args) > 2:
             repo = args[2]
@@ -5212,4 +5212,3 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 exec open(os.path.join(plugin_dir, extfile))
 
 # vim: sw=4 et
-
