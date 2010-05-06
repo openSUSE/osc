@@ -3207,6 +3207,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified repo(s)')
     @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
+    @cmdln.option('-v', '--verbose', action='store_true', default=False,
+                        help='more verbose output')
     @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
@@ -3254,19 +3256,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml and opts.csv:
             raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
 
+        args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
         if opts.xml:
-            func = show_results_meta
-            delim = ''
+            return show_results_meta(*args)
         elif opts.csv:
-            def _func(*args):
-                return format_results(get_package_results(*args), opts.format)
-            func = _func
-            delim = '\n'
+            return '\n'.join(format_results(get_package_results(*args), opts.format))
         else:
-            func = get_results
-            delim = '\n'
-
-        print delim.join(func(apiurl, project, package, opts.last_build, opts.repo, opts.arch))
+            args.append(opts.verbose)
+            return '\n'.join(get_results(*args))
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!

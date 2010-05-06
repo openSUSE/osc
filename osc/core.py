@@ -3737,16 +3737,24 @@ def format_results(results, format):
     """apply selected format on each dict in results and return it as a list of strings"""
     return [format % r for r in results]
 
-def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], verbose=False):
     r = []
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
 
     for res in get_package_results(apiurl, prj, package, lastbuild, repository, arch):
         res['status'] = res['code']
-        if res['details'] != '':
-            res['status'] += ': %s' % (res['details'], )
+        if verbose and res['details'] != '':
+            if res['status'] in ('unresolvable', 'expansion error'):
+                lines = res['details'].split(',')
+                res['status'] += ': ' + '\n     '.join(lines)
+
+            else:
+                res['status'] += ': %s' % (res['details'], )
         if res['dirty']:
-            res['status'] = 'state is outdated (was: %s)' % res['status']
+            if verbose:
+                res['status'] = 'state is outdated (was: %s)' % res['status']
+            else:
+                res['status'] += '*'
 
         r.append(result_line_templ % res)
 
