@@ -9,6 +9,8 @@ import signal
 from osc import oscerr
 from urllib2 import URLError, HTTPError
 from oscsslexcp import NoSecureSSLError
+from osc.util.cpio import CpioError
+
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError
     from M2Crypto.SSL import SSLError as SSLError
@@ -163,6 +165,10 @@ def run(prg):
         return 1
 
     except OSError, e:
+        print >>sys.stderr, e
+        return 1
+
+    except CpioError, e:
         print >>sys.stderr, e
         return 1
 
