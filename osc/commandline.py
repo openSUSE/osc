@@ -3309,9 +3309,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repositories = get_repositories_of_project(store_read_apiurl('.'), project)
             if not len(repositories):
                 raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
-            f = open(repolistfile, 'w')
-            f.write('\n'.join(repositories) + '\n')
-            f.close()
+            try:
+                f = open(repolistfile, 'w')
+                f.write('\n'.join(repositories) + '\n')
+                f.close()
+            except:
+                pass
 
         if not arg_repository and len(repositories):
             # Use a default value from config, but just even if it's available
