@@ -2038,10 +2038,10 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
     os.chdir(store)
     f = open('_project', 'w')
     f.write(project + '\n')
-    f.close
+    f.close()
     f = open('_package', 'w')
     f.write(package + '\n')
-    f.close
+    f.close()
 
     if limit_size:
         f = open('_size_limit', 'w')
@@ -2243,7 +2243,7 @@ class metafile:
 
     def sync(self):
         hash = dgst(self.filename)
-        if self.change_is_required == True and hash == self.hash_orig:
+        if self.change_is_required and hash == self.hash_orig:
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
             return
@@ -2479,6 +2479,26 @@ def read_meta_from_spec(specfile, *args):
         spec_data[section] = data
 
     return spec_data
+
+def run_pager(message):
+        import tempfile, sys
+
+        if not sys.stdout.isatty: 
+            print message
+        else:
+            tmpfile = None
+
+            if tmpfile is None:
+                tmpfile = tempfile.NamedTemporaryFile()
+
+            tmpfile.write(message)
+            tmpfile.flush()
+            pager = os.getenv('PAGER', default='less')
+            subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+
+            if tmpfile is not None:
+                tmpfile.close()
+
 
 def run_editor(filename):
     if sys.platform[:3] != 'win':
@@ -3540,9 +3560,12 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
         rmap['state'] = node.get('state')
         rmap['dirty'] = node.get('dirty')
 
-        statusnode =  node.find('status')
-        rmap['code'] = statusnode.get('code', '')
         rmap['details'] = ''
+        statusnode =  node.find('status')
+        if statusnode != None:
+            rmap['code'] = statusnode.get('code', '')
+        else:
+            rmap['code'] = ''
 
         if rmap['code'] in ('unresolvable', 'expansion error', 'broken', 'blocked', 'finished'):
             details = statusnode.find('details')

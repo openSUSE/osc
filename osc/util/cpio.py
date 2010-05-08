@@ -31,6 +31,8 @@ class CpioError(Exception):
         Exception.__init__(self)
         self.file = fn
         self.msg = msg
+    def __str__(self):
+        return '%s: %s' % (self.file, self.msg)
 
 class CpioHdr:
     """
@@ -159,7 +161,7 @@ class CpioRead:
         data = self.__file.read(6)
         self.format = data
         if not self.format in self.sfmt.values():
-            raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.filename)
+            raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
         while (len(data) != 0):
             self.__file.seek(pos, os.SEEK_SET)

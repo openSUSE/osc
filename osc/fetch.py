@@ -46,6 +46,8 @@ class OscFileGrabber:
                 exc.exception = e
                 exc.code = e.code
                 raise exc
+            except IOError, e:
+                raise URLGrabError(4, str(e))
         finally:
             f.close()
         return filename

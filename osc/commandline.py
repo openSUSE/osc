@@ -149,6 +149,12 @@ class Osc(cmdln.Cmdln):
         doc = doc.rstrip() + '\n' # trim down trailing space
         return self._str(doc)
 
+    def get_api_url(self):
+        localdir = os.getcwd()
+        if (is_package_dir(localdir) or is_project_dir(localdir)) and not self.options.apiurl:
+           return store_read_apiurl(os.curdir)
+        else:
+           return conf.config['apiurl']
 
     # overridden from class Cmdln() to use config variables in help texts
     def _help_preprocess(self, help, cmdname):
@@ -282,11 +288,11 @@ class Osc(cmdln.Cmdln):
                 dir = os.getcwd()
                 if is_project_dir(dir):
                     project = store_read_project(dir)
-                    apiurl = store_read_apiurl(dir)
                 elif is_package_dir(dir):
                     project = store_read_project(dir)
                     package = store_read_package(dir)
-                    apiurl = store_read_apiurl(dir)
+
+            apiurl = self.get_api_url()
 
             if not project:
                 raise oscerr.WrongArgs('There are no binaries to list above project level.')
@@ -394,7 +400,7 @@ class Osc(cmdln.Cmdln):
         project_dir = localdir = os.getcwd()
         if is_project_dir(localdir):
             project = store_read_project(localdir)
-            apiurl = store_read_apiurl(localdir)
+            apiurl = self.get_api_url()
         else:
             sys.exit('This command must be called in a checked out project.')
         patchinfo = None
@@ -416,8 +422,8 @@ class Osc(cmdln.Cmdln):
         if not os.path.exists(project_dir + "/" + patchinfo):
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
 
-	filename = project_dir + "/" + patchinfo + "/_patchinfo"
-	run_editor(filename)
+        filename = project_dir + "/" + patchinfo + "/_patchinfo"
+        run_editor(filename)
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -505,17 +511,17 @@ class Osc(cmdln.Cmdln):
 
         # specific arguments
         attributepath = []
-	if cmd in ['pkg', 'prj', 'prjconf' ]:
-	    if len(args) == 0:
-		project = store_read_project(os.curdir)
-	    else:
-		project = args[0]
+        if cmd in ['pkg', 'prj', 'prjconf' ]:
+            if len(args) == 0:
+                project = store_read_project(os.curdir)
+            else:
+                project = args[0]
 
-	    if cmd == 'pkg':
-		if len(args) < 2:
-		    package = store_read_package(os.curdir)
-		else:
-		    package = args[1]
+            if cmd == 'pkg':
+                if len(args) < 2:
+                    package = store_read_package(os.curdir)
+                else:
+                    package = args[1]
 
         elif cmd == 'attribute':
             project = args[0]
@@ -743,14 +749,13 @@ class Osc(cmdln.Cmdln):
         if len(args) > 0 and len(args) <= 2 and is_project_dir(os.getcwd()):
             sys.exit('osc submitrequest from project directory is only working without target specs and for source linked files\n')
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
 
         if len(args) == 0 and is_project_dir(os.getcwd()):
             import cgi
             # submit requests for multiple packages are currently handled via multiple requests
             # They could be also one request with multiple actions, but that avoids to accepts parts of it.
             project = store_read_project(os.curdir)
-            apiurl = store_read_apiurl(os.curdir)
 
             sr_ids = []
             pi = []
@@ -990,17 +995,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
+        apiurl = self.get_api_url()
+
         if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
             wd = os.curdir
             devel_project = store_read_project(wd)
             devel_package = package = store_read_package(wd)
-            apiurl = store_read_apiurl(wd)
             project = conf.config['getpac_default_project']
         else:
             if len(args) < 3:
                 raise oscerr.WrongArgs('Too few arguments.')
-
-            apiurl = conf.config['apiurl']
 
             devel_project = args[2]
             project = args[0]
@@ -1151,7 +1155,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
 
         if cmd == 'list':
             package = None
@@ -1161,7 +1165,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif not opts.mine and not opts.user:
                 try:
                     project = store_read_project(os.curdir)
-                    apiurl = store_read_apiurl(os.curdir)
                     package = store_read_package(os.curdir)
                 except oscerr.NoWorkingCopy:
                     pass
@@ -1370,20 +1373,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc linktobranch PROJECT PACKAGE
         ${cmd_option_list}
         """
-
         args = slash_split(args)
+        apiurl = self.get_api_url()
+
         if len(args) == 0:
             wd = os.curdir
             project = store_read_project(wd)
             package = store_read_package(wd)
-            apiurl = store_read_apiurl(wd)
             update_local_dir = True
         elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         else:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
             update_local_dir = False
@@ -1714,10 +1716,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-	if not opts.message:
-		footer='please specify the purpose of your branch'
-		template='This package was branched from %s in order to ...\n' % args[0]
-		opts.message = edit_message(footer, template)
+        if not opts.message:
+                footer='please specify the purpose of your branch'
+                template='This package was branched from %s in order to ...\n' % args[0]
+                opts.message = edit_message(footer, template)
 
         exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(conf.config['apiurl'], args[0], args[1],
@@ -1893,7 +1895,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
         if len(diff) > 0:
-            print diff
+            run_pager(diff)
 
 
     @cmdln.option('--oldprj', metavar='OLDPRJ',
@@ -2025,13 +2027,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
 
         if len(args) == 1:
             project = args[0]
         elif len(args) == 0:
             project = store_read_project('.')
-            apiurl = store_read_apiurl('.')
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
@@ -2097,7 +2098,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         project = package = filename = None
-        apiurl = conf.config['apiurl']
+
+        apiurl = self.get_api_url()
+
         try:
             project = project_dir = args[0]
             package = args[1]
@@ -2111,7 +2114,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project(localdir)
                 project_dir = localdir
                 package = args[0]
-                apiurl = store_read_apiurl(localdir)
 
         rev, dummy = parseRevisionOption(opts.revision)
         if rev==None:
@@ -2752,7 +2754,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
         if len(args) == 0:
             wd = os.curdir
             if is_project_dir(wd):
@@ -2768,7 +2770,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 project = store_read_project(wd)
                 package = store_read_package(wd)
-                apiurl = store_read_apiurl(wd)
         elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
@@ -2820,9 +2821,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
+        apiurl = self.get_api_url()
 
         if args:
-            apiurl = conf.config['apiurl']
             if len(args) == 1:
                 project = args[0]
             else:
@@ -2830,7 +2831,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             wd = os.curdir
             project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
 
         print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical))
 
@@ -2869,13 +2869,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         repository = arch = None
 
+        apiurl = self.get_api_url()
+
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
         else:
             wd = os.curdir
             package = store_read_package(wd)
             project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
 
         offset=0
         if opts.start:
@@ -3030,6 +3031,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 2:
             self.print_repos()
+        
+        apiurl = self.get_api_url()
 
         if len(args) == 2: # 2
             if is_package_dir('.'):
@@ -3037,11 +3040,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 raise oscerr.WrongArgs('package is not specified.')
             project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
             repository = args[0]
             arch = args[1]
         elif len(args) == 4:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
             repository = args[2]
@@ -3099,24 +3100,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 5:
             raise oscerr.WrongArgs('Too many arguments.')
 
+        apiurl = self.get_api_url()
+
         if len(args) < 3: # 2
             if is_package_dir('.'):
                 packages = [store_read_package(wd)]
             elif not is_project_dir('.'):
                 raise oscerr.WrongArgs('Project and package is not specified.')
             project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
             repository = args[0]
             arch = args[1]
 
         if len(args) == 3:
-            apiurl = conf.config['apiurl']
             project = args[0]
             repository = args[1]
             arch = args[2]
 
         if len(args) == 4:
-            apiurl = conf.config['apiurl']
             project = args[0]
             packages = [args[1]]
             repository = args[2]
@@ -3170,15 +3170,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 5:
             raise oscerr.WrongArgs('Too many arguments.')
 
+        apiurl = self.get_api_url()
+
         if len(args) < 4: # 2 or 3
             package = store_read_package(wd)
             project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
             repository = args[0]
             arch = args[1]
 
         if len(args) > 3 and len(args) < 6: # 4 or 5
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
             repository = args[2]
@@ -3231,14 +3231,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
+        apiurl = self.get_api_url()
+
         if len(args) == 2:
             package = store_read_package(wd)
             project = store_read_project(wd)
-            apiurl = store_read_apiurl(wd)
             repository = args[0]
             arch = args[1]
         elif len(args) == 4:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
             repository = args[2]
@@ -3259,13 +3259,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
 
         if len(args) == 1:
             project = args[0]
         elif len(args) == 0:
             project = store_read_project('.')
-            apiurl = store_read_apiurl('.')
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
@@ -3311,9 +3310,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repositories = get_repositories_of_project(store_read_apiurl('.'), project)
             if not len(repositories):
                 raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
-            f = open(repolistfile, 'w')
-            f.write('\n'.join(repositories) + '\n')
-            f.close()
+            try:
+                f = open(repolistfile, 'w')
+                f.write('\n'.join(repositories) + '\n')
+                f.close()
+            except:
+                pass
 
         if not arg_repository and len(repositories):
             # Use a default value from config, but just even if it's available
@@ -3579,8 +3581,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
+        apiurl = self.get_api_url()
+
         if len(args) == 4:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
             repository = args[2]
@@ -3591,7 +3594,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
             repository = args[0]
             arch = args[1]
-            apiurl = store_read_apiurl(wd)
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
@@ -3623,14 +3625,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 2 and (is_project_dir('.') or is_package_dir('.')):
             self.print_repos()
 
+        apiurl = self.get_api_url()
+
         if len(args) == 4:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
             repository = args[2]
             arch = args[3]
         elif len(args) == 3:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = None        # skipped = prj
             repository = args[1]
@@ -3644,7 +3646,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
             repository = args[0]
             arch = args[1]
-            apiurl = store_read_apiurl(wd)
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
@@ -3677,17 +3678,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
+        apiurl = self.get_api_url()
+
         if len(args) == 0:
             wd = os.curdir
             project = store_read_project(wd)
             package = store_read_package(wd)
-            apiurl = store_read_apiurl(wd)
         elif len(args) < 2:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         else:
-            apiurl = conf.config['apiurl']
             project = args[0]
             package = args[1]
 
@@ -3702,7 +3703,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        print '\n'.join(get_commitlog(apiurl, project, package, rev, format))
+        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format))        
+        run_pager(log)
 
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
@@ -3729,15 +3731,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         package = repo = arch = code = None
 
         if len(args) < 1:
-	    if is_package_dir('.'):
+            if is_package_dir('.'):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
-	    else:
+            else:
                 raise oscerr.WrongArgs('Too few arguments.')
-	else:
-	    project = args[0]
-	    if len(args) > 1:
-		package = args[1]
+        else:
+            project = args[0]
+            if len(args) > 1:
+                package = args[1]
 
         if len(args) > 2:
             repo = args[2]
@@ -3864,15 +3866,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         others even when they are not "published" yet.
 
         usage:
+           osc getbinaries REPOSITORY                                      # works in checked out package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out package
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
 
         args = slash_split(args)
-        apiurl = conf.config['apiurl']
 
-        if len(args) < 2 and is_package_dir('.'):
+        apiurl = self.get_api_url()
+
+        if len(args) < 1 and is_package_dir('.'):
             self.print_repos()
 
         if len(args) == 4:
@@ -3884,48 +3888,101 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_package_dir(os.getcwd()):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
-                apiurl  = store_read_apiurl(os.curdir)
                 repository   = args[0]
                 architecture = args[1]
             else:
                 sys.exit('Local directory is no checkout package, neither it is specified. ' )
+        elif len(args) == 1:
+            if is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                repository = args[0]
+            else:
+                sys.exit('Local directory is no checkout package, neither it is specified. ' )
         else:
-            raise oscerr.WrongArgs('Need either 2 or 4 arguments')
+            raise oscerr.WrongArgs('Need either 1, 2 or 4 arguments')
 
         # Get package list
-        binaries = get_binarylist(apiurl,
-                                   project, repository, architecture,
-                                   package = package, verbose=True)
+        if len(args) == 1:
+            data = []
+            for repo in get_repos_of_project(apiurl, project):
+                if repo.name == repository: 
+                   data.append(repo.arch)
 
-        if not os.path.isdir(opts.destdir):
-            print "Creating %s" % opts.destdir
-            os.makedirs(opts.destdir, 0755)
+            for arch in data:
+                binaries = get_binarylist(apiurl,
+                                         project, repository, arch,
+                                         package = package, verbose=True)
 
-        if binaries == [ ]:
-            sys.exit('no binaries found. Either the package does not '
-                     'exist or no binaries have been built.')
+                if opts.destdir:
+                   print "Creating %s/%s" % (opts.destdir, arch)
+                   target_dir = '%s/%s' % (opts.destdir, arch)
+                else:
+                   target_dir = '%s' % arch
 
-        for binary in binaries:
+                if not os.path.isdir(target_dir):
+                    os.makedirs(target_dir, 0755)
 
-            # skip source rpms
-            if not opts.sources and binary.name.endswith('.src.rpm'):
-                continue
+                if binaries == [ ]:
+                   sys.exit('no binaries found. Either the package does not '
+                            'exist or no binaries have been built.')
 
-            target_filename = '%s/%s' % (opts.destdir, binary.name)
+                for binary in binaries:
+                    target_filename = []
+                    if os.path.isdir(opts.destdir):
+                       target_filename = '%s/%s/%s' % (opts.destdir, arch, binary.name)
+                    else:
+                       target_filename = '%s/%s' % (arch, binary.name)
 
-            if os.path.exists(target_filename):
-                st = os.stat(target_filename)
-                if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                    if os.path.exists(target_filename):
+                       st = os.stat(target_filename)
+                       if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                          continue
+
+                    get_binary_file(apiurl,
+                                project,
+                                repository, arch,
+                                binary.name,
+                                package = package,
+                                target_filename = target_filename,
+                                target_mtime = binary.mtime,
+                                progress_meter = not opts.quiet)
+
+
+        else:
+            binaries = get_binarylist(apiurl,
+                                      project, repository, architecture,
+                                      package = package, verbose=True)
+
+            if not os.path.isdir(opts.destdir):
+               print "Creating %s" % opts.destdir
+               os.makedirs(opts.destdir, 0755)
+
+            if binaries == [ ]:
+               sys.exit('no binaries found. Either the package does not '
+                        'exist or no binaries have been built.')
+
+            for binary in binaries:
+
+                # skip source rpms
+                if not opts.sources and binary.name.endswith('.src.rpm'):
                     continue
 
-            get_binary_file(apiurl,
-                            project,
-                            repository, architecture,
-                            binary.name,
-                            package = package,
-                            target_filename = target_filename,
-                            target_mtime = binary.mtime,
-                            progress_meter = not opts.quiet)
+                target_filename = '%s/%s' % (opts.destdir, binary.name)
+
+                if os.path.exists(target_filename):
+                    st = os.stat(target_filename)
+                    if st.st_mtime == binary.mtime and st.st_size == binary.size:
+                       continue
+
+                get_binary_file(apiurl,
+                                project,
+                                repository, architecture,
+                                binary.name,
+                                package = package,
+                                target_filename = target_filename,
+                                target_mtime = binary.mtime,
+                                progress_meter = not opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
@@ -3972,6 +4029,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.all and (opts.bugowner or opts.maintainer):
             raise oscerr.WrongOptions('Sorry, \'--all\' and \'--bugowner\' or \'--maintainer\' are mutually exclusive')
 
+        apiurl = self.get_api_url()
+
         exclude_projects = []
         for i in opts.exclude_project or []:
             prj = i.split(',')
@@ -3980,7 +4039,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 exclude_projects.extend(prj)
         if not opts.user:
-            user = conf.get_apiurl_usr(conf.config['apiurl'])
+            user = conf.get_apiurl_usr(apiurl)
         else:
             user = opts.user
 
@@ -3991,7 +4050,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif type in args_prj:
             what = {'project': ''}
         elif type in args_sr:
-            requests = get_request_list(conf.config['apiurl'], req_who=user, exclude_target_projects=exclude_projects)
+            requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
             for r in requests:
                 print r.list_view()
             return
@@ -4008,7 +4067,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.all:
             role_filter = ''
 
-        res = get_user_projpkgs(conf.config['apiurl'], user, role_filter,
+        res = get_user_projpkgs(apiurl, user, role_filter,
                                 exclude_projects, what.has_key('project'), what.has_key('package'))
         request_todo = {}
         roles = {}
@@ -4025,7 +4084,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
-            requests = get_user_projpkgs_request_list(conf.config['apiurl'], user, projpkgs=request_todo)
+            requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in requests:
                 print r.list_view()
         else:
@@ -4623,7 +4682,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], pathname2url(name)], query=query)
             for buf in streamfile(u, http_GET, BUFSIZE):
                 o.write(buf)
-        o.close
+        o.close()
 
 
     @cmdln.option('-d', '--destdir', default='repairlink', metavar='DIR',
@@ -4649,7 +4708,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
+
         if len(args) >= 3 and len(args) <= 4:
             prj = args[0]
             package = target_package = args[1]
@@ -4660,7 +4720,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             target_prj = prj = args[0]
             target_package = package = args[1]
         elif is_package_dir(os.getcwd()):
-            apiurl = store_read_apiurl(os.getcwd())
             target_prj = prj = store_read_project(os.getcwd())
             target_package = package = store_read_package(os.getcwd())
         else:
@@ -4980,7 +5039,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
         f = None
 
         prj = None
@@ -4988,7 +5047,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             dir = os.getcwd()
             if is_project_dir(dir) or is_package_dir(dir):
                 prj = store_read_project(dir)
-                apiurl = store_read_apiurl(dir)
         if len(args) == 1:
             prj = args[0]
 
@@ -5068,10 +5126,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if arg and is_package_dir(arg):
                 apiurl = store_read_apiurl(arg)
-            elif is_package_dir(os.getcwd()):
-                apiurl = store_read_apiurl(os.getcwd())
             else:
-                apiurl = conf.config['apiurl']
+                apiurl = self.get_api_url()
 
             user = conf.get_apiurl_usr(apiurl)
 
@@ -5160,4 +5216,3 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 exec open(os.path.join(plugin_dir, extfile))
 
 # vim: sw=4 et
-
