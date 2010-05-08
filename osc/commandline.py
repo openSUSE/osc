@@ -1563,11 +1563,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             dst_apiurl = src_apiurl
 
-        if src_project == dst_project and \
-           src_package == dst_package and \
-           src_apiurl == dst_apiurl:
-            raise oscerr.WrongArgs('Source and destination are the same.')
-
         if src_apiurl != dst_apiurl:
             opts.client_side_copy = True
 
@@ -1579,6 +1574,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not rev:
                 rev = show_upstream_rev(src_apiurl, src_project, src_package)
             comment = 'osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
+
+        if src_project == dst_project and \
+           src_package == dst_package and \
+           not rev and \
+           src_apiurl == dst_apiurl:
+            raise oscerr.WrongArgs('Source and destination are the same.')
 
         r = copy_pac(src_apiurl, src_project, src_package,
                      dst_apiurl, dst_project, dst_package,
