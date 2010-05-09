@@ -2508,12 +2508,17 @@ def run_editor(filename):
 
     return subprocess.call([ editor, filename ])
 
-def edit_message(footer='', template=''):
+def edit_message(footer='', template='', templatelen=30):
     delim = '--This line, and those below, will be ignored--\n'
     import tempfile
     (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff')
     f = os.fdopen(fd, 'w')
     if template != '':
+        if not templatelen is None:
+            lines = template.splitlines()
+            template = '\n'.join(lines[:templatelen])
+            if lines[templatelen:]:
+                footer = '%s\n\n%s' % ('\n'.join(lines[templatelen:]), footer)
         f.write(template)
     f.write('\n')
     f.write(delim)
