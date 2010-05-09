@@ -4626,19 +4626,16 @@ def get_commit_message_template(pac):
     """
     diff = ""
     template = []
-    if pac.todo:
-        files = filter(lambda file: '.changes' in file and pac.status(file) in ('A', 'M'), pac.todo)
-        if not files:
-            return template
+    files = [i for i in pac.todo if i.endswith('.changes') and pac.status(i) in ('A', 'M')]
 
-        for file in files:
-            if pac.status(file) == 'M':
-                diff += get_source_file_diff(pac.absdir, file, pac.rev)
-            elif pac.status(file) == 'A':
-                f = open(file, 'r')
-                for line in f:
-                    diff += '+' + line
-                f.close()
+    for file in files:
+        if pac.status(file) == 'M':
+            diff += get_source_file_diff(pac.absdir, file, pac.rev)
+        elif pac.status(file) == 'A':
+            f = open(file, 'r')
+            for line in f:
+                diff += '+' + line
+            f.close()
 
     if diff:
         template = parse_diff_for_commit_message(diff)
