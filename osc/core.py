@@ -950,8 +950,8 @@ class Package:
         storefilename = os.path.join(self.storedir, n)
         mtime = self.findfilebyname(n).mtime
 
-        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename, revision=revision, progress_obj=self.progress_obj)
-        os.utime(filename, (-1, mtime))
+        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename,
+                revision=revision, progress_obj=self.progress_obj, mtime=mtime)
 
         shutil.copyfile(filename, storefilename)
 
@@ -964,8 +964,8 @@ class Package:
 
         mtime = self.findfilebyname(n).mtime
         get_source_file(self.apiurl, self.prjname, self.name, n,
-                        revision=self.rev, targetfilename=upfilename, progress_obj=self.progress_obj)
-        os.utime(upfilename, (-1, mtime))
+                        revision=self.rev, targetfilename=upfilename,
+                        progress_obj=self.progress_obj, mtime=mtime)
 
         if binary_file(myfilename) or binary_file(upfilename):
             # don't try merging
@@ -2780,7 +2780,7 @@ def get_user_data(apiurl, user, *tags):
     return data
 
 
-def download(url, filename, progress_obj = None):
+def download(url, filename, progress_obj = None, mtime = None):
     import tempfile, shutil
     o = None
     try:
@@ -2800,13 +2800,16 @@ def download(url, filename, progress_obj = None):
         if o is not None:
             o.close()
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None):
+    if mtime:
+        os.utime(filename, (-1, mtime))
+
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None):
     targetfilename = targetfilename or filename
     query = None
     if revision:
         query = { 'rev': revision }
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
-    download(u, targetfilename, progress_obj)
+    download(u, targetfilename, progress_obj, mtime)
 
 def get_binary_file(apiurl, prj, repo, arch,
                     filename,
@@ -2823,7 +2826,7 @@ def get_binary_file(apiurl, prj, repo, arch,
 
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
-    download(u, target_filename, progress_obj)
+    download(u, target_filename, progress_obj, target_mtime)
 
 def dgst_from_string(str):
     # Python 2.5 depracates the md5 modules
