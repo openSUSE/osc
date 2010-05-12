@@ -3341,8 +3341,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not arg_descr and len(descr) == 1:
             arg_descr = descr[0]
         elif not arg_descr:
+            msg = None
             if len(descr) > 1:
-                msg = 'Multiple build description files found: %s' % ', '.join(descr)
+                spec = os.path.basename(os.getcwd())+'.spec'
+                if spec in descr:
+                    arg_descr = spec
+                else:
+                    msg = 'Multiple build description files found: %s' % ', '.join(descr)
             else:
                 msg = 'Missing argument: build description (spec, dsc or kiwi file)'
                 try:
@@ -3351,7 +3356,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         msg += ' (this package is not expanded - you might want to try osc up --expand)'
                 except:
                     pass
-            raise oscerr.WrongArgs(msg)
+            if msg:
+                raise oscerr.WrongArgs(msg)
 
         return arg_repository, arg_arch, arg_descr
 
