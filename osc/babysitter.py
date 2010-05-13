@@ -10,6 +10,7 @@ from osc import oscerr
 from urllib2 import URLError, HTTPError
 from oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
+from osc.util.packagequery import PackageError
 
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError
@@ -170,6 +171,10 @@ def run(prg):
 
     except CpioError, e:
         print >>sys.stderr, e
+        return 1
+
+    except PackageError, e:
+        print >>sys.stderr, e.msg
         return 1
 
 # vim: sw=4 et
