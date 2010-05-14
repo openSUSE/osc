@@ -2235,7 +2235,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_add(self, subcmd, opts, *args):
         """${cmd_name}: Mark files to be added upon the next commit
 
+        In case a URL is given the file will get downloaded and registered to be downloaded
+        by the server as well via the download_url source service.
+
+        This is recommended for release tar balls to track their source and to help
+        others to review your changes esp. on version upgrades.
+
         usage:
+            osc add URL [URL...]
             osc add FILE [FILE...]
         ${cmd_option_list}
         """
@@ -2243,7 +2250,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Missing argument.\n\n' \
                   + self.get_cmd_help('add'))
 
-        # Do some magic here, when adding a url. We want that the server is download the tar ball and verifing it
+        # Do some magic here, when adding a url. We want that the server to download the tar ball and to verify it
         for arg in parseargs(args):
             if arg.startswith('http://') or arg.startswith('https://') or arg.startswith('ftp://'):
                 addDownloadUrlService(arg)
