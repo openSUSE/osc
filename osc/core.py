@@ -4536,10 +4536,12 @@ def stripETxml(node):
 
 def addDownloadUrlService(url):
     service_file = os.path.join(os.getcwd(), '_service')
+    addfile = False
     if os.path.exists( service_file ):
         services = ET.parse(os.path.join(os.getcwd(), '_service')).getroot()
     else:
         services = ET.fromstring("<services />")
+        addfile = True
     stripETxml( services )
     si = Serviceinfo()
     s = si.addDownloadUrl(services, url)
@@ -4551,6 +4553,8 @@ def addDownloadUrlService(url):
     f = open(service_file, 'wb')
     f.write(reparsed.toprettyxml(indent="  "))
     f.close()
+    if addfile:
+       addFiles( ['_service'] )
 
     # download file
     si.execute(os.getcwd())
