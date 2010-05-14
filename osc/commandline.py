@@ -2243,8 +2243,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Missing argument.\n\n' \
                   + self.get_cmd_help('add'))
 
-        filenames = parseargs(args)
-        addFiles(filenames)
+        # Do some magic here, when adding a url. We want that the server is download the tar ball and verifing it
+        for arg in parseargs(args):
+            if arg.startswith('http://') or arg.startswith('https://') or arg.startswith('ftp://'):
+                addDownloadUrlService(arg)
+            else:
+                addFiles(arg)
 
 
     def do_mkpac(self, subcmd, opts, *args):

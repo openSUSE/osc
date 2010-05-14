@@ -197,6 +197,41 @@ buildstatus_symbols = {'succeeded':       '.',
                        'dispatching':     'd',
 }
 
+
+# our own xml writer function to write xml nice, but with correct syntax
+# This function is from http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
+from xml.dom import minidom
+def fixed_writexml(self, writer, indent="", addindent="", newl=""):
+    # indent = current indentation
+    # addindent = indentation to add to higher levels
+    # newl = newline string
+    writer.write(indent+"<" + self.tagName)
+
+    attrs = self._get_attributes()
+    a_names = attrs.keys()
+    a_names.sort()
+
+    for a_name in a_names:
+        writer.write(" %s=\"" % a_name)
+        minidom._write_data(writer, attrs[a_name].value)
+        writer.write("\"")
+    if self.childNodes:
+        if len(self.childNodes) == 1 \
+          and self.childNodes[0].nodeType == minidom.Node.TEXT_NODE:
+            writer.write(">")
+            self.childNodes[0].writexml(writer, "", "", "")
+            writer.write("</%s>%s" % (self.tagName, newl))
+            return
+        writer.write(">%s"%(newl))
+        for node in self.childNodes:
+            node.writexml(writer,indent+addindent,addindent,newl)
+        writer.write("%s</%s>%s" % (indent,self.tagName,newl))
+    else:
+        writer.write("/>%s"%(newl))
+# replace minidom's function with ours
+minidom.Element.writexml = fixed_writexml
+
+
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
     try:
@@ -240,8 +275,26 @@ class Serviceinfo:
                     name += " --" + option + " '" + value + "'"
                 self.commands.append(name)
             except:
-                msg = 'invalid service format:\n%s' % ET.tostring(root)
+                msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node)
                 raise oscerr.APIError(msg)
+
+    def addDownloadUrl(self, serviceinfo_node, url_string):
+        from urlparse import urlparse
+        url = urlparse( url_string )
+        protocol = url.scheme
+        host = url.netloc
+        path = url.path
+
+        r = serviceinfo_node
+        s = ET.Element( "service", name="download_url" )
+        ET.SubElement(s, "param", name="protocol").text = protocol
+        ET.SubElement(s, "param", name="host").text     = host
+        ET.SubElement(s, "param", name="path").text     = path
+
+        r.append( s )
+
+        return r
+
 
     def execute(self, dir):
         import tempfile
@@ -4473,6 +4526,36 @@ def createPackageDir(pathname, prj_obj=None):
             msg += '\ntry svn instead of osc.'
         raise oscerr.NoWorkingCopy(msg)
 
+
+def stripETxml(node):
+    node.tail = None
+    if node.text != None:
+        node.text = node.text.replace(" ", "").replace("\n", "")
+    for child in node.getchildren():
+        stripETxml(child)
+
+def addDownloadUrlService(url):
+    service_file = os.path.join(os.getcwd(), '_service')
+    if os.path.exists( service_file ):
+        services = ET.parse(os.path.join(os.getcwd(), '_service')).getroot()
+    else:
+        services = ET.fromstring("<services />")
+    stripETxml( services )
+    si = Serviceinfo()
+    s = si.addDownloadUrl(services, url)
+    si.read(s)
+
+    # for pretty output
+    from xml.dom.ext import StripXml, Print
+    reparsed = minidom.parseString(ET.tostring(s))
+    f = open(service_file, 'wb')
+    f.write(reparsed.toprettyxml(indent="  "))
+    f.close()
+
+    # download file
+    si.execute(os.getcwd())
+
+    # IMPLEMENT ME: add a SHA256 verification service here
 
 def addFiles(filenames, prj_obj = None):
     for filename in filenames:

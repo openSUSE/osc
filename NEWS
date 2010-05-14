@@ -5,6 +5,7 @@
   - osc branch reads project/package in package directory
   - fix creation of package link, when target project has the package via linked project
   - add support for CBpreinstall/CBinstall
+  - support "osc add http://...", this uses obs source service for downloading a file now
 
 0.126
  - added VM autosetup to osc. This requires appropriate OBS version and build script version.
