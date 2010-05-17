@@ -1664,10 +1664,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-c', '--checkout', action='store_true',
                         help='Checkout branched package afterwards ' \
                                 '(\'osc bco\' is a shorthand for this option)' )
-    @cmdln.option('-r', '--revision', metavar='rev',
-                        help='branch against a specific revision')
+    @cmdln.option('-f', '--force', default=False, action="store_true",
+                  help='force commit - do not tests a file list')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='branch against a specific revision')
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
@@ -1725,7 +1727,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 branch_pkg(conf.config['apiurl'], args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
-                           return_existing=opts.checkout, msg=opts.message or '')
+                           return_existing=opts.checkout, msg=opts.message or '',
+                           force=opts.force)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
