@@ -278,6 +278,23 @@ class Serviceinfo:
                 msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node)
                 raise oscerr.APIError(msg)
 
+    def addVerifyFile(self, serviceinfo_node, filename):
+        import hashlib
+
+        f = open(filename, 'r')
+        digest = hashlib.sha256(f.read()).hexdigest()
+        f.close()
+
+        r = serviceinfo_node
+        s = ET.Element( "service", name="verify_file" )
+        ET.SubElement(s, "param", name="file").text = filename
+        ET.SubElement(s, "param", name="verifier").text  = "sha256"
+        ET.SubElement(s, "param", name="check-sum").text = digest
+
+        r.append( s )
+        return r
+
+
     def addDownloadUrl(self, serviceinfo_node, url_string):
         from urlparse import urlparse
         url = urlparse( url_string )
@@ -292,7 +309,6 @@ class Serviceinfo:
         ET.SubElement(s, "param", name="path").text     = path
 
         r.append( s )
-
         return r
 
 
@@ -4548,7 +4564,6 @@ def addDownloadUrlService(url):
     si.read(s)
 
     # for pretty output
-    from xml.dom.ext import StripXml, Print
     reparsed = minidom.parseString(ET.tostring(s))
     f = open(service_file, 'wb')
     f.write(reparsed.toprettyxml(indent="  "))
@@ -4557,9 +4572,25 @@ def addDownloadUrlService(url):
        addFiles( ['_service'] )
 
     # download file
-    si.execute(os.getcwd())
+    path = os.getcwd()
+    files = os.listdir(path)
+    si.execute(path)
+    newfiles = os.listdir(path)
 
-    # IMPLEMENT ME: add a SHA256 verification service here
+    # add verify service for new files
+    for file in files:
+       newfiles.remove(file)
+
+    for file in newfiles:
+       if file.startswith('_service:download_url:'):
+          s = si.addVerifyFile(services, file)
+
+    # for pretty output
+    reparsed = minidom.parseString(ET.tostring(s))
+    f = open(service_file, 'wb')
+    f.write(reparsed.toprettyxml(indent="  "))
+    f.close()
+
 
 def addFiles(filenames, prj_obj = None):
     for filename in filenames:
