@@ -289,7 +289,7 @@ class Serviceinfo:
         s = ET.Element( "service", name="verify_file" )
         ET.SubElement(s, "param", name="file").text = filename
         ET.SubElement(s, "param", name="verifier").text  = "sha256"
-        ET.SubElement(s, "param", name="check-sum").text = digest
+        ET.SubElement(s, "param", name="checksum").text = digest
 
         r.append( s )
         return r
