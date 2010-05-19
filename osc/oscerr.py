@@ -41,6 +41,13 @@ class NoConfigfile(OscBaseError):
         self.file = fname
         self.msg = msg
 
+class RuntimeError(OscBaseError):
+    """Exception raised when there is a runtime error of an external tool"""
+    def __init__(self, msg, fname):
+        OscBaseError.__init__(self)
+        self.msg = msg
+        self.file = fname
+
 class WrongArgs(OscBaseError):
     """Exception raised by the cli for wrong arguments usage"""
 

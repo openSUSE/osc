@@ -5,6 +5,7 @@
   - fix creation of package link, when target project has the package via linked project
   - add "osc rq approvenew $PROJECT" command to show and accept all request in new state. 
     This makes sense esp. for projects which work with default reviewers before.
+  - support external source validator script before commiting
 #
 # Features which require OBS 2.0
 #
