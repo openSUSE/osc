@@ -3,6 +3,8 @@
   - --csv/--format options for results command - using format user can explicitly specify what he wants print
   - osc branch reads project/package in package directory
   - fix creation of package link, when target project has the package via linked project
+  - add "osc rq acceptallnew $PROJECT" command to show and accept all request in new state. 
+    This makes sense esp. for projects which work with default reviewers before.
 #
 # Features which require OBS 2.0
 #

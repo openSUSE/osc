@@ -1103,6 +1103,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request log ID
             osc request [show] [-d] [-b] ID
             osc request accept [-m TEXT] ID
+            osc request acceptallnew [-m TEXT] PROJECT
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request wipe ID
@@ -1133,7 +1134,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['list', 'log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co', 'help']
+        cmds = ['list', 'log', 'show', 'decline', 'accept', 'acceptallnew', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1144,9 +1145,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if cmd == 'help':
             return self.do_help(['help', 'request'])
 
-        if cmd in ['wipe']:
-            min_args, max_args = 1, 1
-        elif cmd in ['list']:
+        if cmd in ['list']:
             min_args, max_args = 0, 2
         else:
             min_args, max_args = 1, 1
@@ -1157,7 +1156,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        if cmd == 'list':
+        if cmd == 'list' or cmd == 'acceptallnew':
             package = None
             project = None
             if len(args) > 0:
@@ -1174,36 +1173,41 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd in ['log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
-        # list
-        if cmd == 'list':
+        # list and acceptallnew
+        if cmd == 'list' or cmd == 'acceptallnew':
             states = ('new', 'accepted', 'revoked', 'declined')
-            state_list = opts.state.split(',')
-            if opts.state == 'all':
-                state_list = ['all']
-            else:
-                for s in state_list:
-                    if not s in states:
-                        raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
             who = ''
-            if opts.mine:
-                who = conf.get_apiurl_usr(apiurl)
-            if opts.user:
-                who = opts.user
-            if opts.all:
-                state_list = ['all']
-
-            ## FIXME -B not implemented!
-            if opts.bugowner:
-                if (self.options.debug):
-                    print 'list: option --bugowner ignored: not impl.'
-
-            if opts.involved_projects:
-                who = who or conf.get_apiurl_usr(apiurl)
-                results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
-                                                         req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
+            if cmd == 'acceptallnew':
+               states = ('new')
+               results = get_request_list(apiurl, project, package, '', ['new'])
             else:
-                results = get_request_list(apiurl, project, package, who,
-                                           state_list, opts.type, opts.exclude_target_project or [])
+               state_list = opts.state.split(',')
+               if opts.state == 'all':
+                   state_list = ['all']
+               else:
+                   for s in state_list:
+                       if not s in states:
+                           raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
+               if opts.mine:
+                   who = conf.get_apiurl_usr(apiurl)
+               if opts.user:
+                   who = opts.user
+               if opts.all:
+                   state_list = ['all']
+
+               ## FIXME -B not implemented!
+               if opts.bugowner:
+                   if (self.options.debug):
+                       print 'list: option --bugowner ignored: not impl.'
+
+               if opts.involved_projects:
+                   who = who or conf.get_apiurl_usr(apiurl)
+                   results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
+                                                            req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
+               else:
+                   results = get_request_list(apiurl, project, package, who,
+                                              state_list, opts.type, opts.exclude_target_project or [])
+
             results.sort(reverse=True)
             import time
             days = opts.days or conf.config['request_list_days']
@@ -1230,6 +1234,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     skipped += 1
             if skipped:
                 print "There are %d requests older than %s days.\n" % (skipped, days)
+
+            if cmd == 'acceptallnew':
+                print "\n *** Approve them all ? [y/n] ***"
+                if sys.stdin.read(1) == "y":
+		    
+                    if not opts.message:
+                        opts.message = edit_message()
+                    for result in results:
+                        print result.reqid, ": ",
+                        r = change_request_state(conf.config['apiurl'],
+                                str(result.reqid), 'accepted', opts.message or '')
+                        print r
+                else:
+                    print >>sys.stderr, 'Aborted...'
+                    raise oscerr.UserAbort()
 
         elif cmd == 'log':
             for l in get_request_log(conf.config['apiurl'], reqid):
