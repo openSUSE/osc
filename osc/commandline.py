@@ -1110,6 +1110,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request checkout/co ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
+            osc review new [-m TEXT] ID            # for setting a temporary comment without changing the state
         ${cmd_option_list}
         """
 
@@ -1299,7 +1300,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             state_map = {'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
             # Change review state only
             if subcmd == 'review':
-                if cmd in ['accept', 'decline']:
+                if cmd in ['accept', 'decline', 'new']:
                     r = change_review_state(conf.config['apiurl'],
                             reqid, state_map[cmd], conf.config['user'], '', opts.message or '')
                     print r
