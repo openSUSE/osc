@@ -3417,13 +3417,15 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg=''):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False):
     """
     Branch a package (via API call)
     """
     query = { 'cmd': 'branch' }
     if nodevelproject:
         query['ignoredevel'] = '1'
+    if force:
+        query['force'] = '1'
     if rev:
         query['rev'] = rev
     if target_project:

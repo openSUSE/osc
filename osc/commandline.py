@@ -1665,7 +1665,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Checkout branched package afterwards ' \
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-f', '--force', default=False, action="store_true",
-                  help='force commit - do not tests a file list')
+                  help='force branch, overwrite target')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='rev',
