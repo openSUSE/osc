@@ -2278,7 +2278,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if arg.startswith('http://') or arg.startswith('https://') or arg.startswith('ftp://'):
                 addDownloadUrlService(arg)
             else:
-                addFiles(arg)
+                addFiles([arg])
 
 
     def do_mkpac(self, subcmd, opts, *args):
