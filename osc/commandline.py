@@ -1103,7 +1103,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request log ID
             osc request [show] [-d] [-b] ID
             osc request accept [-m TEXT] ID
-            osc request acceptallnew [-m TEXT] PROJECT
+            osc request approvenew [-m TEXT] PROJECT
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request wipe ID
@@ -1134,7 +1134,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['list', 'log', 'show', 'decline', 'accept', 'acceptallnew', 'wipe', 'revoke', 'checkout', 'co', 'help']
+        cmds = ['list', 'log', 'show', 'decline', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1156,7 +1156,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        if cmd == 'list' or cmd == 'acceptallnew':
+        if cmd == 'list' or cmd == 'approvenew':
             package = None
             project = None
             if len(args) > 0:
@@ -1173,11 +1173,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd in ['log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
-        # list and acceptallnew
-        if cmd == 'list' or cmd == 'acceptallnew':
+        # list and approvenew
+        if cmd == 'list' or cmd == 'approvenew':
             states = ('new', 'accepted', 'revoked', 'declined')
             who = ''
-            if cmd == 'acceptallnew':
+            if cmd == 'approvenew':
                states = ('new')
                results = get_request_list(apiurl, project, package, '', ['new'])
             else:
@@ -1235,7 +1235,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if skipped:
                 print "There are %d requests older than %s days.\n" % (skipped, days)
 
-            if cmd == 'acceptallnew':
+            if cmd == 'approvenew':
                 print "\n *** Approve them all ? [y/n] ***"
                 if sys.stdin.read(1) == "y":
 		    
