@@ -2567,10 +2567,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev="base")
                             p.mark_frozen()
                     else:
+                        p.update(rev, service_files, opts.limit_size)
                         rev = p.linkinfo.xsrcmd5
                     print 'Expanding to rev', rev
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     print 'Unexpanding to rev', p.linkinfo.lsrcmd5
+                    p.update(rev, service_files, opts.limit_size)
                     rev = p.linkinfo.lsrcmd5
                 elif p.islink() and p.isexpanded():
                     rev = p.latest_rev()
