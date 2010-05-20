@@ -624,7 +624,7 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commit(self, pacs = (), msg = '', files = {}, validator = None):
+    def commit(self, pacs = (), msg = '', files = {}, validators = None):
         if len(pacs):
             try:
                 for pac in pacs:
@@ -643,7 +643,7 @@ class Project:
                         else:
                             p = Package(os.path.join(self.dir, pac))
                         p.todo = todo
-                        p.commit(msg, validator=validator)
+                        p.commit(msg, validators=validators)
                     elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
                         print 'osc: \'%s\' is not under version control' % pac
                     elif pac in self.pacs_broken:
@@ -663,7 +663,7 @@ class Project:
                     state = self.get_state(pac)
                     if state == ' ':
                         # do a simple commit
-                        Package(os.path.join(self.dir, pac)).commit(msg, validator=validator)
+                        Package(os.path.join(self.dir, pac)).commit(msg, validators=validators)
                     elif state == 'D':
                         self.commitDelPackage(pac)
                     elif state == 'A':
@@ -896,7 +896,7 @@ class Package:
 
         shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
-    def commit(self, msg='', validator=None):
+    def commit(self, msg='', validators=None):
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
@@ -907,11 +907,12 @@ class Package:
 
         pathn = getTransActPath(self.dir)
 
-        if validator:
-            import subprocess
-            p = subprocess.Popen([validator], close_fds=True)
-            if p.wait() != 0:
-                raise oscerr.RuntimeError(p.stdout, validator )
+        if validators:
+            for validator in os.listdir(validators):
+                import subprocess
+                p = subprocess.Popen([validators+"/"+validator], close_fds=True)
+                if p.wait() != 0:
+                    raise oscerr.RuntimeError(p.stdout, validator )
 
         have_conflicts = False
         for filename in self.todo:

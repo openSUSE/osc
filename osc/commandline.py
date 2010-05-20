@@ -2370,8 +2370,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='read log message from FILE')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force commit - do not tests a file list')
-    @cmdln.option('--skip-validator', default=False, action="store_true",
-                  help='Skip the source validator')
+    @cmdln.option('--skip-validation', default=False, action="store_true",
+                  help='Skip the source validation')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -2400,12 +2400,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
 
         msg = ''
-        validator = conf.config['source_validator']
-        if opts.skip_validator:
-            validator = None
-        elif not os.path.exists(validator):
-            print "WARNING: validator", validator, "configured, but not existing. Skipping ..."
-            validator = None
+        validators = conf.config['source_validator_directory']
+        if opts.skip_validation:
+            validators = None
+        elif not os.path.exists(validators):
+            print "WARNING: validator directory", validators, "configured, but not existing. Skipping ..."
+            validators = None
             
         if opts.message:
             msg = opts.message
@@ -2421,7 +2421,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not msg:
                     msg = edit_message()
                 try:
-                    Project(arg).commit(msg=msg, validator=validator)
+                    Project(arg).commit(msg=msg, validators=validators)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
@@ -2472,19 +2472,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     single_paths.append(pac.dir)
             for prj, packages in prj_paths.iteritems():
                 try:
-                    Project(prj).commit(tuple(packages), msg, files, validator=validator)
+                    Project(prj).commit(tuple(packages), msg, files, validators=validators)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
             for pac in single_paths:
                 try:
-                    Package(pac).commit(msg, validator=validator)
+                    Package(pac).commit(msg, validators=validators)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
         else:
             for p in pacs:
-                p.commit(msg, validator=validator)
+                p.commit(msg, validators=validators)
 
         store_unlink_file(os.path.abspath('.'), '_commit_msg')
 
