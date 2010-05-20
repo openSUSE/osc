@@ -908,11 +908,15 @@ class Package:
         pathn = getTransActPath(self.dir)
 
         if validators:
+            import subprocess
+            from stat import *
             for validator in os.listdir(validators):
-                import subprocess
-                p = subprocess.Popen([validators+"/"+validator], close_fds=True)
-                if p.wait() != 0:
-                    raise oscerr.RuntimeError(p.stdout, validator )
+                fn=validators+"/"+validator
+                mode = os.stat(fn)
+                if S_ISREG(mode[ST_MODE]):
+                   p = subprocess.Popen([fn], close_fds=True)
+                   if p.wait() != 0:
+                       raise oscerr.RuntimeError(p.stdout, validator )
 
         have_conflicts = False
         for filename in self.todo:
