@@ -3526,10 +3526,18 @@ def copy_pac(src_apiurl, src_project, src_package,
         return 'Done.'
 
 
+def undelete_package(apiurl, prj, pac):
+    u = makeurl(apiurl, ['source', prj, pac], query={'comment': 'undeleted via osc'})
+    http_POST(u)
+
+def undelete_project(apiurl, prj):
+    u = makeurl(apiurl, ['source', prj], query={'comment': 'undeleted via osc'})
+    http_POST(u)
+
+
 def delete_package(apiurl, prj, pac):
     u = makeurl(apiurl, ['source', prj, pac])
     http_DELETE(u)
-
 
 def delete_project(apiurl, prj):
     u = makeurl(apiurl, ['source', prj])
@@ -3539,6 +3547,7 @@ def delete_files(apiurl, prj, pac, files):
     for file in files:
         u = makeurl(apiurl, ['source', prj, pac, file], query={'comment': 'removed %s' % (file, )})
         http_DELETE(u)
+
 
 # old compat lib call
 def get_platforms(apiurl):

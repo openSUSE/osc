@@ -1784,6 +1784,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print_request_list(conf.config['apiurl'], devloc, args[1])
 
 
+    def do_undelete(self, subcmd, opts, *args):
+        """${cmd_name}: Restores a deleted project or package on the server.
+
+        The server restores a package including the sources and meta configuration.
+        Binaries remain to be lost and will be rebuild.
+
+        usage:
+           osc undelete PROJECT
+           osc undelete PROJECT PACKAGE [PACKAGE ...]
+
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        if len(args) < 1:
+            raise oscerr.WrongArgs('Missing argument.')
+        prj = args[0]
+        pkgs = args[1:]
+
+        if pkgs:
+            for pkg in pkgs:
+                undelete_package(conf.config['apiurl'], prj, pkg)
+        else:
+            undelete_project(conf.config['apiurl'], prj)
+
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='deletes a package or an empty project')
