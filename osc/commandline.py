@@ -3955,7 +3955,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-q', '--quiet', action='store_true',
                   help='do not show downloading progress')
-    @cmdln.option('-d', '--destdir', default='.', metavar='DIR',
+    @cmdln.option('-d', '--destdir', default='./', metavar='DIR',
                   help='destination directory')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
@@ -3980,109 +3980,57 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 1 and is_package_dir('.'):
             self.print_repos()
 
+        architecture = None
         if len(args) == 4:
             project = args[0]
             package = args[1]
             repository   = args[2]
             architecture = args[3]
-        elif len(args) == 2:
-            if is_package_dir(os.getcwd()):
-                project = store_read_project(os.curdir)
-                package = store_read_package(os.curdir)
-                repository   = args[0]
+        elif len(args) <= 2:
+            if not is_package_dir(os.getcwd()):
+                raise oscerr.WrongArgs('Missing arguments: either specify <project> and ' \
+                                       '<package> or move to a package working copy')
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+            repository   = args[0]
+            if len(args) == 2:
                 architecture = args[1]
-            else:
-                sys.exit('Local directory is no checkout package, neither it is specified. ' )
-        elif len(args) == 1:
-            if is_package_dir(os.getcwd()):
-                project = store_read_project(os.curdir)
-                package = store_read_package(os.curdir)
-                repository = args[0]
-            else:
-                sys.exit('Local directory is no checkout package, neither it is specified. ' )
         else:
             raise oscerr.WrongArgs('Need either 1, 2 or 4 arguments')
 
         # Get package list
-        if len(args) == 1:
-            data = []
-            for repo in get_repos_of_project(apiurl, project):
-                if repo.name == repository: 
-                   data.append(repo.arch)
+        arches = [architecture]
+        if architecture is None:
+            arches = [i.arch for i in get_repos_of_project(apiurl, project) if repository == i.name]
+        for arch in arches:
+            binaries = get_binarylist(apiurl, project, repository, arch,
+                                      package=package, verbose=True)
+            if not binaries:
+                print >>sys.stderr, 'no binaries found: Either the package ' \
+                                    'does not exist or no binaries have been built.'
+                continue
+            target_dir = opts.destdir
+            if architecture is None:
+                # we're going to fetch all repo arches
+                target_dir = '%s/%s' % (opts.destdir, arch)
+            target_dir = os.path.normpath(target_dir)
+            if not os.path.isdir(target_dir):
+                print 'Creating %s' % target_dir
+                os.makedirs(target_dir, 0755)
 
-            for arch in data:
-                binaries = get_binarylist(apiurl,
-                                         project, repository, arch,
-                                         package = package, verbose=True)
-
-                if opts.destdir:
-                   print "Creating %s/%s" % (opts.destdir, arch)
-                   target_dir = '%s/%s' % (opts.destdir, arch)
-                else:
-                   target_dir = '%s' % arch
-
-                if not os.path.isdir(target_dir):
-                    os.makedirs(target_dir, 0755)
-
-                if binaries == [ ]:
-                   sys.exit('no binaries found. Either the package does not '
-                            'exist or no binaries have been built.')
-
-                for binary in binaries:
-                    target_filename = []
-                    if os.path.isdir(opts.destdir):
-                       target_filename = '%s/%s/%s' % (opts.destdir, arch, binary.name)
-                    else:
-                       target_filename = '%s/%s' % (arch, binary.name)
-
-                    if os.path.exists(target_filename):
-                       st = os.stat(target_filename)
-                       if st.st_mtime == binary.mtime and st.st_size == binary.size:
-                          continue
-
-                    get_binary_file(apiurl,
-                                project,
-                                repository, arch,
-                                binary.name,
-                                package = package,
-                                target_filename = target_filename,
-                                target_mtime = binary.mtime,
-                                progress_meter = not opts.quiet)
-
-
-        else:
-            binaries = get_binarylist(apiurl,
-                                      project, repository, architecture,
-                                      package = package, verbose=True)
-
-            if not os.path.isdir(opts.destdir):
-               print "Creating %s" % opts.destdir
-               os.makedirs(opts.destdir, 0755)
-
-            if binaries == [ ]:
-               sys.exit('no binaries found. Either the package does not '
-                        'exist or no binaries have been built.')
-
-            for binary in binaries:
-
-                # skip source rpms
-                if not opts.sources and binary.name.endswith('.src.rpm'):
-                    continue
-
-                target_filename = '%s/%s' % (opts.destdir, binary.name)
-
-                if os.path.exists(target_filename):
-                    st = os.stat(target_filename)
-                    if st.st_mtime == binary.mtime and st.st_size == binary.size:
-                       continue
-
+            for i in binaries:
+                fname = '%s/%s' % (target_dir, i.name)
+                if os.path.exists(fname):
+                    st = os.stat(fname)
+                    if st.st_mtime == i.mtime and st.st_size == i.size:
+                        continue
                 get_binary_file(apiurl,
                                 project,
-                                repository, architecture,
-                                binary.name,
+                                repository, arch,
+                                i.name,
                                 package = package,
-                                target_filename = target_filename,
-                                target_mtime = binary.mtime,
+                                target_filename = fname,
+                                target_mtime = i.mtime,
                                 progress_meter = not opts.quiet)
 
 
