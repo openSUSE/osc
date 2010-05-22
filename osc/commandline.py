@@ -2405,6 +2405,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='force commit - do not tests a file list')
     @cmdln.option('--skip-validation', default=False, action="store_true",
                   help='Skip the source validation')
+    @cmdln.option('--verbose-validation', default=False, action="store_true",
+                  help='Run the source validation with verbose informations')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -2432,14 +2434,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = parseargs(args)
 
-        msg = ''
         validators = conf.config['source_validator_directory']
         if opts.skip_validation:
             validators = None
         elif not os.path.exists(validators):
             print "WARNING: validator directory", validators, "configured, but not existing. Skipping ..."
             validators = None
+        if opts.verbose_validation:
+            verbose_validation = 1
             
+        msg = ''
         if opts.message:
             msg = opts.message
         elif opts.file:
@@ -2454,7 +2458,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not msg:
                     msg = edit_message()
                 try:
-                    Project(arg).commit(msg=msg, validators=validators)
+                    Project(arg).commit(msg=msg, validators=validators, verbose_validation=verbose_validation)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
@@ -2505,19 +2509,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     single_paths.append(pac.dir)
             for prj, packages in prj_paths.iteritems():
                 try:
-                    Project(prj).commit(tuple(packages), msg, files, validators=validators)
+                    Project(prj).commit(tuple(packages), msg, files, validators=validators, verbose_validation=verbose_validation)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
             for pac in single_paths:
                 try:
-                    Package(pac).commit(msg, validators=validators)
+                    Package(pac).commit(msg, validators=validators, verbose_validation=verbose_validation)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
         else:
             for p in pacs:
-                p.commit(msg, validators=validators)
+                p.commit(msg, validators=validators, verbose_validation=verbose_validation)
 
         store_unlink_file(os.path.abspath('.'), '_commit_msg')
 

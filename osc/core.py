@@ -614,7 +614,7 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commit(self, pacs = (), msg = '', files = {}, validators = None):
+    def commit(self, pacs = (), msg = '', files = {}, validators = None, verbose_validation = None):
         if len(pacs):
             try:
                 for pac in pacs:
@@ -623,7 +623,7 @@ class Project:
                         todo = files[pac]
                     state = self.get_state(pac)
                     if state == 'A':
-                        self.commitNewPackage(pac, msg, todo)
+                        self.commitNewPackage(pac, msg, todo, validators=validators, verbose_validation=verbose_validation)
                     elif state == 'D':
                         self.commitDelPackage(pac)
                     elif state == ' ':
@@ -633,7 +633,7 @@ class Project:
                         else:
                             p = Package(os.path.join(self.dir, pac))
                         p.todo = todo
-                        p.commit(msg, validators=validators)
+                        p.commit(msg, validators=validators, verbose_validation=verbose_validation)
                     elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
                         print 'osc: \'%s\' is not under version control' % pac
                     elif pac in self.pacs_broken:
@@ -653,15 +653,15 @@ class Project:
                     state = self.get_state(pac)
                     if state == ' ':
                         # do a simple commit
-                        Package(os.path.join(self.dir, pac)).commit(msg, validators=validators)
+                        Package(os.path.join(self.dir, pac)).commit(msg, validators=validators, verbose_validation=verbose_validation)
                     elif state == 'D':
                         self.commitDelPackage(pac)
                     elif state == 'A':
-                        self.commitNewPackage(pac, msg)
+                        self.commitNewPackage(pac, msg, validators=validators, verbose_validation=verbose_validation)
             finally:
                 self.write_packages()
 
-    def commitNewPackage(self, pac, msg = '', files = []):
+    def commitNewPackage(self, pac, msg = '', files = [], validators = None, verbose_validation = None):
         """creates and commits a new package if it does not exist on the server"""
         if pac in self.pacs_available:
             print 'package \'%s\' already exists' % pac
@@ -682,7 +682,7 @@ class Project:
                 p = Package(os.path.join(self.dir, pac))
             p.todo = files
             print statfrmt('Sending', os.path.normpath(p.dir))
-            p.commit(msg)
+            p.commit(msg, validators=validators, verbose_validation=verbose_validation)
             self.set_state(pac, ' ')
             os.chdir(olddir)
 
@@ -899,7 +899,7 @@ class Package:
 
         shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
-    def commit(self, msg='', validators=None):
+    def commit(self, msg='', validators=None, verbose_validation=None):
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
@@ -919,8 +919,11 @@ class Package:
                 fn=validators+"/"+validator
                 mode = os.stat(fn)
                 if S_ISREG(mode[ST_MODE]):
-                   print "run", fn
-                   p = subprocess.Popen([fn], close_fds=True)
+                   if verbose_validation:
+                       print "run", fn
+                       p = subprocess.Popen([fn, "--verbose"], close_fds=True)
+                   else:
+                       p = subprocess.Popen([fn], close_fds=True)
                    if p.wait() != 0:
                        raise oscerr.RuntimeError(p.stdout, validator )
 
