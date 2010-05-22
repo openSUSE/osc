@@ -211,6 +211,8 @@ class Osc(cmdln.Cmdln):
                         help='print extra information')
     @cmdln.option('-l', '--long', action='store_true', dest='verbose',
                         help='print extra information')
+    @cmdln.option('-D', '--deleted', action='store_true',
+                        help='show only the former deleted projects or packages')
     def do_list(self, subcmd, opts, *args):
         """${cmd_name}: List sources or binaries on the server
 
@@ -257,7 +259,11 @@ class Osc(cmdln.Cmdln):
             project = args[0]
         if len(args) > 1:
             package = args[1]
+            if opts.deleted:
+                raise oscerr.WrongArgs("Too many arguments when listing deleted packages")
         if len(args) > 2:
+            if opts.deleted:
+                raise oscerr.WrongArgs("Too many arguments when listing deleted packages")
             if opts.binaries:
                 if opts.repo:
                     if opts.repo != args[2]:
@@ -330,7 +336,7 @@ class Osc(cmdln.Cmdln):
         # list sources
         elif not opts.binaries:
             if not args:
-                print '\n'.join(meta_get_project_list(conf.config['apiurl']))
+                print '\n'.join(meta_get_project_list(conf.config['apiurl'], opts.deleted))
 
             elif len(args) == 1:
                 if opts.verbose:
@@ -339,7 +345,7 @@ class Osc(cmdln.Cmdln):
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
 
-                print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project))
+                print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project, opts.deleted))
 
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False
@@ -2101,6 +2107,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is a link, check out the _link file ' \
                              'instead of the expanded sources')
+    @cmdln.option('-m', '--meta', action='store_true',
+                        help='checkout out meta data instead of sources' )
     @cmdln.option('-c', '--current-dir', action='store_true',
                         help='place PACKAGE folder in the current directory' \
                              'instead of a PROJECT/PACKAGE directory')
@@ -2178,7 +2186,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress, limit_size=opts.limit_size)
+                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -2198,13 +2206,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size)
+                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size)
+                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project)
 
         else:

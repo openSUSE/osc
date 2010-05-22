@@ -77,23 +77,13 @@ new_project_templ = """\
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_11.0">
-    <path project="openSUSE:11.0" repository="standard"/>
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="Fedora_11">
-    <path project="Fedora:11" repository="standard" />
+  <repository name="Fedora_12">
+    <path project="Fedora:12" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
   <repository name="SLE_11">
     <path project="SUSE:SLE-11" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="SLE_10">
-    <path project="SUSE:SLE-10:SDK" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
@@ -185,7 +175,7 @@ new_pattern_template = """\
 
 buildstatus_symbols = {'succeeded':       '.',
                        'disabled':        ' ',
-                       'expansion error': 'E',  # obsolete with OBS 2.0
+                       'expansion error': 'U',  # obsolete with OBS 2.0
                        'unresolvable':    'U',
                        'failed':          'F',
                        'broken':          'B',
@@ -760,11 +750,12 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir, progress_obj=None, limit_size=None):
+    def __init__(self, workingdir, progress_obj=None, limit_size=None, meta=None):
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
+        self.meta = meta
         self.limit_size = limit_size
         if limit_size and limit_size == 0:
            self.limit_size = None
@@ -850,6 +841,18 @@ class Package:
 
             self.write_conflictlist()
 
+    def write_meta_mode(self):
+        if self.meta:
+            fname = os.path.join(self.storedir, '_meta_mode')
+            f = open(fname, 'w')
+            f.write(str("true"))
+            f.close()
+        else:
+            try:
+                os.unlink(os.path.join(self.storedir, '_meta_mode'))
+            except:
+                pass
+
     def write_sizelimit(self):
         if self.size_limit and self.size_limit <= 0:
             try:
@@ -910,10 +913,11 @@ class Package:
         if validators:
             import subprocess
             from stat import *
-            for validator in os.listdir(validators):
+            for validator in sorted(os.listdir(validators)):
                 fn=validators+"/"+validator
                 mode = os.stat(fn)
                 if S_ISREG(mode[ST_MODE]):
+                   print "run", fn
                    p = subprocess.Popen([fn], close_fds=True)
                    if p.wait() != 0:
                        raise oscerr.RuntimeError(p.stdout, validator )
@@ -1031,7 +1035,7 @@ class Package:
         mtime = self.findfilebyname(n).mtime
 
         get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename,
-                revision=revision, progress_obj=self.progress_obj, mtime=mtime)
+                revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
 
         shutil.copyfile(filename, storefilename)
 
@@ -1045,7 +1049,7 @@ class Package:
         mtime = self.findfilebyname(n).mtime
         get_source_file(self.apiurl, self.prjname, self.name, n,
                         revision=self.rev, targetfilename=upfilename,
-                        progress_obj=self.progress_obj, mtime=mtime)
+                        progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
 
         if binary_file(myfilename) or binary_file(upfilename):
             # don't try merging
@@ -1088,7 +1092,7 @@ class Package:
         Update the local _files file in the store.
         It is replaced with the version pulled from upstream.
         """
-        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, limit_size=self.limit_size))
+        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, limit_size=self.limit_size, meta=self.meta))
         store_write_string(self.absdir, '_files', meta)
 
     def update_datastructs(self):
@@ -1128,6 +1132,7 @@ class Package:
         self.in_conflict = read_inconflict(self.dir)
         self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
         self.size_limit = read_sizelimit(self.dir)
+        self.meta = read_meta_mode(self.dir)
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir)
@@ -1947,6 +1952,17 @@ def read_tobedeleted(dir):
     return r
 
 
+def read_meta_mode(dir):
+    r = None
+    fname = os.path.join(dir, store, '_meta_mode')
+
+    if os.path.exists(fname):
+        r = open(fname).readline()
+
+    if r is None or not r == "true":
+        return None
+    return 1
+
 def read_sizelimit(dir):
     r = None
     fname = os.path.join(dir, store, '_size_limit')
@@ -2112,7 +2128,7 @@ def init_project_dir(apiurl, dir, project):
     if conf.config['do_package_tracking']:
         store_write_initial_packages(dir, project, [])
 
-def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None):
+def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=None):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -2123,6 +2139,11 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
     f.write(package + '\n')
     f.close()
 
+    if meta:
+        f = open('_meta_mode', 'w')
+        f.write("true")
+        f.close()
+
     if limit_size:
         f = open('_size_limit', 'w')
         f.write(str(limit_size))
@@ -2130,7 +2151,7 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
 
     if files:
         f = open('_files', 'w')
-        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size)))
+        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta)))
         f.close()
     else:
         # create dummy
@@ -2172,9 +2193,13 @@ def check_store_version(dir):
         raise oscerr.WorkingCopyWrongVersion, msg
 
 
-def meta_get_packagelist(apiurl, prj):
+def meta_get_packagelist(apiurl, prj, deleted=None):
 
-    u = makeurl(apiurl, ['source', prj])
+    query = {}
+    if deleted:
+       query['deleted'] = 1
+
+    u = makeurl(apiurl, ['source', prj], query)
     f = http_GET(u)
     root = ET.parse(f).getroot()
     return [ node.get('name') for node in root.findall('entry') ]
@@ -2213,8 +2238,12 @@ def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revisio
         return l
 
 
-def meta_get_project_list(apiurl):
-    u = makeurl(apiurl, ['source'])
+def meta_get_project_list(apiurl, deleted):
+    query = {}
+    if deleted:
+        query['deleted'] = 1
+
+    u = makeurl(apiurl, ['source'], query)
     f = http_GET(u)
     root = ET.parse(f).getroot()
     return sorted([ node.get('name') for node in root ])
@@ -2454,7 +2483,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=None):
     query = {}
     if revision:
         query['rev'] = revision
@@ -2464,6 +2493,8 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
         query['linkrev'] = linkrev
     elif conf.config['linkcontrol']:
         query['linkrev'] = 'base'
+    if meta:
+        query['meta'] = 1
     if expand:
         query['expand'] = 1
     if linkrepair:
@@ -2883,11 +2914,13 @@ def download(url, filename, progress_obj = None, mtime = None):
     if mtime:
         os.utime(filename, (-1, mtime))
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None):
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=None):
     targetfilename = targetfilename or filename
-    query = None
+    query = {}
+    if meta:
+        query['rev'] = 1
     if revision:
-        query = { 'rev': revision }
+        query['rev'] = revision
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
     download(u, targetfilename, progress_obj, mtime)
 
@@ -3108,7 +3141,7 @@ def make_diff(wc, revision):
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision, unified=False, missingok=False):
+                new_project, new_package, new_revision, unified=False, missingok=False, meta=None):
     query = {'cmd': 'diff', 'expand': '1'}
     if old_project:
         query['oproject'] = old_project
@@ -3122,6 +3155,8 @@ def server_diff(apiurl,
         query['unified'] = 1
     if missingok:
         query['missingok'] = 1
+    if meta:
+        query['meta'] = 1
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
 
@@ -3173,7 +3208,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None):
+                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None, meta=None):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3211,7 +3246,7 @@ def checkout_package(apiurl, project, package,
         if x:
             revision = x
     os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
-    init_package_dir(apiurl, project, package, store, revision, limit_size=limit_size)
+    init_package_dir(apiurl, project, package, store, revision, limit_size=limit_size, meta=meta)
     os.chdir(os.pardir)
     p = Package(package, progress_obj=progress_obj)
     if isfrozen:
@@ -3527,11 +3562,11 @@ def copy_pac(src_apiurl, src_project, src_package,
 
 
 def undelete_package(apiurl, prj, pac):
-    u = makeurl(apiurl, ['source', prj, pac], query={'comment': 'undeleted via osc'})
+    u = makeurl(apiurl, ['source', prj, pac], query={'comment': 'undeleted via osc', 'cmd': 'undelete'})
     http_POST(u)
 
 def undelete_project(apiurl, prj):
-    u = makeurl(apiurl, ['source', prj], query={'comment': 'undeleted via osc'})
+    u = makeurl(apiurl, ['source', prj], query={'comment': 'undeleted via osc', 'cmd': 'undelete'})
     http_POST(u)
 
 
