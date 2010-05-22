@@ -914,6 +914,8 @@ class Package:
             import subprocess
             from stat import *
             for validator in sorted(os.listdir(validators)):
+                if validator.startswith('.'):
+                   continue
                 fn=validators+"/"+validator
                 mode = os.stat(fn)
                 if S_ISREG(mode[ST_MODE]):
