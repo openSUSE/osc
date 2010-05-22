@@ -2435,6 +2435,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
 
         validators = conf.config['source_validator_directory']
+        verbose_validation = None
         if opts.skip_validation:
             validators = None
         elif not os.path.exists(validators):
@@ -2509,7 +2510,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     single_paths.append(pac.dir)
             for prj, packages in prj_paths.iteritems():
                 try:
-                    Project(prj).commit(tuple(packages), msg, files, validators=validators, verbose_validation=verbose_validation)
+                    Project(prj).commit(tuple(packages), msg=msg, files=files, validators=validators, verbose_validation=verbose_validation)
                 except oscerr.RuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1

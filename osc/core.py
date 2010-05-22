@@ -682,7 +682,7 @@ class Project:
                 p = Package(os.path.join(self.dir, pac))
             p.todo = files
             print statfrmt('Sending', os.path.normpath(p.dir))
-            p.commit(msg, validators=validators, verbose_validation=verbose_validation)
+            p.commit(msg=msg, validators=validators, verbose_validation=verbose_validation)
             self.set_state(pac, ' ')
             os.chdir(olddir)
 
