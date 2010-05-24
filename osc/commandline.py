@@ -948,6 +948,370 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             print 'created request id', result
 
+    def _actionparser(option, opt_str, value, parser):
+        value = []
+        if not hasattr(parser.values, 'actiondata'):
+            setattr(parser.values, 'actiondata', [])
+        if parser.values.actions == None:
+            parser.values.actions = []
+
+        rargs = parser.rargs
+        while rargs:
+            arg = rargs[0]
+            if ((arg[:2] == "--" and len(arg) > 2) or
+                    (arg[:1] == "-" and len(arg) > 1 and arg[1] != "-")):
+                break
+            else:
+                value.append(arg)
+                del rargs[0]
+
+        parser.values.actions.append(value[0])
+        del value[0]
+        parser.values.actiondata.append(value)
+
+    def _submit_request(self, args, opts, options_block):
+        actionxml=""
+        apiurl = self.get_api_url()
+        if len(args) == 0 and is_project_dir(os.getcwd()):
+            import cgi
+            # submit requests for multiple packages are currently handled via multiple requests
+            # They could be also one request with multiple actions, but that avoids to accepts parts of it.
+            project = store_read_project(os.curdir)
+
+            pi = []
+            pac = []
+            targetprojects = []
+            rdiffmsg = []
+            # loop via all packages for checking their state
+            for p in meta_get_packagelist(apiurl, project):
+                if p.startswith("_patchinfo:"):
+                    pi.append(p)
+                else:
+                    # get _link info from server, that knows about the local state ...
+                    u = makeurl(apiurl, ['source', project, p])
+                    f = http_GET(u)
+                    root = ET.parse(f).getroot()
+                    linkinfo = root.find('linkinfo')
+                    if linkinfo == None:
+                        print "Package ", p, " is not a source link."
+                        sys.exit("This is currently not supported.")
+                    if linkinfo.get('error'):
+                        print "Package ", p, " is a broken source link."
+                        sys.exit("Please fix this first")
+                    t = linkinfo.get('project')
+                    if t:
+                        rdiff = ''
+                        try:
+                            rdiff = server_diff(apiurl, t, p, opts.revision, project, p, None, True)
+                        except:
+                            rdiff = ''
+
+                        if rdiff != '':
+                            targetprojects.append(t)
+                            pac.append(p)
+                            rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" %(t, p, project, p,rdiff))
+                        else:
+                            print "Skipping package ", p,  " since it has no difference with the target package."
+                    else:
+                        print "Skipping package ", p,  " since it is a source link pointing inside the project."
+            if opts.diff:
+                print ''.join(rdiffmsg)
+                sys.exit(0)
+
+                if not opts.yes:
+                    if pi:
+                        print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
+                    print "\nEverything fine? Can we create the requests ? [y/n]"
+                    if sys.stdin.read(1) != "y":
+                        sys.exit("Aborted...")
+
+            # loop via all packages to do the action
+            for p in pac:
+                s = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
+                       (project, p, opts.revision or show_upstream_rev(apiurl, project, p), t, p, options_block)
+                actionxml += s
+
+            # create submit requests for all found patchinfos
+            for p in pi:
+                for t in targetprojects:
+                    s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
+                           (project, p, t, p, options_block)
+                    actionxml += s
+
+            return actionxml
+
+        elif len(args) <= 2:
+            # try using the working copy at hand
+            p = findpacs(os.curdir)[0]
+            src_project = p.prjname
+            src_package = p.name
+            if len(args) == 0 and p.islink():
+                dst_project = p.linkinfo.project
+                dst_package = p.linkinfo.package
+            elif len(args) > 0:
+                dst_project = args[0]
+                if len(args) == 2:
+                    dst_package = args[1]
+                else:
+                    dst_package = src_package
+            else:
+                sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
+                         'Please provide it the target via commandline arguments.' % p.name)
+
+            modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
+            if len(modified) > 0:
+                print 'Your working copy has local modifications.'
+                repl = raw_input('Proceed without committing the local changes? (y|N) ')
+                if repl != 'y':
+                    sys.exit(1)
+        elif len(args) >= 3:
+            # get the arguments from the commandline
+            src_project, src_package, dst_project = args[0:3]
+            if len(args) == 4:
+                dst_package = args[3]
+            else:
+                dst_package = src_package
+        else:
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('request'))
+
+        if not opts.nodevelproject:
+            devloc = None
+            try:
+                devloc = show_develproject(apiurl, dst_project, dst_package)
+            except urllib2.HTTPError:
+                print >>sys.stderr, """\
+Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
+                    % (dst_project, dst_package)
+                pass
+
+            if devloc and \
+               dst_project != devloc and \
+               src_project != devloc:
+                print """\
+A different project, %s, is defined as the place where development
+of the package %s primarily takes place.
+Please submit there instead, or use --nodevelproject to force direct submission.""" \
+                % (devloc, dst_package)
+                if not opts.diff:
+                    sys.exit(1)
+
+        rdiff = None
+        if opts.diff:
+            try:
+                rdiff = 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
+                rdiff += server_diff(apiurl,
+                                    dst_project, dst_package, opts.revision,
+                                    src_project, src_package, None, True)
+            except:
+                rdiff = ''
+        if opts.diff:
+            print rdiff
+        else:
+            reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
+            user = conf.get_apiurl_usr(apiurl)
+            myreqs = [ i for i in reqs if i.state.who == user ]
+            repl = ''
+            if len(myreqs) > 0:
+                print 'You already created the following submit request: %s.' % \
+                      ', '.join([str(i.reqid) for i in myreqs ])
+                repl = raw_input('Supersede the old requests? (y/n/c) ')
+                if repl.lower() == 'c':
+                    print >>sys.stderr, 'Aborting'
+                    sys.exit(1)
+
+            actionxml = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
+                    (src_project, src_package, opts.revision or show_upstream_rev(apiurl, src_project, src_package), dst_project, dst_package, options_block)
+            if repl.lower() == 'y':
+                for req in myreqs:
+                    change_request_state(apiurl, str(req.reqid), 'superseded',
+                                         'superseded by %s' % result, result)
+
+            if opts.supersede:
+                r = change_request_state(apiurl,
+                        opts.supersede, 'superseded', '', result)
+
+            #print 'created request id', result
+            return actionxml
+
+    def _delete_request(self, args, opts):
+        if len(args) < 1:
+            raise oscerr.WrongArgs('Please specify at least a project.')
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        package = ""
+        if len(args) > 1:
+            package = """package="%s" """ % (args[1])
+        actionxml = """<action type="delete"> <target project="%s" %s/> </action> """ % (args[0], package)
+        return actionxml
+
+    def _changedevel_request(self, args, opts):
+        if len(args) > 4:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
+            wd = os.curdir
+            devel_project = store_read_project(wd)
+            devel_package = package = store_read_package(wd)
+            project = conf.config['getpac_default_project']
+        else:
+            if len(args) < 3:
+                raise oscerr.WrongArgs('Too few arguments.')
+
+            devel_project = args[2]
+            project = args[0]
+            package = args[1]
+            devel_package = package
+            if len(args) > 3:
+                devel_package = args[3]
+
+        actionxml = """ <action type="change_devel"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> </action> """ % \
+                (devel_project, devel_package, project, package)
+
+        return actionxml
+
+    def _add_role(self, args, opts):
+        if len(args) > 4:
+            raise oscerr.WrongArgs('Too many arguments.')
+        if len(args) < 3:
+            raise oscerr.WrongArgs('Too few arguments.')
+
+        apiurl = self.get_api_url()
+
+        user = args[0]
+        role = args[1]
+        project = args[2]
+        if len(args) > 3:
+            package = args[3]
+
+        if get_user_meta(apiurl, user) == None:
+            raise oscerr.WrongArgs('osc: an error occured.')
+
+        actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <person name="%s" role="%s" /> </action> """ % \
+                (project, package, user, role)
+
+        return actionxml
+
+    def _set_bugowner(self, args, opts):
+        if len(args) > 3:
+            raise oscerr.WrongArgs('Too many arguments.')
+        if len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments.')
+
+        apiurl = self.get_api_url()
+
+        user = args[0]
+        project = args[1]
+        if len(args) > 2:
+            package = args[2]
+
+        if get_user_meta(apiurl, user) == None:
+            raise oscerr.WrongArgs('osc: an error occured.')
+
+        actionxml = """ <action type="set_bugowner"> <target project="%s" package="%s" /> <person name="%s" /> </action> """ % \
+                (project, package, user)
+
+        return actionxml
+
+    @cmdln.option('-a', '--action', action='callback', callback = _actionparser,dest = 'actions',
+                  help='specify action type of a request, can be : submit/delete/change_devel/add_role/set_bugowner')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
+    @cmdln.option('-r', '--revision', metavar='REV',
+                  help='for "create", specify a certain source revision ID (the md5 sum)')
+    @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
+                  help='Superseding another request by this one')
+    @cmdln.option('--nodevelproject', action='store_true',
+                  help='do not follow a defined devel project ' \
+                       '(primary project where a package is developed)')
+    @cmdln.option('--cleanup', action='store_true',
+                  help='remove package if submission gets accepted (default for home:<id>:branch projects)')
+    @cmdln.option('--no-cleanup', action='store_true',
+                  help='never remove source package on accept, but update its content')
+    @cmdln.option('--no-update', action='store_true',
+                  help='never touch source package on accept (will break source links)')
+    @cmdln.option('-d', '--diff', action='store_true',
+                  help='show diff only instead of creating the actual request')
+    @cmdln.option('--yes', action='store_true',
+                  help='proceed without asking.')
+    @cmdln.alias("creq")
+    def do_createrequest(self, subcmd, opts, *args):
+        """${cmd_name}: create multiple requests with a single command
+
+        usage:
+            osc creq [OPTIONS] [ 
+                -a submit SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG] 
+                -a delete PROJECT [PACKAGE] 
+                -a change_devel PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE] 
+                -a add_role USER ROLE PROJECT [PACKAGE]
+                -a set_bugowner USER PROJECT [PACKAGE]
+                ]
+
+            Option -m works for all types of request, the rest work only for submit.
+        example:
+            osc creq -a submit -a delete home:someone:branches:openSUSE:Tools -a change_devel openSUSE:Tools osc home:someone:branches:openSUSE:Tools -m ok
+
+            This will submit all modified packages under current directory, delete project home:someone:branches:openSUSE:Tools and change the devel project to home:someone:branches:openSUSE:Tools for package osc in project openSUSE:Tools.
+        ${cmd_option_list}
+        """
+        src_update = conf.config['submitrequest_on_accept_action'] or None
+        # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
+        if opts.cleanup:
+            src_update = "cleanup"
+        elif opts.no_cleanup:
+            src_update = "update"
+        elif opts.no_update:
+            src_update = "noupdate"
+
+        options_block=""
+        if src_update:
+            options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+
+        args = slash_split(args)
+
+        apiurl = self.get_api_url()
+        
+        i = 0
+        actionsxml = ""
+        for ai in opts.actions:
+            if ai == 'submit':
+                args = opts.actiondata[i]
+                i = i+1
+                actionsxml += self._submit_request(args,opts, options_block)
+            elif ai == 'delete':
+                args = opts.actiondata[i]
+                actionsxml += self._delete_request(args,opts)
+                i = i+1
+            elif ai == 'change_devel':
+                args = opts.actiondata[i]
+                actionsxml += self._changedevel_request(args,opts)
+                i = i+1
+            elif ai == 'add_role':
+                args = opts.actiondata[i]
+                actionsxml += self._add_role(args,opts)
+                i = i+1
+            elif ai == 'set_bugowner':
+                args = opts.actiondata[i]
+                actionsxml += self._set_bugowner(args,opts)
+                i = i+1
+            else:
+                raise oscerr.WrongArgs('Unsupported action %s' % ai)
+        if actionsxml == "":
+            sys.exit('No actions need to be taken.')
+
+        if not opts.message:
+            opts.message = edit_message()
+
+        import cgi
+        xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
+              (actionsxml, cgi.escape(opts.message or ""))
+        u = makeurl(apiurl, ['request'], query='cmd=create')
+        f = http_POST(u, data=xml)
+
+        root = ET.parse(f).getroot()
+        return root.get('id')
+
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')

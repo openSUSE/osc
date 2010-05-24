@@ -1741,7 +1741,7 @@ class Request:
     def __str__(self):
         action_list=""
         for action in self.actions:
-            action_list="  %s:  " % (action.type)
+            action_list=action_list+"  %s:  " % (action.type)
             if action.type=="submit":
                 r=""
                 if action.src_rev:
