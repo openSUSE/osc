@@ -2471,7 +2471,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is a link, check out the _link file ' \
                              'instead of the expanded sources')
-    @cmdln.option('-m', '--meta', action='store_true',
+    @cmdln.option('-M', '--meta', action='store_true',
                         help='checkout out meta data instead of sources' )
     @cmdln.option('-c', '--current-dir', action='store_true',
                         help='place PACKAGE folder in the current directory' \
@@ -4132,7 +4132,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML')
-    @cmdln.option('-m', '--meta', action='store_true',
+    @cmdln.option('-M', '--meta', action='store_true',
                         help='checkout out meta data instead of sources' )
     def do_log(self, subcmd, opts, *args):
         """${cmd_name}: Shows the commit log of a package
