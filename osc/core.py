@@ -2243,7 +2243,7 @@ def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revisio
         return l
 
 
-def meta_get_project_list(apiurl, deleted):
+def meta_get_project_list(apiurl, deleted=None):
     query = {}
     if deleted:
         query['deleted'] = 1
@@ -2276,8 +2276,16 @@ def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
         raise
 
 
-def show_package_meta(apiurl, prj, pac):
-    url = makeurl(apiurl, ['source', prj, pac, '_meta'])
+def show_package_meta(apiurl, prj, pac, meta=None):
+    query = {}
+    if meta:
+        query['meta'] = 1
+
+    # packages like _project, _pattern and _project do not have a _meta file
+    if pac.startswith('_'):
+        return ""
+
+    url = makeurl(apiurl, ['source', prj, pac, '_meta'], query)
     try:
         f = http_GET(url)
         return f.readlines()
