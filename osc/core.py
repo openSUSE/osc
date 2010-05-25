@@ -912,13 +912,13 @@ class Package:
 
         if validators:
             import subprocess
-            from stat import *
+            import stat
             for validator in sorted(os.listdir(validators)):
                 if validator.startswith('.'):
                    continue
-                fn=validators+"/"+validator
-                mode = os.stat(fn)
-                if S_ISREG(mode[ST_MODE]):
+                fn = os.path.join(validators, validator)
+                mode = os.stat(fn).st_mode
+                if stat.S_ISREG(mode):
                    if verbose_validation:
                        print "osc runs source service:", fn
                        p = subprocess.Popen([fn, "--verbose"], close_fds=True)
