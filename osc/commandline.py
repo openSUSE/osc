@@ -2986,9 +2986,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.expand_link and p.islink() and not p.isexpanded():
                     if p.haslinkerror():
                         try:
-                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
+                            rev = p.show_upstream_xsrcmd5()
                         except:
-                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev="base")
+                            rev = p.show_upstream_xsrcmd5(linkrev="base")
                             p.mark_frozen()
                     else:
                         p.update(rev, service_files, opts.limit_size)
@@ -4132,6 +4132,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML')
+    @cmdln.option('-m', '--meta', action='store_true',
+                        help='checkout out meta data instead of sources' )
     def do_log(self, subcmd, opts, *args):
         """${cmd_name}: Shows the commit log of a package
 
@@ -4144,6 +4146,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         apiurl = self.get_api_url()
+        meta = None
 
         if len(args) == 0:
             wd = os.curdir
@@ -4157,8 +4160,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = args[0]
             package = args[1]
 
+        if opts.meta:
+            meta = 1
+
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(project, package, rev, apiurl):
+        if rev and not checkRevision(project, package, rev, apiurl, meta):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
@@ -4168,7 +4174,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format))        
+        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, meta))
         run_pager(log)
 
     @cmdln.option('-f', '--failed', action='store_true',

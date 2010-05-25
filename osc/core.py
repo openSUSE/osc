@@ -920,7 +920,7 @@ class Package:
                 mode = os.stat(fn)
                 if S_ISREG(mode[ST_MODE]):
                    if verbose_validation:
-                       print "run", fn
+                       print "osc runs source service:", fn
                        p = subprocess.Popen([fn, "--verbose"], close_fds=True)
                    else:
                        p = subprocess.Popen([fn], close_fds=True)
@@ -1393,21 +1393,21 @@ rev: %s
 
     def latest_rev(self):
         if self.islinkrepair():
-            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1)
+            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1, meta=self.meta)
         elif self.islink() and self.isexpanded():
             if self.isfrozen() or self.ispulled():
-                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
+                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta)
             else:
                 try:
-                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name)
+                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, meta=self.meta)
                 except:
                     try:
-                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5)
+                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta)
                     except:
-                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev="base")
+                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev="base", meta=self.meta)
                         self.mark_frozen()
         else:
-            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name)
+            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta)
         return upstream_rev
 
     def update(self, rev = None, service_files = False, limit_size = None):
@@ -2505,7 +2505,6 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-
     # look for "too large" files according to size limit and mark them
     root = ET.fromstring(''.join(f.readlines()))
     for e in root.findall('entry'):
@@ -2515,13 +2514,13 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     return ET.tostring(root)
 
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None):
-    m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision)
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=None):
+    m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta)
     return ET.fromstring(''.join(m)).get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False):
-    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair)
+def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=None):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta)
     try:
         # only source link packages have a <linkinfo> element.
         li_node = ET.fromstring(''.join(m)).find('linkinfo')
@@ -2536,8 +2535,8 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_upstream_rev(apiurl, prj, pac):
-    m = show_files_meta(apiurl, prj, pac)
+def show_upstream_rev(apiurl, prj, pac, meta=None):
+    m = show_files_meta(apiurl, prj, pac, meta=meta)
     return ET.fromstring(''.join(m)).get('rev')
 
 
@@ -3235,7 +3234,7 @@ def checkout_package(apiurl, project, package,
 
     # before we create directories and stuff, check if the package actually
     # exists
-    show_package_meta(apiurl, project, package)
+    show_package_meta(apiurl, project, package, meta)
 
     isfrozen = 0
     if expand_link:
@@ -3243,9 +3242,9 @@ def checkout_package(apiurl, project, package,
         # if it is a link we use the xsrcmd5 as the revision to be
         # checked out
         try:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision)
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta)
         except:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, linkrev='base')
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base')
             if x:
                 isfrozen = 1
         if x:
@@ -4032,9 +4031,14 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             print '%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker)
 
 
-def get_commitlog(apiurl, prj, package, revision, format = 'text'):
+def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = None):
     import time, locale
-    u = makeurl(apiurl, ['source', prj, package, '_history'])
+
+    query = {}
+    if meta:
+        query['meta'] = 1
+
+    u = makeurl(apiurl, ['source', prj, package, '_history'], query)
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
