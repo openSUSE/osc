@@ -4200,11 +4200,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         package = repo = arch = code = None
+        apiurl = conf.config['apiurl']
 
         if len(args) < 1:
-            if is_package_dir('.'):
+            if is_package_dir(os.curdir):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
@@ -4220,7 +4222,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.failed:
             code = 'failed'
 
-        print rebuild(conf.config['apiurl'], project, package, repo, arch, code)
+        print rebuild(apiurl, project, package, repo, arch, code)
 
 
     def do_info(self, subcmd, opts, *args):
