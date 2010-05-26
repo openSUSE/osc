@@ -755,12 +755,11 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir, progress_obj=None, limit_size=None, meta=None):
+    def __init__(self, workingdir, progress_obj=None, limit_size=None):
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
-        self.meta = meta
         self.limit_size = limit_size
         if limit_size and limit_size == 0:
            self.limit_size = None
@@ -847,16 +846,13 @@ class Package:
             self.write_conflictlist()
 
     def write_meta_mode(self):
+        # XXX: the "elif" is somehow a contradiction (with current and the old implementation
+        #      it's not possible to "leave" the metamode again) (except if you modify pac.meta
+        #      which is really ugly:) )
         if self.meta:
-            fname = os.path.join(self.storedir, '_meta_mode')
-            f = open(fname, 'w')
-            f.write(str("true"))
-            f.close()
-        else:
-            try:
-                os.unlink(os.path.join(self.storedir, '_meta_mode'))
-            except:
-                pass
+            store_write_string(self.absdir, '_meta_mode', '')
+        elif self.ismetamode():
+            os.unlink(os.path.join(self.storedir, '_meta_mode'))
 
     def write_sizelimit(self):
         if self.size_limit and self.size_limit <= 0:
@@ -1142,7 +1138,7 @@ class Package:
         self.in_conflict = read_inconflict(self.dir)
         self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
         self.size_limit = read_sizelimit(self.dir)
-        self.meta = read_meta_mode(self.dir)
+        self.meta = self.ismetamode()
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir)
@@ -1174,6 +1170,10 @@ class Package:
     def isfrozen(self):
         """tells us if the link is frozen."""
         return os.path.isfile(os.path.join(self.storedir, '_frozenlink'))
+
+    def ismetamode(self):
+        """tells us if the package is in meta mode"""
+        return os.path.isfile(os.path.join(self.storedir, '_meta_mode'))
 
     def get_pulled_srcmd5(self):
         pulledrev = None
@@ -1958,17 +1958,6 @@ def read_tobedeleted(dir):
 
     return r
 
-
-def read_meta_mode(dir):
-    r = None
-    fname = os.path.join(dir, store, '_meta_mode')
-
-    if os.path.exists(fname):
-        r = open(fname).readline()
-
-    if r is None or not r == "true":
-        return None
-    return 1
 
 def read_sizelimit(dir):
     r = None
