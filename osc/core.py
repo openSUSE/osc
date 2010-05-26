@@ -313,6 +313,8 @@ class Serviceinfo:
                 msg += "Maybe try this: zypper in obs-server-" + name
                 raise oscerr.APIError(msg)
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
+            if conf.config['verbose'] > 1:
+                print "Run source service:", c
             ret = subprocess.call(c, shell=True)
             if ret != 0:
                 print "ERROR: service call failed: " + c
@@ -1474,9 +1476,6 @@ rev: %s
 
         #print ljust(p.name, 45), 'At revision %s.' % p.rev
         print 'At revision %s.' % self.rev
-
-        if not service_files:
-            self.run_source_services()
 
     def run_source_services(self):
         if self.filenamelist.count('_service'):
