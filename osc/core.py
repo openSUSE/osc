@@ -4977,7 +4977,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
     try:
         res = search(apiurl, **what)
     except urllib2.HTTPError, e:
-        if e.code != 400 or not role_filter:
+        if e.code != 400 or not role_filter_xpath:
             raise e
         # backward compatibility: local role filtering
         what = dict([[kind, role_filter_xpath] for kind in what.keys()])
