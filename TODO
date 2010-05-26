@@ -64,6 +64,7 @@ MINOR:
 
 
 JW:
+FIXME: osc bco ignores --nodevelproject ??
 FIXME: osc co overwrites local changes without warning.
 FIXME: when branching, the user should be added to bugowner, for the branch project.
 FIXME: 'osc rq' shall default to 'osc rq list -M -B -s all',
