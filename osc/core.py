@@ -316,9 +316,12 @@ class Serviceinfo:
             ret = subprocess.call(c, shell=True)
             if ret != 0:
                 print "ERROR: service call failed: " + c
+                # FIXME: addDownloadUrlService calls si.execute after 
+                #        updating _services.
+                print "       (your _services file may be corrupt now)"
 
             for file in os.listdir(temp_dir):
-                os.rename( os.path.join(temp_dir, file), os.path.join(dir, "_service:"+name+":"+file) )
+                shutil.move( os.path.join(temp_dir, file), os.path.join(dir, "_service:"+name+":"+file) )
             os.rmdir(temp_dir)
 
 class Linkinfo:
