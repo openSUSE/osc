@@ -289,7 +289,7 @@ def verify_pacs_old(pac_list):
                 missing_key = line.split('#')[-1].split(')')[0]
 
                 print >>sys.stderr, """
-- If the key is missing, install it first.
+- If the key (%(name)s) is missing, install it first.
   For example, do the following:
     osc signkey PROJECT > file
   and, as root:
