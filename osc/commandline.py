@@ -4160,11 +4160,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = args[0]
             package = args[1]
 
-        if opts.meta:
-            meta = 1
-
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(project, package, rev, apiurl, meta):
+        if rev and not checkRevision(project, package, rev, apiurl, opts.meta):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
@@ -4174,7 +4171,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, meta))
+        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta))
         run_pager(log)
 
     @cmdln.option('-f', '--failed', action='store_true',

@@ -845,6 +845,7 @@ class Package:
 
             self.write_conflictlist()
 
+    # XXX: this isn't used at all
     def write_meta_mode(self):
         # XXX: the "elif" is somehow a contradiction (with current and the old implementation
         #      it's not possible to "leave" the metamode again) (except if you modify pac.meta
@@ -2124,7 +2125,7 @@ def init_project_dir(apiurl, dir, project):
     if conf.config['do_package_tracking']:
         store_write_initial_packages(dir, project, [])
 
-def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=None):
+def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=False):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -2136,31 +2137,21 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
     f.close()
 
     if meta:
-        f = open('_meta_mode', 'w')
-        f.write("true")
-        f.close()
+        store_write_string(os.pardir, '_meta_mode', '')
 
     if limit_size:
-        f = open('_size_limit', 'w')
-        f.write(str(limit_size))
-        f.close()
+        store_write_string(os.pardir, '_size_limit', str(limit_size))
 
     if files:
-        f = open('_files', 'w')
-        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta)))
-        f.close()
+        fmeta = ''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta))
+        store_write_string(os.pardir, '_files', fmeta)
     else:
         # create dummy
         ET.ElementTree(element=ET.Element('directory')).write('_files')
 
-    f = open('_osclib_version', 'w')
-    f.write(__store_version__ + '\n')
-    f.close()
-
+    store_write_string(os.pardir, '_osclib_version', __store_version__ + '\n')
     store_write_apiurl(os.path.pardir, apiurl)
-
     os.chdir(os.pardir)
-    return
 
 
 def check_store_version(dir):
@@ -2267,7 +2258,7 @@ def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
         raise
 
 
-def show_package_meta(apiurl, prj, pac, meta=None):
+def show_package_meta(apiurl, prj, pac, meta=False):
     query = {}
     if meta:
         query['meta'] = 1
@@ -2487,7 +2478,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=None):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=False):
     query = {}
     if revision:
         query['rev'] = revision
@@ -2513,12 +2504,12 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     return ET.tostring(root)
 
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=None):
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta)
     return ET.fromstring(''.join(m)).get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=None):
+def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta)
     try:
         # only source link packages have a <linkinfo> element.
@@ -2534,7 +2525,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_upstream_rev(apiurl, prj, pac, meta=None):
+def show_upstream_rev(apiurl, prj, pac, meta=False):
     m = show_files_meta(apiurl, prj, pac, meta=meta)
     return ET.fromstring(''.join(m)).get('rev')
 
@@ -2917,7 +2908,7 @@ def download(url, filename, progress_obj = None, mtime = None):
     if mtime:
         os.utime(filename, (-1, mtime))
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=None):
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=False):
     targetfilename = targetfilename or filename
     query = {}
     if meta:
@@ -3144,7 +3135,7 @@ def make_diff(wc, revision):
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision, unified=False, missingok=False, meta=None):
+                new_project, new_package, new_revision, unified=False, missingok=False, meta=False):
     query = {'cmd': 'diff', 'expand': '1'}
     if old_project:
         query['oproject'] = old_project
@@ -3211,7 +3202,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None, meta=None):
+                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None, meta=False):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -4030,7 +4021,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             print '%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker)
 
 
-def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = None):
+def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False):
     import time, locale
 
     query = {}
@@ -4276,7 +4267,7 @@ def parseRevisionOption(string):
     else:
         return None, None
 
-def checkRevision(prj, pac, revision, apiurl=None):
+def checkRevision(prj, pac, revision, apiurl=None, meta=False):
     """
     check if revision is valid revision, i.e. it is not
     larger than the upstream revision id
@@ -4287,7 +4278,7 @@ def checkRevision(prj, pac, revision, apiurl=None):
     if not apiurl:
         apiurl = conf.config['apiurl']
     try:
-        if int(revision) > int(show_upstream_rev(apiurl, prj, pac)) \
+        if int(revision) > int(show_upstream_rev(apiurl, prj, pac, meta)) \
            or int(revision) <= 0:
             return False
         else:
