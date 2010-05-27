@@ -4156,6 +4156,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   package = "_project"
                else:
                   package = store_read_package(wd)
+            else:
+               raise oscerr.WrongArgs('Local directory is not a checked out resource and no remote project/package given.')
         elif len(args) < 1:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
