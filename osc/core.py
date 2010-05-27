@@ -3732,11 +3732,12 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     targets = []
     # {package: {(repo,arch): status}}
     status = {}
-    if not root.find('result'):
+    if root.find('result') == None:
         return []
-    for node in root.find('result'):
-        pacs.append(node.get('package'))
-    pacs.sort()
+    for results in root.findall('result'):
+	for node in results:
+	    pacs.append(node.get('package'))
+    pacs = sorted(list(set(pacs)))
     for node in root.findall('result'):
         # filter architecture and repository
         if arch != None and arch != node.get('arch'):
