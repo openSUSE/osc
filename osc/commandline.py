@@ -4139,7 +4139,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Usage:
             osc log (inside working copy)
-            osc log remote_project remote_package
+            osc log remote_project [remote_package]
 
         ${cmd_option_list}
         """
@@ -4150,12 +4150,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 0:
             wd = os.curdir
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-        elif len(args) < 2:
+            if is_project_dir(dir) or is_package_dir(dir):
+               project = store_read_project(wd)
+               if is_project_dir(dir):
+                  package = "_project"
+               else:
+                  package = store_read_package(wd)
+        elif len(args) < 1:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        elif len(args) == 1:
+            project = args[0]
+            package = "_project"
         else:
             project = args[0]
             package = args[1]
