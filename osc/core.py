@@ -310,7 +310,7 @@ class Serviceinfo:
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
                 msg =  "ERROR: service is not installed!\n"
-                msg += "Maybe try this: zypper in obs-server-" + name
+                msg += "Maybe try this: zypper in obs-service-" + name
                 raise oscerr.APIError(msg)
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1:
