@@ -4150,14 +4150,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 0:
             wd = os.curdir
-            if is_project_dir(dir) or is_package_dir(dir):
-               project = store_read_project(wd)
-               if is_project_dir(dir):
-                  package = "_project"
-               else:
-                  package = store_read_package(wd)
+            if is_project_dir(wd) or is_package_dir(wd):
+                project = store_read_project(wd)
+                if is_project_dir(wd):
+                    package = "_project"
+                else:
+                    package = store_read_package(wd)
             else:
-               raise oscerr.WrongArgs('Local directory is not a checked out resource and no remote project/package given.')
+                raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath(wd))
         elif len(args) < 1:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
