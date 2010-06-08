@@ -3202,7 +3202,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None, meta=False):
+                     expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, limit_size=None, meta=False):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3248,7 +3248,7 @@ def checkout_package(apiurl, project, package,
     for filename in p.filenamelist:
         if filename in p.skipped:
             continue
-        if service_files or not filename.startswith('_service:'):
+        if server_service_files or not filename.startswith('_service:'):
             p.updatefile(filename, revision)
             # print 'A   ', os.path.join(project, package, filename)
             print statfrmt('A', os.path.join(pathname, filename))
@@ -3258,6 +3258,9 @@ def checkout_package(apiurl, project, package,
             prj_obj = Project(os.getcwd())
         prj_obj.set_state(p.name, ' ')
         prj_obj.write_packages()
+    if service_files:
+        print "Running local source services"
+        p.run_source_services()
     os.chdir(olddir)
 
 

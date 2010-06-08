@@ -2477,8 +2477,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='place PACKAGE folder in the current directory' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-s', '--source-service-files', action='store_true',
-                        help='server side generated files of source services' \
-                             'gets downloaded as well' )
+                        help='Use server side generated sources instead of local generation.' )
+    @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
+                        help='Use server side generated sources instead of local generation.' )
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
                         help='Skip all files with a given size')
     @cmdln.alias('co')
@@ -2511,10 +2512,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             expand_link = False
         else:
             expand_link = True
-        if opts.source_service_files:
-            service_files = True
-        else:
-            service_files = False
 
         args = slash_split(args)
         project = package = filename = None
@@ -2550,7 +2547,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -2570,13 +2567,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project)
 
         else:
@@ -2900,6 +2897,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='if a package is a link, update to the expanded sources')
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='Use server side generated sources instead of local generation.' )
+    @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
+                        help='Use server side generated sources instead of local generation.' )
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
                         help='Skip all files with a given size')
     @cmdln.alias('up')
@@ -2934,9 +2933,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             or (opts.unexpand_link and opts.revision):
             raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
                      '--revision are mutually exclusive.')
-
-        if opts.source_service_files: service_files = True
-        else: service_files = False
 
         args = parseargs(args)
         arg_list = args[:]
@@ -2991,17 +2987,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             rev = p.show_upstream_xsrcmd5(linkrev="base")
                             p.mark_frozen()
                     else:
-                        p.update(rev, service_files, opts.limit_size)
+                        p.update(rev, opts.server_side_source_service_files, opts.limit_size)
                         rev = p.linkinfo.xsrcmd5
                     print 'Expanding to rev', rev
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     print 'Unexpanding to rev', p.linkinfo.lsrcmd5
-                    p.update(rev, service_files, opts.limit_size)
+                    p.update(rev, opts.server_side_source_service_files, opts.limit_size)
                     rev = p.linkinfo.lsrcmd5
                 elif p.islink() and p.isexpanded():
                     rev = p.latest_rev()
 
-            p.update(rev, service_files, opts.limit_size)
+            p.update(rev, opts.server_side_source_service_files, opts.limit_size)
+            if opts.source_service_files:
+                print 'Running local source services'
+                p.run_source_services()
             if opts.unexpand_link:
                 p.unmark_frozen()
             rev = None
