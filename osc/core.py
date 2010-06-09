@@ -2585,6 +2585,38 @@ def read_meta_from_spec(specfile, *args):
 
     return spec_data
 
+def get_default_editor():
+    import platform
+    system = platform.system()
+    if system == 'Windows':
+        return 'notepad'
+    if system == 'Linux':
+        try:
+            # Python 2.6
+            dist = platform.linux_distributionx()[0]
+        except AttributeError:
+            dist = platform.dist()[0]
+        if dist == 'debian':
+            return 'editor'
+        return 'vim'
+    return 'vi'
+
+def get_default_pager():
+    import platform
+    system = platform.system()
+    if system == 'Windows':
+        return 'less'
+    if system == 'Linux':
+        try:
+            # Python 2.6
+            dist = platform.linux_distributionx()[0]
+        except AttributeError:
+            dist = platform.dist()[0]
+        if dist == 'debian':
+            return 'pager'
+        return 'less'
+    return 'more'
+
 def run_pager(message):
     import tempfile, sys
 
