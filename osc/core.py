@@ -4941,8 +4941,7 @@ def request_interactive_review(apiurl, request):
                                            request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
                     tmpfile.write(diff)
                     tmpfile.flush()
-                pager = os.getenv('EDITOR', default=get_default_editor())
-                subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+                run_editor(tmpfile.name)
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()
