@@ -2593,7 +2593,7 @@ def get_default_editor():
     if system == 'Linux':
         try:
             # Python 2.6
-            dist = platform.linux_distributionx()[0]
+            dist = platform.linux_distribution()[0]
         except AttributeError:
             dist = platform.dist()[0]
         if dist == 'debian':
@@ -2609,7 +2609,7 @@ def get_default_pager():
     if system == 'Linux':
         try:
             # Python 2.6
-            dist = platform.linux_distributionx()[0]
+            dist = platform.linux_distribution()[0]
         except AttributeError:
             dist = platform.dist()[0]
         if dist == 'debian':
