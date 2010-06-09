@@ -2626,15 +2626,12 @@ def run_pager(message):
         tmpfile = tempfile.NamedTemporaryFile()
         tmpfile.write(message)
         tmpfile.flush()
-        pager = os.getenv('PAGER', default='less')
+        pager = os.getenv('PAGER', default=get_default_pager())
         subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
         tmpfile.close()
 
 def run_editor(filename):
-    if sys.platform[:3] != 'win':
-        editor = os.getenv('EDITOR', default='vim')
-    else:
-        editor = os.getenv('EDITOR', default='notepad')
+    editor = os.getenv('EDITOR', default=get_default_editor())
 
     return subprocess.call([ editor, filename ])
 
@@ -4944,7 +4941,7 @@ def request_interactive_review(apiurl, request):
                                            request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
                     tmpfile.write(diff)
                     tmpfile.flush()
-                pager = os.getenv('EDITOR', default='less')
+                pager = os.getenv('EDITOR', default=get_default_editor())
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
