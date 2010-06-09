@@ -64,7 +64,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
              'pass': 'your_password',
              'passx': '',
-             'packagecachedir': '/var/tmp/osbuild-packagecache',
+             'packagecachedir': '/var/cache/osbuild-packagecache',
              'su-wrapper': 'su -c',
 
              # build type settings
