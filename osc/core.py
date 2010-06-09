@@ -3767,8 +3767,8 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     if root.find('result') == None:
         return []
     for results in root.findall('result'):
-	for node in results:
-	    pacs.append(node.get('package'))
+        for node in results:
+            pacs.append(node.get('package'))
     pacs = sorted(list(set(pacs)))
     for node in root.findall('result'):
         # filter architecture and repository
