@@ -948,7 +948,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             print 'created request id', result
 
-    def _actionparser(option, opt_str, value, parser):
+    def _actionparser(self, opt_str, value, parser):
         value = []
         if not hasattr(parser.values, 'actiondata'):
             setattr(parser.values, 'actiondata', [])

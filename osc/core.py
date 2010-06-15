@@ -4474,9 +4474,7 @@ def unpack_srcrpm(srpm, dir, *files):
         print >>sys.stderr, 'error - \'%s\' is not a source rpm.' % srpm
         sys.exit(1)
     curdir = os.getcwd()
-    if not os.path.isdir(dir):
-        dir = curdir
-    else:
+    if os.path.isdir(dir):
         os.chdir(dir)
     cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
     ret = subprocess.call(cmd, shell=True)
