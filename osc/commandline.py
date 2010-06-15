@@ -4344,7 +4344,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         others even when they are not "published" yet.
 
         usage:
-           osc getbinaries REPOSITORY                                      # works in checked out package (check out all archs in subdirs)
+           osc getbinaries REPOSITORY                                 # works in checked out package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out package
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
