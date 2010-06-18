@@ -499,6 +499,8 @@ class Osc(cmdln.Cmdln):
         cmd = args[0]
         del args[0]
 
+        apiurl = self.get_api_url()
+
         if cmd in ['pkg']:
             min_args, max_args = 0, 2
         elif cmd in ['pattern']:
@@ -563,24 +565,24 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
+                sys.stdout.write(''.join(show_project_meta(apiurl, project)))
             elif cmd == 'pkg':
-                sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
+                sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(conf.config['apiurl'], project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project)))
+                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
+                sys.stdout.write(''.join(show_project_conf(apiurl, project)))
             elif cmd == 'user':
-                r = get_user_meta(conf.config['apiurl'], user)
+                r = get_user_meta(apiurl, user)
                 if r:
                     sys.stdout.write(''.join(r))
             elif cmd == 'pattern':
                 if pattern:
-                    r = show_pattern_meta(conf.config['apiurl'], project, pattern)
+                    r = show_pattern_meta(apiurl, project, pattern)
                     if r:
                         sys.stdout.write(''.join(r))
                 else:
-                    r = show_pattern_metalist(conf.config['apiurl'], project)
+                    r = show_pattern_metalist(apiurl, project)
                     if r:
                         sys.stdout.write('\n'.join(r) + '\n')
 
@@ -590,6 +592,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj',
                           edit=True,
                           path_args=quote_plus(project),
+                          apiurl=apiurl,
                           template_args=({
                                   'name': project,
                                   'user': conf.config['user']}))
@@ -597,6 +600,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='pkg',
                           edit=True,
                           path_args=(quote_plus(project), quote_plus(package)),
+                          apiurl=apiurl,
                           template_args=({
                                   'name': package,
                                   'user': conf.config['user']}))
@@ -604,16 +608,19 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prjconf',
                           edit=True,
                           path_args=quote_plus(project),
+                          apiurl=apiurl,
                           template_args=None)
             elif cmd == 'user':
                 edit_meta(metatype='user',
                           edit=True,
                           path_args=(quote_plus(user)),
+                          apiurl=apiurl,
                           template_args=({'user': user}))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           edit=True,
                           path_args=(project, pattern),
+                          apiurl=apiurl,
                           template_args=None)
 
         # create attribute entry
@@ -627,7 +634,7 @@ class Osc(cmdln.Cmdln):
                     values += '<value>%s</value>' % i
             aname = opts.attribute.split(":")
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
-            url = makeurl(conf.config['apiurl'], attributepath)
+            url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
                 sys.stdout.write(data)
 
@@ -646,26 +653,31 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=quote_plus(project))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=(quote_plus(project), quote_plus(package)))
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=quote_plus(project))
             elif cmd == 'user':
                 edit_meta(metatype='user',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=(quote_plus(user)))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=(project, pattern))
 
 
@@ -674,13 +686,13 @@ class Osc(cmdln.Cmdln):
             path = metatypes[cmd]['path']
             if cmd == 'pattern':
                 path = path % (project, pattern)
-                u = makeurl(conf.config['apiurl'], [path])
+                u = makeurl(apiurl, [path])
                 http_DELETE(u)
             elif cmd == 'attribute':
                 if not opts.attribute:
                     raise oscerr.WrongOptions('no attribute given to create')
                 attributepath.append(opts.attribute)
-                u = makeurl(conf.config['apiurl'], attributepath)
+                u = makeurl(apiurl, attributepath)
                 for data in streamfile(u, http_DELETE):
                     sys.stdout.write(data)
             else:
