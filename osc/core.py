@@ -3740,7 +3740,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     r = []
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
 
-    for res in get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+    for res in get_package_results(apiurl, prj, package, lastbuild, repository, arch):
         res['status'] = res['code']
         if res['details'] != '':
             res['status'] += ': %s' % (res['details'], )
