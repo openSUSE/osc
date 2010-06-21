@@ -3217,8 +3217,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             wd = os.curdir
             if is_project_dir(wd):
                 opts.csv = None
-                opts.arch = None
-                opts.repo = None
+                if opts.arch == []:
+                    opts.arch = None
+                if opts.repo == []:
+                    opts.repo = None
                 opts.hide_legend = None
                 opts.name_filter = None
                 opts.status_filter = None

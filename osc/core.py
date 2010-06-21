@@ -3772,9 +3772,9 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     pacs = sorted(list(set(pacs)))
     for node in root.findall('result'):
         # filter architecture and repository
-        if arch != None and arch != node.get('arch'):
+        if arch != None and node.get('arch') not in arch:
             continue
-        if repo != None and repo != node.get('repository'):
+        if repo != None and node.get('repository') not in repo:
             continue
         if node.get('dirty') == "true":
             state = "outdated"
