@@ -466,8 +466,22 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
     cp = get_configParser(config['conffile'])
     # don't allow "internal" options
     general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
-    section = config['apiurl_aliases'].get(section, section)
-    sections = dict([[i.rstrip('/'), i] for i in cp.sections()])
+    if section != 'general':
+        section = config['apiurl_aliases'].get(section, section)
+        scheme, host = \
+            parse_apisrv_url(config.get('scheme', 'https'), section)
+        section = urljoin(scheme, host)
+
+    sections = {}
+    for url in cp.sections():
+        if url == 'general':
+            sections[url] = url
+        else:
+            scheme, host = \
+                parse_apisrv_url(config.get('scheme', 'https'), url)
+            apiurl = urljoin(scheme, host)
+            sections[apiurl] = url
+
     section = sections.get(section.rstrip('/'), section)
     if not section in cp.sections():
         raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
