@@ -4398,6 +4398,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 os.makedirs(target_dir, 0755)
 
             for i in binaries:
+                # skip source rpms
+                if not opts.sources and i.name.endswith('.src.rpm'):
+                    continue
                 fname = '%s/%s' % (target_dir, i.name)
                 if os.path.exists(fname):
                     st = os.stat(fname)
