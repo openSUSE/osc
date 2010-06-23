@@ -317,15 +317,20 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
     # XXX: simplify!
     def __str__(self):
         ret = []
+        first = True
         for line in self._sections._lines:
             if line.type == 'section':
+                if first:
+                    first = False
+                else:
+                    ret.append('')
                 ret.append('[%s]' % line.name)
                 for sline in line._lines:
                     if sline.name == '__name__':
                         continue
                     if sline.type == 'option':
                         ret.append(sline.frmt % (sline.name, sline.value))
-                    else:
+                    elif str(sline) != '':
                         ret.append(str(sline))
             else:
                 ret.append(str(line))
