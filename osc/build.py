@@ -54,7 +54,6 @@ hostarch = os.uname()[4]
 if hostarch == 'i686': # FIXME
     hostarch = 'i586'
 
-
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
@@ -317,6 +316,29 @@ def create_deps(pkgqs):
         depfile.append('P:%s%s' % (id, ' '.join(p.provides())))
     return depfile
 
+
+trustprompt = """Would you like to ...
+0 - quit (default)
+1 - trust packages from '%(project)s' always
+2 - trust them just this time
+? """
+def check_trusted_projects(apiurl, projects):
+    trusted = config['api_host_options'][apiurl]['trusted_prj']
+    tlen = len(trusted)
+    for prj in projects:
+        if not prj in trusted:
+            print "\nThe build root needs packages from project '%s'." % prj
+            print "Note that malicious packages can compromise the build result or even your system."
+            r = raw_input(trustprompt % { 'project':prj })
+            if r == '1':
+                trusted.append(prj)
+            elif r != '2':
+                print "Well, good good bye then :-)"
+                raise oscerr.UserAbort()
+
+    if tlen != len(trusted):
+        config['api_host_options'][apiurl]['trusted_prj'] = trusted
+        conf.config_set_option(apiurl, 'trusted_prj', ' '.join(trusted))
 
 def main(opts, argv):
 
@@ -619,6 +641,8 @@ def main(opts, argv):
                       enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
 
+    check_trusted_projects(apiurl, bi.projects.keys())
+
     # now update the package cache
     fetcher.run(bi)
 
@@ -654,27 +678,12 @@ def main(opts, argv):
                     os.symlink(sffn, tffn)
 
     if bi.pacsuffix == 'rpm':
-        if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
-            print 'Skipping verification of package signatures due to secure VM build'
-        elif opts.no_verify or opts.noinit or opts.offline:
+        if opts.no_verify:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
-            t = config['api_host_options'][apiurl]['trusted_prj']
-            for prj in bi.prjkeys:
-                if not prj in t:
-                    print "\nYou are trying to use packages from project '%s'." % prj
-                    print "Note that malicious packages can compromise your system when using chroot build enviroment."
-                    print "Use kvm or xen builds for a safe enviroment."
-# saving back to config file is complicated
-#                    r = raw_input("Would you like to trust '%s' (a)lways, (t)emorarily or (N)ever? " % prj)
-#                    if r == 'a':
-#                        config['api_host_options'][apiurl]['trusted_prj'] += prj
-#                    elif r != 't':
-#                        print "Well, good good bye then :-)"
-#                        sys.exit(1)
-
             verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
+
     elif bi.pacsuffix == 'deb':
         if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
             print 'Skipping verification of package signatures due to secure VM build'

@@ -736,7 +736,7 @@ def get_config(override_conffile = None,
             api_host_options[apiurl]['sslcertck'] = True
 
         if cp.has_option(url, 'trusted_prj'):
-            api_host_options[apiurl]['trusted_prj'] = cp.get(url, key).split(' ')
+            api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
         else:
             api_host_options[apiurl]['trusted_prj'] = []
 
