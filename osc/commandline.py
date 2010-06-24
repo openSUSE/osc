@@ -3904,6 +3904,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='enable downloading packages as cpio archive from api')
     @cmdln.option('--download-api-only', action='store_true',
                   help=SUPPRESS_HELP)
+    @cmdln.option('--oldpackages', metavar='DIR',
+            help='take previous build from DIR (special values: _self, _link)')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
