@@ -4181,6 +4181,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help=SUPPRESS_HELP)
     @cmdln.option('--oldpackages', metavar='DIR',
             help='take previous build from DIR (special values: _self, _link)')
+    @cmdln.option('--shell', action='store_true',
+                  help=SUPPRESS_HELP)
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 

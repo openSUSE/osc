@@ -440,6 +440,8 @@ def main(apiurl, opts, argv):
             pac = '_repository'
         else:
             pac = store_read_package(os.curdir)
+    if opts.shell:
+        buildargs.append("--shell")
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
@@ -851,11 +853,16 @@ def main(apiurl, opts, argv):
         cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
 
     print cmd
-    rc = subprocess.call(cmd, shell=True)
-    if rc:
-        print
-        print 'The buildroot was:', build_root
-        sys.exit(rc)
+    try:
+        rc = subprocess.call(cmd, shell=True)
+        if rc:
+            print
+            print 'The buildroot was:', build_root
+            sys.exit(rc)
+    except KeyboardInterrupt, i:
+        print "keyboard interrupt, killing build ..."
+        subprocess.call(cmd + " --kill", shell=True)
+        raise i
 
     pacdir = os.path.join(build_root, '.build.packages')
     if os.path.islink(pacdir):
