@@ -30,6 +30,8 @@ change_personality = {
             'i386':  'linux32',
             'ppc':   'powerpc32',
             's390':  's390',
+            'sparc': 'linux32',
+            'sparcv8': 'linux32',
         }
 
 can_also_build = {
@@ -48,6 +50,7 @@ can_also_build = {
              'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
              'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
              'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
+             'sparc64': ['sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc'],
              }
 
 # real arch of this machine
