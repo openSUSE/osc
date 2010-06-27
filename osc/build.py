@@ -8,10 +8,11 @@
 import os
 import re
 import sys
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, mkdtemp
 from shutil import rmtree
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
+from osc.core import get_binarylist, get_binary_file
 from osc.util import rpmquery, debquery
 import osc.conf
 import oscerr
@@ -347,6 +348,7 @@ def main(opts, argv):
     build_descr = argv[2]
     xp = []
     build_root = None
+    build_uid=''
     vm_type = config['build-type']
 
     build_descr = os.path.abspath(build_descr)
@@ -400,7 +402,9 @@ def main(opts, argv):
     if opts.without:
         for o in opts.without:
             buildargs.append('--without %s' % o)
-    build_uid=''
+# FIXME: quoting
+#    if opts.define:
+#        buildargs.append('--define "%s"' % opts.define)
     if config['build-uid']:
         build_uid = config['build-uid']
     if opts.build_uid:
@@ -414,9 +418,6 @@ def main(opts, argv):
         else:
             print >>sys.stderr, 'Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"'
             return 1
-# FIXME: quoting
-#    if opts.define:
-#        buildargs.append('--define "%s"' % opts.define)
     if opts.vm_type:
         vm_type = opts.vm_type
     if opts.alternative_project:
@@ -590,8 +591,6 @@ def main(opts, argv):
     if bi.release:
         buildargs.append('--release %s' % bi.release)
 
-    buildargs = ' '.join(buildargs)
-
     # real arch of this machine
     # vs.
     # arch we are supposed to build for
@@ -645,6 +644,71 @@ def main(opts, argv):
 
     # now update the package cache
     fetcher.run(bi)
+
+    old_pkg_dir = None
+    if opts.oldpackages:
+        old_pkg_dir = opts.oldpackages
+        if not old_pkg_dir.startswith('/') and not opts.offline:
+            data = [ prj, pacname, repo, arch]
+            if old_pkg_dir == '_link':
+                p = osc.core.findpacs(os.curdir)[0]
+                if not p.islink():
+                    raise oscerr.WrongOptions('package is not a link')
+                data[0] = p.linkinfo.project
+                data[1] = p.linkinfo.package
+                repos = osc.core.get_repositories_of_project(apiurl, data[0])
+                # hack for links to e.g. Factory
+                if not data[2] in repos and 'standard' in repos:
+                    data[2] = 'standard'
+            elif old_pkg_dir != '' and old_pkg_dir != '_self':
+                a = old_pkg_dir.split('/')
+                for i in range(0, len(a)):
+                    data[i] = a[i]
+
+            destdir = os.path.join(config['packagecachedir'], data[0], data[2], data[3])
+            old_pkg_dir = None
+            try:
+                print "Downloading previous build from %s ..." % '/'.join(data)
+                binaries = get_binarylist(apiurl, data[0], data[2], data[3], package=data[1], verbose=True)
+            except Exception, e:
+                print "Error: failed to get binaries: %s" % str(e)
+                binaries = []
+
+            if binaries:
+                class mytmpdir:
+                    """ temporary directory that removes itself"""
+                    def __init__(self, *args, **kwargs):
+                        self.name = mkdtemp(*args, **kwargs)
+                    def cleanup(self):
+                        rmtree(self.name)
+                    def __del__(self):
+                        self.cleanup()
+                    def __exit__(self):
+                        self.cleanup()
+                    def __str__(self):
+                        return self.name
+
+                old_pkg_dir = mytmpdir(prefix='.build.oldpackages', dir=os.path.abspath(os.curdir))
+                if not os.path.exists(destdir):
+                    os.makedirs(destdir)
+            for i in binaries:
+                fname = os.path.join(destdir, i.name)
+                os.symlink(fname, os.path.join(str(old_pkg_dir), i.name))
+                if os.path.exists(fname):
+                    st = os.stat(fname)
+                    if st.st_mtime == i.mtime and st.st_size == i.size:
+                        continue
+                get_binary_file(apiurl,
+                                data[0],
+                                data[2], data[3],
+                                i.name,
+                                package = data[1],
+                                target_filename = fname,
+                                target_mtime = i.mtime,
+                                progress_meter = True)
+
+        if old_pkg_dir != None:
+            buildargs.append('--oldpackages %s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi
     if build_type == 'kiwi':
@@ -760,7 +824,7 @@ def main(opts, argv):
                     specialcmdopts,
                     bi.buildarch,
                     vm_options,
-                    buildargs,
+                    ' '.join(buildargs),
                     build_descr)
 
     if need_root:
@@ -796,7 +860,6 @@ def main(opts, argv):
 
         if opts.keep_pkgs:
             for i in b_built.splitlines() + s_built.splitlines():
-                import shutil
                 shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
 
     if bi_file:
