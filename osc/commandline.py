@@ -4308,21 +4308,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         otherwise all binary packages in the project will be deleted.
 
         usage:
+	    osc wipebinaries OPTS			# works in checked out project dir
             osc wipebinaries OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
+	package = project = None
+	apiurl = self.get_api_url()
+
+        # try to get project and package from checked out dirs
         if len(args) < 1:
-            raise oscerr.WrongArgs('Missing <project> argument.')
+            if is_project_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+            if is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+            if project is  None:
+                raise oscerr.WrongArgs('Missing <project> argument.')
         if len(args) > 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
+        # respect given project and package
+        if len(args) >= 1:
+           project = args[0]
+
         if len(args) == 2:
-            package = args[1]
-        else:
-            package = None
+           package = args[1]
 
         codes = []
         if opts.build_disabled:
@@ -4341,7 +4354,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # make a new request for each code= parameter
         for code in codes:
-            print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, code)
+            print wipebinaries(apiurl, project, package, opts.arch, opts.repo, code)
 
 
     @cmdln.option('-q', '--quiet', action='store_true',
