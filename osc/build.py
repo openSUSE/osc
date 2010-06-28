@@ -30,6 +30,8 @@ change_personality = {
             'i386':  'linux32',
             'ppc':   'powerpc32',
             's390':  's390',
+            'sparc': 'linux32',
+            'sparcv8': 'linux32',
         }
 
 can_also_build = {
@@ -48,6 +50,7 @@ can_also_build = {
              'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
              'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
              'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mips64' ],
+             'sparc64': ['sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc'],
              }
 
 # real arch of this machine
@@ -640,7 +643,8 @@ def main(opts, argv):
                       enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
 
-    check_trusted_projects(apiurl, bi.projects.keys())
+    # implicitly trust the project we are building for
+    check_trusted_projects(apiurl, [ i for i in bi.projects.keys() if not i == prj ])
 
     # now update the package cache
     fetcher.run(bi)

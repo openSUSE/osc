@@ -848,7 +848,7 @@ class Osc(cmdln.Cmdln):
             print "Requests created: ",
             for i in sr_ids:
                 print i,
-            sys.exit('Successfull finished')
+            sys.exit('Successfully finished')
 
         elif len(args) <= 2:
             # try using the working copy at hand
