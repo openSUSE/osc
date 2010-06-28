@@ -3154,6 +3154,7 @@ def make_diff(wc, revision):
             diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
                                              revision, file, cmp_pac.storedir, file))
 
+    os.unlink(tmpfile)
     os.chdir(olddir)
     if cmp_pac != None:
         delete_dir(cmp_pac.absdir)
