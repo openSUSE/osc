@@ -643,7 +643,8 @@ def main(opts, argv):
                       enable_cpio = opts.cpio_bulk_download,
                       cookiejar=cookiejar)
 
-    check_trusted_projects(apiurl, bi.projects.keys())
+    # implicitly trust the project we are building for
+    check_trusted_projects(apiurl, [ i for i in bi.projects.keys() if not i == prj ])
 
     # now update the package cache
     fetcher.run(bi)
