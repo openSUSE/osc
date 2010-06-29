@@ -335,6 +335,7 @@ def check_trusted_projects(apiurl, projects):
             print "Note that malicious packages can compromise the build result or even your system."
             r = raw_input(trustprompt % { 'project':prj })
             if r == '1':
+                print "adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj,apiurl)
                 trusted.append(prj)
             elif r != '2':
                 print "Well, good good bye then :-)"

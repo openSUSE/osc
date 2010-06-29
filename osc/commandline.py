@@ -1622,7 +1622,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if cmd == 'approvenew':
                 print "\n *** Approve them all ? [y/n] ***"
                 if sys.stdin.read(1) == "y":
-		    
+    
                     if not opts.message:
                         opts.message = edit_message()
                     for result in results:
@@ -4311,15 +4311,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         otherwise all binary packages in the project will be deleted.
 
         usage:
-	    osc wipebinaries OPTS			# works in checked out project dir
+            osc wipebinaries OPTS			# works in checked out project dir
             osc wipebinaries OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
-	package = project = None
-	apiurl = self.get_api_url()
+        package = project = None
+        apiurl = self.get_api_url()
 
         # try to get project and package from checked out dirs
         if len(args) < 1:
