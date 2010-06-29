@@ -101,7 +101,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'checkout_no_colon': '0',
              # local files to ignore with status, addremove, ....
              # local files to ignore with status, addremove, ....
-             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak',
+             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.*',
              # keep passwords in plaintext. If you see this comment, your osc
              # already uses the encrypted password, and only keeps them in plain text
              # for backwards compatibility. Default will change to 0 in future releases.
@@ -466,8 +466,22 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
     cp = get_configParser(config['conffile'])
     # don't allow "internal" options
     general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
-    section = config['apiurl_aliases'].get(section, section)
-    sections = dict([[i.rstrip('/'), i] for i in cp.sections()])
+    if section != 'general':
+        section = config['apiurl_aliases'].get(section, section)
+        scheme, host = \
+            parse_apisrv_url(config.get('scheme', 'https'), section)
+        section = urljoin(scheme, host)
+
+    sections = {}
+    for url in cp.sections():
+        if url == 'general':
+            sections[url] = url
+        else:
+            scheme, host = \
+                parse_apisrv_url(config.get('scheme', 'https'), url)
+            apiurl = urljoin(scheme, host)
+            sections[apiurl] = url
+
     section = sections.get(section.rstrip('/'), section)
     if not section in cp.sections():
         raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
@@ -722,7 +736,7 @@ def get_config(override_conffile = None,
             api_host_options[apiurl]['sslcertck'] = True
 
         if cp.has_option(url, 'trusted_prj'):
-            api_host_options[apiurl]['trusted_prj'] = cp.get(url, key).split(' ')
+            api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
         else:
             api_host_options[apiurl]['trusted_prj'] = []
 

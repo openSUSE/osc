@@ -499,6 +499,8 @@ class Osc(cmdln.Cmdln):
         cmd = args[0]
         del args[0]
 
+        apiurl = self.get_api_url()
+
         if cmd in ['pkg']:
             min_args, max_args = 0, 2
         elif cmd in ['pattern']:
@@ -563,24 +565,24 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(conf.config['apiurl'], project)))
+                sys.stdout.write(''.join(show_project_meta(apiurl, project)))
             elif cmd == 'pkg':
-                sys.stdout.write(''.join(show_package_meta(conf.config['apiurl'], project, package)))
+                sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(conf.config['apiurl'], project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project)))
+                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(conf.config['apiurl'], project)))
+                sys.stdout.write(''.join(show_project_conf(apiurl, project)))
             elif cmd == 'user':
-                r = get_user_meta(conf.config['apiurl'], user)
+                r = get_user_meta(apiurl, user)
                 if r:
                     sys.stdout.write(''.join(r))
             elif cmd == 'pattern':
                 if pattern:
-                    r = show_pattern_meta(conf.config['apiurl'], project, pattern)
+                    r = show_pattern_meta(apiurl, project, pattern)
                     if r:
                         sys.stdout.write(''.join(r))
                 else:
-                    r = show_pattern_metalist(conf.config['apiurl'], project)
+                    r = show_pattern_metalist(apiurl, project)
                     if r:
                         sys.stdout.write('\n'.join(r) + '\n')
 
@@ -590,6 +592,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj',
                           edit=True,
                           path_args=quote_plus(project),
+                          apiurl=apiurl,
                           template_args=({
                                   'name': project,
                                   'user': conf.config['user']}))
@@ -597,6 +600,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='pkg',
                           edit=True,
                           path_args=(quote_plus(project), quote_plus(package)),
+                          apiurl=apiurl,
                           template_args=({
                                   'name': package,
                                   'user': conf.config['user']}))
@@ -604,16 +608,19 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prjconf',
                           edit=True,
                           path_args=quote_plus(project),
+                          apiurl=apiurl,
                           template_args=None)
             elif cmd == 'user':
                 edit_meta(metatype='user',
                           edit=True,
                           path_args=(quote_plus(user)),
+                          apiurl=apiurl,
                           template_args=({'user': user}))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           edit=True,
                           path_args=(project, pattern),
+                          apiurl=apiurl,
                           template_args=None)
 
         # create attribute entry
@@ -627,7 +634,7 @@ class Osc(cmdln.Cmdln):
                     values += '<value>%s</value>' % i
             aname = opts.attribute.split(":")
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
-            url = makeurl(conf.config['apiurl'], attributepath)
+            url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
                 sys.stdout.write(data)
 
@@ -646,26 +653,31 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=quote_plus(project))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=(quote_plus(project), quote_plus(package)))
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=quote_plus(project))
             elif cmd == 'user':
                 edit_meta(metatype='user',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=(quote_plus(user)))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           data=f,
                           edit=opts.edit,
+                          apiurl=apiurl,
                           path_args=(project, pattern))
 
 
@@ -674,13 +686,13 @@ class Osc(cmdln.Cmdln):
             path = metatypes[cmd]['path']
             if cmd == 'pattern':
                 path = path % (project, pattern)
-                u = makeurl(conf.config['apiurl'], [path])
+                u = makeurl(apiurl, [path])
                 http_DELETE(u)
             elif cmd == 'attribute':
                 if not opts.attribute:
                     raise oscerr.WrongOptions('no attribute given to create')
                 attributepath.append(opts.attribute)
-                u = makeurl(conf.config['apiurl'], attributepath)
+                u = makeurl(apiurl, attributepath)
                 for data in streamfile(u, http_DELETE):
                     sys.stdout.write(data)
             else:
@@ -836,7 +848,7 @@ class Osc(cmdln.Cmdln):
             print "Requests created: ",
             for i in sr_ids:
                 print i,
-            sys.exit('Successfull finished')
+            sys.exit('Successfully finished')
 
         elif len(args) <= 2:
             # try using the working copy at hand
@@ -948,7 +960,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             print 'created request id', result
 
-    def _actionparser(option, opt_str, value, parser):
+    def _actionparser(self, opt_str, value, parser):
         value = []
         if not hasattr(parser.values, 'actiondata'):
             setattr(parser.values, 'actiondata', [])
@@ -2477,8 +2489,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='place PACKAGE folder in the current directory' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-s', '--source-service-files', action='store_true',
-                        help='server side generated files of source services' \
-                             'gets downloaded as well' )
+                        help='Use server side generated sources instead of local generation.' )
+    @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
+                        help='Use server side generated sources instead of local generation.' )
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
                         help='Skip all files with a given size')
     @cmdln.alias('co')
@@ -2511,10 +2524,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             expand_link = False
         else:
             expand_link = True
-        if opts.source_service_files:
-            service_files = True
-        else:
-            service_files = False
 
         args = slash_split(args)
         project = package = filename = None
@@ -2550,7 +2559,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files=service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -2570,13 +2579,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
-                                     prj_dir = prj_dir, service_files = service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project)
 
         else:
@@ -2900,6 +2909,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='if a package is a link, update to the expanded sources')
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='Use server side generated sources instead of local generation.' )
+    @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
+                        help='Use server side generated sources instead of local generation.' )
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
                         help='Skip all files with a given size')
     @cmdln.alias('up')
@@ -2934,9 +2945,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             or (opts.unexpand_link and opts.revision):
             raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
                      '--revision are mutually exclusive.')
-
-        if opts.source_service_files: service_files = True
-        else: service_files = False
 
         args = parseargs(args)
         arg_list = args[:]
@@ -2991,17 +2999,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             rev = p.show_upstream_xsrcmd5(linkrev="base")
                             p.mark_frozen()
                     else:
-                        p.update(rev, service_files, opts.limit_size)
+                        p.update(rev, opts.server_side_source_service_files, opts.limit_size)
                         rev = p.linkinfo.xsrcmd5
                     print 'Expanding to rev', rev
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     print 'Unexpanding to rev', p.linkinfo.lsrcmd5
-                    p.update(rev, service_files, opts.limit_size)
+                    p.update(rev, opts.server_side_source_service_files, opts.limit_size)
                     rev = p.linkinfo.lsrcmd5
                 elif p.islink() and p.isexpanded():
                     rev = p.latest_rev()
 
-            p.update(rev, service_files, opts.limit_size)
+            p.update(rev, opts.server_side_source_service_files, opts.limit_size)
+            if opts.source_service_files:
+                print 'Running local source services'
+                p.run_source_services()
             if opts.unexpand_link:
                 p.unmark_frozen()
             rev = None
@@ -3218,8 +3229,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             wd = os.curdir
             if is_project_dir(wd):
                 opts.csv = None
-                opts.arch = None
-                opts.repo = None
+                if opts.arch == []:
+                    opts.arch = None
+                if opts.repo == []:
+                    opts.repo = None
                 opts.hide_legend = None
                 opts.name_filter = None
                 opts.status_filter = None
@@ -3891,6 +3904,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='enable downloading packages as cpio archive from api')
     @cmdln.option('--download-api-only', action='store_true',
                   help=SUPPRESS_HELP)
+    @cmdln.option('--oldpackages', metavar='DIR',
+            help='take previous build from DIR (special values: _self, _link)')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -4139,7 +4154,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Usage:
             osc log (inside working copy)
-            osc log remote_project remote_package
+            osc log remote_project [remote_package]
 
         ${cmd_option_list}
         """
@@ -4150,21 +4165,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 0:
             wd = os.curdir
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-        elif len(args) < 2:
+            if is_project_dir(wd) or is_package_dir(wd):
+                project = store_read_project(wd)
+                if is_project_dir(wd):
+                    package = "_project"
+                else:
+                    package = store_read_package(wd)
+            else:
+                raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath(wd))
+        elif len(args) < 1:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        elif len(args) == 1:
+            project = args[0]
+            package = "_project"
         else:
             project = args[0]
             package = args[1]
 
-        if opts.meta:
-            meta = 1
-
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(project, package, rev, apiurl, meta):
+        if rev and not checkRevision(project, package, rev, apiurl, opts.meta):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
@@ -4174,7 +4195,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, meta))
+        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta))
         run_pager(log)
 
     @cmdln.option('-f', '--failed', action='store_true',
@@ -4289,21 +4310,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         otherwise all binary packages in the project will be deleted.
 
         usage:
+	    osc wipebinaries OPTS			# works in checked out project dir
             osc wipebinaries OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
+	package = project = None
+	apiurl = self.get_api_url()
+
+        # try to get project and package from checked out dirs
         if len(args) < 1:
-            raise oscerr.WrongArgs('Missing <project> argument.')
+            if is_project_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+            if is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+            if project is  None:
+                raise oscerr.WrongArgs('Missing <project> argument.')
         if len(args) > 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
+        # respect given project and package
+        if len(args) >= 1:
+           project = args[0]
+
         if len(args) == 2:
-            package = args[1]
-        else:
-            package = None
+           package = args[1]
 
         codes = []
         if opts.build_disabled:
@@ -4322,7 +4356,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # make a new request for each code= parameter
         for code in codes:
-            print wipebinaries(conf.config['apiurl'], args[0], package, opts.arch, opts.repo, code)
+            print wipebinaries(apiurl, project, package, opts.arch, opts.repo, code)
 
 
     @cmdln.option('-q', '--quiet', action='store_true',
@@ -4339,7 +4373,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         others even when they are not "published" yet.
 
         usage:
-           osc getbinaries REPOSITORY                                      # works in checked out package (check out all archs in subdirs)
+           osc getbinaries REPOSITORY                                 # works in checked out package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out package
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
@@ -4391,6 +4425,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 os.makedirs(target_dir, 0755)
 
             for i in binaries:
+                # skip source rpms
+                if not opts.sources and i.name.endswith('.src.rpm'):
+                    continue
                 fname = '%s/%s' % (target_dir, i.name)
                 if os.path.exists(fname):
                     st = os.stat(fname)

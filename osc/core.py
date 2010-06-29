@@ -3,7 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.126git'
+__version__ = '0.127git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -310,7 +310,7 @@ class Serviceinfo:
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
                 msg =  "ERROR: service is not installed!\n"
-                msg += "Maybe try this: zypper in obs-server-" + name
+                msg += "Maybe try this: zypper in obs-service-" + name
                 raise oscerr.APIError(msg)
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1:
@@ -755,12 +755,11 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir, progress_obj=None, limit_size=None, meta=None):
+    def __init__(self, workingdir, progress_obj=None, limit_size=None):
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
-        self.meta = meta
         self.limit_size = limit_size
         if limit_size and limit_size == 0:
            self.limit_size = None
@@ -846,17 +845,15 @@ class Package:
 
             self.write_conflictlist()
 
+    # XXX: this isn't used at all
     def write_meta_mode(self):
+        # XXX: the "elif" is somehow a contradiction (with current and the old implementation
+        #      it's not possible to "leave" the metamode again) (except if you modify pac.meta
+        #      which is really ugly:) )
         if self.meta:
-            fname = os.path.join(self.storedir, '_meta_mode')
-            f = open(fname, 'w')
-            f.write(str("true"))
-            f.close()
-        else:
-            try:
-                os.unlink(os.path.join(self.storedir, '_meta_mode'))
-            except:
-                pass
+            store_write_string(self.absdir, '_meta_mode', '')
+        elif self.ismetamode():
+            os.unlink(os.path.join(self.storedir, '_meta_mode'))
 
     def write_sizelimit(self):
         if self.size_limit and self.size_limit <= 0:
@@ -1142,7 +1139,7 @@ class Package:
         self.in_conflict = read_inconflict(self.dir)
         self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
         self.size_limit = read_sizelimit(self.dir)
-        self.meta = read_meta_mode(self.dir)
+        self.meta = self.ismetamode()
 
         # gather unversioned files, but ignore some stuff
         self.excluded = [ i for i in os.listdir(self.dir)
@@ -1174,6 +1171,10 @@ class Package:
     def isfrozen(self):
         """tells us if the link is frozen."""
         return os.path.isfile(os.path.join(self.storedir, '_frozenlink'))
+
+    def ismetamode(self):
+        """tells us if the package is in meta mode"""
+        return os.path.isfile(os.path.join(self.storedir, '_meta_mode'))
 
     def get_pulled_srcmd5(self):
         pulledrev = None
@@ -1959,17 +1960,6 @@ def read_tobedeleted(dir):
     return r
 
 
-def read_meta_mode(dir):
-    r = None
-    fname = os.path.join(dir, store, '_meta_mode')
-
-    if os.path.exists(fname):
-        r = open(fname).readline()
-
-    if r is None or not r == "true":
-        return None
-    return 1
-
 def read_sizelimit(dir):
     r = None
     fname = os.path.join(dir, store, '_size_limit')
@@ -2135,7 +2125,7 @@ def init_project_dir(apiurl, dir, project):
     if conf.config['do_package_tracking']:
         store_write_initial_packages(dir, project, [])
 
-def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=None):
+def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=False):
     if not os.path.isdir(store):
         os.mkdir(store)
     os.chdir(store)
@@ -2147,31 +2137,21 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
     f.close()
 
     if meta:
-        f = open('_meta_mode', 'w')
-        f.write("true")
-        f.close()
+        store_write_string(os.pardir, '_meta_mode', '')
 
     if limit_size:
-        f = open('_size_limit', 'w')
-        f.write(str(limit_size))
-        f.close()
+        store_write_string(os.pardir, '_size_limit', str(limit_size))
 
     if files:
-        f = open('_files', 'w')
-        f.write(''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta)))
-        f.close()
+        fmeta = ''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta))
+        store_write_string(os.pardir, '_files', fmeta)
     else:
         # create dummy
         ET.ElementTree(element=ET.Element('directory')).write('_files')
 
-    f = open('_osclib_version', 'w')
-    f.write(__store_version__ + '\n')
-    f.close()
-
+    store_write_string(os.pardir, '_osclib_version', __store_version__ + '\n')
     store_write_apiurl(os.path.pardir, apiurl)
-
     os.chdir(os.pardir)
-    return
 
 
 def check_store_version(dir):
@@ -2278,13 +2258,13 @@ def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
         raise
 
 
-def show_package_meta(apiurl, prj, pac, meta=None):
+def show_package_meta(apiurl, prj, pac, meta=False):
     query = {}
     if meta:
         query['meta'] = 1
 
-    # packages like _project, _pattern and _project do not have a _meta file
-    if pac.startswith('_'):
+    # packages like _pattern and _project do not have a _meta file
+    if pac.startswith('_pattern') or pac.startswith('_project'):
         return ""
 
     url = makeurl(apiurl, ['source', prj, pac, '_meta'], query)
@@ -2498,7 +2478,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=None):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=False):
     query = {}
     if revision:
         query['rev'] = revision
@@ -2524,12 +2504,12 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     return ET.tostring(root)
 
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=None):
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta)
     return ET.fromstring(''.join(m)).get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=None):
+def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta)
     try:
         # only source link packages have a <linkinfo> element.
@@ -2545,7 +2525,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_upstream_rev(apiurl, prj, pac, meta=None):
+def show_upstream_rev(apiurl, prj, pac, meta=False):
     m = show_files_meta(apiurl, prj, pac, meta=meta)
     return ET.fromstring(''.join(m)).get('rev')
 
@@ -2605,6 +2585,38 @@ def read_meta_from_spec(specfile, *args):
 
     return spec_data
 
+def get_default_editor():
+    import platform
+    system = platform.system()
+    if system == 'Windows':
+        return 'notepad'
+    if system == 'Linux':
+        try:
+            # Python 2.6
+            dist = platform.linux_distribution()[0]
+        except AttributeError:
+            dist = platform.dist()[0]
+        if dist == 'debian':
+            return 'editor'
+        return 'vim'
+    return 'vi'
+
+def get_default_pager():
+    import platform
+    system = platform.system()
+    if system == 'Windows':
+        return 'less'
+    if system == 'Linux':
+        try:
+            # Python 2.6
+            dist = platform.linux_distribution()[0]
+        except AttributeError:
+            dist = platform.dist()[0]
+        if dist == 'debian':
+            return 'pager'
+        return 'less'
+    return 'more'
+
 def run_pager(message):
     import tempfile, sys
 
@@ -2614,15 +2626,12 @@ def run_pager(message):
         tmpfile = tempfile.NamedTemporaryFile()
         tmpfile.write(message)
         tmpfile.flush()
-        pager = os.getenv('PAGER', default='less')
+        pager = os.getenv('PAGER', default=get_default_pager())
         subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
         tmpfile.close()
 
 def run_editor(filename):
-    if sys.platform[:3] != 'win':
-        editor = os.getenv('EDITOR', default='vim')
-    else:
-        editor = os.getenv('EDITOR', default='notepad')
+    editor = os.getenv('EDITOR', default=get_default_editor())
 
     return subprocess.call([ editor, filename ])
 
@@ -2928,7 +2937,7 @@ def download(url, filename, progress_obj = None, mtime = None):
     if mtime:
         os.utime(filename, (-1, mtime))
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=None):
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=False):
     targetfilename = targetfilename or filename
     query = {}
     if meta:
@@ -3145,6 +3154,7 @@ def make_diff(wc, revision):
             diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
                                              revision, file, cmp_pac.storedir, file))
 
+    os.unlink(tmpfile)
     os.chdir(olddir)
     if cmp_pac != None:
         delete_dir(cmp_pac.absdir)
@@ -3155,7 +3165,7 @@ def make_diff(wc, revision):
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision, unified=False, missingok=False, meta=None):
+                new_project, new_package, new_revision, unified=False, missingok=False, meta=False):
     query = {'cmd': 'diff', 'expand': '1'}
     if old_project:
         query['oproject'] = old_project
@@ -3222,7 +3232,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, service_files=None, progress_obj=None, limit_size=None, meta=None):
+                     expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, limit_size=None, meta=False):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3268,7 +3278,7 @@ def checkout_package(apiurl, project, package,
     for filename in p.filenamelist:
         if filename in p.skipped:
             continue
-        if service_files or not filename.startswith('_service:'):
+        if server_service_files or not filename.startswith('_service:'):
             p.updatefile(filename, revision)
             # print 'A   ', os.path.join(project, package, filename)
             print statfrmt('A', os.path.join(pathname, filename))
@@ -3278,6 +3288,9 @@ def checkout_package(apiurl, project, package,
             prj_obj = Project(os.getcwd())
         prj_obj.set_state(p.name, ' ')
         prj_obj.write_packages()
+    if service_files:
+        print "Running local source services"
+        p.run_source_services()
     os.chdir(olddir)
 
 
@@ -3728,7 +3741,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
     r = []
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
 
-    for res in get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+    for res in get_package_results(apiurl, prj, package, lastbuild, repository, arch):
         res['status'] = res['code']
         if res['details'] != '':
             res['status'] += ': %s' % (res['details'], )
@@ -3752,16 +3765,17 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     targets = []
     # {package: {(repo,arch): status}}
     status = {}
-    if not root.find('result'):
+    if root.find('result') == None:
         return []
-    for node in root.find('result'):
-        pacs.append(node.get('package'))
-    pacs.sort()
+    for results in root.findall('result'):
+        for node in results:
+            pacs.append(node.get('package'))
+    pacs = sorted(list(set(pacs)))
     for node in root.findall('result'):
         # filter architecture and repository
-        if arch != None and arch != node.get('arch'):
+        if arch != None and node.get('arch') not in arch:
             continue
-        if repo != None and repo != node.get('repository'):
+        if repo != None and node.get('repository') not in repo:
             continue
         if node.get('dirty') == "true":
             state = "outdated"
@@ -4041,7 +4055,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             print '%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker)
 
 
-def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = None):
+def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False):
     import time, locale
 
     query = {}
@@ -4287,7 +4301,7 @@ def parseRevisionOption(string):
     else:
         return None, None
 
-def checkRevision(prj, pac, revision, apiurl=None):
+def checkRevision(prj, pac, revision, apiurl=None, meta=False):
     """
     check if revision is valid revision, i.e. it is not
     larger than the upstream revision id
@@ -4298,7 +4312,7 @@ def checkRevision(prj, pac, revision, apiurl=None):
     if not apiurl:
         apiurl = conf.config['apiurl']
     try:
-        if int(revision) > int(show_upstream_rev(apiurl, prj, pac)) \
+        if int(revision) > int(show_upstream_rev(apiurl, prj, pac, meta)) \
            or int(revision) <= 0:
             return False
         else:
@@ -4461,9 +4475,7 @@ def unpack_srcrpm(srpm, dir, *files):
         print >>sys.stderr, 'error - \'%s\' is not a source rpm.' % srpm
         sys.exit(1)
     curdir = os.getcwd()
-    if not os.path.isdir(dir):
-        dir = curdir
-    else:
+    if os.path.isdir(dir):
         os.chdir(dir)
     cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
     ret = subprocess.call(cmd, shell=True)
@@ -4928,8 +4940,7 @@ def request_interactive_review(apiurl, request):
                                            request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
                     tmpfile.write(diff)
                     tmpfile.flush()
-                pager = os.getenv('EDITOR', default='less')
-                subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+                run_editor(tmpfile.name)
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()
@@ -4977,7 +4988,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
     try:
         res = search(apiurl, **what)
     except urllib2.HTTPError, e:
-        if e.code != 400 or not role_filter:
+        if e.code != 400 or not role_filter_xpath:
             raise e
         # backward compatibility: local role filtering
         what = dict([[kind, role_filter_xpath] for kind in what.keys()])

@@ -165,10 +165,6 @@ def run(prg):
         print >>sys.stderr, e
         return 1
 
-    except OSError, e:
-        print >>sys.stderr, e
-        return 1
-
     except CpioError, e:
         print >>sys.stderr, e
         return 1
