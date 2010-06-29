@@ -1485,6 +1485,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request log ID
             osc request [show] [-d] [-b] ID
             osc request accept [-m TEXT] ID
+            osc request reopen [-m TEXT] ID
             osc request approvenew [-m TEXT] PROJECT
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
@@ -1517,7 +1518,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['list', 'log', 'show', 'decline', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
+        cmds = ['list', 'log', 'show', 'decline', 'reopen', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1553,7 +1554,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['log', 'show', 'decline', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
+        elif cmd in ['log', 'show', 'decline', 'reopen', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
         # list and approvenew
@@ -1679,7 +1680,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             if not opts.message:
                 opts.message = edit_message()
-            state_map = {'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
+            state_map = {'reopen' : 'new', 'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
             # Change review state only
             if subcmd == 'review':
                 if cmd in ['accept', 'decline', 'new']:
@@ -1687,7 +1688,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             reqid, state_map[cmd], conf.config['user'], '', opts.message or '')
                     print r
             # Change state of entire request
-            elif cmd in ['accept', 'decline', 'wipe', 'revoke']:
+            elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
                 r = change_request_state(conf.config['apiurl'],
                         reqid, state_map[cmd], opts.message or '')
                 print r

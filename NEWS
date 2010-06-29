@@ -1,5 +1,6 @@
 0.128
   - better default commands selection for editor/pager
+  - support "osc rq reopen" to set a request in new state again
 
 0.127
   - add size limit mode, files can be ignored on checkout or update given a certain size limit.
