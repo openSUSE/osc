@@ -3780,7 +3780,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 f.close()
         else:
             project = alternative_project or store_read_project('.')
-            repositories = get_repositories_of_project(store_read_apiurl('.'), project)
+            apiurl = self.get_api_url()
+            repositories = get_repositories_of_project(apiurl, project)
             if not len(repositories):
                 raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
             try:
@@ -3984,7 +3985,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
         print 'Building %s for %s/%s' % (args[2], args[0], args[1])
-        return osc.build.main(opts, args)
+        return osc.build.main(self.get_api_url(), opts, args)
 
 
     @cmdln.option('--local-package', action='store_true',

@@ -345,7 +345,7 @@ def check_trusted_projects(apiurl, projects):
         config['api_host_options'][apiurl]['trusted_prj'] = trusted
         conf.config_set_option(apiurl, 'trusted_prj', ' '.join(trusted))
 
-def main(opts, argv):
+def main(apiurl, opts, argv):
 
     repo = argv[0]
     arch = argv[1]
@@ -433,7 +433,6 @@ def main(opts, argv):
             pac = '_repository'
         else:
             pac = store_read_package(os.curdir)
-    apiurl = store_read_apiurl(os.curdir)
 
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
