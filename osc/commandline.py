@@ -4372,8 +4372,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         others even when they are not "published" yet.
 
         usage:
-           osc getbinaries REPOSITORY                                 # works in checked out package (check out all archs in subdirs)
-           osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out package
+           osc getbinaries REPOSITORY                                 # works in checked out project/package (check out all archs in subdirs)
+           osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out project/package
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
@@ -4381,6 +4381,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         apiurl = self.get_api_url()
+	package = None
+	project = None
 
         if len(args) < 1 and is_package_dir('.'):
             self.print_repos()
@@ -4392,11 +4394,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository   = args[2]
             architecture = args[3]
         elif len(args) <= 2:
-            if not is_package_dir(os.getcwd()):
+            if is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+            elif is_project_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+            else:
                 raise oscerr.WrongArgs('Missing arguments: either specify <project> and ' \
-                                       '<package> or move to a package working copy')
-            project = store_read_project(os.curdir)
-            package = store_read_package(os.curdir)
+                                       '<package> or move to a project or package working copy')
             repository   = args[0]
             if len(args) == 2:
                 architecture = args[1]
@@ -4407,39 +4412,46 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         arches = [architecture]
         if architecture is None:
             arches = [i.arch for i in get_repos_of_project(apiurl, project) if repository == i.name]
-        for arch in arches:
-            binaries = get_binarylist(apiurl, project, repository, arch,
-                                      package=package, verbose=True)
-            if not binaries:
-                print >>sys.stderr, 'no binaries found: Either the package ' \
-                                    'does not exist or no binaries have been built.'
-                continue
-            target_dir = opts.destdir
-            if architecture is None:
-                # we're going to fetch all repo arches
-                target_dir = '%s/%s' % (opts.destdir, arch)
-            target_dir = os.path.normpath(target_dir)
-            if not os.path.isdir(target_dir):
-                print 'Creating %s' % target_dir
-                os.makedirs(target_dir, 0755)
 
-            for i in binaries:
-                # skip source rpms
-                if not opts.sources and i.name.endswith('.src.rpm'):
-                    continue
-                fname = '%s/%s' % (target_dir, i.name)
-                if os.path.exists(fname):
-                    st = os.stat(fname)
-                    if st.st_mtime == i.mtime and st.st_size == i.size:
-                        continue
-                get_binary_file(apiurl,
-                                project,
-                                repository, arch,
-                                i.name,
-                                package = package,
-                                target_filename = fname,
-                                target_mtime = i.mtime,
-                                progress_meter = not opts.quiet)
+	if package is None:
+	    package = meta_get_packagelist(apiurl, project)
+	else: 
+	    package = [package]
+
+        for arch in arches:
+            for pac in package:
+		binaries = get_binarylist(apiurl, project, repository, arch,
+					  package=pac, verbose=True)
+		if not binaries:
+		    print >>sys.stderr, 'no binaries found: Either the package %s ' \
+					'does not exist or no binaries have been built.' % pac
+		    continue
+		target_dir = opts.destdir
+		if architecture is None:
+		    # we're going to fetch all repo arches
+		    target_dir = '%s/%s' % (opts.destdir, arch)
+		target_dir = os.path.normpath(target_dir)
+		if not os.path.isdir(target_dir):
+		    print 'Creating %s' % target_dir
+		    os.makedirs(target_dir, 0755)
+
+		for i in binaries:
+		    # skip source rpms
+		    if not opts.sources and i.name.endswith('.src.rpm'):
+			continue
+		    fname = '%s/%s' % (target_dir, i.name)
+		    if os.path.exists(fname):
+			st = os.stat(fname)
+			if st.st_mtime == i.mtime and st.st_size == i.size:
+			    continue
+		    get_binary_file(apiurl,
+				    project,
+				    repository, arch,
+				    i.name,
+				    package = pac,
+				    target_filename = fname,
+				    target_mtime = i.mtime,
+				    progress_meter = not opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
