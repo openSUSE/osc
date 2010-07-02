@@ -2632,8 +2632,10 @@ def run_pager(message):
 
 def run_editor(filename):
     editor = os.getenv('EDITOR', default=get_default_editor())
+    cmd = editor.split(' ')
+    cmd.append(filename)
 
-    return subprocess.call([ editor, filename ])
+    return subprocess.call(cmd)
 
 def edit_message(footer='', template='', templatelen=30):
     delim = '--This line, and those below, will be ignored--\n'
