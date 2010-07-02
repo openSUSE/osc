@@ -1344,9 +1344,9 @@ rev: %s
                 sys.exit(1)
 
         data = read_meta_from_spec(specfile, 'Summary', 'Url', '%description')
-        self.summary = data['Summary']
-        self.url = data['Url']
-        self.descr = data['%description']
+        self.summary = data.get('Summary', '')
+        self.url = data.get('Url', '')
+        self.descr = data.get('%description', '')
 
 
     def update_package_meta(self, force=False):
@@ -2564,18 +2564,12 @@ def read_meta_from_spec(specfile, *args):
         m = re.compile(tag_pat % tag, re.I | re.M).search(''.join(lines))
         if m and m.group('val'):
             spec_data[tag] = m.group('val').strip()
-        else:
-            print >>sys.stderr, 'error - tag \'%s\' does not exist' % tag
-            sys.exit(1)
 
     section_pat = '^%s\s*?$'
     for section in sections:
         m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
         if m:
             start = lines.index(m.group()+'\n') + 1
-        else:
-            print >>sys.stderr, 'error - section \'%s\' does not exist' % section
-            sys.exit(1)
         data = []
         for line in lines[start:]:
             if line.startswith('%'):
