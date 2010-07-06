@@ -1359,7 +1359,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        apiurl = conf.config['apiurl']
+	apiurl = self.get_api_url()
 
         if not opts.message:
             import textwrap
