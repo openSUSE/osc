@@ -1332,28 +1332,45 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_deleterequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to delete a package or project
 
-
         usage:
+            osc deletereq [-m TEXT] 		           # works in checked out project/package
             osc deletereq [-m TEXT] PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
         args = slash_split(args)
 
+        project = None
+        package = None
+
         if len(args) < 1:
-            raise oscerr.WrongArgs('Please specify at least a project.')
-        if len(args) > 2:
+            if is_project_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+            elif is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+            else: 
+                raise oscerr.WrongArgs('Please specify at least a project.')
+        elif len(args) == 1:
+            project = args[0]
+        elif len(args) > 1:
+            project = args[0]
+            package = args[1]
+        elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = conf.config['apiurl']
 
-        project = args[0]
-        package = None
-        if len(args) > 1:
-            package = args[1]
-
         if not opts.message:
-            opts.message = edit_message()
+            import textwrap
+            if package is not None:
+                footer=textwrap.TextWrapper(width = 66).fill(
+                        'please explain why you like to delete package %s of project %s'
+                        % (package,project))
+            else:
+                footer=textwrap.TextWrapper(width = 66).fill(
+                        'please explain why you like to delete project %s' % project)
+            opts.message = edit_message(footer)
 
         result = create_delete_request(apiurl, project, package, opts.message)
         print result
