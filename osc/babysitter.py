@@ -104,7 +104,11 @@ def run(prg):
         if hasattr(e, 'osc_msg'):
             print >>sys.stderr, e.osc_msg
 
-        body = e.read()
+        try:
+            body = e.read()
+        except AttributeError:
+            body = ''
+
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
             print >>sys.stderr, e.hdrs
