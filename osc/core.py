@@ -4979,7 +4979,7 @@ def request_interactive_review(apiurl, request):
         if tmpfile is not None:
             tmpfile.close()
 
-def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True):
+def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True, maintained=False):
     """Return all project/packages where user is involved."""
     xpath = 'person/@userid = \'%s\'' % user
     excl_prj = ''
@@ -4992,6 +4992,10 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
         xpath = xpath_join(xpath, 'person/@role = \'%s\'' % role, inner=True, op='and')
     xpath_pkg = xpath_join(xpath, excl_pkg, op='and')
     xpath_prj = xpath_join(xpath, excl_prj, op='and')
+
+    if maintained:
+        xpath_pkg = xpath_join(xpath_pkg, '(project/attribute/@name=\'%(attr)s\' or attribute/@name=\'%(attr)s\')' % {'attr': conf.config['maintained_attribute']}, op='and')
+
     what = {}
     if pkg:
         what['package_id'] = xpath_pkg

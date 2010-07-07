@@ -4483,6 +4483,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='exclude requests for specified project')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='verbose listing')
+    @cmdln.option('--maintained', action='store_true',
+                        help='limit search results to packages with maintained attribute set.')
     def do_my(self, subcmd, opts, type):
         """${cmd_name}: show packages, projects or requests involving yourself
 
@@ -4554,7 +4556,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             role_filter = ''
 
         res = get_user_projpkgs(apiurl, user, role_filter,
-                                exclude_projects, what.has_key('project'), what.has_key('package'))
+                                exclude_projects, what.has_key('project'), what.has_key('package'), opts.maintained)
         request_todo = {}
         roles = {}
         if len(what.keys()) == 2:
