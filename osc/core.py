@@ -2621,15 +2621,22 @@ def run_pager(message):
         tmpfile.write(message)
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
-        subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
-        tmpfile.close()
+        try:
+            try:
+                subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
+            except OSError, e:
+                raise oscerr.RuntimeError('cannot run pager \'%s\': %s' % (pager, e.strerror), pager)
+        finally:
+            tmpfile.close()
 
 def run_editor(filename):
     editor = os.getenv('EDITOR', default=get_default_editor())
     cmd = editor.split(' ')
     cmd.append(filename)
-
-    return subprocess.call(cmd)
+    try:
+        return subprocess.call(cmd)
+    except OSError, e:
+        raise oscerr.RuntimeError('cannot run editor \'%s\': %s' % (editor, e.strerror), editor)
 
 def edit_message(footer='', template='', templatelen=30):
     delim = '--This line, and those below, will be ignored--\n'

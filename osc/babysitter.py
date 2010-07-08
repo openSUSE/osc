@@ -141,6 +141,10 @@ def run(prg):
         print >>sys.stderr, e
         return 2
 
+    except oscerr.RuntimeError, e:
+        print >>sys.stderr, e.msg
+        return 1
+
     except oscerr.WorkingCopyOutdated, e:
         print >>sys.stderr, e
         return 1
