@@ -3736,27 +3736,41 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     def do_repos(self, subcmd, opts, *args):
-        """${cmd_name}: shows repositories configured for a project
+        """${cmd_name}: shows repositories configured for a project or package
 
         usage:
             osc repos
-            osc repos [PROJECT]
+            osc repos [PROJECT] [PACKAGE]
 
         ${cmd_option_list}
         """
 
         apiurl = self.get_api_url()
+        package = None
+        disabled = None
 
         if len(args) == 1:
             project = args[0]
+        elif len(args) == 1:
+            project = args[0]
+            package = args[1]
         elif len(args) == 0:
-            project = store_read_project('.')
+            if is_package_dir('.'):
+                package = store_read_package('.')
+                project = store_read_project('.')
+            elif is_project_dir('.'):
+                project = store_read_project('.')
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
+        if package is not None:
+            disabled = show_package_disabled_repos(apiurl, project, package)
+
         data = []
         for repo in get_repos_of_project(apiurl, project):
-            data += [repo.name, repo.arch]
+            if (disabled is None) or ((disabled is not None) and (repo.name not in disabled)):
+                data += [repo.name, repo.arch]
+            
         for row in build_table(2, data, width=2):
             print row
 
@@ -4397,10 +4411,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         apiurl = self.get_api_url()
-	package = None
-	project = None
+        package = None
+        project = None
 
         if len(args) < 1 and is_package_dir('.'):
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
             self.print_repos()
 
         architecture = None

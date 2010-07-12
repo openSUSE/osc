@@ -2309,6 +2309,17 @@ def show_develproject(apiurl, prj, pac):
         return None
 
 
+def show_package_disabled_repos(apiurl, prj, pac):
+    m = show_package_meta(apiurl, prj, pac)
+    try:
+        root = ET.fromstring(''.join(m))
+        elm = root.find('build')
+        r = [ node.get('repository') for node in elm.findall('disable')]
+        return r
+    except:
+        return None
+
+
 def show_pattern_metalist(apiurl, prj):
     url = makeurl(apiurl, ['source', prj, '_pattern'])
     try:
