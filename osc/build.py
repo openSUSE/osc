@@ -615,7 +615,6 @@ def main(apiurl, opts, argv):
                 bi.remove_dep(name)
                 rpmlist_prefers.append((name, path))
                 print ' - %s (%s)' % (name, path)
-                continue
 
     print 'Updating cache of required packages'
 
