@@ -8,8 +8,8 @@
 import os
 import re
 import sys
+import shutil
 from tempfile import NamedTemporaryFile, mkdtemp
-from shutil import rmtree
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
 from osc.core import get_binarylist, get_binary_file
@@ -683,7 +683,7 @@ def main(apiurl, opts, argv):
                     def __init__(self, *args, **kwargs):
                         self.name = mkdtemp(*args, **kwargs)
                     def cleanup(self):
-                        rmtree(self.name)
+                        shutil.rmtree(self.name)
                     def __del__(self):
                         self.cleanup()
                     def __exit__(self):
@@ -718,7 +718,7 @@ def main(apiurl, opts, argv):
         if not os.path.exists('repos'):
             os.mkdir('repos')
         else:
-            rmtree('repos')
+            shutil.rmtree('repos')
             os.mkdir('repos')
         for i in bi.deps:
             # project
