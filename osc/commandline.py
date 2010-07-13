@@ -5562,7 +5562,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             url = makeurl(apiurl, ['source', prj], query='cmd=createkey')
             f = http_POST(url)
         elif opts.extend:
-            url = makeurl(apiurl, ['source', prj, query='cmd=extendkey'])
+            url = makeurl(apiurl, ['source', prj], query='cmd=extendkey')
             f = http_POST(url)
         elif opts.delete:
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
