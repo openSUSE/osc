@@ -1,6 +1,10 @@
 0.128
   - better default commands selection for editor/pager
   - support "osc rq reopen" to set a request in new state again
+#
+# Features which require OBS 2.1
+#
+  - add osc signkey --extend for extending the expiration date of the gpg public key
 
 0.127
   - add size limit mode, files can be ignored on checkout or update given a certain size limit.

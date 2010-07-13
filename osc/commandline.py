@@ -5515,6 +5515,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('--create', action='store_true', default=False,
                   help='create new gpg signing key for this project')
+    @cmdln.option('--extend', action='store_true', default=False,
+                  help='extend expiration date of the gpg public key for this project')
     @cmdln.option('--delete', action='store_true', default=False,
                   help='delete the gpg signing key in this project')
     @cmdln.option('--notraverse', action='store_true', default=False,
@@ -5522,7 +5524,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_signkey(self, subcmd, opts, *args):
         """${cmd_name}: Manage Project Signing Key
 
-        osc signkey [--create|--delete] <PROJECT>
+        osc signkey [--create|--delete|--extend] <PROJECT>
         osc signkey [--notraverse] <PROJECT>
 
         This command is for managing gpg keys. It shows the public key
@@ -5558,6 +5560,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.create:
             url = makeurl(apiurl, ['source', prj], query='cmd=createkey')
+            f = http_POST(url)
+        elif opts.extend:
+            url = makeurl(apiurl, ['source', prj, query='cmd=extendkey'])
             f = http_POST(url)
         elif opts.delete:
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
