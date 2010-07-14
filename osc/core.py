@@ -2603,7 +2603,7 @@ def get_default_editor():
             dist = platform.dist()[0]
         if dist == 'debian':
             return 'editor'
-        else if dist == 'fedora':
+        elif dist == 'fedora':
             return 'vi'
         return 'vim'
     return 'vi'
