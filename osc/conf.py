@@ -253,6 +253,9 @@ apiurl = %(apiurl)s
 #review requests interactively (default: off)
 #request_show_review = 1
 
+# Directory with executables to validate sources, esp before committing
+#source_validator_directory = /usr/lib/osc/source_validators
+
 [%(apiurl)s]
 user = %(user)s
 pass = %(pass)s
