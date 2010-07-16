@@ -1,8 +1,14 @@
 0.128
   - better default commands selection for editor/pager
   - support "osc rq reopen" to set a request in new state again
+  - "osc repos" and "wipebinaries" is checking for local project now
+  - "osc getbinaries" works in project dir now
+  - support added for SPARC builds
+  - support build --oldpackages
+  - introduced the "trusted projects"
+  - Fixes for default editor, api check on deleterequest call, tempfile leaks, getbinaries source package handling, results command
 #
-# Features which require OBS 2.1
+# Feature which require either OBS 2.1 or 2.0.4
 #
   - add osc signkey --extend for extending the expiration date of the gpg public key
 
