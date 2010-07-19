@@ -2797,7 +2797,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--skip-validation', default=False, action="store_true",
                   help='Skip the source validation')
     @cmdln.option('--verbose-validation', default=False, action="store_true",
-                  help='Run the source validation with verbose informations')
+                  help='Run the source validation with verbose information')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
