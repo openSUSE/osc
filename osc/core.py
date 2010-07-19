@@ -912,7 +912,7 @@ class Package:
 
         pathn = getTransActPath(self.dir)
 
-        if validators:
+        if validators and not self.name.startswith('_'):
             import subprocess
             import stat
             for validator in sorted(os.listdir(validators)):
