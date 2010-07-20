@@ -3414,7 +3414,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
     http_PUT(u, data=link_template)
     print 'Done.'
 
-def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map = {}, disable_publish = False):
+def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map = {}, disable_publish = False, nosources = False):
     """
     aggregate package
      - "src" is the original package
@@ -3466,9 +3466,15 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
 
     aggregate_template += """\
     <package>%s</package>
+""" % ( src_package)
+    if nosources:
+        aggregate_template += """\
+    <nosources />
+"""
+    aggregate_template += """\
   </aggregate>
 </aggregatelist>
-""" % ( src_package)
+"""
 
     u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_aggregate'])
     http_PUT(u, data=aggregate_template)

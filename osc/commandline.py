@@ -1881,6 +1881,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish)
 
+    @cmdln.option('--nosources', action='store_true',
+                  help='ignore source packages when copying build results to destination project')
     @cmdln.option('-m', '--map-repo', metavar='SRC=TARGET[,SRC=TARGET]',
                   help='Allows repository mapping(s) to be given as SRC=TARGET[,SRC=TARGET]')
     @cmdln.option('-d', '--disable-publish', action='store_true',
@@ -1929,7 +1931,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.WrongOptions('map "%s" must be SRC=TARGET[,SRC=TARGET]' % opts.map_repo)
                 repo_map[src_tgt[0]] = src_tgt[1]
 
-        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map, opts.disable_publish)
+        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map, opts.disable_publish, opts.nosources)
 
 
     @cmdln.option('-c', '--client-side-copy', action='store_true',

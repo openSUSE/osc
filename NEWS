@@ -1,4 +1,8 @@
 0.129
+#
+# Feature which requires OBS 2.1
+#
+  - add "osc aggregate --nosources" option
 
 0.128
   - better default commands selection for editor/pager
