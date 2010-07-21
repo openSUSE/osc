@@ -1843,6 +1843,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         See the examples in the _link file.
 
+        NOTE: In case you are not aware about the difference of 'linkpac' and 'branch' command
+              you should use the 'branch' command by default.
+
         usage:
             osc linkpac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         ${cmd_option_list}
