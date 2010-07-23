@@ -1411,7 +1411,7 @@ rev: %s
                         upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta)
                     except:
                         upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev="base", meta=self.meta)
-                        self.mark_frozen()
+                    self.mark_frozen()
         else:
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta)
         return upstream_rev
