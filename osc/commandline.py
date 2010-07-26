@@ -3628,6 +3628,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
+    @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
+                  help='Prefer packages from this directory when installing the build-root')
     def do_buildinfo(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build info
 
@@ -3679,18 +3681,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             del args[0]
             del args[0]
 
-        # were we given a specfile (third argument)?
-        try:
-            spec = open(args[2]).read()
-        except IndexError:
-            spec = None
-        except IOError, e:
-            print >>sys.stderr, e
-            return 1
+        build_descr_data = None
+        if len(args) == 3:
+            build_descr_data = open(args[2]).read()
+        if opts.prefer_pkgs and build_descr_data is None:
+            raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
+        elif opts.prefer_pkgs:
+            from build import get_prefer_pkgs
+            print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
+            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(args[2])[1])
+            cpio.add(os.path.basename(args[2]), build_descr_data)
+            build_descr_data = cpio.get()
 
         print ''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
-                                    specfile=spec,
+                                    specfile=build_descr_data,
                                     addlist=opts.extra_pkgs))
 
 
