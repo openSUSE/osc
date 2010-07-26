@@ -3365,21 +3365,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
+        elif len(args) < 2:
+            self.print_repos()
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
         else:
             wd = os.curdir
             package = store_read_package(wd)
             project = store_read_project(wd)
+            repository = args[0]
+            arch = args[1]
 
         offset=0
         if opts.start:
             offset = int(opts.start)
-
-        if not repository or not arch:
-            if len(args) < 2:
-                self.print_repos()
-            else:
-                repository = args[0]
-                arch = args[1]
 
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
