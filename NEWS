@@ -3,6 +3,7 @@
 # Feature which requires OBS 2.1
 #
   - add "osc aggregate --nosources" option
+  - fixed references into en.opensuse.org to honor the new Wiki structure
 
 0.128
   - better default commands selection for editor/pager
