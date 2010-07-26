@@ -2126,9 +2126,9 @@ def init_project_dir(apiurl, dir, project):
         store_write_initial_packages(dir, project, [])
 
 def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=False):
-    if not os.path.isdir(store):
-        os.mkdir(store)
-    os.chdir(store)
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+    os.chdir(dir)
     f = open('_project', 'w')
     f.write(project + '\n')
     f.close()
@@ -2798,7 +2798,7 @@ def get_request(apiurl, reqid):
     return r
 
 
-def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', message='', supersed=''):
+def change_review_state(apiurl, reqid, newstate, by_user='', message='', supersed=''):
     u = makeurl(apiurl,
                 ['request', reqid],
                 query={'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user, 'superseded_by': supersed})
@@ -2885,7 +2885,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new',), req_type=No
     return result
 
 def get_request_log(apiurl, reqid):
-    r = get_request(conf.config['apiurl'], reqid)
+    r = get_request(apiurl, reqid)
     data = []
     frmt = '-' * 76 + '\n%s | %s | %s\n\n%s'
     # the description of the request is used for the initial log entry
@@ -4062,17 +4062,13 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
         reason = node.get('reason')
         if not reason:
             reason = "unknown"
-        bcnt = node.get('bcnt')
         code = node.get('code')
-        rev = int(node.get('rev'))
-        srcmd5 = node.get('srcmd5')
         rt = int(node.get('readytime'))
         readyt = time.localtime(rt)
         readyt = time.strftime('%Y-%m-%d %H:%M:%S', readyt)
         st = int(node.get('starttime'))
         et = int(node.get('endtime'))
         endtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(et))
-        waitstart = time.strftime('%H:%M:%S', time.gmtime(st-rt))
         waittm = time.gmtime(et-st)
         if waittm.tm_hour:
             waitbuild = "%2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
@@ -4591,7 +4587,7 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
                        path_args=path,
                        template_args=None,
                        create_new=False)
-    if data:
+    if data and get_user_meta(apiurl, user) != None:
         root = ET.fromstring(''.join(data))
         found = False
         for person in root.getiterator('person'):
@@ -4883,7 +4879,6 @@ def get_commit_message_template(pac):
 
 def parse_diff_for_commit_message(diff, template = []):
     date_re = re.compile(r'\+(Mon|Tue|Wed|Thu|Fri|Sat|Sun) ([A-Z][a-z]{2}) ( ?[0-9]|[0-3][0-9]) .*')
-    index = 0
     diff = diff.split('\n')
 
     # The first four lines contains a header of diff
@@ -4946,7 +4941,7 @@ def print_request_list(apiurl, project, package = None, states = ('new', ), forc
 
 def request_interactive_review(apiurl, request):
     """review the request interactively"""
-    import tempfile, subprocess, re
+    import tempfile, re
 
     tmpfile = None
 

@@ -429,7 +429,7 @@ class RawCmdln(cmd.Cmd):
         cmdln.py).
         """
         import sys
-        type, exc, traceback = sys.exc_info()
+        exc_type, exc, traceback = sys.exc_info()
         if isinstance(exc, CmdlnUserError):
             msg = "%s %s: %s\nTry '%s help %s' for info.\n"\
                   % (self.name, argv[0], exc, self.name, argv[0])
@@ -558,7 +558,7 @@ class RawCmdln(cmd.Cmd):
     do_help.aliases = ["?"]
 
 
-    def do_man(self, argv):
+    def do_man(self):
         """${cmd_name}: generates a man page
 
         usage:

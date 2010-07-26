@@ -8,7 +8,6 @@ from core import *
 import cmdln
 import conf
 import oscerr
-import urlgrabber.progress
 from optparse import SUPPRESS_HELP
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
@@ -955,8 +954,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                          'superseded by %s' % result, result)
 
             if opts.supersede:
-                r = change_request_state(conf.config['apiurl'],
-                        opts.supersede, 'superseded', opts.message or '', result)
+                change_request_state(conf.config['apiurl'], opts.supersede, 'superseded', 
+                                     opts.message or '', result)
 
             print 'created request id', result
 
@@ -985,7 +984,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         actionxml=""
         apiurl = self.get_api_url()
         if len(args) == 0 and is_project_dir(os.getcwd()):
-            import cgi
             # submit requests for multiple packages are currently handled via multiple requests
             # They could be also one request with multiple actions, but that avoids to accepts parts of it.
             project = store_read_project(os.curdir)
@@ -1140,8 +1138,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                          'superseded by %s' % result, result)
 
             if opts.supersede:
-                r = change_request_state(apiurl,
-                        opts.supersede, 'superseded', '', result)
+                change_request_state(apiurl, opts.supersede, 'superseded', '', result)
 
             #print 'created request id', result
             return actionxml
@@ -1702,7 +1699,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if subcmd == 'review':
                 if cmd in ['accept', 'decline', 'new']:
                     r = change_review_state(conf.config['apiurl'],
-                            reqid, state_map[cmd], conf.config['user'], '', opts.message or '')
+                            reqid, state_map[cmd], conf.config['user'], opts.message or '')
                     print r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
@@ -4196,7 +4193,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         apiurl = self.get_api_url()
-        meta = None
 
         if len(args) == 0:
             wd = os.curdir
@@ -5621,7 +5617,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        from subprocess import Popen, PIPE
+        from subprocess import Popen
 
         if not os.path.exists('/usr/lib/build/vc'):
             print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
