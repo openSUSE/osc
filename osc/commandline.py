@@ -3153,15 +3153,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         2. osc repositories <project>
                 Shows the configured repositories/build targets of a project
 
-        ${cmd_usage}
+        usage:
+           osc repositories                                # works in checked out project/package 
+           osc repositories PROJECT    
+
         ${cmd_option_list}
         """
 
+        apiurl = self.get_api_url()
+
         if args:
             project = args[0]
-            print '\n'.join(get_repositories_of_project(conf.config['apiurl'], project))
+            print '\n'.join(get_repositories_of_project(apiurl, project))
         else:
-            print '\n'.join(get_repositories(conf.config['apiurl']))
+            if is_package_dir('.') or is_project_dir('.'):
+                project = store_read_project(os.curdir) 
+                print '\n'.join(get_repositories_of_project(apiurl, project))
+            else:
+                print '\n'.join(get_repositories(apiurl))
 
 
     @cmdln.hide(1)
@@ -3380,7 +3389,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
 
-    def print_repos(self):
+    def print_repos(self, repos_only=False):
         wd = os.curdir
         doprint = False
         if is_package_dir(wd):
@@ -3393,8 +3402,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if doprint:
             print 'Valid arguments for this %s are:' % str
             print
-            self.do_repos(None, None)
-            print
+            if repos_only:
+                self.do_repositories(None, None)
+            else:
+                self.do_repos(None, None)
         raise oscerr.WrongArgs('Missing arguments')
 
     @cmdln.alias('rbl')
@@ -3717,7 +3728,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         if len(args) < 1 and (is_package_dir('.') or is_project_dir('.')):
-            self.print_repos()
+            self.print_repos(True)
 
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
