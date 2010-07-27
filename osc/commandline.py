@@ -27,11 +27,11 @@ MAN_FOOTER = r"""
 Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
 .PP
 For additional information, see
- * http://wiki.opensuse.org/openSUSE:Build_Service_Tutorial
- * http://wiki.opensuse.org/openSUSE:OSC
+ * http://en.opensuse.org/openSUSE:Build_Service_Tutorial
+ * http://en.opensuse.org/openSUSE:OSC
 .PP
 You can modify osc commands, or roll you own, via the plugin API:
- * http://wiki.opensuse.org/openSUSE:OSC_plugins
+ * http://en.opensuse.org/openSUSE:OSC_plugins
 .SH AUTHOR
 osc was written by several authors. This man page is automatically generated.
 """
@@ -47,11 +47,11 @@ class Osc(cmdln.Cmdln):
     ${help_list}
     global ${option_list}
     For additional information, see
-    * http://wiki.opensuse.org/openSUSE:Build_Service_Tutorial
-    * http://wiki.opensuse.org/openSUSE:OSC
+    * http://en.opensuse.org/openSUSE:Build_Service_Tutorial
+    * http://en.opensuse.org/openSUSE:OSC
 
     You can modify osc commands, or roll you own, via the plugin API:
-    * http://wiki.opensuse.org/openSUSE:OSC_plugins
+    * http://en.opensuse.org/openSUSE:OSC_plugins
     """
     name = 'osc'
     conf = None
@@ -723,7 +723,7 @@ class Osc(cmdln.Cmdln):
     def do_submitrequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to submit source into another Project
 
-        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration for information
+        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration for information
         on this topic.]
 
         See the "request" command for showing and modifing existing requests.
@@ -1380,7 +1380,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_changedevelrequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to change the devel package definition.
 
-        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration 
+        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration 
         for information on this topic.]
 
         See the "request" command for showing and modifing existing requests.
@@ -1458,7 +1458,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
-        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration
+        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration
         for information on this topic.]
 
         This command shows and modifies existing requests. To create new requests
@@ -1895,7 +1895,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         This can be used to make packages available from building that are
         needed in a project but available only in a different project. Note
         that this is done at the expense of disk space. See
-        http://wiki.opensuse.org/openSUSE:Build_Service_Tips_and_Tricks#_link_and__aggregate
+        http://en.opensuse.org/openSUSE:Build_Service_Tips_and_Tricks#_link_and__aggregate
         for more information.
 
         The DESTPAC name is optional; the source packages' name will be used if
@@ -2026,7 +2026,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_mbranch(self, subcmd, opts, *args):
         """${cmd_name}: Multiple branch of a package
 
-        [See http://wiki.opensuse.org/openSUSE:Build_Service_Concept_Maintenance
+        [See http://en.opensuse.org/openSUSE:Build_Service_Concept_Maintenance
         for information on this topic.]
 
         This command is used for creating multiple links of defined version of a package
@@ -2095,7 +2095,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
-        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration
+        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration
         for information on this topic.]
 
         Create a source link from a package of an existing project to a new

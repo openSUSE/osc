@@ -127,7 +127,7 @@ new_package_templ = """\
   </useforbuild>
 
   Please have a look at:
-  http://wiki.opensuse.org/Restricted_formats
+  http://en.opensuse.org/Restricted_formats
   Packages containing formats listed there are NOT allowed to
   be packaged in the openSUSE Buildservice and will be deleted!
 

@@ -35,7 +35,7 @@ CRITICAL:
    apiurl/source/prj/pkg
    The current working directory or its descendants should provide defaults
    for apiurl, prj and/or pkg.
-   See also http://en.opensuse.org/Build_Service/Concepts/OscProjPack
+   See also http://en.opensuse.org/openSUSE:Build_Service_Concept_OscProjPack
 
 MAJOR:
 

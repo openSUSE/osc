@@ -58,7 +58,7 @@ setup(name='osc',
       license = 'GPL',
       platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME'],
       keywords = ['openSUSE', 'SUSE', 'RPM', 'build', 'buildservice'],
-      url = 'http://en.opensuse.org/Build_Service/CLI',
+      url = 'http://en.opensuse.org/openSUSE:OSC',
       download_url = 'http://gitorious.org/opensuse/osc',
 
       packages = ['osc', 'osc.util'],
