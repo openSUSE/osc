@@ -3347,11 +3347,12 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
     """
     meta_change = False
     dst_meta = ''
+    apiurl = conf.config['apiurl']
     try:
         dst_meta = meta_exists(metatype='pkg',
                                path_args=(quote_plus(dst_project), quote_plus(dst_package)),
                                template_args=None,
-                               create_new=False, apiurl=conf.config['apiurl'])
+                               create_new=False, apiurl=apiurl)
         root = ET.fromstring(''.join(dst_meta))
         print root.attrib['project']
         if root.attrib['project'] != dst_project:
@@ -3361,7 +3362,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
         meta_change = True
 
     if meta_change:
-        src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
+        src_meta = show_package_meta(apiurl, src_project, src_package)
         dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
 
     if disable_publish:
@@ -3380,7 +3381,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
                   data=dst_meta)
     # create the _link file
     # but first, make sure not to overwrite an existing one
-    if '_link' in meta_get_filelist(conf.config['apiurl'], dst_project, dst_package):
+    if '_link' in meta_get_filelist(apiurl, dst_project, dst_package):
         if force:
             print >>sys.stderr, 'forced overwrite of existing _link file'
         else:
@@ -3410,7 +3411,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
 </link>
 """ % (src_project, src_package, rev, cicount)
 
-    u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_link'])
+    u = makeurl(apiurl, ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
     print 'Done.'
 
@@ -3423,13 +3424,14 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     """
     meta_change = False
     dst_meta = ''
+    apiurl = conf.config['apiurl']
     try:
         dst_meta = meta_exists(metatype='pkg',
                                path_args=(quote_plus(dst_project), quote_plus(dst_package)),
                                template_args=None,
-                               create_new=False, apiurl=conf.config['apiurl'])
+                               create_new=False, apiurl=apiurl)
     except:
-        src_meta = show_package_meta(conf.config['apiurl'], src_project, src_package)
+        src_meta = show_package_meta(apiurl, src_project, src_package)
         dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
         meta_change = True
 
@@ -3449,7 +3451,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
 
     # create the _aggregate file
     # but first, make sure not to overwrite an existing one
-    if '_aggregate' in meta_get_filelist(conf.config['apiurl'], dst_project, dst_package):
+    if '_aggregate' in meta_get_filelist(apiurl, dst_project, dst_package):
         print >>sys.stderr
         print >>sys.stderr, '_aggregate file already exists...! Aborting'
         sys.exit(1)
@@ -3476,7 +3478,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
 </aggregatelist>
 """
 
-    u = makeurl(conf.config['apiurl'], ['source', dst_project, dst_package, '_aggregate'])
+    u = makeurl(apiurl, ['source', dst_project, dst_package, '_aggregate'])
     http_PUT(u, data=aggregate_template)
     print 'Done.'
 
