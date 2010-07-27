@@ -3696,46 +3696,41 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Shows the build configuration which is used in building a package.
         This command is mostly used internally by the 'build' command.
-        It needs to be called from inside a package directory.
 
         The returned data is the project-wide build configuration in a format
         which is directly readable by the build script. It contains RPM macros
         and BuildRequires expansions, for example.
 
-        The arguments REPOSITORY and ARCH can be taken from the first two columns
-        of the 'osc repos' output.
+        The argument REPOSITORY an be taken from the first column of the 
+        'osc repos' output.
 
         usage:
-            osc buildconfig REPOSITORY ARCH    (in pkg dir)
-            osc buildconfig PROJECT PACKAGE REPOSITORY ARCH
+            osc buildconfig REPOSITORY                      (in pkg or prj dir)
+            osc buildconfig PROJECT REPOSITORY
         ${cmd_option_list}
         """
 
         wd = os.curdir
         args = slash_split(args)
 
-        if len(args) < 2 and is_package_dir('.'):
+        if len(args) < 1 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
 
-        if len(args) > 4:
+        if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = self.get_api_url()
 
-        if len(args) == 2:
-            package = store_read_package(wd)
+        if len(args) == 1:
             project = store_read_project(wd)
             repository = args[0]
-            arch = args[1]
-        elif len(args) == 4:
+        elif len(args) == 2:
             project = args[0]
-            package = args[1]
-            repository = args[2]
-            arch = args[3]
+            repository = args[1]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        print ''.join(get_buildconfig(apiurl, project, package, repository, arch))
+        print ''.join(get_buildconfig(apiurl, project, repository))
 
 
     def do_repos(self, subcmd, opts, *args):

@@ -4012,7 +4012,7 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
     return f.read()
 
 
-def get_buildconfig(apiurl, prj, package, repository, arch):
+def get_buildconfig(apiurl, prj, repository):
     u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'])
     f = http_GET(u)
     return f.read()

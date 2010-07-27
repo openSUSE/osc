@@ -555,7 +555,7 @@ def main(apiurl, opts, argv):
             print 'Getting buildconfig from server and store to %s' % bc_filename
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
-            bc_file.write(get_buildconfig(apiurl, prj, pac, repo, arch))
+            bc_file.write(get_buildconfig(apiurl, prj, repo))
             bc_file.flush()
     except urllib2.HTTPError, e:
         if e.code == 404:
