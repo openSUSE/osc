@@ -3456,7 +3456,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             files = glob.glob(os.path.join(os.getcwd(), store, "_buildinfo-*"))
             if not files:
                 self.print_repos()
-                raise oscerr.WrongArgs('No buildconfig found, please specify repo and arch manually.')
             cfg = files[0]
             # find newest file
             for f in files[1:]:
