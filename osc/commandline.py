@@ -27,11 +27,11 @@ MAN_FOOTER = r"""
 Type 'osc help <subcommand>' for more detailed help on a specific subcommand.
 .PP
 For additional information, see
- * http://en.opensuse.org/Build_Service_Tutorial
- * http://en.opensuse.org/Build_Service/CLI
+ * http://wiki.opensuse.org/openSUSE:Build_Service_Tutorial
+ * http://wiki.opensuse.org/openSUSE:OSC
 .PP
 You can modify osc commands, or roll you own, via the plugin API:
- * http://en.opensuse.org/Build_Service/osc_plugins
+ * http://wiki.opensuse.org/openSUSE:OSC_plugins
 .SH AUTHOR
 osc was written by several authors. This man page is automatically generated.
 """
@@ -47,11 +47,11 @@ class Osc(cmdln.Cmdln):
     ${help_list}
     global ${option_list}
     For additional information, see
-    * http://en.opensuse.org/Build_Service_Tutorial
-    * http://en.opensuse.org/Build_Service/CLI
+    * http://wiki.opensuse.org/openSUSE:Build_Service_Tutorial
+    * http://wiki.opensuse.org/openSUSE:OSC
 
     You can modify osc commands, or roll you own, via the plugin API:
-    * http://en.opensuse.org/Build_Service/osc_plugins
+    * http://wiki.opensuse.org/openSUSE:OSC_plugins
     """
     name = 'osc'
     conf = None
@@ -723,7 +723,7 @@ class Osc(cmdln.Cmdln):
     def do_submitrequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to submit source into another Project
 
-        [See http://en.opensuse.org/Build_Service/Collaboration for information
+        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration for information
         on this topic.]
 
         See the "request" command for showing and modifing existing requests.
@@ -1380,8 +1380,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_changedevelrequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to change the devel package definition.
 
-        [See http://en.opensuse.org/Build_Service/Collaboration for information
-        on this topic.]
+        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration 
+        for information on this topic.]
 
         See the "request" command for showing and modifing existing requests.
 
@@ -1458,8 +1458,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_request(self, subcmd, opts, *args):
         """${cmd_name}: Show and modify requests
 
-        [See http://en.opensuse.org/Build_Service/Collaboration for information
-        on this topic.]
+        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration
+        for information on this topic.]
 
         This command shows and modifies existing requests. To create new requests
         you need to call one of the following:
@@ -1895,7 +1895,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         This can be used to make packages available from building that are
         needed in a project but available only in a different project. Note
         that this is done at the expense of disk space. See
-        http://en.opensuse.org/Build_Service/Tips_and_Tricks#_link_and__aggregate
+        http://wiki.opensuse.org/openSUSE:Build_Service_Tips_and_Tricks#_link_and__aggregate
         for more information.
 
         The DESTPAC name is optional; the source packages' name will be used if
@@ -2026,8 +2026,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_mbranch(self, subcmd, opts, *args):
         """${cmd_name}: Multiple branch of a package
 
-        [See http://en.opensuse.org/Build_Service/Concepts/Maintenance for information
-        on this topic.]
+        [See http://wiki.opensuse.org/openSUSE:Build_Service_Concept_Maintenance
+        for information on this topic.]
 
         This command is used for creating multiple links of defined version of a package
         in one project. This is esp. used for maintenance updates.
@@ -2095,8 +2095,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
-        [See http://en.opensuse.org/Build_Service/Collaboration for information
-        on this topic.]
+        [See http://wiki.opensuse.org/openSUSE:Build_Service_Collaboration
+        for information on this topic.]
 
         Create a source link from a package of an existing project to a new
         subproject of the requesters home project (home:branches:)
@@ -3362,21 +3362,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
+        elif len(args) < 2:
+            self.print_repos()
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
         else:
             wd = os.curdir
             package = store_read_package(wd)
             project = store_read_project(wd)
+            repository = args[0]
+            arch = args[1]
 
         offset=0
         if opts.start:
             offset = int(opts.start)
-
-        if not repository or not arch:
-            if len(args) < 2:
-                self.print_repos()
-            else:
-                repository = args[0]
-                arch = args[1]
 
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
@@ -3625,6 +3624,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
+    @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
+                  help='Prefer packages from this directory when installing the build-root')
     def do_buildinfo(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build info
 
@@ -3676,18 +3677,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             del args[0]
             del args[0]
 
-        # were we given a specfile (third argument)?
-        try:
-            spec = open(args[2]).read()
-        except IndexError:
-            spec = None
-        except IOError, e:
-            print >>sys.stderr, e
-            return 1
+        build_descr_data = None
+        if len(args) == 3:
+            build_descr_data = open(args[2]).read()
+        if opts.prefer_pkgs and build_descr_data is None:
+            raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
+        elif opts.prefer_pkgs:
+            from build import get_prefer_pkgs
+            print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
+            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(args[2])[1])
+            cpio.add(os.path.basename(args[2]), build_descr_data)
+            build_descr_data = cpio.get()
 
         print ''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
-                                    specfile=spec,
+                                    specfile=build_descr_data,
                                     addlist=opts.extra_pkgs))
 
 
