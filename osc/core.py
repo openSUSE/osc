@@ -3647,6 +3647,45 @@ def get_repositories(apiurl):
     return r
 
 
+def get_distibutions(apiurl, discon=False):
+    r = []
+
+    if discon:
+        result_line_templ = '%(name)-25s %(project)s'
+        f = http_GET(makeurl(apiurl, ['build']))
+        root = ET.fromstring(''.join(f))
+
+        for node in root.findall('entry'):
+            if node.get('name').startswith('DISCONTINUED:'):
+                rmap = {}
+                rmap['name'] = node.get('name').replace('DISCONTINUED:','').replace(':', ' ')
+                rmap['project'] = node.get('name')
+                r.append (result_line_templ % rmap)
+
+        r.insert(0,'distribution              project')
+        r.insert(1,'------------              -------')
+
+    else:
+    	result_line_templ = '%(name)-25s %(project)-25s %(reponame)s'
+        f = http_GET(makeurl(apiurl, ['distributions']))
+        root = ET.fromstring(''.join(f))
+
+        for node in root.findall('distribution'):
+            rmap = {}
+            for node2 in node.findall('name'):
+                rmap['name'] = node2.text
+            for node3 in node.findall('project'):
+                rmap['project'] = node3.text
+            for node4 in node.findall('reponame'):
+                rmap['reponame'] = node4.text
+            r.append(result_line_templ % rmap)
+
+        r.insert(0,'distribution              project                   reponame')
+        r.insert(1,'------------              -------                   --------')
+
+    return r
+
+
 # old compat lib call
 def get_platforms_of_project(apiurl, prj):
     return get_repositories_of_project(apiurl, prj)

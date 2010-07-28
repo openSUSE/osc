@@ -3173,6 +3173,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print '\n'.join(get_repositories(apiurl))
 
 
+    @cmdln.alias('dists')
+    @cmdln.option('-d', '--discontinued', action='store_true',
+                        help='show discontinued distributions')
+    def do_distributions(self, subcmd, opts, *args):
+        """${cmd_name}: Shows all available distributions
+
+	This command shows the available distributions. For active distributions
+	it shows the name, project and name of the repository. 
+
+        usage:
+            osc distributions                           
+
+        ${cmd_option_list}
+        """
+        apiurl = self.get_api_url()
+
+        print '\n'.join(get_distibutions(apiurl, opts.discontinued))
+
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):
         print "Command results_meta is obsolete. Please use: osc results --xml"
