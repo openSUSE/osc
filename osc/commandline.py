@@ -3269,6 +3269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.name_filter = None
                 opts.status_filter = None
                 opts.vertical = None
+                opts.show_non_building = None
                 self.do_prjresults('prjresults', opts, *args)
                 sys.exit(0)
             else:
@@ -3310,6 +3311,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show results only for specified repo(s)')
     @cmdln.option('-V', '--vertical', action='store_true',
                         help='list packages vertically instead horizontally')
+    @cmdln.option('-S', '--show-non-building', action='store_true',
+                        help='Show also packages which are build disabled or excluded')
     @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
@@ -3331,7 +3334,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             wd = os.curdir
             project = store_read_project(wd)
 
-        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical))
+        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical, show_non_building=opts.show_non_building))
 
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
