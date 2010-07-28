@@ -3100,6 +3100,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 pathn = getTransActPath(p.dir)
                 for filename in p.todo:
+                    p.clear_from_conflictlist(filename)
                     ret, state = p.delete_file(filename, opts.force)
                     if ret:
                         print statfrmt('D', os.path.join(pathn, filename))
