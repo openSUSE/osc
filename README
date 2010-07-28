@@ -130,7 +130,7 @@ stored in the keyring application.
 
 
 USAGE EXAMPLES:
-(online at http://en.opensuse.org/Build_Service/CLI )
+(online at http://en.opensuse.org/openSUSE:OSC )
 
 To list existing content on the server
  osc ls                                # list projects

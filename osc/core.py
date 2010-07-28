@@ -127,7 +127,7 @@ new_package_templ = """\
   </useforbuild>
 
   Please have a look at:
-  http://wiki.opensuse.org/Restricted_formats
+  http://en.opensuse.org/Restricted_formats
   Packages containing formats listed there are NOT allowed to
   be packaged in the openSUSE Buildservice and will be deleted!
 
@@ -1239,7 +1239,7 @@ class Package:
             exists_in_store = True
 
 
-        if n in self.skipped:
+        if n in self.skipped or n.startswith('_service:'):
             state = 'S'
         elif exists and not exists_in_store and known_by_meta:
             state = 'D'
@@ -3823,7 +3823,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
 
     return r
 
-def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None):
+def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_non_building=None):
     #print '----------------------------------------'
 
     r = []
@@ -3862,7 +3862,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     targets.sort()
 
     # filter option
-    if status_filter or name_filter:
+    if status_filter or name_filter or not show_non_building:
 
         pacs_to_show = []
         targets_to_show = []
@@ -3887,6 +3887,17 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             for pkg in pacs:
                 if name_filter in pkg:
                     pacs_to_show.append(pkg)
+
+        #filter non building states
+        elif not show_non_building:
+           for pkg in status.keys():
+              print "RUN for", pkg
+              for repo in status[pkg].keys():
+                  if status[pkg][repo] != "excluded" and status[pkg][repo] != "disabled":
+                     pacs_to_show.append(pkg)
+                     targets_to_show.append(repo)
+                     break
+
 
         pacs = [ i for i in pacs if i in pacs_to_show ]
         if len(targets_to_show):
@@ -4877,6 +4888,8 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
                 lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
 
         for filename in p.todo:
+            if filename.startswith('_service:'):
+                continue
             if filename in p.excluded:
                 continue
             if filename in p.skipped:
