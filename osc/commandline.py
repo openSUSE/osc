@@ -5415,7 +5415,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p = Package('.')
         # check if everything is committed
         for filename in p.filenamelist:
-            if p.status(filename) != ' ':
+            state = p.status(filename)
+            if state != ' ' and state != 'S':
                 raise oscerr.WrongArgs('Please commit your local changes first!')
         # check if we need to update
         upstream_rev = p.latest_rev()

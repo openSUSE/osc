@@ -1239,7 +1239,7 @@ class Package:
             exists_in_store = True
 
 
-        if n in self.skipped:
+        if n in self.skipped or n.startswith('_service:'):
             state = 'S'
         elif exists and not exists_in_store and known_by_meta:
             state = 'D'
@@ -4838,6 +4838,8 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
                 lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
 
         for filename in p.todo:
+            if filename.startswith('_service:'):
+                continue
             if filename in p.excluded:
                 continue
             if filename in p.skipped:
