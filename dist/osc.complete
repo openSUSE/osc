@@ -27,15 +27,19 @@ let count--
 test "${COMMAND_LINE:$last}" = " " && let count++
 unset last
 
-osccmds=(abortbuild add addremove ar aggregatepac api branch build buildconfig \
+osccmds=(abortbuild add addremove ar aggregatepac api branch bugowner build buildconfig \
     buildhistory buildhist buildinfo buildlog bl cat changedevelrequest changedevelreq \
-    cr checkout co commit checkin ci copypac delete del remove rm deleterequest \
-    deletereq dr diff di getbinaries help importsrcpkg info init jobhistory jobhist \
-    linkpac list ls log maintainer man meta mkpac platforms prjresults pr rdelete \
-    rdiff rebuild rebuildpac remotebuildlog rbl rbuildlog repairlink repos repourls \
-    request rq resolved results r search setlinkrev status st submitrequest sr \
-    submitreq update up updatepacmetafromspec metafromspec vc wipebinaries)
+    cr checkout co commit checkin ci chroot config copypac createrequest creq delete del 
+    remove rm deleterequest deletereq dr dependson whatdependson diff di distributions dists \
+    getbinaries help importsrcpkg info init jobhistory jobhist linkpac linktobranch list ls \
+    log localbuildlog lbl maintainer man mbranch meta mkpac mv my patchinfo platforms \
+    prjresults pr pull rdelete rdiff rebuild rebuildpac remotebuildlog rbl rbuildlog \
+    repairlink repos repositories platforms repourls request rq review rremove resolved \
+    results r search bse se sm setlinkrev signkey status st submitrequest sr submitpac \
+    submitreq triggerreason tr undelete update up updatepacmetafromspec metafromspec vc \
+    wipebinaries)
 oscreq=(list log show accept decline delete revoke wipe)
+oscmy=(pkg prj rq sr)
 
 oscprj=""
 oscpkg=""
@@ -177,6 +181,14 @@ rq|request)
     *)
         ((count == 2)) && builtin compgen -W "$(builtin echo ${oscreq[@]})" -- "${cmdline[2]}"
     esac
+    ;;
+my)
+    if ((count == 1)) ; then
+        builtin compgen -W 'my' -- "${cmdline[1]}"
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "$(builtin echo ${oscmy[@]})" -- "${cmdline[2]}"
+    fi
     ;;
 copypac|linkpac)
     if ((count == 1)) ; then
