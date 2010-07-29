@@ -109,7 +109,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # limit the age of requests shown with 'osc req list'.
              # this is a default only, can be overridden by 'osc req list -D NNN'
              # Use 0 for unlimted.
-             'request_list_days': 30,
+             'request_list_days': 0,
              # check for unversioned/removed files before commit
              'check_filelist': '1',
              # External scripts to validate sources, esp before commit. This is a directory
