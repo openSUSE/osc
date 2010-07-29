@@ -3175,13 +3175,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.alias('dists')
-    @cmdln.option('-d', '--discontinued', action='store_true',
-                        help='show discontinued distributions')
+# FIXME: using just ^DISCONTINUED as match is not a general approach and only valid for one instance
+#        we need to discuss an api call for that, if we need this
+#    @cmdln.option('-d', '--discontinued', action='store_true',
+#                        help='show discontinued distributions')
     def do_distributions(self, subcmd, opts, *args):
         """${cmd_name}: Shows all available distributions
 
 	This command shows the available distributions. For active distributions
-	it shows the name, project and name of the repository. 
+	it shows the name, project and name of the repository and a suggested default repository name. 
 
         usage:
             osc distributions                           
@@ -3190,7 +3192,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
 
-        print '\n'.join(get_distibutions(apiurl, opts.discontinued))
+        print '\n'.join(get_distibutions(apiurl))#FIXME:, opts.discontinued))
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):

@@ -3650,6 +3650,7 @@ def get_repositories(apiurl):
 def get_distibutions(apiurl, discon=False):
     r = []
 
+    # FIXME: this is just a naming convention on api.opensuse.org, but not a general valid apparoach
     if discon:
         result_line_templ = '%(name)-25s %(project)s'
         f = http_GET(makeurl(apiurl, ['build']))
@@ -3666,7 +3667,7 @@ def get_distibutions(apiurl, discon=False):
         r.insert(1,'------------              -------')
 
     else:
-    	result_line_templ = '%(name)-25s %(project)-25s %(reponame)s'
+    	result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
         f = http_GET(makeurl(apiurl, ['distributions']))
         root = ET.fromstring(''.join(f))
 
@@ -3676,12 +3677,14 @@ def get_distibutions(apiurl, discon=False):
                 rmap['name'] = node2.text
             for node3 in node.findall('project'):
                 rmap['project'] = node3.text
-            for node4 in node.findall('reponame'):
-                rmap['reponame'] = node4.text
+            for node4 in node.findall('repository'):
+                rmap['repository'] = node4.text
+            for node5 in node.findall('reponame'):
+                rmap['reponame'] = node5.text
             r.append(result_line_templ % rmap)
 
-        r.insert(0,'distribution              project                   reponame')
-        r.insert(1,'------------              -------                   --------')
+        r.insert(0,'distribution              project                   repository                reponame')
+        r.insert(1,'------------              -------                   ----------                --------')
 
     return r
 

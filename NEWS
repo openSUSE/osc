@@ -1,4 +1,5 @@
 0.129
+  - "dists" command to show the configured default base repos from the server.
 #
 # Feature which requires OBS 2.1
 #
