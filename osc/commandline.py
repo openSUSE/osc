@@ -4962,11 +4962,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print 'Package \'%s\' imported successfully' % pac
 
 
-    @cmdln.option('-m', '--method', default='GET', metavar='HTTP_METHOD',
+    @cmdln.option('-X', '-m', '--method', default='GET', metavar='HTTP_METHOD',
                         help='specify HTTP method to use (GET|PUT|DELETE|POST)')
     @cmdln.option('-d', '--data', default=None, metavar='STRING',
                         help='specify string data for e.g. POST')
-    @cmdln.option('-f', '--file', default=None, metavar='FILE',
+    @cmdln.option('-T', '-f', '--file', default=None, metavar='FILE',
                         help='specify filename for e.g. PUT or DELETE')
     @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING',
                         nargs=2, action='append', dest='headers',
@@ -4983,7 +4983,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Examples:
           osc api /source/home:user
-          osc api -m PUT -f /etc/fstab source/home:user/test5/myfstab
+          osc api -X PUT -T /etc/fstab source/home:user/test5/myfstab
 
         ${cmd_usage}
         ${cmd_option_list}
