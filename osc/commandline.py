@@ -183,11 +183,13 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        apiurl = self.get_api_url()
+
         if not package:
-            init_project_dir(conf.config['apiurl'], os.curdir, project)
+            init_project_dir(apiurl, os.curdir, project)
             print 'Initializing %s (Project: %s)' % (os.curdir, project)
         else:
-            init_package_dir(conf.config['apiurl'], project, package, os.path.curdir)
+            init_package_dir(apiurl, project, package, os.path.curdir)
             print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
     @cmdln.alias('ls')
@@ -243,7 +245,6 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        apiurl = conf.config['apiurl']
         args = slash_split(args)
         if subcmd == 'll':
             opts.verbose = True
@@ -285,6 +286,8 @@ class Osc(cmdln.Cmdln):
         if opts.binaries and opts.expand:
             raise oscerr.WrongOptions('Sorry, --binaries and --expand are mutual exclusive.')
 
+        apiurl = self.get_api_url() 
+
         # list binaries
         if opts.binaries:
             # ls -b toplevel doesn't make sense, so use info from
@@ -296,8 +299,6 @@ class Osc(cmdln.Cmdln):
                 elif is_package_dir(dir):
                     project = store_read_project(dir)
                     package = store_read_package(dir)
-
-            apiurl = self.get_api_url()
 
             if not project:
                 raise oscerr.WrongArgs('There are no binaries to list above project level.')
@@ -335,7 +336,7 @@ class Osc(cmdln.Cmdln):
         # list sources
         elif not opts.binaries:
             if not args:
-                print '\n'.join(meta_get_project_list(conf.config['apiurl'], opts.deleted))
+                print '\n'.join(meta_get_project_list(apiurl, opts.deleted))
 
             elif len(args) == 1:
                 if opts.verbose:
@@ -344,14 +345,14 @@ class Osc(cmdln.Cmdln):
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
 
-                print '\n'.join(meta_get_packagelist(conf.config['apiurl'], project, opts.deleted))
+                print '\n'.join(meta_get_packagelist(apiurl, project, opts.deleted))
 
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False
                 print_not_found = True
                 rev = opts.revision
                 for i in [ 1, 2 ]:
-                    l = meta_get_filelist(conf.config['apiurl'],
+                    l = meta_get_filelist(apiurl,
                                       project,
                                       package,
                                       verbose=opts.verbose,
@@ -371,7 +372,7 @@ class Osc(cmdln.Cmdln):
                     else:
                         print '\n'.join(l)
                     if opts.expand or opts.unexpand or not link_seen: break
-                    m = show_files_meta(conf.config['apiurl'], project, package)
+                    m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
                     li.read(ET.fromstring(''.join(m)).find('linkinfo'))
                     if li.haserror():
@@ -954,7 +955,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                          'superseded by %s' % result, result)
 
             if opts.supersede:
-                change_request_state(conf.config['apiurl'], opts.supersede, 'superseded', 
+                change_request_state(apiurl, opts.supersede, 'superseded', 
                                      opts.message or '', result)
 
             print 'created request id', result
@@ -1356,7 +1357,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
 
-	apiurl = self.get_api_url()
+        apiurl = self.get_api_url()
 
         if not opts.message:
             import textwrap
@@ -1651,7 +1652,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         opts.message = edit_message()
                     for result in results:
                         print result.reqid, ": ",
-                        r = change_request_state(conf.config['apiurl'],
+                        r = change_request_state(apiurl,
                                 str(result.reqid), 'accepted', opts.message or '')
                         print r
                 else:
@@ -1659,16 +1660,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.UserAbort()
 
         elif cmd == 'log':
-            for l in get_request_log(conf.config['apiurl'], reqid):
+            for l in get_request_log(apiurl, reqid):
                 print l
 
         # show
         elif cmd == 'show':
-            r = get_request(conf.config['apiurl'], reqid)
+            r = get_request('apiurl', reqid)
             if opts.brief:
                 print r.list_view()
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
-                return request_interactive_review(conf.config['apiurl'], r)
+                return request_interactive_review(apiurl, r)
             else:
                 print r
             # fixme: will inevitably fail if the given target doesn't exist
@@ -1676,7 +1677,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongOptions('\'--diff\' is not possible for request type: \'%s\'' % r.actions[0].type)
             elif opts.diff:
                 try:
-                    print server_diff(conf.config['apiurl'],
+                    print server_diff(apiurl,
                                       r.actions[0].dst_project, r.actions[0].dst_package, None,
                                       r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
                 except urllib2.HTTPError, e:
@@ -1685,7 +1686,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         raise e
                     # backward compatiblity: only a recent api/backend supports the missingok parameter
                     try:
-                        print server_diff(conf.config['apiurl'],
+                        print server_diff(apiurl,
                                           r.actions[0].dst_project, r.actions[0].dst_package, None,
                                           r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, False)
                     except urllib2.HTTPError, e:
@@ -1694,11 +1695,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
-            r = get_request(conf.config['apiurl'], reqid)
+            r = get_request(apiurl, reqid)
             submits = [ i for i in r.actions if i.type == 'submit' ]
             if not len(submits):
                 raise oscerr.WrongArgs('\'checkout\' only works for \'submit\' requests')
-            checkout_package(conf.config['apiurl'], submits[0].src_project, submits[0].src_package, \
+            checkout_package(apiurl, submits[0].src_project, submits[0].src_package, \
                 submits[0].src_rev, expand_link=True, prj_dir=submits[0].src_project)
 
         else:
@@ -1708,12 +1709,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # Change review state only
             if subcmd == 'review':
                 if cmd in ['accept', 'decline', 'new']:
-                    r = change_review_state(conf.config['apiurl'],
+                    r = change_review_state(apiurl,
                             reqid, state_map[cmd], conf.config['user'], opts.message or '')
                     print r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
-                r = change_request_state(conf.config['apiurl'],
+                r = change_request_state(apiurl,
                         reqid, state_map[cmd], opts.message or '')
                 print r
 
@@ -1757,7 +1758,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
         package = None
         if len(args) == 0:
             p = findpacs(os.curdir)[0]
@@ -1859,6 +1860,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
+        apiurl = self.get_api_url()
 
         if not args or len(args) < 3:
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
@@ -1883,7 +1885,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.cicount = "copy"
 
         if opts.current:
-            rev = show_upstream_rev(conf.config['apiurl'], src_project, src_package)
+            rev = show_upstream_rev(apiurl, src_project, src_package)
 
         if rev and not checkRevision(src_project, src_package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
@@ -2051,6 +2053,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         args = slash_split(args)
+        apiurl = self.get_api_url()
         tproject = None
 
         maintained_attribute = conf.config['maintained_attribute']
@@ -2063,7 +2066,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 2:
             tproject = args[1]
 
-        r = attribute_branch_pkg(conf.config['apiurl'], maintained_attribute, maintained_update_project_attribute, \
+        r = attribute_branch_pkg(apiurl, maintained_attribute, maintained_update_project_attribute, \
                                  package, tproject)
 
         if r is None:
@@ -2073,13 +2076,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print "Project " + r + " created."
 
         if opts.checkout:
-            init_project_dir(conf.config['apiurl'], r, r)
+            init_project_dir(apiurl, r, r)
             print statfrmt('A', r)
 
             # all packages
-            for package in meta_get_packagelist(conf.config['apiurl'], r):
+            for package in meta_get_packagelist(apiurl, r):
                 try:
-                    checkout_package(conf.config['apiurl'], r, package, expand_link = True, prj_dir = r)
+                    checkout_package(apiurl, r, package, expand_link = True, prj_dir = r)
                 except:
                     print >>sys.stderr, 'Error while checkout package:\n', package
 
@@ -2144,6 +2147,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 2 or len(args) > 4:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
+        apiurl = self.get_api_url()
+
         expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
         if len(args) >= 3:
             expected = tproject = args[2]
@@ -2156,7 +2161,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.message = edit_message(footer, template)
 
         exists, targetprj, targetpkg, srcprj, srcpkg = \
-                branch_pkg(conf.config['apiurl'], args[0], args[1],
+                branch_pkg(apiurl, args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout, msg=opts.message or '',
@@ -2180,20 +2185,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         package = tpackage or args[1]
         if opts.checkout:
-            checkout_package(conf.config['apiurl'], targetprj, package,
+            checkout_package(apiurl, targetprj, package,
                              expand_link=True, prj_dir=targetprj)
             if conf.config['verbose']:
                 print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
         else:
             apiopt = ''
-            if conf.get_configParser().get('general', 'apiurl') != conf.config['apiurl']:
-                apiopt = '-A %s ' % conf.config['apiurl']
+            if conf.get_configParser().get('general', 'apiurl') != apiurl:
+                apiopt = '-A %s ' % apiurl
             print 'A working copy of the branched package can be checked out with:\n\n' \
                   'osc %sco %s/%s' \
                       % (apiopt, targetprj, package)
-        print_request_list(conf.config['apiurl'], args[0], args[1])
+        print_request_list(apiurl, args[0], args[1])
         if devloc:
-            print_request_list(conf.config['apiurl'], devloc, args[1])
+            print_request_list(apiurl, devloc, args[1])
 
 
     def do_undelete(self, subcmd, opts, *args):
@@ -2212,14 +2217,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         if len(args) < 1:
             raise oscerr.WrongArgs('Missing argument.')
+
+        apiurl = self.get_api_url()
         prj = args[0]
         pkgs = args[1:]
 
         if pkgs:
             for pkg in pkgs:
-                undelete_package(conf.config['apiurl'], prj, pkg)
+                undelete_package(apiurl, prj, pkg)
         else:
-            undelete_project(conf.config['apiurl'], prj)
+            undelete_project(apiurl, prj)
 
 
     @cmdln.option('-f', '--force', action='store_true',
@@ -2241,6 +2248,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         if len(args) < 1:
             raise oscerr.WrongArgs('Missing argument.')
+
+        apiurl = self.get_api_url()
         prj = args[0]
         pkgs = args[1:]
 
@@ -2249,14 +2258,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                # careful: if pkg is an empty string, the package delete request results
                # into a project delete request - which works recursively...
                 if pkg:
-                    delete_package(conf.config['apiurl'], prj, pkg)
-        elif len(meta_get_packagelist(conf.config['apiurl'], prj)) >= 1 and not opts.force:
+                    delete_package(apiurl, prj, pkg)
+        elif len(meta_get_packagelist(apiurl, prj)) >= 1 and not opts.force:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
                                 'packages use the \'--force\' switch'
             sys.exit(1)
         else:
-            delete_project(conf.config['apiurl'], prj)
+            delete_project(apiurl, prj)
 
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):
@@ -2393,6 +2402,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
+        apiurl = self.get_api_url()
 
         rev1 = None
         rev2 = None
@@ -2439,7 +2449,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.revision:
                 rev1, rev2 = parseRevisionOption(opts.revision)
 
-        rdiff = server_diff(conf.config['apiurl'],
+        rdiff = server_diff(apiurl,
                             old_project, old_package, rev1,
                             new_project, new_package, rev2, not opts.plain, opts.missingok)
         print rdiff
@@ -3201,6 +3211,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+	apiurl = self.get_api_url()
 
         if len(files) == 0:
             if not '/' in project:
@@ -3215,7 +3226,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if resp not in ('y', 'Y'):
                     continue
             try:
-                delete_files(conf.config['apiurl'], project, package, (file, ))
+                delete_files(apiurl, project, package, (file, ))
             except urllib2.HTTPError, e:
                 if opts.force:
                     print >>sys.stderr, e
@@ -3430,7 +3441,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
         else:
             args = slash_split(args)
-            apiurl = conf.config['apiurl']
+            apiurl = self.get_api_url()
             if len(args) < 4:
                 raise oscerr.WrongArgs('Too few arguments.')
             elif len(args) > 4:
@@ -4268,7 +4279,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         package = repo = arch = code = None
-        apiurl = conf.config['apiurl']
+        apiurl = self.get_api_url()
 
         if len(args) < 1:
             if is_package_dir(os.curdir):
@@ -4324,6 +4335,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc abortbuild [OPTS] PROJECT [PACKAGE]
         ${cmd_option_list}
         """
+        apiurl = self.get_api_url()
 
         if len(args) < 1:
             raise oscerr.WrongArgs('Missing <project> argument.')
@@ -4333,7 +4345,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             package = None
 
-        print abortbuild(conf.config['apiurl'], args[0], package, opts.arch, opts.repo)
+        print abortbuild(apiurl, args[0], package, opts.arch, opts.repo)
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
@@ -4701,6 +4713,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                       'or \'--bugowner\' or \'--maintainer\' or \'--limit-to-attribute <attr>\ ' \
                                       'or \'--project\' or \'--package\' are mutually exclusive')
 
+        apiurl = self.get_api_url()
+
         xpath = ''
         if opts.title:
             xpath = xpath_join(xpath, build_xpath('title', search_term, opts.substring), inner=True)
@@ -4740,7 +4754,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.binary:
             what = {'published/binary/id': xpath}
         try:
-            res = search(conf.config['apiurl'], **what)
+            res = search(apiurl, **what)
         except urllib2.HTTPError, e:
             if e.code != 400 or not role_filter:
                 raise e
@@ -4748,7 +4762,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.limit_to_attribute:
                 role_filter_xpath = xpath_join(role_filter_xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
             what = dict([[kind, role_filter_xpath] for kind in what.keys()])
-            res = search(conf.config['apiurl'], **what)
+            res = search(apiurl, **what)
             filter_role(res, search_term, role_filter)
         if role_filter:
             role_filter = '%s (%s)' % (search_term, role_filter)
@@ -4972,13 +4986,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        apiurl = self.get_api_url()
+
         if not opts.method in ['GET', 'PUT', 'POST', 'DELETE']:
             sys.exit('unknown method %s' % opts.method)
 
         if not url.startswith('http'):
             if not url.startswith('/'):
                 url = '/' + url
-            url = conf.config['apiurl'] + url
+            url = apiurl + url
 
         if opts.headers:
             opts.headers = dict(opts.headers)
@@ -5074,18 +5090,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
+        apiurl = self.get_api_url()
+
         if opts.add:
             for role in roles:
-                addPerson(conf.config['apiurl'], prj, pac, opts.add, role)
+                addPerson(apiurl, prj, pac, opts.add, role)
         elif opts.delete:
             for role in roles:
-                delPerson(conf.config['apiurl'], prj, pac, opts.delete, role)
+                delPerson(apiurl, prj, pac, opts.delete, role)
         elif opts.devel_project:
             # XXX: does it really belong to this command?
-            setDevelProject(conf.config['apiurl'], prj, pac, opts.devel_project)
+            setDevelProject(apiurl, prj, pac, opts.devel_project)
         else:
             if pac:
-                m = show_package_meta(conf.config['apiurl'], prj, pac)
+                m = show_package_meta(apiurl, prj, pac)
                 root = ET.fromstring(''.join(m))
                 if not opts.nodevelproject:
                     while root.findall('devel'):
@@ -5094,16 +5112,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         pac = d.get('package', pac)
                         if opts.verbose:
                             print "Following to the development space: %s/%s" % (prj, pac)
-                        m = show_package_meta(conf.config['apiurl'], prj, pac)
+                        m = show_package_meta(apiurl, prj, pac)
                         root = ET.fromstring(''.join(m))
                     if not root.findall('person'):
                         if opts.verbose:
                             print "No dedicated persons in package defined, showing the project persons."
                         pac = None
-                        m = show_project_meta(conf.config['apiurl'], prj)
+                        m = show_project_meta(apiurl, prj)
                         root = ET.fromstring(''.join(m))
             else:
-                m = show_project_meta(conf.config['apiurl'], prj)
+                m = show_project_meta(apiurl, prj)
                 root = ET.fromstring(''.join(m))
 
             # showing the maintainers
@@ -5120,14 +5138,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.email:
                     emails = []
                     for maintainer in maintainers.get(role, []):
-                        user = get_user_data(conf.config['apiurl'], maintainer, 'email')
+                        user = get_user_data(apiurl, maintainer, 'email')
                         if len(user):
                             emails.append(''.join(user))
                     print ', '.join(emails) or '-'
                 elif opts.verbose:
                     userdata = []
                     for maintainer in maintainers.get(role, []):
-                        user = get_user_data(conf.config['apiurl'], maintainer, 'login', 'realname', 'email')
+                        user = get_user_data(apiurl, maintainer, 'login', 'realname', 'email')
                         userdata.append(user[0])
                         if user[1] !=  '-':
                             userdata.append("%s <%s>"%(user[1], user[2]))
@@ -5173,21 +5191,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) != 3:
             raise oscerr.WrongArgs('Wrong number of arguments.')
         rev, dummy = parseRevisionOption(opts.revision)
+        apiurl = self.get_api_url()
 
         query = { }
         if opts.revision:
             query['rev'] = opts.revision
         if opts.expand:
-            query['rev'] = show_upstream_srcmd5(conf.config['apiurl'], args[0], args[1], expand=True, revision=opts.revision)
-        u = makeurl(conf.config['apiurl'], ['source', args[0], args[1], args[2]], query=query)
+            query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
+        u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
         try:
             for data in streamfile(u):
                 sys.stdout.write(data)
         except urllib2.HTTPError, e:
             if e.code == 404 and not opts.expand and not opts.unexpand:
                 print >>sys.stderr, 'expanding link...'
-                query['rev'] = show_upstream_srcmd5(conf.config['apiurl'], args[0], args[1], expand=True, revision=opts.revision)
-                u = makeurl(conf.config['apiurl'], ['source', args[0], args[1], args[2]], query=query)
+                query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
+                u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
                 for data in streamfile(u):
                     sys.stdout.write(data)
             else:
