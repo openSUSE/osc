@@ -2813,6 +2813,41 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
     return f.read()
 
 
+def get_review_list(apiurl, project='', package='', user='', group='', states=('new')):
+    xpath = ''
+    xpath = xpath_join(xpath, 'state/@name=\'review\'', inner=True)
+    if not 'all' in states:
+        for state in states:
+            xpath = xpath_join(xpath, 'review/@state=\'%s\'' % state, inner=True)
+    if user:
+        xpath = xpath_join(xpath, 'review/@by_user=\'%s\'\'' % user, op='and')
+    if group:
+        xpath = xpath_join(xpath, 'review/@by_group=\'%s\'\'' % group, op='and')
+
+    # XXX: we cannot use the '|' in the xpath expression because it is not supported
+    #      in the backend
+    todo = {}
+    if project:
+        todo['project'] = project
+    if package:
+        todo['package'] = package
+    for kind, val in todo.iteritems():
+        xpath = xpath_join(xpath, '(action/target/@%(kind)s=\'%(val)s\' or ' \
+                                  'action/source/@%(kind)s=\'%(val)s\' or ' \
+                                  'submit/target/@%(kind)s=\'%(val)s\' or ' \
+                                  'submit/source/@%(kind)s=\'%(val)s\')' % {'kind': kind, 'val': val}, op='and')
+
+    if conf.config['verbose'] > 1:
+        print '[ %s ]' % xpath
+    res = search(apiurl, request=xpath)
+    collection = res['request']
+    requests = []
+    for root in collection.findall('request'):
+        r = Request()
+        r.read(root)
+        requests.append(r)
+    return requests
+
 def get_request_list(apiurl, project='', package='', req_who='', req_state=('new',), req_type=None, exclude_target_projects=[]):
     xpath = ''
     if not 'all' in req_state:

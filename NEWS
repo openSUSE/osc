@@ -1,5 +1,6 @@
 0.129
   - "dists" command to show the configured default base repos from the server.
+  - "review list" command to list open review requests
 #
 # Feature which requires OBS 2.1
 #

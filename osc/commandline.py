@@ -1438,7 +1438,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests in state "new" or changed in the last DAYS. [default=%(request_list_days)s]')
     @cmdln.option('-U', '--user', metavar='USER',
-                        help='same as -M, but for the specified USER')
+                        help='requests or reviews limited for the specified USER')
+    @cmdln.option('-G', '--group', metavar='GROUP',
+                        help='requests or reviews limited for the specified GROUP')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
     @cmdln.option('-M', '--mine', action='store_true',
@@ -1505,6 +1507,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request revoke [-m TEXT] ID
             osc request wipe ID
             osc request checkout/co ID
+            osc review list [-U USER] [-G GROUP] [-s state]
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
             osc review new [-m TEXT] ID            # for setting a temporary comment without changing the state
@@ -1575,12 +1578,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if cmd == 'list' or cmd == 'approvenew':
             states = ('new', 'accepted', 'revoked', 'declined')
             who = ''
+            group = opts.group
             if cmd == 'approvenew':
                states = ('new')
                results = get_request_list(apiurl, project, package, '', ['new'])
             else:
                state_list = opts.state.split(',')
-               if opts.state == 'all':
+               if opts.all:
+                   state_list = ['all']
+               if subcmd == 'review':
+                   state_list = ['review']
+               elif opts.state == 'all':
                    state_list = ['all']
                else:
                    for s in state_list:
@@ -1590,21 +1598,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    who = conf.get_apiurl_usr(apiurl)
                if opts.user:
                    who = opts.user
-               if opts.all:
-                   state_list = ['all']
 
                ## FIXME -B not implemented!
                if opts.bugowner:
                    if (self.options.debug):
                        print 'list: option --bugowner ignored: not impl.'
 
-               if opts.involved_projects:
-                   who = who or conf.get_apiurl_usr(apiurl)
-                   results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
-                                                            req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
+               if subcmd == 'review':
+                       # FIXME: do the review list for the user and for all groups he belong to
+                       results = get_review_list(apiurl, project, package, who, opts.group, state_list)
                else:
-                   results = get_request_list(apiurl, project, package, who,
-                                              state_list, opts.type, opts.exclude_target_project or [])
+                   if opts.involved_projects:
+                       who = who or conf.get_apiurl_usr(apiurl)
+                       results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
+                                                                req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
+                   else:
+                       results = get_request_list(apiurl, project, package, who,
+                                                  state_list, opts.type, opts.exclude_target_project or [])
 
             results.sort(reverse=True)
             import time
