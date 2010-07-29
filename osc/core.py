@@ -2311,6 +2311,7 @@ def show_develproject(apiurl, prj, pac):
 
 def show_package_disabled_repos(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
+    #FIXME: don't work if all repos of a project are disabled and only some are enabled since <disable/> is empty
     try:
         root = ET.fromstring(''.join(m))
         elm = root.find('build')
