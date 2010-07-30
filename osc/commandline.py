@@ -3888,11 +3888,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif not arg_descr:
             msg = None
             if len(descr) > 1:
-                spec = os.path.basename(os.getcwd())+'.spec'
-                if spec in descr:
-                    arg_descr = spec
-                else:
-                    msg = 'Multiple build description files found: %s' % ', '.join(descr)
+                msg = 'Multiple build description files found: %s' % ', '.join(descr)
             else:
                 msg = 'Missing argument: build description (spec, dsc or kiwi file)'
                 try:
