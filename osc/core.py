@@ -1598,7 +1598,7 @@ class RequestState:
 
 class Action:
     """represents an action"""
-    def __init__(self, type, src_project, src_package, src_rev, dst_project, dst_package, src_update):
+    def __init__(self, type, src_project, src_package, src_rev, dst_project, dst_package, src_update, role_person, role_group, role):
         self.type = type
         self.src_project = src_project
         self.src_package = src_package
@@ -1606,6 +1606,9 @@ class Action:
         self.dst_project = dst_project
         self.dst_package = dst_package
         self.src_update = src_update
+        self.role_person  = role_person
+        self.role_group   = role_group
+        self.role         = role
 
 class Request:
     """represent a request and holds its metadata
@@ -1631,7 +1634,7 @@ class Request:
         for action in actions:
             type = action.get('type', 'submit')
             try:
-                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_update = None
+                src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_update = role = role_person = role_group = None
                 if action.findall('source'):
                     n = action.find('source')
                     src_prj = n.get('project', None)
@@ -1645,7 +1648,15 @@ class Request:
                     n = action.find('options')
                     if n.findall('sourceupdate'):
                         src_update = n.find('sourceupdate').text.strip()
-                self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update)
+                if action.findall('person'):
+                    n = action.find('person')
+                    role_person = n.get('name', None)
+                    role = n.get('role', None)
+                if action.findall('group'):
+                    n = action.find('add_role')
+                    role_group = n.get('name', None)
+                    role = n.get('role', None)
+                self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update, role_person, role_group, role)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
                 raise oscerr.APIError(msg)
@@ -1693,9 +1704,9 @@ class Request:
         except:
             pass
 
-    def add_action(self, type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update):
+    def add_action(self, type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update, role_person, role_group, role):
         self.actions.append(Action(type, src_prj, src_pkg, src_rev,
-                                   dst_prj, dst_pkg, src_update)
+                                   dst_prj, dst_pkg, src_update, role_person, role_group, role)
                            )
 
     def list_view(self):
@@ -1709,6 +1720,11 @@ class Request:
             sr_source=""
             if a.type=="submit":
                 sr_source="%s/%s  -> " % (a.src_project, a.src_package)
+            if a.type=="add_role":
+                if a.role_person is not None:
+                    sr_source="%s as %s" % (a.role_person, a.role)
+                if a.role_group is not None:
+                    sr_source="%s as %s" % (a.role_group, a.role)
             if a.type=="change_devel":
                 dst = "developed in %s/%s" % (a.src_project, a.src_package)
                 sr_source="%s/%s" % (a.dst_project, a.dst_package)
