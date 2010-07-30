@@ -3417,7 +3417,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
 
-    def print_repos(self):
+    def print_repos(self, repos_only=False):
         wd = os.curdir
         doprint = False
         if is_package_dir(wd):
@@ -3430,7 +3430,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if doprint:
             print 'Valid arguments for this %s are:' % str
             print
-            self.do_repositories(None, None)
+            if repos_only:
+                self.do_repositories("repos_only", None)
+            else:
+                self.do_repositories(None, None)
         raise oscerr.WrongArgs('Missing arguments')
 
     @cmdln.alias('rbl')
@@ -3753,7 +3756,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         if len(args) < 1 and (is_package_dir('.') or is_project_dir('.')):
-            self.print_repos()
+            self.print_repos(True)
 
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -3761,6 +3764,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         if len(args) == 1:
+            #FIXME: check if args[0] is really a repo and not a project, need a is_project() function for this
             project = store_read_project(wd)
             repository = args[0]
         elif len(args) == 2:
@@ -3810,13 +3814,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if package is not None:
             disabled = show_package_disabled_repos(apiurl, project, package)
 
-        data = []
-        for repo in get_repos_of_project(apiurl, project):
-            if (disabled is None) or ((disabled is not None) and (repo.name not in disabled)):
-                data += [repo.name, repo.arch]
-            
-        for row in build_table(2, data, width=2):
-            print row
+        if subcmd == 'repos_only':
+            for repo in get_repositories_of_project(apiurl, project): 
+                if (disabled is None) or ((disabled is not None) and (repo not in disabled)):
+                    print repo
+        else:
+            data = []
+            for repo in get_repos_of_project(apiurl, project):
+                if (disabled is None) or ((disabled is not None) and (repo.name not in disabled)):
+                    data += [repo.name, repo.arch]
+        
+            for row in build_table(2, data, width=2):
+                print row
 
 
     def parse_repoarchdescr(self, args, noinit = False, alternative_project = None):
