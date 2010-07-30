@@ -1509,6 +1509,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request wipe ID
             osc request checkout/co ID
             osc review list [-U USER] [-G GROUP] [-s state]
+            osc review add [-U USER] [-G GROUP] ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
             osc review new [-m TEXT] ID            # for setting a temporary comment without changing the state
@@ -1536,7 +1537,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['list', 'log', 'show', 'decline', 'reopen', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
+        cmds = ['add', 'list', 'log', 'show', 'decline', 'reopen', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1555,6 +1556,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
+        if cmd in ['add'] and not opts.user and not opts.group:
+            raise oscerr.WrongArgs('Need either a user or group as reviewer')
 
         apiurl = self.get_api_url()
 
@@ -1572,11 +1575,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['log', 'show', 'decline', 'reopen', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
+        elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
+        # add new reviewer to existing request
+        if cmd in ['add'] and subcmd == 'review':
+            query = { 'cmd': 'addreview' }
+            if opts.user:
+                query['by_user'] = opts.user
+            if opts.group:
+                query['by_group'] = opts.group
+            url = makeurl(apiurl, ['request', reqid], query)
+            r = http_POST(url)
+            print r.read()
+
         # list and approvenew
-        if cmd == 'list' or cmd == 'approvenew':
+        elif cmd == 'list' or cmd == 'approvenew':
             states = ('new', 'accepted', 'revoked', 'declined')
             who = ''
             group = opts.group
