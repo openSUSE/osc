@@ -318,8 +318,7 @@ def verify_pacs(pac_list, key_list):
        In case of failure, exit.
        """
 
-    # XXX: remove if new code stable
-    if not conf.config.get('builtin_signature_check', False):
+    if not conf.config.get('builtin_signature_check', True):
         return verify_pacs_old(pac_list)
 
     if not pac_list:
