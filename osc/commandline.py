@@ -1679,7 +1679,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # show
         elif cmd == 'show':
-            r = get_request('apiurl', reqid)
+            r = get_request(apiurl, reqid)
             if opts.brief:
                 print r.list_view()
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
