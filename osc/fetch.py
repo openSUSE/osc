@@ -215,35 +215,31 @@ class Fetcher:
                 os.makedirs(dest, mode=0755)
             dest += '/_pubkey'
 
-            if os.path.exists(dest):
+            url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
+            try:
+                OscFileGrabber().urlgrab(url, dest)
                 buildinfo.keys.append(dest)
                 buildinfo.prjkeys.append(i)
-            else:
-                url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
-                try:
-                    self.gr.urlgrab(url, dest, text="fetching key for %s" % i)
-                    buildinfo.keys.append(dest)
-                    buildinfo.prjkeys.append(i)
-                except KeyboardInterrupt:
-                    print 'Cancelled by user (ctrl-c)'
-                    print 'Exiting.'
-                    if os.path.exists(dest):
-                        os.unlink(dest)
-                    sys.exit(0)
-                except URLGrabError, e:
-                    if self.http_debug:
-                        print "can't fetch key for %s: %s" %(i, e.strerror)
-                        print "url: %s" % url
-                    else:
-                        print "%s doesn't have a gpg key" % i
+            except KeyboardInterrupt:
+                print 'Cancelled by user (ctrl-c)'
+                print 'Exiting.'
+                if os.path.exists(dest):
+                    os.unlink(dest)
+                sys.exit(0)
+            except URLGrabError, e:
+                if self.http_debug:
+                    print "can't fetch key for %s: %s" %(i, e.strerror)
+                    print "url: %s" % url
+                else:
+                    print "%s doesn't have a gpg key" % i
 
-                    if os.path.exists(dest):
-                        os.unlink(dest)
+                if os.path.exists(dest):
+                    os.unlink(dest)
 
-                    l = i.rsplit(':', 1)
-                    # try key from parent project
-                    if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
-                        prjs.append(l[0])
+                l = i.rsplit(':', 1)
+                # try key from parent project
+                if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
+                    prjs.append(l[0])
 
 def verify_pacs_old(pac_list):
     """Take a list of rpm filenames and run rpm -K on them.
