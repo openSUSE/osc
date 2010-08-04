@@ -749,7 +749,7 @@ def main(apiurl, opts, argv):
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
-            verify_pacs([ i.fullfilename for i in bi.deps ], bi.keys)
+            verify_pacs(bi)
 
     elif bi.pacsuffix == 'deb':
         if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":

@@ -230,8 +230,6 @@ class Fetcher:
                 if self.http_debug:
                     print "can't fetch key for %s: %s" %(i, e.strerror)
                     print "url: %s" % url
-                else:
-                    print "%s doesn't have a gpg key" % i
 
                 if os.path.exists(dest):
                     os.unlink(dest)
@@ -308,30 +306,29 @@ def verify_pacs_old(pac_list):
             sys.exit(1)
 
 
-def verify_pacs(pac_list, key_list):
+def verify_pacs(bi):
     """Take a list of rpm filenames and verify their signatures.
 
        In case of failure, exit.
        """
 
+    pac_list = [ i.fullfilename for i in bi.deps ]
     if not conf.config.get('builtin_signature_check', True):
         return verify_pacs_old(pac_list)
 
     if not pac_list:
         return
 
-    if not key_list:
-        print "no keys"
-        sys.exit(1)
-        return
+    if not bi.keys:
+        raise oscerr.APIError("can't verify packages due to lack of GPG keys")
 
-    print key_list
+    print "using keys from", ', '.join(bi.prjkeys)
 
     import checker
     failed = False
     checker = checker.Checker()
     try:
-        checker.readkeys(key_list)
+        checker.readkeys(bi.keys)
         for pkg in pac_list:
             try:
                 checker.check(pkg)
