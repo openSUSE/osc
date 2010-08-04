@@ -593,6 +593,8 @@ def main(apiurl, opts, argv):
 
     if bi.release:
         buildargs.append('--release %s' % bi.release)
+    else:
+        buildargs.append('--release 0')
 
     # real arch of this machine
     # vs.
