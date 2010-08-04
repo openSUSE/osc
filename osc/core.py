@@ -390,6 +390,22 @@ class Linkinfo:
             return 'None'
 
 
+# http://effbot.org/zone/element-lib.htm#prettyprint
+def xmlindent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        for e in elem:
+            xmlindent(e, level+1)
+            if not e.tail or not e.tail.strip():
+                e.tail = i + "  "
+        if not e.tail or not e.tail.strip():
+            e.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
 class Project:
     """represent a project directory, holding packages"""
     def __init__(self, dir, getPackageList=True, progress_obj=None):
@@ -485,8 +501,8 @@ class Project:
             return ET.parse(os.path.join(self.absdir, store, '_packages'))
 
     def write_packages(self):
-        # TODO: should we only modify the existing file instead of overwriting?
-        ET.ElementTree(self.pac_root).write(os.path.join(self.absdir, store, '_packages'))
+        xmlindent(self.pac_root)
+        store_write_string(self.absdir, '_packages', ET.tostring(self.pac_root))
 
     def addPackage(self, pac):
         import fnmatch
