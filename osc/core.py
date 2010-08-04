@@ -2141,9 +2141,10 @@ def init_project_dir(apiurl, dir, project):
     if conf.config['do_package_tracking']:
         store_write_initial_packages(dir, project, [])
 
+# XXX: the chdir semantics for this are really broken
 def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=False):
     if not os.path.isdir(dir):
-        os.mkdir(dir)
+        os.makedirs(dir)
     if not os.path.exists(os.path.join(dir, store)):
         os.mkdir(os.path.join(dir, store))
 
@@ -2165,7 +2166,6 @@ def init_package_dir(apiurl, project, package, dir, revision=None, files=True, l
 
     store_write_string(dir, '_osclib_version', __store_version__ + '\n')
     store_write_apiurl(dir, apiurl)
-
 
 def check_store_version(dir):
     versionfile = os.path.join(dir, store, '_osclib_version')
@@ -3334,10 +3334,11 @@ def checkout_package(apiurl, project, package,
                 isfrozen = 1
         if x:
             revision = x
-    os.chdir(make_dir(apiurl, project, package, pathname, prj_dir))
-    init_package_dir(apiurl, project, package, store, revision, limit_size=limit_size, meta=meta)
+    dir = os.path.abspath(make_dir(apiurl, project, package, pathname, prj_dir))
+    os.chdir(dir)
+    init_package_dir(apiurl, project, package, dir, revision, limit_size=limit_size, meta=meta)
     os.chdir(os.pardir)
-    p = Package(package, progress_obj=progress_obj)
+    p = Package(dir, progress_obj=progress_obj)
     if isfrozen:
         p.mark_frozen()
     for filename in p.filenamelist:
