@@ -3892,7 +3892,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
 
     return r
 
-def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, hide_disabled=None):
+def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
     #print '----------------------------------------'
 
     r = []
@@ -3931,7 +3931,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     targets.sort()
 
     # filter option
-    if status_filter or name_filter or hide_disabled:
+    if status_filter or name_filter or not show_excluded:
 
         pacs_to_show = []
         targets_to_show = []
@@ -3958,12 +3958,12 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                     pacs_to_show.append(pkg)
 
         #filter non building states
-        elif hide_disabled:
+        elif not show_excluded:
             enabled = {}
             for pkg in status.keys():
                 showpkg = False
                 for repo in status[pkg].keys():
-                    if status[pkg][repo] != "excluded" and status[pkg][repo] != "disabled":
+                    if status[pkg][repo] != "excluded":
                         enabled[repo] = 1
                         showpkg = True
 
