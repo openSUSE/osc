@@ -1502,6 +1502,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request log ID
             osc request [show] [-d] [-b] ID
             osc request accept [-m TEXT] ID
+            osc request clone [-m TEXT] ID
             osc request reopen [-m TEXT] ID
             osc request approvenew [-m TEXT] PROJECT
             osc request decline [-m TEXT] ID
@@ -1537,7 +1538,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['add', 'list', 'log', 'show', 'decline', 'reopen', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
+        cmds = ['add', 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
         if not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1575,11 +1576,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) > 1:
                 package = args[1]
-        elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
+        elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
+        # clone all packages from a given request
+        if cmd in ['clone']:
+            query = { 'cmd': 'branch', 'request': reqid }
+            url = makeurl(apiurl, ['source'], query)
+            r = http_POST(url, data=opts.message)
+            print r.read()
+
         # add new reviewer to existing request
-        if cmd in ['add'] and subcmd == 'review':
+        elif cmd in ['add'] and subcmd == 'review':
             query = { 'cmd': 'addreview' }
             if opts.user:
                 query['by_user'] = opts.user

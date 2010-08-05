@@ -6,6 +6,7 @@
 # Feature which requires OBS 2.1
 #
   - add "osc aggregate --nosources" option
+  - add "request clone" command to clone all packages from a given request
   - fixed references into en.opensuse.org to honor the new Wiki structure
 
 0.128
