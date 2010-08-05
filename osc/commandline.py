@@ -808,13 +808,23 @@ class Osc(cmdln.Cmdln):
                     else:
                         print "Skipping package ", p,  " since it is a source link pointing inside the project."
 
+            # was this project created by clone request ?
+            u = makeurl(apiurl, ['source', project, '_attribute', 'OBS:RequestCloned'])
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            value = root.findtext('attribute/value')
+            myreqs = {}
+            if value:
+                myreqs = [ value ]
+
             if not opts.yes:
                 if pi:
                     print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
-                print "\nEverything fine? Can we create the requests ? [y/n]"
-                if sys.stdin.read(1) != "y":
+                repl = raw_input('\nEverything fine? Can we create the requests ? (y/n) ')
+                if repl.lower() != 'y':
                     print >>sys.stderr, 'Aborted...'
                     raise oscerr.UserAbort()
+
 
             # loop via all packages to do the action
             for p in pac:
@@ -848,6 +858,17 @@ class Osc(cmdln.Cmdln):
             print "Requests created: ",
             for i in sr_ids:
                 print i,
+
+            repl = ''
+            if len(myreqs) > 0:
+                print '\n\nThere are already following submit request: %s.' % \
+                      ', '.join([str(i) for i in myreqs ])
+                repl = raw_input('\nSupersede the old requests? (y/n) ')
+                if repl.lower() == 'y':
+                    for req in myreqs:
+                        change_request_state(apiurl, str(req), 'superseded',
+                                             'superseded by %s' % result, result)
+
             sys.exit('Successfully finished')
 
         elif len(args) <= 2:
@@ -916,49 +937,52 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     src_project, src_package, None, True)
             except:
                 rdiff = ''
+
         if opts.diff:
             print rdiff
-        else:
-            reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
-            user = conf.get_apiurl_usr(apiurl)
-            myreqs = [ i for i in reqs if i.state.who == user ]
-            repl = ''
-            if len(myreqs) > 0:
-                print 'You already created the following submit request: %s.' % \
-                      ', '.join([str(i.reqid) for i in myreqs ])
-                repl = raw_input('Supersede the old requests? (y/n/c) ')
-                if repl.lower() == 'c':
-                    print >>sys.stderr, 'Aborting'
-                    raise oscerr.UserAbort()
 
-            if not opts.message:
-                difflines = []
-                doappend = False
-                changes_re = re.compile(r'^--- .*\.changes ')
-                for line in rdiff.split('\n'):
-                    if line.startswith('--- '):
-                        if changes_re.match(line):
-                            doappend = True
-                        else:
-                            doappend = False
-                    if doappend:
-                        difflines.append(line)
-                opts.message = edit_message(footer=rdiff, template='\n'.join(parse_diff_for_commit_message('\n'.join(difflines))))
+        # Are there already requests to this package ?
+        reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
+        user = conf.get_apiurl_usr(apiurl)
+        myreqs = [ i for i in reqs if i.state.who == user ]
+        repl = ''
 
-            result = create_submit_request(apiurl,
-                                           src_project, src_package,
-                                           dst_project, dst_package,
-                                           opts.message, orev=opts.revision, src_update=src_update)
-            if repl.lower() == 'y':
-                for req in myreqs:
-                    change_request_state(apiurl, str(req.reqid), 'superseded',
-                                         'superseded by %s' % result, result)
+        if len(myreqs) > 0:
+            print 'There are already following submit request: %s.' % \
+                  ', '.join([str(i.reqid) for i in myreqs ])
+            repl = raw_input('Supersede the old requests? (y/n/c) ')
+            if repl.lower() == 'c':
+                print >>sys.stderr, 'Aborting'
+                raise oscerr.UserAbort()
 
-            if opts.supersede:
-                change_request_state(apiurl, opts.supersede, 'superseded', 
-                                     opts.message or '', result)
+        if not opts.message:
+            difflines = []
+            doappend = False
+            changes_re = re.compile(r'^--- .*\.changes ')
+            for line in rdiff.split('\n'):
+                if line.startswith('--- '):
+                    if changes_re.match(line):
+                        doappend = True
+                    else:
+                        doappend = False
+                if doappend:
+                    difflines.append(line)
+            opts.message = edit_message(footer=rdiff, template='\n'.join(parse_diff_for_commit_message('\n'.join(difflines))))
 
-            print 'created request id', result
+        result = create_submit_request(apiurl,
+                                       src_project, src_package,
+                                       dst_project, dst_package,
+                                       opts.message, orev=opts.revision, src_update=src_update)
+        if repl.lower() == 'y':
+            for req in myreqs:
+                change_request_state(apiurl, str(req.reqid), 'superseded',
+                                     'superseded by %s' % result, result)
+
+        if opts.supersede:
+            change_request_state(apiurl, opts.supersede, 'superseded', 
+                                 opts.message or '', result)
+
+        print 'created request id', result
 
     def _actionparser(self, opt_str, value, parser):
         value = []
