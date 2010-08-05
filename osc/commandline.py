@@ -1586,7 +1586,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.group:
                 query['by_group'] = opts.group
             url = makeurl(apiurl, ['request', reqid], query)
-            r = http_POST(url)
+            r = http_POST(url, data=opts.message)
             print r.read()
 
         # list and approvenew
