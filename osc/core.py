@@ -185,6 +185,7 @@ buildstatus_symbols = {'succeeded':       '.',
                        'scheduled':       's',
                        'excluded':        'x',
                        'dispatching':     'd',
+                       'signing':         'S',
 }
 
 
