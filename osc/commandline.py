@@ -3920,8 +3920,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # can be implemented using
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
-        specs = glob.glob('*.spec')
-        descr = specs + glob.glob('*.dsc') + glob.glob('*.kiwi')
+        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi')
         
         # FIXME:
         # * request repos from server and select by build type.
@@ -3930,12 +3929,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif not arg_descr:
             msg = None
             if len(descr) > 1:
-                # prefer spec files that match the directory name
-                # only if there are no debian or kiwi files
-                spec = os.path.basename(os.getcwd())+'.spec'
-                if spec in specs and len(specs) == len(descr):
-                    arg_descr = spec
-                else:
+                # prefer build descr that match the directory name
+                # only if there are no other build descrs of different build types
+                for ext in ['.spec', '.dsc', '.kiwi']:
+                    spec = os.path.basename(os.getcwd()) + ext
+                    if spec in descr and not [i for i in descr if not i.endswith(ext)]:
+                        arg_descr = spec
+                if not arg_descr:
                     msg = 'Multiple build description files found: %s' % ', '.join(descr)
             else:
                 msg = 'Missing argument: build description (spec, dsc or kiwi file)'
