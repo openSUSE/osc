@@ -5664,18 +5664,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
             f = http_DELETE(url)
         else:
-            prjs = [ prj ]
-            for prj in prjs:
+            while True:
                 try:
-                    url = makeurl(apiurl, ['source', prj, "_pubkey"])
+                    url = makeurl(apiurl, ['source', prj, '_pubkey'])
                     f = http_GET(url)
                     break
-                except:
+                except urllib2.HTTPError, e:
                     l = prj.rsplit(':', 1)
                     # try key from parent project
-                    if not opts.notraverse and len(l) > 1 and l[1]:
-                        print "%s has no key, trying %s" % (prj, l[0])
-                        prjs.append(l[0])
+                    if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:
+                        print '%s has no key, trying %s' % (prj, l[0])
+                        prj = l[0]
                     else:
                         raise
 
@@ -5684,8 +5683,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not buf:
                 break
             sys.stdout.write(buf)
-
-
 
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (not open an editor)')
