@@ -2159,30 +2159,31 @@ def init_project_dir(apiurl, dir, project):
         store_write_initial_packages(dir, project, [])
 
 # XXX: the chdir semantics for this are really broken
+#      it's expected that we're already in "dir" (which doesn't make sense...) when
+#      calling this method
 def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=False):
-    if not os.path.isdir(dir):
-        os.makedirs(dir)
-    if not os.path.exists(os.path.join(dir, store)):
-        os.mkdir(os.path.join(dir, store))
-
-    store_write_string(dir, '_project', project)
-    store_write_string(dir, '_package', package)
+    if not os.path.isdir(store):
+        os.mkdir(store)
+    os.chdir(store)
+    store_write_string(os.pardir, '_project', project)
+    store_write_string(os.pardir, '_package', package)
 
     if meta:
-        store_write_string(dir, '_meta_mode', '')
+        store_write_string(os.pardir, '_meta_mode', '')
 
     if limit_size:
-        store_write_string(dir, '_size_limit', str(limit_size))
+        store_write_string(os.pardir, '_size_limit', str(limit_size))
 
     if files:
         fmeta = ''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta))
-        store_write_string(dir, '_files', fmeta)
+        store_write_string(os.pardir, '_files', fmeta)
     else:
         # create dummy
         ET.ElementTree(element=ET.Element('directory')).write('_files')
 
-    store_write_string(dir, '_osclib_version', __store_version__ + '\n')
-    store_write_apiurl(dir, apiurl)
+    store_write_string(os.pardir, '_osclib_version', __store_version__ + '\n')
+    store_write_apiurl(os.pardir, apiurl)
+    os.chdir(os.pardir)
 
 def check_store_version(dir):
     versionfile = os.path.join(dir, store, '_osclib_version')
