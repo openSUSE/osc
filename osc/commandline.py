@@ -2691,6 +2691,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='print as little as possible')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='print extra information')
+    @cmdln.option('-e', '--show-excluded', action='store_true',
+                        help='also show files which are excluded by the ' \
+                             '"exclude_glob" config option')
     @cmdln.alias('st')
     def do_status(self, subcmd, opts, *args):
         """${cmd_name}: Show status of files in working copy
@@ -2747,10 +2750,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.NoWorkingCopy, msg
         lines = []
         # process single packages
-        lines = getStatus(findpacs(pacpaths), None, opts.verbose, opts.quiet)
+        lines = getStatus(findpacs(pacpaths), None, opts.verbose, opts.quiet, opts.show_excluded)
         # process project dirs
         for prj, pacs in prjpacs.iteritems():
-            lines += getStatus(findpacs(pacs), prj, opts.verbose, opts.quiet)
+            lines += getStatus(findpacs(pacs), prj, opts.verbose, opts.quiet, opts.show_excluded)
         if lines:
             print '\n'.join(lines)
 

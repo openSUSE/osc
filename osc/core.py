@@ -1159,9 +1159,12 @@ class Package:
         self.meta = self.ismetamode()
 
         # gather unversioned files, but ignore some stuff
-        self.excluded = [ i for i in os.listdir(self.dir)
-                          for j in conf.config['exclude_glob']
-                          if fnmatch.fnmatch(i, j) ]
+        self.excluded = []
+        for i in os.listdir(self.dir):
+            for j in conf.config['exclude_glob']:
+                if fnmatch.fnmatch(i, j):
+                    self.excluded.append(i)
+                    break
         self.filenamelist_unvers = [ i for i in os.listdir(self.dir)
                                      if i not in self.excluded
                                      if i not in self.filenamelist ]
@@ -4934,7 +4937,7 @@ def getTransActPath(pac_dir):
         pathn = ''
     return pathn
 
-def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
+def getStatus(pacs, prj_obj=None, verbose=False, quiet=False, excluded=False):
     """
     calculates the status of certain packages. pacs is a list of Package()
     objects and prj_obj is a Project() object. If prj_obj is specified all
@@ -4952,9 +4955,12 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
                     lines.append(statfrmt('!', os.path.normpath(os.path.join(prj_obj.dir, data))))
 
     for p in pacs:
-        # no files given as argument? Take all files in current dir
-        if not p.todo:
-            p.todo = p.filenamelist + p.filenamelist_unvers
+        if not p.todo and excluded:
+            # all files + dirs in pwd (except .osc storedir)
+            p.todo = p.filenamelist + p.filenamelist_unvers + [i for i in p.excluded if i != store]
+        elif not p.todo:
+            # only files, no dirs and no excluded files
+            p.todo = p.filenamelist + [i for i in p.filenamelist_unvers if not os.path.isdir(i)]
         p.todo.sort()
 
         if prj_obj and conf.config['do_package_tracking']:
@@ -4965,7 +4971,7 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False):
         for filename in p.todo:
             if filename.startswith('_service:'):
                 continue
-            if filename in p.excluded:
+            if filename in p.excluded and not excluded:
                 continue
             if filename in p.skipped:
                 continue
