@@ -3661,22 +3661,24 @@ def copy_pac(src_apiurl, src_project, src_package,
     else:
         # copy one file after the other
         import tempfile
-        tmpdir = tempfile.mkdtemp(prefix='osc_copypac')
-        os.chdir(tmpdir)
         query = {'rev': 'upload'}
         revision = show_upstream_srcmd5(src_apiurl, src_project, src_package, expand=expand, revision=revision)
         for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand, revision=revision):
             print '  ', n
-            get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n, revision=revision)
-            u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)], query=query)
-            http_PUT(u, file = n)
-            os.unlink(n)
+            tmpfile = None
+            try:
+                (fd, tmpfile) = tempfile.mkstemp(prefix='osc-copypac')
+                get_source_file(src_apiurl, src_project, src_package, n, targetfilename=tmpfile, revision=revision)
+                u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)], query=query)
+                http_PUT(u, file = n)
+            finally:
+                if not tmpfile is None:
+                    os.unlink(tmpfile)
         if comment:
             query['comment'] = comment
         query['cmd'] = 'commit'
         u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
         http_POST(u)
-        os.rmdir(tmpdir)
         return 'Done.'
 
 
