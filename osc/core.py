@@ -35,10 +35,6 @@ BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(
 BUFSIZE = 1024*1024
 store = '.osc'
 
-# NOTE: do not use this anymore, use conf.exclude_glob instead.
-# but this needs to stay to avoid breakage of tools which use osc lib
-exclude_stuff = [store, 'CVS', '*~', '#*#', '.*', '_linkerror']
-
 new_project_templ = """\
 <project name="%(name)s">
 
