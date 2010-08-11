@@ -3664,7 +3664,8 @@ def copy_pac(src_apiurl, src_project, src_package,
         tmpdir = tempfile.mkdtemp(prefix='osc_copypac')
         os.chdir(tmpdir)
         query = {'rev': 'upload'}
-        for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand):
+        revision = show_upstream_srcmd5(src_apiurl, src_project, src_package, expand=expand, revision=revision)
+        for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand, revision=revision):
             print '  ', n
             get_source_file(src_apiurl, src_project, src_package, n, targetfilename=n, revision=revision)
             u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)], query=query)

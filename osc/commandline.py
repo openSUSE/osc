@@ -2020,7 +2020,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         A way to copy package to somewhere else.
 
         It can be done across buildservice instances, if the -t option is used.
-        In that case, a client-side copy is implied.
+        In that case, a client-side copy and link expansion are implied.
 
         Using --client-side-copy always involves downloading all files, and
         uploading them to the target.
@@ -2055,6 +2055,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if src_apiurl != dst_apiurl:
             opts.client_side_copy = True
+            opts.expand = True
 
         rev, dummy = parseRevisionOption(opts.revision)
 
