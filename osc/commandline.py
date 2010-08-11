@@ -1525,19 +1525,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [-B] [PRJ [PKG]]
             osc request log ID
             osc request [show] [-d] [-b] ID
+
             osc request accept [-m TEXT] ID
-            osc request clone [-m TEXT] ID
-            osc request reopen [-m TEXT] ID
-            osc request approvenew [-m TEXT] PROJECT
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request wipe ID
+            osc request reopen [-m TEXT] ID
+            osc request approvenew [-m TEXT] PROJECT
+
             osc request checkout/co ID
+            osc request clone [-m TEXT] ID
+
             osc review list [-U USER] [-G GROUP] [-s state]
             osc review add [-U USER] [-G GROUP] ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
             osc review new [-m TEXT] ID            # for setting a temporary comment without changing the state
+
         ${cmd_option_list}
         """
 
@@ -1562,16 +1566,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        cmds = ['add', 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co', 'help']
-        if not args or args[0] not in cmds:
+        if cmd == 'help':
+            return self.do_help(['help', 'request'])
+
+        cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co' ]
+        if subcmd != 'review' and not args or args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
+                                               % (args[0],', '.join(cmds)))
+        cmds = [ 'list', 'add', 'decline', 'accept', 'new' ]
+        if subcmd == 'review' and not args or args[0] not in cmds:
+            raise oscerr.WrongArgs('Unknown review action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
 
         cmd = args[0]
         del args[0]
-
-        if cmd == 'help':
-            return self.do_help(['help', 'request'])
 
         if cmd in ['list']:
             min_args, max_args = 0, 2
