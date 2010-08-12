@@ -4097,7 +4097,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             p = Package('.')
             p.run_source_services()
 
-        if conf.config['no_verify'] == '1':
+        if conf.config['no_verify']:
             opts.no_verify = True
 
         if opts.prefer_pkgs:
