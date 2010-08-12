@@ -4870,13 +4870,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
             # construct a sorted, flat list
             # Sort by first column, follwed by second column if we have two columns, else sort by first.
-            results.sort(lambda x, y: 
-                (x[1] and y[1]) 
-                  and 
-                 (cmp(x[0], y[0]) or cmp(x[1], y[1])) 
-                  or 
-                 cmp(x[0], y[0]))
-
+            results.sort(lambda x, y: ( cmp(x[0], y[0]) or 
+                                       (len(x)>1 and len(y)>1 and cmp(x[1], y[1])) ))
             new = []
             for i in results:
                 new.extend(i)
