@@ -3737,7 +3737,7 @@ def get_distibutions(apiurl, discon=False):
         r.insert(1,'------------              -------')
 
     else:
-    	result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
+        result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
         f = http_GET(makeurl(apiurl, ['distributions']))
         root = ET.fromstring(''.join(f))
 

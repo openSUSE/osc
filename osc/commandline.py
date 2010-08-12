@@ -3229,8 +3229,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_distributions(self, subcmd, opts, *args):
         """${cmd_name}: Shows all available distributions
 
-	This command shows the available distributions. For active distributions
-	it shows the name, project and name of the repository and a suggested default repository name. 
+        This command shows the available distributions. For active distributions
+        it shows the name, project and name of the repository and a suggested default repository name. 
 
         usage:
             osc distributions                           
@@ -3269,7 +3269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
-	apiurl = self.get_api_url()
+        apiurl = self.get_api_url()
 
         if len(files) == 0:
             if not '/' in project:
@@ -4548,45 +4548,45 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if architecture is None:
             arches = [i.arch for i in get_repos_of_project(apiurl, project) if repository == i.name]
 
-	if package is None:
-	    package = meta_get_packagelist(apiurl, project)
-	else: 
-	    package = [package]
+        if package is None:
+            package = meta_get_packagelist(apiurl, project)
+        else: 
+            package = [package]
 
         for arch in arches:
             for pac in package:
-		binaries = get_binarylist(apiurl, project, repository, arch,
-					  package=pac, verbose=True)
-		if not binaries:
-		    print >>sys.stderr, 'no binaries found: Either the package %s ' \
-					'does not exist or no binaries have been built.' % pac
-		    continue
-		target_dir = opts.destdir
-		if architecture is None:
-		    # we're going to fetch all repo arches
-		    target_dir = '%s/%s' % (opts.destdir, arch)
-		target_dir = os.path.normpath(target_dir)
-		if not os.path.isdir(target_dir):
-		    print 'Creating %s' % target_dir
-		    os.makedirs(target_dir, 0755)
+                binaries = get_binarylist(apiurl, project, repository, arch,
+                                          package=pac, verbose=True)
+                if not binaries:
+                    print >>sys.stderr, 'no binaries found: Either the package %s ' \
+                                        'does not exist or no binaries have been built.' % pac
+                    continue
+                target_dir = opts.destdir
+                if architecture is None:
+                    # we're going to fetch all repo arches
+                    target_dir = '%s/%s' % (opts.destdir, arch)
+                target_dir = os.path.normpath(target_dir)
+                if not os.path.isdir(target_dir):
+                    print 'Creating %s' % target_dir
+                    os.makedirs(target_dir, 0755)
 
-		for i in binaries:
-		    # skip source rpms
-		    if not opts.sources and i.name.endswith('.src.rpm'):
-			continue
-		    fname = '%s/%s' % (target_dir, i.name)
-		    if os.path.exists(fname):
-			st = os.stat(fname)
-			if st.st_mtime == i.mtime and st.st_size == i.size:
-			    continue
-		    get_binary_file(apiurl,
-				    project,
-				    repository, arch,
-				    i.name,
-				    package = pac,
-				    target_filename = fname,
-				    target_mtime = i.mtime,
-				    progress_meter = not opts.quiet)
+                for i in binaries:
+                    # skip source rpms
+                    if not opts.sources and i.name.endswith('.src.rpm'):
+                        continue
+                    fname = '%s/%s' % (target_dir, i.name)
+                    if os.path.exists(fname):
+                        st = os.stat(fname)
+                        if st.st_mtime == i.mtime and st.st_size == i.size:
+                            continue
+                    get_binary_file(apiurl,
+                                    project,
+                                    repository, arch,
+                                    i.name,
+                                    package = pac,
+                                    target_filename = fname,
+                                    target_mtime = i.mtime,
+                                    progress_meter = not opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
