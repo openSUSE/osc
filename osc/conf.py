@@ -89,6 +89,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'use_keyring': '1',
              'gnome_keyring': '1',
              'cookiejar': '~/.osc_cookiejar',
+             # fallback for osc build option --no-verify
+             'no_verify': '0',
              # enable project tracking by default
              'do_package_tracking': '1',
              # default for osc build
@@ -230,6 +232,9 @@ apiurl = %(apiurl)s
 
 # show HTTP traffic useful for debugging
 #http_debug = 1
+
+# Skip signature verification of packages used for build.
+#no_verify = 1
 
 # jump into the debugger in case of errors
 #post_mortem = 1

@@ -3982,7 +3982,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nochecks', '--no-checks', action='store_true',
                   help='Do not run post build checks on the resulting packages.')
     @cmdln.option('--no-verify', action='store_true',
-                  help='Skip signature verification of packages used for build.')
+                  help='Skip signature verification of packages used for build. (Global config in .oscrc: no_verify)')
     @cmdln.option('--noservice', '--no-service', action='store_true',
                   help='Skip run of local source services as specified in _service file.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -4096,6 +4096,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.noservice and not opts.noinit and os.listdir('.').count("_service"):
             p = Package('.')
             p.run_source_services()
+
+        if conf.config['no_verify'] == '1':
+            opts.no_verify = True
 
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
