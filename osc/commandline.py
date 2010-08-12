@@ -9,6 +9,7 @@ import cmdln
 import conf
 import oscerr
 from optparse import SUPPRESS_HELP
+import pprint
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -4866,7 +4867,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print 'No matches found for \'%s\' in %ss' % (role_filter or search_term, kind)
                 continue
             # construct a sorted, flat list
-            results.sort(lambda x, y: cmp(x[0], y[0]))
+            # Sort by first column, follwed by second column if we have two columns, else sort by first.
+            results.sort(lambda x, y: 
+                (x[1] and y[1]) 
+                  and 
+                 (cmp(x[0], y[0]) or cmp(x[1], y[1])) 
+                  or 
+                 cmp(x[0], y[0]))
+
             new = []
             for i in results:
                 new.extend(i)
