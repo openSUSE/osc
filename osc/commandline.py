@@ -1567,7 +1567,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.state == '':
             opts.state = 'new'
 
-        if cmd == 'help':
+        if args[0] == 'help':
             return self.do_help(['help', 'request'])
 
         cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co' ]
