@@ -940,6 +940,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.diff:
             print rdiff
+            return
 
         # Are there already requests to this package ?
         reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
