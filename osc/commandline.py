@@ -1571,11 +1571,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return self.do_help(['help', 'request'])
 
         cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co' ]
-        if subcmd != 'review' and not args or args[0] not in cmds:
+        if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
         cmds = [ 'list', 'add', 'decline', 'accept', 'new' ]
-        if subcmd == 'review' and not args or args[0] not in cmds:
+        if subcmd == 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown review action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
 
