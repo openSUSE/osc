@@ -5113,7 +5113,7 @@ def request_interactive_review(apiurl, request):
                 raise oscerr.UserAbort()
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
-                mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
+                mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl.strip())
                 if mo is None:
                     print >>sys.stderr, 'invalid choice: \'%s\'' % repl
                     continue
