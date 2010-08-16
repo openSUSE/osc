@@ -141,7 +141,7 @@ def run(prg):
         print >>sys.stderr, e
         return 2
 
-    except oscerr.RuntimeError, e:
+    except oscerr.ExtRuntimeError, e:
         print >>sys.stderr, e.msg
         return 1
 

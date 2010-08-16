@@ -2932,7 +2932,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     msg = edit_message()
                 try:
                     Project(arg).commit(msg=msg, validators=validators, verbose_validation=verbose_validation)
-                except oscerr.RuntimeError, e:
+                except oscerr.ExtRuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
                 args.remove(arg)
@@ -2983,13 +2983,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for prj, packages in prj_paths.iteritems():
                 try:
                     Project(prj).commit(tuple(packages), msg=msg, files=files, validators=validators, verbose_validation=verbose_validation)
-                except oscerr.RuntimeError, e:
+                except oscerr.ExtRuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
             for pac in single_paths:
                 try:
                     Package(pac).commit(msg, validators=validators, verbose_validation=verbose_validation)
-                except oscerr.RuntimeError, e:
+                except oscerr.ExtRuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
         else:

@@ -940,7 +940,7 @@ class Package:
                    else:
                        p = subprocess.Popen([fn], close_fds=True)
                    if p.wait() != 0:
-                       raise oscerr.RuntimeError(p.stdout, validator )
+                       raise oscerr.ExtRuntimeError(p.stdout, validator )
 
         have_conflicts = False
         for filename in self.todo:
@@ -2669,7 +2669,7 @@ def run_pager(message):
             try:
                 subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
             except OSError, e:
-                raise oscerr.RuntimeError('cannot run pager \'%s\': %s' % (pager, e.strerror), pager)
+                raise oscerr.ExtRuntimeError('cannot run pager \'%s\': %s' % (pager, e.strerror), pager)
         finally:
             tmpfile.close()
 
@@ -2680,7 +2680,7 @@ def run_editor(filename):
     try:
         return subprocess.call(cmd)
     except OSError, e:
-        raise oscerr.RuntimeError('cannot run editor \'%s\': %s' % (editor, e.strerror), editor)
+        raise oscerr.ExtRuntimeError('cannot run editor \'%s\': %s' % (editor, e.strerror), editor)
 
 def edit_message(footer='', template='', templatelen=30):
     delim = '--This line, and those below, will be ignored--\n'

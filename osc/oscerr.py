@@ -41,7 +41,7 @@ class NoConfigfile(OscBaseError):
         self.file = fname
         self.msg = msg
 
-class RuntimeError(OscBaseError):
+class ExtRuntimeError(OscBaseError):
     """Exception raised when there is a runtime error of an external tool"""
     def __init__(self, msg, fname):
         OscBaseError.__init__(self)
