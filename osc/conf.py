@@ -79,6 +79,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-vmdisk-swapsize': '', # optional for VM builds
 
              'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN'), # compile with N jobs
+             'builtin_signature_check': '1', # by default use builtin check for verify pkgs
              'icecream': '0',
 
              'debug': '0',
@@ -135,7 +136,7 @@ config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'use_keyring', 'gnome_keyring', 'no_verify']
+    'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 

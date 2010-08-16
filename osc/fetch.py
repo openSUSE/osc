@@ -313,7 +313,7 @@ def verify_pacs(bi):
        """
 
     pac_list = [ i.fullfilename for i in bi.deps ]
-    if not conf.config.get('builtin_signature_check', True):
+    if not conf.config['builtin_signature_check']:
         return verify_pacs_old(pac_list)
 
     if not pac_list:
