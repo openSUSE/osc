@@ -1100,12 +1100,7 @@ class Package:
                 self.write_conflictlist()
                 return 'C'
             else:
-                print >>sys.stderr, '\ndiff3 got in trouble... exit code:', ret
-                print >>sys.stderr, 'the command line was:'
-                print >>sys.stderr, merge_cmd
-                sys.exit(1)
-
-
+                raise oscerr.ExtRuntimeError('diff3 failed with exit code: %s' % ret, merge_cmd)
 
     def update_local_filesmeta(self, revision=None):
         """
