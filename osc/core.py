@@ -5092,7 +5092,7 @@ def request_interactive_review(apiurl, request):
         if request.actions[0].type == 'submit':
             msg = 'd(i)ff/%s' % msg
         while True:
-            repl = raw_input(msg)
+            repl = raw_input(msg).strip()
             if repl == 'i' and request.actions[0].type == 'submit':
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
@@ -5113,7 +5113,7 @@ def request_interactive_review(apiurl, request):
                 raise oscerr.UserAbort()
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
-                mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl.strip())
+                mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
                 if mo is None:
                     print >>sys.stderr, 'invalid choice: \'%s\'' % repl
                     continue
