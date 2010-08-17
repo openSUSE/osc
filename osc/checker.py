@@ -26,7 +26,13 @@ class Checker:
     def readkeys(self, keys=[]):
         rpm.addMacro('_dbpath', self.dbdir)
         for key in keys:
-            self.readkey(key)
+            try:
+                self.readkey(key)
+            except KeyError, e:
+                print e
+
+        if not len(self.imported):
+            raise KeyError('', "no key imported")
 
         rpm.delMacro("_dbpath")
 

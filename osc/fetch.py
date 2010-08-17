@@ -218,8 +218,9 @@ class Fetcher:
             url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
             try:
                 OscFileGrabber().urlgrab(url, dest)
-                buildinfo.keys.append(dest)
-                buildinfo.prjkeys.append(i)
+                if not i in buildinfo.prjkeys: # not that many keys usually
+                    buildinfo.keys.append(dest)
+                    buildinfo.prjkeys.append(i)
             except KeyboardInterrupt:
                 print 'Cancelled by user (ctrl-c)'
                 print 'Exiting.'
