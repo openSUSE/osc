@@ -1764,7 +1764,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         print result.reqid, ": ",
                         r = change_request_state(apiurl,
                                 str(result.reqid), 'accepted', opts.message or '')
-                        print r
+                        print 'Result of change request state: %s' % r
                 else:
                     print >>sys.stderr, 'Aborted...'
                     raise oscerr.UserAbort()
@@ -1821,12 +1821,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if cmd in ['accept', 'decline', 'new']:
                     r = change_review_state(apiurl,
                             reqid, state_map[cmd], conf.config['user'], opts.message or '')
-                    print r
+                    print % r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
                 r = change_request_state(apiurl,
                         reqid, state_map[cmd], opts.message or '')
-                print r
+                print 'Result of change request state: %s' % r
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")

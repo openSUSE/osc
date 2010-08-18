@@ -2836,8 +2836,13 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
                 ['request', reqid],
                 query={'cmd': 'changestate', 'newstate': newstate, 'superseded_by': supersed})
     f = http_POST(u, data=message)
-    return f.read()
 
+    r = f.read()
+    if r.startswith('<status code="'):
+        r = r.split('<status code="')[1]
+        r = r.split('" />')[0]
+
+    return r
 
 def get_review_list(apiurl, project='', package='', user='', group='', states=('new')):
     xpath = ''
