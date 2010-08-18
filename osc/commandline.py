@@ -1375,7 +1375,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     user = args[0]
             else:
-                raise oscerr.WrongArgs('Wrong number of arguments. 1')
+                raise oscerr.WrongArgs('Wrong number of arguments.')
         elif len(args) == 2:
             project = args[0]
             package = args[1]
@@ -1385,7 +1385,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = args[1]
             user =  args[2]   
         else:
-            raise oscerr.WrongArgs('Wrong number of arguments. 2')
+            raise oscerr.WrongArgs('Wrong number of arguments.')
 
         arg = [ user, 'maintainer', project, package ]
 
