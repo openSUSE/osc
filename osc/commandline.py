@@ -1371,7 +1371,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
                 if len(args) == 0:
-                    user = conf.config['user']
+                    user = conf.get_apiurl_usr(apiurl)
                 else:
                     user = args[0]
             else:
@@ -1379,21 +1379,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) == 2:
             project = args[0]
             package = args[1]
-            user = conf.config['user']    
+            user = conf.get_apiurl_usr(apiurl)
         elif len(args) == 3:
             project = args[0]
             package = args[1]
-            user =  args[2]   
+            user = args[2]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
         arg = [ user, 'maintainer', project, package ]
 
-        actionsxml = ""
-        actionsxml += self._add_role(arg, None)
-
-        if actionsxml == "":
-            sys.exit('No actions need to be taken.')
+        actionsxml = self._add_role(arg, None)
 
         if not opts.message:
             opts.message = edit_message()
