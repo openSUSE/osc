@@ -1350,6 +1350,65 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.alias("reqmaintainership")
+    @cmdln.alias("reqms")
+    def do_requestmaintainership(self, subcmd, opts, *args):
+        """${cmd_name}: requests to add user as maintainer
+
+        usage:
+            osc requestmaintainership                           # for current user in checked out package
+            osc requestmaintainership USER                      # for specified user in checked out package
+            osc requestmaintainership PROJECT PACKAGE           # for current user
+            osc requestmaintainership PROJECT PACKAGE USER      # request for specified user
+
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+        
+        if len(args) < 2:
+            if is_package_dir(os.getcwd()):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                if len(args) == 0:
+                    user = conf.config['user']
+                else:
+                    user = args[0]
+            else:
+                raise oscerr.WrongArgs('Wrong number of arguments. 1')
+        elif len(args) == 2:
+            project = args[0]
+            package = args[1]
+            user = conf.config['user']    
+        elif len(args) == 3:
+            project = args[0]
+            package = args[1]
+            user =  args[2]   
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments. 2')
+
+        arg = [ user, 'maintainer', project, package ]
+
+        actionsxml = ""
+        actionsxml += self._add_role(arg, None)
+
+        if actionsxml == "":
+            sys.exit('No actions need to be taken.')
+
+        if not opts.message:
+            opts.message = edit_message()
+
+        import cgi
+        xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
+              (actionsxml, cgi.escape(opts.message or ""))
+        u = makeurl(apiurl, ['request'], query='cmd=create')
+        f = http_POST(u, data=xml)
+
+        root = ET.parse(f).getroot()
+        return root.get('id')
+
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
     @cmdln.alias("dr")
     @cmdln.alias("deletereq")
     def do_deleterequest(self, subcmd, opts, *args):
