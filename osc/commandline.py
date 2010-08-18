@@ -1821,7 +1821,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if cmd in ['accept', 'decline', 'new']:
                     r = change_review_state(apiurl,
                             reqid, state_map[cmd], conf.config['user'], opts.message or '')
-                    print % r
+                    print r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
                 r = change_request_state(apiurl,
