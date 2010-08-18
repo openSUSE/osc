@@ -1813,17 +1813,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 submits[0].src_rev, expand_link=True, prj_dir=submits[0].src_project)
 
         else:
-            if not opts.message:
-                opts.message = edit_message()
             state_map = {'reopen' : 'new', 'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
             # Change review state only
             if subcmd == 'review':
+                if not opts.message:
+                   opts.message = edit_message()
                 if cmd in ['accept', 'decline', 'new']:
                     r = change_review_state(apiurl,
                             reqid, state_map[cmd], conf.config['user'], opts.message or '')
                     print r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
+                rq = get_request(apiurl, reqid)
+                if rq.state.name == state_map[cmd]:
+                    repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "  % (reqid, rq.state.name))
+                    if repl.lower() != 'y':
+                        print >>sys.stderr, 'Aborted...'
+                        raise oscerr.UserAbort()
+                                            
+                if not opts.message:
+                    opts.message = edit_message()
                 r = change_request_state(apiurl,
                         reqid, state_map[cmd], opts.message or '')
                 print 'Result of change request state: %s' % r
