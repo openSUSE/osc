@@ -3157,9 +3157,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.expand_link and p.islink() and not p.isexpanded():
                     if p.haslinkerror():
                         try:
-                            rev = p.show_upstream_xsrcmd5()
+                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
                         except:
-                            rev = p.show_upstream_xsrcmd5(linkrev="base")
+                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev='base')
                             p.mark_frozen()
                     else:
                         p.update(rev, opts.server_side_source_service_files, opts.limit_size)
