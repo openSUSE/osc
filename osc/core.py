@@ -5119,7 +5119,9 @@ def request_interactive_review(apiurl, request):
                     continue
                 state = state_map[mo.group(1)]
                 msg = mo.group(2)
-                footer = str(request)
+                footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
+                    % (request.state.name, state)
+                footer += str(request)
                 if tmpfile is not None:
                     tmpfile.seek(0)
                     # the read bytes probably have a moderate size so the str won't be too large
