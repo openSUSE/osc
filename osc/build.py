@@ -129,11 +129,12 @@ class Buildinfo:
         return False
 
     def remove_dep(self, name):
+        # we need to iterate over all deps because if this a
+        # kiwi build the same package might appear multiple times
         for i in self.deps:
-            if i.name == name:
+            # only remove those which are needed for the build itself
+            if i.name == name and not i.noinstall:
                 self.deps.remove(i)
-                return True
-        return False
 
 
 class Pac:
@@ -158,7 +159,7 @@ class Pac:
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
 
         # this is not the ideal place to check if the package is a localdep or not
-        localdep = self.mp['name'] in localpkgs
+        localdep = self.mp['name'] in localpkgs and not self.mp['noinstall']
         if not localdep and not (node.get('project') and node.get('repository')):
             raise oscerr.APIError('incomplete information for package %s, may be caused by a broken project configuration.'
                                   % self.mp['name'] )
