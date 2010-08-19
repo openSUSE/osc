@@ -233,6 +233,8 @@ class File:
         self.md5 = md5
         self.size = size
         self.mtime = mtime
+    def __repr__(self):
+        return self.name
     def __str__(self):
         return self.name
 
@@ -1035,32 +1037,40 @@ class Package:
     def write_conflictlist(self):
         self.__write_storelist('_in_conflict', self.in_conflict)
 
-    def updatefile(self, n, revision):
+    def updatefile(self, n, revision, mtime=None):
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
-        mtime = self.findfilebyname(n).mtime
+        origfile = os.path.join(self.storedir, '_in_update', n)
+        if os.path.isfile(filename):
+            shutil.copyfile(filename, origfile)
+        else:
+            origfile = None
 
-        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=filename,
+        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=storefilename,
                 revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
 
-        shutil.copyfile(filename, storefilename)
+        shutil.copyfile(storefilename, filename)
+        if not origfile is None:
+            os.unlink(origfile)
 
-    def mergefile(self, n):
+    def mergefile(self, n, revision, mtime=None):
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
         myfilename = os.path.join(self.dir, n + '.mine')
         upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+        origfile = os.path.join(self.storedir, '_in_update', n)
+        shutil.copyfile(filename, origfile)
         os.rename(filename, myfilename)
 
-        mtime = self.findfilebyname(n).mtime
         get_source_file(self.apiurl, self.prjname, self.name, n,
-                        revision=self.rev, targetfilename=upfilename,
+                        revision=revision, targetfilename=upfilename,
                         progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
 
         if binary_file(myfilename) or binary_file(upfilename):
             # don't try merging
             shutil.copyfile(upfilename, filename)
             shutil.copyfile(upfilename, storefilename)
+            os.unlink(origfile)
             self.in_conflict.append(n)
             self.write_conflictlist()
             return 'C'
@@ -1078,10 +1088,12 @@ class Package:
                 shutil.copyfile(upfilename, storefilename)
                 os.unlink(upfilename)
                 os.unlink(myfilename)
+                os.unlink(origfile)
                 return 'G'
             elif ret == 1:
                 # unsuccessful merge
                 shutil.copyfile(upfilename, storefilename)
+                os.unlink(origfile)
                 self.in_conflict.append(n)
                 self.write_conflictlist()
                 return 'C'
@@ -1217,10 +1229,11 @@ class Package:
           x       x            x        ' ' if digest differs: 'M'
                                             and if in conflicts file: 'C'
           x       -            -        '?'
-          x       -            x        'D' and listed in _to_be_deleted
+          -       x            x        'D' and listed in _to_be_deleted
+          x       x            x        'D' and listed in _to_be_deleted (e.g. if deleted file was modified)
+          x       x            x        'D' and listed in _to_be_deleted (e.g. if deleted file was modified)
+          x       x            x        'C' and listed in _in_conflict
           -       x            x        '!'
-          -       x            -        'D' (when file in working copy is already deleted)
-          -       -            x        'F' (new in repo, but not yet in working copy)
           -       -            -        NOT DEFINED
 
         """
@@ -1235,36 +1248,54 @@ class Package:
         if os.path.exists(os.path.join(self.storedir, n)):
             exists_in_store = True
 
-
-        if n in self.skipped or n.startswith('_service:'):
-            state = 'S'
-        elif exists and not exists_in_store and known_by_meta:
-            state = 'D'
-        elif n in self.to_be_deleted:
+        if n in self.to_be_deleted:
             state = 'D'
         elif n in self.in_conflict:
             state = 'C'
+        elif n in self.skipped or n.startswith('_service:'):
+            state = 'S'
+        elif exists and exists_in_store and not known_by_meta:
+            state = 'A'
         elif exists and exists_in_store and known_by_meta:
-            #print self.findfilebyname(n)
             if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
                 state = 'M'
             else:
                 state = ' '
+        elif not exists and exists_in_store and known_by_meta and not n in self.to_be_deleted:
+            state = '!'
         elif exists and not exists_in_store and not known_by_meta:
             state = '?'
-        elif exists and exists_in_store and not known_by_meta:
-            state = 'A'
-        elif not exists and exists_in_store and known_by_meta:
-            state = '!'
-        elif not exists and not exists_in_store and known_by_meta:
-            state = 'F'
-        elif not exists and exists_in_store and not known_by_meta:
-            state = 'D'
-        elif not exists and not exists_in_store and not known_by_meta:
+        else:
             # this case shouldn't happen (except there was a typo in the filename etc.)
             raise IOError('osc: \'%s\' is not under version control' % n)
 
         return state
+        # XXX: old
+#        elif exists and not exists_in_store and known_by_meta:
+#            state = 'D'
+#        elif n in self.to_be_deleted:
+#            state = 'D'
+#        elif n in self.in_conflict:
+#            state = 'C'
+#        elif exists and exists_in_store and known_by_meta:
+#            #print self.findfilebyname(n)
+#            if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
+#                state = 'M'
+#            else:
+#                state = ' '
+#        elif exists and not exists_in_store and not known_by_meta:
+#            state = '?'
+#        elif exists and exists_in_store and not known_by_meta:
+#            state = 'A'
+#        elif not exists and exists_in_store and known_by_meta:
+#            state = '!'
+#        elif not exists and not exists_in_store and known_by_meta:
+#            state = 'F'
+#        elif not exists and exists_in_store and not known_by_meta:
+#            state = 'D'
+#        elif not exists and not exists_in_store and not known_by_meta:
+#            # this case shouldn't happen (except there was a typo in the filename etc.)
+#            raise IOError('osc: \'%s\' is not under version control' % n)
 
     def comparePac(self, cmp_pac):
         """
@@ -1413,67 +1444,219 @@ rev: %s
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta)
         return upstream_rev
 
+    def __get_files(self, filesmeta):
+        f = []
+        fmeta = ET.fromstring(filesmeta)
+        for i in fmeta.findall('entry'):
+            f.append(File(i.get('name'), i.get('md5'),
+                     int(i.get('size')), int(i.get('mtime'))))
+        return f
+
+    def __get_rev_changes(self, revfiles):
+        kept = []
+        added = []
+        deleted = []
+        revfilenames = []
+        for f in revfiles:
+            revfilenames.append(f.name)
+            if f.name in self.filenamelist:
+                kept.append(f)
+            else:
+                added.append(f)
+        for f in self.filelist:
+            if not f.name in revfilenames:
+                deleted.append(f)
+
+        return kept, added, deleted
+
     def update(self, rev = None, service_files = False, limit_size = None):
-        # save filelist and (modified) status before replacing the meta file
-        saved_filenames = self.filenamelist
-        saved_modifiedfiles = [ f for f in self.filenamelist if self.status(f) == 'M' ]
+        import tempfile
+        rfiles = []
+        if os.path.isfile(os.path.join(self.storedir, '_in_update', '_files')):
+            print 'resuming broken update...'
+            root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
+            fm = ET.tostring(root)
+            rfiles = self.__get_files(fm)
+            kept, added, deleted = self.__get_rev_changes(rfiles)
+            # check if we aborted in the middle of a file update
+            broken_file = os.listdir(os.path.join(self.storedir, '_in_update'))
+            broken_file.remove('_files')
+            if len(broken_file) == 1:
+                origfile = os.path.join(self.storedir, '_in_update', broken_file[0])
+                wcfile = os.path.join(self.absdir, broken_file[0])
+                origfile_md5 = dgst(origfile)
+                origfile_meta = self.findfilebyname(broken_file[0])
+                if origfile_meta is None:
+                    # should we remove this file from _in_update? if we don't
+                    # the user has no chance to continue without removing the file manually
+                    raise oscerr.PackageInternalError(self.prjname, self.name,
+                        '\'%s\' is not known by meta but exists in \'_in_update\' dir')
+                if origfile_md5 != origfile_meta.md5:
+                    # ok it seems we aborted at some point during the copy process
+                    # (copy process == copy wcfile to the _in_update dir). remove file+continue
+                    os.unlink(origfile)
+                elif os.path.isfile(wcfile) and dgst(wcfile) != origfile_md5:
+                    (fd, tmpfile) = tempfile.mkstemp(dir=self.absdir, prefix=broken_file[0]+'.')
+                    os.close(fd)
+                    os.rename(wcfile, tmpfile)
+                    os.rename(origfile, wcfile)
+                    print 'warning: it seems you modified \'%s\' after the broken ' \
+                          'update. Restored original file and saved modified version ' \
+                          'to \'%s\'.' % (wcfile, tmpfile)
+                elif not os.path.isfile(wcfile):
+                    # this is strange... because it existed before the update. restore it
+                    os.rename(origfile, wcfile)
+                else:
+                    # everything seems to be ok
+                    os.unlink(origfile)
+            elif len(broken_file) > 1:
+                raise oscerr.PackageInternalError(self.prjname, self.name, 'too many files in \'_in_update\' dir')
+            tmp = rfiles[:]
+            for f in tmp:
+                if os.path.exists(os.path.join(self.storedir, f.name)):
+                    if dgst(f.name) == f.md5:
+                        if f in kept:
+                            kept.remove(f)
+                        elif f in added:
+                            added.remove(f)
+                        # this can't happen
+                        elif f in deleted:
+                            deleted.remove(f)
+            self.__update(kept, added, deleted, fm, root.get('rev'), service_files, limit_size)
+            os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
+            os.rmdir(os.path.join(self.storedir, '_in_update'))
+        # ok everything is ok (hopefully)...
+        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev)
+        rfiles = self.__get_files(fm)
+        store_write_string(self.absdir, '_files', fm, subdir='_in_update')
+        kept, added, deleted = self.__get_rev_changes(rfiles)
+        self.__update(kept, added, deleted, fm, rev, service_files, limit_size)
+        os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
+        if os.path.isdir(os.path.join(self.storedir, '_in_update')):
+            os.rmdir(os.path.join(self.storedir, '_in_update'))
 
-        oldp = self
-        if limit_size:
-            self.limit_size = limit_size
-        else:
-            self.limit_size = read_sizelimit(self.dir)
-        self.update_local_filesmeta(rev)
-        self = Package(self.dir, progress_obj=self.progress_obj)
-
-        # which files do no longer exist upstream?
-        disappeared = [ f for f in saved_filenames if f not in self.filenamelist ]
-
+    def __update(self, kept, added, deleted, fm, rev = None, service_files = False, limit_size = None):
         pathn = getTransActPath(self.dir)
+        # check for conflicts with existing files
+        for f in added:
+            if f.name in self.filenamelist_unvers:
+                raise oscerr.PackageFileConflict(self.prjname, self.name, f.name,
+                    'failed to add file \'%s\' file/dir with the same name already exists' % f.name)
+        # ok, the update can't fail due to existing files
+        for f in added:
+            self.updatefile(f.name, rev, f.mtime)
+            print statfrmt('A', os.path.join(pathn, f.name))
+        for f in deleted:
+            # if the storefile doesn't exist we're resuming an aborted update:
+            # the file was already deleted but we cannot know this
+            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) != 'M':
+#            if self.status(f.name) != 'M':
+                self.delete_localfile(f.name)
+            self.delete_storefile(f.name)
+            print statfrmt('D', os.path.join(pathn, f.name))
+            if f.name in self.to_be_deleted:
+                self.to_be_deleted.remove(f.name)
+                self.write_deletelist()
 
-        for filename in saved_filenames:
-            if filename in self.skipped:
-                continue
-            if not filename.startswith('_service:') and filename in disappeared:
-                print statfrmt('D', os.path.join(pathn, filename))
-                # keep file if it has local modifications
-                if oldp.status(filename) == ' ':
-                    self.delete_localfile(filename)
-                self.delete_storefile(filename)
-
-        for filename in self.filenamelist:
-            if filename in self.skipped:
-                continue
-
-            state = self.status(filename)
-            if not service_files and filename.startswith('_service:'):
+        for f in kept:
+            state = self.status(f.name)
+#            print f.name, state
+            if state == 'M' and self.findfilebyname(f.name).md5 == f.md5:
+                # remote file didn't change
                 pass
-            elif state == 'M' and self.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
-                # no merge necessary... local file is changed, but upstream isn't
-                pass
-            elif state == 'M' and filename in saved_modifiedfiles:
-                status_after_merge = self.mergefile(filename)
-                print statfrmt(status_after_merge, os.path.join(pathn, filename))
             elif state == 'M':
-                self.updatefile(filename, rev)
-                print statfrmt('U', os.path.join(pathn, filename))
+                # try to merge changes
+                merge_status = self.mergefile(f.name, rev, f.mtime)
+                print statfrmt(merge_status, os.path.join(pathn, f.name))
             elif state == '!':
-                self.updatefile(filename, rev)
-                print 'Restored \'%s\'' % os.path.join(pathn, filename)
-            elif state == 'F':
-                self.updatefile(filename, rev)
-                print statfrmt('A', os.path.join(pathn, filename))
-            elif state == 'D' and self.findfilebyname(filename).md5 != oldp.findfilebyname(filename).md5:
-                self.updatefile(filename, rev)
-                self.delete_storefile(filename)
-                print statfrmt('U', os.path.join(pathn, filename))
-            elif state == ' ':
-                pass
-
+                self.updatefile(f.name, rev, f.mtime)
+                print 'Restored \'%s\'' % os.path.join(pathn, f.name)
+            elif state == 'C':
+                get_source_file(self.apiurl, self.prjname, self.name, f.name,
+                    targetfilename=os.path.join(self.storedir, f.name), revision=rev,
+                    progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
+                print 'skipping \'%s\' (this is due to conflicts)' % f.name
+            elif state == 'D' and self.findfilebyname(f.name).md5 != f.md5:
+                # XXX: in the worst case we might end up with f.name being
+                # in _to_be_deleted and in _in_conflict... this needs to be checked
+                if os.path.exists(os.path.join(self.absdir, f.name)):
+                    merge_status = self.mergefile(f.name, rev, f.mtime)
+                    print statfrmt(merge_status, os.path.join(pathn, f.name))
+                    if merge_status == 'C':
+                        # state changes from delete to conflict
+                        self.to_be_deleted.remove(f.name)
+                        self.write_deletelist()
+                else:
+                    # XXX: we cannot recover this case because we've no file
+                    # to backup
+                    self.updatefile(f.name, rev, f.mtime)
+                    print statfrmt('U', os.path.join(pathn, f.name))
+            elif state == ' ' and self.findfilebyname(f.name).md5 != f.md5:
+                self.updatefile(f.name, rev, f.mtime)
+                print statfrmt('U', os.path.join(pathn, f.name))
+        store_write_string(self.absdir, '_files', fm)
         self.update_local_pacmeta()
+        self.update_datastructs()
 
         #print ljust(p.name, 45), 'At revision %s.' % p.rev
         print 'At revision %s.' % self.rev
+
+#        sys.exit(1)
+#        # save filelist and (modified) status before replacing the meta file
+#        saved_filenames = self.filenamelist
+#        saved_modifiedfiles = [ f for f in self.filenamelist if self.status(f) == 'M' ]
+#
+#        oldp = self
+#        if limit_size:
+#            self.limit_size = limit_size
+#        else:
+#            self.limit_size = read_sizelimit(self.dir)
+#        self.update_local_filesmeta(rev)
+#        self = Package(self.dir, progress_obj=self.progress_obj)
+#
+#        # which files do no longer exist upstream?
+#        disappeared = [ f for f in saved_filenames if f not in self.filenamelist ]
+#
+#        pathn = getTransActPath(self.dir)
+#
+#        for filename in saved_filenames:
+#            if filename in self.skipped:
+#                continue
+#            if not filename.startswith('_service:') and filename in disappeared:
+#                print statfrmt('D', os.path.join(pathn, filename))
+#                # keep file if it has local modifications
+#                if oldp.status(filename) == ' ':
+#                    self.delete_localfile(filename)
+#                self.delete_storefile(filename)
+#
+#        for filename in self.filenamelist:
+#            if filename in self.skipped:
+#                continue
+#
+#            state = self.status(filename)
+#            if not service_files and filename.startswith('_service:'):
+#                pass
+#            elif state == 'M' and self.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
+#                # no merge necessary... local file is changed, but upstream isn't
+#                pass
+#            elif state == 'M' and filename in saved_modifiedfiles:
+#                status_after_merge = self.mergefile(filename)
+#                print statfrmt(status_after_merge, os.path.join(pathn, filename))
+#            elif state == 'M':
+#                self.updatefile(filename, rev)
+#                print statfrmt('U', os.path.join(pathn, filename))
+#            elif state == '!':
+#                self.updatefile(filename, rev)
+#                print 'Restored \'%s\'' % os.path.join(pathn, filename)
+#            elif state == 'F':
+#                self.updatefile(filename, rev)
+#                print statfrmt('A', os.path.join(pathn, filename))
+#            elif state == 'D' and self.findfilebyname(filename).md5 != oldp.findfilebyname(filename).md5:
+#                self.updatefile(filename, rev)
+#                self.delete_storefile(filename)
+#                print statfrmt('U', os.path.join(pathn, filename))
+#            elif state == ' ':
+#                pass
 
     def run_source_services(self):
         if self.filenamelist.count('_service'):
@@ -4309,8 +4492,10 @@ def store_read_apiurl(dir):
         apiurl = conf.config['apiurl']
     return apiurl
 
-def store_write_string(dir, file, string):
-    fname = os.path.join(dir, store, file)
+def store_write_string(dir, file, string, subdir=''):
+    if subdir and not os.path.isdir(os.path.join(dir, store, subdir)):
+        os.mkdir(os.path.join(dir, store, subdir))
+    fname = os.path.join(dir, store, subdir, file)
     try:
         f = open(fname + '.new', 'w')
         f.write(string)

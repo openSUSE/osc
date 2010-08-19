@@ -113,4 +113,18 @@ class PackageMissing(PackageError):
         PackageError.__init__(self, prj, pac)
         self.msg = msg
 
+class PackageFileConflict(PackageError):
+    """
+    Exception raised when there's a file conflict.
+    Conflict doesn't mean an unsuccessfull merge in this context.
+    """
+    def __init__(self, prj, pac, file, msg):
+        PackageError.__init__(self, prj, pac)
+        self.file = file
+        self.msg = msg
+
+class PackageInternalError(PackageError):
+    def __init__(self, prj, pac, msg):
+        PackageError.__init__(self, prj, pac)
+        self.msg = msg
 # vim: sw=4 et
