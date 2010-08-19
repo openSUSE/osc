@@ -355,6 +355,8 @@ def init_basicauth(config):
 
     from osc.core import __version__
     import cookielib
+    import urllib2
+    import sys
 
     if config['api_host_options'][config['apiurl']]['sslcertck']:
         try:
@@ -364,12 +366,6 @@ def init_basicauth(config):
             print e
             raise NoSecureSSLError("M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto." % config['apiurl'])
 
-    import urllib2
-
-
-    global cookiejar
-
-    import sys
     if sys.version_info < (2, 6):
         # HTTPS proxy is not supported in old urllib2. It only leads to an error
         # or, at best, a warning.
@@ -378,16 +374,31 @@ def init_basicauth(config):
         if 'HTTPS_PROXY' in os.environ:
             del os.environ['HTTPS_PROXY']
 
+    # workaround for http://bugs.python.org/issue9639
+    authhandler_class = urllib2.HTTPBasicAuthHandler
+    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1) \
+        and 'reset_retry_count' in dir(urllib2.HTTPBasicAuthHandler):
+        print >>sys.stderr, 'warning: your urllib2 version seems to be broken. ' \
+            'Using a workaround for http://bugs.python.org/issue9639'
+        class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+            def http_error_401(self, *args):
+                response = urllib2.HTTPBasicAuthHandler.http_error_401(self, *args)
+                self.retried = 0
+                return response
+
+        authhandler_class = OscHTTPBasicAuthHandler
+
     if config['http_debug']:
         # brute force
         def urllib2_debug_init(self, debuglevel=0):
             self._debuglevel = 1
         urllib2.AbstractHTTPHandler.__init__ = urllib2_debug_init
 
-    authhandler = urllib2.HTTPBasicAuthHandler( \
+    authhandler = authhandler_class( \
         urllib2.HTTPPasswordMgrWithDefaultRealm())
 
     cookie_file = os.path.expanduser(config['cookiejar'])
+    global cookiejar
     cookiejar = cookielib.LWPCookieJar(cookie_file)
     try:
         cookiejar.load(ignore_discard=True)
