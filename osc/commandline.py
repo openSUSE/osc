@@ -2247,7 +2247,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc branch SOURCEPROJECT SOURCEPACKAGE
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
             osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
-            osc getpac  SOURCEPACKAGE
+            osc getpac SOURCEPACKAGE
             osc bco ...
         ${cmd_option_list}
         """
