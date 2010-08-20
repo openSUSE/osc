@@ -1,0 +1,5 @@
+<directory name="deleted" rev="2" srcmd5="0e717058d371ab9029336418c8c883bd" vrev="2">
+  <entry md5="2bb5f888a0063a0931c12f35851953e4" mtime="1282135005" name="foo" size="37" />
+  <entry md5="426e11f11438365322f102c02b0a33f0" mtime="1282134896" name="merge" size="50" />
+  <entry md5="7efa70f68983fad1cf487f69dedf93e9" mtime="1282134731" name="nochange" size="25" />
+</directory>

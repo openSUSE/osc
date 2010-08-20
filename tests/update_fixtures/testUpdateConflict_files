@@ -1,0 +1,5 @@
+<directory name="conflict" rev="2" srcmd5="6463d0bd161765e9a2b7186606c72ca1" vrev="2">
+  <entry md5="0d62ceea6020d75154078a20d8c9f9ba" mtime="1282130148" name="foo" size="23" />
+  <entry md5="89fcd308c6e6919c472e56ec82ace945" mtime="1282130545" name="merge" size="46" />
+  <entry md5="7efa70f68983fad1cf487f69dedf93e9" mtime="1282130148" name="nochange" size="25" />
+</directory>

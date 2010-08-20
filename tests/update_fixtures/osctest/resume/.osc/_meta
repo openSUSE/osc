@@ -1,0 +1,8 @@
+<package project="osctest" name="simple">
+  <title/>
+  <description>
+
+  </description>
+  <person userid="Admin" role="maintainer"/>
+  <person userid="Admin" role="bugowner"/>
+</package>

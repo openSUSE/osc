@@ -1,0 +1,8 @@
+<package project="osctest" name="already_in_conflict">
+  <title/>
+  <description>
+
+  </description>
+  <person userid="Admin" role="maintainer"/>
+  <person userid="Admin" role="bugowner"/>
+</package>
