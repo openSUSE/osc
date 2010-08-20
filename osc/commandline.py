@@ -5791,12 +5791,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from subprocess import Popen
 
-        if not os.path.exists('/usr/lib/build/vc'):
-            print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
-            print >>sys.stderr, 'See http://download.opensuse.org/repositories/openSUSE:/Tools/'
-            return 1
+        meego_style = False
+        if not args:
+            import glob, re
+            try:
+                fn_changelog = glob.glob('*.changes')[0]
+                fp = file(fn_changelog)
+                titleline = fp.readline()
+                fp.close()
+                if re.match('^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
+                    meego_style = True
+            except IndexError:
+                pass
 
-        cmd_list = ["/usr/lib/build/vc", ]
+        if meego_style:
+            if not os.path.exists('/usr/bin/vc'):
+                print >>sys.stderr, 'Error: you need meego-packaging-tools for /usr/bin/vc command'
+                return 1
+            cmd_list = ["/usr/bin/vc", ]
+        else:
+            if not os.path.exists('/usr/lib/build/vc'):
+                print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
+                print >>sys.stderr, 'See http://download.opensuse.org/repositories/openSUSE:/Tools/'
+                return 1
+
+            cmd_list = ["/usr/lib/build/vc", ]
 
         if len(args) > 0:
             arg = args[0]
@@ -5813,24 +5832,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             user = conf.get_apiurl_usr(apiurl)
 
-            # work with all combinations of URL with or withouth the ending slash
+            try:
+                os.environ['mailaddr'], os.environ['username'] = get_user_data(apiurl, user, 'email', 'realname')
+            except Exception, e:
+                sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
+
+            # mailaddr can be overrided by config one
             if conf.config['api_host_options'][apiurl].has_key('email'):
                 os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
-            else:
-                try:
-                    os.environ['mailaddr'] = get_user_data(apiurl, user, 'email')[0]
-                except Exception, e:
-                    sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
 
-        if opts.message:
-            cmd_list.append("-m")
-            cmd_list.append(opts.message)
+        if meego_style:
+            if opts.message or opts.just_edit:
+                print >>sys.stderr, 'Warning: to edit MeeGo style changelog, opts will be ignored.'
+        else:
+            if opts.message:
+                cmd_list.append("-m")
+                cmd_list.append(opts.message)
 
-        if opts.just_edit:
-            cmd_list.append("-e")
+            if opts.just_edit:
+                cmd_list.append("-e")
 
-        if args:
-            cmd_list.extend(args)
+            if args:
+                cmd_list.extend(args)
 
         vc = Popen(cmd_list)
         vc.wait()
