@@ -595,7 +595,7 @@ class Osc(cmdln.Cmdln):
                           apiurl=apiurl,
                           template_args=({
                                   'name': project,
-                                  'user': conf.config['user']}))
+                                  'user': conf.get_apiurl_usr(apiurl)}))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg',
                           edit=True,
@@ -603,7 +603,7 @@ class Osc(cmdln.Cmdln):
                           apiurl=apiurl,
                           template_args=({
                                   'name': package,
-                                  'user': conf.config['user']}))
+                                  'user': conf.get_apiurl_usr(apiurl)}))
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf',
                           edit=True,
@@ -1820,7 +1820,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    opts.message = edit_message()
                 if cmd in ['accept', 'decline', 'new']:
                     r = change_review_state(apiurl,
-                            reqid, state_map[cmd], conf.config['user'], opts.message or '')
+                            reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.message or '')
                     print r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
@@ -2269,7 +2269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        expected = 'home:%s:branches:%s' % (conf.config['user'], args[0])
+        expected = 'home:%s:branches:%s' % (conf.get_apiurl_usr(apiurl), args[0])
         if len(args) >= 3:
             expected = tproject = args[2]
         if len(args) >= 4:
