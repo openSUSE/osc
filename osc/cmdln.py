@@ -689,8 +689,8 @@ class RawCmdln(cmd.Cmd):
         else:
             block = ""
 
-        help = help.replace(indent+marker+suffix, block, 1)
-        return help
+        help_msg = help.replace(indent+marker+suffix, block, 1)
+        return help_msg
 
     def _help_get_command_list(self):
         # Find any aliases for commands.
@@ -779,8 +779,8 @@ class RawCmdln(cmd.Cmd):
                     + '\n'.join(lines) + "\n\n"
         else:
             block = ''
-        help = help.replace(indent+marker+suffix, block, 1)
-        return help
+        help_msg = help.replace(indent+marker+suffix, block, 1)
+        return help_msg
 
     def _help_preprocess_cmd_name(self, help, cmdname=None):
         marker = "${cmd_name}"
@@ -792,8 +792,8 @@ class RawCmdln(cmd.Cmd):
         s = cmdname
         if hasattr(handler, "aliases"):
             s += " (%s)" % (", ".join(handler.aliases))
-        help = help.replace(marker, s)
-        return help
+        help_msg = help.replace(marker, s)
+        return help_msg
 
     #TODO: this only makes sense as part of the Cmdln class.
     #      Add hooks to add help preprocessing template vars and put
@@ -860,8 +860,8 @@ class RawCmdln(cmd.Cmd):
         ]
         block = '\n'.join(block_lines) + '\n\n'
 
-        help = help.replace(indent+marker+suffix, block, 1)
-        return help
+        help_msg = help.replace(indent+marker+suffix, block, 1)
+        return help_msg
 
     #TODO: this only makes sense as part of the Cmdln class.
     #      Add hooks to add help preprocessing template vars and put
@@ -886,12 +886,12 @@ class RawCmdln(cmd.Cmd):
         else:
             block = ""
 
-        help = help.replace(indent+marker+suffix, block, 1)
-        return help
+        help_msg = help.replace(indent+marker+suffix, block, 1)
+        return help_msg
 
     def _get_canonical_cmd_name(self, token):
-        map = self._get_canonical_map()
-        return map.get(token, None)
+        c_map = self._get_canonical_map()
+        return c_map.get(token, None)
 
     def _get_canonical_map(self):
         """Return a mapping of available command names and aliases to

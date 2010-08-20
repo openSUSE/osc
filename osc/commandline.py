@@ -157,8 +157,8 @@ class Osc(cmdln.Cmdln):
 
     # overridden from class Cmdln() to use config variables in help texts
     def _help_preprocess(self, help, cmdname):
-        help = cmdln.Cmdln._help_preprocess(self, help, cmdname)
-        return help % conf.config
+        help_msg = cmdln.Cmdln._help_preprocess(self, help, cmdname)
+        return help_msg % conf.config
 
 
     def do_init(self, subcmd, opts, project, package=None):
@@ -293,12 +293,12 @@ class Osc(cmdln.Cmdln):
             # ls -b toplevel doesn't make sense, so use info from
             # current dir if available
             if len(args) == 0:
-                dir = os.getcwd()
-                if is_project_dir(dir):
-                    project = store_read_project(dir)
-                elif is_package_dir(dir):
-                    project = store_read_project(dir)
-                    package = store_read_package(dir)
+                cwd = os.getcwd()
+                if is_project_dir(cwd):
+                    project = store_read_project(cwd)
+                elif is_package_dir(cwd):
+                    project = store_read_project(cwd)
+                    package = store_read_package(cwd)
 
             if not project:
                 raise oscerr.WrongArgs('There are no binaries to list above project level.')
@@ -1689,7 +1689,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd == 'list' or cmd == 'approvenew':
             states = ('new', 'accepted', 'revoked', 'declined')
             who = ''
-            group = opts.group
             if cmd == 'approvenew':
                states = ('new')
                results = get_request_list(apiurl, project, package, '', ['new'])
@@ -3343,13 +3342,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 files = (package, )
                 project, package = project.split('/')
 
-        for file in files:
+        for filename in files:
             if not opts.force:
-                resp = raw_input("rm: remove source file `%s' from `%s/%s'? (yY|nN) " % (file, project, package))
+                resp = raw_input("rm: remove source file `%s' from `%s/%s'? (yY|nN) " % (filename, project, package))
                 if resp not in ('y', 'Y'):
                     continue
             try:
-                delete_files(apiurl, project, package, (file, ))
+                delete_files(apiurl, project, package, (filename, ))
             except urllib2.HTTPError, e:
                 if opts.force:
                     print >>sys.stderr, e
@@ -3530,14 +3529,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         doprint = False
         if is_package_dir(wd):
-            str = "package"
+            msg = "package"
             doprint = True
         elif is_project_dir(wd):
-            str = "project"
+            msg = "project"
             doprint = True
 
         if doprint:
-            print 'Valid arguments for this %s are:' % str
+            print 'Valid arguments for this %s are:' % msg
             print
             if repos_only:
                 self.do_repositories("repos_only", None)
@@ -5083,8 +5082,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p.update_datastructs()
                 p.commit()
         elif opts.commit and opts.delete_old_files:
-            for file in p.filenamelist:
-                p.delete_remote_source_file(file)
+            for filename in p.filenamelist:
+                p.delete_remote_source_file(filename)
             p.update_local_filesmeta()
             print 'Adding files to working copy...'
             addFiles(glob.glob('*'))
@@ -5727,9 +5726,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         prj = None
         if len(args) == 0:
-            dir = os.getcwd()
-            if is_project_dir(dir) or is_package_dir(dir):
-                prj = store_read_project(dir)
+            cwd = os.getcwd()
+            if is_project_dir(cwd) or is_package_dir(cwd):
+                prj = store_read_project(cwd)
         if len(args) == 1:
             prj = args[0]
 

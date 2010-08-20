@@ -319,8 +319,8 @@ class Serviceinfo:
                 #        updating _services.
                 print "       (your _services file may be corrupt now)"
 
-            for file in os.listdir(temp_dir):
-                shutil.move( os.path.join(temp_dir, file), os.path.join(dir, "_service:"+name+":"+file) )
+            for filename in os.listdir(temp_dir):
+                shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
             os.rmdir(temp_dir)
 
 class Linkinfo:
@@ -523,21 +523,21 @@ class Project:
         can_delete = True
         if state == ' ' or state == 'D':
             del_files = []
-            for file in pac.filenamelist + pac.filenamelist_unvers:
-                filestate = pac.status(file)
+            for filename in pac.filenamelist + pac.filenamelist_unvers:
+                filestate = pac.status(filename)
                 if filestate == 'M' or filestate == 'C' or \
                    filestate == 'A' or filestate == '?':
                     can_delete = False
                 else:
-                    del_files.append(file)
+                    del_files.append(filename)
             if can_delete or force:
-                for file in del_files:
-                    pac.delete_localfile(file)
-                    if pac.status(file) != '?':
-                        pac.delete_storefile(file)
+                for filename in del_files:
+                    pac.delete_localfile(filename)
+                    if pac.status(filename) != '?':
+                        pac.delete_storefile(filename)
                         # this is not really necessary
-                        pac.put_on_deletelist(file)
-                        print statfrmt('D', getTransActPath(os.path.join(pac.dir, file)))
+                        pac.put_on_deletelist(filename)
+                        print statfrmt('D', getTransActPath(os.path.join(pac.dir, filename)))
                 print statfrmt('D', getTransActPath(os.path.join(pac.dir, os.pardir, pac.name)))
                 pac.write_deletelist()
                 self.set_state(pac.name, 'D')
@@ -1291,22 +1291,22 @@ class Package:
         added_files = []
         removed_files = []
 
-        for file in self.filenamelist+self.filenamelist_unvers:
-            state = self.status(file)
-            if file in self.skipped:
+        for filename in self.filenamelist+self.filenamelist_unvers:
+            state = self.status(filename)
+            if filename in self.skipped:
                 continue
-            if state == 'A' and (not file in cmp_pac.filenamelist):
-                added_files.append(file)
-            elif file in cmp_pac.filenamelist and state == 'D':
-                removed_files.append(file)
-            elif state == ' ' and not file in cmp_pac.filenamelist:
-                added_files.append(file)
-            elif file in cmp_pac.filenamelist and state != 'A' and state != '?':
-                if dgst(os.path.join(self.absdir, file)) != cmp_pac.findfilebyname(file).md5:
-                    changed_files.append(file)
-        for file in cmp_pac.filenamelist:
-            if not file in self.filenamelist:
-                removed_files.append(file)
+            if state == 'A' and (not filename in cmp_pac.filenamelist):
+                added_files.append(filename)
+            elif filename in cmp_pac.filenamelist and state == 'D':
+                removed_files.append(filename)
+            elif state == ' ' and not filename in cmp_pac.filenamelist:
+                added_files.append(filename)
+            elif filename in cmp_pac.filenamelist and state != 'A' and state != '?':
+                if dgst(os.path.join(self.absdir, filename)) != cmp_pac.findfilebyname(filename).md5:
+                    changed_files.append(filename)
+        for filename in cmp_pac.filenamelist:
+            if not filename in self.filenamelist:
+                removed_files.append(filename)
         removed_files = set(removed_files)
 
         return changed_files, added_files, removed_files
@@ -1345,8 +1345,8 @@ rev: %s
                 specfile = speclist[0]
             elif len(speclist) > 1:
                 print 'the following specfiles were found:'
-                for file in speclist:
-                    print file
+                for filename in speclist:
+                    print filename
                 print 'please specify one with --specfile'
                 sys.exit(1)
             else:
@@ -1643,7 +1643,7 @@ class Request:
             actions = [ root.find('submit') ] # for old style requests
 
         for action in actions:
-            type = action.get('type', 'submit')
+            action_type = action.get('type', 'submit')
             try:
                 src_prj = src_pkg = src_rev = dst_prj = dst_pkg = src_update = role = role_person = role_group = None
                 if action.findall('source'):
@@ -1667,7 +1667,7 @@ class Request:
                     n = action.find('add_role')
                     role_group = n.get('name', None)
                     role = n.get('role', None)
-                self.add_action(type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update, role_person, role_group, role)
+                self.add_action(action_type, src_prj, src_pkg, src_rev, dst_prj, dst_pkg, src_update, role_person, role_group, role)
             except:
                 msg = 'invalid request format:\n%s' % ET.tostring(root)
                 raise oscerr.APIError(msg)
@@ -2383,8 +2383,7 @@ class metafile:
         self.hash_orig = dgst(self.filename)
 
     def sync(self):
-        hash = dgst(self.filename)
-        if self.change_is_required and hash == self.hash_orig:
+        if self.change_is_required and self.hash_orig == dgst(self.filename):
             print 'File unchanged. Not saving.'
             os.unlink(self.filename)
             return
@@ -2414,8 +2413,8 @@ class metafile:
                     data = e.read()
                     if '<summary>' in data:
                         print >>sys.stderr, data.split('<summary>')[1].split('</summary>')[0]
-                    input = raw_input('Try again? ([y/N]): ')
-                    if input not in ['y', 'Y']:
+                    ri = raw_input('Try again? ([y/N]): ')
+                    if ri not in ['y', 'Y']:
                         break
         finally:
             self.discard()
@@ -2703,13 +2702,13 @@ def edit_message(footer='', template='', templatelen=30):
             if len(msg):
                 break
             else:
-                input = raw_input('Log message not specified\n'
-                                  'a)bort, c)ontinue, e)dit: ')
-                if input in 'aA':
+                ri = raw_input('Log message not specified\n'
+                               'a)bort, c)ontinue, e)dit: ')
+                if ri in 'aA':
                     raise oscerr.UserAbort()
-                elif input in 'cC':
+                elif ri in 'cC':
                     break
-                elif input in 'eE':
+                elif ri in 'eE':
                     pass
     finally:
         os.unlink(filename)
@@ -3154,66 +3153,66 @@ def make_diff(wc, revision):
     if not revision:
         # normal diff
         if wc.todo:
-            for file in wc.todo:
-                if file in wc.skipped:
+            for filename in wc.todo:
+                if filename in wc.skipped:
                     continue
-                if file in wc.filenamelist+wc.filenamelist_unvers:
-                    state = wc.status(file)
+                if filename in wc.filenamelist+wc.filenamelist_unvers:
+                    state = wc.status(filename)
                     if state == 'A':
-                        added_files.append(file)
+                        added_files.append(filename)
                     elif state == 'D':
-                        removed_files.append(file)
+                        removed_files.append(filename)
                     elif state == 'M' or state == 'C':
-                        changed_files.append(file)
+                        changed_files.append(filename)
                 else:
-                    diff.append('osc: \'%s\' is not under version control' % file)
+                    diff.append('osc: \'%s\' is not under version control' % filename)
         else:
-            for file in wc.filenamelist+wc.filenamelist_unvers:
-                if file in wc.skipped:
+            for filename in wc.filenamelist+wc.filenamelist_unvers:
+                if filename in wc.skipped:
                     continue
-                state = wc.status(file)
+                state = wc.status(filename)
                 if state == 'M' or state == 'C':
-                    changed_files.append(file)
+                    changed_files.append(filename)
                 elif state == 'A':
-                    added_files.append(file)
+                    added_files.append(filename)
                 elif state == 'D':
-                    removed_files.append(file)
+                    removed_files.append(filename)
     else:
         tmpdir  = tempfile.mkdtemp(str(revision), wc.name)
         os.chdir(tmpdir)
         init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
         cmp_pac = Package(tmpdir)
         if wc.todo:
-            for file in wc.todo:
-                if file in cmp_pac.skipped:
+            for filename in wc.todo:
+                if filename in cmp_pac.skipped:
                     continue
-                if file in cmp_pac.filenamelist:
-                    if file in wc.filenamelist:
-                        changed_files.append(file)
+                if filename in cmp_pac.filenamelist:
+                    if filename in wc.filenamelist:
+                        changed_files.append(filename)
                     else:
-                        diff.append('osc: \'%s\' is not under version control' % file)
+                        diff.append('osc: \'%s\' is not under version control' % filename)
                 else:
-                    diff.append('osc: unable to find \'%s\' in revision %s' % (file, cmp_pac.rev))
+                    diff.append('osc: unable to find \'%s\' in revision %s' % (filename, cmp_pac.rev))
         else:
             changed_files, added_files, removed_files = wc.comparePac(cmp_pac)
 
-    for file in changed_files:
-        diff.append(diff_hdr % file)
+    for filename in changed_files:
+        diff.append(diff_hdr % filename)
         if cmp_pac == None:
-            diff.append(get_source_file_diff(wc.absdir, file, wc.rev))
+            diff.append(get_source_file_diff(wc.absdir, filename, wc.rev))
         else:
-            cmp_pac.updatefile(file, revision)
-            diff.append(get_source_file_diff(wc.absdir, file, revision, file,
-                                             cmp_pac.absdir, file))
+            cmp_pac.updatefile(filename, revision)
+            diff.append(get_source_file_diff(wc.absdir, filename, revision, filename,
+                                             cmp_pac.absdir, filename))
     (fd, tmpfile) = tempfile.mkstemp()
-    for file in added_files:
-        diff.append(diff_hdr % file)
+    for filename in added_files:
+        diff.append(diff_hdr % filename)
         if cmp_pac == None:
-            diff.append(get_source_file_diff(wc.absdir, file, wc.rev, os.path.basename(tmpfile),
-                                             os.path.dirname(tmpfile), file))
+            diff.append(get_source_file_diff(wc.absdir, filename, wc.rev, os.path.basename(tmpfile),
+                                             os.path.dirname(tmpfile), filename))
         else:
-            diff.append(get_source_file_diff(wc.absdir, file, revision, os.path.basename(tmpfile),
-                                             os.path.dirname(tmpfile), file))
+            diff.append(get_source_file_diff(wc.absdir, filename, revision, os.path.basename(tmpfile),
+                                             os.path.dirname(tmpfile), filename))
 
     # FIXME: this is ugly but it cannot be avoided atm
     #        if a file is deleted via "osc rm file" we should keep the storefile.
@@ -3225,16 +3224,16 @@ def make_diff(wc, revision):
         tmp_pac = Package(tmpdir)
         os.chdir(olddir)
 
-    for file in removed_files:
-        diff.append(diff_hdr % file)
+    for filename in removed_files:
+        diff.append(diff_hdr % filename)
         if cmp_pac == None:
-            tmp_pac.updatefile(file, tmp_pac.rev)
+            tmp_pac.updatefile(filename, tmp_pac.rev)
             diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
-                                             wc.rev, file, tmp_pac.storedir, file))
+                                             wc.rev, filename, tmp_pac.storedir, filename))
         else:
-            cmp_pac.updatefile(file, revision)
+            cmp_pac.updatefile(filename, revision)
             diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
-                                             revision, file, cmp_pac.storedir, file))
+                                             revision, filename, cmp_pac.storedir, filename))
 
     os.unlink(tmpfile)
     os.chdir(olddir)
@@ -3351,11 +3350,11 @@ def checkout_package(apiurl, project, package,
                 isfrozen = 1
         if x:
             revision = x
-    dir = os.path.abspath(make_dir(apiurl, project, package, pathname, prj_dir))
-    os.chdir(dir)
-    init_package_dir(apiurl, project, package, dir, revision, limit_size=limit_size, meta=meta)
+    directory = os.path.abspath(make_dir(apiurl, project, package, pathname, prj_dir))
+    os.chdir(directory)
+    init_package_dir(apiurl, project, package, directory, revision, limit_size=limit_size, meta=meta)
     os.chdir(os.pardir)
-    p = Package(dir, progress_obj=progress_obj)
+    p = Package(directory, progress_obj=progress_obj)
     if isfrozen:
         p.mark_frozen()
     for filename in p.filenamelist:
@@ -3700,8 +3699,8 @@ def delete_project(apiurl, prj):
     http_DELETE(u)
 
 def delete_files(apiurl, prj, pac, files):
-    for file in files:
-        u = makeurl(apiurl, ['source', prj, pac, file], query={'comment': 'removed %s' % (file, )})
+    for filename in files:
+        u = makeurl(apiurl, ['source', prj, pac, filename], query={'comment': 'removed %s' % (filename, )})
         http_DELETE(u)
 
 
@@ -4605,8 +4604,8 @@ def delete_dir(dir):
         raise oscerr.OscIOError(None, 'cannot remove \'/\'')
 
     for dirpath, dirnames, filenames in os.walk(dir, topdown=False):
-        for file in filenames:
-            os.unlink(os.path.join(dirpath, file))
+        for filename in filenames:
+            os.unlink(os.path.join(dirpath, filename))
         for dirname in dirnames:
             os.rmdir(os.path.join(dirpath, dirname))
     os.rmdir(dir)
@@ -4823,12 +4822,12 @@ def addDownloadUrlService(url):
     newfiles = os.listdir(path)
 
     # add verify service for new files
-    for file in files:
-       newfiles.remove(file)
+    for filename in files:
+       newfiles.remove(filename)
 
-    for file in newfiles:
-       if file.startswith('_service:download_url:'):
-          s = si.addVerifyFile(services, file)
+    for filename in newfiles:
+       if filename.startswith('_service:download_url:'):
+          s = si.addVerifyFile(services, filename)
 
     # for pretty output
     reparsed = minidom.parseString(ET.tostring(s))
@@ -4997,11 +4996,11 @@ def get_commit_message_template(pac):
     template = []
     files = [i for i in pac.todo if i.endswith('.changes') and pac.status(i) in ('A', 'M')]
 
-    for file in files:
-        if pac.status(file) == 'M':
-            diff += get_source_file_diff(pac.absdir, file, pac.rev)
-        elif pac.status(file) == 'A':
-            f = open(file, 'r')
+    for filename in files:
+        if pac.status(filename) == 'M':
+            diff += get_source_file_diff(pac.absdir, filename, pac.rev)
+        elif pac.status(filename) == 'A':
+            f = open(filename, 'r')
             for line in f:
                 diff += '+' + line
             f.close()
