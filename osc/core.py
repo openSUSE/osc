@@ -1633,65 +1633,7 @@ rev: %s
         self.update_local_pacmeta()
         self.update_datastructs()
 
-        #print ljust(p.name, 45), 'At revision %s.' % p.rev
         print 'At revision %s.' % self.rev
-
-#        sys.exit(1)
-#        # save filelist and (modified) status before replacing the meta file
-#        saved_filenames = self.filenamelist
-#        saved_modifiedfiles = [ f for f in self.filenamelist if self.status(f) == 'M' ]
-#
-#        oldp = self
-#        if limit_size:
-#            self.limit_size = limit_size
-#        else:
-#            self.limit_size = read_sizelimit(self.dir)
-#        self.update_local_filesmeta(rev)
-#        self = Package(self.dir, progress_obj=self.progress_obj)
-#
-#        # which files do no longer exist upstream?
-#        disappeared = [ f for f in saved_filenames if f not in self.filenamelist ]
-#
-#        pathn = getTransActPath(self.dir)
-#
-#        for filename in saved_filenames:
-#            if filename in self.skipped:
-#                continue
-#            if not filename.startswith('_service:') and filename in disappeared:
-#                print statfrmt('D', os.path.join(pathn, filename))
-#                # keep file if it has local modifications
-#                if oldp.status(filename) == ' ':
-#                    self.delete_localfile(filename)
-#                self.delete_storefile(filename)
-#
-#        for filename in self.filenamelist:
-#            if filename in self.skipped:
-#                continue
-#
-#            state = self.status(filename)
-#            if not service_files and filename.startswith('_service:'):
-#                pass
-#            elif state == 'M' and self.findfilebyname(filename).md5 == oldp.findfilebyname(filename).md5:
-#                # no merge necessary... local file is changed, but upstream isn't
-#                pass
-#            elif state == 'M' and filename in saved_modifiedfiles:
-#                status_after_merge = self.mergefile(filename)
-#                print statfrmt(status_after_merge, os.path.join(pathn, filename))
-#            elif state == 'M':
-#                self.updatefile(filename, rev)
-#                print statfrmt('U', os.path.join(pathn, filename))
-#            elif state == '!':
-#                self.updatefile(filename, rev)
-#                print 'Restored \'%s\'' % os.path.join(pathn, filename)
-#            elif state == 'F':
-#                self.updatefile(filename, rev)
-#                print statfrmt('A', os.path.join(pathn, filename))
-#            elif state == 'D' and self.findfilebyname(filename).md5 != oldp.findfilebyname(filename).md5:
-#                self.updatefile(filename, rev)
-#                self.delete_storefile(filename)
-#                print statfrmt('U', os.path.join(pathn, filename))
-#            elif state == ' ':
-#                pass
 
     def run_source_services(self):
         if self.filenamelist.count('_service'):
