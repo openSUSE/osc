@@ -200,6 +200,49 @@ class TestUpdate(unittest.TestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.__check_digests('testUpdateRestore_files')
 
+    @GET('http://localhost/source/osctest/limitsize?rev=latest', file='testUpdateLimitSizeNoChange_filesremote')
+    @GET('http://localhost/source/osctest/limitsize/_meta', file='meta.xml')
+    def testUpdateLimitSizeNoChange(self):
+        """
+        a new file was added to the remote package but isn't checked out because
+        of the size constraint
+        """
+        self.__change_to_pkg('limitsize')
+        osc.core.Package('.').update(limit_size=50)
+        self.assertTrue(len(EXPECTED_REQUESTS) == 0)
+        exp = 'D    bigfile\nAt revision 2.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
+        self.assertFalse(os.path.exists('bigfile'))
+        self.__check_digests('testUpdateLimitSizeNoChange_files', 'bigfile')
+
+    @GET('http://localhost/source/osctest/limitsize?rev=latest', file='testUpdateLimitSizeAddDelete_filesremote')
+    @GET('http://localhost/source/osctest/limitsize/exists', file='testUpdateLimitSizeAddDelete_exists')
+    @GET('http://localhost/source/osctest/limitsize/_meta', file='meta.xml')
+    def testUpdateLimitSizeAddDelete(self):
+        """
+        a new file (exists) was added to the remote package with
+        size < limit_size and one file (nochange) was deleted from the
+        remote package (local file 'nochange' is modified). Additionally
+        files which didn't change are removed the local wc due to the
+        size constraint.
+        """
+        self.__change_to_pkg('limitsize')
+        osc.core.Package('.').update(limit_size=10)
+        self.assertTrue(len(EXPECTED_REQUESTS) == 0)
+        exp = 'A    exists\nD    bigfile\nD    foo\nD    merge\nD    nochange\nAt revision 2.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
+        self.assertFalse(os.path.exists('bigfile'))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertFalse(os.path.exists('foo'))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'merge')))
+        self.assertFalse(os.path.exists('merge'))
+        # exists because local version is modified
+        self.assertTrue(os.path.exists('nochange'))
+
+        self.__check_digests('testUpdateLimitSizeAddDelete_files', 'bigfile', 'foo', 'merge', 'nochange')
+
     # tests to recover from an aborted/broken update
 
     @GET('http://localhost/source/osctest/simple/foo?rev=2', file='testUpdateResume_foo')
@@ -244,11 +287,13 @@ class TestUpdate(unittest.TestCase):
     def __change_to_pkg(self, name):
         os.chdir(os.path.join(self.tmpdir, 'osctest', name))
 
-    def __check_digests(self, fname):
+    def __check_digests(self, fname, *skipfiles):
         fname = os.path.join(FIXTURES_DIR, fname)
         self.assertEqual(open(os.path.join('.osc', '_files'), 'r').read(), open(fname, 'r').read())
         root = ET.parse(fname).getroot()
         for i in root.findall('entry'):
+            if i.get('name') in skipfiles:
+                continue
             self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
             self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
 

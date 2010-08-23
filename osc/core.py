@@ -228,11 +228,12 @@ def os_path_samefile(path1, path2):
 
 class File:
     """represent a file, including its metadata"""
-    def __init__(self, name, md5, size, mtime):
+    def __init__(self, name, md5, size, mtime, skipped=False):
         self.name = name
         self.md5 = md5
         self.size = size
         self.mtime = mtime
+        self.skipped = skipped
     def __repr__(self):
         return self.name
     def __str__(self):
@@ -1135,6 +1136,7 @@ class Package:
                          int(node.get('mtime')))
                 if node.get('skipped'):
                     self.skipped.append(f.name)
+                    f.skipped = True
             except:
                 # okay, a very old version of _files, which didn't contain any metadata yet...
                 f = File(node.get('name'), '', 0, 0)
@@ -1448,8 +1450,9 @@ rev: %s
         f = []
         fmeta = ET.fromstring(filesmeta)
         for i in fmeta.findall('entry'):
+            skipped = i.get('skipped') is not None
             f.append(File(i.get('name'), i.get('md5'),
-                     int(i.get('size')), int(i.get('mtime'))))
+                     int(i.get('size')), int(i.get('mtime')), skipped))
         return f
 
     def __get_rev_changes(self, revfiles):
@@ -1459,7 +1462,14 @@ rev: %s
         revfilenames = []
         for f in revfiles:
             revfilenames.append(f.name)
-            if f.name in self.filenamelist:
+            # treat skipped like deleted files
+            if f.skipped:
+                deleted.append(f)
+                continue
+            # treat skipped like added files
+            # problem: this overwrites existing files during the update
+            # (because skipped files aren't in self.filenamelist_unvers)
+            if f.name in self.filenamelist and not f.name in self.skipped:
                 kept.append(f)
             else:
                 added.append(f)
@@ -1522,20 +1532,20 @@ rev: %s
                         # this can't happen
                         elif f in deleted:
                             deleted.remove(f)
-            self.__update(kept, added, deleted, fm, root.get('rev'), service_files, limit_size)
+            self.__update(kept, added, deleted, fm, root.get('rev'), service_files)
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
-        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev)
+        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev, limit_size=limit_size)
         rfiles = self.__get_files(fm)
         store_write_string(self.absdir, '_files', fm, subdir='_in_update')
         kept, added, deleted = self.__get_rev_changes(rfiles)
-        self.__update(kept, added, deleted, fm, rev, service_files, limit_size)
+        self.__update(kept, added, deleted, fm, rev, service_files)
         os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
         if os.path.isdir(os.path.join(self.storedir, '_in_update')):
             os.rmdir(os.path.join(self.storedir, '_in_update'))
 
-    def __update(self, kept, added, deleted, fm, rev = None, service_files = False, limit_size = None):
+    def __update(self, kept, added, deleted, fm, rev = None, service_files = False):
         pathn = getTransActPath(self.dir)
         # check for conflicts with existing files
         for f in added:
@@ -5132,8 +5142,8 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False, excluded=False):
                 continue
             if filename in p.excluded and not excluded:
                 continue
-            if filename in p.skipped:
-                continue
+#            if filename in p.skipped:
+#                continue
             s = p.status(filename)
             if s == 'F':
                 lines.append(statfrmt('!', pathjoin(p.dir, filename)))

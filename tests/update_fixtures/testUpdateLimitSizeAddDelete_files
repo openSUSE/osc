@@ -1,0 +1,6 @@
+<directory name="foo" rev="2" srcmd5="018a80019e08143e7ae324c778873d62" vrev="2">
+  <entry md5="ed955c917012307d982b7cdd5799ff1a" mtime="1282320398" name="bigfile" size="69" skipped="true" />
+  <entry md5="d15dbfcb847653913855e21370d83af1" mtime="1282553634" name="exists" size="6" />
+  <entry md5="0d62ceea6020d75154078a20d8c9f9ba" mtime="1282320303" name="foo" size="23" skipped="true" />
+  <entry md5="17b9e9e1a032ed44e7a584dc6303ffa8" mtime="1282320303" name="merge" size="48" skipped="true" />
+</directory>
