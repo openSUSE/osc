@@ -789,8 +789,6 @@ class Package:
         self.update_datastructs()
 
         self.todo = []
-        self.todo_send = []
-        self.todo_delete = []
 
     def info(self):
         source_url = makeurl(self.apiurl, ['source', self.prjname, self.name])
@@ -905,6 +903,8 @@ class Package:
         shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
 
     def commit(self, msg='', validators=None, verbose_validation=None):
+        todo_send = []
+        todo_delete = []
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
@@ -936,13 +936,11 @@ class Package:
         for filename in self.todo:
             if not filename.startswith('_service:') and not filename.startswith('_service_'):
                 st = self.status(filename)
-                if st == 'S':
-                    self.todo.remove(filename)
-                elif st == 'A' or st == 'M':
-                    self.todo_send.append(filename)
+                if st == 'A' or st == 'M':
+                    todo_send.append(filename)
                     print statfrmt('Sending', os.path.join(pathn, filename))
                 elif st == 'D':
-                    self.todo_delete.append(filename)
+                    todo_delete.append(filename)
                     print statfrmt('Deleting', os.path.join(pathn, filename))
                 elif st == 'C':
                     have_conflicts = True
@@ -951,7 +949,7 @@ class Package:
             print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
             return 1
 
-        if not self.todo_send and not self.todo_delete and not self.rev == "upload" and not self.islinkrepair() and not self.ispulled():
+        if not todo_send and not todo_delete and not self.rev == "upload" and not self.islinkrepair() and not self.ispulled():
             print 'nothing to do for package %s' % self.name
             return 1
 
@@ -964,12 +962,12 @@ class Package:
 
         print 'Transmitting file data ',
         try:
-            for filename in self.todo_delete:
+            for filename in todo_delete:
                 # do not touch local files on commit --
                 # delete remotely instead
                 self.delete_remote_source_file(filename)
                 self.to_be_deleted.remove(filename)
-            for filename in self.todo_send:
+            for filename in todo_send:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 self.put_source_file(filename)
