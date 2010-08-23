@@ -2925,7 +2925,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 elif state == '!':
                     p.put_on_deletelist(filename)
                     p.write_deletelist()
-                    os.unlink(os.path.join(p.storedir, filename))
                     print statfrmt('D', getTransActPath(os.path.join(p.dir, filename)))
 
 
