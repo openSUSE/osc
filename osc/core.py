@@ -1787,6 +1787,19 @@ rev: %s
         if not loop:
             raise ValueError("Empty filelist")
 
+    def revert(self, filename):
+        if not filename in self.filenamelist:
+            raise IOError('file \'%s\' is not under version control' % filename)
+        if not os.path.exists(os.path.join(self.storedir, filename)):
+            raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
+        shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
+        state = self.status(filename)
+        if state == 'D':
+            self.to_be_deleted.remove(filename)
+            self.write_deletelist()
+        elif state == 'C':
+            self.clear_from_conflictlist(filename)
+
 class ReviewState:
     """for objects to represent the review state in a request"""
     def __init__(self, state=None, by_user=None, by_group=None, who=None, when=None, comment=None):

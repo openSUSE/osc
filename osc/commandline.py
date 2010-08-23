@@ -5902,6 +5902,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
 
+    def do_revert(self, subcmd, opts, *files):
+        """${cmd_name}: restore original wc file
+
+        Examples:
+            osc revert <modified file(s)>
+
+        Note: this only works for files in a package working copy
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        pacs = findpacs(files)
+        for p in pacs:
+            if not len(p.todo):
+                p.todo = p.filenamelist
+            for f in p.todo:
+                p.revert(f)
+                
 # fini!
 ###############################################################################
 
