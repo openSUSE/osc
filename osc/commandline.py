@@ -5808,25 +5808,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not os.path.exists('/usr/bin/vc'):
                 print >>sys.stderr, 'Error: you need meego-packaging-tools for /usr/bin/vc command'
                 return 1
-            cmd_list = ["/usr/bin/vc", ]
+            cmd_list = ['/usr/bin/vc']
         else:
             if not os.path.exists('/usr/lib/build/vc'):
                 print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
                 print >>sys.stderr, 'See http://download.opensuse.org/repositories/openSUSE:/Tools/'
                 return 1
 
-            cmd_list = ["/usr/lib/build/vc", ]
-
-        if len(args) > 0:
-            arg = args[0]
-        else:
-            arg = ""
+            cmd_list = ['/usr/lib/build/vc']
 
         # set user's email if no mailaddr exists
         if not os.environ.has_key('mailaddr'):
 
-            if arg and is_package_dir(arg):
-                apiurl = store_read_apiurl(arg)
+            if len(args) and is_package_dir(args[0]):
+                apiurl = store_read_apiurl(args[0])
             else:
                 apiurl = self.get_api_url()
 
@@ -5852,8 +5847,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.just_edit:
                 cmd_list.append("-e")
 
-            if args:
-                cmd_list.extend(args)
+            cmd_list.extend(args)
 
         vc = Popen(cmd_list)
         vc.wait()
