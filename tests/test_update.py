@@ -233,6 +233,29 @@ class TestUpdate(unittest.TestCase):
 
         self.__check_digests('testUpdateLimitSizeAddDelete_files', 'bigfile', 'foo', 'merge', 'nochange')
 
+    @GET('http://localhost/source/osctest/services?rev=latest', file='testUpdateServiceFilesAddDelete_filesremote')
+    @GET('http://localhost/source/osctest/services/bigfile?rev=2', file='testUpdateServiceFilesAddDelete_bigfile')
+    @GET('http://localhost/source/osctest/services/_service%3Abar?rev=2', file='testUpdateServiceFilesAddDelete__service:bar')
+    @GET('http://localhost/source/osctest/services/_service%3Afoo?rev=2', file='testUpdateServiceFilesAddDelete__service:foo')
+    @GET('http://localhost/source/osctest/services/_meta', file='meta.xml')
+    def testUpdateAddDeleteServiceFiles(self):
+        """
+        a new file was added to the remote package but isn't checked out because
+        of the size constraint
+        """
+        self.__change_to_pkg('services')
+        osc.core.Package('.').update(service_files=True)
+        exp = 'A    bigfile\nD    _service:exists\nA    _service:bar\nA    _service:foo\nAt revision 2.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:bar')))
+        self.assertTrue(os.path.exists('_service:bar'))
+        self.assertEqual(open('_service:bar').read(), 'another service\n')
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:foo')))
+        self.assertTrue(os.path.exists('_service:foo'))
+        self.assertEqual(open('_service:foo').read(), 'small\n')
+        self.assertTrue(os.path.exists('_service:exists'))
+        self.__check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
+
     # tests to recover from an aborted/broken update
 
     @GET('http://localhost/source/osctest/simple/foo?rev=2', file='testUpdateResume_foo')

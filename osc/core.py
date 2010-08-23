@@ -1254,7 +1254,7 @@ class Package:
             state = 'D'
         elif n in self.in_conflict:
             state = 'C'
-        elif n in self.skipped or n.startswith('_service:'):
+        elif n in self.skipped:
             state = 'S'
         elif exists and exists_in_store and not known_by_meta:
             state = 'A'
@@ -1460,12 +1460,16 @@ rev: %s
         kept = []
         added = []
         deleted = []
+        services = []
         revfilenames = []
         for f in revfiles:
             revfilenames.append(f.name)
             # treat skipped like deleted files
             if f.skipped:
-                deleted.append(f)
+                if f.name.startswith('_service:'):
+                    services.append(f)
+                else:
+                    deleted.append(f)
                 continue
             # treat skipped like added files
             # problem: this overwrites existing files during the update
@@ -1478,7 +1482,7 @@ rev: %s
             if not f.name in revfilenames:
                 deleted.append(f)
 
-        return kept, added, deleted
+        return kept, added, deleted, services
 
     def update(self, rev = None, service_files = False, limit_size = None):
         import tempfile
@@ -1487,7 +1491,7 @@ rev: %s
             print 'resuming broken update...'
             root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
             rfiles = self.__get_files(root)
-            kept, added, deleted = self.__get_rev_changes(rfiles)
+            kept, added, deleted, services = self.__get_rev_changes(rfiles)
             # check if we aborted in the middle of a file update
             broken_file = os.listdir(os.path.join(self.storedir, '_in_update'))
             broken_file.remove('_files')
@@ -1532,7 +1536,9 @@ rev: %s
                         # this can't happen
                         elif f in deleted:
                             deleted.remove(f)
-            self.__update(kept, added, deleted, ET.tostring(root), root.get('rev'), service_files)
+            if not service_files:
+                services = []
+            self.__update(kept, added, deleted, services, ET.tostring(root), root.get('rev'))
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
@@ -1540,13 +1546,15 @@ rev: %s
         root = ET.fromstring(fm)
         rfiles = self.__get_files(root)
         store_write_string(self.absdir, '_files', fm, subdir='_in_update')
-        kept, added, deleted = self.__get_rev_changes(rfiles)
-        self.__update(kept, added, deleted, fm, root.get('rev'), service_files)
+        kept, added, deleted, services = self.__get_rev_changes(rfiles)
+        if not service_files:
+            services = []
+        self.__update(kept, added, deleted, services, fm, root.get('rev'))
         os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
         if os.path.isdir(os.path.join(self.storedir, '_in_update')):
             os.rmdir(os.path.join(self.storedir, '_in_update'))
 
-    def __update(self, kept, added, deleted, fm, rev, service_files = False):
+    def __update(self, kept, added, deleted, services, fm, rev):
         pathn = getTransActPath(self.dir)
         # check for conflicts with existing files
         for f in added:
@@ -1560,6 +1568,7 @@ rev: %s
         for f in deleted:
             # if the storefile doesn't exist we're resuming an aborted update:
             # the file was already deleted but we cannot know this
+            # OR we're processing a _service: file (simply keep the file)
             if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) != 'M':
 #            if self.status(f.name) != 'M':
                 self.delete_localfile(f.name)
@@ -1605,6 +1614,13 @@ rev: %s
             elif state == ' ' and self.findfilebyname(f.name).md5 != f.md5:
                 self.updatefile(f.name, rev, f.mtime)
                 print statfrmt('U', os.path.join(pathn, f.name))
+
+        # checkout service files
+        for f in services:
+            get_source_file(self.apiurl, self.prjname, self.name, f.name,
+                targetfilename=os.path.join(self.absdir, f.name), revision=rev,
+                progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
+            print statfrmt('A', os.path.join(pathn, f.name))
         store_write_string(self.absdir, '_files', fm)
         self.update_local_pacmeta()
         self.update_datastructs()
@@ -2684,7 +2700,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=False):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=False, skip_service=True):
     query = {}
     if revision:
         query['rev'] = revision
@@ -2705,8 +2721,9 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     root = ET.fromstring(''.join(f.readlines()))
     for e in root.findall('entry'):
         size = e.get('size')
-        if size and limit_size and int(size) > int(limit_size):
-             e.set('skipped', 'true')
+        if size and limit_size and int(size) > int(limit_size) \
+            or skip_service and (e.get('name').startswith('_service:') or e.get('name').startswith('_service_')):
+            e.set('skipped', 'true')
     return ET.tostring(root)
 
 
@@ -5139,8 +5156,8 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False, excluded=False):
                 lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
 
         for filename in p.todo:
-            if filename.startswith('_service:'):
-                continue
+#            if filename.startswith('_service:'):
+#                continue
             if filename in p.excluded and not excluded:
                 continue
 #            if filename in p.skipped:

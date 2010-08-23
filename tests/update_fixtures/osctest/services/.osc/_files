@@ -1,0 +1,5 @@
+<directory name="foo" rev="1" srcmd5="b9f060f4b3640e58a1d44abc25ffb9bd" vrev="1">
+  <entry md5="7b1458c733a187d4f3807665ddd02cca" mtime="1282565027" name="_service:exists" size="20" skipped="true" />
+  <entry md5="0d62ceea6020d75154078a20d8c9f9ba" mtime="1282320303" name="foo" size="23" />
+  <entry md5="17b9e9e1a032ed44e7a584dc6303ffa8" mtime="1282320303" name="merge" size="48" />
+</directory>
