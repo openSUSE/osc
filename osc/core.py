@@ -1141,6 +1141,11 @@ class Package:
             except:
                 # okay, a very old version of _files, which didn't contain any metadata yet...
                 f = File(node.get('name'), '', 0, 0)
+            # restore storefile in case it is lost (for whatever reason)
+            if not os.path.exists(os.path.join(self.storedir, f.name)) and not f.name in self.skipped:
+                get_source_file(self.apiurl, self.prjname, self.name, f.name,
+                    targetfilename=os.path.join(self.storedir, f.name), revision=files_tree_root.get('rev'),
+                    mtime=f.mtime)
             self.filelist.append(f)
             self.filenamelist.append(f.name)
 
@@ -1270,6 +1275,8 @@ class Package:
         elif exists and not exists_in_store and not known_by_meta:
             state = '?'
         elif not exists_in_store and known_by_meta:
+            # XXX: this codepath shouldn't be reached (we restore the storefile
+            #      in update_datastructs)
             raise oscerr.PackageInternalError(self.prjname, self.name,
                 'error: file \'%s\' is known by meta but no storefile exists.\n'
                 'This might be caused by an old wc format. Please backup your current\n'
