@@ -1019,6 +1019,9 @@ class Package:
         self.write_deletelist()
         self.update_datastructs()
 
+        for filename in todo_delete:
+            self.delete_storefile(filename)
+
         if self.filenamelist.count('_service'):
             print 'The package contains a source service.'
             for filename in self.todo:
@@ -1233,8 +1236,9 @@ class Package:
           x       -            -        '?'
           -       x            x        'D' and listed in _to_be_deleted
           x       x            x        'D' and listed in _to_be_deleted (e.g. if deleted file was modified)
-          x       x            x        'D' and listed in _to_be_deleted (e.g. if deleted file was modified)
           x       x            x        'C' and listed in _in_conflict
+          x       -            x        'S' and listed in self.skipped
+          -       -            x        'S' and listed in self.skipped
           -       x            x        '!'
           -       -            -        NOT DEFINED
 
