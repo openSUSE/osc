@@ -189,7 +189,7 @@ class TestUpdate(unittest.TestCase):
         self.__check_digests('testUpdateLocalDeletions_files')
 
     @GET('http://localhost/source/osctest/restore?rev=latest', file='testUpdateRestore_files')
-    @GET('http://localhost/source/osctest/restore/foo', file='testUpdateRestore_foo')
+    @GET('http://localhost/source/osctest/restore/foo?rev=1', file='testUpdateRestore_foo')
     @GET('http://localhost/source/osctest/restore/_meta', file='meta.xml')
     def testUpdateRestore(self):
         """local file 'foo' was deleted with a non osc command and will be restored"""
@@ -217,7 +217,7 @@ class TestUpdate(unittest.TestCase):
         self.__check_digests('testUpdateLimitSizeNoChange_files', 'bigfile')
 
     @GET('http://localhost/source/osctest/limitsize?rev=latest', file='testUpdateLimitSizeAddDelete_filesremote')
-    @GET('http://localhost/source/osctest/limitsize/exists', file='testUpdateLimitSizeAddDelete_exists')
+    @GET('http://localhost/source/osctest/limitsize/exists?rev=2', file='testUpdateLimitSizeAddDelete_exists')
     @GET('http://localhost/source/osctest/limitsize/_meta', file='meta.xml')
     def testUpdateLimitSizeAddDelete(self):
         """

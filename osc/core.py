@@ -1446,10 +1446,11 @@ rev: %s
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta)
         return upstream_rev
 
-    def __get_files(self, filesmeta):
+    def __get_files(self, fmeta_root):
         f = []
-        fmeta = ET.fromstring(filesmeta)
-        for i in fmeta.findall('entry'):
+        if fmeta_root.get('rev') is None:
+            raise oscerr.APIError('missing rev attribute in _files:\n%s' % ''.join(ET.tostring(fmeta_root)))
+        for i in fmeta_root.findall('entry'):
             skipped = i.get('skipped') is not None
             f.append(File(i.get('name'), i.get('md5'),
                      int(i.get('size')), int(i.get('mtime')), skipped))
@@ -1485,8 +1486,7 @@ rev: %s
         if os.path.isfile(os.path.join(self.storedir, '_in_update', '_files')):
             print 'resuming broken update...'
             root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
-            fm = ET.tostring(root)
-            rfiles = self.__get_files(fm)
+            rfiles = self.__get_files(root)
             kept, added, deleted = self.__get_rev_changes(rfiles)
             # check if we aborted in the middle of a file update
             broken_file = os.listdir(os.path.join(self.storedir, '_in_update'))
@@ -1532,20 +1532,21 @@ rev: %s
                         # this can't happen
                         elif f in deleted:
                             deleted.remove(f)
-            self.__update(kept, added, deleted, fm, root.get('rev'), service_files)
+            self.__update(kept, added, deleted, ET.tostring(root), root.get('rev'), service_files)
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
         fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev, limit_size=limit_size)
-        rfiles = self.__get_files(fm)
+        root = ET.fromstring(fm)
+        rfiles = self.__get_files(root)
         store_write_string(self.absdir, '_files', fm, subdir='_in_update')
         kept, added, deleted = self.__get_rev_changes(rfiles)
-        self.__update(kept, added, deleted, fm, rev, service_files)
+        self.__update(kept, added, deleted, fm, root.get('rev'), service_files)
         os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
         if os.path.isdir(os.path.join(self.storedir, '_in_update')):
             os.rmdir(os.path.join(self.storedir, '_in_update'))
 
-    def __update(self, kept, added, deleted, fm, rev = None, service_files = False):
+    def __update(self, kept, added, deleted, fm, rev, service_files = False):
         pathn = getTransActPath(self.dir)
         # check for conflicts with existing files
         for f in added:
