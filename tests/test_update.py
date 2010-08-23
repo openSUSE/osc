@@ -272,6 +272,7 @@ class TestUpdate(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_update')))
         self.__check_digests('testUpdateResume_files')
 
+    @GET('http://localhost/source/osctest/simple/added?rev=1', file='testUpdateResumeDeletedFile_foo')
     @GET('http://localhost/source/osctest/simple/foo?rev=1', file='testUpdateResumeDeletedFile_foo')
     @GET('http://localhost/source/osctest/simple/merge?rev=1', file='testUpdateResumeDeletedFile_merge')
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
@@ -288,6 +289,8 @@ class TestUpdate(unittest.TestCase):
         exp = 'resuming broken update...\nD    added\nU    foo\nU    merge\nAt revision 1.\nAt revision 1.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_update')))
+        self.assertFalse(os.path.exists('added'))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'added')))
         self.__check_digests('testUpdateResumeDeletedFile_files')
 
     def __expected_requests(self, *args):
