@@ -1269,6 +1269,12 @@ class Package:
             state = '!'
         elif exists and not exists_in_store and not known_by_meta:
             state = '?'
+        elif not exists_in_store and known_by_meta:
+            raise oscerr.PackageInternalError(self.prjname, self.name,
+                'error: file \'%s\' is known by meta but no storefile exists.\n'
+                'This might be caused by an old wc format. Please backup your current\n'
+                'wc and checkout the package again. Afterwards copy all files (except the\n'
+                '.osc/ dir) into the new package wc. Please file a bug.' % n)
         else:
             # this case shouldn't happen (except there was a typo in the filename etc.)
             raise IOError('osc: \'%s\' is not under version control' % n)
