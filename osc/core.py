@@ -796,8 +796,22 @@ class Package:
         return r
 
     def addfile(self, n):
-        st = os.stat(os.path.join(self.dir, n))
-        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+        if not os.path.exists(os.path.join(self.absdir, n)):
+            raise IOError('error: file \'%s\' does not exist' % n)
+        if n in self.to_be_deleted:
+            self.to_be_deleted.remove(n)
+#            self.delete_storefile(n)
+            self.write_deletelist()
+        elif n in self.filenamelist or n in self.to_be_added:
+            raise oscerr.PackageFileConflict(self.prjname, self.name, n, 'osc: warning: \'%s\' is already under version control' % n)
+#        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+        if self.dir != '.':
+            pathname = os.path.join(self.dir, n)
+        else:
+            pathname = n
+        self.to_be_added.append(n)
+        self.write_addlist()
+        print statfrmt('A', pathname)
 
     def delete_file(self, n, force=False):
         """deletes a file if possible and marks the file as deleted"""
@@ -807,14 +821,20 @@ class Package:
         except IOError, ioe:
             if not force:
                 raise ioe
-        if state in ['?', 'A', 'M'] and not force:
+        if state in ['?', 'A', 'M', 'R', 'C'] and not force:
             return (False, state)
         self.delete_localfile(n)
-        if state != 'A':
+        if state in ('A', 'R'):
+            self.to_be_added.remove(n)
+            self.write_addlist()
+        elif state == 'C':
+            # don't remove "merge files" (*.r, *.mine...)
+            # that's why we don't use clear_from_conflictlist
+            self.in_conflict.remove(n)
+            self.write_conflictlist()
+        if not state in ('A', '?'):
             self.put_on_deletelist(n)
             self.write_deletelist()
-        else:
-            self.delete_storefile(n)
         return (True, state)
 
     def delete_storefile(self, n):
@@ -832,6 +852,10 @@ class Package:
     def put_on_conflictlist(self, n):
         if n not in self.in_conflict:
             self.in_conflict.append(n)
+
+    def put_on_addlist(self, n):
+        if n not in self.to_be_added:
+            self.to_be_added.append(n)
 
     def clear_from_conflictlist(self, n):
         """delete an entry from the file, and remove the file if it would be empty"""
@@ -878,6 +902,9 @@ class Package:
         else:
             store_write_string(self.absdir, '_size_limit', self.size_limit)
 
+    def write_addlist(self):
+        self.__write_storelist('_to_be_added', self.to_be_added)
+
     def write_deletelist(self):
         self.__write_storelist('_to_be_deleted', self.to_be_deleted)
 
@@ -901,6 +928,8 @@ class Package:
         http_PUT(u, file = os.path.join(self.dir, n))
 
         shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+        if n in self.to_be_added:
+            self.to_be_added.remove(n)
 
     def commit(self, msg='', validators=None, verbose_validation=None):
         todo_send = []
@@ -936,7 +965,7 @@ class Package:
         for filename in self.todo:
             if not filename.startswith('_service:') and not filename.startswith('_service_'):
                 st = self.status(filename)
-                if st == 'A' or st == 'M':
+                if st == 'A' or st == 'M' or st == 'R':
                     todo_send.append(filename)
                     print statfrmt('Sending', os.path.join(pathn, filename))
                 elif st == 'D':
@@ -1149,8 +1178,9 @@ class Package:
             self.filelist.append(f)
             self.filenamelist.append(f.name)
 
-        self.to_be_deleted = read_tobedeleted(self.dir)
-        self.in_conflict = read_inconflict(self.dir)
+        self.to_be_added = read_tobeadded(self.absdir)
+        self.to_be_deleted = read_tobedeleted(self.absdir)
+        self.in_conflict = read_inconflict(self.absdir)
         self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
         self.size_limit = read_sizelimit(self.dir)
         self.meta = self.ismetamode()
@@ -1233,7 +1263,8 @@ class Package:
          file  storefile  file present  STATUS
         exists  exists      in _files
 
-          x       x            -        'A'
+          x       -            -        'A' and listed in _to_be_added
+          x       x            -        'R' and listed in _to_be_added
           x       x            x        ' ' if digest differs: 'M'
                                             and if in conflicts file: 'C'
           x       -            -        '?'
@@ -1263,7 +1294,9 @@ class Package:
             state = 'C'
         elif n in self.skipped:
             state = 'S'
-        elif exists and exists_in_store and not known_by_meta:
+        elif n in self.to_be_added and exists_in_store:
+            state = 'R'
+        elif n in self.to_be_added:
             state = 'A'
         elif exists and exists_in_store and known_by_meta:
             if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
@@ -1743,17 +1776,21 @@ rev: %s
             raise ValueError("Empty filelist")
 
     def revert(self, filename):
-        if not filename in self.filenamelist:
+        if not filename in self.filenamelist and not filename in self.to_be_added:
             raise IOError('file \'%s\' is not under version control' % filename)
-        if not os.path.exists(os.path.join(self.storedir, filename)):
+        if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
             raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
-        shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
         state = self.status(filename)
+        if state != 'A':
+            shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
         if state == 'D':
             self.to_be_deleted.remove(filename)
             self.write_deletelist()
         elif state == 'C':
             self.clear_from_conflictlist(filename)
+        elif state == 'A' or state == 'R':
+            self.to_be_added.remove(filename)
+            self.write_addlist()
 
 class ReviewState:
     """for objects to represent the review state in a request"""
@@ -2147,6 +2184,9 @@ def store_readlist(dir, name):
     if os.path.exists(os.path.join(dir, store, name)):
         r = [line.strip() for line in open(os.path.join(dir, store, name), 'r')]
     return r
+
+def read_tobeadded(dir):
+    return store_readlist(dir, '_to_be_added')
 
 def read_tobedeleted(dir):
     return store_readlist(dir, '_to_be_deleted')
@@ -5042,21 +5082,6 @@ def addFiles(filenames, prj_obj = None):
             if filename in pac.excluded:
                 print >>sys.stderr, 'osc: warning: \'%s\' is excluded from a working copy' % filename
                 continue
-            if filename in pac.filenamelist:
-                # check if this is a re-add after delete.
-                pac.to_be_deleted = read_tobedeleted(pac.dir)
-                try:
-                    pac.to_be_deleted.remove(filename)
-                    print >>sys.stderr, 'osc: Note: \'%s\' was deleted, is now re-added' % filename
-                    pac.write_deletelist()
-                except:
-                    print >>sys.stderr, 'osc: Warning: \'%s\' is already under version control' % filename
-                continue
-            if pac.dir != '.':
-                pathname = os.path.join(pac.dir, filename)
-            else:
-                pathname = filename
-            print statfrmt('A', pathname)
             pac.addfile(filename)
 
 def getPrjPacPaths(path):
