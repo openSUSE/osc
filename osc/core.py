@@ -875,23 +875,10 @@ class Package:
             except:
                 pass
         else:
-            fname = os.path.join(self.storedir, '_size_limit')
-            f = open(fname, 'w')
-            f.write(str(self.size_limit))
-            f.close()
+            store_write_string(self.absdir, '_size_limit', self.size_limit)
 
     def write_deletelist(self):
-        if len(self.to_be_deleted) == 0:
-            try:
-                os.unlink(os.path.join(self.storedir, '_to_be_deleted'))
-            except:
-                pass
-        else:
-            fname = os.path.join(self.storedir, '_to_be_deleted')
-            f = open(fname, 'w')
-            f.write('\n'.join(self.to_be_deleted))
-            f.write('\n')
-            f.close()
+        self.__write_storelist('_to_be_deleted', self.to_be_deleted)
 
     def delete_source_file(self, n):
         """delete local a source file"""
@@ -1036,18 +1023,17 @@ class Package:
                     os.unlink(filename) # remove local files
         print_request_list(self.apiurl, self.prjname, self.name)
 
-    def write_conflictlist(self):
-        if len(self.in_conflict) == 0:
+    def __write_storelist(self, name, data):
+        if len(data) == 0:
             try:
-                os.unlink(os.path.join(self.storedir, '_in_conflict'))
+                os.unlink(os.path.join(self.storedir, name))
             except:
                 pass
         else:
-            fname = os.path.join(self.storedir, '_in_conflict')
-            f = open(fname, 'w')
-            f.write('\n'.join(self.in_conflict))
-            f.write('\n')
-            f.close()
+            store_write_string(self.absdir, name, '%s\n' % '\n'.join(data))
+
+    def write_conflictlist(self):
+        self.__write_storelist('_in_conflict', self.in_conflict)
 
     def updatefile(self, n, revision):
         filename = os.path.join(self.dir, n)
@@ -1976,16 +1962,14 @@ def read_filemeta(dir):
                                    '%s' % (dir, e))
     return r
 
-
-def read_tobedeleted(dir):
+def store_readlist(dir, name):
     r = []
-    fname = os.path.join(dir, store, '_to_be_deleted')
-
-    if os.path.exists(fname):
-        r = [ line.strip() for line in open(fname) ]
-
+    if os.path.exists(os.path.join(dir, store, name)):
+        r = [line.strip() for line in open(os.path.join(dir, store, name), 'r')]
     return r
 
+def read_tobedeleted(dir):
+    return store_readlist(dir, '_to_be_deleted')
 
 def read_sizelimit(dir):
     r = None
@@ -1999,14 +1983,7 @@ def read_sizelimit(dir):
     return int(r)
 
 def read_inconflict(dir):
-    r = []
-    fname = os.path.join(dir, store, '_in_conflict')
-
-    if os.path.exists(fname):
-        r = [ line.strip() for line in open(fname) ]
-
-    return r
-
+    return store_readlist(dir, '_in_conflict')
 
 def parseargs(list_of_args):
     """Convenience method osc's commandline argument parsing.
