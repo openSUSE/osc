@@ -82,3 +82,6 @@ class OscTestCase(unittest.TestCase):
 
     def _get_fixtures_dir(self):
         raise NotImplementedError('subclasses should implement this method')
+
+    def _change_to_pkg(self, name):
+        os.chdir(os.path.join(self.tmpdir, 'osctest', name))

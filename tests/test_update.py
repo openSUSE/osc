@@ -14,7 +14,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
     def testUpdateNoChanges(self):
         """update without any changes (the wc is the most recent version)"""
-        self.__change_to_pkg('simple')
+        self._change_to_pkg('simple')
         osc.core.Package('.').update()
         self.assertEqual(sys.stdout.getvalue(), 'At revision 1.\n')
 
@@ -23,7 +23,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
     def testUpdateNewFile(self):
         """a new file was added to the remote package"""
-        self.__change_to_pkg('simple')
+        self._change_to_pkg('simple')
         osc.core.Package('.').update(rev=2)
         exp = 'A    upstream_added\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -35,14 +35,14 @@ class TestUpdate(OscTestCase):
         a new file was added to the remote package but the same (unversioned)
         file exists locally
         """
-        self.__change_to_pkg('simple')
+        self._change_to_pkg('simple')
         self.assertRaises(osc.oscerr.PackageFileConflict, osc.core.Package('.').update, rev=2)
 
     @GET('http://localhost/source/osctest/simple?rev=2', file='testUpdateDeletedFile_files')
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
     def testUpdateDeletedFile(self):
         """a file was deleted from the remote package"""
-        self.__change_to_pkg('simple')
+        self._change_to_pkg('simple')
         osc.core.Package('.').update(rev=2)
         exp = 'D    foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -56,7 +56,7 @@ class TestUpdate(OscTestCase):
     def testUpdateUpstreamModifiedFile(self):
         """a file was modified in the remote package (local file isn't modified)"""
         
-        self.__change_to_pkg('simple')
+        self._change_to_pkg('simple')
         osc.core.Package('.').update(rev=2)
         exp = 'U    foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -70,7 +70,7 @@ class TestUpdate(OscTestCase):
         a file was modified in the remote package (local file is also modified 
         and a merge isn't possible)
         """
-        self.__change_to_pkg('conflict')
+        self._change_to_pkg('conflict')
         osc.core.Package('.').update(rev=2)
         exp = 'C    merge\nAt revision 2.\n'
         self.__check_digests('testUpdateConflict_files')
@@ -84,7 +84,7 @@ class TestUpdate(OscTestCase):
         """
         a file was modified in the remote package (the local file is already in conflict)
         """
-        self.__change_to_pkg('already_in_conflict')
+        self._change_to_pkg('already_in_conflict')
         osc.core.Package('.').update(rev=2)
         exp = 'skipping \'merge\' (this is due to conflicts)\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -101,7 +101,7 @@ class TestUpdate(OscTestCase):
         'merge' was modified in the wc before deletion so the local file
         still exists (and a merge with the remote file is not possible)
         """
-        self.__change_to_pkg('deleted')
+        self._change_to_pkg('deleted')
         osc.core.Package('.').update(rev=2)
         exp = 'U    foo\nC    merge\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -115,7 +115,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/restore/_meta', file='meta.xml')
     def testUpdateRestore(self):
         """local file 'foo' was deleted with a non osc command and will be restored"""
-        self.__change_to_pkg('restore')
+        self._change_to_pkg('restore')
         osc.core.Package('.').update()
         exp = 'Restored \'foo\'\nAt revision 1.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -128,7 +128,7 @@ class TestUpdate(OscTestCase):
         a new file was added to the remote package but isn't checked out because
         of the size constraint
         """
-        self.__change_to_pkg('limitsize')
+        self._change_to_pkg('limitsize')
         osc.core.Package('.').update(limit_size=50)
         exp = 'D    bigfile\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -147,7 +147,7 @@ class TestUpdate(OscTestCase):
         files which didn't change are removed the local wc due to the
         size constraint.
         """
-        self.__change_to_pkg('limitsize')
+        self._change_to_pkg('limitsize')
         osc.core.Package('.').update(limit_size=10)
         exp = 'A    exists\nD    bigfile\nD    foo\nD    merge\nD    nochange\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -172,7 +172,7 @@ class TestUpdate(OscTestCase):
         a new file was added to the remote package but isn't checked out because
         of the size constraint
         """
-        self.__change_to_pkg('services')
+        self._change_to_pkg('services')
         osc.core.Package('.').update(service_files=True)
         exp = 'A    bigfile\nD    _service:exists\nA    _service:bar\nA    _service:foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -194,7 +194,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
     def testUpdateResume(self):
         """resume an aborted update"""
-        self.__change_to_pkg('resume')
+        self._change_to_pkg('resume')
         osc.core.Package('.').update(rev=2)
         exp = 'resuming broken update...\nU    foo\nU    merge\nAt revision 2.\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -213,7 +213,7 @@ class TestUpdate(OscTestCase):
         run). It's marked as deleted again (this is due to an expected issue with the update
         code)
         """
-        self.__change_to_pkg('resume_deleted')
+        self._change_to_pkg('resume_deleted')
         osc.core.Package('.').update(rev=1)
         exp = 'resuming broken update...\nD    added\nU    foo\nU    merge\nAt revision 1.\nAt revision 1.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
@@ -221,14 +221,6 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists('added'))
         self.assertFalse(os.path.exists(os.path.join('.osc', 'added')))
         self.__check_digests('testUpdateResumeDeletedFile_files')
-
-    def __expected_requests(self, *args):
-        self.assertTrue(len(self.exp_requests) == 0)
-        for i in args:
-            self.exp_requests.append(i)
-
-    def __change_to_pkg(self, name):
-        os.chdir(os.path.join(self.tmpdir, 'osctest', name))
 
     def __check_digests(self, fname, *skipfiles):
         fname = os.path.join(self._get_fixtures_dir(), fname)
