@@ -6,6 +6,10 @@ from common import GET, OscTestCase
 from xml.etree import cElementTree as ET
 FIXTURES_DIR = os.path.join(os.getcwd(), 'update_fixtures')
 
+def suite():
+    import unittest
+    return unittest.makeSuite(TestUpdate)
+
 class TestUpdate(OscTestCase):
     def _get_fixtures_dir(self):
         return FIXTURES_DIR

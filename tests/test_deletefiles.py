@@ -6,7 +6,11 @@ from common import GET, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.getcwd(), 'deletefile_fixtures')
 
-class TestAddFiles(OscTestCase):
+def suite():
+    import unittest
+    return unittest.makeSuite(TestDeleteFiles)
+
+class TestDeleteFiles(OscTestCase):
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
 

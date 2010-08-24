@@ -6,6 +6,10 @@ from common import GET, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.getcwd(), 'addfile_fixtures')
 
+def suite():
+    import unittest
+    return unittest.makeSuite(TestAddFiles)
+
 class TestAddFiles(OscTestCase):
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
