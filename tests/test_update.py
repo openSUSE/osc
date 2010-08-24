@@ -1,85 +1,14 @@
-import unittest
-import urllib2
 import osc.core
 import osc.oscerr
-import StringIO
-import shutil
-import tempfile
 import os
 import sys
+from common import GET, OscTestCase
 from xml.etree import cElementTree as ET
 FIXTURES_DIR = os.path.join(os.getcwd(), 'update_fixtures')
-EXPECTED_REQUESTS = []
 
-class RequestWrongOrder(Exception):
-    """issued if an unexpected request is issued to urllib2"""
-    def __init__(self, url, exp_url, method, exp_method):
-        Exception.__init__(self)
-        self.url = url
-        self.exp_url = exp_url
-        self.method = method
-        self.exp_method = exp_method
-
-    def __str__(self):
-        return '%s, %s, %s, %s' % (self.url, self.exp_url, self.method, self.exp_method)
-
-def get_response(url, **kwargs):
-    f = None
-    if not kwargs.has_key('text') and kwargs.has_key('file'):
-        f = StringIO.StringIO(open(os.path.join(FIXTURES_DIR, kwargs['file']), 'r').read())
-    elif kwargs.has_key('text') and not kwargs.has_key('file'):
-        f = StringIO.StringIO(kwargs['text'])
-    else:
-        raise RuntimeError('either specify text or file')
-    resp = urllib2.addinfourl(f, '', url)
-    resp.code = 200
-    resp.msg = ''
-    return resp
-
-def mock_GET(fullurl, **kwargs):
-    return get_response(fullurl, **kwargs)
-
-class MyHTTPHandler(urllib2.HTTPHandler):
-    def __init__(self, exp_requests):
-        self.exp_requests = exp_requests
-
-    def http_open(self, req):
-        r = self.exp_requests.pop(0)
-        if req.get_full_url() != r[1] and req.get_method() == r[0]:
-            raise RequestWrongOrder(req.get_full_url(), r[1], req.get_method(), r[0])
-        if req.get_method() == 'GET':
-            return mock_GET(r[1], **r[2])
-
-def GET(fullurl, **kwargs):
-    def decorate(test_method):
-        def wrapped_test_method(*args):
-            addExpectedRequest('GET', fullurl, **kwargs)
-            test_method(*args)
-        return wrapped_test_method
-    return decorate
-
-def addExpectedRequest(method, url, **kwargs):
-    global EXPECTED_REQUESTS
-    EXPECTED_REQUESTS.append((method, url, kwargs))
-
-class TestUpdate(unittest.TestCase):
-    def setUp(self):
-        osc.core.conf.get_config(override_conffile=os.path.join(FIXTURES_DIR, 'oscrc'))
-        self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
-        shutil.copytree(os.path.join(FIXTURES_DIR, 'osctest'), os.path.join(self.tmpdir, 'osctest'))
-        global EXPECTED_REQUESTS
-        EXPECTED_REQUESTS = []
-        urllib2.install_opener(urllib2.build_opener(MyHTTPHandler(EXPECTED_REQUESTS)))
-        self.stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
-
-    def tearDown(self):
-        self.assertTrue(len(EXPECTED_REQUESTS) == 0)
-        sys.stdout = self.stdout
-        try:
-            shutil.rmtree(self.tmpdir)
-        except:
-            pass
+class TestUpdate(OscTestCase):
+    def _get_fixtures_dir(self):
+        return FIXTURES_DIR
 
     @GET('http://localhost/source/osctest/simple?rev=latest', file='testUpdateNoChanges_files')
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
@@ -302,7 +231,7 @@ class TestUpdate(unittest.TestCase):
         os.chdir(os.path.join(self.tmpdir, 'osctest', name))
 
     def __check_digests(self, fname, *skipfiles):
-        fname = os.path.join(FIXTURES_DIR, fname)
+        fname = os.path.join(self._get_fixtures_dir(), fname)
         self.assertEqual(open(os.path.join('.osc', '_files'), 'r').read(), open(fname, 'r').read())
         root = ET.parse(fname).getroot()
         for i in root.findall('entry'):
@@ -312,4 +241,5 @@ class TestUpdate(unittest.TestCase):
             self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
 
 if __name__ == '__main__':
+    import unittest
     unittest.main()
