@@ -54,6 +54,9 @@ def GET(fullurl, **kwargs):
         def wrapped_test_method(*args):
             addExpectedRequest('GET', fullurl, **kwargs)
             test_method(*args)
+        # "rename" method otherwise we cannot specify a TestCaseClass.testName
+        # cmdline arg when using unittest.main()
+        wrapped_test_method.__name__ = test_method.__name__
         return wrapped_test_method
     return decorate
 
