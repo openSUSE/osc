@@ -1072,7 +1072,9 @@ class Package:
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
         origfile = os.path.join(self.storedir, '_in_update', n)
-        if os.path.isfile(filename):
+        # XXX: the existence of the _in_update dir is just a hack
+        # otherwise checkout_package fails - will be fixed later
+        if os.path.isfile(filename) and os.path.isdir(os.path.join(self.storedir, '_in_update')):
             shutil.copyfile(filename, origfile)
         else:
             origfile = None
@@ -1171,6 +1173,7 @@ class Package:
                 # okay, a very old version of _files, which didn't contain any metadata yet...
                 f = File(node.get('name'), '', 0, 0)
             # restore storefile in case it is lost (for whatever reason)
+            # XXX: this is a bad idea if we do a checkout - will be fixed later
             if not os.path.exists(os.path.join(self.storedir, f.name)) and not f.name in self.skipped:
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
                     targetfilename=os.path.join(self.storedir, f.name), revision=files_tree_root.get('rev'),
