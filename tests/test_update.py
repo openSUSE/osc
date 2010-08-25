@@ -92,6 +92,7 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(rev=2)
         exp = 'skipping \'merge\' (this is due to conflicts)\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
+        self._check_conflictlist('merge\n')
         self.__check_digests('testUpdateAlreadyInConflict_files')
 
     @GET('http://localhost/source/osctest/deleted?rev=2', file='testUpdateLocalDeletions_files')

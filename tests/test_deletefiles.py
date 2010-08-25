@@ -76,7 +76,7 @@ class TestDeleteFiles(OscTestCase):
         self.assertTrue(os.path.exists('foo'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
-        self.assertTrue(os.path.exists(os.path.join('.osc', '_in_conflict')))
+        self._check_conflictlist('foo\n')
         self._check_status(p, 'foo', 'C')
 
     def testDeleteModifiedForce(self):
