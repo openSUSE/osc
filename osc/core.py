@@ -1793,7 +1793,7 @@ rev: %s
             self.write_deletelist()
         elif state == 'C':
             self.clear_from_conflictlist(filename)
-        elif state == 'A' or state == 'R':
+        elif state in ('A', 'R'):
             self.to_be_added.remove(filename)
             self.write_addlist()
 
