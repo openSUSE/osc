@@ -1781,6 +1781,8 @@ rev: %s
     def revert(self, filename):
         if not filename in self.filenamelist and not filename in self.to_be_added:
             raise IOError('file \'%s\' is not under version control' % filename)
+        elif filename in self.skipped:
+            raise IOError('file \'%s\' is marked as skipped and cannot be reverted')
         if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
             raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
         state = self.status(filename)
