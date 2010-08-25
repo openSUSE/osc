@@ -22,7 +22,7 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, True, ' ')
         self.assertFalse(os.path.exists('foo'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.__check_deletelist('foo\n')
+        self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
 
     def testDeleteModified(self):
@@ -64,7 +64,7 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, False, 'R')
         self.assertTrue(os.path.exists('merge'))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
-        self._check_list('_to_be_added', 'toadd1\nmerge\n')
+        self._check_addlist('toadd1\nmerge\n')
         self._check_status(p, 'merge', 'R')
 
     def testDeleteConflict(self):
@@ -87,7 +87,7 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, True, 'M')
         self.assertFalse(os.path.exists('nochange'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'nochange')))
-        self.__check_deletelist('nochange\n')
+        self._check_deletelist('nochange\n')
         self._check_status(p, 'nochange', 'D')
 
     def testDeleteUnversionedForce(self):
@@ -119,8 +119,8 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, True, 'R')
         self.assertFalse(os.path.exists('merge'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'merge')))
-        self.__check_deletelist('merge\n')
-        self._check_list('_to_be_added', 'toadd1\n')
+        self._check_deletelist('merge\n')
+        self._check_addlist('toadd1\n')
         self._check_status(p, 'merge', 'D')
 
     def testDeleteConflictForce(self):
@@ -133,7 +133,7 @@ class TestDeleteFiles(OscTestCase):
         self.assertTrue(os.path.exists('foo.r2'))
         self.assertTrue(os.path.exists('foo.mine'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.__check_deletelist('foo\n')
+        self._check_deletelist('foo\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_conflict')))
         self._check_status(p, 'foo', 'D')
 
@@ -149,7 +149,7 @@ class TestDeleteFiles(OscTestCase):
         self.assertFalse(os.path.exists('merge'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'merge')))
-        self.__check_deletelist('foo\nmerge\n')
+        self._check_deletelist('foo\nmerge\n')
 
     def testDeleteAlreadyDeleted(self):
         """delete already deleted file from the wc"""
@@ -159,16 +159,13 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, True, 'D')
         self.assertFalse(os.path.exists('foo'))
         self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.__check_deletelist('foo\n')
+        self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
 
     def __check_ret(self, ret, exp1, exp2):
         self.assertTrue(len(ret) == 2)
         self.assertTrue(ret[0] == exp1)
         self.assertTrue(ret[1] == exp2)
-
-    def __check_deletelist(self, exp):
-        self._check_list('_to_be_deleted', exp)
 
 if __name__ == '__main__':
     import unittest

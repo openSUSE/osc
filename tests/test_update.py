@@ -79,7 +79,7 @@ class TestUpdate(OscTestCase):
         exp = 'C    merge\nAt revision 2.\n'
         self.__check_digests('testUpdateConflict_files')
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertEqual(open(os.path.join('.osc', '_in_conflict'), 'r').read(), 'merge\n')
+        self._check_conflictlist('merge\n')
 
     @GET('http://localhost/source/osctest/already_in_conflict?rev=2', file='testUpdateAlreadyInConflict_files')
     @GET('http://localhost/source/osctest/already_in_conflict/merge?rev=2', file='testUpdateAlreadyInConflict_merge')
@@ -109,8 +109,8 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(rev=2)
         exp = 'U    foo\nC    merge\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertEqual(open(os.path.join('.osc', '_to_be_deleted'), 'r').read(), 'foo\n')
-        self.assertEqual(open(os.path.join('.osc', '_in_conflict'), 'r').read(), 'merge\n')
+        self._check_deletelist('foo\n')
+        self._check_conflictlist('merge\n')
         self.assertEqual(open('foo', 'r').read(), open(os.path.join('.osc', 'foo'), 'r').read())
         self.__check_digests('testUpdateLocalDeletions_files')
 

@@ -89,10 +89,19 @@ class OscTestCase(unittest.TestCase):
     def _change_to_pkg(self, name):
         os.chdir(os.path.join(self.tmpdir, 'osctest', name))
 
-    def _check_list(self, fname, exp):
+    def __check_list(self, fname, exp):
         fname = os.path.join('.osc', fname)
         self.assertTrue(os.path.exists(fname))
         self.assertEqual(open(fname, 'r').read(), exp)
+
+    def _check_addlist(self, exp):
+        self.__check_list('_to_be_added', exp)
+
+    def _check_deletelist(self, exp):
+        self.__check_list('_to_be_deleted', exp)
+
+    def _check_conflictlist(self, exp):
+        self.__check_list('_in_conflict', exp)
 
     def _check_status(self, p, fname, exp):
         self.assertEqual(p.status(fname), exp)

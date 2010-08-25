@@ -23,7 +23,7 @@ class TestAddFiles(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
         self._check_status(p, 'toadd1', 'A')
-        self.__check_addlist('toadd1\n')
+        self._check_addlist('toadd1\n')
 
     def testSimpleMultipleAdd(self):
         """add multiple files ('toadd1', 'toadd2') to the wc"""
@@ -37,7 +37,7 @@ class TestAddFiles(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd2')))
         self._check_status(p, 'toadd1', 'A')
         self._check_status(p, 'toadd2', 'A')
-        self.__check_addlist('toadd1\ntoadd2\n')
+        self._check_addlist('toadd1\ntoadd2\n')
 
     def testAddVersionedFile(self):
         """add a versioned file"""
@@ -57,7 +57,7 @@ class TestAddFiles(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
         self._check_status(p, 'toadd1', 'A')
-        self.__check_addlist('toadd1\n')
+        self._check_addlist('toadd1\n')
 
     def testReplace(self):
         """replace a deleted file ('foo')"""
@@ -71,7 +71,7 @@ class TestAddFiles(OscTestCase):
         self.assertNotEqual(open(os.path.join('.osc', 'foo'), 'r').read(), 'replaced file\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self._check_status(p, 'foo', 'R')
-        self.__check_addlist('foo\n')
+        self._check_addlist('foo\n')
 
     def testAddNonExistentFile(self):
         """add a non existent file"""
@@ -79,9 +79,6 @@ class TestAddFiles(OscTestCase):
         p = osc.core.Package('.')
         self.assertRaises(IOError, p.addfile, 'doesnotexist')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
-
-    def __check_addlist(self, exp):
-        self._check_list('_to_be_added', exp)
 
 if __name__ == '__main__':
     import unittest
