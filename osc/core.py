@@ -1071,11 +1071,13 @@ class Package:
     def updatefile(self, n, revision, mtime=None):
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
+        origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
         origfile = os.path.join(self.storedir, '_in_update', n)
         # XXX: the existence of the _in_update dir is just a hack
         # otherwise checkout_package fails - will be fixed later
         if os.path.isfile(filename) and os.path.isdir(os.path.join(self.storedir, '_in_update')):
-            shutil.copyfile(filename, origfile)
+            shutil.copyfile(filename, origfile_tmp)
+            os.rename(origfile_tmp, origfile)
         else:
             origfile = None
 
@@ -1091,8 +1093,10 @@ class Package:
         storefilename = os.path.join(self.storedir, n)
         myfilename = os.path.join(self.dir, n + '.mine')
         upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+        origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
         origfile = os.path.join(self.storedir, '_in_update', n)
-        shutil.copyfile(filename, origfile)
+        shutil.copyfile(filename, origfile_tmp)
+        os.rename(origfile_tmp, origfile)
         os.rename(filename, myfilename)
 
         get_source_file(self.apiurl, self.prjname, self.name, n,
@@ -1551,15 +1555,15 @@ rev: %s
                 wcfile = os.path.join(self.absdir, broken_file[0])
                 origfile_md5 = dgst(origfile)
                 origfile_meta = self.findfilebyname(broken_file[0])
-                if origfile_meta is None:
+                if origfile.endswith('.copy'):
+                    # ok it seems we aborted at some point during the copy process
+                    # (copy process == copy wcfile to the _in_update dir). remove file+continue
+                    os.unlink(origfile)
+                elif self.findfilebyname(broken_file[0]) is None:
                     # should we remove this file from _in_update? if we don't
                     # the user has no chance to continue without removing the file manually
                     raise oscerr.PackageInternalError(self.prjname, self.name,
                         '\'%s\' is not known by meta but exists in \'_in_update\' dir')
-                if origfile_md5 != origfile_meta.md5:
-                    # ok it seems we aborted at some point during the copy process
-                    # (copy process == copy wcfile to the _in_update dir). remove file+continue
-                    os.unlink(origfile)
                 elif os.path.isfile(wcfile) and dgst(wcfile) != origfile_md5:
                     (fd, tmpfile) = tempfile.mkstemp(dir=self.absdir, prefix=broken_file[0]+'.')
                     os.close(fd)
@@ -1579,7 +1583,7 @@ rev: %s
             tmp = rfiles[:]
             for f in tmp:
                 if os.path.exists(os.path.join(self.storedir, f.name)):
-                    if dgst(f.name) == f.md5:
+                    if dgst(os.path.join(self.storedir, f.name)) == f.md5:
                         if f in kept:
                             kept.remove(f)
                         elif f in added:
