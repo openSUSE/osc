@@ -3646,7 +3646,7 @@ def copy_pac(src_apiurl, src_project, src_package,
                 (fd, tmpfile) = tempfile.mkstemp(prefix='osc-copypac')
                 get_source_file(src_apiurl, src_project, src_package, n, targetfilename=tmpfile, revision=revision)
                 u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)], query=query)
-                http_PUT(u, file = n)
+                http_PUT(u, file = tmpfile)
             finally:
                 if not tmpfile is None:
                     os.unlink(tmpfile)
