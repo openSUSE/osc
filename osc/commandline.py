@@ -4164,13 +4164,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if conf.config['no_verify']:
             opts.no_verify = True
 
+        if opts.keep_pkgs and not os.path.isdir(opts.keep_pkgs):
+            if os.path.exists(opts.keep_pkgs):
+                raise oscerr.WrongOptions('Preferred save location \'%s\' is not a directory' % opts.keep_pkgs)
+            else:
+                os.makedirs(opts.keep_pkgs)
+
         if opts.prefer_pkgs:
             for d in opts.prefer_pkgs:
                 if not os.path.isdir(d):
                     raise oscerr.WrongOptions('Preferred package location \'%s\' is not a directory' % d)
-
-        if opts.keep_pkgs and not os.path.isdir(opts.keep_pkgs):
-            raise oscerr.WrongOptions('Preferred save location \'%s\' is not a directory' % opts.keep_pkgs)
 
         if opts.noinit and opts.offline:
             raise oscerr.WrongOptions('--noinit and --offline are mutually exclusive')
