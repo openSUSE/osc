@@ -71,7 +71,7 @@ class OscTestCase(unittest.TestCase):
         shutil.copytree(os.path.join(self._get_fixtures_dir(), 'osctest'), os.path.join(self.tmpdir, 'osctest'))
         global EXPECTED_REQUESTS
         EXPECTED_REQUESTS = []
-        urllib2.install_opener(urllib2.build_opener(MyHTTPHandler(EXPECTED_REQUESTS, self._get_fixtures_dir())))
+        osc.core.conf._build_opener = lambda u: urllib2.build_opener(MyHTTPHandler(EXPECTED_REQUESTS, self._get_fixtures_dir()))
         self.stdout = sys.stdout
         sys.stdout = StringIO.StringIO()
 
