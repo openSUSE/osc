@@ -1303,13 +1303,15 @@ class Package:
             state = 'S'
         elif n in self.to_be_added and exists_in_store:
             state = 'R'
-        elif n in self.to_be_added:
+        elif n in self.to_be_added and exists:
             state = 'A'
         elif exists and exists_in_store and known_by_meta:
             if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
                 state = 'M'
             else:
                 state = ' '
+        elif n in self.to_be_added and not exists:
+            state = '!'
         elif not exists and exists_in_store and known_by_meta and not n in self.to_be_deleted:
             state = '!'
         elif exists and not exists_in_store and not known_by_meta:
@@ -1790,14 +1792,14 @@ rev: %s
         if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
             raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
         state = self.status(filename)
-        if state != 'A':
+        if not (state == 'A' or state == '!' and filename in self.to_be_added):
             shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
         if state == 'D':
             self.to_be_deleted.remove(filename)
             self.write_deletelist()
         elif state == 'C':
             self.clear_from_conflictlist(filename)
-        elif state in ('A', 'R'):
+        elif state in ('A', 'R') or state == '!' and filename in self.to_be_added:
             self.to_be_added.remove(filename)
             self.write_addlist()
 

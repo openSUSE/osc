@@ -35,7 +35,7 @@ class TestRevertFiles(OscTestCase):
         p = osc.core.Package('.')
         p.revert('toadd1')
         self.assertTrue(os.path.exists('toadd1'))
-        self._check_addlist('replaced\n')
+        self._check_addlist('replaced\naddedmissing\n')
         self._check_status(p, 'toadd1', '?')
 
     def testRevertDeleted(self):
@@ -55,13 +55,21 @@ class TestRevertFiles(OscTestCase):
         self.__check_file('missing')
         self._check_status(p, 'missing', ' ')
 
+    def testRevertMissingAdded(self):
+        """revert a missing file which was added to the wc"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.revert('addedmissing')
+        self._check_addlist('toadd1\nreplaced\n')
+        self.assertRaises(IOError, p.status, 'addedmissing')
+
     def testRevertReplaced(self):
         """revert a replaced (state == 'R') file"""
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
         p.revert('replaced')
         self.__check_file('replaced')
-        self._check_addlist('toadd1\n')
+        self._check_addlist('toadd1\naddedmissing\n')
         self._check_status(p, 'replaced', ' ')
 
     def testRevertConflict(self):
