@@ -348,31 +348,22 @@ def get_apiurl_usr(apiurl):
             % (apiurl, config['user'])
         return config['user']
 
-
-
-def init_basicauth(config):
-    """initialize urllib2 with the credentials for Basic Authentication"""
-
+# workaround m2crypto issue:
+# if multiple SSL.Context objects are created
+# m2crypto only uses the last object which was created.
+# So we need to build a new opener everytime we switch the
+# apiurl (because different apiurls may have different
+# cafile/capath locations)
+def _build_opener(url):
     from osc.core import __version__
-    import cookielib
     import urllib2
     import sys
-
-    if config['api_host_options'][config['apiurl']]['sslcertck']:
-        try:
-            import oscssl
-            from M2Crypto import m2urllib2
-        except ImportError, e:
-            print e
-            raise NoSecureSSLError("M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto." % config['apiurl'])
-
-    if sys.version_info < (2, 6):
-        # HTTPS proxy is not supported in old urllib2. It only leads to an error
-        # or, at best, a warning.
-        if 'https_proxy' in os.environ:
-            del os.environ['https_proxy']
-        if 'HTTPS_PROXY' in os.environ:
-            del os.environ['HTTPS_PROXY']
+    global config
+    apiurl = urljoin(*parse_apisrv_url(None, url))
+    if not _build_opener.__dict__.has_key('last_opener'):
+        _build_opener.last_opener = (None, None)
+    if apiurl == _build_opener.last_opener[0]:
+        return _build_opener.last_opener[1]
 
     # workaround for http://bugs.python.org/issue9639
     authhandler_class = urllib2.HTTPBasicAuthHandler
@@ -388,35 +379,23 @@ def init_basicauth(config):
 
         authhandler_class = OscHTTPBasicAuthHandler
 
-    if config['http_debug']:
-        # brute force
-        def urllib2_debug_init(self, debuglevel=0):
-            self._debuglevel = 1
-        urllib2.AbstractHTTPHandler.__init__ = urllib2_debug_init
-
+    options = config['api_host_options'][apiurl]
+    # with None as first argument, it will always use this username/password
+    # combination for urls for which arg2 (apisrv) is a super-url
     authhandler = authhandler_class( \
         urllib2.HTTPPasswordMgrWithDefaultRealm())
+    authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
-    cookie_file = os.path.expanduser(config['cookiejar'])
-    global cookiejar
-    cookiejar = cookielib.LWPCookieJar(cookie_file)
-    try:
-        cookiejar.load(ignore_discard=True)
-    except IOError:
+    if options['sslcertck']:
         try:
-            open(cookie_file, 'w').close()
-            os.chmod(cookie_file, 0600)
-        except:
-            #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
-            cookiejar = cookielib.CookieJar()
+            import oscssl
+            from M2Crypto import m2urllib2
+        except ImportError, e:
+            print e
+            raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto.' % apiurl)
 
-
-    if config['api_host_options'][config['apiurl']]['sslcertck']:
-        cafile = capath = None
-        if 'capath' in config['api_host_options'][config['apiurl']]:
-            capath = config['api_host_options'][config['apiurl']]['capath']
-        if 'cafile' in config['api_host_options'][config['apiurl']]:
-            cafile = config['api_host_options'][config['apiurl']]['cafile']
+        cafile = options.get('cafile', None)
+        capath = options.get('capath', None)
         if not cafile and not capath:
             for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs' ]:
                 if os.path.isfile(i):
@@ -432,15 +411,43 @@ def init_basicauth(config):
         import sys
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
-
-    urllib2.install_opener(opener)
-
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
+    _build_opener.last_opener = (apiurl, opener)
+    return opener
 
-    # with None as first argument, it will always use this username/password
-    # combination for urls for which arg2 (apisrv) is a super-url
-    for host, auth in config['api_host_options'].iteritems():
-        authhandler.add_password(None, host, auth['user'], auth['pass'])
+def init_basicauth(config):
+    """initialize urllib2 with the credentials for Basic Authentication"""
+
+    import cookielib
+    import urllib2
+    import sys
+
+    if sys.version_info < (2, 6):
+        # HTTPS proxy is not supported in old urllib2. It only leads to an error
+        # or, at best, a warning.
+        if 'https_proxy' in os.environ:
+            del os.environ['https_proxy']
+        if 'HTTPS_PROXY' in os.environ:
+            del os.environ['HTTPS_PROXY']
+
+    if config['http_debug']:
+        # brute force
+        def urllib2_debug_init(self, debuglevel=0):
+            self._debuglevel = 1
+        urllib2.AbstractHTTPHandler.__init__ = urllib2_debug_init
+
+    cookie_file = os.path.expanduser(config['cookiejar'])
+    global cookiejar
+    cookiejar = cookielib.LWPCookieJar(cookie_file)
+    try:
+        cookiejar.load(ignore_discard=True)
+    except IOError:
+        try:
+            open(cookie_file, 'w').close()
+            os.chmod(cookie_file, 0600)
+        except:
+            #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
+            cookiejar = cookielib.CookieJar()
 
 
 def get_configParser(conffile=None, force_read=False):
