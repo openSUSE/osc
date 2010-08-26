@@ -2045,9 +2045,9 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
         data = ''
 
     req = urllib2.Request(url)
-    urllib2.install_opener(conf._build_opener(url))
     api_host_options = {}
     try:
+        urllib2.install_opener(conf._build_opener(url))
         api_host_options = conf.get_apiurl_api_host_options(url)
         for header, value in api_host_options['http_headers']:
             req.add_header(header, value)
