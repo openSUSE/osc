@@ -1,0 +1,249 @@
+import osc.core
+import osc.oscerr
+import os
+import sys
+from common import GET, OscTestCase
+
+FIXTURES_DIR = os.path.join(os.getcwd(), 'difffile_fixtures')
+
+def suite():
+    import unittest
+    return unittest.makeSuite(TestDiffFiles)
+
+class TestDiffFiles(OscTestCase):
+    diff_hdr = 'Index: %s\n==================================================================='
+    def _get_fixtures_dir(self):
+        return FIXTURES_DIR
+
+    def testDiffUnmodified(self):
+        """diff an unmodified file"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['merge']
+        self.__check_diff(p, '', None)
+
+    def testDiffAdded(self):
+        """diff an added file"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['toadd1']
+        exp = """%s
+--- toadd1\t(revision 0)
++++ toadd1\t(revision 0)
+@@ -0,0 +1,1  @@
++toadd1
+""" % (TestDiffFiles.diff_hdr % 'toadd1')
+        self.__check_diff(p, exp, None)
+
+    def testDiffRemoved(self):
+        """diff a removed file"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['somefile']
+        exp = """%s
+--- somefile\t(revision 2)
++++ somefile\t(working copy)
+@@ -1,1 +0,0  @@
+-some content
+""" % (TestDiffFiles.diff_hdr % 'somefile')
+        self.__check_diff(p, exp, None)
+
+    def testDiffMissing(self):
+        """diff a missing file (missing files are ignored)"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['missing']
+        self.__check_diff(p, '', None)
+
+    def testDiffReplaced(self):
+        """diff a replaced file"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['replaced']
+        exp = """%s
+--- replaced\t(revision 2) 
++++ replaced\t(working copy) 
+@@ -1,1 +1,1 @@
+-yet another file
++foo replaced
+""" % (TestDiffFiles.diff_hdr % 'replaced')
+        self.__check_diff(p, exp, None)
+
+    def testDiffSkipped(self):
+        """diff a skipped file (skipped files are ignored)"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['skipped']
+        self.__check_diff(p, '', None)
+
+    def testDiffConflict(self):
+        """diff a file which is in the conflict state"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['foo']
+        exp = """%s
+--- foo\t(revision 2) 
++++ foo\t(working copy) 
+@@ -1,1 +1,5 @@
++<<<<<<< foo.mine
++This is no test.
++=======
+ This is a simple test.
++>>>>>>> foo.r2
+""" % (TestDiffFiles.diff_hdr % 'foo')
+        self.__check_diff(p, exp, None)
+
+    def testDiffModified(self):
+        """diff a modified file"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['nochange']
+        exp = """%s
+--- nochange\t(revision 2) 
++++ nochange\t(working copy) 
+@@ -1,1 +1,2 @@
+-This file didn't change.
++This file didn't change but
++is modified.
+""" % (TestDiffFiles.diff_hdr % 'nochange')
+        self.__check_diff(p, exp, None)
+
+    def testDiffUnversioned(self):
+        """diff an unversioned file"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['toadd2']
+        self.assertRaises(IOError, self.__check_diff, p, '', None)
+
+    def testDiffMultipleFiles(self):
+        """diff multiple files"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['nochange', 'somefile']
+        exp = """%s
+--- nochange\t(revision 2) 
++++ nochange\t(working copy) 
+@@ -1,1 +1,2 @@
+-This file didn't change.
++This file didn't change but
++is modified.
+%s
+--- somefile\t(revision 2)
++++ somefile\t(working copy)
+@@ -1,1 +0,0  @@
+-some content
+""" % (TestDiffFiles.diff_hdr % 'nochange', TestDiffFiles.diff_hdr % 'somefile')
+
+    # diff with revision
+    @GET('http://localhost/source/osctest/remote_simple_noadd?rev=3', file='testDiffRemoteNoChange_files')
+    def testDiffRemoteNoChange(self):
+        """diff against remote revision where no file changed"""
+        self._change_to_pkg('remote_simple_noadd')
+        p = osc.core.Package('.')
+        self.__check_diff(p, '', 3)
+
+    @GET('http://localhost/source/osctest/remote_simple?rev=3', file='testDiffRemoteModified_files')
+    @GET('http://localhost/source/osctest/remote_simple/merge?rev=3', file='testDiffRemoteModified_merge')
+    def testDiffRemoteModified(self):
+        """diff against a remote revision with one modified file"""
+        self._change_to_pkg('remote_simple')
+        p = osc.core.Package('.')
+        exp = """%s
+--- merge\t(revision 3) 
++++ merge\t(working copy) 
+@@ -1,3 +1,4 @@
+ Is it
+ possible to
+ merge this file?
++I hope so...
+%s
+--- toadd1\t(revision 0)
++++ toadd1\t(revision 0)
+@@ -0,0 +1,1  @@
++toadd1
+""" % (TestDiffFiles.diff_hdr % 'merge', TestDiffFiles.diff_hdr % 'toadd1')
+        self.__check_diff(p, exp, 3)
+
+    @GET('http://localhost/source/osctest/remote_simple?rev=3', file='testDiffRemoteDeletedLocalAdded_files')
+    def testDiffRemoteNotExistingLocalAdded(self):
+        """
+        a file which doesn't exist in a remote revision and
+        has status A in the wc
+        """
+        self._change_to_pkg('remote_simple')
+        p = osc.core.Package('.')
+        exp = """%s
+--- toadd1\t(revision 0)
++++ toadd1\t(revision 0)
+@@ -0,0 +1,1  @@
++toadd1
+""" % (TestDiffFiles.diff_hdr % 'toadd1')
+        self.__check_diff(p, exp, 3)
+
+    @GET('http://localhost/source/osctest/remote_simple_noadd?rev=3', file='testDiffRemoteExistingLocalNotExisting_files')
+    @GET('http://localhost/source/osctest/remote_simple_noadd/foobar?rev=3', file='testDiffRemoteExistingLocalNotExisting_foobar')
+    def testDiffRemoteExistingLocalNotExisting(self):
+        """
+        a file doesn't exist in the local wc but exists
+        in the remote revision
+        """
+        self._change_to_pkg('remote_simple_noadd')
+        p = osc.core.Package('.')
+        exp = """%s
+--- foobar\t(revision 3)
++++ foobar\t(working copy)
+@@ -1,2 +0,0  @@
+-foobar
+-barfoo
+""" % (TestDiffFiles.diff_hdr % 'foobar')
+        self.__check_diff(p, exp, 3)
+
+    @GET('http://localhost/source/osctest/remote_localmodified?rev=3', file='testDiffRemoteUnchangedLocalModified_files')
+    @GET('http://localhost/source/osctest/remote_localmodified/nochange?rev=3', file='testDiffRemoteUnchangedLocalModified_nochange')
+    def testDiffRemoteUnchangedLocalModified(self):
+        """remote revision didn't change, local file is modified"""
+        self._change_to_pkg('remote_localmodified')
+        p = osc.core.Package('.')
+        exp = """%s
+--- nochange\t(revision 3) 
++++ nochange\t(working copy) 
+@@ -1,1 +1,2 @@
+ This file didn't change.
++oh it does
+""" % (TestDiffFiles.diff_hdr % 'nochange')
+        self.__check_diff(p, exp, 3)
+
+    @GET('http://localhost/source/osctest/remote_simple_noadd?rev=3', file='testDiffRemoteMissingLocalExisting_files')
+    def testDiffRemoteMissingLocalExisting(self):
+        """
+        remote revision misses a file which exists in the local wc (state ' ')"""
+        self._change_to_pkg('remote_simple_noadd')
+        p = osc.core.Package('.')
+        exp = """%s
+--- foo\t(revision 0)
++++ foo\t(working copy)
+@@ -0,0 +1,1  @@
++This is a simple test.
+""" % (TestDiffFiles.diff_hdr % 'foo')
+        self.__check_diff(p, exp, 3)
+
+    @GET('http://localhost/source/osctest/remote_localdelete?rev=3', file='testDiffRemoteMissingLocalDeleted_files')
+    def testDiffRemoteMissingLocalDeleted(self):
+        """
+        remote revision misses a file which is marked for
+        deletion in the local wc
+        """
+        # empty diff is expected (svn does the same)
+        self._change_to_pkg('remote_localdelete')
+        p = osc.core.Package('.')
+        self.__check_diff(p, '', 3)
+
+    def __check_diff(self, p, exp, revision=None):
+        s = ''
+        for i in p.get_diff(revision):
+            s += ''.join(i)
+        self.assertEqual(s, exp)
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()
