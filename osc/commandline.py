@@ -2478,7 +2478,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         diff = ''
         for pac in pacs:
             if not rev2:
-                diff += ''.join(make_diff(pac, rev1))
+                for i in pac.get_diff(rev1):
+                    sys.stdout.write(''.join(i))
             else:
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
@@ -3008,14 +3009,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             template = store_read_file(os.path.abspath('.'), '_commit_msg')
             # open editor for commit message
             # but first, produce status and diff to append to the template
-            footer = diffs = []
+            footer = []
             lines = []
             for pac in pacs:
                 changed = getStatus([pac], quiet=True)
                 if changed:
                     footer += changed
-                    diffs += ['\nDiff for working copy: %s' % pac.dir]
-                    diffs += make_diff(pac, 0)
+                    footer.append('\nDiff for working copy: %s' % pac.dir)
+                    footer.extend([''.join(i) for i in pac.get_diff(ignoreUnversioned=True)])
                     lines.extend(get_commit_message_template(pac))
             if template == None:
                 template='\n'.join(lines)

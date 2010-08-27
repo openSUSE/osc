@@ -1356,6 +1356,105 @@ class Package:
 #            # this case shouldn't happen (except there was a typo in the filename etc.)
 #            raise IOError('osc: \'%s\' is not under version control' % n)
 
+    def get_diff(self, revision=None, ignoreUnversioned=False):
+        import tempfile
+        diff_hdr = 'Index: %s\n'
+        diff_hdr += '===================================================================\n'
+        kept = []
+        added = []
+        deleted = []
+        def diff_add_delete(fname, add, revision):
+            diff = []
+            diff.append(diff_hdr % f)
+            tmpfile = None
+            if add:
+                diff.append('--- %s\t(revision 0)\n' % fname)
+                rev = 'revision 0'
+                if revision and not fname in self.to_be_added:
+                    rev = 'working copy'
+                diff.append('+++ %s\t(%s)\n' % (fname, rev))
+                fname = os.path.join(self.absdir, fname)
+            else:
+                diff.append('--- %s\t(revision %s)\n' % (fname, revision or self.rev))
+                diff.append('+++ %s\t(working copy)\n' % fname)
+                fname = os.path.join(self.storedir, fname)
+               
+            try:
+                if revision is not None and not add:
+                    (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
+                    get_source_file(self.apiurl, self.prjname, self.name, os.path.basename(f), tmpfile, revision)
+                    fname = tmpfile
+                tmpl = '+%s'
+                ltmpl = '@@ -0,0 +1,%d  @@\n'
+                if not add:
+                    tmpl = '-%s'
+                    ltmpl = '@@ -1,%d +0,0  @@\n'
+                lines = [tmpl % i for i in open(fname, 'r').readlines()]
+                if len(lines):
+                    diff.append(ltmpl % len(lines))
+                    if not lines[-1].endswith('\n'):
+                        lines.append('\n\\ No newline at end of file\n')
+                diff.extend(lines)
+            finally:
+                if tmpfile is not None:
+                    os.close(fd)
+                    os.unlink(tmpfile)
+            return diff
+
+        if revision is None:
+            todo = self.todo or self.filenamelist+self.to_be_added
+            for fname in todo:
+                if fname in self.to_be_added and self.status(fname) == 'A':
+                    added.append(fname)
+                elif fname in self.to_be_deleted:
+                    deleted.append(fname)
+                elif fname in self.filenamelist:
+                    kept.append(self.findfilebyname(fname))
+                elif not ignoreUnversioned:
+                    raise IOError('file \'%s\' is not under version control' % fname)
+        else:
+            fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision)
+            root = ET.fromstring(fm)
+            rfiles = self.__get_files(root)
+            # swap added and deleted
+            kept, deleted, added, services = self.__get_rev_changes(rfiles)
+            added = [f.name for f in added]
+            added.extend([f for f in self.to_be_added if not f in kept])
+            deleted = [f.name for f in deleted]
+            deleted.extend(self.to_be_deleted)
+            for f in added[:]:
+                if f in deleted:
+                    added.remove(f)
+                    deleted.remove(f)
+#        print kept, added, deleted
+        for f in kept:
+            state = self.status(f.name)
+            if state in ('S', '?', '!'):
+                continue
+            elif state == ' ' and revision is None:
+                continue
+            elif revision and self.findfilebyname(f.name).md5 == f.md5 and state != 'M':
+                continue
+            yield [diff_hdr % f.name]
+            if revision is None:
+                yield get_source_file_diff(self.absdir, f.name, self.rev)
+            else:
+                tmpfile = None
+                try:
+                    (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
+                    get_source_file(self.apiurl, self.prjname, self.name, f.name, tmpfile, revision)
+                    yield get_source_file_diff(self.absdir, f.name, revision,
+                        os.path.basename(tmpfile), os.path.dirname(tmpfile), f.name)
+                finally:
+                    if tmpfile is not None:
+                        os.close(fd)
+                        os.unlink(tmpfile)
+
+        for f in added:
+            yield diff_add_delete(f, True, revision)
+        for f in deleted:
+            yield diff_add_delete(f, False, revision)
+
     def comparePac(self, cmp_pac):
         """
         This method compares the local filelist with
@@ -3319,34 +3418,36 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 
     file1 = os.path.join(olddir, oldfilename)   # old/stored original
     file2 = os.path.join(dir, filename)         # working copy
+    if binary_file(file1) or binary_file(file2):
+        return ['Binary file %s has changed\n' % origfilename]
 
-    f1 = open(file1, 'rb')
-    s1 = f1.read()
-    f1.close()
+    f1 = f2 = None
+    try:
+        f1 = open(file1, 'rb')
+        s1 = f1.readlines()
+        f1.close()
 
-    f2 = open(file2, 'rb')
-    s2 = f2.read()
-    f2.close()
+        f2 = open(file2, 'rb')
+        s2 = f2.readlines()
+        f2.close()
+    finally:
+        if f1:
+            f1.close()
+        if f2:
+            f2.close()
 
-    if binary(s1) or binary (s2):
-        d = ['Binary file %s has changed\n' % origfilename]
+    d = difflib.unified_diff(s1, s2,
+        fromfile = '%s\t(revision %s)' % (origfilename, rev), \
+        tofile = '%s\t(working copy)' % origfilename)
 
-    else:
-        d = difflib.unified_diff(\
-            s1.splitlines(1), \
-            s2.splitlines(1), \
-            fromfile = '%s\t(revision %s)' % (origfilename, rev), \
-            tofile = '%s\t(working copy)' % origfilename)
-
-        # if file doesn't end with newline, we need to append one in the diff result
-        d = list(d)
-        for i, line in enumerate(d):
-            if not line.endswith('\n'):
-                d[i] += '\n\\ No newline at end of file'
-                if i+1 != len(d):
-                    d[i] += '\n'
-
-    return ''.join(d)
+    # if file doesn't end with newline, we need to append one in the diff result
+    d = list(d)
+    for i, line in enumerate(d):
+        if not line.endswith('\n'):
+            d[i] += '\n\\ No newline at end of file'
+            if i+1 != len(d):
+                d[i] += '\n'
+    return d
 
 def make_diff(wc, revision):
     import tempfile
