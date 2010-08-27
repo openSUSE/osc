@@ -5078,10 +5078,26 @@ def request_interactive_review(apiurl, request):
                         diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
                                            request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, True)
                     except urllib2.HTTPError, e:
-                        if e.code != 400:
+                        if e.code == 400:
+                            try:
+                                diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
+                                                   request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
+                            except urllib2.HTTPError, e:
+                                tmpfile.close()
+                                tmpfile = None
+                                if e.code != 404:
+                                    raise e
+                                root = ET.fromstring(e.read())
+                                print >>sys.stderr, root.find('summary').text
+                                continue
+                        elif e.code == 404:
+                            tmpfile.close()
+                            tmpfile = None
+                            root = ET.fromstring(e.read())
+                            print >>sys.stderr, root.find('summary').text
+                            continue
+                        else:
                             raise e
-                        diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
-                                           request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
                     tmpfile.write(diff)
                     tmpfile.flush()
                 run_editor(tmpfile.name)
