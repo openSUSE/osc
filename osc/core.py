@@ -1329,32 +1329,6 @@ class Package:
             raise IOError('osc: \'%s\' is not under version control' % n)
 
         return state
-        # XXX: old
-#        elif exists and not exists_in_store and known_by_meta:
-#            state = 'D'
-#        elif n in self.to_be_deleted:
-#            state = 'D'
-#        elif n in self.in_conflict:
-#            state = 'C'
-#        elif exists and exists_in_store and known_by_meta:
-#            #print self.findfilebyname(n)
-#            if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
-#                state = 'M'
-#            else:
-#                state = ' '
-#        elif exists and not exists_in_store and not known_by_meta:
-#            state = '?'
-#        elif exists and exists_in_store and not known_by_meta:
-#            state = 'A'
-#        elif not exists and exists_in_store and known_by_meta:
-#            state = '!'
-#        elif not exists and not exists_in_store and known_by_meta:
-#            state = 'F'
-#        elif not exists and exists_in_store and not known_by_meta:
-#            state = 'D'
-#        elif not exists and not exists_in_store and not known_by_meta:
-#            # this case shouldn't happen (except there was a typo in the filename etc.)
-#            raise IOError('osc: \'%s\' is not under version control' % n)
 
     def get_diff(self, revision=None, ignoreUnversioned=False):
         import tempfile
@@ -1454,37 +1428,6 @@ class Package:
             yield diff_add_delete(f, True, revision)
         for f in deleted:
             yield diff_add_delete(f, False, revision)
-
-    def comparePac(self, cmp_pac):
-        """
-        This method compares the local filelist with
-        the filelist of the passed package to see which files
-        were added, removed and changed.
-        """
-
-        changed_files = []
-        added_files = []
-        removed_files = []
-
-        for filename in self.filenamelist+self.filenamelist_unvers:
-            state = self.status(filename)
-            if filename in self.skipped:
-                continue
-            if state == 'A' and (not filename in cmp_pac.filenamelist):
-                added_files.append(filename)
-            elif filename in cmp_pac.filenamelist and state == 'D':
-                removed_files.append(filename)
-            elif state == ' ' and not filename in cmp_pac.filenamelist:
-                added_files.append(filename)
-            elif filename in cmp_pac.filenamelist and state != 'A' and state != '?':
-                if dgst(os.path.join(self.absdir, filename)) != cmp_pac.findfilebyname(filename).md5:
-                    changed_files.append(filename)
-        for filename in cmp_pac.filenamelist:
-            if not filename in self.filenamelist:
-                removed_files.append(filename)
-        removed_files = set(removed_files)
-
-        return changed_files, added_files, removed_files
 
     def merge(self, otherpac):
         self.todo += otherpac.todo
@@ -3448,110 +3391,6 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
             if i+1 != len(d):
                 d[i] += '\n'
     return d
-
-def make_diff(wc, revision):
-    import tempfile
-    changed_files = []
-    added_files = []
-    removed_files = []
-    cmp_pac = None
-    diff_hdr = 'Index: %s\n'
-    diff_hdr += '===================================================================\n'
-    diff = []
-    olddir = os.getcwd()
-    if not revision:
-        # normal diff
-        if wc.todo:
-            for filename in wc.todo:
-                if filename in wc.skipped:
-                    continue
-                if filename in wc.filenamelist+wc.filenamelist_unvers:
-                    state = wc.status(filename)
-                    if state == 'A':
-                        added_files.append(filename)
-                    elif state == 'D':
-                        removed_files.append(filename)
-                    elif state == 'M' or state == 'C':
-                        changed_files.append(filename)
-                else:
-                    diff.append('osc: \'%s\' is not under version control' % filename)
-        else:
-            for filename in wc.filenamelist+wc.filenamelist_unvers:
-                if filename in wc.skipped:
-                    continue
-                state = wc.status(filename)
-                if state == 'M' or state == 'C':
-                    changed_files.append(filename)
-                elif state == 'A':
-                    added_files.append(filename)
-                elif state == 'D':
-                    removed_files.append(filename)
-    else:
-        tmpdir  = tempfile.mkdtemp(str(revision), wc.name)
-        os.chdir(tmpdir)
-        init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, revision)
-        cmp_pac = Package(tmpdir)
-        if wc.todo:
-            for filename in wc.todo:
-                if filename in cmp_pac.skipped:
-                    continue
-                if filename in cmp_pac.filenamelist:
-                    if filename in wc.filenamelist:
-                        changed_files.append(filename)
-                    else:
-                        diff.append('osc: \'%s\' is not under version control' % filename)
-                else:
-                    diff.append('osc: unable to find \'%s\' in revision %s' % (filename, cmp_pac.rev))
-        else:
-            changed_files, added_files, removed_files = wc.comparePac(cmp_pac)
-
-    for filename in changed_files:
-        diff.append(diff_hdr % filename)
-        if cmp_pac == None:
-            diff.append(get_source_file_diff(wc.absdir, filename, wc.rev))
-        else:
-            cmp_pac.updatefile(filename, revision)
-            diff.append(get_source_file_diff(wc.absdir, filename, revision, filename,
-                                             cmp_pac.absdir, filename))
-    (fd, tmpfile) = tempfile.mkstemp()
-    for filename in added_files:
-        diff.append(diff_hdr % filename)
-        if cmp_pac == None:
-            diff.append(get_source_file_diff(wc.absdir, filename, wc.rev, os.path.basename(tmpfile),
-                                             os.path.dirname(tmpfile), filename))
-        else:
-            diff.append(get_source_file_diff(wc.absdir, filename, revision, os.path.basename(tmpfile),
-                                             os.path.dirname(tmpfile), filename))
-
-    # FIXME: this is ugly but it cannot be avoided atm
-    #        if a file is deleted via "osc rm file" we should keep the storefile.
-    tmp_pac = None
-    if cmp_pac == None and removed_files:
-        tmpdir = tempfile.mkdtemp()
-        os.chdir(tmpdir)
-        init_package_dir(wc.apiurl, wc.prjname, wc.name, tmpdir, wc.rev)
-        tmp_pac = Package(tmpdir)
-        os.chdir(olddir)
-
-    for filename in removed_files:
-        diff.append(diff_hdr % filename)
-        if cmp_pac == None:
-            tmp_pac.updatefile(filename, tmp_pac.rev)
-            diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
-                                             wc.rev, filename, tmp_pac.storedir, filename))
-        else:
-            cmp_pac.updatefile(filename, revision)
-            diff.append(get_source_file_diff(os.path.dirname(tmpfile), os.path.basename(tmpfile),
-                                             revision, filename, cmp_pac.storedir, filename))
-
-    os.unlink(tmpfile)
-    os.chdir(olddir)
-    if cmp_pac != None:
-        delete_dir(cmp_pac.absdir)
-    if tmp_pac != None:
-        delete_dir(tmp_pac.absdir)
-    return diff
-
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
