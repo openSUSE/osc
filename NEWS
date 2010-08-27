@@ -2,6 +2,14 @@
   - "dists" command to show the configured default base repos from the server.
   - "review list" command to list open review requests
   - "review add" command to add another reviewer for a request (either user or group)
+  - add "buildinfo --prefer-pkgs <dir>" option
+  - add "prjresults --hide-disabled" option to hide packages which are disabled/excluded
+    in all repos and repos which have only disabled/excluded packages
+  - harmonize "api"'s options with curl's options
+  - use builtin signature check by default (instead of verifying the signature with "rpm -K...")
+  - add "status --show-excluded"  to show all files (except the store dir)
+  - new "osc reqmaintainership" command which is a shortcut for
+    "osc creq -a add_role USER maintainer PROJECT PACKAGE"
 #
 # Feature which requires OBS 2.1
 #
