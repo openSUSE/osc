@@ -16,6 +16,7 @@
   - add "osc aggregate --nosources" option
   - add "request clone" command to clone all packages from a given request
   - fixed references into en.opensuse.org to honor the new Wiki structure
+  - add cross build targets mips and mipsel for QEMU Usermode. needs also build update.
 
 0.128
   - better default commands selection for editor/pager
