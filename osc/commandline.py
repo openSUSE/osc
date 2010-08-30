@@ -5048,7 +5048,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         olddir = os.getcwd()
         if conf.config['do_package_tracking']:
             createPackageDir(os.path.join(project.dir, pac), project)
-            os.chdir(os.path.join(project.dir, pac))
         else:
             if not os.path.exists(os.path.join(project_dir, pac)):
                 apiurl = store_read_apiurl(project_dir)
@@ -5060,7 +5059,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        'user': user}), apiurl=apiurl)
                 if data:
                     data = ET.fromstring(''.join(data))
-                    data.find('title').text = title
+                    data.find('title').text = ''.join(title)
                     data.find('description').text = ''.join(descr)
                     data.find('url').text = url
                     data = ET.tostring(data)
@@ -5070,13 +5069,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 edit_meta(metatype='pkg',
                           path_args=(quote_plus(project), quote_plus(pac)),
                           data = data, apiurl=apiurl)
-                Package.init_package(apiurl, project, pac, os.path.join(project, pac))
+                Package.init_package(apiurl, project, pac, os.path.join(project_dir, pac))
             else:
                 print >>sys.stderr, 'error - local package already exists'
                 sys.exit(1)
 
-        unpack_srcrpm(srpm, os.getcwd())
-        p = Package(os.getcwd())
+        unpack_srcrpm(srpm, os.path.join(project_dir, pac))
+        p = Package(os.path.join(project_dir, pac))
         if len(p.filenamelist) == 0 and opts.commit:
             print 'Adding files to working copy...'
             addFiles(glob.glob('*'))
