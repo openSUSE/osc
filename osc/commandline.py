@@ -3402,6 +3402,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.status_filter = None
                 opts.vertical = None
                 opts.show_non_building = None
+                opts.show_excluded = None
                 self.do_prjresults('prjresults', opts, *args)
                 sys.exit(0)
             else:
