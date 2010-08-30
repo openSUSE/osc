@@ -900,7 +900,7 @@ class Package:
             except:
                 pass
         else:
-            store_write_string(self.absdir, '_size_limit', self.size_limit)
+            store_write_string(self.absdir, '_size_limit', str(self.size_limit) + '\n')
 
     def write_addlist(self):
         self.__write_storelist('_to_be_added', self.to_be_added)
@@ -1143,7 +1143,7 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, limit_size=self.limit_size, meta=self.meta))
-        store_write_string(self.absdir, '_files', meta)
+        store_write_string(self.absdir, '_files', meta + '\n')
 
     def update_datastructs(self):
         """
@@ -1256,7 +1256,7 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
-        store_write_string(self.absdir, '_meta', meta)
+        store_write_string(self.absdir, '_meta', meta + '\n')
 
     def findfilebyname(self, n):
         for i in self.filelist:
@@ -1644,7 +1644,7 @@ rev: %s
         fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev, limit_size=limit_size)
         root = ET.fromstring(fm)
         rfiles = self.__get_files(root)
-        store_write_string(self.absdir, '_files', fm, subdir='_in_update')
+        store_write_string(self.absdir, '_files', fm + '\n', subdir='_in_update')
         kept, added, deleted, services = self.__get_rev_changes(rfiles)
         if not service_files:
             services = []
@@ -1720,7 +1720,7 @@ rev: %s
                 targetfilename=os.path.join(self.absdir, f.name), revision=rev,
                 progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
             print statfrmt('A', os.path.join(pathn, f.name))
-        store_write_string(self.absdir, '_files', fm)
+        store_write_string(self.absdir, '_files', fm + '\n')
         self.update_local_pacmeta()
         self.update_datastructs()
 

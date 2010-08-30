@@ -190,7 +190,7 @@ class Osc(cmdln.Cmdln):
             print 'Initializing %s (Project: %s)' % (os.curdir, project)
         else:
             Package.init_package(apiurl, project, package, os.curdir)
-            store_write_string(os.curdir, '_files', show_files_meta(apiurl, project, package))
+            store_write_string(os.curdir, '_files', show_files_meta(apiurl, project, package) + '\n')
             print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
     @cmdln.alias('ls')
@@ -3026,7 +3026,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 msg = edit_message(footer='\n'.join(footer), template=template)
 
             if msg:
-                store_write_string(os.path.abspath('.'), '_commit_msg', msg)
+                store_write_string(os.path.abspath('.'), '_commit_msg', msg + '\n')
             else:
                 store_unlink_file(os.path.abspath('.'), '_commit_msg')
 
@@ -5495,7 +5495,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         os.mkdir(destdir)
 
         Package.init_package(apiurl, target_prj, target_package, destdir)
-        store_write_string(destdir, '_files', ''.join(meta))
+        store_write_string(destdir, '_files', ''.join(meta) + '\n')
         store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)
 
@@ -5681,7 +5681,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p.write_deletelist()
         p.write_conflictlist()
         # store new linkrev
-        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
+        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5') + '\n')
         p.unmark_frozen()
         print
         if len(p.in_conflict):
