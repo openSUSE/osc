@@ -2090,7 +2090,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
                 else:
                     raise
 
-    if conf.config['debug']: print method, url
+    if conf.config['debug']: print >>sys.stderr, method, url
 
     old_timeout = socket.getdefaulttimeout()
     # XXX: dirty hack as timeout doesn't work with python-m2crypto
