@@ -1,0 +1,5 @@
+<directory name="simple" rev="2" srcmd5="2df1eacfe03a3bec2112529e7f4dc39a" vrev="2">
+  <entry md5="b423d194c75e59ee4d8d2e07ba24323d" mtime="1111111111" name="add" size="11" />
+  <entry md5="ea467af882b32a275fe62eb05aba6ee1" mtime="0000000000" name="add2" size="5" />
+  <entry md5="2abd19de6a38ff2890af64f453df96b1" mtime="2222222222" name="nochange" size="22" />
+</directory>
