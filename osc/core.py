@@ -2036,9 +2036,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     filefd = None
 
     if conf.config['http_debug']:
-        print
-        print
-        print '--', method, url
+        print >>sys.stderr, '\n\n--', method, url
 
     if method == 'POST' and not file and not data:
         # adding data to an urllib2 request transforms it into a POST
