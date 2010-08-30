@@ -189,7 +189,8 @@ class Osc(cmdln.Cmdln):
             init_project_dir(apiurl, os.curdir, project)
             print 'Initializing %s (Project: %s)' % (os.curdir, project)
         else:
-            init_package_dir(apiurl, project, package, os.path.curdir)
+            Package.init_package(apiurl, project, package, os.curdir)
+            store_write_string(os.curdir, '_files', show_files_meta(apiurl, project, package))
             print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
 
     @cmdln.alias('ls')
@@ -5069,9 +5070,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 edit_meta(metatype='pkg',
                           path_args=(quote_plus(project), quote_plus(pac)),
                           data = data, apiurl=apiurl)
-                os.mkdir(os.path.join(project_dir, pac))
-                os.chdir(os.path.join(project_dir, pac))
-                init_package_dir(apiurl, project, pac, os.path.join(project, pac))
+                Package.init_package(apiurl, project, pac, os.path.join(project, pac))
             else:
                 print >>sys.stderr, 'error - local package already exists'
                 sys.exit(1)
@@ -5496,10 +5495,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             shutil.rmtree(destdir)
         os.mkdir(destdir)
 
-        olddir=os.getcwd()
-        os.chdir(destdir)
-        init_package_dir(apiurl, target_prj, target_package, destdir, files=False)
-        os.chdir(olddir)
+        Package.init_package(apiurl, target_prj, target_package, destdir)
         store_write_string(destdir, '_files', ''.join(meta))
         store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)

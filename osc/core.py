@@ -1845,6 +1845,27 @@ rev: %s
             self.to_be_added.remove(filename)
             self.write_addlist()
 
+    @staticmethod
+    def init_package(apiurl, project, package, dir, limit_size=None, meta=False, progress_obj=None):
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        elif not os.path.isdir(dir):
+            raise IOError('error: \'%s\' is no directory' % dir)
+        if os.path.exists(os.path.join(dir, store)):
+            raise IOError('error: \'%s\' is already an initialized osc working copy' % dir)
+        else:
+            os.mkdir(os.path.join(dir, store))
+        store_write_project(dir, project)
+        store_write_string(dir, '_package', package + '\n')
+        store_write_apiurl(dir, apiurl)
+        if meta:
+            store_write_string(dir, '_meta_mode', '')
+        if limit_size:
+            store_write_string(dir, '_size_limit', str(limit_size) + '\n')
+        store_write_string(dir, '_files', '<directory />' + '\n')
+        store_write_string(dir, '_osclib_version', __store_version__ + '\n')
+        return Package(dir, progress_obj=progress_obj, limit_size=limit_size)
+
 class ReviewState:
     """for objects to represent the review state in a request"""
     def __init__(self, state=None, by_user=None, by_group=None, who=None, when=None, comment=None):
@@ -2400,33 +2421,6 @@ def init_project_dir(apiurl, dir, project):
     store_write_apiurl(dir, apiurl)
     if conf.config['do_package_tracking']:
         store_write_initial_packages(dir, project, [])
-
-# XXX: the chdir semantics for this are really broken
-#      it's expected that we're already in "dir" (which doesn't make sense...) when
-#      calling this method
-def init_package_dir(apiurl, project, package, dir, revision=None, files=True, limit_size=None, meta=False):
-    if not os.path.isdir(store):
-        os.mkdir(store)
-    os.chdir(store)
-    store_write_string(os.pardir, '_project', project)
-    store_write_string(os.pardir, '_package', package)
-
-    if meta:
-        store_write_string(os.pardir, '_meta_mode', '')
-
-    if limit_size:
-        store_write_string(os.pardir, '_size_limit', str(limit_size))
-
-    if files:
-        fmeta = ''.join(show_files_meta(apiurl, project, package, revision=revision, limit_size=limit_size, meta=meta))
-        store_write_string(os.pardir, '_files', fmeta)
-    else:
-        # create dummy
-        ET.ElementTree(element=ET.Element('directory')).write('_files')
-
-    store_write_string(os.pardir, '_osclib_version', __store_version__ + '\n')
-    store_write_apiurl(os.pardir, apiurl)
-    os.chdir(os.pardir)
 
 def check_store_version(dir):
     versionfile = os.path.join(dir, store, '_osclib_version')
@@ -3454,9 +3448,9 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
     if not os.path.exists(os.path.join(prj_dir, package)):
         print statfrmt('A', pathname)
         os.mkdir(os.path.join(prj_dir, package))
-        os.mkdir(os.path.join(prj_dir, package, store))
+#        os.mkdir(os.path.join(prj_dir, package, store))
 
-    return(os.path.join(prj_dir, package))
+    return os.path.join(prj_dir, package)
 
 
 def checkout_package(apiurl, project, package,
@@ -3485,7 +3479,7 @@ def checkout_package(apiurl, project, package,
     # exists
     show_package_meta(apiurl, project, package, meta)
 
-    isfrozen = 0
+    isfrozen = False
     if expand_link:
         # try to read from the linkinfo
         # if it is a link we use the xsrcmd5 as the revision to be
@@ -3495,34 +3489,23 @@ def checkout_package(apiurl, project, package,
         except:
             x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base')
             if x:
-                isfrozen = 1
+                isfrozen = True
         if x:
             revision = x
-    directory = os.path.abspath(make_dir(apiurl, project, package, pathname, prj_dir))
-    os.chdir(directory)
-    init_package_dir(apiurl, project, package, directory, revision, limit_size=limit_size, meta=meta)
-    os.chdir(os.pardir)
-    p = Package(directory, progress_obj=progress_obj)
+    directory = make_dir(apiurl, project, package, pathname, prj_dir)
+    p = Package.init_package(apiurl, project, package, directory, limit_size, meta, progress_obj)
     if isfrozen:
         p.mark_frozen()
-    for filename in p.filenamelist:
-        if filename in p.skipped:
-            continue
-        if server_service_files or not filename.startswith('_service:'):
-            p.updatefile(filename, revision)
-            # print 'A   ', os.path.join(project, package, filename)
-            print statfrmt('A', os.path.join(pathname, filename))
     if conf.config['do_package_tracking']:
         # check if we can re-use an existing project object
-        if prj_obj == None:
-            prj_obj = Project(os.getcwd())
+        if prj_obj is None:
+            prj_obj = Project(prj_dir)
         prj_obj.set_state(p.name, ' ')
         prj_obj.write_packages()
+    p.update(revision, server_service_files, limit_size)
     if service_files:
-        print "Running local source services"
+        print 'Running local source services'
         p.run_source_services()
-    os.chdir(olddir)
-
 
 def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
                      dst_userid = None, keep_develproject = False):
@@ -4921,12 +4904,7 @@ def createPackageDir(pathname, prj_obj=None):
         if not os.path.exists(pac_dir):
             prj = prj_obj or Project(prj_dir, False)
             prj.addPackage(pac_dir)
-            os.mkdir(pathname)
-            os.chdir(pathname)
-            init_package_dir(prj.apiurl,
-                             prj.name,
-                             pac_dir, pac_dir, files=False)
-            os.chdir(prj.absdir)
+            Package.init_package(prj.apiurl, prj.name, pac_dir, pac_dir)
             print statfrmt('A', os.path.normpath(pathname))
         else:
             raise oscerr.OscIOError(None, 'file or directory \'%s\' already exists' % pathname)
@@ -4998,12 +4976,9 @@ def addFiles(filenames, prj_obj = None):
         prj_dir, pac_dir = getPrjPacPaths(filename)
         if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
            and conf.config['do_package_tracking']:
-            old_dir = os.getcwd()
             prj_name = store_read_project(prj_dir)
             prj_apiurl = store_read_apiurl(prj_dir)
-            os.chdir(filename)
-            init_package_dir(prj_apiurl, prj_name, pac_dir, pac_dir, files=False)
-            os.chdir(old_dir)
+            Package.init_package(prj_apiurl, prj_name, pac_dir, pac_dir)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
             raise oscerr.PackageExists(store_read_project(filename), store_read_package(filename),
                                        'osc: warning: \'%s\' is already under version control' % filename)
