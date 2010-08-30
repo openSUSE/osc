@@ -1042,8 +1042,9 @@ class Package:
         if self.islink() and self.isexpanded():
             self.update_local_filesmeta(revision=self.latest_rev())
         else:
-            self.update_local_filesmeta()
+            self.update_local_filesmeta(self.rev)
         self.write_deletelist()
+        self.write_addlist()
         self.update_datastructs()
 
         for filename in todo_delete:

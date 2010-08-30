@@ -3,7 +3,6 @@ import osc.oscerr
 import os
 import sys
 from common import GET, OscTestCase
-from xml.etree import cElementTree as ET
 FIXTURES_DIR = os.path.join(os.getcwd(), 'update_fixtures')
 
 def suite():
@@ -31,7 +30,7 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(rev=2)
         exp = 'A    upstream_added\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.__check_digests('testUpdateNewFile_files')
+        self._check_digests('testUpdateNewFile_files')
 
     @GET('http://localhost/source/osctest/simple?rev=2', file='testUpdateNewFileLocalExists_files')
     def testUpdateNewFileLocalExists(self):
@@ -50,7 +49,7 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(rev=2)
         exp = 'D    foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.__check_digests('testUpdateDeletedFile_files')
+        self._check_digests('testUpdateDeletedFile_files')
         self.assertFalse(os.path.exists('foo'))
         self.assertFalse(os.path.exists(os.path.join('.osc', 'foo')))
 
@@ -64,7 +63,7 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(rev=2)
         exp = 'U    foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.__check_digests('testUpdateUpstreamModifiedFile_files')
+        self._check_digests('testUpdateUpstreamModifiedFile_files')
 
     @GET('http://localhost/source/osctest/conflict?rev=2', file='testUpdateConflict_files')
     @GET('http://localhost/source/osctest/conflict/merge?rev=2', file='testUpdateConflict_merge')
@@ -77,7 +76,7 @@ class TestUpdate(OscTestCase):
         self._change_to_pkg('conflict')
         osc.core.Package('.').update(rev=2)
         exp = 'C    merge\nAt revision 2.\n'
-        self.__check_digests('testUpdateConflict_files')
+        self._check_digests('testUpdateConflict_files')
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_conflictlist('merge\n')
 
@@ -93,7 +92,7 @@ class TestUpdate(OscTestCase):
         exp = 'skipping \'merge\' (this is due to conflicts)\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_conflictlist('merge\n')
-        self.__check_digests('testUpdateAlreadyInConflict_files')
+        self._check_digests('testUpdateAlreadyInConflict_files')
 
     @GET('http://localhost/source/osctest/deleted?rev=2', file='testUpdateLocalDeletions_files')
     @GET('http://localhost/source/osctest/deleted/foo?rev=2', file='testUpdateLocalDeletions_foo')
@@ -113,7 +112,7 @@ class TestUpdate(OscTestCase):
         self._check_deletelist('foo\n')
         self._check_conflictlist('merge\n')
         self.assertEqual(open('foo', 'r').read(), open(os.path.join('.osc', 'foo'), 'r').read())
-        self.__check_digests('testUpdateLocalDeletions_files')
+        self._check_digests('testUpdateLocalDeletions_files')
 
     @GET('http://localhost/source/osctest/restore?rev=latest', file='testUpdateRestore_files')
     @GET('http://localhost/source/osctest/restore/foo?rev=1', file='testUpdateRestore_foo')
@@ -124,7 +123,7 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update()
         exp = 'Restored \'foo\'\nAt revision 1.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.__check_digests('testUpdateRestore_files')
+        self._check_digests('testUpdateRestore_files')
 
     @GET('http://localhost/source/osctest/limitsize?rev=latest', file='testUpdateLimitSizeNoChange_filesremote')
     @GET('http://localhost/source/osctest/limitsize/_meta', file='meta.xml')
@@ -139,7 +138,7 @@ class TestUpdate(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
         self.assertFalse(os.path.exists('bigfile'))
-        self.__check_digests('testUpdateLimitSizeNoChange_files', 'bigfile')
+        self._check_digests('testUpdateLimitSizeNoChange_files', 'bigfile')
 
     @GET('http://localhost/source/osctest/limitsize?rev=latest', file='testUpdateLimitSizeAddDelete_filesremote')
     @GET('http://localhost/source/osctest/limitsize/exists?rev=2', file='testUpdateLimitSizeAddDelete_exists')
@@ -165,7 +164,7 @@ class TestUpdate(OscTestCase):
         # exists because local version is modified
         self.assertTrue(os.path.exists('nochange'))
 
-        self.__check_digests('testUpdateLimitSizeAddDelete_files', 'bigfile', 'foo', 'merge', 'nochange')
+        self._check_digests('testUpdateLimitSizeAddDelete_files', 'bigfile', 'foo', 'merge', 'nochange')
 
     @GET('http://localhost/source/osctest/services?rev=latest', file='testUpdateServiceFilesAddDelete_filesremote')
     @GET('http://localhost/source/osctest/services/bigfile?rev=2', file='testUpdateServiceFilesAddDelete_bigfile')
@@ -188,7 +187,7 @@ class TestUpdate(OscTestCase):
         self.assertTrue(os.path.exists('_service:foo'))
         self.assertEqual(open('_service:foo').read(), 'small\n')
         self.assertTrue(os.path.exists('_service:exists'))
-        self.__check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
+        self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
 
     # tests to recover from an aborted/broken update
 
@@ -204,7 +203,7 @@ class TestUpdate(OscTestCase):
         exp = 'resuming broken update...\nU    foo\nU    merge\nAt revision 2.\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_update')))
-        self.__check_digests('testUpdateResume_files')
+        self._check_digests('testUpdateResume_files')
 
     @GET('http://localhost/source/osctest/simple/added?rev=1', file='testUpdateResumeDeletedFile_foo')
     @GET('http://localhost/source/osctest/simple/foo?rev=1', file='testUpdateResumeDeletedFile_foo')
@@ -225,17 +224,7 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_update')))
         self.assertFalse(os.path.exists('added'))
         self.assertFalse(os.path.exists(os.path.join('.osc', 'added')))
-        self.__check_digests('testUpdateResumeDeletedFile_files')
-
-    def __check_digests(self, fname, *skipfiles):
-        fname = os.path.join(self._get_fixtures_dir(), fname)
-        self.assertEqual(open(os.path.join('.osc', '_files'), 'r').read(), open(fname, 'r').read())
-        root = ET.parse(fname).getroot()
-        for i in root.findall('entry'):
-            if i.get('name') in skipfiles:
-                continue
-            self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
-            self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+        self._check_digests('testUpdateResumeDeletedFile_files')
 
 if __name__ == '__main__':
     import unittest
