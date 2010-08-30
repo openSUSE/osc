@@ -92,10 +92,9 @@ class Fetcher:
         mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport,(),{}))
 
         if self.http_debug:
-            print
-            print 'URLs to try for package \'%s\':' % pac
-            print '\n'.join(pac.urllist)
-            print
+            print >>sys.stderr, '\nURLs to try for package \'%s\':' % pac
+            print >>sys.stderr, '\n'.join(pac.urllist)
+            print >>sys.stderr
 
         (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
         try:
@@ -229,8 +228,8 @@ class Fetcher:
                 sys.exit(0)
             except URLGrabError, e:
                 if self.http_debug:
-                    print "can't fetch key for %s: %s" %(i, e.strerror)
-                    print "url: %s" % url
+                    print >>sys.stderr, "can't fetch key for %s: %s" %(i, e.strerror)
+                    print >>sys.stderr, "url: %s" % url
 
                 if os.path.exists(dest):
                     os.unlink(dest)
