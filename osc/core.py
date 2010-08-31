@@ -2268,10 +2268,19 @@ def filedir_to_pac(f, progress_obj=None):
 def read_filemeta(dir):
     global store
 
+    msg = '\'%s\' is not a valid working copy.\n' % dir
+    if not is_project_dir(dir):
+        raise oscerr.NoWorkingCopy(msg)
+
+    filesmeta = os.path.join(dir, store, '_files')
+    if not os.path.isfile(filesmeta):
+        print "Warning: file _files is missing, creating a default one"
+        store_write_string(os.path.join(dir, store), '_files', '<directory \>')
+
     try:
-        r = ET.parse(os.path.join(dir, store, '_files'))
+        r = ET.parse(filesmeta)
     except SyntaxError, e:
-        raise oscerr.NoWorkingCopy('\'%s\' is not a valid working copy.\n'
+        raise oscerr.NoWorkingCopy(msg + 
                                    'When parsing .osc/_files, the following error was encountered:\n'
                                    '%s' % (dir, e))
     return r
