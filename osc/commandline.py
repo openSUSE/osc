@@ -703,7 +703,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
-                  help='for "create", specify a certain source revision ID (the md5 sum)')
+                  help='specify a certain source revision ID (the md5 sum) for the source package')
     @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
                   help='Superseding another request by this one')
     @cmdln.option('--nodevelproject', action='store_true',
