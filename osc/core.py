@@ -2269,7 +2269,7 @@ def read_filemeta(dir):
     global store
 
     msg = '\'%s\' is not a valid working copy.\n' % dir
-    if not is_project_dir(dir):
+    if not is_package_dir(dir):
         raise oscerr.NoWorkingCopy(msg)
 
     filesmeta = os.path.join(dir, store, '_files')
