@@ -5170,7 +5170,7 @@ def get_commit_message_template(pac):
     """
     Read the difference in .changes file(s) and put them as a template to commit message.
     """
-    diff = ""
+    diff = []
     template = []
     files = [i for i in pac.todo if i.endswith('.changes') and pac.status(i) in ('A', 'M')]
 
@@ -5184,7 +5184,7 @@ def get_commit_message_template(pac):
             f.close()
 
     if diff:
-        template = parse_diff_for_commit_message(diff)
+        template = parse_diff_for_commit_message(''.join(diff))
 
     return template
 
