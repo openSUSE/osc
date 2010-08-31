@@ -1,3 +1,4 @@
+import sys
 import unittest
 import test_update
 import test_addfiles
@@ -15,4 +16,5 @@ suite.addTests(test_update.suite())
 suite.addTests(test_difffiles.suite())
 suite.addTests(test_init_package.suite())
 suite.addTests(test_commit.suite())
-unittest.TextTestRunner(verbosity=1).run(suite)
+result = unittest.TextTestRunner(verbosity=1).run(suite)
+sys.exit(not result.wasSuccessful())
