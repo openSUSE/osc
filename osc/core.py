@@ -5197,14 +5197,15 @@ def request_interactive_review(apiurl, request):
 
     tmpfile = None
 
-    try:
-      # FIXME: print can fail with unicode chars in the string. 
-      #        Here we fix the symptoms, not the cause.
-      # UnicodeEncodeError: 'ascii' codec can't encode character u'\u2002' in position 309: ordinal not in range(128)
-      print request
-    except:
-      print request.__str__().encode('ascii', 'xmlcharrefreplace')
-
+    def print_request(request):
+        try:
+            # FIXME: print can fail with unicode chars in the string. 
+            #        Here we fix the symptoms, not the cause.
+            # UnicodeEncodeError: 'ascii' codec can't encode character u'\u2002' in position 309: ordinal not in range(128)
+            print request
+        except:
+            print request.__str__().encode('ascii', 'xmlcharrefreplace')
+    print_request(request)
     try:
         msg = '(a)ccept/(d)ecline/(r)evoke/(c)ancel > '
         if request.actions[0].type == 'submit':
@@ -5242,6 +5243,7 @@ def request_interactive_review(apiurl, request):
                     tmpfile.write(diff)
                     tmpfile.flush()
                 run_editor(tmpfile.name)
+                print_request(request)
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()
