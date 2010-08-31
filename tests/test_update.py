@@ -189,6 +189,21 @@ class TestUpdate(OscTestCase):
         self.assertTrue(os.path.exists('_service:exists'))
         self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
 
+    @GET('http://localhost/source/osctest/metamode?meta=1&rev=latest', file='testUpdateMetaMode_filesremote')
+    @GET('http://localhost/source/osctest/metamode/_meta?rev=1', file='testUpdateMetaMode__meta')
+    def testUpdateMetaMode(self):
+        """update package with metamode enabled"""
+        self._change_to_pkg('metamode')
+        p = osc.core.Package('.')
+        p.update()
+        exp = 'A    _meta\nD    foo\nD    merge\nD    nochange\nAt revision 1.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self.assertFalse(os.path.exists('foo'))
+        self.assertFalse(os.path.exists('merge'))
+        self.assertFalse(os.path.exists('nochange'))
+        self._check_digests('testUpdateMetaMode_filesremote')
+        self._check_status(p, '_meta', ' ')
+
     # tests to recover from an aborted/broken update
 
     @GET('http://localhost/source/osctest/simple/foo?rev=2', file='testUpdateResume_foo')

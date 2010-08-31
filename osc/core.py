@@ -1734,7 +1734,8 @@ rev: %s
                 progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
             print statfrmt('A', os.path.join(pathn, f.name))
         store_write_string(self.absdir, '_files', fm + '\n')
-        self.update_local_pacmeta()
+        if not self.meta:
+            self.update_local_pacmeta()
         self.update_datastructs()
 
         print 'At revision %s.' % self.rev
