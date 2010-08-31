@@ -484,6 +484,8 @@ class Project:
         ET.SubElement(self.pac_root, 'package', name=name, state=state)
 
     def read_packages(self):
+        global store
+
         packages_file = os.path.join(self.absdir, store, '_packages')
         if os.path.isfile(packages_file) and os.path.getsize(packages_file):
             return ET.parse(packages_file)
@@ -772,6 +774,8 @@ class Project:
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
     def __init__(self, workingdir, progress_obj=None, limit_size=None):
+        global store
+
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
@@ -1856,6 +1860,8 @@ rev: %s
 
     @staticmethod
     def init_package(apiurl, project, package, dir, limit_size=None, meta=False, progress_obj=None):
+        global store
+
         if not os.path.exists(dir):
             os.mkdir(dir)
         elif not os.path.isdir(dir):
@@ -2125,11 +2131,15 @@ def shorttime(t):
 
 
 def is_project_dir(d):
+    global store
+
     return os.path.exists(os.path.join(d, store, '_project')) and not \
            os.path.exists(os.path.join(d, store, '_package'))
 
 
 def is_package_dir(d):
+    global store
+
     return os.path.exists(os.path.join(d, store, '_project')) and \
            os.path.exists(os.path.join(d, store, '_package'))
 
@@ -2137,6 +2147,8 @@ def parse_disturl(disturl):
     """Parse a disturl, returns tuple (apiurl, project, source, repository,
     revision), else raises an oscerr.WrongArgs exception
     """
+
+    global DISTURL_RE
 
     m = DISTURL_RE.match(disturl)
     if not m:
@@ -2254,6 +2266,8 @@ def filedir_to_pac(f, progress_obj=None):
 
 
 def read_filemeta(dir):
+    global store
+
     try:
         r = ET.parse(os.path.join(dir, store, '_files'))
     except SyntaxError, e:
@@ -2263,6 +2277,8 @@ def read_filemeta(dir):
     return r
 
 def store_readlist(dir, name):
+    global store
+
     r = []
     if os.path.exists(os.path.join(dir, store, name)):
         r = [line.strip() for line in open(os.path.join(dir, store, name), 'r')]
@@ -2275,6 +2291,8 @@ def read_tobedeleted(dir):
     return store_readlist(dir, '_to_be_deleted')
 
 def read_sizelimit(dir):
+    global store
+
     r = None
     fname = os.path.join(dir, store, '_size_limit')
 
@@ -2417,6 +2435,8 @@ def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 
 
 def init_project_dir(apiurl, dir, project):
+    global store
+
     if not os.path.exists(dir):
         if conf.config['checkout_no_colon']:
             os.makedirs(dir)      # helpful with checkout_no_colon
@@ -2432,6 +2452,8 @@ def init_project_dir(apiurl, dir, project):
         store_write_initial_packages(dir, project, [])
 
 def check_store_version(dir):
+    global store
+
     versionfile = os.path.join(dir, store, '_osclib_version')
     try:
         v = open(versionfile).read().strip()
@@ -2710,6 +2732,8 @@ def meta_exists(metatype,
                 create_new=True,
                 apiurl=None):
 
+    global metatypes
+
     if not apiurl:
         apiurl = conf.config['apiurl']
     url = make_meta_url(metatype, path_args, apiurl)
@@ -2725,6 +2749,8 @@ def meta_exists(metatype,
     return data
 
 def make_meta_url(metatype, path_args=None, apiurl=None):
+    global metatypes
+
     if not apiurl:
         apiurl = conf.config['apiurl']
     if metatype not in metatypes.keys():
@@ -2744,6 +2770,8 @@ def edit_meta(metatype,
               edit=False,
               change_is_required=False,
               apiurl=None):
+
+    global metatypes
 
     if not apiurl:
         apiurl = conf.config['apiurl']
@@ -3250,6 +3278,8 @@ def get_user_data(apiurl, user, *tags):
 
 def download(url, filename, progress_obj = None, mtime = None):
     import tempfile, shutil
+    global BUFSIZE
+
     o = None
     try:
         prefix = os.path.basename(filename)
@@ -3315,6 +3345,8 @@ def dgst(file):
     #if not os.path.exists(file):
         #return None
 
+    global BUFSIZE
+
     try:
         import hashlib
         md5 = hashlib
@@ -3352,6 +3384,8 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     """
 
     import difflib
+
+    global store
 
     if not oldfilename:
         oldfilename = filename
@@ -4037,6 +4071,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
 
 def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
     #print '----------------------------------------'
+    global buildstatus_symbols
 
     r = []
 
@@ -4442,6 +4477,8 @@ def rebuild(apiurl, prj, package, repo, arch, code=None):
 
 
 def store_read_project(dir):
+    global store
+
     try:
         p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
     except IOError:
@@ -4453,6 +4490,8 @@ def store_read_project(dir):
 
 
 def store_read_package(dir):
+    global store
+
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
     except IOError:
@@ -4463,6 +4502,8 @@ def store_read_package(dir):
     return p
 
 def store_read_apiurl(dir):
+    global store
+
     fname = os.path.join(dir, store, '_apiurl')
     try:
         url = open(fname).readlines()[0].strip()
@@ -4474,6 +4515,8 @@ def store_read_apiurl(dir):
     return apiurl
 
 def store_write_string(dir, file, string, subdir=''):
+    global store
+
     if subdir and not os.path.isdir(os.path.join(dir, store, subdir)):
         os.mkdir(os.path.join(dir, store, subdir))
     fname = os.path.join(dir, store, subdir, file)
@@ -4494,10 +4537,14 @@ def store_write_apiurl(dir, apiurl):
     store_write_string(dir, '_apiurl', apiurl + '\n')
 
 def store_unlink_file(dir, file):
+    global store
+
     try: os.unlink(os.path.join(dir, store, file))
     except: pass
 
 def store_read_file(dir, file):
+    global store
+
     try:
         content = open(os.path.join(dir, store, file)).read()
         return content
@@ -4505,6 +4552,8 @@ def store_read_file(dir, file):
         return None
 
 def store_write_initial_packages(dir, project, subelements):
+    global store
+
     fname = os.path.join(dir, store, '_packages')
     root = ET.Element('project', name=project)
     for elem in subelements:
@@ -5060,6 +5109,7 @@ def getStatus(pacs, prj_obj=None, verbose=False, quiet=False, excluded=False):
     objects and prj_obj is a Project() object. If prj_obj is specified all
     Package() objects in the pacs list have to belong to this project.
     """
+    global store
     lines = []
     if prj_obj:
         if conf.config['do_package_tracking']:
