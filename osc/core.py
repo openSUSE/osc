@@ -1654,7 +1654,7 @@ rev: %s
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
-        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev, limit_size=limit_size)
+        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev, limit_size=limit_size, meta=self.meta)
         root = ET.fromstring(fm)
         rfiles = self.__get_files(root)
         store_write_string(self.absdir, '_files', fm + '\n', subdir='_in_update')
