@@ -1372,10 +1372,10 @@ class Package:
                     diff.append('Binary file \'%s\' %s.\n' % (origname, what))
                     return diff
                 tmpl = '+%s'
-                ltmpl = '@@ -0,0 +1,%d  @@\n'
+                ltmpl = '@@ -0,0 +1,%d @@\n'
                 if not add:
                     tmpl = '-%s'
-                    ltmpl = '@@ -1,%d +0,0  @@\n'
+                    ltmpl = '@@ -1,%d +0,0 @@\n'
                 lines = [tmpl % i for i in open(fname, 'r').readlines()]
                 if len(lines):
                     diff.append(ltmpl % len(lines))

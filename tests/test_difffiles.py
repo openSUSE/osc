@@ -30,7 +30,7 @@ class TestDiffFiles(OscTestCase):
         exp = """%s
 --- toadd1\t(revision 0)
 +++ toadd1\t(revision 0)
-@@ -0,0 +1,1  @@
+@@ -0,0 +1,1 @@
 +toadd1
 """ % (TestDiffFiles.diff_hdr % 'toadd1')
         self.__check_diff(p, exp, None)
@@ -43,7 +43,7 @@ class TestDiffFiles(OscTestCase):
         exp = """%s
 --- somefile\t(revision 2)
 +++ somefile\t(working copy)
-@@ -1,1 +0,0  @@
+@@ -1,1 +0,0 @@
 -some content
 """ % (TestDiffFiles.diff_hdr % 'somefile')
         self.__check_diff(p, exp, None)
@@ -130,7 +130,7 @@ class TestDiffFiles(OscTestCase):
 %s
 --- somefile\t(revision 2)
 +++ somefile\t(working copy)
-@@ -1,1 +0,0  @@
+@@ -1,1 +0,0 @@
 -some content
 """ % (TestDiffFiles.diff_hdr % 'nochange', TestDiffFiles.diff_hdr % 'somefile')
         self.__check_diff(p, exp, None)
@@ -190,7 +190,7 @@ Binary file 'binary' has changed.
 %s
 --- toadd1\t(revision 0)
 +++ toadd1\t(revision 0)
-@@ -0,0 +1,1  @@
+@@ -0,0 +1,1 @@
 +toadd1
 """ % (TestDiffFiles.diff_hdr % 'merge', TestDiffFiles.diff_hdr % 'toadd1')
         self.__check_diff(p, exp, 3)
@@ -206,7 +206,7 @@ Binary file 'binary' has changed.
         exp = """%s
 --- toadd1\t(revision 0)
 +++ toadd1\t(revision 0)
-@@ -0,0 +1,1  @@
+@@ -0,0 +1,1 @@
 +toadd1
 """ % (TestDiffFiles.diff_hdr % 'toadd1')
         self.__check_diff(p, exp, 3)
@@ -224,7 +224,7 @@ Binary file 'binary' has changed.
         exp = """%s
 --- foobar\t(revision 3)
 +++ foobar\t(working copy)
-@@ -1,2 +0,0  @@
+@@ -1,2 +0,0 @@
 -foobar
 -barfoo
 %s
@@ -259,7 +259,7 @@ Binary file 'binary' has changed.
         exp = """%s
 --- foo\t(revision 0)
 +++ foo\t(working copy)
-@@ -0,0 +1,1  @@
+@@ -0,0 +1,1 @@
 +This is a simple test.
 """ % (TestDiffFiles.diff_hdr % 'foo')
         self.__check_diff(p, exp, 3)
