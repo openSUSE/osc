@@ -133,6 +133,37 @@ class TestDiffFiles(OscTestCase):
 @@ -1,1 +0,0  @@
 -some content
 """ % (TestDiffFiles.diff_hdr % 'nochange', TestDiffFiles.diff_hdr % 'somefile')
+        self.__check_diff(p, exp, None)
+
+    def testDiffBinaryAdded(self):
+        """diff an added binary file"""
+        self._change_to_pkg('binary')
+        p = osc.core.Package('.')
+        p.todo = ['binary_added']
+        exp = """%s
+Binary file 'binary_added' added.
+""" % (TestDiffFiles.diff_hdr % 'binary_added')
+        self.__check_diff(p, exp, None)
+
+    def testDiffBinaryDeleted(self):
+        """diff a deleted binary file"""
+        self._change_to_pkg('binary')
+        p = osc.core.Package('.')
+        p.todo = ['binary_deleted']
+        exp = """%s
+Binary file 'binary_deleted' deleted.
+""" % (TestDiffFiles.diff_hdr % 'binary_deleted')
+        self.__check_diff(p, exp, None)
+
+    def testDiffBinaryModified(self):
+        """diff a modified binary file"""
+        self._change_to_pkg('binary')
+        p = osc.core.Package('.')
+        p.todo = ['binary']
+        exp = """%s
+Binary file 'binary' has changed.
+""" % (TestDiffFiles.diff_hdr % 'binary')
+        self.__check_diff(p, exp, None)
 
     # diff with revision
     @GET('http://localhost/source/osctest/remote_simple_noadd?rev=3', file='testDiffRemoteNoChange_files')
@@ -182,6 +213,7 @@ class TestDiffFiles(OscTestCase):
 
     @GET('http://localhost/source/osctest/remote_simple_noadd?rev=3', file='testDiffRemoteExistingLocalNotExisting_files')
     @GET('http://localhost/source/osctest/remote_simple_noadd/foobar?rev=3', file='testDiffRemoteExistingLocalNotExisting_foobar')
+    @GET('http://localhost/source/osctest/remote_simple_noadd/binary?rev=3', file='testDiffRemoteExistingLocalNotExisting_binary')
     def testDiffRemoteExistingLocalNotExisting(self):
         """
         a file doesn't exist in the local wc but exists
@@ -195,11 +227,14 @@ class TestDiffFiles(OscTestCase):
 @@ -1,2 +0,0  @@
 -foobar
 -barfoo
-""" % (TestDiffFiles.diff_hdr % 'foobar')
+%s
+Binary file 'binary' deleted.
+""" % (TestDiffFiles.diff_hdr % 'foobar', TestDiffFiles.diff_hdr % 'binary')
         self.__check_diff(p, exp, 3)
 
     @GET('http://localhost/source/osctest/remote_localmodified?rev=3', file='testDiffRemoteUnchangedLocalModified_files')
     @GET('http://localhost/source/osctest/remote_localmodified/nochange?rev=3', file='testDiffRemoteUnchangedLocalModified_nochange')
+    @GET('http://localhost/source/osctest/remote_localmodified/binary?rev=3', file='testDiffRemoteUnchangedLocalModified_binary')
     def testDiffRemoteUnchangedLocalModified(self):
         """remote revision didn't change, local file is modified"""
         self._change_to_pkg('remote_localmodified')
@@ -210,7 +245,9 @@ class TestDiffFiles(OscTestCase):
 @@ -1,1 +1,2 @@
  This file didn't change.
 +oh it does
-""" % (TestDiffFiles.diff_hdr % 'nochange')
+%s
+Binary file 'binary' has changed.
+""" % (TestDiffFiles.diff_hdr % 'nochange', TestDiffFiles.diff_hdr % 'binary')
         self.__check_diff(p, exp, 3)
 
     @GET('http://localhost/source/osctest/remote_simple_noadd?rev=3', file='testDiffRemoteMissingLocalExisting_files')

@@ -1340,8 +1340,9 @@ class Package:
         deleted = []
         def diff_add_delete(fname, add, revision):
             diff = []
-            diff.append(diff_hdr % f)
+            diff.append(diff_hdr % fname)
             tmpfile = None
+            origname = fname
             if add:
                 diff.append('--- %s\t(revision 0)\n' % fname)
                 rev = 'revision 0'
@@ -1357,8 +1358,15 @@ class Package:
             try:
                 if revision is not None and not add:
                     (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
-                    get_source_file(self.apiurl, self.prjname, self.name, os.path.basename(f), tmpfile, revision)
+                    get_source_file(self.apiurl, self.prjname, self.name, origname, tmpfile, revision)
                     fname = tmpfile
+                if binary_file(fname):
+                    what = 'added'
+                    if not add:
+                        what = 'deleted'
+                    diff = diff[:1]
+                    diff.append('Binary file \'%s\' %s.\n' % (origname, what))
+                    return diff
                 tmpl = '+%s'
                 ltmpl = '@@ -0,0 +1,%d  @@\n'
                 if not add:
@@ -3357,7 +3365,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     file1 = os.path.join(olddir, oldfilename)   # old/stored original
     file2 = os.path.join(dir, filename)         # working copy
     if binary_file(file1) or binary_file(file2):
-        return ['Binary file %s has changed\n' % origfilename]
+        return ['Binary file \'%s\' has changed.\n' % origfilename]
 
     f1 = f2 = None
     try:
