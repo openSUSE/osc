@@ -1,3 +1,6 @@
+0.130
+  - New "service" command to run source services locally or trigger a re-run on the server.
+
 0.129
   - "dists" command to show the configured default base repos from the server.
   - "review list" command to list open review requests

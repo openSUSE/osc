@@ -4464,6 +4464,19 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False)
     return r
 
 
+def runservice(apiurl, prj, package):
+    u = makeurl(apiurl, ['source', prj, package], query={'cmd': 'runservice'})
+
+    try:
+        f = http_POST(u)
+    except urllib2.HTTPError, e:
+        e.osc_msg = 'could not trigger service run for project \'%s\' package \'%s\'' % (prj, package)
+        raise
+
+    root = ET.parse(f).getroot()
+    return root.get('code')
+
+
 def rebuild(apiurl, prj, package, repo, arch, code=None):
     query = { 'cmd': 'rebuild' }
     if package:

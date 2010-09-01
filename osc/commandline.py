@@ -4400,6 +4400,53 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta))
         run_pager(log)
 
+    def do_service(self, subcmd, opts, *args):
+        """${cmd_name}: Handle source services
+
+        Source services can be used to modify sources like downloading files,
+        verify files, generating files or modify existing files.
+
+        usage:
+            osc service COMMAND (inside working copy)
+            osc service COMMAND PROJECT PACKAGE
+
+            COMMAND can be:
+            run         run defined services locally
+            remoterun   trigger a re-run on the server side
+
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        package = repo = arch = code = None
+        apiurl = self.get_api_url()
+
+        if len(args) < 2:
+            if is_package_dir(os.curdir):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
+            else:
+                raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) == 3:
+            project = args[1]
+            package = args[2]
+        else:
+            raise oscerr.WrongArgs('Too few arguments.')
+
+        command = args[0]
+
+        if command == "remoterun":
+            print runservice(apiurl, project, package)
+
+        if command == "run":
+            if not is_package_dir(os.curdir):
+                raise oscerr.WrongArgs('Local directory is no package')
+            p = Package(".")
+            p.run_source_services()
+
+
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
     @cmdln.alias('rebuildpac')
