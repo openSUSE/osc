@@ -315,6 +315,11 @@ def parse_apisrv_url(scheme, apisrv):
 def urljoin(scheme, apisrv):
     return '://'.join([scheme, apisrv])
 
+def is_known_apiurl(url):
+    """returns true if url is a known apiurl"""
+    apiurl = urljoin(*parse_apisrv_url(None, url))
+    return config['api_host_options'].has_key(apiurl)
+
 def get_apiurl_api_host_options(apiurl):
     """
     Returns all apihost specific options for the given apiurl, None if
@@ -325,11 +330,10 @@ def get_apiurl_api_host_options(apiurl):
     # had been mingled into before.  But this works fine for now.
 
     apiurl = urljoin(*parse_apisrv_url(None, apiurl))
-    try:
+    if is_known_apiurl(apiurl):
         return config['api_host_options'][apiurl]
-    except KeyError:
-        raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
-                                         '', apiurl)
+    raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
+                                     '', apiurl)
 
 def get_apiurl_usr(apiurl):
     """
