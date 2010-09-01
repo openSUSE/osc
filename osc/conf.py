@@ -759,6 +759,9 @@ def get_config(override_conffile = None,
         if not 'sslcertck' in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
+        if scheme == 'http':
+            api_host_options[apiurl]['sslcertck'] = False
+
         if cp.has_option(url, 'trusted_prj'):
             api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
         else:
