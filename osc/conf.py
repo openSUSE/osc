@@ -84,6 +84,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 
              'debug': '0',
              'http_debug': '0',
+             'http_full_debug': '0',
              'verbose': '1',
              'traceback': '0',
              'post_mortem': '0',
@@ -136,7 +137,7 @@ config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check']
+    'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check', 'http_full_debug']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -421,6 +422,31 @@ def init_basicauth(config):
     import cookielib
     import urllib2
     import sys
+    import httplib
+    def filterhdrs(meth, ishdr, *hdrs):
+        import re
+        import sys
+        import StringIO
+        # this is so ugly but httplib doesn't use
+        # a logger object or such
+        def new_method(*args, **kwargs):
+            stdout = sys.stdout
+            sys.stdout = StringIO.StringIO()
+            meth(*args, **kwargs)
+            hdr = sys.stdout.getvalue()
+            sys.stdout = stdout
+            for i in hdrs:
+                if ishdr:
+                    hdr = re.sub(r'%s:[^\\r]*\\r\\n' % i, '', hdr)
+                else:
+                    hdr = re.sub(i, '', hdr)
+            sys.stdout.write(hdr)
+        new_method.__name__ = meth.__name__
+        return new_method
+
+    if config['http_debug'] and not config['http_full_debug']:
+        httplib.HTTPConnection.send = filterhdrs(httplib.HTTPConnection.send, True, 'Cookie', 'Authorization')
+        httplib.HTTPResponse.begin = filterhdrs(httplib.HTTPResponse.begin, False, 'header: Set-Cookie.*\n')
 
     if sys.version_info < (2, 6):
         # HTTPS proxy is not supported in old urllib2. It only leads to an error
@@ -623,6 +649,7 @@ def get_config(override_conffile = None,
                override_apiurl = None,
                override_debug = None,
                override_http_debug = None,
+               override_http_full_debug = None,
                override_traceback = None,
                override_post_mortem = None,
                override_no_keyring = None,
@@ -795,6 +822,9 @@ def get_config(override_conffile = None,
         config['debug'] = override_debug
     if override_http_debug:
         config['http_debug'] = override_http_debug
+    if override_http_full_debug:
+        config['http_debug'] = override_http_full_debug or config['http_debug']
+        config['http_full_debug'] = override_http_full_debug
     if override_traceback:
         config['traceback'] = override_traceback
     if override_post_mortem:

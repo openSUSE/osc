@@ -77,7 +77,9 @@ class Osc(cmdln.Cmdln):
         optparser.add_option('-t', '--traceback', action='store_true',
                       help='print call trace in case of errors')
         optparser.add_option('-H', '--http-debug', action='store_true',
-                      help='debug HTTP traffic')
+                      help='debug HTTP traffic (filters some headers)')
+        optparser.add_option('--http-full-debug', action='store_true',
+                      help='debug HTTP traffic (filters no headers)'),
         optparser.add_option('-d', '--debug', action='store_true',
                       help='print info useful for debugging')
         optparser.add_option('-A', '--apiurl', dest='apiurl',
@@ -104,6 +106,7 @@ class Osc(cmdln.Cmdln):
                             override_apiurl = self.options.apiurl,
                             override_debug = self.options.debug,
                             override_http_debug = self.options.http_debug,
+                            override_http_full_debug = self.options.http_full_debug,
                             override_traceback = self.options.traceback,
                             override_post_mortem = self.options.post_mortem,
                             override_no_keyring = self.options.no_keyring,
