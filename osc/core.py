@@ -4251,6 +4251,8 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         r.append(' Legend:')
         legend = []
         for i, j in buildstatus_symbols.items():
+            if i == "expansion error":
+                continue
             legend.append('%3s %-20s' % (j, i))
 
         if vertical:
