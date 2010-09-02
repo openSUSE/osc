@@ -1306,7 +1306,7 @@ class Package:
             state = 'C'
         elif n in self.skipped:
             state = 'S'
-        elif n in self.to_be_added and exists_in_store:
+        elif n in self.to_be_added and exists and exists_in_store:
             state = 'R'
         elif n in self.to_be_added and exists:
             state = 'A'
