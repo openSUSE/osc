@@ -3462,6 +3462,13 @@ def server_diff(apiurl,
     return f.read()
 
 
+def request_diff(apiurl, reqid):
+    u = makeurl(apiurl, ['request', reqid], query={'cmd': 'diff'} )
+
+    f = http_POST(u)
+    return f.read()
+
+
 def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
     """
     creates the plain directory structure for a package dir.

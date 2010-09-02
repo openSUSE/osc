@@ -1,5 +1,9 @@
 0.130
   - New "service" command to run source services locally or trigger a re-run on the server.
+#
+# Feature which requires OBS 2.1
+#
+  - support reliable diff for an accepted request
 
 0.129
   - "dists" command to show the configured default base repos from the server.
