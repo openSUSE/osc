@@ -801,7 +801,7 @@ class Package:
 
     def addfile(self, n):
         if not os.path.exists(os.path.join(self.absdir, n)):
-            raise IOError('error: file \'%s\' does not exist' % n)
+            raise oscerr.OscIOError(None, 'error: file \'%s\' does not exist' % n)
         if n in self.to_be_deleted:
             self.to_be_deleted.remove(n)
 #            self.delete_storefile(n)
@@ -1331,7 +1331,7 @@ class Package:
                 '.osc/ dir) into the new package wc. Please file a bug.' % n)
         else:
             # this case shouldn't happen (except there was a typo in the filename etc.)
-            raise IOError('osc: \'%s\' is not under version control' % n)
+            raise oscerr.OscIOError(None, 'osc: \'%s\' is not under version control' % n)
 
         return state
 
@@ -1398,7 +1398,7 @@ class Package:
                 elif fname in self.filenamelist:
                     kept.append(self.findfilebyname(fname))
                 elif not ignoreUnversioned:
-                    raise IOError('file \'%s\' is not under version control' % fname)
+                    raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % fname)
         else:
             fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision)
             root = ET.fromstring(fm)
@@ -1842,9 +1842,9 @@ rev: %s
 
     def revert(self, filename):
         if not filename in self.filenamelist and not filename in self.to_be_added:
-            raise IOError('file \'%s\' is not under version control' % filename)
+            raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % filename)
         elif filename in self.skipped:
-            raise IOError('file \'%s\' is marked as skipped and cannot be reverted')
+            raise oscerr.OscIOError(None, 'file \'%s\' is marked as skipped and cannot be reverted')
         if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
             raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
         state = self.status(filename)
@@ -1866,9 +1866,9 @@ rev: %s
         if not os.path.exists(dir):
             os.mkdir(dir)
         elif not os.path.isdir(dir):
-            raise IOError('error: \'%s\' is no directory' % dir)
+            raise oscerr.OscIOError(None, 'error: \'%s\' is no directory' % dir)
         if os.path.exists(os.path.join(dir, store)):
-            raise IOError('error: \'%s\' is already an initialized osc working copy' % dir)
+            raise oscerr.OscIOError(None, 'error: \'%s\' is already an initialized osc working copy' % dir)
         else:
             os.mkdir(os.path.join(dir, store))
         store_write_project(dir, project)
@@ -2867,7 +2867,7 @@ def read_meta_from_spec(specfile, *args):
     """
 
     if not os.path.isfile(specfile):
-        raise IOError('\'%s\' is not a regular file' % specfile)
+        raise oscerr.OscIOError(None, '\'%s\' is not a regular file' % specfile)
 
     try:
         lines = codecs.open(specfile, 'r', locale.getpreferredencoding()).readlines()

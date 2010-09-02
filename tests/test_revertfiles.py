@@ -18,7 +18,7 @@ class TestRevertFiles(OscTestCase):
         """revert an unchanged file (state == ' ')"""
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
-        self.assertRaises(IOError, p.revert, 'toadd2')
+        self.assertRaises(osc.oscerr.OscIOError, p.revert, 'toadd2')
         self._check_status(p, 'toadd2', '?')
 
     def testRevertModified(self):
@@ -61,7 +61,7 @@ class TestRevertFiles(OscTestCase):
         p = osc.core.Package('.')
         p.revert('addedmissing')
         self._check_addlist('toadd1\nreplaced\n')
-        self.assertRaises(IOError, p.status, 'addedmissing')
+        self.assertRaises(osc.oscerr.OscIOError, p.status, 'addedmissing')
 
     def testRevertReplaced(self):
         """revert a replaced (state == 'R') file"""
@@ -85,7 +85,7 @@ class TestRevertFiles(OscTestCase):
         """revert a skipped file"""
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
-        self.assertRaises(IOError, p.revert, 'skipped')
+        self.assertRaises(osc.oscerr.OscIOError, p.revert, 'skipped')
 
     def __check_file(self, fname):
         storefile = os.path.join('.osc', fname)

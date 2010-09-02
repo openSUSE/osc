@@ -98,7 +98,7 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, True, '?')
         self.assertFalse(os.path.exists('toadd2'))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
-        self.assertRaises(IOError, p.status, 'toadd2')
+        self.assertRaises(osc.oscerr.OscIOError, p.status, 'toadd2')
 
     def testDeleteAddedForce(self):
         """delete an added file ('toadd1') from the wc (with force)"""
@@ -109,7 +109,7 @@ class TestDeleteFiles(OscTestCase):
         self.assertFalse(os.path.exists('toadd1'))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
-        self.assertRaises(IOError, p.status, 'toadd1')
+        self.assertRaises(osc.oscerr.OscIOError, p.status, 'toadd1')
 
     def testDeleteReplacedForce(self):
         """delete an added file ('merge') from the wc (with force)"""

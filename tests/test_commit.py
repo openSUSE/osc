@@ -111,8 +111,8 @@ class TestCommit(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self.assertFalse(os.path.exists(os.path.join('.osc', 'foo')))
         self.assertFalse(os.path.exists(os.path.join('.osc', 'merge')))
-        self.assertRaises(IOError, p.status, 'foo')
-        self.assertRaises(IOError, p.status, 'merge')
+        self.assertRaises(osc.oscerr.OscIOError, p.status, 'foo')
+        self.assertRaises(osc.oscerr.OscIOError, p.status, 'merge')
         self._check_status(p, 'add', ' ')
         self._check_status(p, 'add2', ' ')
         self._check_status(p, 'nochange', ' ')
@@ -140,7 +140,7 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'merge', 'D')
         self._check_status(p, 'add', ' ')
         self._check_status(p, 'nochange', ' ')
-        self.assertRaises(IOError, p.status, 'foo')
+        self.assertRaises(osc.oscerr.OscIOError, p.status, 'foo')
 
     @GET('http://localhost/source/osctest/simple?rev=latest', file='testSimple_filesremote')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=upload', exp='This file didn\'t change but\nis modified.\n',

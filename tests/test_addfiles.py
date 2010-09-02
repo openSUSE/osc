@@ -77,7 +77,7 @@ class TestAddFiles(OscTestCase):
         """add a non existent file"""
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
-        self.assertRaises(IOError, p.addfile, 'doesnotexist')
+        self.assertRaises(osc.oscerr.OscIOError, p.addfile, 'doesnotexist')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
 
 if __name__ == '__main__':

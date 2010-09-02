@@ -113,7 +113,7 @@ class TestDiffFiles(OscTestCase):
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
         p.todo = ['toadd2']
-        self.assertRaises(IOError, self.__check_diff, p, '', None)
+        self.assertRaises(osc.oscerr.OscIOError, self.__check_diff, p, '', None)
 
     def testDiffMultipleFiles(self):
         """diff multiple files"""

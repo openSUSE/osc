@@ -75,14 +75,14 @@ class TestInitPackage(OscTestCase):
         pac_dir = os.path.join(self.tmpdir, 'testpkg')
         os.mkdir(pac_dir)
         os.mkdir(os.path.join(pac_dir, osc.core.store))
-        self.assertRaises(IOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
+        self.assertRaises(osc.oscerr.OscIOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
 
     def test_dirIsFile(self):
         """initialize a package dir (dir is a file)"""
         pac_dir = os.path.join(self.tmpdir, 'testpkg')
         os.mkdir(pac_dir)
         open(os.path.join(pac_dir, osc.core.store), 'w').write('foo\n')
-        self.assertRaises(IOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
+        self.assertRaises(osc.oscerr.OscIOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
 
 if __name__ == '__main__':
     import unittest
