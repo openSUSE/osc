@@ -1389,7 +1389,7 @@ class Package:
             return diff
 
         if revision is None:
-            todo = self.todo or self.filenamelist+self.to_be_added
+            todo = self.todo or [i for i in self.filenamelist if not i in self.to_be_added]+self.to_be_added
             for fname in todo:
                 if fname in self.to_be_added and self.status(fname) == 'A':
                     added.append(fname)
@@ -1397,6 +1397,9 @@ class Package:
                     deleted.append(fname)
                 elif fname in self.filenamelist:
                     kept.append(self.findfilebyname(fname))
+                elif fname in self.to_be_added and self.status(fname) == '!':
+                    raise oscerr.OscIOError(None, 'file \'%s\' is marked as \'A\' but does not exist\n'\
+                        '(either add the missing file or revert it)' % fname)
                 elif not ignoreUnversioned:
                     raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % fname)
         else:

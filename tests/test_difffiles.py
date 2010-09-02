@@ -115,6 +115,13 @@ class TestDiffFiles(OscTestCase):
         p.todo = ['toadd2']
         self.assertRaises(osc.oscerr.OscIOError, self.__check_diff, p, '', None)
 
+    def testDiffAddedMissing(self):
+        """diff a file which has satus 'A' but the local file does not exist"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        p.todo = ['addedmissing']
+        self.assertRaises(osc.oscerr.OscIOError, self.__check_diff, p, '', None)
+
     def testDiffMultipleFiles(self):
         """diff multiple files"""
         self._change_to_pkg('simple')
@@ -133,6 +140,19 @@ class TestDiffFiles(OscTestCase):
 @@ -1,1 +0,0 @@
 -some content
 """ % (TestDiffFiles.diff_hdr % 'nochange', TestDiffFiles.diff_hdr % 'somefile')
+        self.__check_diff(p, exp, None)
+
+    def testDiffReplacedEmptyTodo(self):
+        """diff a complete package"""
+        self._change_to_pkg('replaced')
+        p = osc.core.Package('.')
+        exp = """%s
+--- replaced\t(revision 2) 
++++ replaced\t(working copy) 
+@@ -1,1 +1,1 @@
+-yet another file
++foo replaced
+""" % (TestDiffFiles.diff_hdr % 'replaced')
         self.__check_diff(p, exp, None)
 
     def testDiffBinaryAdded(self):

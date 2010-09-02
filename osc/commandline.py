@@ -2819,7 +2819,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     pacpaths += [arg + '/' + n for n in prj.pacs_have]
             elif is_package_dir(arg):
                 pacpaths.append(arg)
-            elif os.path.isfile(arg):
+            elif os.path.isfile(arg) or is_package_dir(os.path.dirname(arg)):
                 pacpaths.append(arg)
             else:
                 msg = '\'%s\' is neither a project or a package directory' % arg
