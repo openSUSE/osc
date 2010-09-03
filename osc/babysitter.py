@@ -153,6 +153,18 @@ def run(prg):
         print >>sys.stderr, e.msg
         return 1
 
+    except oscerr.PackageInternalError, e:
+        import traceback
+        print >>sys.stderr, 'a package internal error occured\n' \
+            'please file a bug and attach your current package working copy ' \
+            'and the following traceback to it:'
+        print >>sys.stderr, e.msg
+        traceback.print_exc(file=sys.stderr)
+
+    except oscerr.PackageError, e:
+        print >>sys.stderr, e.msg
+        return 1
+
     except AttributeError, e:
         print >>sys.stderr, e
         return 1
@@ -175,10 +187,6 @@ def run(prg):
 
     except CpioError, e:
         print >>sys.stderr, e
-        return 1
-
-    except oscerr.PackageError, e:
-        print >>sys.stderr, e.msg
         return 1
 
 # vim: sw=4 et
