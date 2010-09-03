@@ -191,10 +191,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/services/_service%3Afoo?rev=2', file='testUpdateServiceFilesAddDelete__service:foo')
     @GET('http://localhost/source/osctest/services/_meta', file='meta.xml')
     def testUpdateAddDeleteServiceFiles(self):
-        """
-        a new file was added to the remote package but isn't checked out because
-        of the size constraint
-        """
+        """update package with _service:* files"""
         self._change_to_pkg('services')
         osc.core.Package('.').update(service_files=True)
         exp = 'A    bigfile\nD    _service:exists\nA    _service:bar\nA    _service:foo\nAt revision 2.\n'
@@ -205,6 +202,22 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', '_service:foo')))
         self.assertTrue(os.path.exists('_service:foo'))
         self.assertEqual(open('_service:foo').read(), 'small\n')
+        self.assertTrue(os.path.exists('_service:exists'))
+        self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
+
+    @GET('http://localhost/source/osctest/services?rev=latest', file='testUpdateServiceFilesAddDelete_filesremote')
+    @GET('http://localhost/source/osctest/services/bigfile?rev=2', file='testUpdateServiceFilesAddDelete_bigfile')
+    @GET('http://localhost/source/osctest/services/_meta', file='meta.xml')
+    def testUpdateDisableAddDeleteServiceFiles(self):
+        """update package with _service:* files (with service_files=False)"""
+        self._change_to_pkg('services')
+        osc.core.Package('.').update()
+        exp = 'A    bigfile\nD    _service:exists\nAt revision 2.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:bar')))
+        self.assertFalse(os.path.exists('_service:bar'))
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:foo')))
+        self.assertFalse(os.path.exists('_service:foo'))
         self.assertTrue(os.path.exists('_service:exists'))
         self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
 
