@@ -140,6 +140,25 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists('bigfile'))
         self._check_digests('testUpdateLimitSizeNoChange_files', 'bigfile')
 
+    @GET('http://localhost/source/osctest/limitsize_local?rev=latest', file='testUpdateLocalLimitSizeNoChange_filesremote')
+    @GET('http://localhost/source/osctest/limitsize_local/_meta', file='meta.xml')
+    def testUpdateLocalLimitSizeNoChange(self):
+        """
+        a new file was added to the remote package but isn't checked out because
+        of the local size constraint
+        """
+        self._change_to_pkg('limitsize_local')
+        p = osc.core.Package('.')
+        p.update()
+        exp = 'D    bigfile\nD    merge\nAt revision 2.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'merge')))
+        self.assertFalse(os.path.exists('bigfile'))
+        self._check_digests('testUpdateLocalLimitSizeNoChange_files', 'bigfile', 'merge')
+        self._check_status(p, 'bigfile', 'S')
+        self._check_status(p, 'merge', 'S')
+
     @GET('http://localhost/source/osctest/limitsize?rev=latest', file='testUpdateLimitSizeAddDelete_filesremote')
     @GET('http://localhost/source/osctest/limitsize/exists?rev=2', file='testUpdateLimitSizeAddDelete_exists')
     @GET('http://localhost/source/osctest/limitsize/_meta', file='meta.xml')

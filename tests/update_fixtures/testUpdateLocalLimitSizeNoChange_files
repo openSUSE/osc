@@ -1,0 +1,6 @@
+<directory name="limitsize_local" rev="2" srcmd5="e51a3133d3d3eb2a48e06efb79e2d503" vrev="2">
+  <entry md5="ed955c917012307d982b7cdd5799ff1a" mtime="1282320398" name="bigfile" size="69" skipped="true" />
+  <entry md5="0d62ceea6020d75154078a20d8c9f9ba" mtime="1282320303" name="foo" size="23" />
+  <entry md5="17b9e9e1a032ed44e7a584dc6303ffa8" mtime="1282320303" name="merge" size="48" skipped="true" />
+  <entry md5="7efa70f68983fad1cf487f69dedf93e9" mtime="1282047303" name="nochange" size="25" />
+</directory>

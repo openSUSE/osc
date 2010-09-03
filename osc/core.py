@@ -1616,7 +1616,7 @@ rev: %s
         # size_limit is only temporary for this update
         old_size_limit = self.size_limit
         if not size_limit is None:
-            self.size_limit = size_limit
+            self.size_limit = int(size_limit)
         if os.path.isfile(os.path.join(self.storedir, '_in_update', '_files')):
             print 'resuming broken update...'
             root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
@@ -2326,7 +2326,7 @@ def read_sizelimit(dir):
     fname = os.path.join(dir, store, '_size_limit')
 
     if os.path.exists(fname):
-        r = open(fname).readline()
+        r = open(fname).readline().strip()
 
     if r is None or not r.isdigit():
         return None
