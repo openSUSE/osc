@@ -1,0 +1,5 @@
+<directory error="missing" name="allstates">
+  <entry md5="b423d194c75e59ee4d8d2e07ba24323d" name="add" />
+  <entry md5="d908d26cac8092d475f40a5179ca6347" name="missing" />
+  <entry md5="2abd19de6a38ff2890af64f453df96b1" name="nochange" />
+</directory>

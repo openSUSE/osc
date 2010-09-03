@@ -923,28 +923,77 @@ class Package:
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_DELETE(u)
 
-    def put_source_file(self, n):
-
-        # escaping '+' in the URL path (note: not in the URL query string) is
-        # only a workaround for ruby on rails, which swallows it otherwise
-        query = 'rev=upload'
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
-        http_PUT(u, file = os.path.join(self.dir, n))
-
-        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
+    def put_source_file(self, n, copy_only=False):
+        cdir = os.path.join(self.storedir, '_in_commit')
+        try:
+            if not os.path.isdir(cdir):
+                os.mkdir(cdir)
+            query = 'rev=repository'
+            tmpfile = os.path.join(cdir, n)
+            shutil.copyfile(os.path.join(self.dir, n), tmpfile)
+            # escaping '+' in the URL path (note: not in the URL query string) is
+            # only a workaround for ruby on rails, which swallows it otherwise
+            if not copy_only:
+                u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
+                http_PUT(u, file = os.path.join(self.dir, n))
+            os.rename(tmpfile, os.path.join(self.storedir, n))
+        finally:
+            if os.path.isdir(cdir):
+                shutil.rmtree(cdir)
         if n in self.to_be_added:
             self.to_be_added.remove(n)
 
+    def __generate_commitlist(self, todo_send):
+        root = ET.Element('directory')
+        keys = todo_send.keys()
+        keys.sort()
+        for i in keys:
+            ET.SubElement(root, 'entry', name=i, md5=todo_send[i])
+        return root
+
+    def __send_commitlog(self, msg, local_filelist):
+        """send the commitlog and the local filelist to the server"""
+        query = {'cmd'    : 'commitfilelist',
+                 'user'   : conf.get_apiurl_usr(self.apiurl),
+                 'comment': msg}
+        if self.islink() and self.isexpanded():
+            query['keeplink'] = '1'
+            if conf.config['linkcontrol'] or self.isfrozen():
+                query['linkrev'] = self.linkinfo.srcmd5
+            if self.ispulled():
+                query['repairlink'] = '1'
+                query['linkrev'] = self.get_pulled_srcmd5()
+        if self.islinkrepair():
+            query['repairlink'] = '1'
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
+        f = http_POST(u, data=ET.tostring(local_filelist))
+        root = ET.parse(f).getroot()
+        return root
+
+    def __get_todo_send(self, server_filelist):
+        """parse todo from a previous __send_commitlog call"""
+        error = server_filelist.get('error')
+        if error is None:
+            return []
+        elif error != 'missing':
+            raise oscerr.PackageInternalError(self.prjname, self.name,
+                '__get_todo_send: unexpected \'error\' attr: \'%s\'' % error)
+        todo = []
+        for n in server_filelist.findall('entry'):
+            name = n.get('name')
+            if name is None:
+                raise oscerr.APIError('missing \'name\' attribute:\n%s\n' % ET.tostring(server_filelist))
+            todo.append(n.get('name'))
+        return todo
+
     def commit(self, msg='', validators=None, verbose_validation=None):
-        todo_send = []
-        todo_delete = []
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
             raise oscerr.WorkingCopyOutdated((self.absdir, self.rev, upstream_rev))
 
         if not self.todo:
-            self.todo = self.filenamelist_unvers + self.filenamelist
+            self.todo = [i for i in self.to_be_added if not i in self.filenamelist] + self.filenamelist
 
         pathn = getTransActPath(self.dir)
 
@@ -965,74 +1014,69 @@ class Package:
                    if p.wait() != 0:
                        raise oscerr.ExtRuntimeError(p.stdout, validator )
 
-        have_conflicts = False
-        for filename in self.todo:
-            if not filename.startswith('_service:') and not filename.startswith('_service_'):
-                st = self.status(filename)
-                if st == 'A' or st == 'M' or st == 'R':
-                    todo_send.append(filename)
+        todo_send = {}
+        todo_delete = []
+        real_send = []
+        for filename in self.filenamelist + [i for i in self.to_be_added if not i in self.filenamelist]:
+            if filename.startswith('_service:') or filename.startswith('_service_'):
+                continue
+            st = self.status(filename)
+            if st == 'C':
+                print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
+                return 1
+            elif filename in self.todo:
+                if st in ('A', 'R', 'M'):
+                    todo_send[filename] = dgst(os.path.join(self.absdir, filename))
+                    real_send.append(filename)
                     print statfrmt('Sending', os.path.join(pathn, filename))
+                elif st in (' ', '!', 'S'):
+                    f = self.findfilebyname(filename)
+                    if f is None:
+                        raise oscerr.PackageInternalError(self.prjname, self.name,
+                            'error: file \'%s\' with state \'%s\' is not known by meta' \
+                            % (filename, st))
+                    todo_send[filename] = f.md5
                 elif st == 'D':
                     todo_delete.append(filename)
                     print statfrmt('Deleting', os.path.join(pathn, filename))
-                elif st == 'C':
-                    have_conflicts = True
+            elif st in ('R', 'M', 'D', ' ', '!', 'S'):
+                f = self.findfilebyname(filename)
+                if f is None:
+                    raise oscerr.PackageInternalError(self.prjname, self.name,
+                        'error: file \'%s\' with state \'%s\' is not known by meta' \
+                        % (filename, st))
+                todo_send[filename] = f.md5
 
-        if have_conflicts:
-            print 'Please resolve all conflicts before committing using "osc resolved FILE"!'
-            return 1
-
-        if not todo_send and not todo_delete and not self.rev == "upload" and not self.islinkrepair() and not self.ispulled():
+        if not real_send and not todo_delete and not self.islinkrepair() and not self.ispulled():
             print 'nothing to do for package %s' % self.name
             return 1
 
-        if self.islink() and self.isexpanded():
-            # resolve the link into the upload revision
-            # XXX: do this always?
-            query = { 'cmd': 'copy', 'rev': 'upload', 'orev': self.rev }
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-            f = http_POST(u)
-
         print 'Transmitting file data ',
-        try:
-            for filename in todo_delete:
-                # do not touch local files on commit --
-                # delete remotely instead
-                self.delete_remote_source_file(filename)
-                self.to_be_deleted.remove(filename)
-            for filename in todo_send:
+        filelist = self.__generate_commitlist(todo_send)
+        sfilelist = self.__send_commitlog(msg, filelist)
+        send = self.__get_todo_send(sfilelist)
+        real_send = [i for i in real_send if not i in send]
+        # abort after 3 tries
+        tries = 3
+        while len(send) and tries:
+            for filename in send[:]:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 self.put_source_file(filename)
+                send.remove(filename)
+            tries -= 1
+            sfilelist = self.__send_commitlog(msg, filelist)
+            send = self.__get_todo_send(sfilelist)
+        if len(send):
+            raise oscerr.PackageInternalError(self.prjname, self.name,
+                'server does not accept filelist:\n%s\nmissing:\n%s\n' \
+                % (ET.tostring(filelist), ET.tostring(sfilelist)))
+        # these files already exist on the server
+        # just copy them into the storedir
+        for filename in real_send:
+            self.put_source_file(filename, copy_only=True)
 
-            # all source files are committed - now comes the log
-            query = { 'cmd'    : 'commit',
-                      'rev'    : 'upload',
-                      'user'   : conf.get_apiurl_usr(self.apiurl),
-                      'comment': msg }
-            if self.islink() and self.isexpanded():
-                query['keeplink'] = '1'
-                if conf.config['linkcontrol'] or self.isfrozen():
-                    query['linkrev'] = self.linkinfo.srcmd5
-                if self.ispulled():
-                    query['repairlink'] = '1'
-                    query['linkrev'] = self.get_pulled_srcmd5()
-            if self.islinkrepair():
-                query['repairlink'] = '1'
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-            f = http_POST(u)
-        except Exception, e:
-            # delete upload revision
-            try:
-                query = { 'cmd': 'deleteuploadrev' }
-                u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-                f = http_POST(u)
-            except:
-                pass
-            raise e
-
-        root = ET.parse(f).getroot()
-        self.rev = int(root.get('rev'))
+        self.rev = sfilelist.get('rev')
         print
         print 'Committed revision %s.' % self.rev
 
@@ -1043,16 +1087,23 @@ class Package:
             self.linkrepair = False
             # XXX: mark package as invalid?
             print 'The source link has been repaired. This directory can now be removed.'
+
         if self.islink() and self.isexpanded():
-            self.update_local_filesmeta(revision=self.latest_rev())
-        else:
-            self.update_local_filesmeta(self.rev)
+            li = Linkinfo()
+            li.read(sfilelist.find('linkinfo'))
+            if li.xsrcmd5 is None:
+                raise oscerr.APIError('linkinfo has no xsrcmd5 attr:\n%s\n' % ET.tostring(sfilelist))
+            sfilelist = ET.fromstring(self.get_files_meta(revision=li.xsrcmd5))
+        for i in sfilelist.findall('entry'):
+            if i.get('name') in self.skipped:
+                i.set('skipped', 'true')
+        store_write_string(self.absdir, '_files', ET.tostring(sfilelist) + '\n')
+        for filename in todo_delete:
+            self.to_be_deleted.remove(filename)
+            self.delete_storefile(filename)
         self.write_deletelist()
         self.write_addlist()
         self.update_datastructs()
-
-        for filename in todo_delete:
-            self.delete_storefile(filename)
 
         if self.filenamelist.count('_service'):
             print 'The package contains a source service.'

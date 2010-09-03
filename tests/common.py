@@ -55,9 +55,11 @@ class MyHTTPHandler(urllib2.HTTPHandler):
             raise RuntimeError('either specify exp or expfile')
         elif kwargs.has_key('expfile'):
             exp = open(os.path.join(self.__fixtures_dir, kwargs['expfile']), 'r').read()
+        elif exp is None:
+            raise RuntimeError('exp or expfile required')
         if exp is not None:
             if req.get_data() != exp:
-                raise RequestDataMismatch(req.get_full_url(), req.get_data(), exp)
+                raise RequestDataMismatch(req.get_full_url(), repr(req.get_data()), repr(exp))
         return self.__get_response(req.get_full_url(), **kwargs)
 
     def __get_response(self, url, **kwargs):

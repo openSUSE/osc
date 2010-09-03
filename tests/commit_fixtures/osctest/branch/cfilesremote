@@ -1,0 +1,5 @@
+<directory name="branch" rev="5" srcmd5="1d4bbfa2655ab3982074226e16e1e5ff" vrev="5">
+  <linkinfo baserev="b63634ab40861fdb8b44e5f4f459c621" lsrcmd5="1d4bbfa2655ab3982074226e16e1e5ff" package="bar" project="foo" srcmd5="b63634ab40861fdb8b44e5f4f459c621" xsrcmd5="87ea02aede261b0267aabaa97c756e7a" />
+  <entry md5="542f96b49b64095104d8a9e9dd313a9c" mtime="1283521153" name="_link" size="130" />
+  <entry md5="75da7f7167c22b2b02c6879366d78ad1" mtime="1283525027" name="simple" size="22" />
+</directory>
