@@ -133,7 +133,7 @@ class TestUpdate(OscTestCase):
         of the size constraint
         """
         self._change_to_pkg('limitsize')
-        osc.core.Package('.').update(limit_size=50)
+        osc.core.Package('.').update(size_limit=50)
         exp = 'D    bigfile\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
@@ -146,13 +146,13 @@ class TestUpdate(OscTestCase):
     def testUpdateLimitSizeAddDelete(self):
         """
         a new file (exists) was added to the remote package with
-        size < limit_size and one file (nochange) was deleted from the
+        size < size_limit and one file (nochange) was deleted from the
         remote package (local file 'nochange' is modified). Additionally
         files which didn't change are removed the local wc due to the
         size constraint.
         """
         self._change_to_pkg('limitsize')
-        osc.core.Package('.').update(limit_size=10)
+        osc.core.Package('.').update(size_limit=10)
         exp = 'A    exists\nD    bigfile\nD    foo\nD    merge\nD    nochange\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))

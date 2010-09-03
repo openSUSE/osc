@@ -33,10 +33,10 @@ class TestInitPackage(OscTestCase):
         self._check_list(os.path.join(storedir, '_files'), '<directory />\n')
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
 
-    def test_limit_size(self):
-        """initialize a package dir with limit_size parameter"""
+    def test_size_limit(self):
+        """initialize a package dir with size_limit parameter"""
         pac_dir = os.path.join(self.tmpdir, 'testpkg')
-        osc.core.Package.init_package('http://localhost', 'osctest', 'testpkg', pac_dir, limit_size=42)
+        osc.core.Package.init_package('http://localhost', 'osctest', 'testpkg', pac_dir, size_limit=42)
         storedir = os.path.join(pac_dir, osc.core.store)
         self.assertFalse(os.path.exists(os.path.join(storedir, '_meta_mode')))
         self._check_list(os.path.join(storedir, '_size_limit'), '42\n')

@@ -773,16 +773,16 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir, progress_obj=None, limit_size=None):
+    def __init__(self, workingdir, progress_obj=None, size_limit=None):
         global store
 
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
-        self.limit_size = limit_size
-        if limit_size and limit_size == 0:
-           self.limit_size = None
+        self.size_limit = size_limit
+        if size_limit and size_limit == 0:
+           self.size_limit = None
 
         check_store_version(self.dir)
 
@@ -1147,8 +1147,19 @@ class Package:
         Update the local _files file in the store.
         It is replaced with the version pulled from upstream.
         """
-        meta = ''.join(show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, limit_size=self.limit_size, meta=self.meta))
+        meta = self.get_files_meta(revision=revision)
         store_write_string(self.absdir, '_files', meta + '\n')
+
+    def get_files_meta(self, revision='latest', skip_service=True):
+        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta)
+        # look for "too large" files according to size limit and mark them
+        root = ET.fromstring(fm)
+        for e in root.findall('entry'):
+            size = e.get('size')
+            if size and self.size_limit and int(size) > self.size_limit \
+                or skip_service and (e.get('name').startswith('_service:') or e.get('name').startswith('_service_')):
+                e.set('skipped', 'true')
+        return ET.tostring(root)
 
     def update_datastructs(self):
         """
@@ -1403,7 +1414,7 @@ class Package:
                 elif not ignoreUnversioned:
                     raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % fname)
         else:
-            fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision)
+            fm = self.get_files_meta(revision=revision)
             root = ET.fromstring(fm)
             rfiles = self.__get_files(root)
             # swap added and deleted
@@ -1599,9 +1610,13 @@ rev: %s
 
         return kept, added, deleted, services
 
-    def update(self, rev = None, service_files = False, limit_size = None):
+    def update(self, rev = None, service_files = False, size_limit = None):
         import tempfile
         rfiles = []
+        # size_limit is only temporary for this update
+        old_size_limit = self.size_limit
+        if not size_limit is None:
+            self.size_limit = size_limit
         if os.path.isfile(os.path.join(self.storedir, '_in_update', '_files')):
             print 'resuming broken update...'
             root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
@@ -1657,7 +1672,7 @@ rev: %s
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
-        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=rev, limit_size=limit_size, meta=self.meta)
+        fm = self.get_files_meta(revision=rev)
         root = ET.fromstring(fm)
         rfiles = self.__get_files(root)
         store_write_string(self.absdir, '_files', fm + '\n', subdir='_in_update')
@@ -1668,6 +1683,7 @@ rev: %s
         os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
         if os.path.isdir(os.path.join(self.storedir, '_in_update')):
             os.rmdir(os.path.join(self.storedir, '_in_update'))
+        self.size_limit = old_size_limit
 
     def __update(self, kept, added, deleted, services, fm, rev):
         pathn = getTransActPath(self.dir)
@@ -1863,7 +1879,7 @@ rev: %s
             self.write_addlist()
 
     @staticmethod
-    def init_package(apiurl, project, package, dir, limit_size=None, meta=False, progress_obj=None):
+    def init_package(apiurl, project, package, dir, size_limit=None, meta=False, progress_obj=None):
         global store
 
         if not os.path.exists(dir):
@@ -1879,11 +1895,11 @@ rev: %s
         store_write_apiurl(dir, apiurl)
         if meta:
             store_write_string(dir, '_meta_mode', '')
-        if limit_size:
-            store_write_string(dir, '_size_limit', str(limit_size) + '\n')
+        if size_limit:
+            store_write_string(dir, '_size_limit', str(size_limit) + '\n')
         store_write_string(dir, '_files', '<directory />' + '\n')
         store_write_string(dir, '_osclib_version', __store_version__ + '\n')
-        return Package(dir, progress_obj=progress_obj, limit_size=limit_size)
+        return Package(dir, progress_obj=progress_obj, size_limit=size_limit)
 
 class ReviewState:
     """for objects to represent the review state in a request"""
@@ -2805,7 +2821,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, limit_size=None, meta=False, skip_service=True):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, meta=False):
     query = {}
     if revision:
         query['rev'] = revision
@@ -2822,15 +2838,7 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    # look for "too large" files according to size limit and mark them
-    root = ET.fromstring(''.join(f.readlines()))
-    for e in root.findall('entry'):
-        size = e.get('size')
-        if size and limit_size and int(size) > int(limit_size) \
-            or skip_service and (e.get('name').startswith('_service:') or e.get('name').startswith('_service_')):
-            e.set('skipped', 'true')
-    return ET.tostring(root)
-
+    return f.read()
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta)
@@ -3516,7 +3524,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, limit_size=None, meta=False):
+                     expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, size_limit=None, meta=False):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -3554,7 +3562,7 @@ def checkout_package(apiurl, project, package,
         if x:
             revision = x
     directory = make_dir(apiurl, project, package, pathname, prj_dir)
-    p = Package.init_package(apiurl, project, package, directory, limit_size, meta, progress_obj)
+    p = Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj)
     if isfrozen:
         p.mark_frozen()
     if conf.config['do_package_tracking']:
@@ -3563,7 +3571,7 @@ def checkout_package(apiurl, project, package,
             prj_obj = Project(prj_dir)
         prj_obj.set_state(p.name, ' ')
         prj_obj.write_packages()
-    p.update(revision, server_service_files, limit_size)
+    p.update(revision, server_service_files, size_limit)
     if service_files:
         print 'Running local source services'
         p.run_source_services()

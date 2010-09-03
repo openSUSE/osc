@@ -2729,7 +2729,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -2749,13 +2749,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for package in meta_get_packagelist(apiurl, project):
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
-                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
                 except oscerr.LinkExpandError, e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
-                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, limit_size=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
             print_request_list(apiurl, project)
 
         else:
