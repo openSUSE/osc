@@ -2919,8 +2919,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = findpacs(args)
         for p in pacs:
-            p.todo = p.filenamelist + p.filenamelist_unvers
-
+            p.todo = list(set(p.filenamelist + p.filenamelist_unvers + p.to_be_added))
             for filename in p.todo:
                 if os.path.isdir(filename):
                     continue
@@ -2928,17 +2927,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if os.path.splitext(filename)[0] in p.in_conflict:
                     continue
                 state = p.status(filename)
-
                 if state == '?':
                     # TODO: should ignore typical backup files suffix ~ or .orig
                     p.addfile(filename)
-                    print statfrmt('A', getTransActPath(os.path.join(p.dir, filename)))
                 elif state == '!':
-                    p.put_on_deletelist(filename)
-                    p.write_deletelist()
+                    p.delete_file(filename)
                     print statfrmt('D', getTransActPath(os.path.join(p.dir, filename)))
-
-
 
     @cmdln.alias('ci')
     @cmdln.alias('checkin')

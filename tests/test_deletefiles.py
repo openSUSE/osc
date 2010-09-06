@@ -162,6 +162,20 @@ class TestDeleteFiles(OscTestCase):
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
 
+    def testDeleteAddedMissing(self):
+        """
+        delete a file which was added to the wc and is removed again
+        (via a non osc command). It's current state is '!'
+        """
+        self._change_to_pkg('delete')
+        p = osc.core.Package('.')
+        ret = p.delete_file('toadd1')
+        self.__check_ret(ret, True, '!')
+        self.assertFalse(os.path.exists('toadd1'))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
+        self._check_deletelist('foo\n')
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
+
     def __check_ret(self, ret, exp1, exp2):
         self.assertTrue(len(ret) == 2)
         self.assertTrue(ret[0] == exp1)

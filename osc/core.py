@@ -828,7 +828,8 @@ class Package:
         if state in ['?', 'A', 'M', 'R', 'C'] and not force:
             return (False, state)
         self.delete_localfile(n)
-        if state in ('A', 'R'):
+        was_added = n in self.to_be_added
+        if state in ('A', 'R') or state == '!' and was_added:
             self.to_be_added.remove(n)
             self.write_addlist()
         elif state == 'C':
@@ -836,7 +837,7 @@ class Package:
             # that's why we don't use clear_from_conflictlist
             self.in_conflict.remove(n)
             self.write_conflictlist()
-        if not state in ('A', '?'):
+        if not state in ('A', '?') and not (state == '!' and was_added):
             self.put_on_deletelist(n)
             self.write_deletelist()
         return (True, state)
