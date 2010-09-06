@@ -5129,7 +5129,7 @@ def addFiles(filenames, prj_obj = None):
            and conf.config['do_package_tracking']:
             prj_name = store_read_project(prj_dir)
             prj_apiurl = store_read_apiurl(prj_dir)
-            Package.init_package(prj_apiurl, prj_name, pac_dir, pac_dir)
+            Package.init_package(prj_apiurl, prj_name, pac_dir, filename)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
             raise oscerr.PackageExists(store_read_project(filename), store_read_package(filename),
                                        'osc: warning: \'%s\' is already under version control' % filename)
