@@ -217,11 +217,26 @@ class RpmQuery(packagequery.PackageQuery):
     def requires(self):
         return self.__reqprov(1049, 1048, 1050)
 
+    def is_src(self):
+        # SOURCERPM = 1044
+        return self.gettag(1044) is None
+
+    def is_nosrc(self):
+        # NOSOURCE = 1051, NOPATCH = 1052
+        return self.is_src() and \
+            (self.gettag(1051) is not None or self.gettag(1052) is not None)
+
     def gettag(self, num):
         return self.header.gettag(num)
 
     def canonname(self):
-        return RpmQuery.filename(self.name(), self.version(), self.release(), self.arch())
+        if self.is_nosrc():
+            arch = 'nosrc'
+        elif self.is_src():
+            arch = 'src'
+        else:
+            arch = self.arch()
+        return RpmQuery.filename(self.name(), self.version(), self.release(), arch)
 
     @staticmethod
     def query(filename):

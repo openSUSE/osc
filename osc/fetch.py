@@ -84,6 +84,46 @@ class Fetcher:
               % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
         return {}
 
+    def __add_cpio(self, pac):
+        prpap = '%s/%s/%s/%s' % (pac.project, pac.repository, pac.repoarch, pac.repopackage)
+        self.cpio.setdefault(prpap, {})[pac.repofilename] = pac
+
+    def __fetch_cpio(self, apiurl):
+        from urllib import quote_plus
+        for prpap, pkgs in self.cpio.iteritems():
+            project, repo, arch, package = prpap.split('/', 3)
+            query = ['binary=%s' % quote_plus(i) for i in pkgs.keys()]
+            query.append('view=cpio')
+            tmparchive = tmpfile = None
+            try:
+                (fd, tmparchive) = tempfile.mkstemp(prefix='osc_build_cpio')
+                (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
+                url = makeurl(apiurl, ['build', project, repo, arch, package], query=query)
+                sys.stdout.write("preparing download ...\r")
+                sys.stdout.flush()
+                self.gr.urlgrab(url, filename = tmparchive, text = 'fetching cpio for \'%s\'' % project)
+                archive = cpio.CpioRead(tmparchive)
+                archive.read()
+                for hdr in archive:
+                    # XXX: we won't have an .errors file because we're using
+                    # getbinarylist instead of the public/... route (which is
+                    # routed to getbinaries (but that won't work for kiwi products))
+                    if hdr.filename == '.errors':
+                        archive.copyin_file(hdr.filename)
+                        raise oscerr.APIError('CPIO archive is incomplete (see .errors file)')
+                    if package == '_repository':
+                        pac = pkgs[hdr.filename.rsplit('.', 1)[0]]
+                    else:
+                        # this is a kiwi product
+                        pac = pkgs[hdr.filename]
+                    archive.copyin_file(hdr.filename, os.path.dirname(tmpfile), os.path.basename(tmpfile))
+                    self.move_package(tmpfile, pac.localdir, pac)
+            finally:
+                if not tmparchive is None and os.path.exists(tmparchive):
+                    os.unlink(tmparchive)
+                if not tmpfile is None and os.path.exists(tmpfile):
+                    os.unlink(tmpfile)
+
     def fetch(self, pac, prefix=''):
         # for use by the failure callback
         self.curpac = pac
@@ -105,7 +145,7 @@ class Fetcher:
                 self.move_package(tmpfile, pac.localdir, pac)
             except URLGrabError, e:
                 if self.enable_cpio and e.errno == 256:
-                    self.cpio.setdefault(pac.project, {})[pac.name] = pac
+                    self.__add_cpio(pac)
                     return
                 print
                 print >>sys.stderr, 'Error:', e.strerror
@@ -120,14 +160,6 @@ class Fetcher:
     def move_package(self, tmpfile, destdir, pac_obj = None):
         import shutil
         pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
-        arch = pkgq.arch()
-        # SOURCERPM = 1044
-        if pkgq.filename_suffix == 'rpm' and not pkgq.gettag(1044):
-            # NOSOURCE = 1051, NOPATCH = 1052
-            if pkgq.gettag(1051) or pkgq.gettag(1052):
-                arch = "nosrc"
-            else:
-                arch = "src"
         canonname = pkgq.canonname()
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
@@ -146,7 +178,6 @@ class Fetcher:
                 sys.exit(1)
 
     def run(self, buildinfo):
-        from urllib import quote_plus
         cached = 0
         all = len(buildinfo.deps)
         for i in buildinfo.deps:
@@ -179,33 +210,8 @@ class Fetcher:
                     print 'Exiting.'
                     sys.exit(0)
                 done += 1
-        for project, pkgs in self.cpio.iteritems():
-            repo = pkgs.values()[0].repository
-            query = [ 'binary=%s' % quote_plus(i) for i in pkgs.keys() ]
-            query.append('view=cpio')
-            try:
-                (fd, tmparchive) = tempfile.mkstemp(prefix='osc_build_cpio')
-                (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
-                url = makeurl(buildinfo.apiurl,
-                              ['public/build', project, repo, buildinfo.buildarch, '_repository'],
-                              query=query)
-                sys.stdout.write("preparing download ...\r")
-                sys.stdout.flush()
-                self.gr.urlgrab(url, filename = tmparchive, text = 'fetching cpio for \'%s\'' % project)
-                archive = cpio.CpioRead(tmparchive)
-                archive.read()
-                for hdr in archive:
-                    if hdr.filename == '.errors':
-                        archive.copyin_file(hdr.filename)
-                        raise oscerr.APIError('CPIO archive is incomplete (see .errors file)')
-                    pac = pkgs[hdr.filename.rsplit('.', 1)[0]]
-                    archive.copyin_file(hdr.filename, os.path.dirname(tmpfile), os.path.basename(tmpfile))
-                    self.move_package(tmpfile, pac.localdir, pac)
-            finally:
-                if os.path.exists(tmparchive):
-                    os.unlink(tmparchive)
-                if os.path.exists(tmpfile):
-                    os.unlink(tmpfile)
+
+        self.__fetch_cpio(buildinfo.apiurl)
 
         prjs = buildinfo.projects.keys()
         for i in prjs:
