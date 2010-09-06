@@ -51,12 +51,16 @@ can_also_build = {
              'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mipsel' ],
              'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el', 'sh4', 'mips', 'mipsel' ],
              'sparc64': ['sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc'],
+             'parisc': ['hppa'],
              }
 
 # real arch of this machine
 hostarch = os.uname()[4]
 if hostarch == 'i686': # FIXME
     hostarch = 'i586'
+
+if hostarch == 'parisc':
+    hostarch = 'hppa'
 
 class Buildinfo:
     """represent the contents of a buildinfo file"""
