@@ -1626,7 +1626,7 @@ rev: %s
 
     def __get_files(self, fmeta_root):
         f = []
-        if fmeta_root.get('rev') is None:
+        if fmeta_root.get('rev') is None and len(fmeta_root.findall('entry')) > 0:
             raise oscerr.APIError('missing rev attribute in _files:\n%s' % ''.join(ET.tostring(fmeta_root)))
         for i in fmeta_root.findall('entry'):
             skipped = i.get('skipped') is not None
