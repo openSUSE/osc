@@ -236,6 +236,17 @@ class TestUpdate(OscTestCase):
         self._check_digests('testUpdateMetaMode_filesremote')
         self._check_status(p, '_meta', ' ')
 
+    @GET('http://localhost/source/osctest/new?rev=latest', file='testUpdateNew_filesremote')
+    @GET('http://localhost/source/osctest/new/_meta', file='meta.xml')
+    def testUpdateNew(self):
+        """update a new (empty) package. The package has no revision."""
+        self._change_to_pkg('new')
+        p = osc.core.Package('.')
+        p.update()
+        exp = 'At revision None.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self._check_digests('testUpdateNew_filesremote')
+
     # tests to recover from an aborted/broken update
 
     @GET('http://localhost/source/osctest/simple/foo?rev=2', file='testUpdateResume_foo')
