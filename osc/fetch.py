@@ -118,6 +118,11 @@ class Fetcher:
                         pac = pkgs[hdr.filename]
                     archive.copyin_file(hdr.filename, os.path.dirname(tmpfile), os.path.basename(tmpfile))
                     self.move_package(tmpfile, pac.localdir, pac)
+                    # check if we got all packages... (because we've no .errors file)
+                    for pac in pkgs.itervalues():
+                        if not os.path.isfile(pac.fullfilename):
+                            raise oscerr.APIError('failed to fetch file \'%s\': ' \
+                                'does not exist in CPIO archive' % pac.repofilename)
             finally:
                 if not tmparchive is None and os.path.exists(tmparchive):
                     os.unlink(tmparchive)
