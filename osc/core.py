@@ -1130,9 +1130,7 @@ class Package:
         storefilename = os.path.join(self.storedir, n)
         origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
         origfile = os.path.join(self.storedir, '_in_update', n)
-        # XXX: the existence of the _in_update dir is just a hack
-        # otherwise checkout_package fails - will be fixed later
-        if os.path.isfile(filename) and os.path.isdir(os.path.join(self.storedir, '_in_update')):
+        if os.path.isfile(filename):
             shutil.copyfile(filename, origfile_tmp)
             os.rename(origfile_tmp, origfile)
         else:
