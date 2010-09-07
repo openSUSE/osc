@@ -4867,7 +4867,7 @@ def set_link_rev(apiurl, project, package, revision = None):
     if not revision:
         src_project = root.attrib['project']
         src_package = root.attrib['package']
-        root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package)
+        root.attrib['rev'] = show_upstream_xsrcmd5(apiurl, src_project, src_package)
     elif revision == -1:
         del root.attrib['rev']
     else:
