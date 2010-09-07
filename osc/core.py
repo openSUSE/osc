@@ -4854,7 +4854,7 @@ def search(apiurl, **kwargs):
         res[urlpath] = ET.parse(f).getroot()
     return res
 
-def set_link_rev(apiurl, project, package, revision = None):
+def set_link_rev(apiurl, project, package, revision = None, use_baserev = None):
     url = makeurl(apiurl, ['source', project, package, '_link'])
     try:
         f = http_GET(url)
@@ -4864,14 +4864,17 @@ def set_link_rev(apiurl, project, package, revision = None):
         raise
 
     # set revision element
+    src_project = root.attrib['project']
+    src_package = root.attrib['package']
     if not revision:
-        src_project = root.attrib['project']
-        src_package = root.attrib['package']
-        root.attrib['rev'] = show_upstream_xsrcmd5(apiurl, src_project, src_package)
+        root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package)
     elif revision == -1:
         del root.attrib['rev']
     else:
         root.attrib['rev'] = revision
+
+    if use_baserev:
+        root.attrib['rev'] = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'], linkrev='base' )
 
     l = ET.tostring(root)
     # upload _link file again

@@ -1871,6 +1871,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='use the specified revision.')
+    @cmdln.option('-R', '--use-plain-revision', action='store_true',
+                  help='Don\'t expand revsion based on baserev, the revision which was used when commit happened.')
     @cmdln.option('-u', '--unset', action='store_true',
                   help='remove revision in link, it will point always to latest revision')
     def do_setlinkrev(self, subcmd, opts, *args):
@@ -1888,6 +1890,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = self.get_api_url()
         package = None
+        use_baserev = 1
         if len(args) == 0:
             p = findpacs(os.curdir)[0]
             project = p.prjname
@@ -1909,13 +1912,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             packages = meta_get_packagelist(apiurl, project)
 
+        if opts.use_plain_revision:
+            use_baserev = None
+
         for p in packages:
             print "setting revision for package", p
             if opts.unset:
                 rev=-1
             else:
                 rev, dummy = parseRevisionOption(opts.revision)
-            set_link_rev(apiurl, project, p, rev)
+            set_link_rev(apiurl, project, p, revision = rev, use_baserev = use_baserev)
 
 
     def do_linktobranch(self, subcmd, opts, *args):

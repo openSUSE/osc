@@ -1,6 +1,6 @@
 0.130
   - New "service" command to run source services locally or trigger a re-run on the server.
-  - setlinkrev is setting now the revision to xsrcmd5 by default to avoid later breakage on indirect links
+  - setlinkrev is setting now the revision to xsrcmd5 by default to avoid later breakage on indirect links by default.
 #
 # Feature which requires OBS 2.1
 #
