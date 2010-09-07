@@ -4111,7 +4111,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Create -32bit/-64bit/-x86 rpms for other architectures')
     @cmdln.option('--release', metavar='N',
                   help='set release number of the package to N')
-    @cmdln.option('--cpio-bulk-download', action='store_true',
+    @cmdln.option('--disable-cpio-bulk-download', action='store_true',
                   help='enable downloading packages as cpio archive from api')
     @cmdln.option('--download-api-only', action='store_true',
                   help=SUPPRESS_HELP)

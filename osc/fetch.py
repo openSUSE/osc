@@ -54,7 +54,7 @@ class OscFileGrabber:
 
 class Fetcher:
     def __init__(self, cachedir = '/tmp', api_host_options = {}, urllist = [], http_debug = False,
-                 cookiejar = None, offline = False, enable_cpio = False):
+                 cookiejar = None, offline = False, enable_cpio = True):
         # set up progress bar callback
         if sys.stdout.isatty() and TextMeter:
             self.progress_obj = TextMeter(fo=sys.stdout)

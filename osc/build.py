@@ -636,7 +636,7 @@ def main(apiurl, opts, argv):
         # OBS 1.5 and before has no downloadurl defined in buildinfo
         if bi.downloadurl:
             urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
-    if not opts.cpio_bulk_download:
+    if opts.disable_cpio_bulk_download:
         urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
     fetcher = Fetcher(cachedir = config['packagecachedir'],
@@ -644,7 +644,7 @@ def main(apiurl, opts, argv):
                       api_host_options = config['api_host_options'],
                       offline = opts.noinit or opts.offline,
                       http_debug = config['http_debug'],
-                      enable_cpio = opts.cpio_bulk_download,
+                      enable_cpio = not opts.disable_cpio_bulk_download,
                       cookiejar=cookiejar)
 
     # implicitly trust the project we are building for
