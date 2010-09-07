@@ -1691,7 +1691,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # list and approvenew
         elif cmd == 'list' or cmd == 'approvenew':
-            states = ('new', 'accepted', 'revoked', 'declined')
+            states = ('new', 'accepted', 'revoked', 'declined', 'review', 'superseded')
             who = ''
             if cmd == 'approvenew':
                states = ('new')
