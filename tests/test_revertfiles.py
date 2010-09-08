@@ -44,7 +44,7 @@ class TestRevertFiles(OscTestCase):
         p = osc.core.Package('.')
         p.revert('somefile')
         self.__check_file('somefile')
-        self._check_deletelist('modified\n')
+        self._check_deletelist('deleted\n')
         self._check_status(p, 'somefile', ' ')
 
     def testRevertMissing(self):

@@ -263,7 +263,6 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_update')))
         self._check_digests('testUpdateResume_files')
 
-    @GET('http://localhost/source/osctest/simple/added?rev=1', file='testUpdateResumeDeletedFile_foo')
     @GET('http://localhost/source/osctest/simple/foo?rev=1', file='testUpdateResumeDeletedFile_foo')
     @GET('http://localhost/source/osctest/simple/merge?rev=1', file='testUpdateResumeDeletedFile_merge')
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
