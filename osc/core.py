@@ -3488,9 +3488,13 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     d = difflib.unified_diff(s1, s2,
         fromfile = '%s\t(revision %s)' % (origfilename, rev), \
         tofile = '%s\t(working copy)' % origfilename)
+    d = list(d)
+    # python2.7's difflib slightly changed the format
+    # adapt old format to the new format
+    d[0] = d[0].replace(' \n', '\n')
+    d[1] = d[1].replace(' \n', '\n')
 
     # if file doesn't end with newline, we need to append one in the diff result
-    d = list(d)
     for i, line in enumerate(d):
         if not line.endswith('\n'):
             d[i] += '\n\\ No newline at end of file'
