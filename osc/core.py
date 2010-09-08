@@ -773,7 +773,13 @@ class Project:
 
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
-    def __init__(self, workingdir, progress_obj=None, size_limit=None):
+
+    # should _meta be a required file?
+    REQ_STOREFILES = ('_project', '_package', '_apiurl', '_files', '_osclib_version')
+    OPT_STOREFILES = ('_to_be_added', '_to_be_deleted', '_in_conflict', '_in_update',
+        '_in_commit', '_meta', '_meta_mode', '_frozen', '_pulled', '_linkrepair', '_size_limit')
+
+    def __init__(self, workingdir, progress_obj=None, size_limit=None, wc_check=True):
         global store
 
         self.dir = workingdir
@@ -791,8 +797,63 @@ class Package:
         self.apiurl = store_read_apiurl(self.dir)
 
         self.update_datastructs()
+        if wc_check and self.wc_check():
+            msg = 'Your working copy is in an inconsistent state.\n' \
+                'Please run \'osc repairwc\' (Note this might _remove_\n' \
+                'files from the .osc/ dir). Please check the state\n' \
+                'of the working copy afterwards (via \'osc status\')'
+            raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, msg)
 
         self.todo = []
+
+    def wc_check(self):
+        dirty = False
+        for fname in self.filenamelist:
+            if not os.path.exists(os.path.join(self.storedir, fname)) and not fname in self.skipped:
+                dirty = True
+        for fname in Package.REQ_STOREFILES:
+            if not os.path.isfile(os.path.join(self.storedir, fname)):
+                dirty = True
+        for fname in os.listdir(self.storedir):
+            if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
+                fname.startswith('_build'):
+                continue
+            elif fname in self.filenamelist and fname in self.skipped:
+                dirty = True
+            elif not fname in self.filenamelist:
+                dirty = True
+        for fname in self.to_be_deleted[:]:
+            if not fname in self.filenamelist:
+                dirty = True
+        for fname in self.in_conflict[:]:
+            if not fname in self.filenamelist:
+                dirty = True
+        return dirty
+
+    def wc_repair(self):
+        # all files which are present in the filelist have to exist in the storedir
+        for f in self.filelist:
+            # XXX: should we also check the md5?
+            if not os.path.exists(os.path.join(self.storedir, f.name)) and not f.name in self.skipped:
+                # if get_source_file fails we're screwed up...
+                get_source_file(self.apiurl, self.prjname, self.name, f.name,
+                    targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
+                    mtime=f.mtime)
+        for fname in os.listdir(self.storedir):
+            if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
+                fname.startswith('_build'):
+                continue
+            elif not fname in self.filenamelist or fname in self.skipped:
+                # this file does not belong to the storedir so remove it
+                os.unlink(os.path.join(self.storedir, fname))
+        for fname in self.to_be_deleted[:]:
+            if not fname in self.filenamelist:
+                self.to_be_deleted.remove(fname)
+                self.write_deletelist()
+        for fname in self.in_conflict[:]:
+            if not fname in self.filenamelist:
+                self.in_conflict.remove(fname)
+                self.write_conflictlist()
 
     def info(self):
         source_url = makeurl(self.apiurl, ['source', self.prjname, self.name])
@@ -1242,12 +1303,6 @@ class Package:
             except:
                 # okay, a very old version of _files, which didn't contain any metadata yet...
                 f = File(node.get('name'), '', 0, 0)
-            # restore storefile in case it is lost (for whatever reason)
-            # XXX: this is a bad idea if we do a checkout - will be fixed later
-            if not os.path.exists(os.path.join(self.storedir, f.name)) and not f.name in self.skipped:
-                get_source_file(self.apiurl, self.prjname, self.name, f.name,
-                    targetfilename=os.path.join(self.storedir, f.name), revision=files_tree_root.get('rev'),
-                    mtime=f.mtime)
             self.filelist.append(f)
             self.filenamelist.append(f.name)
 

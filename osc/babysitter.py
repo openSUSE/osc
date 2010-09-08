@@ -149,7 +149,7 @@ def run(prg):
         print >>sys.stderr, e
         return 1
 
-    except (oscerr.PackageExists, oscerr.PackageMissing), e:
+    except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent), e:
         print >>sys.stderr, e.msg
         return 1
 

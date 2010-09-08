@@ -5977,7 +5977,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p.todo = p.filenamelist
             for f in p.todo:
                 p.revert(f)
-                
+
+    def do_repairwc(self, subcmd, opts, *args):
+        """${cmd_name}: try to repair an inconsistent working copy
+
+        Examples:
+            osc repairwc <path>
+
+        Note: if <path> is omitted it defaults to '.'
+
+        Warning: This command might delete some files in the storedir
+        (.osc). Please check the state of the wc afterwards (via 'osc status').
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        args = parseargs(args)
+        if len(args) < 1:
+            raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) > 1:
+            raise oscerr.WrongArgs('Too many arguments.')
+        try:
+            p = Package(args[0])
+        except oscerr.WorkingCopyInconsistent:
+            p = Package(args[0], wc_check=False)
+            p.wc_repair()
+            print 'done. Please check the state of the wc (via \'osc status\').'
+        else:
+            print >>sys.stderr, 'osc: working copy is not inconsistent'
 # fini!
 ###############################################################################
 
