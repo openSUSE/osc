@@ -61,8 +61,8 @@ class TestDiffFiles(OscTestCase):
         p = osc.core.Package('.')
         p.todo = ['replaced']
         exp = """%s
---- replaced\t(revision 2) 
-+++ replaced\t(working copy) 
+--- replaced\t(revision 2)
++++ replaced\t(working copy)
 @@ -1,1 +1,1 @@
 -yet another file
 +foo replaced
@@ -82,8 +82,8 @@ class TestDiffFiles(OscTestCase):
         p = osc.core.Package('.')
         p.todo = ['foo']
         exp = """%s
---- foo\t(revision 2) 
-+++ foo\t(working copy) 
+--- foo\t(revision 2)
++++ foo\t(working copy)
 @@ -1,1 +1,5 @@
 +<<<<<<< foo.mine
 +This is no test.
@@ -99,8 +99,8 @@ class TestDiffFiles(OscTestCase):
         p = osc.core.Package('.')
         p.todo = ['nochange']
         exp = """%s
---- nochange\t(revision 2) 
-+++ nochange\t(working copy) 
+--- nochange\t(revision 2)
++++ nochange\t(working copy)
 @@ -1,1 +1,2 @@
 -This file didn't change.
 +This file didn't change but
@@ -128,8 +128,8 @@ class TestDiffFiles(OscTestCase):
         p = osc.core.Package('.')
         p.todo = ['nochange', 'somefile']
         exp = """%s
---- nochange\t(revision 2) 
-+++ nochange\t(working copy) 
+--- nochange\t(revision 2)
++++ nochange\t(working copy)
 @@ -1,1 +1,2 @@
 -This file didn't change.
 +This file didn't change but
@@ -147,8 +147,8 @@ class TestDiffFiles(OscTestCase):
         self._change_to_pkg('replaced')
         p = osc.core.Package('.')
         exp = """%s
---- replaced\t(revision 2) 
-+++ replaced\t(working copy) 
+--- replaced\t(revision 2)
++++ replaced\t(working copy)
 @@ -1,1 +1,1 @@
 -yet another file
 +foo replaced
@@ -200,8 +200,8 @@ Binary file 'binary' has changed.
         self._change_to_pkg('remote_simple')
         p = osc.core.Package('.')
         exp = """%s
---- merge\t(revision 3) 
-+++ merge\t(working copy) 
+--- merge\t(revision 3)
++++ merge\t(working copy)
 @@ -1,3 +1,4 @@
  Is it
  possible to
@@ -260,8 +260,8 @@ Binary file 'binary' deleted.
         self._change_to_pkg('remote_localmodified')
         p = osc.core.Package('.')
         exp = """%s
---- nochange\t(revision 3) 
-+++ nochange\t(working copy) 
+--- nochange\t(revision 3)
++++ nochange\t(working copy)
 @@ -1,1 +1,2 @@
  This file didn't change.
 +oh it does
