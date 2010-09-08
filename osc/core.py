@@ -3352,14 +3352,15 @@ def download(url, filename, progress_obj = None, mtime = None):
     o = None
     try:
         prefix = os.path.basename(filename)
-        (fd, tmpfile) = tempfile.mkstemp(prefix = prefix, suffix = '.osc')
+        path = os.path.dirname(filename)
+        (fd, tmpfile) = tempfile.mkstemp(dir=path, prefix = prefix, suffix = '.osctmp')
         os.chmod(tmpfile, 0644)
         try:
             o = os.fdopen(fd, 'wb')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
                 o.write(buf)
             o.close()
-            shutil.move(tmpfile, filename)
+            os.rename(tmpfile, filename)
         except:
             os.unlink(tmpfile)
             raise
