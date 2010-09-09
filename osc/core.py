@@ -4411,7 +4411,10 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     if progress_obj:
         import urlparse
         basename = os.path.basename(urlparse.urlsplit(url)[2])
-        progress_obj.start(basename=basename, text=text, size=int(f.info().get('Content-Length', -1)))
+        cl = f.info().get('Content-Length')
+        if cl is not None:
+            cl = int(cl)
+        progress_obj.start(basename=basename, text=text, size=cl)
     data = f.read(bufsize)
     read = len(data)
     while len(data):
