@@ -3009,15 +3009,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
 
         validators = conf.config['source_validator_directory']
-        verbose_validation = None
         if opts.skip_validation:
             validators = None
         elif not os.path.exists(validators):
             print "WARNING: validator directory", validators, "configured, but not existing (please install osc-source_validator). Skipping ..."
             validators = None
-        if opts.verbose_validation:
-            verbose_validation = 1
-            
+
         msg = ''
         if opts.message:
             msg = opts.message
@@ -3032,7 +3029,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 try:
                     prj = Project(arg)
-                    prj.validate_pacs(validators, verbose_validation)
+                    prj.validate_pacs(validators, opts.verbose_validation)
                     if not msg:
                         msg = edit_message()
                     prj.commit(msg=msg)
@@ -3065,20 +3062,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     single_paths.append(pac.dir)
             for prj_path, packages in prj_paths.iteritems():
                 prj = Project(prj_path)
-                prj.validate_pacs(validators, verbose_validation, *packages)
+                prj.validate_pacs(validators, opts.verbose_validation, *packages)
                 if not msg:
                     msg = get_commit_msg(pac_objs[prj_path])
                 prj.commit(packages, msg=msg, files=files)
             for pac in single_paths:
                 p = Package(pac)
-                p.validate(validators, verbose_validation)
+                p.validate(validators, opts.verbose_validation)
                 if not msg:
                     msg = get_commit_msg([p])
                 p.commit(msg)
         else:
             for p in pacs:
                 p = Package(pac)
-                p.validate(validators, verbose_validation)
+                p.validate(validators, opts.verbose_validation)
                 if not msg:
                     msg = get_commit_msg([p])
                 p.commit(msg)

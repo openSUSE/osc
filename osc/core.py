@@ -654,7 +654,7 @@ class Project:
                 p = Package(os.path.join(self.dir, pac))
             p.validate(validators, verbose_validation)
 
-    def commit(self, pacs = (), msg = '', files = {}, validators_dir = None, verbose_validation = None):
+    def commit(self, pacs = (), msg = '', files = {}, validators_dir = None, verbose_validation = False):
         if len(pacs):
             try:
                 for pac in pacs:
@@ -679,7 +679,7 @@ class Project:
                     elif pac in self.pacs_broken:
                         print 'osc: \'%s\' package not found' % pac
                     elif state == None:
-                        self.commitExtPackage(pac, msg, todo)
+                        self.commitExtPackage(pac, msg, todo, validators_dir=validators_dir, verbose_validation=verbose_validation)
             finally:
                 self.write_packages()
         else:
@@ -701,7 +701,7 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commitNewPackage(self, pac, msg = '', files = [], validators_dir = None, verbose_validation = None):
+    def commitNewPackage(self, pac, msg = '', files = [], validators_dir = None, verbose_validation = False):
         """creates and commits a new package if it does not exist on the server"""
         if pac in self.pacs_available:
             print 'package \'%s\' already exists' % pac
@@ -748,7 +748,7 @@ class Project:
         delete_package(self.apiurl, self.name, pac)
         self.del_package_node(pac)
 
-    def commitExtPackage(self, pac, msg, files = []):
+    def commitExtPackage(self, pac, msg, files = [], validators_dir=None, verbose_validation=False):
         """commits a package from an external project"""
         if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
             pac_path = '.'
@@ -758,24 +758,16 @@ class Project:
         project = store_read_project(pac_path)
         package = store_read_package(pac_path)
         apiurl = store_read_apiurl(pac_path)
-        if meta_exists(metatype='pkg',
-                       path_args=(quote_plus(project), quote_plus(package)),
-                       template_args=None,
-                       create_new=False, apiurl=apiurl):
-            p = Package(pac_path)
-            p.todo = files
-            p.commit(msg)
-        else:
+        if not meta_exists(metatype='pkg',
+                           path_args=(quote_plus(project), quote_plus(package)),
+                           template_args=None, create_new=False, apiurl=apiurl):
             user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
                       path_args=(quote_plus(project), quote_plus(package)),
-                      template_args=({
-                              'name': pac,
-                              'user': user}),
-                              apiurl=apiurl)
-            p = Package(pac_path)
-            p.todo = files
-            p.commit(msg)
+                      template_args=({'name': pac, 'user': user}), apiurl=apiurl)
+        p = Package(pac_path)
+        p.todo = files
+        p.commit(msg=msg, validators_dir=validators_dir, verbose_validation=verbose_validation)
 
     def __str__(self):
         r = []
@@ -1085,7 +1077,7 @@ class Package:
                 if p.wait() != 0:
                     raise oscerr.ExtRuntimeError('ERROR: source_validator failed:\n%s' % p.stdout, validator)
 
-    def commit(self, msg='', validators_dir=None, verbose_validation=None):
+    def commit(self, msg='', validators_dir=None, verbose_validation=False):
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
