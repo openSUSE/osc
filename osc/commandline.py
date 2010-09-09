@@ -2981,6 +2981,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        def get_commit_msg(pacs):
+            template = store_read_file(os.path.abspath('.'), '_commit_msg')
+            # open editor for commit message
+            # but first, produce status and diff to append to the template
+            footer = []
+            lines = []
+            for pac in pacs:
+                changed = getStatus([pac], quiet=True)
+                if changed:
+                    footer += changed
+                    footer.append('\nDiff for working copy: %s' % pac.dir)
+                    footer.extend([''.join(i) for i in pac.get_diff(ignoreUnversioned=True)])
+                    lines.extend(get_commit_message_template(pac))
+            if template == None:
+                template='\n'.join(lines)
+            msg = ''
+            # if footer is empty, there is nothing to commit, and no edit needed.
+            if footer:
+                msg = edit_message(footer='\n'.join(footer), template=template)
+            if msg:
+                store_write_string(os.path.abspath('.'), '_commit_msg', msg + '\n')
+            else:
+                store_unlink_file(os.path.abspath('.'), '_commit_msg')
+            return msg
 
         args = parseargs(args)
 
@@ -3006,10 +3030,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         arg_list = args[:]
         for arg in arg_list:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
-                if not msg:
-                    msg = edit_message()
                 try:
-                    Project(arg).commit(msg=msg, validators=validators, verbose_validation=verbose_validation)
+                    prj = Project(arg)
+                    prj.validate_pacs(validators, verbose_validation)
+                    if not msg:
+                        msg = edit_message()
+                    prj.commit(msg=msg)
                 except oscerr.ExtRuntimeError, e:
                     print >>sys.stderr, "ERROR: source_validator failed", e
                     return 1
@@ -3020,34 +3046,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if conf.config['check_filelist'] and not opts.force:
             check_filelist_before_commit(pacs)
 
-        if not msg:
-            template = store_read_file(os.path.abspath('.'), '_commit_msg')
-            # open editor for commit message
-            # but first, produce status and diff to append to the template
-            footer = []
-            lines = []
-            for pac in pacs:
-                changed = getStatus([pac], quiet=True)
-                if changed:
-                    footer += changed
-                    footer.append('\nDiff for working copy: %s' % pac.dir)
-                    footer.extend([''.join(i) for i in pac.get_diff(ignoreUnversioned=True)])
-                    lines.extend(get_commit_message_template(pac))
-            if template == None:
-                template='\n'.join(lines)
-            # if footer is empty, there is nothing to commit, and no edit needed.
-            if footer:
-                msg = edit_message(footer='\n'.join(footer), template=template)
-
-            if msg:
-                store_write_string(os.path.abspath('.'), '_commit_msg', msg + '\n')
-            else:
-                store_unlink_file(os.path.abspath('.'), '_commit_msg')
-
         if conf.config['do_package_tracking'] and len(pacs) > 0:
             prj_paths = {}
             single_paths = []
             files = {}
+            # XXX: this is really ugly
+            pac_objs = {}
             # it is possible to commit packages from different projects at the same
             # time: iterate over all pacs and put each pac to the right project in the dict
             for pac in pacs:
@@ -3055,24 +3059,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if is_project_dir(path):
                     pac_path = os.path.basename(os.path.normpath(pac.absdir))
                     prj_paths.setdefault(path, []).append(pac_path)
+                    pac_objs.setdefault(path, []).append(pac)
                     files[pac_path] = pac.todo
                 else:
                     single_paths.append(pac.dir)
-            for prj, packages in prj_paths.iteritems():
-                try:
-                    Project(prj).commit(tuple(packages), msg=msg, files=files, validators=validators, verbose_validation=verbose_validation)
-                except oscerr.ExtRuntimeError, e:
-                    print >>sys.stderr, "ERROR: source_validator failed", e
-                    return 1
+            for prj_path, packages in prj_paths.iteritems():
+                prj = Project(prj_path)
+                prj.validate_pacs(validators, verbose_validation, *packages)
+                if not msg:
+                    msg = get_commit_msg(pac_objs[prj_path])
+                prj.commit(packages, msg=msg, files=files)
             for pac in single_paths:
-                try:
-                    Package(pac).commit(msg, validators=validators, verbose_validation=verbose_validation)
-                except oscerr.ExtRuntimeError, e:
-                    print >>sys.stderr, "ERROR: source_validator failed", e
-                    return 1
+                p = Package(pac)
+                p.validate(validators, verbose_validation)
+                if not msg:
+                    msg = get_commit_msg([p])
+                p.commit(msg)
         else:
             for p in pacs:
-                p.commit(msg, validators=validators, verbose_validation=verbose_validation)
+                p = Package(pac)
+                p.validate(validators, verbose_validation)
+                if not msg:
+                    msg = get_commit_msg([p])
+                p.commit(msg)
 
         store_unlink_file(os.path.abspath('.'), '_commit_msg')
 
