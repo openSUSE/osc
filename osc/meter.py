@@ -45,10 +45,10 @@ class TextMeter(BaseMeter):
 
 
         #self.unsized_templ = '\r%-60.60s    %5sB %s '
-        self.unsized_templ = '\r%%-%s.%ss    %%5sB %%s ' % (width *4/3, width*3/5)
+        self.unsized_templ = '\r%%-%s.%ss    %%5sB %%s ' % (width *2/5, width*3/5)
         #self.sized_templ = '\r%-45.45s %3i%% |%-15.15s| %5sB %8s '
         self.bar_length = width/5
-        self.sized_templ = '\r%%-%s.%ss %%3i%%%% |%%-%s.%ss| %%5sB %%8s ' %(width*4/10, width*4/10, self.bar_length, self.bar_length)
+        self.sized_templ = '\r%%-%s.%ss %%3i%%%% |%%-%s.%ss| %%5sB %%8s ' % (width*4/10, width*4/10, self.bar_length, self.bar_length)
 
 
     def _do_start(self, *args, **kwargs):
