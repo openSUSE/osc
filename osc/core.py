@@ -777,7 +777,8 @@ class Package:
     # should _meta be a required file?
     REQ_STOREFILES = ('_project', '_package', '_apiurl', '_files', '_osclib_version')
     OPT_STOREFILES = ('_to_be_added', '_to_be_deleted', '_in_conflict', '_in_update',
-        '_in_commit', '_meta', '_meta_mode', '_frozen', '_pulled', '_linkrepair', '_size_limit')
+        '_in_commit', '_meta', '_meta_mode', '_frozen', '_pulled', '_linkrepair',
+        '_size_limit', '_commit_msg')
 
     def __init__(self, workingdir, progress_obj=None, size_limit=None, wc_check=True):
         global store
