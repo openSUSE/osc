@@ -1221,14 +1221,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         user = args[0]
         role = args[1]
         project = args[2]
+        actionxml = """ <action type="add_role"> <target project="%s" /> <person name="%s" role="%s" /> </action> """ % \
+                (project, user, role)
+
         if len(args) > 3:
             package = args[3]
+            actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <person name="%s" role="%s" /> </action> """ % \
+                (project, package, user, role)
 
         if get_user_meta(apiurl, user) == None:
             raise oscerr.WrongArgs('osc: an error occured.')
-
-        actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <person name="%s" role="%s" /> </action> """ % \
-                (project, package, user, role)
 
         return actionxml
 
