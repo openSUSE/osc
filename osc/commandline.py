@@ -3829,18 +3829,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
 
-        if len(args) >= 0 and len(args) <= 3 and is_package_dir(wd):
-            package = store_read_package(wd)
-            project = store_read_project(wd)
-
-            if len(args) == 0:
-                repository = conf.config['build_repository']
-                import osc.build
-                arch = osc.build.hostarch
-            elif len(args) == 1:
-
-
-        """if len(args) == 0 or len(args) == 1 and is_package_dir('.'):
+        if (len(args) == 0 or len(args) == 1) and is_package_dir('.'):
             package = store_read_package(wd)
             project = store_read_project(wd)
             repository = conf.config['build_repository']
@@ -3850,7 +3839,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = store_read_package(wd)
             project = store_read_project(wd)
             repository = args[0]
-            arch = args[1]"""
+            arch = args[1]
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
             package = args[1]
@@ -3865,8 +3854,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         build_descr_data = None
-        if len(args) == 3:
-            build_descr_data = open(args[2]).read()
+        if len(args) % 2 == 1: # odd number of args, means last is BUILD_DESCR
+            with open(args[len(args) - 1]) as f:
+                build_descr_data = f.read()
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
