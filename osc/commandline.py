@@ -3814,10 +3814,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The returned data is XML and contains a list of the packages used in
         building, their source, and the expanded BuildRequires.
 
-        The arguments REPOSITORY and ARCH can be taken from the first two columns
-        of the 'osc repos' output.
+        The arguments REPOSITORY and ARCH are optional. They can be taken from
+        the first two columns of the 'osc repos' output. If not specified,
+        REPOSITORY defaults to the 'build_repositoy' config entry in your '.oscrc'
+        and ARCH defaults to your host architecture.
 
         usage:
+            osc buildinfo [BUILD_DESCR]                    (in pkg dir)
             osc buildinfo REPOSITORY ARCH [BUILD_DESCR]    (in pkg dir)
             osc buildinfo PROJECT PACKAGE REPOSITORY ARCH [BUILD_DESCR]
 
@@ -3826,21 +3829,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
 
-        if len(args) < 2 and is_package_dir('.'):
-            self.print_repos()
+        if len(args) >= 0 and len(args) <= 3 and is_package_dir(wd):
+            package = store_read_package(wd)
+            project = store_read_project(wd)
 
-        if len(args) > 5:
-            raise oscerr.WrongArgs('Too many arguments.')
+            if len(args) == 0:
+                repository = conf.config['build_repository']
+                import osc.build
+                arch = osc.build.hostarch
+            elif len(args) == 1:
 
-        apiurl = self.get_api_url()
 
-        if len(args) < 4: # 2 or 3
+        """if len(args) == 0 or len(args) == 1 and is_package_dir('.'):
+            package = store_read_package(wd)
+            project = store_read_project(wd)
+            repository = conf.config['build_repository']
+            import osc.build
+            arch = osc.build.hostarch
+        elif len(args) == 2 or len(args) == 3:
             package = store_read_package(wd)
             project = store_read_project(wd)
             repository = args[0]
-            arch = args[1]
-
-        if len(args) > 3 and len(args) < 6: # 4 or 5
+            arch = args[1]"""
+        elif len(args) == 4 or len(args) == 5:
             project = args[0]
             package = args[1]
             repository = args[2]
@@ -3848,6 +3859,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # for following specfile detection ...
             del args[0]
             del args[0]
+        else:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        apiurl = self.get_api_url()
 
         build_descr_data = None
         if len(args) == 3:
