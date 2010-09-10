@@ -3072,6 +3072,9 @@ def get_default_pager():
 def run_pager(message):
     import tempfile, sys
 
+    if not message:
+        return
+
     if not sys.stdout.isatty():
         print message
     else:

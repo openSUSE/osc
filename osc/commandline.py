@@ -943,7 +943,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rdiff = ''
 
         if opts.diff:
-            print rdiff
+            run_pager(rdiff)
             return
 
         # Are there already requests to this package ?
@@ -1146,7 +1146,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             except:
                 rdiff = ''
         if opts.diff:
-            print rdiff
+            run_pager(rdiff)
         else:
             reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
             user = conf.get_apiurl_usr(apiurl)
@@ -1792,27 +1792,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.diff and r.actions[0].type != 'submit':
                 raise oscerr.WrongOptions('\'--diff\' is not possible for request type: \'%s\'' % r.actions[0].type)
             elif opts.diff:
+                rdiff = ''
                 try:
                     # works since OBS 2.1
-                    print request_diff(apiurl, reqid)
+                    rdiff = request_diff(apiurl, reqid)
                 except urllib2.HTTPError, e:
                     # for OBS 2.0 and before
                     try:
-                        print server_diff(apiurl,
-                                          r.actions[0].dst_project, r.actions[0].dst_package, None,
-                                          r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
+                        rdiff = server_diff(apiurl,
+                                            r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                            r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
                     except urllib2.HTTPError, e:
                         if e.code != 400:
                             e.osc_msg = 'Diff not possible'
                             raise e
                         # backward compatiblity: only a recent api/backend supports the missingok parameter
                         try:
-                            print server_diff(apiurl,
-                                              r.actions[0].dst_project, r.actions[0].dst_package, None,
-                                              r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, False)
+                            rdiff = server_diff(apiurl,
+                                                r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                                r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, False)
                         except urllib2.HTTPError, e:
                             e.osc_msg = 'Diff not possible'
                             raise
+                run_pager(rdiff)
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
@@ -2506,8 +2508,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
-        if len(diff) > 0:
-            run_pager(diff)
+        run_pager(diff)
 
 
     @cmdln.option('--oldprj', metavar='OLDPRJ',
@@ -2595,7 +2596,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rdiff = server_diff(apiurl,
                             old_project, old_package, rev1,
                             new_project, new_package, rev2, not opts.plain, opts.missingok)
-        print rdiff
+        run_pager(rdiff)
 
     @cmdln.hide(1)
     @cmdln.alias('in')
