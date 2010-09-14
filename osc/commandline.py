@@ -1542,6 +1542,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='exclude target project from request list')
     @cmdln.option('--involved-projects', action='store_true',
                         help='show all requests for project/packages where USER is involved')
+    @cmdln.option('--source-buildstatus', action='store_true',
+                        help='print the buildstatus of the source package (only works with "show")')
     @cmdln.alias("rq")
     @cmdln.alias("review")
     def do_request(self, subcmd, opts, *args):
@@ -1787,6 +1789,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return request_interactive_review(apiurl, r)
             else:
                 print r
+            if opts.source_buildstatus:
+                if r.actions[0].type != 'submit':
+                    raise oscerr.WrongOptions( '\'--source-buildstatus\' is not possible for ' \
+                        'request type: \'%s\'' % r.actions[0].type)
+                print 'Buildstatus for \'%s/%s\':' % (r.actions[0].src_project, r.actions[0].src_package)
+                print '\n'.join(get_results(apiurl, r.actions[0].src_project, r.actions[0].src_package))
             # FIXME: will inevitably fail if the given target doesn't exist
             # FIXME: diff should work if there are submit actions anyway
             if opts.diff and r.actions[0].type != 'submit':

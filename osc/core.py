@@ -5443,7 +5443,7 @@ def request_interactive_review(apiurl, request):
             print request.__str__().encode('ascii', 'xmlcharrefreplace')
     print_request(request)
     try:
-        msg = '(a)ccept/(d)ecline/(r)evoke/(c)ancel > '
+        msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/(c)ancel > '
         if request.actions[0].type == 'submit':
             msg = 'd(i)ff/%s' % msg
         while True:
@@ -5483,6 +5483,8 @@ def request_interactive_review(apiurl, request):
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()
+            elif repl == 'b':
+                print '\n'.join(get_results(apiurl, request.actions[0].src_project, request.actions[0].src_package))
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
