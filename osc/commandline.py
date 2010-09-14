@@ -6002,18 +6002,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         args = parseargs(args)
-        if len(args) < 1:
-            raise oscerr.WrongArgs('Too few arguments.')
-        elif len(args) > 1:
-            raise oscerr.WrongArgs('Too many arguments.')
-        try:
-            p = Package(args[0])
-        except oscerr.WorkingCopyInconsistent:
-            p = Package(args[0], wc_check=False)
-            p.wc_repair()
-            print 'done. Please check the state of the wc (via \'osc status\').'
-        else:
-            print >>sys.stderr, 'osc: working copy is not inconsistent'
+        pacs = []
+        for i in args:
+            if is_project_dir(i):
+                prj = Project(i, getPackageList=False)
+                for p in prj.pacs_have:
+                    if p in prj.pacs_broken:
+                        continue
+                    try:
+                        Package(os.path.join(i, p))
+                    except oscerr.WorkingCopyInconsistent:
+                        pacs.append(os.path.join(i, p))
+            elif is_package_dir(i):
+                pacs.append(i)
+            else:
+                print >>sys.stderr, '\'%s\' is neither a project working copy ' \
+                    'nor a package working copy' % i
+        for i in pacs:
+            try:
+                p = Package(i)
+            except oscerr.WorkingCopyInconsistent:
+                p = Package(i, wc_check=False)
+                p.wc_repair()
+                print 'done. Please check the state of the wc (via \'osc status\').'
+            else:
+                print >>sys.stderr, 'osc: working copy is not inconsistent'
 # fini!
 ###############################################################################
 
