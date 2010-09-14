@@ -6024,9 +6024,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             except oscerr.WorkingCopyInconsistent:
                 p = Package(i, wc_check=False)
                 p.wc_repair()
-                print 'done. Please check the state of the wc (via \'osc status\').'
+                print 'done. Please check the state of the wc (via \'osc status %s\').' % i
             else:
-                print >>sys.stderr, 'osc: working copy is not inconsistent'
+                print >>sys.stderr, 'osc: working copy \'%s\' is not inconsistent' % i
 # fini!
 ###############################################################################
 

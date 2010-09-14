@@ -809,9 +809,9 @@ class Package:
         self.update_datastructs()
         if wc_check and self.wc_check():
             msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
-                'Please run \'osc repairwc\' (Note this might _remove_\n' \
+                'Please run \'osc repairwc %s\' (Note this might _remove_\n' \
                 'files from the .osc/ dir). Please check the state\n' \
-                'of the working copy afterwards (via \'osc status\')' % self.dir
+                'of the working copy afterwards (via \'osc status %s\')' % (self.dir, self.dir, self.dir)
             raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, msg)
 
         self.todo = []
