@@ -5993,7 +5993,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Examples:
             osc repairwc <path>
 
-        Note: if <path> is omitted it defaults to '.'
+        Note: if <path> is omitted it defaults to '.' (<path> can be
+              a project or package working copy)
 
         Warning: This command might delete some files in the storedir
         (.osc). Please check the state of the wc afterwards (via 'osc status').
