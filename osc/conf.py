@@ -383,6 +383,17 @@ def _build_opener(url):
                 return response
 
         authhandler_class = OscHTTPBasicAuthHandler
+    elif sys.version_info >= (2, 6, 5) and sys.version_info < (2, 6, 6):
+        # workaround for broken urllib2 in python 2.6.5: wrong credentials
+        # lead to an infinite recursion
+        class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+            def retry_http_basic_auth(self, host, req, realm):
+                # don't retry if auth failed
+                if req.get_header(self.auth_header, None) is not None:
+                    return None
+                return urllib2.HTTPBasicAuthHandler.retry_http_basic_auth(self, host, req, realm)
+
+        authhandler_class = OscHTTPBasicAuthHandler
 
     options = config['api_host_options'][apiurl]
     # with None as first argument, it will always use this username/password
