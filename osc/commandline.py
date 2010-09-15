@@ -4142,7 +4142,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--release', metavar='N',
                   help='set release number of the package to N')
     @cmdln.option('--disable-cpio-bulk-download', action='store_true',
-                  help='enable downloading packages as cpio archive from api')
+                  help='disable downloading packages as cpio archive from api')
+    @cmdln.option('--cpio-bulk-download', action='store_false',
+                  dest='disable_cpio_bulk_download', help=SUPPRESS_HELP)
     @cmdln.option('--download-api-only', action='store_true',
                   help=SUPPRESS_HELP)
     @cmdln.option('--oldpackages', metavar='DIR',
