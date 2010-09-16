@@ -105,7 +105,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'checkout_no_colon': '0',
              # local files to ignore with status, addremove, ....
              # local files to ignore with status, addremove, ....
-             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.*',
+             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
              # keep passwords in plaintext. If you see this comment, your osc
              # already uses the encrypted password, and only keeps them in plain text
              # for backwards compatibility. Default will change to 0 in future releases.
