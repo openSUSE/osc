@@ -10,6 +10,7 @@ import M2Crypto.m2urllib2
 import urlparse
 import socket
 import urllib
+import httplib
 
 class TrustedCertStore:
     _tmptrusted = {}
@@ -236,7 +237,7 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
     def getPort(self):
         return self.port
 
-class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection):
+class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, httplib.HTTPSConnection):
     def __init__(self, *args, **kwargs):
         self.appname = kwargs.pop('appname', 'generic')
         M2Crypto.httpslib.ProxyHTTPSConnection.__init__(self, *args, **kwargs)
@@ -244,6 +245,11 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection):
     def _start_ssl(self):
         M2Crypto.httpslib.ProxyHTTPSConnection._start_ssl(self)
         verify_certificate(self)
+
+    def endheaders(self, *args, **kwargs):
+        if not self._proxy_auth is None:
+            self._proxy_auth = self._encode_auth()
+        httplib.HTTPSConnection.endheaders(self, *args, **kwargs)        
 
     # broken in m2crypto: port needs to be an int
     def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
