@@ -5443,7 +5443,7 @@ def request_interactive_review(apiurl, request):
             print request.__str__().encode('ascii', 'xmlcharrefreplace')
     print_request(request)
     try:
-        msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/(c)ancel > '
+        msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/(s)kip/(c)ancel > '
         if request.actions[0].type == 'submit':
             msg = 'd(i)ff/%s' % msg
         while True:
@@ -5480,6 +5480,9 @@ def request_interactive_review(apiurl, request):
                     tmpfile.flush()
                 run_editor(tmpfile.name)
                 print_request(request)
+            elif repl == 's':
+                print >>sys.stderr, 'skipping: #%d' % request.reqid
+                break
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()

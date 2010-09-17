@@ -1756,10 +1756,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for result in results:
                 if days == 0 or result.state.when > since or result.state.name == 'new':
                     if (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
-                        try:
-                            request_interactive_review(apiurl, result)
-                        except oscerr.UserAbort:
-                            pass
+                        request_interactive_review(apiurl, result)
                     else:
                         print result.list_view()
                 else:
