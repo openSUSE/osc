@@ -122,6 +122,8 @@ class Buildinfo:
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.cbinstall_list = [ dep.name for dep in self.deps if dep.cbinstall ]
         self.cbpreinstall_list = [ dep.name for dep in self.deps if dep.cbpreinstall ]
+        self.cbpreignore_list = [ dep.name for dep in self.deps if dep.cbpreignore ]
+        self.cbignore_list = [ deb.name for dep in self.deps if dep.cbignore ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
 
@@ -153,7 +155,7 @@ class Pac:
                   'version', 'release',
                   'project', 'repository',
                   'preinstall', 'vminstall', 'noinstall', 'runscripts',
-                  'cbinstall', 'cbpreinstall',
+                  'cbinstall', 'cbpreinstall', 'cbpreignore', 'cbignore',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -775,6 +777,8 @@ def main(apiurl, opts, argv):
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('cbinstall: ' + ' '.join(bi.cbinstall_list) + '\n')
     rpmlist.append('cbpreinstall: ' + ' '.join(bi.cbpreinstall_list) + '\n')
+    rpmlist.append('cbpreignore: ' + ' '.join(bi.cbpreinstall_list) + '\n')
+    rpmlist.append('cbignore: ' + ' '.join(bi.cbpreinstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
