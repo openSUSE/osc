@@ -415,7 +415,7 @@ class Project:
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
-        self.apiurl = store_read_apiurl(self.dir)
+        self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
         if getPackageList:
             self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
@@ -757,7 +757,7 @@ class Project:
 
         project = store_read_project(pac_path)
         package = store_read_package(pac_path)
-        apiurl = store_read_apiurl(pac_path)
+        apiurl = store_read_apiurl(pac_path, defaulturl=False)
         if not meta_exists(metatype='pkg',
                            path_args=(quote_plus(project), quote_plus(package)),
                            template_args=None, create_new=False, apiurl=apiurl):
@@ -798,13 +798,13 @@ class Package:
         self.progress_obj = progress_obj
         self.size_limit = size_limit
         if size_limit and size_limit == 0:
-           self.size_limit = None
+            self.size_limit = None
 
         check_store_version(self.dir)
 
         self.prjname = store_read_project(self.dir)
         self.name = store_read_package(self.dir)
-        self.apiurl = store_read_apiurl(self.dir)
+        self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
         self.update_datastructs()
         if wc_check and self.wc_check():
@@ -4673,7 +4673,7 @@ def store_read_package(dir):
         raise oscerr.NoWorkingCopy(msg)
     return p
 
-def store_read_apiurl(dir):
+def store_read_apiurl(dir, defaulturl=True):
     global store
 
     fname = os.path.join(dir, store, '_apiurl')
@@ -4683,6 +4683,9 @@ def store_read_apiurl(dir):
         # (former osc versions may stored an apiurl with a trailing slash etc.)
         apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
     except:
+        if not defaulturl:
+            msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
+            raise oscerr.NoWorkingCopy(msg)
         apiurl = conf.config['apiurl']
     return apiurl
 
@@ -5221,7 +5224,7 @@ def addFiles(filenames, prj_obj = None):
         if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
            and conf.config['do_package_tracking']:
             prj_name = store_read_project(prj_dir)
-            prj_apiurl = store_read_apiurl(prj_dir)
+            prj_apiurl = store_read_apiurl(prj_dir, defaulturl=False)
             Package.init_package(prj_apiurl, prj_name, pac_dir, filename)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
             raise oscerr.PackageExists(store_read_project(filename), store_read_package(filename),
