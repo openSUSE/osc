@@ -301,6 +301,12 @@ class Serviceinfo:
         r.append( s )
         return r
 
+    def addGitUrl(self, serviceinfo_node, url_string):
+        r = serviceinfo_node
+        s = ET.Element( "service", name="git_pull" )
+        ET.SubElement(s, "param", name="url").text = url_string
+        r.append( s )
+        return r
 
     def execute(self, dir):
         import tempfile
@@ -5168,6 +5174,27 @@ def stripETxml(node):
         node.text = node.text.replace(" ", "").replace("\n", "")
     for child in node.getchildren():
         stripETxml(child)
+
+def addGitSource(url):
+    service_file = os.path.join(os.getcwd(), '_service')
+    addfile = False
+    if os.path.exists( service_file ):
+        services = ET.parse(os.path.join(os.getcwd(), '_service')).getroot()
+    else:
+        services = ET.fromstring("<services />")
+        addfile = True
+    stripETxml( services )
+    si = Serviceinfo()
+    s = si.addGitUrl(services, url)
+    si.read(s)
+
+    # for pretty output
+    reparsed = minidom.parseString(ET.tostring(s))
+    f = open(service_file, 'wb')
+    f.write(reparsed.toprettyxml(indent="  "))
+    f.close()
+    if addfile:
+       addFiles( ['_service'] )
 
 def addDownloadUrlService(url):
     service_file = os.path.join(os.getcwd(), '_service')
