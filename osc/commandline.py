@@ -1712,7 +1712,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    state_list = ['all']
                else:
                    for s in state_list:
-                       if not s in [states, 'all']:
+                       if not s in states and not s == 'all':
                            raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
                if opts.mine:
                    who = conf.get_apiurl_usr(apiurl)
