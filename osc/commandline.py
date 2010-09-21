@@ -1605,6 +1605,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
             osc review new [-m TEXT] ID            # for setting a temporary comment without changing the state
+            osc my sr                              # for submit requests I made
+            osc my rq                              # for requests for my packages/projects
 
         ${cmd_option_list}
         """
@@ -1710,7 +1712,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    state_list = ['all']
                else:
                    for s in state_list:
-                       if not s in states:
+                       if not s in [states, 'all']:
                            raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
                if opts.mine:
                    who = conf.get_apiurl_usr(apiurl)
