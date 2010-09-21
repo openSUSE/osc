@@ -894,7 +894,7 @@ class Osc(cmdln.Cmdln):
                 sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                          'Please provide it the target via commandline arguments.' % p.name)
 
-            modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
+            modified = [i for i in p.filenamelist if not p.status(i) in (' ', '?', 'S')]
             if len(modified) > 0:
                 print 'Your working copy has local modifications.'
                 repl = raw_input('Proceed without committing the local changes? (y|N) ')
