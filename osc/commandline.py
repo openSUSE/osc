@@ -4654,6 +4654,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='destination directory')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
+    @cmdln.option('--debug', action="store_true",
+                  help='also fetch debug packages')
     def do_getbinaries(self, subcmd, opts, *args):
         """${cmd_name}: Download binaries to a local directory
 
@@ -4729,8 +4731,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 for i in binaries:
                     # skip source rpms
-                    if not opts.sources and i.name.endswith('.src.rpm'):
-                        continue
+                    if not opts.sources:
+                        if i.name.endswith('.src.rpm'):
+                           continue
+                        if i.name.find('-debugsource-') >= 0:
+                           continue
+                    if not opts.debug:
+                        if i.name.find('-debuginfo-') >= 0:
+                           continue
                     fname = '%s/%s' % (target_dir, i.name)
                     if os.path.exists(fname):
                         st = os.stat(fname)
