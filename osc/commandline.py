@@ -4733,12 +4733,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # skip source rpms
                     if not opts.sources:
                         if i.name.endswith('.src.rpm'):
-                           continue
+                            continue
                         if i.name.find('-debugsource-') >= 0:
-                           continue
+                            continue
                     if not opts.debug:
                         if i.name.find('-debuginfo-') >= 0:
-                           continue
+                            continue
                     fname = '%s/%s' % (target_dir, i.name)
                     if os.path.exists(fname):
                         st = os.stat(fname)
