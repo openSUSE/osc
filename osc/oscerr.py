@@ -84,8 +84,9 @@ class PackageError(OscBaseError):
 
 class WorkingCopyInconsistent(PackageError):
     """Exception raised when the working copy is in an inconsistent state"""
-    def __init__(self, prj, pac, msg):
+    def __init__(self, prj, pac, dirty_files, msg):
         PackageError.__init__(self, prj, pac)
+        self.dirty_files = dirty_files
         self.msg = msg
 
 class LinkExpandError(PackageError):

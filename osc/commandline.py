@@ -6043,12 +6043,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print >>sys.stderr, '\'%s\' is neither a project working copy ' \
                     'nor a package working copy' % i
-        for i in pacs:
+        cp = conf.get_configParser(conf.config['conffile'])
+        apiurls = [i.rstrip('/') for i in cp.sections() if i != 'general']
+        for pdir in pacs:
             try:
-                p = Package(i)
-            except oscerr.WorkingCopyInconsistent:
-                p = Package(i, wc_check=False)
-                p.wc_repair()
+                p = Package(pdir)
+            except oscerr.WorkingCopyInconsistent, e:
+                apiurl = None
+                if '_apiurl' in e.dirty_files:
+                    print 'No apiurl is defined for this package.\n' \
+                        'Please choose one from the following list (enter the number):'
+                    for i in range(len(apiurls)):
+                        print ' %d) %s' % (i, apiurls[i])
+                    num = raw_input('> ')
+                    try:
+                        num = int(num)
+                    except ValueError:
+                        raise oscerr.WrongArgs('\'%s\' is not a number. Aborting' % num)
+                    if num < 0 or num >= len(apiurls):
+                        raise oscerr.WrongArgs('number \'%s\' out of range. Aborting' % num)
+                    apiurl = apiurls[num]
+                p = Package(pdir, wc_check=False)
+                p.wc_repair(apiurl)
                 print 'done. Please check the state of the wc (via \'osc status %s\').' % i
             else:
                 print >>sys.stderr, 'osc: working copy \'%s\' is not inconsistent' % i

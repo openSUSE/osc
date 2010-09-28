@@ -810,43 +810,54 @@ class Package:
 
         self.prjname = store_read_project(self.dir)
         self.name = store_read_package(self.dir)
-        self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
+        self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
 
         self.update_datastructs()
-        if wc_check and self.wc_check():
+        dirty_files = []
+        if wc_check:
+            dirty_files = self.wc_check()
+        if dirty_files:
             msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
                 'Please run \'osc repairwc %s\' (Note this might _remove_\n' \
                 'files from the .osc/ dir). Please check the state\n' \
                 'of the working copy afterwards (via \'osc status %s\')' % (self.dir, self.dir, self.dir)
-            raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, msg)
+            raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, dirty_files, msg)
 
         self.todo = []
 
     def wc_check(self):
-        dirty = False
+        dirty_files = []
         for fname in self.filenamelist:
             if not os.path.exists(os.path.join(self.storedir, fname)) and not fname in self.skipped:
-                dirty = True
+                dirty_files.append(fname)
         for fname in Package.REQ_STOREFILES:
             if not os.path.isfile(os.path.join(self.storedir, fname)):
-                dirty = True
+                dirty_files.append(fname)
         for fname in os.listdir(self.storedir):
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
                 fname.startswith('_build'):
                 continue
             elif fname in self.filenamelist and fname in self.skipped:
-                dirty = True
+                dirty_files.append(fname)
             elif not fname in self.filenamelist:
-                dirty = True
+                dirty_files.append(fname)
         for fname in self.to_be_deleted[:]:
             if not fname in self.filenamelist:
-                dirty = True
+                dirty_files.append(fname)
         for fname in self.in_conflict[:]:
             if not fname in self.filenamelist:
-                dirty = True
-        return dirty
+                dirty_files.append(fname)
+        return dirty_files
 
-    def wc_repair(self):
+    def wc_repair(self, apiurl=None):
+        if not os.path.exists(os.path.join(self.storedir, '_apiurl')):
+            if apiurl is None:
+                msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
+                    'no \'apiurl\' was passed to wc_repair'
+                # hmm should we raise oscerr.WrongArgs?
+                raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
+            store_write_apiurl(self.dir, apiurl)
+            self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
             # XXX: should we also check the md5?
@@ -4689,7 +4700,13 @@ def store_read_apiurl(dir, defaulturl=True):
         # (former osc versions may stored an apiurl with a trailing slash etc.)
         apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
     except:
-        if not defaulturl:
+        if not defaulturl and is_package_dir(dir):
+            msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
+                'Please run \'osc repairwc %s\' (Note this might _remove_\n' \
+                'files from the .osc/ dir). Please check the state\n' \
+                'of the working copy afterwards (via \'osc status %s\')' % (dir, dir, dir)
+            raise oscerr.WorkingCopyInconsistent(store_read_project(dir), store_read_package(dir), ['_apiurl'], msg)
+        elif not defaulturl:
             msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
             raise oscerr.NoWorkingCopy(msg)
         apiurl = conf.config['apiurl']
