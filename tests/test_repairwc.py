@@ -10,8 +10,6 @@ def suite():
     import unittest
     return unittest.makeSuite(TestRepairWC)
 
-rev_dummy = '<revision rev="repository">\n  <srcmd5>empty</srcmd5>\n</revision>'
-
 class TestRepairWC(OscTestCase):
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
@@ -183,6 +181,23 @@ class TestRepairWC(OscTestCase):
         self._check_status(p, 'toadd1', '?')
         # additional cleanup check
         self.__assertNotRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
+
+    def test_noapiurl(self):
+        """the package wc has no _apiurl file"""
+        self._change_to_pkg('noapiurl')
+        p = osc.core.Package('.', wc_check=False)
+        p.wc_repair('http://localhost')
+        self.assertTrue(os.path.exists(os.path.join('.osc', '_apiurl')))
+        self.assertEqual(open(os.path.join('.osc', '_apiurl')).read(), 'http://localhost\n')
+        self.assertEqual(p.apiurl, 'http://localhost')
+
+    def test_noapiurlNotExistingApiurl(self):
+        """the package wc has no _apiurl file and no apiurl is passed to repairwc"""
+        self._change_to_pkg('noapiurl')
+        self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
+        p = osc.core.Package('.', wc_check=False)
+        self.assertRaises(osc.oscerr.WorkingCopyInconsistent, p.wc_repair)
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_apiurl')))
 
 if __name__ == '__main__':
     import unittest
