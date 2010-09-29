@@ -4838,20 +4838,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.all:
             role_filter = ''
 
-        res = get_user_projpkgs(apiurl, user, role_filter,
-                                exclude_projects, what.has_key('project'), what.has_key('package'), opts.maintained)
+        res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
+                                what.has_key('project'), what.has_key('package'),
+                                opts.maintained, opts.verbose)
         request_todo = {}
         roles = {}
         if len(what.keys()) == 2:
-            for i in res['project_id'].findall('project'):
+            for i in res.get('project_id', res.get('project', {})).findall('project'):
                 request_todo[i.get('name')] = []
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
-            for i in res['package_id'].findall('package'):
+            for i in res.get('package_id', res.get('package', {})).findall('package'):
                 roles['/'.join([i.get('project'), i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
                 if not i.get('project') in request_todo.keys():
                     request_todo.setdefault(i.get('project'), []).append(i.get('name'))
         else:
-            for i in res['project_id'].findall('project'):
+            for i in res.get('project_id', res.get('project', {})).findall('project'):
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:

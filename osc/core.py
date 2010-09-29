@@ -5560,7 +5560,7 @@ def request_interactive_review(apiurl, request):
         if tmpfile is not None:
             tmpfile.close()
 
-def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True, maintained=False):
+def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True, maintained=False, metadata=False):
     """Return all project/packages where user is involved."""
     xpath = 'person/@userid = \'%s\'' % user
     excl_prj = ''
@@ -5579,9 +5579,15 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
 
     what = {}
     if pkg:
-        what['package_id'] = xpath_pkg
+        if metadata:
+            what['package'] = xpath_pkg
+        else:
+            what['package_id'] = xpath_pkg
     if proj:
-        what['project_id'] = xpath_prj
+        if metadata:
+            what['project'] = xpath_prj
+        else:
+            what['project_id'] = xpath_prj
     try:
         res = search(apiurl, **what)
     except urllib2.HTTPError, e:
