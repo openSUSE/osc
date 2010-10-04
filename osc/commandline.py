@@ -3837,43 +3837,43 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         and ARCH defaults to your host architecture.
 
         usage:
-            osc buildinfo [BUILD_DESCR]                    (in pkg dir)
-            osc buildinfo REPOSITORY ARCH [BUILD_DESCR]    (in pkg dir)
-            osc buildinfo PROJECT PACKAGE REPOSITORY ARCH [BUILD_DESCR]
+            in a package working copy:
+                osc buildinfo [OPTS] REPOSITORY ARCH BUILD_DESCR
+                osc buildinfo [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
+                osc buildinfo [OPTS] ARCH (REPOSITORY = build_repository (config option), BUILD_DESCR is detected automatically)
+                osc buildinfo [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
+                osc buildinfo [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
+                Note: if BUILD_DESCR does not exist locally the remote BUILD_DESCR is used
+
+            osc buildinfo [OPTS] PROJECT PACKAGE REPOSITORY ARCH [BUILD_DESCR]
 
         ${cmd_option_list}
         """
         wd = os.curdir
         args = slash_split(args)
 
-        if (len(args) == 0 or len(args) == 1) and is_package_dir('.'):
-            package = store_read_package(wd)
-            project = store_read_project(wd)
-            repository = conf.config['build_repository']
-            import osc.build
-            arch = osc.build.hostarch
-        elif len(args) == 2 or len(args) == 3:
-            package = store_read_package(wd)
-            project = store_read_project(wd)
-            repository = args[0]
-            arch = args[1]
+        project = package = repository = arch = build_descr = None
+        if len(args) <= 3:
+            if not is_package_dir('.'):
+                raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
+            project = store_read_project('.')
+            package = store_read_package('.')
+            repository, arch, build_descr = self.parse_repoarchdescr(args, ignore_descr=True)
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
             package = args[1]
             repository = args[2]
             arch = args[3]
-            # for following specfile detection ...
-            del args[0]
-            del args[0]
+            if len(args) == 5:
+                build_descr = args[4]
         else:
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = self.get_api_url()
 
         build_descr_data = None
-        if len(args) % 2 == 1: # odd number of args, means last is BUILD_DESCR
-            with open(args[len(args) - 1]) as f:
-                build_descr_data = f.read()
+        if not build_descr is None:
+            build_descr_data = open(build_descr, 'r').read()
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
@@ -3984,7 +3984,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print row
 
 
-    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None):
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
@@ -4061,7 +4061,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         arg_descr = spec
                 if not arg_descr:
                     msg = 'Multiple build description files found: %s' % ', '.join(descr)
-            else:
+            elif not ignore_descr:
                 msg = 'Missing argument: build description (spec, dsc or kiwi file)'
                 try:
                     p = Package('.')
