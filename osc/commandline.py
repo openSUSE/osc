@@ -5264,10 +5264,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc bugowner PRJ
             osc bugowner PRJ PKG
 
-        Shortcut for osc maintainer -B [PRJ] PKG
-
-        PRJ defaults to '%(getpac_default_project)s'.
+        PRJ and PKG default to current working-copy path.
         Prints bugowner if defined, or maintainer otherwise.
+
+            Shortcut for osc maintainer -B [PRJ] PKG
 
         ${cmd_option_list}
         """
@@ -5307,17 +5307,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
 
-        To be used like this:
-
             osc maintainer PRJ <options>
-        or
             osc maintainer PRJ PKG <options>
+    
+        PRJ and PKG default to current working-copy path.
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
         pac = None
+        prj = None
         root = None
         roles = [ 'bugowner', 'maintainer' ]
         if len(opts.role):
@@ -5325,7 +5325,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.bugowner_only or opts.bugowner:
             roles = [ 'bugowner' ]
 
-        if len(args) == 1:
+        if len(args) == 0:
+            try:
+                pac = store_read_package('.')
+            except oscerr.NoWorkingCopy:
+                pass
+            prj = store_read_project('.')
+        elif len(args) == 1:
             prj = args[0]
         elif len(args) == 2:
             prj = args[0]
