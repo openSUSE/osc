@@ -4521,6 +4521,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
                 apiurl = store_read_apiurl(os.curdir)
+            elif is_project_dir(os.curdir):
+                project = store_read_project(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
