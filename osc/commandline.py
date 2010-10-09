@@ -189,7 +189,7 @@ class Osc(cmdln.Cmdln):
         apiurl = self.get_api_url()
 
         if not package:
-            init_project_dir(apiurl, os.curdir, project)
+            Project.init_project(apiurl, os.curdir, project, conf.config['do_package_tracking'])
             print 'Initializing %s (Project: %s)' % (os.curdir, project)
         else:
             Package.init_package(apiurl, project, package, os.curdir)
@@ -2233,7 +2233,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print "Project " + r + " created."
 
         if opts.checkout:
-            init_project_dir(apiurl, r, r)
+            Project.init_project(apiurl, r, r, conf.config['do_package_tracking'])
             print statfrmt('A', r)
 
             # all packages
@@ -2769,7 +2769,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # check if the project does exist (show_project_meta will throw an exception)
             show_project_meta(apiurl, project)
 
-            init_project_dir(apiurl, prj_dir, project)
+            Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'])
             print statfrmt('A', prj_dir)
 
             # all packages

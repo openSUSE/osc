@@ -784,6 +784,24 @@ class Project:
         r.append('*****************************************************')
         return '\n'.join(r)
 
+    @staticmethod
+    def init_project(apiurl, dir, project, package_tracking=True):
+        global store
+
+        if not os.path.exists(dir):
+            # use makedirs (checkout_no_colon config option might be enabled)
+            os.makedirs(dir)
+        elif not os.path.isdir(dir):
+            raise oscerr.OscIOError(None, 'error: \'%s\' is no directory' % dir)
+        if os.path.exists(os.path.join(dir, store)):
+            raise oscerr.OscIOError(None, 'error: \'%s\' is already an initialized osc working copy' % dir)
+        else:
+            os.mkdir(os.path.join(dir, store))
+
+        store_write_project(dir, project)
+        store_write_apiurl(dir, apiurl)
+        if package_tracking:
+            store_write_initial_packages(dir, project, [])
 
 
 class Package:
@@ -2598,23 +2616,6 @@ def http_PUT(*args, **kwargs):    return http_request('PUT', *args, **kwargs)
 def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 
 
-def init_project_dir(apiurl, dir, project):
-    global store
-
-    if not os.path.exists(dir):
-        if conf.config['checkout_no_colon']:
-            os.makedirs(dir)      # helpful with checkout_no_colon
-        else:
-            os.mkdir(dir)
-    if not os.path.exists(os.path.join(dir, store)):
-        os.mkdir(os.path.join(dir, store))
-
-    # print 'project=',project,'  dir=',dir
-    store_write_project(dir, project)
-    store_write_apiurl(dir, apiurl)
-    if conf.config['do_package_tracking']:
-        store_write_initial_packages(dir, project, [])
-
 def check_store_version(dir):
     global store
 
@@ -3625,7 +3626,7 @@ def request_diff(apiurl, reqid):
     return f.read()
 
 
-def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
+def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_tracking=True):
     """
     creates the plain directory structure for a package dir.
     The 'apiurl' parameter is needed for the project dir initialization.
@@ -3652,7 +3653,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None):
         # this directory could exist as a parent direory for one of our earlier
         # checked out sub-projects. in this case, we still need to initialize it.
         print statfrmt('A', prj_dir)
-        init_project_dir(apiurl, prj_dir, project)
+        Project.init_project(apiurl, prj_dir, project, package_tracking)
 
     if is_project_dir(os.path.join(prj_dir, package)):
         # the thing exists, but is a project directory and not a package directory
@@ -3706,7 +3707,7 @@ def checkout_package(apiurl, project, package,
                 isfrozen = True
         if x:
             revision = x
-    directory = make_dir(apiurl, project, package, pathname, prj_dir)
+    directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'])
     p = Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj)
     if isfrozen:
         p.mark_frozen()
