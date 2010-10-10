@@ -414,14 +414,26 @@ def xmlindent(elem, level=0):
 
 class Project:
     """represent a project directory, holding packages"""
-    def __init__(self, dir, getPackageList=True, progress_obj=None):
+    REQ_STOREFILES = ('_project', '_apiurl')
+    if conf.config['do_package_tracking']:
+        REQ_STOREFILES += ('_packages',)
+    def __init__(self, dir, getPackageList=True, progress_obj=None, wc_check=True):
         import fnmatch
         self.dir = dir
         self.absdir = os.path.abspath(dir)
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
-        self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
+        self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
+
+        dirty_files = []
+        if wc_check:
+            dirty_files = self.wc_check()
+        if dirty_files:
+            msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
+                'Please run \'osc repairwc %s\' and check the state\n' \
+                'of the working copy afterwards (via \'osc status %s\')' % (self.dir, self.dir, self.dir)
+            raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, dirty_files, msg)
 
         if getPackageList:
             self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
@@ -447,6 +459,25 @@ class Project:
             self.pacs_have = [ i for i in os.listdir(self.dir) if i in self.pacs_available ]
 
         self.pacs_missing = [ i for i in self.pacs_available if i not in self.pacs_have ]
+
+    def wc_check(self):
+        global store
+        dirty_files = []
+        for fname in Project.REQ_STOREFILES:
+            if not os.path.exists(os.path.join(self.absdir, store, fname)):
+                dirty_files.append(fname)
+        return dirty_files
+
+    def wc_repair(self, apiurl=None):
+        global store
+        if not os.path.exists(os.path.join(self.dir, store, '_apiurl')):
+            if apiurl is None:
+                msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
+                    'no \'apiurl\' was passed to wc_repair'
+                # hmm should we raise oscerr.WrongArgs?
+                raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
+            store_write_apiurl(self.dir, apiurl)
+            self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
     def checkout_missing_pacs(self, expand_link=False):
         for pac in self.pacs_missing:
@@ -4701,15 +4732,21 @@ def store_read_apiurl(dir, defaulturl=True):
         # (former osc versions may stored an apiurl with a trailing slash etc.)
         apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
     except:
-        if not defaulturl and is_package_dir(dir):
+        if not defaulturl:
+            if is_project_dir(dir):
+                project = store_read_project(dir)
+                package = None
+            elif is_package_dir(dir):
+                project = store_read_project(dir)
+                package = None
+            else:
+                msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
+                raise oscerr.NoWorkingCopy(msg)
             msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
                 'Please run \'osc repairwc %s\' (Note this might _remove_\n' \
                 'files from the .osc/ dir). Please check the state\n' \
                 'of the working copy afterwards (via \'osc status %s\')' % (dir, dir, dir)
-            raise oscerr.WorkingCopyInconsistent(store_read_project(dir), store_read_package(dir), ['_apiurl'], msg)
-        elif not defaulturl:
-            msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
-            raise oscerr.NoWorkingCopy(msg)
+            raise oscerr.WorkingCopyInconsistent(project, package, ['_apiurl'], msg)
         apiurl = conf.config['apiurl']
     return apiurl
 

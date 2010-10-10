@@ -6041,11 +6041,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        def get_apiurl(apiurls):
+            print 'No apiurl is defined for this working copy.\n' \
+                'Please choose one from the following list (enter the number):'
+            for i in range(len(apiurls)):
+                print ' %d) %s' % (i, apiurls[i])
+            num = raw_input('> ')
+            try:
+                num = int(num)
+            except ValueError:
+                raise oscerr.WrongArgs('\'%s\' is not a number. Aborting' % num)
+            if num < 0 or num >= len(apiurls):
+                raise oscerr.WrongArgs('number \'%s\' out of range. Aborting' % num)
+            return apiurls[num]
+
         args = parseargs(args)
         pacs = []
+        cp = conf.get_configParser(conf.config['conffile'])
+        apiurls = [i.rstrip('/') for i in cp.sections() if i != 'general']
         for i in args:
             if is_project_dir(i):
-                prj = Project(i, getPackageList=False)
+                try:
+                    prj = Project(i, getPackageList=False)
+                except oscerr.WorkingCopyInconsistent, e:
+                    apiurl = None
+                    if '_apiurl' in e.dirty_files:
+                        apiurl = get_apiurl(apiurls)
+                    prj = Project(i, getPackageList=False, wc_check=False)
+                    prj.wc_repair(apiurl)
                 for p in prj.pacs_have:
                     if p in prj.pacs_broken:
                         continue
@@ -6058,26 +6081,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print >>sys.stderr, '\'%s\' is neither a project working copy ' \
                     'nor a package working copy' % i
-        cp = conf.get_configParser(conf.config['conffile'])
-        apiurls = [i.rstrip('/') for i in cp.sections() if i != 'general']
         for pdir in pacs:
             try:
                 p = Package(pdir)
             except oscerr.WorkingCopyInconsistent, e:
                 apiurl = None
                 if '_apiurl' in e.dirty_files:
-                    print 'No apiurl is defined for this package.\n' \
-                        'Please choose one from the following list (enter the number):'
-                    for i in range(len(apiurls)):
-                        print ' %d) %s' % (i, apiurls[i])
-                    num = raw_input('> ')
-                    try:
-                        num = int(num)
-                    except ValueError:
-                        raise oscerr.WrongArgs('\'%s\' is not a number. Aborting' % num)
-                    if num < 0 or num >= len(apiurls):
-                        raise oscerr.WrongArgs('number \'%s\' out of range. Aborting' % num)
-                    apiurl = apiurls[num]
+                    apiurl = get_apiurl(apiurls)
                 p = Package(pdir, wc_check=False)
                 p.wc_repair(apiurl)
                 print 'done. Please check the state of the wc (via \'osc status %s\').' % i
