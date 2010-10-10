@@ -199,6 +199,19 @@ class TestRepairWC(OscTestCase):
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, p.wc_repair)
         self.assertFalse(os.path.exists(os.path.join('.osc', '_apiurl')))
 
+    def test_project_noapiurl(self):
+        """the project wc has no _apiurl file"""
+        import shutil
+        prj_dir = os.path.join(self.tmpdir, 'prj_noapiurl')
+        shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_noapiurl'), prj_dir)
+        storedir = os.path.join(prj_dir, osc.core.store)
+        self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Project, prj_dir, getPackageList=False)
+        prj = osc.core.Project(prj_dir, wc_check=False, getPackageList=False)
+        prj.wc_repair('http://localhost')
+        self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
+        self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
+        self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
