@@ -1604,7 +1604,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc review add [-U USER] [-G GROUP] ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
-            osc review new [-m TEXT] ID            # for setting a temporary comment without changing the state
             osc my sr                              # for submit requests I made
             osc my rq                              # for requests for my packages/projects
 
@@ -1639,7 +1638,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
-        cmds = [ 'list', 'add', 'decline', 'accept', 'new' ]
+        cmds = [ 'list', 'add', 'decline', 'accept' ]
         if subcmd == 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown review action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
