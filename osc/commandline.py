@@ -1601,7 +1601,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request clone [-m TEXT] ID
 
             osc review list [-U USER] [-G GROUP] [-s state]
-            osc review add [-U USER] [-G GROUP] ID
+            osc review add [-m TEXT] [-U USER] [-G GROUP] ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
             osc my sr                              # for submit requests I made
@@ -1691,6 +1691,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.group:
                 query['by_group'] = opts.group
             url = makeurl(apiurl, ['request', reqid], query)
+            if not opts.message:
+                opts.message = edit_message()
             r = http_POST(url, data=opts.message)
             print r.read()
 
