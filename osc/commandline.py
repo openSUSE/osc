@@ -1647,6 +1647,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         cmd = args[0]
         del args[0]
 
+        apiurl = self.get_api_url()
+
         if cmd in ['list']:
             min_args, max_args = 0, 2
         else:
@@ -1656,9 +1658,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
         if cmd in ['add'] and not opts.user and not opts.group:
-            raise oscerr.WrongArgs('Need either a user or group as reviewer')
-
-        apiurl = self.get_api_url()
+            opts.user = conf.get_apiurl_usr(apiurl)
 
         if cmd == 'list' or cmd == 'approvenew':
             package = None
