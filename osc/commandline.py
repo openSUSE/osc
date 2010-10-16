@@ -5990,6 +5990,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-d', '--delete', action='store_true',
                         help='delete option from config or reset option to the default)')
+    @cmdln.option('-s', '--stdin', action='store_true',
+                        help='indicates that the config value should be read from stdin')
+    @cmdln.option('-p', '--prompt', action='store_true',
+                        help='prompt for a value')
+    @cmdln.option('--no-echo', action='store_true',
+                        help='prompt for a value but do not echo entered characters')
     def do_config(self, subcmd, opts, section, opt, *val):
         """${cmd_name}: get/set a config option
 
@@ -5997,13 +6003,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc config section option (get current value)
             osc config section option value (set to value)
             osc config section option --delete (delete option/reset to the default)
-            (section is either an apiurl or an alias or 'generic')
+            (section is either an apiurl or an alias or 'general')
 
         ${cmd_usage}
         ${cmd_option_list}
         """
-        if len(val) and opts.delete:
-            raise oscerr.WrongOptions('Sorry, --delete and the specification of a value argument are mutually exclusive')
+        if len(val) and (opts.delete or opts.stdin or opts.prompt or opts.no_echo):
+            raise oscerr.WrongOptions('Sorry, \'--delete\' or \'--stdin\' or \'--prompt\' or \'--no-echo\' ' \
+                'and the specification of a value argument are mutually exclusive')
+        elif (opts.prompt or opts.no_echo) and opts.stdin:
+            raise oscerr.WrongOptions('Sorry, \'--prompt\' or \'--no-echo\' and  \'--stdin\' are mutually exclusive')
+        elif opts.stdin:
+            # strip lines
+            val = [i.strip() for i in sys.stdin.readlines() if i.strip()]
+            if not len(val):
+                raise oscerr.WrongArgs('error: read empty value from stdin')
+        elif opts.no_echo or opts.prompt:
+            if opts.no_echo:
+                import getpass
+                inp = getpass.getpass('Value: ').strip()
+            else:
+                inp = raw_input('Value: ').strip()
+            if not inp:
+                raise oscerr.WrongArgs('error: no value was entered')
+            val = [inp]
         opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=False)
         if newval is None and opts.delete:
             print '\'%s\': \'%s\' got removed' % (section, opt)
