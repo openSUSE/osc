@@ -6033,7 +6033,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif newval is None:
             print '\'%s\': \'%s\' is not set' % (section, opt)
         else:
-            print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
+            if opts.no_echo:
+                # supress value
+                print '\'%s\': set \'%s\'' % (section, opt)
+            else:
+                print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
 
     def do_revert(self, subcmd, opts, *files):
         """${cmd_name}: restore original wc file
