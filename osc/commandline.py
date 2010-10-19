@@ -2571,6 +2571,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              'If rev is negative this is like -r rev:rev-1.')
     @cmdln.option('--missingok', action='store_true',
                         help='do not fail if the source or target project/package does not exist on the server')
+    @cmdln.option('-u', '--unexpand', action='store_true',
+                        help='diff unexpanded version if sources are linked')
     def do_rdiff(self, subcmd, opts, *args):
         """${cmd_name}: Server-side "pretty" diff of two packages
 
@@ -2638,9 +2640,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.revision:
                 rev1, rev2 = parseRevisionOption(opts.revision)
 
-        rdiff = server_diff(apiurl,
-                            old_project, old_package, rev1,
-                            new_project, new_package, rev2, not opts.plain, opts.missingok)
+        try:
+            rdiff = server_diff(apiurl,
+                                old_project, old_package, rev1,
+                                new_project, new_package, rev2, not opts.plain, opts.missingok,
+                                expand=not opts.unexpand)
+        except urllib2.HTTPError, e:
+            if opts.unexpand or not e.code in [ 400, 403, 404, 500 ]:
+                raise
+
+            msg = None
+            body = None
+            try:
+                body = e.read()
+                if not 'bad link' in body:
+                    raise e
+            except:
+                raise e
+
+            rdiff =  "## diff on expanded link not possible, showing unexpanded version\n"
+            rdiff += server_diff(apiurl,
+                                old_project, old_package, rev1,
+                                new_project, new_package, rev2, not opts.plain, opts.missingok,
+                                expand=False)
         run_pager(rdiff)
 
     @cmdln.hide(1)

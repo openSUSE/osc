@@ -3670,8 +3670,10 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision, unified=False, missingok=False, meta=False):
-    query = {'cmd': 'diff', 'expand': '1'}
+                new_project, new_package, new_revision, unified=False, missingok=False, meta=False, expand=True):
+    query = {'cmd': 'diff'}
+    if expand:
+        query['expand'] = 1
     if old_project:
         query['oproject'] = old_project
     if old_package:
