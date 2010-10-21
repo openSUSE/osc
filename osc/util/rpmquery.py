@@ -71,7 +71,7 @@ class RpmQuery(packagequery.PackageQuery):
         data = self.__file.read(RpmHeaderEntry.ENTRY_SIZE)
         hdrmgc, reserved, il, dl = struct.unpack('!I3i', data)
         if self.HEADER_MAGIC != hdrmgc:
-            raise RpmHeaderError('invalid headermagic \'%s\'' % hdrmgc)
+            raise RpmHeaderError(self.__path, 'invalid headermagic \'%s\'' % hdrmgc)
         # skip signature header for now
         size = il * RpmHeaderEntry.ENTRY_SIZE + dl
         # data is 8 byte aligned
@@ -81,7 +81,7 @@ class RpmQuery(packagequery.PackageQuery):
         hdrmgc, reserved, il, dl = struct.unpack('!I3i', data)
         self.header = RpmHeader(pad, dl)
         if self.HEADER_MAGIC != hdrmgc:
-            raise RpmHeaderError('invalid headermagic \'%s\'' % hdrmgc)
+            raise RpmHeaderError(self.__path, 'invalid headermagic \'%s\'' % hdrmgc)
         data = self.__file.read(il * RpmHeaderEntry.ENTRY_SIZE)
         while len(data) > 0:
             ei = struct.unpack('!4i', data[:RpmHeaderEntry.ENTRY_SIZE])
@@ -98,10 +98,10 @@ class RpmQuery(packagequery.PackageQuery):
         data = self.__file.read(self.LEAD_SIZE)
         leadmgc, = struct.unpack('!I', data[:4])
         if leadmgc != self.LEAD_MAGIC:
-            raise RpmError('invalid lead magic \'%s\'' % leadmgc)
+            raise RpmError(self.__path, 'invalid lead magic \'%s\'' % leadmgc)
         sigtype, = struct.unpack('!h', data[78:80])
         if sigtype != self.HEADERSIG_TYPE:
-            raise RpmError('invalid header signature \'%s\'' % sigtype)
+            raise RpmError(self.__path, 'invalid header signature \'%s\'' % sigtype)
 
     def __read_data(self, entry, data):
         off = entry.offset
@@ -144,14 +144,14 @@ class RpmQuery(packagequery.PackageQuery):
                 cnt += 1
             entry.data = entry.data[0]
         else:
-            raise RpmHeaderError('unsupported tag type \'%d\' (tag: \'%s\'' % (entry.type, entry.tag))
+            raise RpmHeaderError(self.__path, 'unsupported tag type \'%d\' (tag: \'%s\'' % (entry.type, entry.tag))
 
     def __reqprov(self, tag, flags, version):
         pnames = self.header.gettag(tag).data
         pflags = self.header.gettag(flags).data
         pvers = self.header.gettag(version).data
         if not (pnames and pflags and pvers):
-            raise RpmError('cannot get provides/requires, tags are missing')
+            raise RpmError(self.__path, 'cannot get provides/requires, tags are missing')
         res = []
         for name, flags, ver in zip(pnames, pflags, pvers):
             # RPMSENSE_SENSEMASK = 15 (see rpmlib.h) but ignore RPMSENSE_SERIAL (= 1 << 0) therefore use 14

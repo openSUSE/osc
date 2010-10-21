@@ -23,18 +23,18 @@ class DebQuery(packagequery.PackageQuery):
         arfile.read()
         debbin = arfile.get_file('debian-binary')
         if debbin is None:
-            raise DebError('no debian binary')
+            raise DebError(self.__path, 'no debian binary')
         if debbin.read() != '2.0\n':
-            raise DebError('invalid debian binary format')
+            raise DebError(self.__path, 'invalid debian binary format')
         control = arfile.get_file('control.tar.gz')
         if control is None:
-            raise DebError('missing control.tar.gz')
+            raise DebError(self.__path, 'missing control.tar.gz')
         # XXX: python24 relies on a name
         tar = tarfile.open(name = 'control.tar.gz', fileobj = control)
         try:
             control = tar.extractfile('./control')
         except KeyError:
-            raise DebError('missing \'control\' file in control.tar.gz')
+            raise DebError(self.__path, 'missing \'control\' file in control.tar.gz')
         self.__parse_control(control, all_tags, *extra_tags)
 
     def __parse_control(self, control, all_tags = False, *extra_tags):

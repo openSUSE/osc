@@ -1,7 +1,8 @@
 class PackageError(Exception):
     """base class for all package related errors"""
-    def __init__(self, msg):
+    def __init__(self, fname, msg):
         Exception.__init__(self)
+        self.fname = fname
         self.msg = msg
 
 class PackageQueries(dict):
