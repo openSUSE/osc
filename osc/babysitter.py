@@ -165,6 +165,10 @@ def run(prg):
         print >>sys.stderr, e.msg
         return 1
 
+    except PackageError, e:
+        print >>sys.stderr, '%s:' % e.fname, e.msg
+        return 1
+
     except RPMError, e:
         print >>sys.stderr, e
         return 1
