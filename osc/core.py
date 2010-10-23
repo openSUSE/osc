@@ -4265,7 +4265,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                 res['status'] += ': %s' % (res['details'], )
         if res['dirty']:
             if verbose:
-                res['status'] = 'state is outdated (was: %s)' % res['status']
+                res['status'] = 'outdated (was: %s)' % res['status']
             else:
                 res['status'] += '*'
 
