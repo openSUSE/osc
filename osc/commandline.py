@@ -1679,10 +1679,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # clone all packages from a given request
         if cmd in ['clone']:
-            query = { 'cmd': 'branch', 'request': reqid }
-            url = makeurl(apiurl, ['source'], query)
-            r = http_POST(url, data=opts.message)
-            print r.read()
+            # should we force a message?
+            print clone_request(apiurl, reqid, opts.message)
 
         # add new reviewer to existing request
         elif cmd in ['add'] and subcmd == 'review':

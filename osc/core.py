@@ -3241,6 +3241,11 @@ def create_change_devel_request(apiurl,
     root = ET.parse(f).getroot()
     return root.get('id')
 
+def clone_request(apiurl, reqid, msg=None):
+    query = {'cmd': 'branch', 'request': reqid}
+    url = makeurl(apiurl, ['source'], query)
+    r = http_POST(url, data=msg)
+    return r.read()
 
 # This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
