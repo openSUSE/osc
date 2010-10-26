@@ -5534,7 +5534,7 @@ def request_interactive_review(apiurl, request):
             print request.__str__().encode('ascii', 'xmlcharrefreplace')
     print_request(request)
     try:
-        msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/(s)kip/(c)ancel > '
+        msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
         if request.actions[0].type == 'submit':
             msg = 'd(i)ff/%s' % msg
         while True:
@@ -5581,14 +5581,16 @@ def request_interactive_review(apiurl, request):
                 print '\n'.join(get_results(apiurl, request.actions[0].src_project, request.actions[0].src_package))
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
-                mo = re.search('^([adr])(?:\s+-m\s+(.*))?$', repl)
+                mo = re.search('^([adrl])(?:\s+-m\s+(.*))?$', repl)
                 if mo is None:
                     print >>sys.stderr, 'invalid choice: \'%s\'' % repl
                     continue
-                state = state_map[mo.group(1)]
+                state = state_map.get(mo.group(1))
                 msg = mo.group(2)
-                footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
-                    % (request.state.name, state)
+                footer = ''
+                if not state is None:
+                    footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
+                        % (request.state.name, state)
                 footer += str(request)
                 if tmpfile is not None:
                     tmpfile.seek(0)
@@ -5598,7 +5600,10 @@ def request_interactive_review(apiurl, request):
                     msg = edit_message(footer = footer)
                 else:
                     msg = msg.strip('\'').strip('"')
-                change_request_state(apiurl, str(request.reqid), state, msg)
+                if state is None:
+                    clone_request(apiurl, str(request.reqid), msg)
+                else:
+                    change_request_state(apiurl, str(request.reqid), state, msg)
                 break
     finally:
         if tmpfile is not None:
