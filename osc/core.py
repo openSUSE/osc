@@ -3620,8 +3620,9 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     d = list(d)
     # python2.7's difflib slightly changed the format
     # adapt old format to the new format
-    d[0] = d[0].replace(' \n', '\n')
-    d[1] = d[1].replace(' \n', '\n')
+    if len(d) > 1:
+        d[0] = d[0].replace(' \n', '\n')
+        d[1] = d[1].replace(' \n', '\n')
 
     # if file doesn't end with newline, we need to append one in the diff result
     for i, line in enumerate(d):
