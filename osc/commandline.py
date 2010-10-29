@@ -5756,6 +5756,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print statfrmt('D', name)
                     p.put_on_deletelist(name)
                     os.unlink(name)
+                elif md5_old == '':
+                    print statfrmt('A', name)
+                    self.download(name, md5_new, dir_new, name)
+                    p.put_on_addlist(name)
                 else:
                     print statfrmt('U', name)
                     self.download(name, md5_new, dir_new, name)
@@ -5790,6 +5794,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print statfrmt('?', name)
                 p.put_on_conflictlist(name)
         p.write_deletelist()
+        p.write_addlist()
         p.write_conflictlist()
         # store new linkrev
         store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5') + '\n')
