@@ -3873,8 +3873,14 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
         cicount = ''
 
     print 'Creating _link...',
+
+    # only include project if it is different
+    src_project_snippet=" project=\"%s\"" % (src_project)
+    if src_project == dst_project:
+        src_project_snippet = ""
+
     link_template = """\
-<link project="%s" package="%s" %s %s>
+<link%s package="%s" %s %s>
 <patches>
   <!-- <apply name="patch" /> apply a patch on the source directory  -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
@@ -3882,7 +3888,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
   <!-- <delete>filename</delete> delete a file -->
 </patches>
 </link>
-""" % (src_project, src_package, rev, cicount)
+""" % (src_project_snippet, src_package, rev, cicount)
 
     u = makeurl(apiurl, ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
