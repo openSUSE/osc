@@ -4492,7 +4492,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             p = Package(".")
             p.run_source_services()
 
-
+    @cmdln.option('-a', '--arch', metavar='ARCH',
+                        help='trigger rebuilds for a specific architecture')
+    @cmdln.option('-r', '--repo', metavar='REPO',
+                        help='trigger rebuilds for a specific repository')
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
     @cmdln.alias('rebuildpac')
@@ -4517,6 +4520,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         package = repo = arch = code = None
         apiurl = self.get_api_url()
+
+        if opts.repo:
+            repo = opts.repo
+
+        if opts.arch:
+            arch = opts.arch
 
         if len(args) < 1:
             if is_package_dir(os.curdir):
