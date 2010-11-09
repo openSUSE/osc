@@ -3328,9 +3328,9 @@ def get_review_list(apiurl, project='', package='', user='', group='', states=('
         for state in states:
             xpath = xpath_join(xpath, 'review/@state=\'%s\'' % state, inner=True)
     if user:
-        xpath = xpath_join(xpath, 'review/@by_user=\'%s\'\'' % user, op='and')
+        xpath = xpath_join(xpath, 'review/@by_user=\'%s\'' % user, op='and')
     if group:
-        xpath = xpath_join(xpath, 'review/@by_group=\'%s\'\'' % group, op='and')
+        xpath = xpath_join(xpath, 'review/@by_group=\'%s\'' % group, op='and')
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend
