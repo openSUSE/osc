@@ -2728,7 +2728,7 @@ def meta_get_project_list(apiurl, deleted=None):
     u = makeurl(apiurl, ['source'], query)
     f = http_GET(u)
     root = ET.parse(f).getroot()
-    return sorted([ node.get('name') for node in root ])
+    return sorted([ node.get('name') for node in root if node.get('name')])
 
 
 def show_project_meta(apiurl, prj):
