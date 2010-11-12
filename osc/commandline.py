@@ -4939,7 +4939,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc search \'search term\' <options>
             osc sm \'source package name\'      ('osc search --maintained')
             osc bse ...                         ('osc search --binary')
-            osc se ...
+            osc se 'perl(Foo::Bar)'             ('osc --package perl-Foo-Bar')
         ${cmd_option_list}
         """
         def build_xpath(attr, what, substr = False):
@@ -4947,6 +4947,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return 'contains(%s, \'%s\')' % (attr, what)
             else:
                 return '%s = \'%s\'' % (attr, what)
+
+        # support perl package names and symbols:
+        if re.match('^\w+(::\w+)+$', search_term):
+            search_term = 'perl-' + re.sub('::','-', search_term)
+            opts.package = True
+
+        if re.match('^perl\(\w+(::\w+)*\)$', search_term):
+            search_term = re.sub('\)','', re.sub('(::|\()','-', search_term))
+            opts.package = True
 
         if opts.mine:
             opts.bugowner = True
