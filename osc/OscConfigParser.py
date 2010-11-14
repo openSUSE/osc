@@ -248,7 +248,8 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                     if cursect == ConfigParser.DEFAULTSECT:
                         self._defaults[optname] = "%s\n%s" % (self._defaults[optname], value)
                     else:
-                        self._sections[cursect]._find(optname).value = '%s\n%s' % (self.get(cursect, optname), value)
+                        # use the raw value here (original version uses raw=False)
+                        self._sections[cursect]._find(optname).value = '%s\n%s' % (self.get(cursect, optname, raw=True), value)
             # a section header or option header?
             else:
                 # is it a section header?

@@ -260,10 +260,14 @@ apiurl = %(apiurl)s
 #submitrequest_on_accept_action = cleanup|update|noupdate
 
 # template for an accepted submitrequest
-#submitrequest_accepted_template = Hi %%(who)s,\\nthanks for working on %%(dst_project)s/%%(dst_package)s. SR %%(reqid)s has been accepted.\\n\\nYour maintainers
+#submitrequest_accepted_template = Hi %%(who)s,\\n
+# thanks for working on:\\t%%(dst_project)s/%%(dst_package)s.
+# SR %%(reqid)s has been accepted.\\n\\nYour maintainers
 
 # template for a declined submitrequest
-#submitrequest_declined_template = Hi %%(who)s,\\nsorry your SR %%(reqid)s for %%(dst_project)s/%%(dst_package)s has been declined because ...
+#submitrequest_declined_template = Hi %%(who)s,\\n
+# sorry your SR %%(reqid)s (request type: %%(type)s) for
+# %%(dst_project)s/%%(dst_package)s has been declined because...
 
 #review requests interactively (default: off)
 #request_show_review = 1
