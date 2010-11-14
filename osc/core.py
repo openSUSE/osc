@@ -2218,6 +2218,11 @@ class Request:
                                    dst_prj, dst_pkg, src_update, role_person, role_group, role)
                            )
 
+    def get_creator(self):
+        if len(self.statehistory):
+            return self.statehistory[-1].who
+        return self.state.who
+
     def list_view(self):
         ret = '%6d  State:%-7s By:%-12s When:%-12s' % (self.reqid, self.state.name, self.state.who, self.state.when)
 
@@ -3320,6 +3325,24 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=''):
         r = r.split('" />')[0]
 
     return r
+
+def change_request_state_template(req, newstate):
+    if not len(req.actions):
+        return ''
+    action = req.actions[0]
+    tmpl_name = '%srequest_%s_template' % (action.type, newstate)
+    tmpl = conf.config.get(tmpl_name, '')
+    tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')    
+    data = {'reqid': req.reqid, 'type': action.type, 'who': req.get_creator()}
+    if req.actions[0].type == 'submit':
+        data.update({'src_project': action.src_project,
+            'src_package': action.src_package, 'src_rev': action.src_rev,
+            'dst_project': action.dst_project, 'dst_package': action.dst_package})
+    try:
+        return tmpl % data
+    except KeyError, e:
+        print >>sys.stderr, 'error: cannot interpolate \'%s\' in \'%s\'' % (e.args[0], tmpl_name)
+        return ''
 
 def get_review_list(apiurl, project='', package='', user='', group='', states=('new')):
     xpath = ''
@@ -5598,7 +5621,10 @@ def request_interactive_review(apiurl, request):
                     # the read bytes probably have a moderate size so the str won't be too large
                     footer += '\n\n' + tmpfile.read()
                 if msg is None:
-                    msg = edit_message(footer = footer)
+                    tmpl = ''
+                    if not state is None:
+                        tmpl = change_request_state_template(request, state)
+                    msg = edit_message(footer = footer, template=tmpl)
                 else:
                     msg = msg.strip('\'').strip('"')
                 if state is None:

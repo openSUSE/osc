@@ -1858,7 +1858,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         raise oscerr.UserAbort()
                                             
                 if not opts.message:
-                    opts.message = edit_message()
+                    tmpl = change_request_state_template(rq, state_map[cmd])
+                    opts.message = edit_message(template=tmpl)
                 r = change_request_state(apiurl,
                         reqid, state_map[cmd], opts.message or '')
                 print 'Result of change request state: %s' % r

@@ -123,6 +123,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              # what to do with the source package if the submitrequest has been accepted
              'submitrequest_on_accept_action': '',
              'request_show_interactive': '0',
+             'submitrequest_accepted_template': '',
+             'submitrequest_declined_template': '',
              'linkcontrol': '0',
 
              # Maintenance defaults to OBS instance defaults
@@ -256,6 +258,12 @@ apiurl = %(apiurl)s
 # what to do with the source package if the submitrequest has been accepted. If
 # nothing is specified the API default is used
 #submitrequest_on_accept_action = cleanup|update|noupdate
+
+# template for an accepted submitrequest
+#submitrequest_accepted_template = Hi %%(who)s,\\nthanks for working on %%(dst_project)s/%%(dst_package)s. SR %%(reqid)s has been accepted.\\n\\nYour maintainers
+
+# template for a declined submitrequest
+#submitrequest_declined_template = Hi %%(who)s,\\nsorry your SR %%(reqid)s for %%(dst_project)s/%%(dst_package)s has been declined because ...
 
 #review requests interactively (default: off)
 #request_show_review = 1
