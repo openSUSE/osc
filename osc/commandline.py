@@ -6048,7 +6048,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not inp:
                 raise oscerr.WrongArgs('error: no value was entered')
             val = [inp]
-        opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=False)
+        opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=True)
         if newval is None and opts.delete:
             print '\'%s\': \'%s\' got removed' % (section, opt)
         elif newval is None:
@@ -6057,6 +6057,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.no_echo:
                 # supress value
                 print '\'%s\': set \'%s\'' % (section, opt)
+            elif opt == 'pass' and not conf.config['plaintext_passwd'] and newval == 'your_password':
+                opt, newval = conf.config_set_option(section, 'passx')
+                print '\'%s\': \'pass\' was rewritten to \'passx\': \'%s\'' % (section, newval)
             else:
                 print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
 
