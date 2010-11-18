@@ -3032,7 +3032,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.skip_validation:
             validators = None
         elif not os.path.exists(validators):
-            print "WARNING: validator directory", validators, "configured, but not existing (please install osc-source_validator). Skipping ..."
+            print "WARNING: source_validator_directory configured but it "\
+                  "does not exist:\n\t %s \n"\
+                  "\t Install osc-source_validator to fix." % validators
             validators = None
 
         msg = ''
