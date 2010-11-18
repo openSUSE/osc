@@ -1,6 +1,25 @@
-  - support added for osc search 'perl(Foo::Bar)' 
-
 0.130
+  - new "revert" command to restore the original working copy file (without
+    downloading it)
+  - rewrote "diff" logic
+  - added new "--http-full-debug" option, "--http-debug" filters the
+    "Authentication" and "Set-Cookie" header
+  - added new "--disabled-cpio-bulk-download" option: disable downloading
+    packages as cpio archive from api
+  - added new "repairwc" command which tries to repair an inconsistent working
+    copy
+  - workaround for broken urllib2 in python 2.6.5: wrong credentials lead to an
+    infinite recursion
+  - support --interactive-review option when running "osc rq list <project>"
+  - improved "osc rq show <id> --interactive-review"
+  - do_config: added new options --stdin, --prompt, --no-echo:
+    --stdin: read value from stdin
+    --prompt: prompt for a value
+    --no-echo: prompt for a value but don't echo entered characters (for
+               instance to enter a passwd)
+  - added template support for a submitrequest accept/decline message
+  - lots of internal rewrites (new working copy handling etc.)
+  - support added for osc search 'perl(Foo::Bar)' 
   - New "service" command to run source services locally or trigger a re-run on the server.
   - setlinkrev is setting now the revision to xsrcmd5 by default to avoid later breakage on indirect links by default.
 #
