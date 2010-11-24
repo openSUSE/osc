@@ -1356,6 +1356,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('-r', '--role', metavar='role', default='maintainer',
+                   help='specify user role (default: maintainer)')
     @cmdln.alias("reqmaintainership")
     @cmdln.alias("reqms")
     def do_requestmaintainership(self, subcmd, opts, *args):
@@ -1393,7 +1395,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        arg = [ user, 'maintainer', project, package ]
+        if not opts.role in ('maintainer', 'bugowner'):
+            raise oscerr.WrongOptions('invalid \'--role\': either specify \'maintainer\' or \'bugowner\'')
+
+        arg = [ user, opts.role, project, package ]
 
         actionsxml = self._add_role(arg, None)
 
