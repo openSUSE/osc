@@ -1566,6 +1566,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         "decline" will change the request state to "declined"
 
+        "reopen" will set the request back to new or review.
+
         "wipe" will permanently delete a request
 
         "revoke" will set the request state to "revoked"
@@ -1607,6 +1609,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc review add [-m TEXT] [-U USER] [-G GROUP] ID
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
+            osc review reopen [-m TEXT] ID
 
         ${cmd_option_list}
         """
@@ -1639,7 +1642,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
-        cmds = [ 'list', 'add', 'decline', 'accept' ]
+        cmds = [ 'list', 'add', 'decline', 'accept', 'reopen' ]
         if subcmd == 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown review action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1844,7 +1847,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if subcmd == 'review':
                 if not opts.message:
                    opts.message = edit_message()
-                if cmd in ['accept', 'decline', 'new']:
+                if cmd in ['accept', 'decline', 'reopen']:
                     r = change_review_state(apiurl,
                             reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.group, opts.message or '')
                     print r
