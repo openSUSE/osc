@@ -3120,7 +3120,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-e', '--expand-link', action='store_true',
                         help='if a package is a link, update to the expanded sources')
     @cmdln.option('-s', '--source-service-files', action='store_true',
-                        help='Use server side generated sources instead of local generation.' )
+                        help='Run local source services after update.' )
     @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
                         help='Use server side generated sources instead of local generation.' )
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
