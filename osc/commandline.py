@@ -2400,26 +2400,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         its packages use \'--force\' switch.
 
         usage:
-           osc rdelete -f PROJECT
-           osc rdelete PROJECT PACKAGE [PACKAGE ...]
+           osc rdelete [-f] PROJECT [PACKAGE]
 
         ${cmd_option_list}
         """
 
         args = slash_split(args)
-        if len(args) < 1:
-            raise oscerr.WrongArgs('Missing argument.')
+        if len(args) < 1 or len(args) > 2:
+            raise oscerr.WrongArgs('Wrong number of arguments')
 
         apiurl = self.get_api_url()
         prj = args[0]
-        pkgs = args[1:]
 
-        if pkgs:
-            for pkg in pkgs:
-               # careful: if pkg is an empty string, the package delete request results
-               # into a project delete request - which works recursively...
-                if pkg:
-                    delete_package(apiurl, prj, pkg)
+        # empty arguments result in recursive project delete ...
+        if not len(prj):
+            raise oscerr.WrongArgs('Project argument is empty')
+
+        if len(args) > 1:
+            pkg = args[1]
+
+            if not len(pkg):
+                raise oscerr.WrongArgs('Package argument is empty')
+
+            delete_package(apiurl, prj, pkg)
+
         elif len(meta_get_packagelist(apiurl, prj)) >= 1 and not opts.force:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
