@@ -1358,21 +1358,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify message TEXT')
     @cmdln.option('-r', '--role', metavar='role', default='maintainer',
                    help='specify user role (default: maintainer)')
-    @cmdln.alias("reqrole")
-    def do_requestrole(self, subcmd, opts, *args):
-        """${cmd_name}: requests to add user as a certain role (usually maintainer)
+    @cmdln.alias("reqmaintainership")
+    @cmdln.alias("reqms")
+    def do_requestmaintainership(self, subcmd, opts, *args):
+        """${cmd_name}: requests to add user as maintainer
 
         usage:
-            osc requestrole                           # for current user in checked out package
-            osc requestrole USER                      # for specified user in checked out package
-            osc requestrole PROJECT PACKAGE           # for current user
-            osc requestrole PROJECT PACKAGE USER      # request for specified user
+            osc requestmaintainership                           # for current user in checked out package
+            osc requestmaintainership USER                      # for specified user in checked out package
+            osc requestmaintainership PROJECT PACKAGE           # for current user
+            osc requestmaintainership PROJECT PACKAGE USER      # request for specified user
 
         ${cmd_option_list}
         """
         args = slash_split(args)
         apiurl = self.get_api_url()
-
+        
         if len(args) < 2:
             if is_package_dir(os.getcwd()):
                 project = store_read_project(os.curdir)
@@ -1394,8 +1395,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        if not opts.role in ('maintainer', 'bugowner', 'reviewer', 'downloader'):
-            raise oscerr.WrongOptions("invalid '--role': specify one of these: 'maintainer', 'bugowner', 'reviewer', 'downloader'")
+        if not opts.role in ('maintainer', 'bugowner'):
+            raise oscerr.WrongOptions('invalid \'--role\': either specify \'maintainer\' or \'bugowner\'')
 
         arg = [ user, opts.role, project, package ]
 
