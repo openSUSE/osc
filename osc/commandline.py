@@ -737,11 +737,18 @@ class Osc(cmdln.Cmdln):
             osc submitreq [OPTIONS]
             osc submitreq [OPTIONS] DESTPRJ [DESTPKG]
             osc submitreq [OPTIONS] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
+
+            osc submitpac ... is a shorthand for osc submitreq --cleanup ...
+
         ${cmd_option_list}
         """
 
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
+
+        if subcmd == 'submitpac' and opts.no_cleanup == False:
+            opts.cleanup = True;
+
         if opts.cleanup:
             src_update = "cleanup"
         elif opts.no_cleanup:
