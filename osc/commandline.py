@@ -746,7 +746,7 @@ class Osc(cmdln.Cmdln):
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
 
-        if subcmd == 'submitpac' and opts.no_cleanup == False:
+        if subcmd == 'submitpac' and not opts.no_cleanup:
             opts.cleanup = True;
 
         if opts.cleanup:
