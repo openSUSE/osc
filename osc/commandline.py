@@ -743,6 +743,9 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        if opts.cleanup and opts.no_cleanup:
+            raise oscerr.WrongOptions('\'--cleanup\' and \'--no-cleanup\' are mutually exclusive')
+
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
 
