@@ -4495,12 +4495,13 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     caller.
     """
     f = http_meth.__call__(url, data = data)
+    import urlparse
+    cl = f.info().get('Content-Length')
+    if cl is not None:
+        cl = int(cl)
+
     if progress_obj:
-        import urlparse
         basename = os.path.basename(urlparse.urlsplit(url)[2])
-        cl = f.info().get('Content-Length')
-        if cl is not None:
-            cl = int(cl)
         progress_obj.start(basename=basename, text=text, size=cl)
     data = f.read(bufsize)
     read = len(data)
@@ -4513,6 +4514,9 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     if progress_obj:
         progress_obj.end(read)
     f.close()
+
+    if read != cl:
+        raise oscerr.OscIOError(None, ('Content-Length is not matching file size for %s: %i vs %i file size' % (url, cl, read)) )
 
 
 def print_buildlog(apiurl, prj, package, repository, arch, offset = 0):
