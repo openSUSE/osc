@@ -72,7 +72,7 @@ class MyHTTPHandler(urllib2.HTTPHandler):
             f = StringIO.StringIO(kwargs['text'])
         else:
             raise RuntimeError('either specify text or file')
-        resp = urllib2.addinfourl(f, '', url)
+        resp = urllib2.addinfourl(f, {}, url)
         resp.code = 200
         resp.msg = ''
         return resp
