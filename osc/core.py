@@ -4515,8 +4515,8 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         progress_obj.end(read)
     f.close()
 
-    if read != cl:
-        raise oscerr.OscIOError(None, ('Content-Length is not matching file size for %s: %i vs %i file size' % (url, cl, read)) )
+    if not cl is None and read != cl:
+        raise oscerr.OscIOError(None, 'Content-Length is not matching file size for %s: %i vs %i file size' % (url, cl, read))
 
 
 def print_buildlog(apiurl, prj, package, repository, arch, offset = 0):
