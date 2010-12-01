@@ -4495,12 +4495,12 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     caller.
     """
     f = http_meth.__call__(url, data = data)
-    import urlparse
     cl = f.info().get('Content-Length')
     if cl is not None:
         cl = int(cl)
 
     if progress_obj:
+        import urlparse
         basename = os.path.basename(urlparse.urlsplit(url)[2])
         progress_obj.start(basename=basename, text=text, size=cl)
     data = f.read(bufsize)
