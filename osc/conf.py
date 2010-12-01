@@ -85,6 +85,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'debug': '0',
              'http_debug': '0',
              'http_full_debug': '0',
+             'http_retries': '3',
              'verbose': '1',
              'traceback': '0',
              'post_mortem': '0',
@@ -236,6 +237,9 @@ apiurl = %(apiurl)s
 
 # show HTTP traffic useful for debugging
 #http_debug = 1
+
+# number of retries on HTTP transfer
+#http_retries = 3
 
 # Skip signature verification of packages used for build.
 #no_verify = 1

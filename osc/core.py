@@ -4494,8 +4494,19 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     until EOF is reached. After each read bufsize bytes are yielded to the
     caller.
     """
-    f = http_meth.__call__(url, data = data)
-    cl = f.info().get('Content-Length')
+    cl = ''
+    retries = 0
+    # Repeat requests until we get reasonable Content-Length header
+    # Server (or iChain) is corrupting data at some point, see bnc#656281
+    while cl == '':
+        if retries >= int(conf.config['http_retries']):
+            raise oscerr.OscIOError(None, 'Content-Length is empty for %s, protocol violation' % url)
+        retries = retries + 1
+        if retries > 1 and conf.config['http_debug']:
+            print >>sys.stderr, '\n\nRetry %d --' % (retries - 1), url
+        f = http_meth.__call__(url, data = data)
+        cl = f.info().get('Content-Length')
+
     if cl is not None:
         cl = int(cl)
 
