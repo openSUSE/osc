@@ -222,7 +222,7 @@ class Osc(cmdln.Cmdln):
         """${cmd_name}: List sources or binaries on the server
 
         Examples for listing sources:
-           ls                         # list all projects
+           ls                          # list all projects (deprecated)
            ls PROJECT                  # list packages in a project
            ls PROJECT PACKAGE          # list source files of package of a project
            ls PROJECT PACKAGE <file>   # list <file> if this file exists
@@ -3444,11 +3444,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
                         help='format string for csv output')
     def do_results(self, subcmd, opts, *args):
-        """${cmd_name}: Shows the build results of a package
+        """${cmd_name}: Shows the build results of a package or project
 
         Usage:
-            osc results (inside working copy)
-            osc results remote_project remote_package
+            osc results                 # (inside working copy of PRJ or PKG)
+            osc results PROJECT [PACKAGE]
 
         ${cmd_option_list}
         """
@@ -3456,7 +3456,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         apiurl = self.get_api_url()
-        if len(args) == 0:
+        if len(args) < 2:
             wd = os.curdir
             if is_project_dir(wd):
                 opts.csv = None
@@ -3475,10 +3475,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 project = store_read_project(wd)
                 package = store_read_package(wd)
-        elif len(args) < 2:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
         elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
+            raise oscerr.WrongArgs('Too many arguments (required none, one, or two)')
         else:
             project = args[0]
             package = args[1]
