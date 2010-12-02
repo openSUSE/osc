@@ -223,6 +223,7 @@ class Osc(cmdln.Cmdln):
 
         Examples for listing sources:
            ls                          # list all projects (deprecated)
+           ls /                        # list all projects
            ls PROJECT                  # list packages in a project
            ls PROJECT PACKAGE          # list source files of package of a project
            ls PROJECT PACKAGE <file>   # list <file> if this file exists
@@ -259,8 +260,14 @@ class Osc(cmdln.Cmdln):
         project = None
         package = None
         fname = None
+        if len(args) == 0:
+            # For consistency with *all* other commands
+            # this list what the server has in the current wd.
+            # CAUTION: 'osc ls -b' already works like this.
+            pass
         if len(args) > 0:
             project = args[0]
+            if project == '/': project = None
         if len(args) > 1:
             package = args[1]
             if opts.deleted:
