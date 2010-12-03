@@ -2089,7 +2089,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         This can be used to make packages available from building that are
         needed in a project but available only in a different project. Note
         that this is done at the expense of disk space. See
-        http://en.opensuse.org/openSUSE:Build_Service_Tips_and_Tricks#_link_and__aggregate
+        http://en.opensuse.org/openSUSE:Build_Service_Tips_and_Tricks#link_and_aggregate
         for more information.
 
         The DESTPAC name is optional; the source packages' name will be used if
