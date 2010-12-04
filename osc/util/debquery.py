@@ -29,10 +29,14 @@ class DebQuery(packagequery.PackageQuery):
         control = arfile.get_file('control.tar.gz')
         if control is None:
             raise DebError(self.__path, 'missing control.tar.gz')
-        # XXX: python24 relies on a name
+        # XXX: python2.4 relies on a name
         tar = tarfile.open(name = 'control.tar.gz', fileobj = control)
         try:
-            control = tar.extractfile('./control')
+            name = './control'
+            # workaround for python2.4's tarfile module
+            if 'control' in tar.getnames():
+                name = 'control'
+            control = tar.extractfile(name)
         except KeyError:
             raise DebError(self.__path, 'missing \'control\' file in control.tar.gz')
         self.__parse_control(control, all_tags, *extra_tags)
