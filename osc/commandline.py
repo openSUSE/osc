@@ -4973,11 +4973,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 return '%s = \'%s\'' % (attr, what)
 
-        # support perl package names and symbols:
-        if re.match('^\w+(::\w+)+$', search_term):
-            search_term = 'perl-' + re.sub('::','-', search_term)
-            opts.package = True
-
+        # support perl symbols:
         if re.match('^perl\(\w+(::\w+)*\)$', search_term):
             search_term = re.sub('\)','', re.sub('(::|\()','-', search_term))
             opts.package = True
