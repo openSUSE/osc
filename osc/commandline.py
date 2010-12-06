@@ -3493,12 +3493,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
         if opts.xml:
-            return show_results_meta(*args)
+            print show_results_meta(*args)
         elif opts.csv:
-            return '\n'.join(format_results(get_package_results(*args), opts.format))
+            print '\n'.join(format_results(get_package_results(*args), opts.format))
         else:
             args.append(opts.verbose)
-            return '\n'.join(get_results(*args))
+            print '\n'.join(get_results(*args))
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!
