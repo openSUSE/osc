@@ -22,6 +22,19 @@
   - support added for osc search 'perl(Foo::Bar)' 
   - New "service" command to run source services locally or trigger a re-run on the server.
   - setlinkrev is setting now the revision to xsrcmd5 by default to avoid later breakage on indirect links by default.
+
+  NOTE:
+   Due to the rewrite of the working copy handling osc might fail with the
+   following error:
+     Your working copy '.' is in an inconsistent state.
+     Please run 'osc repairwc .' (Note this might _remove_
+     files from the .osc/ dir). Please check the state
+     of the working copy afterwards (via 'osc status .')
+   Simply run "osc repairwc" which might fetch files from the api
+   or delete some files from the storedir (.osc/). It won't touch
+   locally modified files. For more information see section
+   "WORKING COPY INCONSISTENT" in the README.
+
 #
 # Feature which requires OBS 2.1
 #

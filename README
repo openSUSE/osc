@@ -129,6 +129,24 @@ from ~/.oscrc and you will be asked for credentials again, which will be then
 stored in the keyring application.
 
 
+WORKING COPY INCONSISTENT (only affects version >= 0.130)
+
+osc's working copy handling was rewritten in 0.130. Thus some
+consistency checks were added. As a result osc might complain
+that some old working copies are in an inconsistent state:
+ Your working copy '.' is in an inconsistent state.
+ Please run 'osc repairwc .' (Note this might _remove_
+ files from the .osc/ dir). Please check the state
+ of the working copy afterwards (via 'osc status .')
+To fix this simply run "osc repairwc ." as suggested in the
+error message. Note that "osc repairwc ." might need to contact
+the api in order to fetch some missing files. Also it might remove
+some files from the storedir (.osc/) but it won't touch any locally
+modified files.
+If it DOES NOT fix the problem please create a bug report and attach
+your working copy to the bug (if possible).
+
+
 USAGE EXAMPLES:
 (online at http://en.opensuse.org/openSUSE:OSC )
 
