@@ -385,9 +385,9 @@ def main(apiurl, opts, argv):
     if opts.root:
         build_root = opts.root
     if opts.jobs:
-        buildargs.append('--jobs %s' % opts.jobs)
+        buildargs.append('--jobs=%s' % opts.jobs)
     elif config['build-jobs'] > 1:
-        buildargs.append('--jobs %s' % config['build-jobs'])
+        buildargs.append('--jobs=%s' % config['build-jobs'])
     if opts.icecream or config['icecream'] != '0':
         if opts.icecream:
             num = opts.icecream
@@ -395,7 +395,7 @@ def main(apiurl, opts, argv):
             num = config['icecream']
 
         if int(num) > 0:
-            buildargs.append('--icecream %s' % num)
+            buildargs.append('--icecream=%s' % num)
             xp.append('icecream')
             xp.append('gcc-c++')
     if opts.ccache:
@@ -409,13 +409,12 @@ def main(apiurl, opts, argv):
         buildargs.append('--debug')
     if opts._with:
         for o in opts._with:
-            buildargs.append('--with %s' % o)
+            buildargs.append('--with=%s' % o)
     if opts.without:
         for o in opts.without:
-            buildargs.append('--without %s' % o)
-# FIXME: quoting
-#    if opts.define:
-#        buildargs.append('--define "%s"' % opts.define)
+            buildargs.append('--without=%s' % o)
+    if opts.define:
+        buildargs.append('--define=%s' % opts.define)
     if config['build-uid']:
         build_uid = config['build-uid']
     if opts.build_uid:
@@ -423,9 +422,9 @@ def main(apiurl, opts, argv):
     if build_uid:
         buildidre = re.compile('^[0-9]{1,5}:[0-9]{1,5}$')
         if build_uid == 'caller':
-            buildargs.append('--uid %s:%s' % (os.getuid(), os.getgid()))
+            buildargs.append('--uid=%s:%s' % (os.getuid(), os.getgid()))
         elif buildidre.match(build_uid):
-            buildargs.append('--uid %s' % build_uid)
+            buildargs.append('--uid=%s' % build_uid)
         else:
             print >>sys.stderr, 'Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"'
             return 1
@@ -500,7 +499,7 @@ def main(apiurl, opts, argv):
         build_descr_data = cpio.get()
 
     # special handling for overlay and rsync-src/dest
-    specialcmdopts = ''
+    specialcmdopts = []
     if opts.rsyncsrc or opts.rsyncdest :
         if not opts.rsyncsrc or not opts.rsyncdest:
             raise oscerr.WrongOptions('When using --rsync-{src,dest} both parameters have to be specified.')
@@ -511,12 +510,12 @@ def main(apiurl, opts, argv):
         myrsyncdest = os.path.expandvars(opts.rsyncdest)
         if not os.path.isabs(myrsyncdest):
             raise oscerr.WrongOptions('--rsync-dest %s is no absolute path (starting with \'/\')!' % opts.rsyncdest)
-        specialcmdopts = '--rsync-src="%s" --rsync-dest="%s"' % (myrsyncsrc, myrsyncdest)
+        specialcmdopts = ['--rsync-src='+myrsyncsrc, '--rsync-dest='+myrsyncdest]
     if opts.overlay:
         myoverlay = os.path.abspath(os.path.expanduser(os.path.expandvars(opts.overlay)))
         if not os.path.isdir(myoverlay):
             raise oscerr.WrongOptions('--overlay %s is no valid directory!' % opts.overlay)
-        specialcmdopts += '--overlay="%s"' % myoverlay
+        specialcmdopts += ['--overlay='+myoverlay]
 
     bi_file = None
     bc_file = None
@@ -601,7 +600,7 @@ def main(apiurl, opts, argv):
         bi.release = opts.release
 
     if bi.release:
-        buildargs.append('--release %s' % bi.release)
+        buildargs.append('--release=%s' % bi.release)
 
     # real arch of this machine
     # vs.
@@ -720,7 +719,7 @@ def main(apiurl, opts, argv):
                                 progress_meter = True)
 
         if old_pkg_dir != None:
-            buildargs.append('--oldpackages %s' % old_pkg_dir)
+            buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi
     if build_type == 'kiwi':
@@ -789,7 +788,7 @@ def main(apiurl, opts, argv):
     rpmlist_file.flush()
 
     subst = { 'repo': repo, 'arch': arch, 'project' : prj, 'package' : pacname }
-    vm_options = ''
+    vm_options = []
     # XXX check if build-device present
     my_build_device = ''
     if config['build-device']:
@@ -807,11 +806,11 @@ def main(apiurl, opts, argv):
         else:
             my_build_swap = build_root + '/swap'
 
-        vm_options = '--vm-type=%s'%vm_type
+        vm_options = [ '--vm-type=%s'%vm_type ]
         if vm_type != 'lxc':
-            vm_options += ' --vm-disk=' + my_build_device
-            vm_options += ' --vm-swap=' + my_build_swap
-            vm_options += ' --logfile=%s/.build.log' % build_root
+            vm_options += [ '--vm-disk=' + my_build_device ]
+            vm_options += [ '--vm-swap=' + my_build_swap ]
+            vm_options += [ '--logfile=%s/.build.log' % build_root ]
             if vm_type == 'kvm':
                 if os.access(build_root, os.W_OK) and os.access('/dev/kvm', os.W_OK):
                     # so let's hope there's also an fstab entry
@@ -819,49 +818,45 @@ def main(apiurl, opts, argv):
             build_root += '/.mount'
 
         if config['build-memory']:
-            vm_options += ' --memory ' + config['build-memory']
+            vm_options += [ '--memory=' + config['build-memory'] ]
         if config['build-vmdisk-rootsize']:
-            vm_options += ' --vmdisk-rootsize ' + config['build-vmdisk-rootsize']
+            vm_options += [ '--vmdisk-rootsize=' + config['build-vmdisk-rootsize'] ]
         if config['build-vmdisk-swapsize']:
-            vm_options += ' --vmdisk-swapsize ' + config['build-vmdisk-swapsize']
+            vm_options += [ '--vmdisk-swapsize=' + config['build-vmdisk-swapsize'] ]
 
     if opts.preload:
         print "Preload done for selected repo/arch."
         sys.exit(0)
 
     print 'Running build'
-    cmd = '"%s" --root="%s" --rpmlist="%s" --dist="%s" %s --arch=%s %s %s "%s"' \
-                 % (config['build-cmd'],
-                    build_root,
-                    rpmlist_filename,
-                    bc_filename,
-                    specialcmdopts,
-                    bi.buildarch,
-                    vm_options,
-                    ' '.join(buildargs),
-                    build_descr)
+    cmd = [ config['build-cmd'], '--root='+build_root,
+                    '--rpmlist='+rpmlist_filename,
+                    '--dist='+bc_filename,
+                    '--arch='+bi.buildarch ]
+    cmd += specialcmdopts + vm_options + buildargs
+    cmd += [ build_descr ]
 
     if need_root:
-        if config['su-wrapper'].startswith('su '):
-            tmpl = '%s \'%s\''
+        sucmd = config['su-wrapper'].split()
+        if sucmd[0] == 'su':
+            cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
         else:
-            tmpl = '%s %s'
-        cmd = tmpl % (config['su-wrapper'], cmd)
+            cmd = sucmd + cmd
 
     # change personality, if needed
-    if hostarch != bi.buildarch:
-        cmd = (change_personality.get(bi.buildarch, '') + ' ' + cmd).strip()
+    if hostarch != bi.buildarch and bi.buildarch in change_personality:
+        cmd = [ change_personality[bi.buildarch] ] + cmd;
 
     print cmd
     try:
-        rc = subprocess.call(cmd, shell=True)
+        rc = subprocess.call(cmd)
         if rc:
             print
             print 'The buildroot was:', build_root
             sys.exit(rc)
     except KeyboardInterrupt, i:
         print "keyboard interrupt, killing build ..."
-        subprocess.call(cmd + " --kill", shell=True)
+        subprocess.call(cmd + ["--kill"])
         raise i
 
     pacdir = os.path.join(build_root, '.build.packages')

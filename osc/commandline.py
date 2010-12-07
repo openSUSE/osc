@@ -4147,9 +4147,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='enable feature X for build')
     @cmdln.option('--without', metavar='X', action='append',
                   help='disable feature X for build')
-# will not work as build.py does not support proper quoting
-#    @cmdln.option('--define', metavar='\'X Y\'', action='append',
-#                  help='define macro X with value Y')
+    @cmdln.option('--define', metavar='\'X Y\'', action='append',
+                  help='define macro X with value Y')
     @cmdln.option('--userootforbuild', action='store_true',
                   help='Run build as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
