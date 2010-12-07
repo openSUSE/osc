@@ -191,6 +191,15 @@ class TestRepairWC(OscTestCase):
         self.assertEqual(open(os.path.join('.osc', '_apiurl')).read(), 'http://localhost\n')
         self.assertEqual(p.apiurl, 'http://localhost')
 
+    def test_invalidapiurl(self):
+        """the package wc has an invalid apiurl file (invalid url format)"""
+        self._change_to_pkg('invalid_apiurl')
+        p = osc.core.Package('.', wc_check=False)
+        p.wc_repair('http://localhost')
+        self.assertTrue(os.path.exists(os.path.join('.osc', '_apiurl')))
+        self.assertEqual(open(os.path.join('.osc', '_apiurl')).read(), 'http://localhost\n')
+        self.assertEqual(p.apiurl, 'http://localhost')
+
     def test_noapiurlNotExistingApiurl(self):
         """the package wc has no _apiurl file and no apiurl is passed to repairwc"""
         self._change_to_pkg('noapiurl')
@@ -204,6 +213,19 @@ class TestRepairWC(OscTestCase):
         import shutil
         prj_dir = os.path.join(self.tmpdir, 'prj_noapiurl')
         shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_noapiurl'), prj_dir)
+        storedir = os.path.join(prj_dir, osc.core.store)
+        self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Project, prj_dir, getPackageList=False)
+        prj = osc.core.Project(prj_dir, wc_check=False, getPackageList=False)
+        prj.wc_repair('http://localhost')
+        self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
+        self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
+        self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
+
+    def test_project_invalidapiurl(self):
+        """the project wc has an invalid _apiurl file (invalid url format)"""
+        import shutil
+        prj_dir = os.path.join(self.tmpdir, 'prj_invalidapiurl')
+        shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_invalidapiurl'), prj_dir)
         storedir = os.path.join(prj_dir, osc.core.store)
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Project, prj_dir, getPackageList=False)
         prj = osc.core.Project(prj_dir, wc_check=False, getPackageList=False)

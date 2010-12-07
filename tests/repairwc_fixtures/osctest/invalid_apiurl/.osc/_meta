@@ -1,0 +1,11 @@
+<package project="remote" name="foo">
+  <title>Title of New Package</title>
+  <description>
+LONG DESCRIPTION 
+GOES 
+HERE
+  </description>
+  <person userid="Admin" role="maintainer"/>
+  <person userid="Admin" role="bugowner"/>
+  <url>PUT_UPSTREAM_URL_HERE</url>
+</package>
