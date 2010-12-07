@@ -470,7 +470,7 @@ class Project:
 
     def wc_repair(self, apiurl=None):
         global store
-        if not os.path.exists(os.path.join(self.dir, store, '_apiurl')):
+        if not os.path.exists(os.path.join(self.dir, store, '_apiurl')) or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'
@@ -899,7 +899,7 @@ class Package:
         return dirty_files
 
     def wc_repair(self, apiurl=None):
-        if not os.path.exists(os.path.join(self.storedir, '_apiurl')):
+        if not os.path.exists(os.path.join(self.storedir, '_apiurl')) or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'

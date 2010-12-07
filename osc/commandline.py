@@ -6111,6 +6111,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for f in p.todo:
                 p.revert(f)
 
+    @cmdln.option('--force-apiurl', action='store_true',
+                  help='ask once for an apiurl and force this apiurl for all inconsistent projects/packages')
     def do_repairwc(self, subcmd, opts, *args):
         """${cmd_name}: try to repair an inconsistent working copy
 
@@ -6144,13 +6146,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = []
         cp = conf.get_configParser(conf.config['conffile'])
         apiurls = [i.rstrip('/') for i in cp.sections() if i != 'general']
+        apiurl = ''
         for i in args:
             if is_project_dir(i):
                 try:
                     prj = Project(i, getPackageList=False)
                 except oscerr.WorkingCopyInconsistent, e:
-                    apiurl = None
-                    if '_apiurl' in e.dirty_files:
+                    if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
                         apiurl = get_apiurl(apiurls)
                     prj = Project(i, getPackageList=False, wc_check=False)
                     prj.wc_repair(apiurl)
@@ -6170,8 +6172,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             try:
                 p = Package(pdir)
             except oscerr.WorkingCopyInconsistent, e:
-                apiurl = None
-                if '_apiurl' in e.dirty_files:
+                if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
                     apiurl = get_apiurl(apiurls)
                 p = Package(pdir, wc_check=False)
                 p.wc_repair(apiurl)
