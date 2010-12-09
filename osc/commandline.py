@@ -964,7 +964,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
 
         # Are there already requests to this package ?
-        reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit')
+        reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state='new')
+        reqs += get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state='review')
         user = conf.get_apiurl_usr(apiurl)
         myreqs = [ i for i in reqs if i.state.who == user ]
         repl = ''
