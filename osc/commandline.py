@@ -6135,8 +6135,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = parseargs(args)
         pacs = []
-        cp = conf.get_configParser(conf.config['conffile'])
-        apiurls = [i.rstrip('/') for i in cp.sections() if i != 'general']
+        apiurls = conf.config['api_host_options'].keys()
         apiurl = ''
         for i in args:
             if is_project_dir(i):

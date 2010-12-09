@@ -476,6 +476,8 @@ class Project:
                     'no \'apiurl\' was passed to wc_repair'
                 # hmm should we raise oscerr.WrongArgs?
                 raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
+            # sanity check
+            conf.parse_apisrv_url(None, apiurl)
             store_write_apiurl(self.dir, apiurl)
             self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
@@ -905,6 +907,8 @@ class Package:
                     'no \'apiurl\' was passed to wc_repair'
                 # hmm should we raise oscerr.WrongArgs?
                 raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
+            # sanity check
+            conf.parse_apisrv_url(None, apiurl)
             store_write_apiurl(self.dir, apiurl)
             self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
         # all files which are present in the filelist have to exist in the storedir
