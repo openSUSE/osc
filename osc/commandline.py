@@ -1434,9 +1434,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.alias("dr")
+    @cmdln.alias("dropreq")
+    @cmdln.alias("droprequest")
     @cmdln.alias("deletereq")
     def do_deleterequest(self, subcmd, opts, *args):
-        """${cmd_name}: Create request to delete a package or project
+        """${cmd_name}: Request to delete (or 'drop') a package or project
 
         usage:
             osc deletereq [-m TEXT] 		           # works in checked out project/package
