@@ -3312,9 +3312,10 @@ def get_request(apiurl, reqid):
 
 
 def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', message='', supersed=''):
-    u = makeurl(apiurl,
-                ['request', reqid],
-                query={'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user, 'by_group': by_group, 'superseded_by': supersed})
+    query = {'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user, 'superseded_by': supersed}
+    if by_group:
+        query['by_group'] = by_group
+    u = makeurl(apiurl, ['request', reqid], query=query)
     f = http_POST(u, data=message)
     root = ET.parse(f).getroot()
     return root.attrib['code']
