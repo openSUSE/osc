@@ -1631,15 +1631,17 @@ class Package:
                 yield get_source_file_diff(self.absdir, f.name, self.rev)
             else:
                 tmpfile = None
+                diff = []
                 try:
                     (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
                     get_source_file(self.apiurl, self.prjname, self.name, f.name, tmpfile, revision)
-                    yield get_source_file_diff(self.absdir, f.name, revision,
+                    diff = get_source_file_diff(self.absdir, f.name, revision,
                         os.path.basename(tmpfile), os.path.dirname(tmpfile), f.name)
                 finally:
                     if tmpfile is not None:
                         os.close(fd)
                         os.unlink(tmpfile)
+                yield diff
 
         for f in added:
             yield diff_add_delete(f, True, revision)
