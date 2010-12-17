@@ -1177,6 +1177,9 @@ class Package:
                     real_send.append(filename)
                     print statfrmt('Sending', os.path.join(pathn, filename))
                 elif st in (' ', '!', 'S'):
+                    if st == '!' and filename in self.to_be_added:
+                        print 'file \'%s\' is marked as \'A\' but does not exist' % filename
+                        return 1
                     f = self.findfilebyname(filename)
                     if f is None:
                         raise oscerr.PackageInternalError(self.prjname, self.name,
@@ -1187,6 +1190,9 @@ class Package:
                     todo_delete.append(filename)
                     print statfrmt('Deleting', os.path.join(pathn, filename))
             elif st in ('R', 'M', 'D', ' ', '!', 'S'):
+                # ignore missing new file (it's not part of the current commit)
+                if st == '!' and filename in self.to_be_added:
+                    continue
                 f = self.findfilebyname(filename)
                 if f is None:
                     raise oscerr.PackageInternalError(self.prjname, self.name,
