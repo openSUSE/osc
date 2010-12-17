@@ -182,8 +182,11 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
 
         if (target_host != host):
             h = myProxyHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
+            # M2Crypto.ProxyHTTPSConnection.putrequest expects a fullurl
+            selector = full_url
         else:
             h = myHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
+            selector = req.get_selector()
         # End our change
         h.set_debuglevel(self._debuglevel)
 
@@ -197,7 +200,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # request.
         headers["Connection"] = "close"
         try:
-            h.request(req.get_method(), req.get_selector(), req.data, headers)
+            h.request(req.get_method(), selector, req.data, headers)
             r = h.getresponse()
         except socket.error, err: # XXX what error?
             err.filename = full_url
@@ -247,7 +250,7 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, httplib.HTT
         verify_certificate(self)
 
     def endheaders(self, *args, **kwargs):
-        if not self._proxy_auth is None:
+        if self._proxy_auth is None:
             self._proxy_auth = self._encode_auth()
         httplib.HTTPSConnection.endheaders(self, *args, **kwargs)        
 
