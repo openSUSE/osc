@@ -233,6 +233,34 @@ class TestCommit(OscTestCase):
         self._check_digests('testExpand_expandedfilesremote')
         self._check_status(p, 'simple', ' ')
 
+    @GET('http://localhost/source/osctest/added_missing?rev=latest', file='testAddedMissing_filesremote')
+    def test_added_missing(self):
+        """commit an added file which is missing"""
+        self._change_to_pkg('added_missing')
+        p = osc.core.Package('.')
+        ret = p.commit()
+        self.assertTrue(ret == 1)
+        exp = 'file \'add\' is marked as \'A\' but does not exist\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self._check_status(p, 'add', '!')
+
+    @GET('http://localhost/source/osctest/added_missing?rev=latest', file='testAddedMissing_filesremote')
+    @POST('http://localhost/source/osctest/added_missing?comment=&cmd=commitfilelist&user=Admin',
+          file='testAddedMissing_missingfilelist', expfile='testAddedMissing_lfilelist')
+    @PUT('http://localhost/source/osctest/added_missing/bar?rev=repository', exp='foobar\n', text=rev_dummy)
+    @POST('http://localhost/source/osctest/added_missing?comment=&cmd=commitfilelist&user=Admin',
+          file='testAddedMissing_cfilesremote', expfile='testAddedMissing_lfilelist')
+    def test_added_missing2(self):
+        """commit an added file, another added file missing (but it's not part of the commit)"""
+        self._change_to_pkg('added_missing')
+        p = osc.core.Package('.')
+        p.todo = ['bar']
+        p.commit()
+        exp = 'Sending    bar\nTransmitting file data .\nCommitted revision 2.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self._check_status(p, 'add', '!')
+        self._check_status(p, 'bar', ' ')
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
