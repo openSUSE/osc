@@ -1,0 +1,4 @@
+<directory name="added_missing" rev="2" srcmd5="2df1eacfe03a3bec2112529e7f4dc39a" vrev="2">
+  <entry md5="14758f1afd44c09b7992073ccf00b43d" mtime="1292622742" name="bar" size="7" />
+  <entry md5="0d62ceea6020d75154078a20d8c9f9ba" mtime="1282130148" name="foo" size="23" />
+</directory>
