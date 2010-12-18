@@ -330,7 +330,9 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                     if sline.name == '__name__':
                         continue
                     if sline.type == 'option':
-                        ret.append(sline.frmt % (sline.name, sline.value))
+                        # special handling for continuation lines
+                        val = '\n '.join(sline.value.split('\n'))
+                        ret.append(sline.frmt % (sline.name, val))
                     elif str(sline) != '':
                         ret.append(str(sline))
             else:
