@@ -772,9 +772,8 @@ def get_config(override_conffile = None,
 
         if not user is None and len(user) == 0:
             user = None
-            print >>sys.stderr, "Warning: blank user in the keyring for the "\
-                                "api url %s.\nRun seahorse to fix the "\
-                                "entry.\n" % (url)
+            print >>sys.stderr, 'Warning: blank user in the keyring for the ' \
+                'apiurl %s.\nPlease fix your keyring entry.'
 
         # Read credentials from config
         if user is None:
@@ -783,9 +782,8 @@ def get_config(override_conffile = None,
             user         = cp.get(url, 'user', raw=True) # need to set raw to prevent '%' expansion
             password     = cp.get(url, 'pass', raw=True) # especially on password!
             passwordx    = cp.get(url, 'passx', raw=True) # especially on password!
-            if user is None or len(user) == 0:
-                raise oscerr.ConfigError("user is blank for %s" % apiurl,
-                                            config['conffile'])
+            if user is None or user == '':
+                raise oscerr.ConfigError('user is blank for %s' % apiurl, config['conffile'])
 
             if password is None or password == 'your_password':
                 try:
