@@ -6049,7 +6049,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='prompt for a value')
     @cmdln.option('--no-echo', action='store_true',
                         help='prompt for a value but do not echo entered characters')
-    def do_config(self, subcmd, opts, section, opt, *val):
+    @cmdln.option('--dump', action='store_true',
+                        help='dump the complete configuration (without \'pass\' and \'passx\' options)')
+    @cmdln.option('--dump-full', action='store_true',
+                        help='dump the complete configuration (including \'pass\' and \'passx\' options)')
+    def do_config(self, subcmd, opts, *args):
         """${cmd_name}: get/set a config option
 
         Examples:
@@ -6057,10 +6061,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc config section option value (set to value)
             osc config section option --delete (delete option/reset to the default)
             (section is either an apiurl or an alias or 'general')
+            osc config --dump (dump the complete configuration)
 
         ${cmd_usage}
         ${cmd_option_list}
         """
+        if len(args) < 2 and not (opts.dump or opts.dump_full):
+            raise oscerr.WrongArgs('Too few arguments')
+        elif opts.dump or opts.dump_full:
+            cp = conf.get_configParser(conf.config['conffile'])
+            for sect in cp.sections():
+                print '[%s]' % sect
+                for opt in sorted(cp.options(sect)):
+                    if sect == 'general' and opt in conf.api_host_options or \
+                        sect != 'general' and not opt in conf.api_host_options:
+                        continue
+                    if opt in ('pass', 'passx') and not opts.dump_full:
+                        continue
+                    val = str(cp.get(sect, opt, raw=True))
+                    # special handling for continuation lines
+                    val = '\n '.join(val.split('\n'))
+                    print '%s = %s' % (opt, val)
+                print
+            return
+
+        section, opt, val = args[0], args[1], args[2:]
         if len(val) and (opts.delete or opts.stdin or opts.prompt or opts.no_echo):
             raise oscerr.WrongOptions('Sorry, \'--delete\' or \'--stdin\' or \'--prompt\' or \'--no-echo\' ' \
                 'and the specification of a value argument are mutually exclusive')
