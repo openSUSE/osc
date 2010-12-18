@@ -769,6 +769,13 @@ def get_config(override_conffile = None,
             except gnomekeyring.NoMatchError:
                 # Fallback to file based auth.
                 pass
+
+        if not user is None and len(user) == 0:
+            user = None
+            print >>sys.stderr, "Warning: blank user in the keyring for the "\
+                                "api url %s.\nRun seahorse to fix the "\
+                                "entry.\n" % (url)
+
         # Read credentials from config
         if user is None:
             #FIXME: this could actually be the ideal spot to take defaults
@@ -776,6 +783,10 @@ def get_config(override_conffile = None,
             user         = cp.get(url, 'user', raw=True) # need to set raw to prevent '%' expansion
             password     = cp.get(url, 'pass', raw=True) # especially on password!
             passwordx    = cp.get(url, 'passx', raw=True) # especially on password!
+            if user is None or len(user) == 0:
+                raise oscerr.ConfigError("user is blank for %s" % apiurl,
+                                            config['conffile'])
+
             if password is None or password == 'your_password':
                 try:
                     password = passwordx.decode('base64').decode('bz2')
