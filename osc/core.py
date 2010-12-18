@@ -4090,6 +4090,8 @@ def copy_pac(src_apiurl, src_project, src_package,
         query = {'rev': 'upload'}
         revision = show_upstream_srcmd5(src_apiurl, src_project, src_package, expand=expand, revision=revision)
         for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand, revision=revision):
+            if n.startswith('_service:') or n.startswith('_service_'):
+                continue
             print '  ', n
             tmpfile = None
             try:
