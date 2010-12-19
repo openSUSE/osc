@@ -1,8 +1,7 @@
 import osc.core
 import osc.oscerr
 import os
-import sys
-from common import GET, OscTestCase
+from common import OscTestCase
 FIXTURES_DIR = os.path.join(os.getcwd(), 'init_package_fixtures')
 
 def suite():

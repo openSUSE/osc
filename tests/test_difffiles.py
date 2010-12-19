@@ -1,7 +1,6 @@
 import osc.core
 import osc.oscerr
 import os
-import sys
 from common import GET, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.getcwd(), 'difffile_fixtures')
