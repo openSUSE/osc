@@ -3954,18 +3954,20 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
 <aggregatelist>
   <aggregate project="%s">
 """ % (src_project)
-    for tgt, src in repo_map.iteritems():
-        aggregate_template += """\
-    <repository target="%s" source="%s" />
-""" % (tgt, src)
 
     aggregate_template += """\
     <package>%s</package>
 """ % ( src_package)
+
     if nosources:
         aggregate_template += """\
     <nosources />
 """
+    for src, tgt in repo_map.iteritems():
+        aggregate_template += """\
+    <repository target="%s" source="%s" />
+""" % (tgt, src)
+
     aggregate_template += """\
   </aggregate>
 </aggregatelist>
