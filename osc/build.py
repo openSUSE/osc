@@ -414,7 +414,8 @@ def main(apiurl, opts, argv):
         for o in opts.without:
             buildargs.append('--without=%s' % o)
     if opts.define:
-        buildargs.append('--define=%s' % opts.define)
+        for o in opts.define:
+            buildargs.append('--define=%s' % o)
     if config['build-uid']:
         build_uid = config['build-uid']
     if opts.build_uid:
@@ -490,6 +491,11 @@ def main(apiurl, opts, argv):
         for i in opts._with:
             s += "%%define _without_%s 0\n" % i
             s += "%%define _with_%s 1\n" % i
+        build_descr_data = s + build_descr_data
+    if opts.define:
+        s = ''
+        for i in opts.define:
+            s += "%%define %s\n" % i
         build_descr_data = s + build_descr_data
 
     if opts.prefer_pkgs:
