@@ -5722,6 +5722,14 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
         filter_role(res, user, role)
     return res
 
+def raw_input(*args):
+    import __builtin__
+    try:
+        __builtin__.raw_input(*args)
+    except EOFError:
+        # interpret ctrl-d as user abort
+        raise oscerr.UserAbort()
+
 # backward compatibility: local role filtering
 def filter_role(meta, user, role):
     """
