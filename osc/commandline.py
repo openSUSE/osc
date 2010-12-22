@@ -4915,16 +4915,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 what.has_key('project'), what.has_key('package'),
                                 opts.maintained, opts.verbose)
+
+        # map of project =>[list of packages]
+        # if list of packages is empty user is maintainer of the whole project
         request_todo = {}
+
         roles = {}
         if len(what.keys()) == 2:
             for i in res.get('project_id', res.get('project', {})).findall('project'):
                 request_todo[i.get('name')] = []
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
             for i in res.get('package_id', res.get('package', {})).findall('package'):
-                roles['/'.join([i.get('project'), i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
-                if not i.get('project') in request_todo.keys():
-                    request_todo.setdefault(i.get('project'), []).append(i.get('name'))
+                prj = i.get('project')
+                roles['/'.join([prj, i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
+                if not prj in request_todo or request_todo[prj] != []:
+                    request_todo.setdefault(prj, []).append(i.get('name'))
         else:
             for i in res.get('project_id', res.get('project', {})).findall('project'):
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
