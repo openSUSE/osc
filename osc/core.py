@@ -5725,7 +5725,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
 def raw_input(*args):
     import __builtin__
     try:
-        __builtin__.raw_input(*args)
+        return __builtin__.raw_input(*args)
     except EOFError:
         # interpret ctrl-d as user abort
         raise oscerr.UserAbort()
