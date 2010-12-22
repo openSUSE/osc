@@ -1,0 +1,9 @@
+<project name="osctest">
+  <package name="conflict" state=" " />
+  <package name="simple" state=" " />
+  <package name="added" state="A" />
+  <package name="deleted" state="D" />
+  <package name="missing" state="!" />
+  <package name="added_deleted" state="A" />
+  <package name="deleted_deleted" state="D" />
+</project>

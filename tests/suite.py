@@ -9,6 +9,8 @@ import test_init_package
 import test_init_project
 import test_commit
 import test_repairwc
+import test_package_status
+import test_project_status
 
 suite = unittest.TestSuite()
 suite.addTests(test_addfiles.suite())
@@ -20,5 +22,7 @@ suite.addTests(test_init_package.suite())
 suite.addTests(test_init_project.suite())
 suite.addTests(test_commit.suite())
 suite.addTests(test_repairwc.suite())
+suite.addTests(test_package_status.suite())
+suite.addTests(test_project_status.suite())
 result = unittest.TextTestRunner(verbosity=1).run(suite)
 sys.exit(not result.wasSuccessful())
