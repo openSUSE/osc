@@ -494,6 +494,39 @@ class Project:
                                  pathname=getTransActPath(os.path.join(self.dir, pac)), \
                                  prj_obj=self, prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
 
+    def status(self, pac):
+        exists = os.path.exists(os.path.join(self.absdir, pac))
+        st = self.get_state(pac)
+        if st is None and exists:
+            return '?'
+        elif st is None:
+            raise oscerr.OscIOError(None, 'osc: \'%s\' is not under version control' % pac)
+        elif st in ('A', ' ') and not exists:
+            return '!'
+        elif st == 'D' and not exists:
+            return 'D'
+        else:
+            return st
+
+    def get_status(self, *exclude_states):
+        res = []
+        for pac in self.pacs_have:
+            st = self.status(pac)
+            if not st in exclude_states:
+                res.append((st, pac))
+        if not '?' in exclude_states:
+            res.extend([('?', pac) for pac in self.pacs_unvers])
+        return res
+
+    def get_pacobj(self, pac, *pac_args, **pac_kwargs):
+        try:
+            st = self.status(pac)
+            if st in ('?', '!') or st == 'D' and not os.path.exists(os.path.join(self.dir, pac)):
+                return None
+            return Package(os.path.join(self.dir, pac), *pac_args, **pac_kwargs)
+        except oscerr.OscIOError:
+            return None
+
     def set_state(self, pac, state):
         node = self.get_package_node(pac)
         if node == None:
@@ -1474,6 +1507,22 @@ class Package:
         for i in self.filelist:
             if i.name == n:
                 return i
+
+    def get_status(self, excluded=False, *exclude_states):
+        global store
+        todo = self.todo
+        if not todo:
+            todo = self.filenamelist + self.to_be_added + \
+                [i for i in self.filenamelist_unvers if not os.path.isdir(os.path.join(self.absdir, i))]
+            if excluded:
+                todo.extend([i for i in self.excluded if i != store])
+            todo = set(todo)
+        res = []
+        for fname in sorted(todo):
+            st = self.status(fname)
+            if not st in exclude_states:
+                res.append((st, fname))
+        return res
 
     def status(self, n):
         """
@@ -5446,60 +5495,6 @@ def getTransActPath(pac_dir):
     else:
         pathn = ''
     return pathn
-
-def getStatus(pacs, prj_obj=None, verbose=False, quiet=False, excluded=False):
-    """
-    calculates the status of certain packages. pacs is a list of Package()
-    objects and prj_obj is a Project() object. If prj_obj is specified all
-    Package() objects in the pacs list have to belong to this project.
-    """
-    global store
-    lines = []
-    if prj_obj:
-        if conf.config['do_package_tracking']:
-            for data in prj_obj.pacs_unvers:
-                lines.append(statfrmt('?', os.path.normpath(os.path.join(prj_obj.dir, data))))
-            for data in prj_obj.pacs_broken:
-                if prj_obj.get_state(data) == 'D':
-                    lines.append(statfrmt('D', os.path.normpath(os.path.join(prj_obj.dir, data))))
-                else:
-                    lines.append(statfrmt('!', os.path.normpath(os.path.join(prj_obj.dir, data))))
-
-    for p in pacs:
-        if not p.todo and excluded:
-            # all files + dirs in pwd (except .osc storedir)
-            p.todo = p.filenamelist + p.filenamelist_unvers + [i for i in p.excluded if i != store]
-        elif not p.todo:
-            # only files, no dirs and no excluded files
-            p.todo = p.filenamelist + [i for i in p.filenamelist_unvers if not os.path.isdir(i)]
-        p.todo.sort()
-
-        if prj_obj and conf.config['do_package_tracking']:
-            state = prj_obj.get_state(p.name)
-            if state != None and (state != ' ' or verbose):
-                lines.append(statfrmt(state, os.path.normpath(os.path.join(prj_obj.dir, p.name))))
-
-        for filename in p.todo:
-#            if filename.startswith('_service:'):
-#                continue
-            if filename in p.excluded and not excluded:
-                continue
-#            if filename in p.skipped:
-#                continue
-            s = p.status(filename)
-            if s == 'F':
-                lines.append(statfrmt('!', pathjoin(p.dir, filename)))
-            elif s != ' ' or (s == ' ' and verbose):
-                lines.append(statfrmt(s, pathjoin(p.dir, filename)))
-
-    if quiet:
-        lines = [line for line in lines if line[0] != '?']
-    else:
-        # arrange the lines in order: unknown files first
-        # filenames are already sorted
-        lines = [line for line in lines if line[0] == '?'] \
-              + [line for line in lines if line[0] != '?']
-    return lines
 
 def get_commit_message_template(pac):
     """

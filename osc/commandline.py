@@ -2878,41 +2878,42 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        args = parseargs(args)
+        if opts.quiet and opts.verbose:
+            raise oscerr.WrongOptions('\'--quiet\' and \'--verbose\' are mutually exclusive')
 
-        # storage for single Package() objects
-        pacpaths = []
-        # storage for a project dir ( { prj_instance : [ package objects ] } )
-        prjpacs = {}
+        args = parseargs(args)
+        lines = []
+        excl_states = (' ',)
+        if opts.quiet:
+            excl_states += ('?',)
+        elif opts.verbose:
+            excl_states = ()
         for arg in args:
-            # when 'status' is run inside a project dir, it should
-            # stat all packages existing in the wc
             if is_project_dir(arg):
                 prj = Project(arg, False)
-
-                if conf.config['do_package_tracking']:
-                    prjpacs[prj] = []
-                    for pac in prj.pacs_have:
-                        # we cannot create package objects if the dir does not exist
-                        if not pac in prj.pacs_broken:
-                            prjpacs[prj].append(os.path.join(arg, pac))
-                else:
-                    pacpaths += [arg + '/' + n for n in prj.pacs_have]
-            elif is_package_dir(arg):
-                pacpaths.append(arg)
-            elif os.path.isfile(arg) or is_package_dir(os.path.dirname(arg)):
-                pacpaths.append(arg)
+                # don't exclude packages with state ' ' because the packages
+                # might have modified etc. files
+                prj_excl = [st for st in excl_states if st != ' ']
+                for st, pac in sorted(prj.get_status(*prj_excl), lambda x, y: cmp(x[1], y[1])):
+                    p = prj.get_pacobj(pac)
+                    if p is None:
+                        # state is != ' '
+                        lines.append(statfrmt(st, os.path.normpath(os.path.join(prj.dir, pac))))
+                        continue
+                    if st == ' ' and opts.verbose or st != ' ':
+                        lines.append(statfrmt(st, os.path.normpath(os.path.join(prj.dir, pac))))
+                    states = p.get_status(opts.show_excluded, *excl_states)
+                    for st, filename in sorted(states, lambda x, y: cmp(x[1], y[1])):
+                        lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
             else:
-                msg = '\'%s\' is neither a project or a package directory' % arg
-                raise oscerr.NoWorkingCopy, msg
-        lines = []
-        # process single packages
-        lines = getStatus(findpacs(pacpaths), None, opts.verbose, opts.quiet, opts.show_excluded)
-        # process project dirs
-        for prj, pacs in prjpacs.iteritems():
-            lines += getStatus(findpacs(pacs), prj, opts.verbose, opts.quiet, opts.show_excluded)
-        if lines:
-            print '\n'.join(lines)
+                p = findpacs([arg])[0]
+                for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), lambda x, y: cmp(x[1], y[1])):
+                    lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
+        # arrange the lines in order: unknown files first
+        # filenames are already sorted
+        lines = [l for l in lines if l[0] == '?'] + \
+                [l for l in lines if l[0] != '?']
+        print '\n'.join(lines)
 
 
     def do_add(self, subcmd, opts, *args):
@@ -3060,13 +3061,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # but first, produce status and diff to append to the template
             footer = []
             lines = []
-            for pac in pacs:
-                changed = getStatus([pac], quiet=True)
+            for p in pacs:
+                states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
+                changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
                 if changed:
                     footer += changed
-                    footer.append('\nDiff for working copy: %s' % pac.dir)
-                    footer.extend([''.join(i) for i in pac.get_diff(ignoreUnversioned=True)])
-                    lines.extend(get_commit_message_template(pac))
+                    footer.append('\nDiff for working copy: %s' % p.dir)
+                    footer.extend([''.join(i) for i in p.get_diff(ignoreUnversioned=True)])
+                    lines.extend(get_commit_message_template(p))
             if template == None:
                 template='\n'.join(lines)
             msg = ''
