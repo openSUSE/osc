@@ -32,7 +32,7 @@ class build_osc(distutils.command.build.build, object):
         # (this would break builds in environments like the obs)
         #osccli.main(argv = ['osc','man'])
         osccli.optparser = osccli.get_optparser()
-        osccli.do_man()
+        osccli.do_man(None)
         outfile.close()
 
     def run(self):

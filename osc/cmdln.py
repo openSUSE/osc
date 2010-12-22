@@ -559,7 +559,7 @@ class RawCmdln(cmd.Cmd):
     do_help.aliases = ["?"]
 
 
-    def do_man(self):
+    def do_man(self, argv):
         """${cmd_name}: generates a man page
 
         usage:
