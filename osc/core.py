@@ -3916,7 +3916,8 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
-                new_project, new_package, new_revision, unified=False, missingok=False, meta=False, expand=True):
+                new_project, new_package, new_revision,
+                unified=False, missingok=False, meta=False, expand=True):
     query = {'cmd': 'diff'}
     if expand:
         query['expand'] = 1
@@ -3939,6 +3940,35 @@ def server_diff(apiurl,
 
     f = http_POST(u)
     return f.read()
+
+def server_diff_noex(apiurl,
+                old_project, old_package, old_revision,
+                new_project, new_package, new_revision,
+                unified=False, missingok=False, meta=False, expand=True):
+    print "diff %d\n" % expand
+    try:
+        return server_diff(apiurl,
+                            old_project, old_package, old_revision,
+                            new_project, new_package, new_revision,
+                            unified, missingok, meta, expand)
+    except urllib2.HTTPError, e:
+        msg = None
+        body = None
+        try:
+            body = e.read()
+            if not 'bad link' in body:
+                return '# diff failed: ' + body
+        except:
+            return '# diff failed with unknown error'
+
+        if expand:
+            rdiff =  "## diff on expanded link not possible, showing unexpanded version\n"
+            print rdiff
+            rdiff += server_diff_noex(apiurl,
+                            old_project, old_package, old_revision,
+                            new_project, new_package, new_revision,
+                            unified, missingok, meta, False)
+            return rdiff
 
 
 def request_diff(apiurl, reqid):

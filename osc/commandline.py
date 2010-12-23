@@ -2670,26 +2670,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for i in pac.get_diff(rev1):
                     sys.stdout.write(''.join(i))
             else:
-                try:
-                    diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                        pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
-                except urllib2.HTTPError, e:
-                    if not e.code in [ 400, 403, 404, 500 ]:
-                        raise
-
-                    msg = None
-                    body = None
-                    try:
-                        body = e.read()
-                        if not 'bad link' in body:
-                            raise e
-                    except:
-                        raise e
-
-                    diff =  "## diff on expanded link not possible, showing unexpanded version\n"
-                    diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                        pac.prjname, pac.name, rev2, not opts.plain, opts.missingok,
-                                        expand=False)
+                diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
+                                    pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
         run_pager(diff)
 
 
@@ -2777,29 +2759,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.revision:
                 rev1, rev2 = parseRevisionOption(opts.revision)
 
-        try:
-            rdiff = server_diff(apiurl,
-                                old_project, old_package, rev1,
-                                new_project, new_package, rev2, not opts.plain, opts.missingok,
-                                expand=not opts.unexpand)
-        except urllib2.HTTPError, e:
-            if opts.unexpand or not e.code in [ 400, 403, 404, 500 ]:
-                raise
+        rdiff = server_diff_noex(apiurl,
+                            old_project, old_package, rev1,
+                            new_project, new_package, rev2, not opts.plain, opts.missingok,
+                            expand=not opts.unexpand)
 
-            msg = None
-            body = None
-            try:
-                body = e.read()
-                if not 'bad link' in body:
-                    raise e
-            except:
-                raise e
-
-            rdiff =  "## diff on expanded link not possible, showing unexpanded version\n"
-            rdiff += server_diff(apiurl,
-                                old_project, old_package, rev1,
-                                new_project, new_package, rev2, not opts.plain, opts.missingok,
-                                expand=False)
         run_pager(rdiff)
 
     @cmdln.hide(1)
