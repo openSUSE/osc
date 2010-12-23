@@ -433,7 +433,7 @@ class Project:
             msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
                 'Please run \'osc repairwc %s\' and check the state\n' \
                 'of the working copy afterwards (via \'osc status %s\')' % (self.dir, self.dir, self.dir)
-            raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, dirty_files, msg)
+            raise oscerr.WorkingCopyInconsistent(self.name, None, dirty_files, msg)
 
         if getPackageList:
             self.pacs_available = meta_get_packagelist(self.apiurl, self.name)
