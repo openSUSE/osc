@@ -1,7 +1,7 @@
 import osc.core
 import osc.oscerr
 import os
-from common import OscTestCase
+from common import GET, OscTestCase
 FIXTURES_DIR = os.path.join(os.getcwd(), 'init_project_fixtures')
 
 def suite():
@@ -23,7 +23,8 @@ class TestInitProject(OscTestCase):
     def test_simple(self):
         """initialize a project dir"""
         prj_dir = os.path.join(self.tmpdir, 'testprj')
-        osc.core.Project.init_project('http://localhost', prj_dir, 'testprj')
+        prj = osc.core.Project.init_project('http://localhost', prj_dir, 'testprj', getPackageList=False)
+        self.assertTrue(isinstance(prj, osc.core.Project))
         storedir = os.path.join(prj_dir, osc.core.store)
         self._check_list(os.path.join(storedir, '_project'), 'testprj\n')
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
@@ -33,7 +34,8 @@ class TestInitProject(OscTestCase):
         """initialize a project dir but the dir already exists"""
         prj_dir = os.path.join(self.tmpdir, 'testprj')
         os.mkdir(prj_dir)
-        osc.core.Project.init_project('http://localhost', prj_dir, 'testprj')
+        prj = osc.core.Project.init_project('http://localhost', prj_dir, 'testprj', getPackageList=False)
+        self.assertTrue(isinstance(prj, osc.core.Project))
         storedir = os.path.join(prj_dir, osc.core.store)
         self._check_list(os.path.join(storedir, '_project'), 'testprj\n')
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
@@ -46,11 +48,19 @@ class TestInitProject(OscTestCase):
         os.mkdir(os.path.join(prj_dir, osc.core.store))
         self.assertRaises(osc.oscerr.OscIOError, osc.core.Project.init_project, 'http://localhost', prj_dir, 'testprj')
 
+    @GET('http://localhost/source/testprj', text='<directory count="0" />')
     def test_no_package_tracking(self):
-        """initialize a project dir but disable package tracking"""
+        """initialize a project dir but disable package tracking; enable getPackageList=True;
+        disable wc_check (because we didn't disable the package tracking before the Project class
+        was imported therefore REQ_STOREFILES contains '_packages')
+        """
+        import osc.conf
+        # disable package tracking
+        osc.conf.config['do_package_tracking'] = False
         prj_dir = os.path.join(self.tmpdir, 'testprj')
         os.mkdir(prj_dir)
-        osc.core.Project.init_project('http://localhost', prj_dir, 'testprj', False)
+        prj = osc.core.Project.init_project('http://localhost', prj_dir, 'testprj', False, wc_check=False)
+        self.assertTrue(isinstance(prj, osc.core.Project))
         storedir = os.path.join(prj_dir, osc.core.store)
         self._check_list(os.path.join(storedir, '_project'), 'testprj\n')
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')

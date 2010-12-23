@@ -851,7 +851,7 @@ class Project:
         return '\n'.join(r)
 
     @staticmethod
-    def init_project(apiurl, dir, project, package_tracking=True):
+    def init_project(apiurl, dir, project, package_tracking=True, getPackageList=True, progress_obj=None, wc_check=True):
         global store
 
         if not os.path.exists(dir):
@@ -868,6 +868,7 @@ class Project:
         store_write_apiurl(dir, apiurl)
         if package_tracking:
             store_write_initial_packages(dir, project, [])
+        return Project(dir, getPackageList, progress_obj, wc_check)
 
 
 class Package:
