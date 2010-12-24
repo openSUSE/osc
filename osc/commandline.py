@@ -2501,6 +2501,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             p.update_package_meta()
 
 
+    @cmdln.alias('linkdiff')
+    @cmdln.alias('ldiff')
     @cmdln.alias('di')
     @cmdln.option('-c', '--change', metavar='rev',
                         help='the change made by revision rev (like -r rev-1:rev).'
@@ -2512,6 +2514,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              '(NOTE: changes in your working copy are ignored in this case)')
     @cmdln.option('-p', '--plain', action='store_true',
                         help='output the diff in plain (not unified) diff format')
+    @cmdln.option('-l', '--link', action='store_true',
+                        help='(osc linkdiff): compare against the base revision of the link')
     @cmdln.option('--missingok', action='store_true',
                         help='do not fail if the source or target project/package does not exist on the server')
     def do_diff(self, subcmd, opts, *args):
@@ -2520,14 +2524,50 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Generates a diff, comparing local changes against the repository
         server.
 
-        ARG, specified, is a filename to include in the diff.
-
         ${cmd_usage}
+                ARG, if specified, is a filename to include in the diff.
+                Default: all files.
+
+            osc diff --link
+            osc linkdiff                
+                Compare current checkout directory against the link base.
+
+            osc diff --link PROJ PACK      
+            osc linkdiff PROJ PACK      
+                Compare a package against the link base (ignoring working copy changes).
+
         ${cmd_option_list}
         """
 
+        if (subcmd == 'ldiff' or subcmd == 'linkdiff'):
+            opts.link = True
         args = parseargs(args)
-        pacs = findpacs(args)
+        
+        pacs = None
+        if not opts.link or not len(args) == 2:
+            pacs = findpacs(args)
+
+
+        if opts.link:
+            query = { 'rev': 'latest' }
+            if pacs:
+                u = makeurl(pacs[0].apiurl, ['source', pacs[0].prjname, pacs[0].name], query=query)
+            else:
+                u = makeurl(self.get_api_url(), ['source', args[0], args[1]], query=query)
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            linkinfo = root.find('linkinfo')
+            if linkinfo == None:
+                raise oscerr.APIError('package is not a source link')
+            baserev = linkinfo.get('baserev')
+            opts.revision = baserev
+            if pacs:
+                print "diff working copy against linked revision %s\n" % baserev
+            else:
+                print "diff commited package against linked revision %s\n" % baserev
+                run_pager(server_diff(self.get_api_url(), args[0], args[1], baserev, 
+                  args[0], args[1], linkinfo.get('lsrcmd5'), not opts.plain, opts.missingok))
+                return
 
         if opts.change:
             try:
