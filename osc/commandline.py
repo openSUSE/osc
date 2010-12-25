@@ -2953,7 +2953,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # filenames are already sorted
         lines = [l for l in lines if l[0] == '?'] + \
                 [l for l in lines if l[0] != '?']
-        print '\n'.join(lines)
+        if lines:
+            print '\n'.join(lines)
 
 
     def do_add(self, subcmd, opts, *args):
