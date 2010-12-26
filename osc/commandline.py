@@ -3096,32 +3096,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
-        def get_commit_msg(pacs):
-            template = store_read_file(os.path.abspath('.'), '_commit_msg')
-            # open editor for commit message
-            # but first, produce status and diff to append to the template
-            footer = []
-            lines = []
-            for p in pacs:
-                states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
-                changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
-                if changed:
-                    footer += changed
-                    footer.append('\nDiff for working copy: %s' % p.dir)
-                    footer.extend([''.join(i) for i in p.get_diff(ignoreUnversioned=True)])
-                    lines.extend(get_commit_message_template(p))
-            if template == None:
-                template='\n'.join(lines)
-            msg = ''
-            # if footer is empty, there is nothing to commit, and no edit needed.
-            if footer:
-                msg = edit_message(footer='\n'.join(footer), template=template)
-            if msg:
-                store_write_string(os.path.abspath('.'), '_commit_msg', msg + '\n')
-            else:
-                store_unlink_file(os.path.abspath('.'), '_commit_msg')
-            return msg
-
         args = parseargs(args)
 
         validators = conf.config['source_validator_directory']
@@ -3182,23 +3156,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(prj_path)
                 prj.validate_pacs(validators, opts.verbose_validation, *packages)
                 if not msg:
-                    msg = get_commit_msg(pac_objs[prj_path])
+                    msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
                 prj.commit(packages, msg=msg, files=files)
+                store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
                 p.validate(validators, opts.verbose_validation)
                 if not msg:
-                    msg = get_commit_msg([p])
+                    msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg)
+                store_unlink_file(p.absdir, '_commit_msg')
         else:
             for p in pacs:
                 p = Package(pac)
                 p.validate(validators, opts.verbose_validation)
                 if not msg:
-                    msg = get_commit_msg([p])
+                    msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg)
-
-        store_unlink_file(os.path.abspath('.'), '_commit_msg')
+                store_unlink_file(p.absdir, '_commit_msg')
 
     @cmdln.option('-r', '--revision', metavar='REV',
                         help='update to specified revision (this option will be ignored '

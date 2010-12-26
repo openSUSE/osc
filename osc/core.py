@@ -5538,6 +5538,32 @@ def parse_diff_for_commit_message(diff, template = []):
 
     return template
 
+def get_commit_msg(wc_dir, pacs):
+    template = store_read_file(wc_dir, '_commit_msg')
+    # open editor for commit message
+    # but first, produce status and diff to append to the template
+    footer = []
+    lines = []
+    for p in pacs:
+        states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
+        changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
+        if changed:
+            footer += changed
+            footer.append('\nDiff for working copy: %s' % p.dir)
+            footer.extend([''.join(i) for i in p.get_diff(ignoreUnversioned=True)])
+            lines.extend(get_commit_message_template(p))
+    if template is None:
+        template = '\n'.join(lines)
+    msg = ''
+    # if footer is empty, there is nothing to commit, and no edit needed.
+    if footer:
+        msg = edit_message(footer='\n'.join(footer), template=template)
+    if msg:
+        store_write_string(wc_dir, '_commit_msg', msg + '\n')
+    else:
+        store_unlink_file(wc_dir, '_commit_msg')
+    return msg
+
 def check_filelist_before_commit(pacs):
 
     # warn if any of files has a ? status (usually a patch, or new source was not added to meta)
