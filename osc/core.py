@@ -4651,6 +4651,33 @@ def get_buildconfig(apiurl, prj, repository):
     f = http_GET(u)
     return f.read()
 
+ 
+def get_source_rev(apiurl, project, package, revision=None):
+    # API supports ?deleted=1&meta=1&rev=4
+    # but not rev=current,rev=latest,rev=top, or anything like this.
+    # CAUTION: We have to loop through all rev and find the highest one, if none given.
+
+    if revision:
+      url = makeurl(apiurl, ['source', project, package, '_history'], {'rev':revision})
+    else:
+      url = makeurl(apiurl, ['source', project, package, '_history'])
+    f = http_GET(url)
+    xml = ET.parse(f)
+    ent = None
+    for new in xml.findall('revision'):
+        # remember the newest one.
+        if not ent:
+            ent = new
+        elif ent.find('time').text < new.find('time').text:
+            ent = new
+    if not ent:
+        return { 'version': None, 'error':'empty revisionlist: no such package?' }
+    e = {}
+    for k in ent.keys():
+         e[k] = ent.get(k)
+    for k in list(ent):
+         e[k.tag] = k.text
+    return e
 
 def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
     import time

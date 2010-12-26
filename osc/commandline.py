@@ -4987,6 +4987,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='match only when given attribute exists in meta data')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
+    @cmdln.option('-V', '--version', action='store_true', 
+                        help='show package version, revision, and srcmd5. CAUTION: This is slow and unreliable')
     @cmdln.option('-i', '--involved', action='store_true',
                         help='show projects/packages where given person (or myself) is involved as bugowner or maintainer')
     @cmdln.option('-b', '--bugowner', action='store_true',
@@ -5125,11 +5127,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 result.append(project)
                 if not package is None:
                     result.append(package)
+
+                if opts.version:
+                    sr = get_source_rev(apiurl,project,package)
+                    v = sr.get('version')
+                    r = sr.get('rev')
+                    s = sr.get('srcmd5')
+                    if not v or v == 'unknown': v = '-'
+                    if not r: r = '-'
+                    if not s: s = '-'
+                    result.append(v)
+                    result.append(r)
+                    result.append(s)
+
                 if opts.verbose:
                     title = node.findtext('title').strip()
                     if len(title) > 60:
                         title = title[:61] + '...'
                     result.append(title)
+
                 if opts.repos_baseurl:
                     # FIXME: no hardcoded URL of instance
                     result.append('http://download.opensuse.org/repositories/%s/' % project.replace(':', ':/'))
@@ -5153,6 +5169,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 headline = [ '# Project', '# Package' ]
             else:
                 headline = [ '# Project' ]
+            if opts.version:
+                headline.append('# Ver')
+                headline.append('Rev')
+                headline.append('Srcmd5')
             if opts.verbose:
                 headline.append('# Title')
             if opts.repos_baseurl:
