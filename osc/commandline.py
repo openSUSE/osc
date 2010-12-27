@@ -436,6 +436,9 @@ class Osc(cmdln.Cmdln):
                 if p.startswith("_patchinfo:"):
                     patchinfo = p
 
+        # CAUTION:
+        #  Both conf.config['checkout_no_colon'] and conf.config['checkout_rooted'] 
+        #  fool this test:
         if not os.path.exists(project_dir + "/" + patchinfo):
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
 

@@ -3817,6 +3817,41 @@ def checkout_package(apiurl, project, package,
             if conf.config['checkout_no_colon']:
                 prj_dir = prj_dir.replace(':', '/')
 
+    root_dots = '.'
+    if conf.config['checkout_rooted']:
+        if prj_dir[:1] == '/':
+            if conf.config['verbose'] > 1:
+              print "checkout_rooted ignored for %s" % prj_dir
+            # ?? should we complain if not is_project_dir(prj_dir) ??
+        else:
+            # if we are inside a project or package dir, ascend to parent
+            # directories, so that all projects are checked out relative to
+            # the same root.
+            if is_project_dir(".."):
+                # if we are in a package dir, goto parent.
+                # Hmm, with 'checkout_no_colon' in effect, we have directory levels that
+                # do not easily reveal the fact, that they are part of a project path.
+                # At least this test should find that the parent of 'home/username/branches' 
+                #  is a project (hack alert). Also goto parent in this case.
+                root_dots = "../"
+            elif is_project_dir("../.."):
+                # testing two levels is better than one.
+                # May happen in case of checkout_no_colon, or 
+                # if project roots were previously inconsistent 
+                root_dots = "../../"
+            if is_project_dir(root_dots):
+                if conf.config['checkout_no_colon']:
+                    oldproj = store_read_project(root_dots)
+                    n = len(oldproj.split(':'))
+                else:
+                    n = 1
+                root_dots = root_dots + "../" * n
+
+    if root_dots != '.':
+        if conf.config['verbose']:
+            print "found root of %s at %s" % (oldproj, root_dots)
+        prj_dir = root_dots + prj_dir
+
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
 

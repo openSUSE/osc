@@ -104,7 +104,8 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'getpac_default_project': 'openSUSE:Factory',
              # alternate filesystem layout: have multiple subdirs, where colons were.
              'checkout_no_colon': '0',
-             # local files to ignore with status, addremove, ....
+             # change filesystem layout: avoid checkout from within a proj or package dir.
+             'checkout_rooted': '0',
              # local files to ignore with status, addremove, ....
              'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
              # keep passwords in plaintext. If you see this comment, your osc
@@ -139,7 +140,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
-    'checkout_no_colon', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
+    'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check', 'http_full_debug']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
@@ -216,6 +217,9 @@ apiurl = %(apiurl)s
 
 # alternate filesystem layout: have multiple subdirs, where colons were.
 #checkout_no_colon = %(checkout_no_colon)s
+
+# change filesystem layout: avoid checkout within a project or package dir.
+#checkout_rooted = %(checkout_rooted)s
 
 # local files to ignore with status, addremove, ....
 #exclude_glob = %(exclude_glob)s
