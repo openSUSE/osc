@@ -5844,7 +5844,7 @@ def request_interactive_review(apiurl, request):
                 run_editor(tmpfile.name)
                 print_request(request)
             elif repl == 's':
-                print >>sys.stderr, 'skipping: #%d' % request.reqid
+                print >>sys.stderr, 'skipping: #%s' % request.reqid
                 break
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
@@ -5876,9 +5876,9 @@ def request_interactive_review(apiurl, request):
                 else:
                     msg = msg.strip('\'').strip('"')
                 if state is None:
-                    clone_request(apiurl, str(request.reqid), msg)
+                    clone_request(apiurl, request.reqid, msg)
                 else:
-                    change_request_state(apiurl, str(request.reqid), state, msg)
+                    change_request_state(apiurl, request.reqid, state, msg)
                 break
     finally:
         if tmpfile is not None:

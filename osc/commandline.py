@@ -976,7 +976,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(myreqs) > 0:
             print 'There are already following submit request: %s.' % \
-                  ', '.join([str(i.reqid) for i in myreqs ])
+                  ', '.join([i.reqid for i in myreqs ])
             repl = raw_input('Supersede the old requests? (y/n/c) ')
             if repl.lower() == 'c':
                 print >>sys.stderr, 'Aborting'
@@ -1002,7 +1002,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        opts.message, orev=opts.revision, src_update=src_update)
         if repl.lower() == 'y':
             for req in myreqs:
-                change_request_state(apiurl, str(req.reqid), 'superseded',
+                change_request_state(apiurl, req.reqid, 'superseded',
                                      'superseded by %s' % result, result)
 
         if opts.supersede:
@@ -1176,7 +1176,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repl = ''
             if len(myreqs) > 0:
                 print 'You already created the following submit request: %s.' % \
-                      ', '.join([str(i.reqid) for i in myreqs ])
+                      ', '.join([i.reqid for i in myreqs ])
                 repl = raw_input('Supersede the old requests? (y/n/c) ')
                 if repl.lower() == 'c':
                     print >>sys.stderr, 'Aborting'
@@ -1186,7 +1186,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     (src_project, src_package, opts.revision or show_upstream_rev(apiurl, src_project, src_package), dst_project, dst_package, options_block)
             if repl.lower() == 'y':
                 for req in myreqs:
-                    change_request_state(apiurl, str(req.reqid), 'superseded',
+                    change_request_state(apiurl, req.reqid, 'superseded',
                                          'superseded by %s' % result, result)
 
             if opts.supersede:
@@ -1807,7 +1807,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     for result in results:
                         print result.reqid, ": ",
                         r = change_request_state(apiurl,
-                                str(result.reqid), 'accepted', opts.message or '')
+                                result.reqid, 'accepted', opts.message or '')
                         print 'Result of change request state: %s' % r
                 else:
                     print >>sys.stderr, 'Aborted...'
