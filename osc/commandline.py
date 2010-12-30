@@ -713,6 +713,8 @@ class Osc(cmdln.Cmdln):
                 raise oscerr.WrongOptions('The --delete switch is only for pattern metadata or attributes.')
 
 
+    # TODO: rewrite and consolidate the current submitrequest/createrequest "mess"
+
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
