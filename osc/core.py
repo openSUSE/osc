@@ -3520,11 +3520,11 @@ def change_request_state_template(req, newstate):
     tmpl = conf.config.get(tmpl_name, '')
     tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')    
     data = {'reqid': req.reqid, 'type': action.type, 'who': req.get_creator()}
-    # XXX: change also mapping key to tgt_ prefix
     if req.actions[0].type == 'submit':
         data.update({'src_project': action.src_project,
             'src_package': action.src_package, 'src_rev': action.src_rev,
             'dst_project': action.tgt_project, 'dst_package': action.tgt_package})
+            'tgt_project': action.tgt_project, 'tgt_package': action.tgt_package})
     try:
         return tmpl % data
     except KeyError, e:

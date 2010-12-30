@@ -269,13 +269,13 @@ apiurl = %(apiurl)s
 
 # template for an accepted submitrequest
 #submitrequest_accepted_template = Hi %%(who)s,\\n
-# thanks for working on:\\t%%(dst_project)s/%%(dst_package)s.
+# thanks for working on:\\t%%(tgt_project)s/%%(tgt_package)s.
 # SR %%(reqid)s has been accepted.\\n\\nYour maintainers
 
 # template for a declined submitrequest
 #submitrequest_declined_template = Hi %%(who)s,\\n
 # sorry your SR %%(reqid)s (request type: %%(type)s) for
-# %%(dst_project)s/%%(dst_package)s has been declined because...
+# %%(tgt_project)s/%%(tgt_package)s has been declined because...
 
 #review requests interactively (default: off)
 #request_show_review = 1
