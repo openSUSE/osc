@@ -105,10 +105,11 @@ def addExpectedRequest(method, url, **kwargs):
     EXPECTED_REQUESTS.append((method, url, kwargs))
 
 class OscTestCase(unittest.TestCase):
-    def setUp(self):
+    def setUp(self, copytree=True):
         osc.core.conf.get_config(override_conffile=os.path.join(self._get_fixtures_dir(), 'oscrc'))
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
-        shutil.copytree(os.path.join(self._get_fixtures_dir(), 'osctest'), os.path.join(self.tmpdir, 'osctest'))
+        if copytree:
+            shutil.copytree(os.path.join(self._get_fixtures_dir(), 'osctest'), os.path.join(self.tmpdir, 'osctest'))
         global EXPECTED_REQUESTS
         EXPECTED_REQUESTS = []
         osc.core.conf._build_opener = lambda u: urllib2.build_opener(MyHTTPHandler(EXPECTED_REQUESTS, self._get_fixtures_dir()))
