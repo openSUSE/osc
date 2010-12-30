@@ -3520,10 +3520,11 @@ def change_request_state_template(req, newstate):
     tmpl = conf.config.get(tmpl_name, '')
     tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')    
     data = {'reqid': req.reqid, 'type': action.type, 'who': req.get_creator()}
+    # XXX: change also mapping key to tgt_ prefix
     if req.actions[0].type == 'submit':
         data.update({'src_project': action.src_project,
             'src_package': action.src_package, 'src_rev': action.src_rev,
-            'dst_project': action.dst_project, 'dst_package': action.dst_package})
+            'dst_project': action.tgt_project, 'dst_package': action.tgt_package})
     try:
         return tmpl % data
     except KeyError, e:
@@ -3640,12 +3641,13 @@ def get_request_log(apiurl, reqid):
     r = get_request(apiurl, reqid)
     data = []
     frmt = '-' * 76 + '\n%s | %s | %s\n\n%s'
+    r.statehistory.reverse()
     # the description of the request is used for the initial log entry
     # otherwise its comment attribute would contain None
     if len(r.statehistory) >= 1:
-        r.statehistory[-1].comment = r.descr
+        r.statehistory[-1].comment = r.description
     else:
-        r.state.comment = r.descr
+        r.state.comment = r.description
     for state in [ r.state ] + r.statehistory:
         s = frmt % (state.name, state.who, state.when, str(state.comment))
         data.append(s)
@@ -5814,12 +5816,12 @@ def request_interactive_review(apiurl, request):
                     tmpfile = tempfile.NamedTemporaryFile()
                     # backward compatiblity: only a recent api/backend supports the missingok parameter
                     try:
-                        diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
+                        diff = server_diff(apiurl, request.actions[0].tgt_project, request.actions[0].tgt_package, None,
                                            request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, True)
                     except urllib2.HTTPError, e:
                         if e.code == 400:
                             try:
-                                diff = server_diff(apiurl, request.actions[0].dst_project, request.actions[0].dst_package, None,
+                                diff = server_diff(apiurl, request.actions[0].tgt_project, request.actions[0].tgt_package, None,
                                                    request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
                             except urllib2.HTTPError, e:
                                 tmpfile.close()

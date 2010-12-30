@@ -1843,7 +1843,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # for OBS 2.0 and before
                     try:
                         rdiff = server_diff(apiurl,
-                                            r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                            r.actions[0].tgt_project, r.actions[0].tgt_package, None,
                                             r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
                     except urllib2.HTTPError, e:
                         if e.code != 400:
@@ -1852,7 +1852,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         # backward compatiblity: only a recent api/backend supports the missingok parameter
                         try:
                             rdiff = server_diff(apiurl,
-                                                r.actions[0].dst_project, r.actions[0].dst_package, None,
+                                                r.actions[0].tgt_project, r.actions[0].tgt_package, None,
                                                 r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, False)
                         except urllib2.HTTPError, e:
                             e.osc_msg = 'Diff not possible'
