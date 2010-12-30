@@ -1790,7 +1790,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                         request_interactive_review(apiurl, result)
                     else:
-                        print result.list_view()
+                        print result.list_view(), '\n'
                 else:
                     skipped += 1
             if skipped:
@@ -4918,7 +4918,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif type in args_sr:
             requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
             for r in requests:
-                print r.list_view()
+                print r.list_view(), '\n'
             return
         elif not type in args_pkg:
             raise oscerr.WrongArgs("invalid type %s" % type)
@@ -4958,7 +4958,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in requests:
-                print r.list_view()
+                print r.list_view(), '\n'
         else:
             for i in sorted(roles.keys()):
                 out = '%s' % i
