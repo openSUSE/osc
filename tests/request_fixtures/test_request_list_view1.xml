@@ -1,0 +1,36 @@
+<request id="62">
+  <action type="set_bugowner">
+    <target project="foo" />
+    <person name="buguser" />
+  </action>
+  <action type="add_role">
+    <target project="foobar" />
+    <person name="xyz" role="maintainer" />
+    <group name="group1" role="reader" />
+  </action>
+  <action type="add_role">
+    <target project="foo" package="bar" />
+    <person name="abc" role="reviewer" />
+  </action>
+  <action type="change_devel">
+    <source project="devprj" package="devpkg" />
+    <target project="foo" package="bar" />
+  </action>
+  <action type="submit">
+    <source project="srcprj" package="srcpackage" />
+    <target project="tgtprj" package="tgtpackage" />
+  </action>
+  <action type="submit">
+    <source project="foo" package="bar" />
+    <target project="baz" />
+  </action>
+  <action type="delete">
+    <target project="deleteme" />
+  </action>
+  <action type="delete">
+    <target project="foo" package="bar" />
+  </action>
+  <state name="new" when="2010-12-29T14:57:25" who="Admin">
+    <comment></comment>
+  </state>
+</request>

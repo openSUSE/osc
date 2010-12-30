@@ -1,0 +1,19 @@
+<request id="123">
+  <action type="submit">
+    <source package="abc" project="xyz" />
+    <options>
+      <sourceupdate>cleanup</sourceupdate>
+      <updatelink>1</updatelink>
+    </options>
+  </action>
+  <action type="add_role">
+    <target project="home:foo" />
+    <person name="bar" role="maintainer" />
+    <group name="groupxyz" role="reader" />
+  </action>
+  <state name="review" when="2010-12-27T01:36:29" who="abc" />
+  <review by_group="group1" state="new" when="2010-12-28T00:11:22" who="abc">
+    <comment>review start</comment>
+  </review>
+  <history name="new" when="2010-12-11T00:00:00" who="creator" />
+</request>

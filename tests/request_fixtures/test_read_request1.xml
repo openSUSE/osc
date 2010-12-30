@@ -1,0 +1,17 @@
+<request id="42">
+  <action type="submit">
+    <source package="bar" project="foo" rev="1" />
+    <target package="bar" project="foobar" />
+  </action>
+  <action type="delete">
+    <target project="deleteme" />
+  </action>
+  <state name="accepted" when="2010-12-27T01:36:29" who="user1" />
+  <history name="new" when="2010-12-13T13:02:03" who="creator">
+    <comment>foobar</comment>
+  </history>
+  <title>title of the request</title>
+  <description>this is a
+very long
+description</description>
+</request>
