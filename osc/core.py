@@ -3523,7 +3523,7 @@ def change_request_state_template(req, newstate):
     if req.actions[0].type == 'submit':
         data.update({'src_project': action.src_project,
             'src_package': action.src_package, 'src_rev': action.src_rev,
-            'dst_project': action.tgt_project, 'dst_package': action.tgt_package})
+            'dst_project': action.tgt_project, 'dst_package': action.tgt_package,
             'tgt_project': action.tgt_project, 'tgt_package': action.tgt_package})
     try:
         return tmpl % data
