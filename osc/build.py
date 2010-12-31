@@ -845,6 +845,8 @@ def main(apiurl, opts, argv):
     if need_root:
         sucmd = config['su-wrapper'].split()
         if sucmd[0] == 'su':
+            if sucmd[-1] == '-c':
+                sucmd.pop()
             cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
         else:
             cmd = sucmd + cmd
