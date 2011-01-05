@@ -305,7 +305,7 @@ def verify_certificate(connection):
                 print >>sys.stderr, "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
                 print >>sys.stderr, "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!"
                 print >>sys.stderr, "offending certificate is at '%s'" % tc.file
-                raise >>sys.stderr, SSLVerificationError("remote host identification has changed")
+                raise SSLVerificationError("remote host identification has changed")
 
         verrs.show()
 
