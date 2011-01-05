@@ -8,6 +8,7 @@ from core import *
 import cmdln
 import conf
 import oscerr
+import sys
 from optparse import SUPPRESS_HELP
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
@@ -783,12 +784,12 @@ class Osc(cmdln.Cmdln):
         # remove this block later again
         oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
         if args and args[0] in oldcmds:
-            print "************************************************************************"
-            print "* WARNING: It looks that you are using this command with a             *"
-            print "*          deprecated syntax.                                          *"
-            print "*          Please run \"osc sr --help\" and \"osc rq --help\"              *"
-            print "*          to see the new syntax.                                      *"
-            print "************************************************************************"
+            print >>sys.stderr, "************************************************************************"
+            print >>sys.stderr, "* WARNING: It looks that you are using this command with a             *"
+            print >>sys.stderr, "*          deprecated syntax.                                          *"
+            print >>sys.stderr, "*          Please run \"osc sr --help\" and \"osc rq --help\"              *"
+            print >>sys.stderr, "*          to see the new syntax.                                      *"
+            print >>sys.stderr, "************************************************************************"
             if args[0] == 'create':
                 args.pop(0)
             else:
@@ -3116,7 +3117,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.skip_validation:
             validators = None
         elif not os.path.exists(validators):
-            print "WARNING: source_validator_directory configured but it "\
+            print >>sys.stderr, "WARNING: source_validator_directory configured but it "\
                   "does not exist:\n\t %s \n"\
                   "\t Install osc-source_validator to fix." % validators
             validators = None
@@ -3376,7 +3377,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         prj = Project(prj_dir, False)
                         prj.delPackage(p, opts.force)
                     else:
-                        print "WARNING: package tracking is disabled, operation skipped !"
+                        print >>sys.stderr, "WARNING: package tracking is disabled, operation skipped !"
             else:
                 pathn = getTransActPath(p.dir)
                 for filename in p.todo:

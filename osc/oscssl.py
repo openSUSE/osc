@@ -11,6 +11,7 @@ import urlparse
 import socket
 import urllib
 import httplib
+import sys
 
 class TrustedCertStore:
     _tmptrusted = {}
@@ -301,10 +302,10 @@ def verify_certificate(connection):
             if tc.is_trusted(): # ok, same cert as the stored one
                 return
             else:
-                print "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
-                print "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!"
-                print "offending certificate is at '%s'" % tc.file
-                raise SSLVerificationError("remote host identification has changed")
+                print >>sys.stderr, "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
+                print >>sys.stderr, "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!"
+                print >>sys.stderr, "offending certificate is at '%s'" % tc.file
+                raise >>sys.stderr, SSLVerificationError("remote host identification has changed")
 
         verrs.show()
 

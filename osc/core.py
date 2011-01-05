@@ -2666,7 +2666,7 @@ def read_filemeta(dir):
 
     filesmeta = os.path.join(dir, store, '_files')
     if not os.path.isfile(filesmeta):
-        print "Warning: file _files is missing, creating a default one"
+        print >>sys.stderr, "Warning: file _files is missing, creating a default one"
         store_write_string(os.path.join(dir, store), '_files', '<directory \>')
 
     try:

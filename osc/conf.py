@@ -793,14 +793,14 @@ def get_config(override_conffile = None,
                 try:
                     password = passwordx.decode('base64').decode('bz2')
                 except:
-                    print "%s: no credentials known" % url
+                    print >>sys.stderr, "%s: no credentials known" % url
                     password = 'your_password'
             elif password != passwordx.decode('base64').decode('bz2'):
                 if not passwordx:
                     # passx not present
-                    print '%s: rewriting from plain pass to encoded pass\n' % url
+                    print >>sys.stderr, '%s: rewriting from plain pass to encoded pass\n' % url
                 else:
-                    print '%s: pass and passx mismatch (rewriting from plain pass to encoded pass)\n' % url
+                    print >>sys.stderr, '%s: pass and passx mismatch (rewriting from plain pass to encoded pass)\n' % url
                 add_section(conffile, url, user, password)
 
         if cp.has_option(url, 'http_headers'):
