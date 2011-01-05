@@ -285,7 +285,6 @@ apiurl = %(apiurl)s
 
 [%(apiurl)s]
 user = %(user)s
-pass = %(pass)s
 passx = %(passx)s
 # set aliases for this apiurl
 # aliases = foo, bar
@@ -294,6 +293,8 @@ passx = %(passx)s
 # additional headers to pass to a request, e.g. for special authentication
 #http_headers = Host: foofoobar,
 #       User: mumblegack
+# Plain text password
+#pass =
 # Force using of keyring for this API
 #keyring = 1
 """
