@@ -347,7 +347,11 @@ class Osc(cmdln.Cmdln):
         # list sources
         elif not opts.binaries:
             if not args:
-                print '\n'.join(meta_get_project_list(apiurl, opts.deleted))
+                for prj in meta_get_project_list(apiurl, opts.deleted):
+                    try:
+                        print prj
+                    except UnicodeEncodeError:
+                        print prj.encode('unicode_escape')
 
             elif len(args) == 1:
                 if opts.verbose:
@@ -355,8 +359,11 @@ class Osc(cmdln.Cmdln):
                         print >>sys.stderr, 'Sorry, the --verbose option is not implemented for projects.'
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
-
-                print '\n'.join(meta_get_packagelist(apiurl, project, opts.deleted))
+                for pkg in meta_get_packagelist(apiurl, project, opts.deleted):
+                    try:
+                        print pkg
+                    except UnicodeEncodeError:
+                        print pkg.encode('unicode_escape')
 
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False
