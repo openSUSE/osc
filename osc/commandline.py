@@ -3085,8 +3085,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Skip the source validation')
     @cmdln.option('--verbose-validation', default=False, action="store_true",
                   help='Run the source validation with verbose information')
-    @cmdln.option('--no-precheckin', action='store_true', default=False,
-            help="don't run pre_checkin.sh, if exists")
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -3136,8 +3134,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 try:
                     prj = Project(arg)
-                    if not opts.no_precheckin:
-                        run_precheckin(prj.pacs_have)
                     prj.validate_pacs(validators, opts.verbose_validation)
                     if not msg:
                         msg = edit_message()
@@ -3171,8 +3167,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     single_paths.append(pac.dir)
             for prj_path, packages in prj_paths.iteritems():
                 prj = Project(prj_path)
-                if not opts.no_precheckin:
-                    run_precheckin((os.path.join(prj_path, p) for p in packages))
                 prj.validate_pacs(validators, opts.verbose_validation, *packages)
                 if not msg:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
@@ -3180,8 +3174,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
-                if not opts.no_precheckin:
-                    run_precheckin()
                 p.validate(validators, opts.verbose_validation)
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
@@ -3190,8 +3182,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             for p in pacs:
                 p = Package(pac)
-                if not opts.no_precheckin:
-                    run_precheckin()
                 p.validate(validators, opts.verbose_validation)
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
@@ -4103,7 +4093,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         repositories = []
         # store list of repos for potential offline use
-        repolistfile = os.path.join(os.getcwd(), store, "_build_repositories")
+        repolistfile = os.path.join(os.getcwd(), osc.core.store, "_build_repositories")
         if noinit:
             if os.path.exists(repolistfile):
                 f = open(repolistfile, 'r')
@@ -4245,8 +4235,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             help='take previous build from DIR (special values: _self, _link)')
     @cmdln.option('--shell', action='store_true',
                   help=SUPPRESS_HELP)
-    @cmdln.option('--no-precheckin', action='store_true', default=False,
-            help="don't run pre_checkin.sh, if exists")
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -4328,9 +4316,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
-
-        if not opts.no_precheckin:
-            run_precheckin()
 
         print 'Building %s for %s/%s' % (args[2], args[0], args[1])
         return osc.build.main(self.get_api_url(), opts, args)

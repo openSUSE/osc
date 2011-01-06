@@ -1,5 +1,4 @@
 0.131
-  - call pre_checkin.sh on build and commit (can be suppressed with --no-precheckin)
 
 0.130
   - new "revert" command to restore the original working copy file (without

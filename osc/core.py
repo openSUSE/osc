@@ -5960,23 +5960,4 @@ def filter_role(meta, user, role):
         for node in delete:
             root.remove(node)
 
-# run the pre_checkin.sh if exists
-def run_precheckin(packages=('.', )):
-    oldpwd = os.getcwd()
-    for dir in packages:
-        if os.path.isdir(dir):
-            os.chdir(dir)
-            if os.path.isfile('pre_checkin.sh'):
-                ret = subprocess.call(["/bin/sh", "pre_checkin.sh"])
-                if ret != 0:
-                    script_name = 'pre_checkin.sh'
-                    if dir != '.':
-                        script_name = "%s/%s" % (dir, script_name)
-                    #XXX: an ugly hack to prevent ../package - to me it seems, there's a bug in do_commit
-                    if script_name[:3] == '../':
-                        script_name = script_name[3:]
-                    raise oscerr.ExtRuntimeError("sh %s has failed with exit code %d, fix it or ignore using --no-precheckin" % (script_name, ret), script_name)
-            os.chdir(oldpwd)
-    return True
-
 # vim: sw=4 et
