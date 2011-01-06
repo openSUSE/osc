@@ -311,6 +311,12 @@ class Serviceinfo:
     def execute(self, dir):
         import tempfile
 
+        # cleanup existing generated files
+        for filename in os.listdir(dir):
+            if filename.startswith('_service:') or filename.startswith('_service_'):
+                os.unlink(os.path.join(dir, filename))
+
+        # recreate files
         for call in self.commands:
             temp_dir = tempfile.mkdtemp()
             name = call.split(None, 1)[0]
