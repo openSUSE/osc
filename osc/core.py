@@ -1964,7 +1964,7 @@ rev: %s
         print 'At revision %s.' % self.rev
 
     def run_source_services(self):
-        if self.filenamelist.count('_service'):
+        if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
             si = Serviceinfo()
             si.read(service)
