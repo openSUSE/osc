@@ -3612,14 +3612,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         sys.exit(1)
 
     @cmdln.alias('bl')
-    @cmdln.option('-s', '--start', metavar='START',
-                    help='get log starting from the offset')
+    @cmdln.alias('blt')
+    @cmdln.alias('buildlogtail')
+    @cmdln.option('-o', '--offset', metavar='OFFSET',
+                    help='get log start or end from the offset')
     def do_buildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
         Shows the log file of the build of a package. Can be used to follow the
         log while it is being written.
         Needs to be called from within a package directory.
+
+        When called as buildlogtail (or blt) it just shows the end of the logfile.
+        This is usefull to see just a build failure reasons.
 
         The arguments REPOSITORY and ARCH are the first two columns in the 'osc
         results' output. If the buildlog url is used buildlog command has the
@@ -3647,8 +3652,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[1]
 
         offset=0
-        if opts.start:
-            offset = int(opts.start)
+        if subcmd == "blt" or subcmd == "buildlogtail":
+            query = { 'view': 'entry' }
+            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            offset = int(root.find('entry').get('size'))
+            if opts.offset:
+                offset = offset - int(opts.offset)
+            else:
+                offset = offset - ( 4 * 1024 )
+            if offset < 0:
+                offset=0
+        elif opts.offset:
+            offset = int(opts.offset)
 
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
@@ -3674,13 +3691,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('rbl')
     @cmdln.alias('rbuildlog')
-    @cmdln.option('-s', '--start', metavar='START',
-                    help='get log starting from the offset')
+    @cmdln.alias('rblt')
+    @cmdln.alias('rbuildlogtail')
+    @cmdln.alias('remotebuildlogtail')
+    @cmdln.option('-o', '--offset', metavar='OFFSET',
+                    help='get log starting or ending from the offset')
     def do_remotebuildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
         Shows the log file of the build of a package. Can be used to follow the
         log while it is being written.
+
+        remotebuildlogtail shows just the tail of the log file.
 
         usage:
             osc remotebuildlog project package repository arch
@@ -3702,14 +3724,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 project, package, repository, arch = args
 
-        offset=0
-        if opts.start:
-            offset = int(opts.start)
+        if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
+            query = { 'view': 'entry' }
+            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            offset = int(root.find('entry').get('size'))
+            if opts.offset:
+                offset = offset - int(opts.offset)
+            else:
+                offset = offset - ( 4 * 1024 )
+            if offset < 0:
+                offset=0
+        elif opts.offset:
+            offset = int(opts.offset)
 
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
     @cmdln.alias('lbl')
-    @cmdln.option('-s', '--start', metavar='START',
+    @cmdln.option('-o', '--offset', metavar='OFFSET',
                   help='get log starting from offset')
     def do_localbuildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a local buildchroot
