@@ -1264,11 +1264,6 @@ class Package:
         self.write_addlist()
         self.update_datastructs()
 
-        if self.filenamelist.count('_service'):
-            print 'The package contains a source service.'
-            for filename in self.todo:
-                if filename.startswith('_service:') and os.path.exists(filename):
-                    os.unlink(filename) # remove local files
         print_request_list(self.apiurl, self.prjname, self.name)
 
     def __write_storelist(self, name, data):
