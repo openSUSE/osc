@@ -3724,6 +3724,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 project, package, repository, arch = args
 
+        offset=0
         if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
             query = { 'view': 'entry' }
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
