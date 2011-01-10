@@ -1240,6 +1240,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         return actionxml
 
+    def _add_me(self, args, opts):
+        if len(args) > 3:
+            raise oscerr.WrongArgs('Too many arguments.')
+        if len(args) < 2:
+            raise oscerr.WrongArgs('Too few arguments.')
+
+        apiurl = self.get_api_url()
+
+        user = conf.get_apiurl_usr(apiurl)
+        role = args[1]
+        project = args[2]
+        actionxml = """ <action type="add_role"> <target project="%s" /> <person name="%s" role="%s" /> </action> """ % \
+                (project, user, role)
+
+        if len(args) > 2:
+            package = args[2]
+            actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <person name="%s" role="%s" /> </action> """ % \
+                (project, package, user, role)
+
+        if get_user_meta(apiurl, user) == None:
+            raise oscerr.WrongArgs('osc: an error occured.')
+
+        return actionxml
+
     def _add_role(self, args, opts):
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -1315,6 +1339,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 -a submit SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG] 
                 -a delete PROJECT [PACKAGE] 
                 -a change_devel PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE] 
+                -a add_me ROLE PROJECT [PACKAGE]
                 -a add_role USER ROLE PROJECT [PACKAGE]
                 -a set_bugowner USER PROJECT [PACKAGE]
                 ]
@@ -1357,6 +1382,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif ai == 'change_devel':
                 args = opts.actiondata[i]
                 actionsxml += self._changedevel_request(args,opts)
+                i = i+1
+            elif ai == 'add_me':
+                args = opts.actiondata[i]
+                actionsxml += self._add_me(args,opts)
                 i = i+1
             elif ai == 'add_role':
                 args = opts.actiondata[i]
