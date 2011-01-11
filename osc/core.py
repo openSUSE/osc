@@ -3655,6 +3655,15 @@ def get_request_log(apiurl, reqid):
     return data
 
 
+def get_group(apiurl, group):
+    u = makeurl(apiurl, ['group', quote_plus(group)])
+    try:
+        f = http_GET(u)
+        return ''.join(f.readlines())
+    except urllib2.HTTPError:
+        print 'user \'%s\' not found' % group
+        return None
+
 def get_user_meta(apiurl, user):
     u = makeurl(apiurl, ['person', quote_plus(user)])
     try:

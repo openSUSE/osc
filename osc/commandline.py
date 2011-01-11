@@ -1264,7 +1264,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         return actionxml
 
-    def _add_role(self, args, opts):
+    def _add_user(self, args, opts):
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
         if len(args) < 3:
@@ -1284,6 +1284,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 (project, package, user, role)
 
         if get_user_meta(apiurl, user) == None:
+            raise oscerr.WrongArgs('osc: an error occured.')
+
+        return actionxml
+
+    def _add_group(self, args, opts):
+        if len(args) > 4:
+            raise oscerr.WrongArgs('Too many arguments.')
+        if len(args) < 3:
+            raise oscerr.WrongArgs('Too few arguments.')
+
+        apiurl = self.get_api_url()
+
+        group = args[0]
+        role = args[1]
+        project = args[2]
+        actionxml = """ <action type="add_role"> <target project="%s" /> <group name="%s" role="%s" /> </action> """ % \
+                (project, group, role)
+
+        if len(args) > 3:
+            package = args[3]
+            actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <group name="%s" role="%s" /> </action> """ % \
+                (project, package, group, role)
+
+        if get_group(apiurl, group) == None:
             raise oscerr.WrongArgs('osc: an error occured.')
 
         return actionxml
@@ -1340,6 +1364,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 -a delete PROJECT [PACKAGE] 
                 -a change_devel PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE] 
                 -a add_me ROLE PROJECT [PACKAGE]
+                -a add_group GROUP ROLE PROJECT [PACKAGE]
                 -a add_role USER ROLE PROJECT [PACKAGE]
                 -a set_bugowner USER PROJECT [PACKAGE]
                 ]
@@ -1387,9 +1412,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 args = opts.actiondata[i]
                 actionsxml += self._add_me(args,opts)
                 i = i+1
+            elif ai == 'add_group':
+                args = opts.actiondata[i]
+                actionsxml += self._add_group(args,opts)
+                i = i+1
             elif ai == 'add_role':
                 args = opts.actiondata[i]
-                actionsxml += self._add_role(args,opts)
+                actionsxml += self._add_user(args,opts)
                 i = i+1
             elif ai == 'set_bugowner':
                 args = opts.actiondata[i]
@@ -1459,7 +1488,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         arg = [ user, opts.role, project, package ]
 
-        actionsxml = self._add_role(arg, None)
+        actionsxml = self._add_user(arg, None)
 
         if not opts.message:
             opts.message = edit_message()

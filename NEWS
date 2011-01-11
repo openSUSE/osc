@@ -2,6 +2,7 @@
   - add blt and rblt commands, aka "buildlogtail" and "remotebuildlogtail" to show
     just the end of a build log (for getting the fail reason faster).
     CHANGE: the --start parameter is now called --offset
+  - add "createrequest -a add_group" option to create a group request
   - add "createrequest -a add_me" shortcut
 
 0.130
