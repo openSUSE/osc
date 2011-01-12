@@ -1249,8 +1249,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         user = conf.get_apiurl_usr(apiurl)
-        role = args[1]
-        project = args[2]
+        role = args[0]
+        project = args[1]
         actionxml = """ <action type="add_role"> <target project="%s" /> <person name="%s" role="%s" /> </action> """ % \
                 (project, user, role)
 
