@@ -2662,8 +2662,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for i in pac.get_diff(rev1):
                     sys.stdout.write(''.join(i))
             else:
-                diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
+                try:
+                    diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
+                                        pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
+                except urllib2.HTTPError, e:
+                    if not e.code in [ 400, 403, 404, 500 ]:
+                        raise
+
+                    msg = None
+                    body = None
+                    try:
+                        body = e.read()
+                        if not 'bad link' in body:
+                            raise e
+                    except:
+                        raise e
+
+                    diff =  "## diff on expanded link not possible, showing unexpanded version\n"
+                    diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
+                                        pac.prjname, pac.name, rev2, not opts.plain, opts.missingok,
+                                        expand=False)
         run_pager(diff)
 
 

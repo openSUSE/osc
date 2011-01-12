@@ -5,6 +5,7 @@
   - add "createrequest -a add_group" option to create a group request
   - add "createrequest -a add_me" shortcut
   - add "less" command, doing the same as "osc cat" but with pager
+  - fallback to unexpanded diff mode on "osc diff" on merge error.
 
 0.130
   - new "revert" command to restore the original working copy file (without
