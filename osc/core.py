@@ -2258,7 +2258,9 @@ class Action:
     """
 
     # allowed types + the corresponding (allowed) attributes
-    type_args = {'submit': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'opt_sourceupdate', 'opt_updatelink'),
+    type_args = {'submit': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'opt_sourceupdate',
+                            'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
+                            'acceptinfo_oxsrcmd5', 'opt_updatelink'),
         'add_role': ('tgt_project', 'tgt_package', 'person_name', 'person_role', 'group_name', 'group_role'),
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'),
         'delete': ('tgt_project', 'tgt_package'),
