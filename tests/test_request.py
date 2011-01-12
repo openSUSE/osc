@@ -290,6 +290,30 @@ class TestRequest(OscTestCase):
         self.assertTrue(action.src_rev is None)
         self.assertEqual(xml, action.to_str())
 
+    def test_action_from_xml3(self):
+        """create action from xml (with acceptinfo element)"""
+        from xml.etree import cElementTree as ET
+        xml = """<action type="submit">
+  <source package="bar" project="testprj" />
+  <target package="baz" project="foobar" />
+  <acceptinfo rev="5" srcmd5="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" xsrcmd5="ffffffffffffffffffffffffffffffff" />
+</action>"""
+        action = osc.core.Action.from_xml(ET.fromstring(xml))
+        self.assertEqual(action.type, 'submit')
+        self.assertEqual(action.src_project, 'testprj')
+        self.assertEqual(action.src_package, 'bar')
+        self.assertEqual(action.tgt_project, 'foobar')
+        self.assertEqual(action.tgt_package, 'baz')
+        self.assertTrue(action.opt_sourceupdate is None)
+        self.assertTrue(action.opt_updatelink is None)
+        self.assertTrue(action.src_rev is None)
+        self.assertEqual(action.acceptinfo_rev, '5')
+        self.assertEqual(action.acceptinfo_srcmd5, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+        self.assertEqual(action.acceptinfo_xsrcmd5, 'ffffffffffffffffffffffffffffffff')
+        self.assertTrue(action.acceptinfo_osrcmd5 is None)
+        self.assertTrue(action.acceptinfo_oxsrcmd5 is None)
+        self.assertEqual(xml, action.to_str())
+
     def test_action_from_xml_unknown_type(self):
         """try to create action from xml with unknown type"""
         from xml.etree import cElementTree as ET
