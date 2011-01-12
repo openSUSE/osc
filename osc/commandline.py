@@ -5655,6 +5655,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='force expansion of linked packages.')
     @cmdln.option('-u', '--unexpand', action='store_true',
                   help='always work with unexpanded packages.')
+    @cmdln.alias('less')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
 
@@ -5691,15 +5692,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
         u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
         try:
-            for data in streamfile(u):
-                sys.stdout.write(data)
+	    if subcmd == "less":
+                f = http_GET(u)
+                run_pager(''.join(f.readlines()))
+            else:
+                for data in streamfile(u):
+                    sys.stdout.write(data)
         except urllib2.HTTPError, e:
             if e.code == 404 and not opts.expand and not opts.unexpand:
                 print >>sys.stderr, 'expanding link...'
                 query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
                 u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
-                for data in streamfile(u):
-                    sys.stdout.write(data)
+		if subcmd == "less":
+                    f = http_GET(u)
+                    run_pager(''.join(f.readlines()))
+                else:
+                    for data in streamfile(u):
+                        sys.stdout.write(data)
             else:
                 e.osc_msg = 'If linked, try: cat -e'
                 raise e
