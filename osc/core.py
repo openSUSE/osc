@@ -1008,6 +1008,12 @@ class Package:
                 raise ioe
         if state in ['?', 'A', 'M', 'R', 'C'] and not force:
             return (False, state)
+        # special handling for skipped files: if file exists, simply delete it
+        if state == 'S':
+            exists = os.path.exists(os.path.join(self.dir, n))
+            self.delete_localfile(n)
+            return (exists, 'S')
+
         self.delete_localfile(n)
         was_added = n in self.to_be_added
         if state in ('A', 'R') or state == '!' and was_added:
@@ -2112,7 +2118,7 @@ rev: %s
         if not filename in self.filenamelist and not filename in self.to_be_added:
             raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % filename)
         elif filename in self.skipped:
-            raise oscerr.OscIOError(None, 'file \'%s\' is marked as skipped and cannot be reverted')
+            raise oscerr.OscIOError(None, 'file \'%s\' is marked as skipped and cannot be reverted' % filename)
         if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
             raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
         state = self.status(filename)
