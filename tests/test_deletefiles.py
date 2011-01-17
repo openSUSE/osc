@@ -175,6 +175,28 @@ class TestDeleteFiles(OscTestCase):
         self._check_deletelist('foo\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
 
+    def testDeleteSkippedLocalNotExistent(self):
+        """
+        delete a skipped file: no local file with that name exists
+        """
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        ret = p.delete_file('skipped')
+        self.__check_ret(ret, False, 'S')
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
+
+    def testDeleteSkippedLocalExistent(self):
+        """
+        delete a skipped file: a local file with that name exists and will be deleted
+        (for instance _service:* files have status 'S' but a local files might exist)
+        """
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        ret = p.delete_file('skipped_exists')
+        self.__check_ret(ret, True, 'S')
+        self.assertFalse(os.path.exists('skipped_exists'))
+        self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
+
     def __check_ret(self, ret, exp1, exp2):
         self.assertTrue(len(ret) == 2)
         self.assertTrue(ret[0] == exp1)
