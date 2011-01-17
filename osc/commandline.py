@@ -5147,7 +5147,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('sm')
     @cmdln.alias('se')
     @cmdln.alias('bse')
-    def do_search(self, subcmd, opts, search_term):
+    def do_search(self, subcmd, opts, *args):
         """${cmd_name}: Search for a project and/or package.
 
         If no option is specified osc will search for projects and
@@ -5166,6 +5166,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return 'contains(%s, \'%s\')' % (attr, what)
             else:
                 return '%s = \'%s\'' % (attr, what)
+
+        if len(args) > 1:
+            raise oscerr.WrongArgs('Too many arguments')
+        elif len(args) == 0:
+            if opts.involved or opts.bugowner or opts.maintainer or opts.mine:
+                search_term = conf.get_apiurl_usr(conf.config['apiurl'])
+            else:
+                raise oscerr.WrongArgs('Too few arguments')
+        search_term = args[0]
 
         # support perl package names and symbols:
         if re.match('^\w+(::\w+)+$', search_term):
