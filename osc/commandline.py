@@ -5167,6 +5167,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 return '%s = \'%s\'' % (attr, what)
 
+        search_term = ''
         if len(args) > 1:
             raise oscerr.WrongArgs('Too many arguments')
         elif len(args) == 0:
@@ -5174,7 +5175,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 search_term = conf.get_apiurl_usr(conf.config['apiurl'])
             else:
                 raise oscerr.WrongArgs('Too few arguments')
-        search_term = args[0]
+        else:
+            search_term = args[0]
 
         # support perl package names and symbols:
         if re.match('^\w+(::\w+)+$', search_term):
