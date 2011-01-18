@@ -3472,6 +3472,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         sys.exit('\'%s\' is not under version control' % filename)
                     elif state in ['A', 'M'] and not opts.force:
                         sys.exit('\'%s\' has local modifications (use --force to remove this file)' % filename)
+                    elif state == 'S':
+                        sys.exit('\'%s\' is marked as skipped and no local file with this name exists' % filename)
 
 
     def do_resolved(self, subcmd, opts, *args):
