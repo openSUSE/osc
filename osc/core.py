@@ -2345,6 +2345,10 @@ class Request:
     """Represents a request (<request />)"""
 
     def __init__(self):
+        self._init_attributes()
+
+    def _init_attributes(self):
+        """initialize attributes with default values"""
         self.reqid = None
         self.title = ''
         self.description = ''
@@ -2352,11 +2356,10 @@ class Request:
         self.actions = []
         self.statehistory = []
         self.reviews = []
-        self.readonly = False
 
     def read(self, root):
         """read in a request"""
-        self.readonly = True
+        self._init_attributes()
         if not root.get('id'):
             raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root))
         self.reqid = root.get('id')
@@ -2516,6 +2519,12 @@ class Request:
     def __cmp__(self, other):
         return cmp(self.reqid, other.reqid)
 
+    def create(self, apiurl):
+        """create a new request"""
+        u = makeurl(apiurl, ['request'], query='cmd=create')
+        f = http_POST(u, data=self.to_str())
+        root = ET.fromstring(f.read())
+        self.read(root)
 
 def shorttime(t):
     """format time as Apr 02 18:19
