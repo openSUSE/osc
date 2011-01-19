@@ -4610,6 +4610,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML')
+    @cmdln.option('-D', '--deleted', action='store_true',
+                        help='work on deleted package')
     @cmdln.option('-M', '--meta', action='store_true',
                         help='checkout out meta data instead of sources' )
     def do_log(self, subcmd, opts, *args):
@@ -4657,7 +4659,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta))
+        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta, opts.deleted))
         run_pager(log)
 
     def do_service(self, subcmd, opts, *args):

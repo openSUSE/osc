@@ -4925,10 +4925,12 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             print '%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker)
 
 
-def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False):
+def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False, deleted = False):
     import time, locale
 
     query = {}
+    if deleted:
+        query['deleted'] = 1
     if meta:
         query['meta'] = 1
 
