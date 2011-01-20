@@ -555,8 +555,6 @@ def main(apiurl, opts, argv):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
             print 'Getting buildinfo from server and store to %s' % bi_filename
-            if not bi_file:
-                bi_file = open(bi_filename, 'w')
             bi_text = ''.join(get_buildinfo(apiurl,
                                             prj,
                                             pac,
@@ -564,12 +562,16 @@ def main(apiurl, opts, argv):
                                             arch,
                                             specfile=build_descr_data,
                                             addlist=extra_pkgs))
+            if not bi_file:
+                bi_file = open(bi_filename, 'w')
+            # maybe we should check for errors before saving the file
             bi_file.write(bi_text)
             bi_file.flush()
             print 'Getting buildconfig from server and store to %s' % bc_filename
+            bc = get_buildconfig(apiurl, prj, repo)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
-            bc_file.write(get_buildconfig(apiurl, prj, repo))
+            bc_file.write(bc)
             bc_file.flush()
     except urllib2.HTTPError, e:
         if e.code == 404:
