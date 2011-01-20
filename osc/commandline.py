@@ -5420,7 +5420,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 'The automatic detection failed'
             sys.exit(1)
 
-        olddir = os.getcwd()
         if conf.config['do_package_tracking']:
             createPackageDir(os.path.join(project.dir, pac), project)
         else:
@@ -5453,9 +5452,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p = Package(os.path.join(project_dir, pac))
         if len(p.filenamelist) == 0 and opts.commit:
             print 'Adding files to working copy...'
-            addFiles(glob.glob('*'))
+            addFiles(glob.glob('%s/*' % os.path.join(project_dir, pac)))
             if conf.config['do_package_tracking']:
-                os.chdir(olddir)
                 project.commit((pac, ))
             else:
                 p.update_datastructs()
