@@ -1512,7 +1512,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Request to delete (or 'drop') a package or project
 
         usage:
-            osc deletereq [-m TEXT] 		           # works in checked out project/package
+            osc deletereq [-m TEXT]                     # works in checked out project/package
             osc deletereq [-m TEXT] PROJECT [PACKAGE]
         ${cmd_option_list}
         """
@@ -4834,7 +4834,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         otherwise all binary packages in the project will be deleted.
 
         usage:
-            osc wipebinaries OPTS			# works in checked out project dir
+            osc wipebinaries OPTS                       # works in checked out project dir
             osc wipebinaries OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
@@ -5721,7 +5721,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
         u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
         try:
-	    if subcmd == "less":
+            if subcmd == "less":
                 f = http_GET(u)
                 run_pager(''.join(f.readlines()))
             else:
@@ -5732,7 +5732,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print >>sys.stderr, 'expanding link...'
                 query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
                 u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
-		if subcmd == "less":
+                if subcmd == "less":
                     f = http_GET(u)
                     run_pager(''.join(f.readlines()))
                 else:
