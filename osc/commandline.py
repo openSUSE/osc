@@ -5736,11 +5736,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     f = http_GET(u)
                     run_pager(''.join(f.readlines()))
                 else:
-                    for data in streamfile(u):
-                        sys.stdout.write(data)
+                    try:
+                        for data in streamfile(u):
+                            sys.stdout.write(data)
+                    except IOError, e:
+                        pass # Ignore broken pipe, i.e. when used like 'osc cat foo | head'
             else:
                 e.osc_msg = 'If linked, try: cat -e'
                 raise e
+        except IOError, e:
+            pass # Ignore broken pipe, i.e. when used like 'osc cat foo | head'
 
 
     # helper function to download a file from a specific revision
