@@ -4885,7 +4885,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-q', '--quiet', action='store_true',
                   help='do not show downloading progress')
-    @cmdln.option('-d', '--destdir', default='./', metavar='DIR',
+    @cmdln.option('-d', '--destdir', default='./binaries', metavar='DIR',
                   help='destination directory')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
@@ -4947,6 +4947,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else: 
             package = [package]
 
+        # Set binary target directory and create if not existing
+        target_dir = os.path.normpath(opts.destdir)
+        if not os.path.isdir(target_dir):
+            print 'Creating %s' % target_dir
+            os.makedirs(target_dir, 0755)
+
         for arch in arches:
             for pac in package:
                 binaries = get_binarylist(apiurl, project, repository, arch,
@@ -4955,14 +4961,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print >>sys.stderr, 'no binaries found: Either the package %s ' \
                                         'does not exist or no binaries have been built.' % pac
                     continue
-                target_dir = opts.destdir
-                if architecture is None:
-                    # we're going to fetch all repo arches
-                    target_dir = '%s/%s' % (opts.destdir, arch)
-                target_dir = os.path.normpath(target_dir)
-                if not os.path.isdir(target_dir):
-                    print 'Creating %s' % target_dir
-                    os.makedirs(target_dir, 0755)
 
                 for i in binaries:
                     # skip source rpms
