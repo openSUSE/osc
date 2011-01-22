@@ -126,6 +126,12 @@ def run(prg):
         print >>sys.stderr, 'Failed to reach a server:\n', e.reason
         return 1
 
+    except IOError, e:
+        # ignore broken pipe
+        if e.errno != 32:
+            raise
+        return 1
+
     except (oscerr.ConfigError, oscerr.NoConfigfile), e:
         print >>sys.stderr, e.msg
         return 1
@@ -160,6 +166,7 @@ def run(prg):
             'and the following traceback to it:'
         print >>sys.stderr, e.msg
         traceback.print_exc(file=sys.stderr)
+        return 1
 
     except oscerr.PackageError, e:
         print >>sys.stderr, e.msg

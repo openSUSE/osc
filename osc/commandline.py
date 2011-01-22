@@ -5721,7 +5721,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
         u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
         try:
-            if subcmd == "less":
+            if subcmd == 'less':
                 f = http_GET(u)
                 run_pager(''.join(f.readlines()))
             else:
@@ -5736,16 +5736,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     f = http_GET(u)
                     run_pager(''.join(f.readlines()))
                 else:
-                    try:
-                        for data in streamfile(u):
-                            sys.stdout.write(data)
-                    except IOError, e:
-                        pass # Ignore broken pipe, i.e. when used like 'osc cat foo | head'
+                    for data in streamfile(u):
+                        sys.stdout.write(data)
             else:
                 e.osc_msg = 'If linked, try: cat -e'
                 raise e
-        except IOError, e:
-            pass # Ignore broken pipe, i.e. when used like 'osc cat foo | head'
 
 
     # helper function to download a file from a specific revision
