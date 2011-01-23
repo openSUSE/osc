@@ -7,6 +7,12 @@
   - add "less" command, doing the same as "osc cat" but with pager
   - fallback to unexpanded diff mode on "osc diff" on merge error.
   - support viewing the commit history of deleted packages
+  - show review states on "review list"
+#
+# Features which requires OBS 2.2
+#
+  - "my requests" is doing faster and complete server side lookup now if available
+  - "review" command has been extended to handle reviews by project or by package maintainers
 
 0.130
   - new "revert" command to restore the original working copy file (without

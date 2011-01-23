@@ -1623,6 +1623,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='requests or reviews limited for the specified USER')
     @cmdln.option('-G', '--group', metavar='GROUP',
                         help='requests or reviews limited for the specified GROUP')
+    @cmdln.option('-P', '--project', metavar='PROJECT',
+                        help='requests or reviews limited for the specified PROJECT')
+    @cmdln.option('-p', '--package', metavar='PACKAGE',
+                        help='requests or reviews limited for the specified PACKAGE, requires also a PROJECT')
     @cmdln.option('-b', '--brief', action='store_true', default=False,
                         help='print output in list view as list subcommand')
     @cmdln.option('-M', '--mine', action='store_true',
@@ -1787,6 +1791,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 query['by_user'] = opts.user
             if opts.group:
                 query['by_group'] = opts.group
+            if opts.project:
+                query['by_project'] = opts.project
+            if opts.package:
+                query['by_package'] = opts.package
             url = makeurl(apiurl, ['request', reqid], query)
             if not opts.message:
                 opts.message = edit_message()
@@ -1824,7 +1832,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                if subcmd == 'review':
                        # FIXME: do the review list for the user and for all groups he belong to
-                       results = get_review_list(apiurl, project, package, who, opts.group, state_list)
+                       results = get_review_list(apiurl, project, package, who, opts.group, opts.project, opts.package, state_list)
                else:
                    if opts.involved_projects:
                        who = who or conf.get_apiurl_usr(apiurl)
@@ -1944,7 +1952,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    opts.message = edit_message()
                 if cmd in ['accept', 'decline', 'reopen']:
                     r = change_review_state(apiurl,
-                            reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.group, opts.message or '')
+                            reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.group, opts.project, opts.package, opts.message or '')
                     print r
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
@@ -5071,6 +5079,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.all:
             role_filter = ''
 
+        if list_requests:
+            # try api side search as supported since OBS 2.2
+            try:
+               u = makeurl(apiurl, ['request'], ['view=collection&user=%s' % quote_plus(user)])
+               res = http_GET(u)
+               requests = []
+               for root in res['request'].findall('request'):
+                   r = Request()
+                   r.read(root)
+                   requests.append(r)
+               for r in requests:
+                   print r.list_view(), '\n'
+               return
+            except:
+               # skip it ... try again with old style below
+               pass
+
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 what.has_key('project'), what.has_key('package'),
                                 opts.maintained, opts.verbose)
@@ -5094,6 +5119,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
+            # old style, only for OBS 2.1 and before. Should not be used, since it is slow and incomplete
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in requests:
                 print r.list_view(), '\n'

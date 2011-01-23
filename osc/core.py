@@ -2204,6 +2204,8 @@ class ReviewState(AbstractState):
         self.state = review_node.get('state')
         self.by_user = review_node.get('by_user')
         self.by_group = review_node.get('by_group')
+        self.by_project = review_node.get('by_project')
+        self.by_package = review_node.get('by_package')
         self.who = review_node.get('who')
         self.when = review_node.get('when')
         self.comment = ''
@@ -2212,7 +2214,7 @@ class ReviewState(AbstractState):
             self.comment = review_node.find('comment').text.strip()
 
     def get_node_attrs(self):
-        return ('state', 'by_user', 'by_group', 'who', 'when')
+        return ('state', 'by_user', 'by_group', 'by_project', 'by_package', 'who', 'when')
 
     def get_comment(self):
         return self.comment
@@ -2418,6 +2420,29 @@ class Request:
         xmlindent(root)
         return ET.tostring(root)
 
+    def _format_review(self, review, show_srcupdate=False):
+        """
+        format a review depending on the reviewer's type.
+        A formatted str is returned.
+        """
+
+        d = {'state': '%s:' % review.state}
+        if review.by_package:
+           d['by'] = '%s/%s' % (review.by_project, review.by_package)
+           d['type'] = 'Package'
+        elif review.by_project:
+           d['by'] = '%s' % review.by_project
+           d['type'] = 'Project'
+        elif review.by_group:
+           d['by'] = '%s' % review.by_group
+           d['type'] = 'Group'
+        else:
+           d['by'] = '%s' % review.by_user
+           d['type'] = 'User'
+        if review.who:
+           d['by'] += '(%s)' % review.who
+        return d
+
     def _format_action(self, action, show_srcupdate=False):
         """
         format an action depending on the action's type.
@@ -2464,6 +2489,9 @@ class Request:
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
             lines.append(tmpl % self._format_action(action))
+        tmpl = '        Review by %(type)-10s is %(state)-10s %(by)-50s'
+        for review in self.reviews:
+            lines.append(tmpl % self._format_review(review))
         history = ['%s(%s)' % (hist.name, hist.who) for hist in self.statehistory]
         if history:
             lines.append('        From: %s' % ' -> '.join(history))
@@ -2492,15 +2520,21 @@ class Request:
         lines.append('Comment: %s' % (self.state.comment or '<no comment>'))
 
         indent = '\n         '
-        tmpl = '%(state)-10s %(by_user)s %(by_group)s %(when)-12s %(who)s  %(comment)s'
+        tmpl = '%(state)-10s %(by)-50s %(when)-12s %(who)-20s  %(comment)s'
         reviews = []
         for review in reversed(self.reviews):
             d = {'state': review.state}
-            d['by_user'] = review.by_user or '<no by_user>'
-            d['by_group'] = review.by_group or '<no by_group>'
-            d['when'] = review.when
-            d['who'] = review.who
-            d['comment'] = review.comment
+            if review.by_user:
+              d['by'] = "User: " + review.by_user
+            if review.by_group:
+              d['by'] = "Group: " + review.by_group
+            if review.by_package:
+              d['by'] = "Package: " + review.by_project + "/" + review.by_package 
+            elif review.by_project:
+              d['by'] = "Project: " + review.by_project
+            d['when'] = review.when or ''
+            d['who'] = review.who or ''
+            d['comment'] = review.comment or ''
             reviews.append(tmpl % d)
         if reviews:
             lines.append('\nReview:  %s' % indent.join(reviews))
@@ -3504,10 +3538,14 @@ def get_request(apiurl, reqid):
     return r
 
 
-def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', message='', supersed=None):
+def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_project='', by_package='', message='', supersed=None):
     query = {'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user }
     if by_group:
         query['by_group'] = by_group
+    if by_project:
+        query['by_project'] = by_project
+    if by_package:
+        query['by_package'] = by_package
     if supersed:
         query['superseded_by'] = supersed
     u = makeurl(apiurl, ['request', reqid], query=query)
@@ -3549,16 +3587,20 @@ def change_request_state_template(req, newstate):
         print >>sys.stderr, 'error: cannot interpolate \'%s\' in \'%s\'' % (e.args[0], tmpl_name)
         return ''
 
-def get_review_list(apiurl, project='', package='', user='', group='', states=('new')):
+def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=('new')):
     xpath = ''
     xpath = xpath_join(xpath, 'state/@name=\'review\'', inner=True)
     if not 'all' in states:
         for state in states:
             xpath = xpath_join(xpath, 'review/@state=\'%s\'' % state, inner=True)
-    if user:
-        xpath = xpath_join(xpath, 'review/@by_user=\'%s\'' % user, op='and')
-    if group:
-        xpath = xpath_join(xpath, 'review/@by_group=\'%s\'' % group, op='and')
+    if byuser:
+        xpath = xpath_join(xpath, 'review/@by_user=\'%s\'' % byuser, op='and')
+    if bygroup:
+        xpath = xpath_join(xpath, 'review/@by_group=\'%s\'' % bygroup, op='and')
+    if bypackage:
+        xpath = xpath_join(xpath, 'review/[@by_project=\'%s\' and @by_package=\'%s\']' % (byproject, bypackage), op='and')
+    elif byproject:
+        xpath = xpath_join(xpath, 'review/@by_project=\'%s\'' % byproject, op='and')
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend
@@ -3621,8 +3663,10 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
         requests.append(r)
     return requests
 
+# old style search, this is to be removed
 def get_user_projpkgs_request_list(apiurl, user, req_state=('new',), req_type=None, exclude_projects=[], projpkgs={}):
-    """Return all new requests for all projects/packages where is user is involved"""
+    """OBSOLETE: user involved request search is supported by OBS 2.2 server side in a better way
+       Return all running requests for all projects/packages where is user is involved"""
     if not projpkgs:
         res = get_user_projpkgs(apiurl, user, exclude_projects=exclude_projects)
         for i in res['project_id'].findall('project'):
