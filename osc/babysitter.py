@@ -6,6 +6,7 @@
 import os.path
 import sys
 import signal
+import errno
 from osc import oscerr
 from urllib2 import URLError, HTTPError
 from oscsslexcp import NoSecureSSLError
@@ -128,7 +129,7 @@ def run(prg):
 
     except IOError, e:
         # ignore broken pipe
-        if e.errno != 32:
+        if e.errno != errno.EPIPE:
             raise
         return 1
 
