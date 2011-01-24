@@ -485,8 +485,8 @@ test.
 State:   review     2010-12-27T01:36:29 abc
 Comment: currently in review
 
-Review:  accepted   <no by_user> group1 2010-12-29T00:11:22 abc  accepted
-         new        <no by_user> group1 2010-12-28T00:11:22 abc  review start
+Review:  accepted   Group: group1                                      2010-12-29T00:11:22 abc                   accepted
+         new        Group: group1                                      2010-12-28T00:11:22 abc                   review start
 
 History: revoked    2010-12-12T00:00:00 creator
          new        2010-12-11T00:00:00 creator"""
