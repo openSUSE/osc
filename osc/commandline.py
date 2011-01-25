@@ -2407,11 +2407,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-        if not opts.message:
-                footer='please specify the purpose of your branch'
-                template='This package was branched from %s in order to ...\n' % args[0]
-                opts.message = edit_message(footer, template)
-
         exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(apiurl, args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
