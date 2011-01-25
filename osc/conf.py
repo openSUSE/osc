@@ -108,9 +108,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'checkout_rooted': '0',
              # local files to ignore with status, addremove, ....
              'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
-             # keep passwords in plaintext. If you see this comment, your osc
-             # already uses the encrypted password, and only keeps them in plain text
-             # for backwards compatibility. Default will change to 0 in future releases.
+             # whether to keep passwords in plaintext.
              'plaintext_passwd': '1',
              # limit the age of requests shown with 'osc req list'.
              # this is a default only, can be overridden by 'osc req list -D NNN'
@@ -224,11 +222,10 @@ apiurl = %(apiurl)s
 # local files to ignore with status, addremove, ....
 #exclude_glob = %(exclude_glob)s
 
-# keep passwords in plaintext. If you see this comment, your osc
-# already uses the encrypted password, and only keeps them in plain text
-# for backwards compatibility. Default will change to 0 in future releases.
-# You can remove the plaintext password without harm, if you do not need
-# backwards compatibility.
+# keep passwords in plaintext.
+# Set to 0 to obfuscate passwords. It's no real security, just
+# prevents most people from remembering your password if they watch
+# you editing this file.
 #plaintext_passwd = %(plaintext_passwd)s
 
 # limit the age of requests shown with 'osc req list'.
@@ -601,7 +598,6 @@ def write_initial_config(conffile, entries, custom_template = ''):
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
-    config['passx'] = base64.b64encode(config['pass'].encode('bz2'))
     # at this point use_keyring and gnome_keyring are str objects
     if config['use_keyring'] == '1' and GENERIC_KEYRING:
         protocol, host = \
@@ -622,6 +618,9 @@ def write_initial_config(conffile, entries, custom_template = ''):
         config['passx'] = ''
     if not config['plaintext_passwd']:
         config['pass'] = ''
+    else:
+        config['passx'] = base64.b64encode(config['pass'].encode('bz2'))
+
     sio = StringIO.StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
     cp.readfp(sio)
@@ -675,7 +674,11 @@ def add_section(filename, url, user, passwd):
         cp.set(url, 'user', user)
         if not config['plaintext_passwd']:
             cp.remove_option(url, 'pass')
-        cp.set(url, 'passx', base64.b64encode(passwd.encode('bz2')))
+            cp.set(url, 'passx', base64.b64encode(passwd.encode('bz2')))
+        else:
+            cp.remove_option(url, 'passx')
+            cp.set(url, 'pass', passwd)
+
     file = open(filename, 'w')
     cp.write(file, True)
     if file: file.close()
@@ -786,23 +789,29 @@ def get_config(override_conffile = None,
             #from the general section.
             user         = cp.get(url, 'user', raw=True) # need to set raw to prevent '%' expansion
             password     = cp.get(url, 'pass', raw=True) # especially on password!
-            passwordx    = cp.get(url, 'passx', raw=True) # especially on password!
+            try:
+                passwordx = cp.get(url, 'passx', raw=True).decode('base64').decode('bz2') # especially on password!
+            except:
+                passwordx = ''
+            
+            if password == None or password == 'your_password':
+                password = ''
+
             if user is None or user == '':
                 raise oscerr.ConfigError('user is blank for %s' % apiurl, config['conffile'])
 
-            if password is None or password == 'your_password':
-                try:
-                    password = passwordx.decode('base64').decode('bz2')
-                except:
-                    print >>sys.stderr, "%s: no credentials known" % url
-                    password = 'your_password'
-            elif password != passwordx.decode('base64').decode('bz2'):
-                if not passwordx:
-                    # passx not present
-                    print >>sys.stderr, '%s: rewriting from plain pass to encoded pass\n' % url
+            if config['plaintext_passwd'] and passwordx or not config['plaintext_passwd'] and password:
+                if not config['plaintext_passwd']:
+                    if password != passwordx:
+                        print >>sys.stderr, '%s: rewriting from plain pass to encoded pass' % url
+                    add_section(conffile, url, user, password)
                 else:
-                    print >>sys.stderr, '%s: pass and passx mismatch (rewriting from plain pass to encoded pass)\n' % url
-                add_section(conffile, url, user, password)
+                    if password != passwordx:
+                        print >>sys.stderr, '%s: rewriting from encoded pass to plain pass' % url
+                    add_section(conffile, url, user, passwordx)
+
+            if not config['plaintext_passwd']:
+                password = passwordx
 
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
