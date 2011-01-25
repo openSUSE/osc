@@ -1459,20 +1459,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
+        import cgi
         args = slash_split(args)
         apiurl = self.get_api_url()
-        
-        if len(args) < 2:
-            if is_package_dir(os.getcwd()):
-                project = store_read_project(os.curdir)
-                package = store_read_package(os.curdir)
-                if len(args) == 0:
-                    user = conf.get_apiurl_usr(apiurl)
-                else:
-                    user = args[0]
-            else:
-                raise oscerr.WrongArgs('Wrong number of arguments.')
-        elif len(args) == 2:
+
+        if len(args) == 2:
             project = args[0]
             package = args[1]
             user = conf.get_apiurl_usr(apiurl)
@@ -1480,27 +1471,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = args[0]
             package = args[1]
             user = args[2]
+        elif len(args) < 2 and is_package_dir(os.curdir):
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+            if len(args) == 0:
+                user = conf.get_apiurl_usr(apiurl)
+            else:
+                user = args[0]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
         if not opts.role in ('maintainer', 'bugowner'):
             raise oscerr.WrongOptions('invalid \'--role\': either specify \'maintainer\' or \'bugowner\'')
-
-        arg = [ user, opts.role, project, package ]
-
-        actionsxml = self._add_user(arg, None)
-
         if not opts.message:
             opts.message = edit_message()
 
-        import cgi
-        xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
-              (actionsxml, cgi.escape(opts.message or ""))
-        u = makeurl(apiurl, ['request'], query='cmd=create')
-        f = http_POST(u, data=xml)
-
-        root = ET.parse(f).getroot()
-        return root.get('id')
+        r = Request()
+        r.add_action('add_role', tgt_project=project, tgt_package=package,
+            person_name=user, person_role=opts.role)
+        r.description = cgi.escape(opts.message or '')
+        r.create(apiurl)
+        print r.reqid
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
