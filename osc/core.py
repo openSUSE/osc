@@ -5618,10 +5618,11 @@ def createPackageDir(pathname, prj_obj=None):
     """
     prj_dir, pac_dir = getPrjPacPaths(pathname)
     if is_project_dir(prj_dir):
-        if not os.path.exists(pac_dir):
+        global store
+        if not os.path.exists(pac_dir+store):
             prj = prj_obj or Project(prj_dir, False)
-            prj.addPackage(pac_dir)
             Package.init_package(prj.apiurl, prj.name, pac_dir, pac_dir)
+            prj.addPackage(pac_dir)
             print statfrmt('A', os.path.normpath(pathname))
         else:
             raise oscerr.OscIOError(None, 'file or directory \'%s\' already exists' % pathname)
