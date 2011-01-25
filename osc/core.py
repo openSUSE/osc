@@ -3945,7 +3945,6 @@ def server_diff_noex(apiurl,
                 old_project, old_package, old_revision,
                 new_project, new_package, new_revision,
                 unified=False, missingok=False, meta=False, expand=True):
-    print "diff %d\n" % expand
     try:
         return server_diff(apiurl,
                             old_project, old_package, old_revision,
