@@ -3424,61 +3424,6 @@ def edit_message(footer='', template='', templatelen=30):
         os.unlink(filename)
     return msg
 
-
-def create_delete_request(apiurl, project, package, message):
-
-    import cgi
-
-    if package:
-        package = """package="%s" """ % (package)
-    else:
-        package = ""
-
-    xml = """\
-<request>
-    <action type="delete">
-        <target project="%s" %s/>
-    </action>
-    <state name="new"/>
-    <description>%s</description>
-</request>
-""" % (project, package,
-       cgi.escape(message or ''))
-
-    u = makeurl(apiurl, ['request'], query='cmd=create')
-    f = http_POST(u, data=xml)
-
-    root = ET.parse(f).getroot()
-    return root.get('id')
-
-
-def create_change_devel_request(apiurl,
-                                devel_project, devel_package,
-                                project, package,
-                                message):
-
-    import cgi
-    xml = """\
-<request>
-    <action type="change_devel">
-        <source project="%s" package="%s" />
-        <target project="%s" package="%s" />
-    </action>
-    <state name="new"/>
-    <description>%s</description>
-</request>
-""" % (devel_project,
-       devel_package,
-       project,
-       package,
-       cgi.escape(message or ''))
-
-    u = makeurl(apiurl, ['request'], query='cmd=create')
-    f = http_POST(u, data=xml)
-
-    root = ET.parse(f).getroot()
-    return root.get('id')
-
 def clone_request(apiurl, reqid, msg=None):
     query = {'cmd': 'branch', 'request': reqid}
     url = makeurl(apiurl, ['source'], query)

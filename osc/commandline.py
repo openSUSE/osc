@@ -1516,29 +1516,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc deletereq [-m TEXT] PROJECT [PACKAGE]
         ${cmd_option_list}
         """
+        import cgi
 
         args = slash_split(args)
 
         project = None
         package = None
 
-        if len(args) < 1:
-            if is_project_dir(os.getcwd()):
-                project = store_read_project(os.curdir)
-            elif is_package_dir(os.getcwd()):
-                project = store_read_project(os.curdir)
-                package = store_read_package(os.curdir)
-            else: 
-                raise oscerr.WrongArgs('Please specify at least a project.')
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
         elif len(args) == 1:
             project = args[0]
-        elif len(args) > 1:
+        elif len(args) == 2:
             project = args[0]
             package = args[1]
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
-
-        apiurl = self.get_api_url()
+        elif is_project_dir(os.getcwd()):
+            project = store_read_project(os.curdir)
+        elif is_package_dir(os.getcwd()):
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+        else: 
+            raise oscerr.WrongArgs('Please specify at least a project.')
 
         if not opts.message:
             import textwrap
@@ -1551,8 +1549,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         'please explain why you like to delete project %s' % project)
             opts.message = edit_message(footer)
 
-        result = create_delete_request(apiurl, project, package, opts.message)
-        print result
+        r = Request()
+        r.add_action('delete', tgt_project=project, tgt_package=package)
+        r.description = cgi.escape(opts.message)
+        r.create(self.get_api_url())
+        print r.reqid
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -1569,26 +1570,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         osc changedevelrequest PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
         """
-
-        if len(args) > 4:
-            raise oscerr.WrongArgs('Too many arguments.')
-
-        apiurl = self.get_api_url()
+        import cgi
 
         if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
             wd = os.curdir
             devel_project = store_read_project(wd)
             devel_package = package = store_read_package(wd)
             project = conf.config['getpac_default_project']
+        elif len(args) < 3:
+            raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) > 4:
+            raise oscerr.WrongArgs('Too many arguments.')
         else:
-            if len(args) < 3:
-                raise oscerr.WrongArgs('Too few arguments.')
-
             devel_project = args[2]
             project = args[0]
             package = args[1]
             devel_package = package
-            if len(args) > 3:
+            if len(args) == 4:
                 devel_package = args[3]
 
         if not opts.message:
@@ -1598,11 +1596,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     % (project,package,devel_project,devel_package))
             opts.message = edit_message(footer)
 
-        result = create_change_devel_request(apiurl,
-                                       devel_project, devel_package,
-                                       project, package,
-                                       opts.message)
-        print result
+        r = Request()
+        r.add_action('change_devel', src_project=devel_project, src_package=devel_package,
+            tgt_project=project, tgt_package=package)
+        r.description = cgi.escape(opts.message)
+        r.create(self.get_api_url())
+        print r.reqid
 
 
     @cmdln.option('-d', '--diff', action='store_true',
