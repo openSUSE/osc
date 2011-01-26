@@ -4663,7 +4663,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         command = args[0]
 
-        if command == "remoterun" or command == "r":
+        if command == "remoterun" or command == "rr":
             print runservice(apiurl, project, package)
 
         if command == "run" or command == "localrun" or command == "disabledrun" or command == "lr" or command == "dr" or command == "r":

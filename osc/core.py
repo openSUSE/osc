@@ -247,13 +247,14 @@ class Serviceinfo:
         """creates an empty serviceinfo instance"""
         self.services = None
 
-    def read(self, serviceinfo_node):
+    def read(self, serviceinfo_node, append=False):
         """read in the source services <services> element passed as
         elementtree node.
         """
         if serviceinfo_node == None:
             return
-        self.services = []
+        if not append:
+            self.services = []
         services = serviceinfo_node.findall('service')
 
         for service in services:
@@ -272,6 +273,13 @@ class Serviceinfo:
             except:
                 msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node)
                 raise oscerr.APIError(msg)
+
+    def readProjectFile(self, apiurl, project):
+        # download project wide _service file, we don't store it yet
+        u = makeurl(apiurl, ['source', project, "_project", "_service"])
+        f = http_GET(u)
+        root = ET.parse(f).getroot()
+        self.read(root, True)
 
     def addVerifyFile(self, serviceinfo_node, filename):
         import hashlib
@@ -2033,6 +2041,7 @@ rev: %s
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
             si = Serviceinfo()
             si.read(service)
+            si.readProjectFile(self.apiurl, self.prjname)
             si.execute(self.absdir, mode)
 
     def prepare_filelist(self):
