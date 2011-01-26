@@ -245,7 +245,7 @@ class Serviceinfo:
     """
     def __init__(self):
         """creates an empty serviceinfo instance"""
-        self.commands = None
+        self.services = None
 
     def read(self, serviceinfo_node):
         """read in the source services <services> element passed as
@@ -253,17 +253,22 @@ class Serviceinfo:
         """
         if serviceinfo_node == None:
             return
-        self.commands = []
+        self.services = []
         services = serviceinfo_node.findall('service')
 
         for service in services:
             name = service.get('name')
+            mode = service.get('mode', None)
+            data = { 'name' : name, 'mode' : '' }
+            if mode:
+                data['mode'] = mode
             try:
                 for param in service.findall('param'):
                     option = param.get('name', None)
                     value = param.text
                     name += " --" + option + " '" + value + "'"
-                self.commands.append(name)
+                data['command'] = name
+                self.services.append(data)
             except:
                 msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node)
                 raise oscerr.APIError(msg)
@@ -317,7 +322,10 @@ class Serviceinfo:
                 os.unlink(os.path.join(dir, filename))
 
         # recreate files
-        for call in self.commands:
+        for service in self.services:
+            if service['mode'] == "disabled":
+                next
+            call = service['command']
             temp_dir = tempfile.mkdtemp()
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
@@ -334,8 +342,12 @@ class Serviceinfo:
                 #        updating _services.
                 print "       (your _services file may be corrupt now)"
 
-            for filename in os.listdir(temp_dir):
-                shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
+            if service['mode'] == "trylocal" or service['mode'] == "localonly":
+                for filename in os.listdir(temp_dir):
+                    shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
+            else:
+                for filename in os.listdir(temp_dir):
+                    shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
             os.rmdir(temp_dir)
 
 class Linkinfo:
