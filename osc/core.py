@@ -277,9 +277,16 @@ class Serviceinfo:
     def readProjectFile(self, apiurl, project):
         # download project wide _service file, we don't store it yet
         u = makeurl(apiurl, ['source', project, "_project", "_service"])
-        f = http_GET(u)
-        root = ET.parse(f).getroot()
-        self.read(root, True)
+        root = None
+        try:
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+        except urllib2.HTTPError, e:
+            if e.code != 404:
+                raise e
+        if root:
+            self.read(root, True)
+
 
     def addVerifyFile(self, serviceinfo_node, filename):
         import hashlib
