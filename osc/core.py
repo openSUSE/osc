@@ -313,7 +313,7 @@ class Serviceinfo:
         r.append( s )
         return r
 
-    def execute(self, dir):
+    def execute(self, dir, callmode = ""):
         import tempfile
 
         # cleanup existing generated files
@@ -323,8 +323,10 @@ class Serviceinfo:
 
         # recreate files
         for service in self.services:
-            if service['mode'] == "disabled":
-                next
+            if service['mode'] == "disabled" and callmode != "disabled":
+                continue
+            if service['mode'] != "disabled" and callmode == "disabled":
+                continue
             call = service['command']
             temp_dir = tempfile.mkdtemp()
             name = call.split(None, 1)[0]
@@ -342,7 +344,7 @@ class Serviceinfo:
                 #        updating _services.
                 print "       (your _services file may be corrupt now)"
 
-            if service['mode'] == "trylocal" or service['mode'] == "localonly":
+            if service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local":
                 for filename in os.listdir(temp_dir):
                     shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
             else:
@@ -2026,12 +2028,12 @@ rev: %s
 
         print 'At revision %s.' % self.rev
 
-    def run_source_services(self):
+    def run_source_services(self, mode=""):
         if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
             si = Serviceinfo()
             si.read(service)
-            si.execute(self.absdir)
+            si.execute(self.absdir, mode)
 
     def prepare_filelist(self):
         """Prepare a list of files, which will be processed by process_filelist

@@ -4635,8 +4635,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc service COMMAND PROJECT PACKAGE
 
             COMMAND can be:
-            run         run defined services locally
-            remoterun   trigger a re-run on the server side
+            run         r  run defined services locally
+            localrun    lr run defined services locally and store files as local created (skip _service: prefix).
+            disabledrun dr run only disabled services locally and store files as local created
+            remoterun   rr trigger a re-run on the server side
 
         ${cmd_option_list}
         """
@@ -4661,14 +4663,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         command = args[0]
 
-        if command == "remoterun":
+        if command == "remoterun" or command == "r":
             print runservice(apiurl, project, package)
 
-        if command == "run":
+        if command == "run" or command == "localrun" or command == "disabledrun" or command == "lr" or command == "dr" or command == "r":
             if not is_package_dir(os.curdir):
                 raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
-            p.run_source_services()
+            if command == "localrun" or command == "lr":
+                p.run_source_services( "local" )
+            elif command == "disabledrun" or command == "dr":
+                p.run_source_services( "disabled" )
+            else:
+                p.run_source_services()
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='trigger rebuilds for a specific architecture')

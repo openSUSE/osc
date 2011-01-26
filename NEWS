@@ -8,6 +8,7 @@
   - fallback to unexpanded diff mode on "osc diff" on merge error.
   - support viewing the commit history of deleted packages
   - show review states on "review list"
+  - new source service commands "localrun" and "disabledrun" to generate files without _service: prefix
 #
 # Features which requires OBS 2.2
 #
