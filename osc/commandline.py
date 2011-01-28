@@ -3844,8 +3844,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         buildroot = buildroot % {'project': project, 'package': package,
                                  'repo': repo, 'arch': arch}
         offset = 0
-        if opts.start:
-            offset = int(opts.start)
+        if opts.offset:
+            offset = int(opts.offset)
         logfile = os.path.join(buildroot, '.build.log')
         if not os.path.isfile(logfile):
             raise oscerr.OscIOError(None, 'logfile \'%s\' does not exist' % logfile)
