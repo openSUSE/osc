@@ -1772,7 +1772,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # clone all packages from a given request
         if cmd in ['clone']:
             # should we force a message?
-            print clone_request(apiurl, reqid, opts.message)
+            print 'Cloned packages are available in project: %s' % clone_request(apiurl, reqid, opts.message)
 
         # add new reviewer to existing request
         elif cmd in ['add'] and subcmd == 'review':

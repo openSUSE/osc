@@ -3473,7 +3473,14 @@ def clone_request(apiurl, reqid, msg=None):
     query = {'cmd': 'branch', 'request': reqid}
     url = makeurl(apiurl, ['source'], query)
     r = http_POST(url, data=msg)
-    return r.read()
+    root = ET.fromstring(r.read())
+    project = None
+    for i in root.findall('data'):
+        if i.get('name') == 'targetproject':
+            project = i.text.strip()
+    if not project:
+        raise oscerr.APIError('invalid data from clone request:\n%s\n' % ET.tostring(root))
+    return project
 
 # This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
