@@ -5920,12 +5920,12 @@ def request_interactive_review(apiurl, request):
             print request.__str__().encode('ascii', 'xmlcharrefreplace')
     print_request(request)
     try:
-        msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
+        prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
         sr_actions = request.get_actions('submit')
         if sr_actions:
-            msg = 'd(i)ff/%s' % msg
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
         while True:
-            repl = raw_input(msg).strip()
+            repl = raw_input(prompt).strip()
             if repl == 'i' and sr_actions:
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
@@ -5944,8 +5944,10 @@ def request_interactive_review(apiurl, request):
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()
-            elif repl == 'b':
-                print '\n'.join(get_results(apiurl, request.actions[0].src_project, request.actions[0].src_package))
+            elif repl == 'b' and sr_actions:
+                for action in sr_actions:
+                    print '%s/%s:' % (action.src_project, action.src_package)
+                    print '\n'.join(get_results(apiurl, action.src_project, action.src_package))
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adrl])(?:\s+-m\s+(.*))?$', repl)

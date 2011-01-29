@@ -1891,11 +1891,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print r
             if opts.source_buildstatus:
-                if r.actions[0].type != 'submit':
-                    raise oscerr.WrongOptions( '\'--source-buildstatus\' is not possible for ' \
-                        'request type: \'%s\'' % r.actions[0].type)
-                print 'Buildstatus for \'%s/%s\':' % (r.actions[0].src_project, r.actions[0].src_package)
-                print '\n'.join(get_results(apiurl, r.actions[0].src_project, r.actions[0].src_package))
+                sr_actions = r.get_actions('submit')
+                if not sr_actions:
+                    raise oscerr.WrongOptions( '\'--source-buildstatus\' not possible ' \
+                        '(request has no \'submit\' actions)')
+                for action in sr_actions:
+                    print 'Buildstatus for \'%s/%s\':' % (action.src_project, action.src_package)
+                    print '\n'.join(get_results(apiurl, action.src_project, action.src_package))
             if opts.diff:
                 diff = ''
                 try:
@@ -1916,11 +1918,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
             r = get_request(apiurl, reqid)
-            submits = [ i for i in r.actions if i.type == 'submit' ]
-            if not len(submits):
-                raise oscerr.WrongArgs('\'checkout\' only works for \'submit\' requests')
-            checkout_package(apiurl, submits[0].src_project, submits[0].src_package, \
-                submits[0].src_rev, expand_link=True, prj_dir=submits[0].src_project)
+            sr_actions = r.get_actions('submit')
+            if not sr_actions:
+                raise oscerr.WrongArgs('\'checkout\' not possible (request has no \'submit\' actions)')
+            for action in sr_actions:
+                checkout_package(apiurl, action.src_project, action.src_package, \
+                    action.src_rev, expand_link=True, prj_dir=action.src_project)
 
         else:
             state_map = {'reopen' : 'new', 'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
