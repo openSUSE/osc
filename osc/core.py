@@ -2561,8 +2561,9 @@ class Request:
             lines.append(self.description.encode(locale.getpreferredencoding(), 'replace'))
         else:
             lines.append('<no message>')
-        lines.append('\nState:   %-10s %-12s %s' % (self.state.name, self.state.when, self.state.who))
-        lines.append('Comment: %s' % (self.state.comment or '<no comment>'))
+        if self.state:
+            lines.append('\nState:   %-10s %-12s %s' % (self.state.name, self.state.when, self.state.who))
+            lines.append('Comment: %s' % (self.state.comment or '<no comment>'))
 
         indent = '\n         '
         tmpl = '%(state)-10s %(by)-50s %(when)-12s %(who)-20s  %(comment)s'
@@ -5930,10 +5931,15 @@ def request_interactive_review(apiurl, request):
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
         sr_actions = request.get_actions('submit')
         if sr_actions:
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/(s)kip/(c)ancel > '
+        editprj = ''
+        orequest = None
         while True:
             repl = raw_input(prompt).strip()
             if repl == 'i' and sr_actions:
+                if not orequest is None and tmpfile:
+                    tmpfile.close()
+                    tmpfile = None
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
                     for action in sr_actions:
@@ -5955,31 +5961,45 @@ def request_interactive_review(apiurl, request):
                 for action in sr_actions:
                     print '%s/%s:' % (action.src_project, action.src_package)
                     print '\n'.join(get_results(apiurl, action.src_project, action.src_package))
+            elif repl == 'e' and sr_actions:
+                if not editprj:
+                    editprj = clone_request(apiurl, request.reqid, 'osc editrequest')
+                    orequest = request
+                request = edit_submitrequest(apiurl, editprj, orequest, request)
+                sr_actions = request.get_actions('submit')
+                print_request(request)
+                prompt = 'd(i)ff/(a)ccept/(b)uildstatus/(e)dit/(s)kip/(c)ancel > '
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
                 mo = re.search('^([adrl])(?:\s+-m\s+(.*))?$', repl)
-                if mo is None:
+                if mo is None or orequest and mo.group(1) != 'a':
                     print >>sys.stderr, 'invalid choice: \'%s\'' % repl
                     continue
                 state = state_map.get(mo.group(1))
                 msg = mo.group(2)
                 footer = ''
-                if not state is None:
+                msg_template = ''
+                if not (state is None or request.state is None):
                     footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
                         % (request.state.name, state)
+                    msg_template = change_request_state_template(request, state)
                 footer += str(request)
                 if tmpfile is not None:
                     tmpfile.seek(0)
                     # the read bytes probably have a moderate size so the str won't be too large
                     footer += '\n\n' + tmpfile.read()
                 if msg is None:
-                    tmpl = ''
-                    if not state is None:
-                        tmpl = change_request_state_template(request, state)
-                    msg = edit_message(footer = footer, template=tmpl)
+                    msg = edit_message(footer = footer, template=msg_template)
                 else:
                     msg = msg.strip('\'').strip('"')
-                if state is None:
+                if not orequest is None:
+                    request.create(apiurl)
+                    change_request_state(apiurl, request.reqid, 'accepted', msg)
+                    repl = raw_input('Supersede original request? (y|N) ')
+                    if repl in ('y', 'Y'):
+                        change_request_state(apiurl, orequest.reqid, 'superseded',
+                            'superseded by %s' % request.reqid, request.reqid)
+                elif state is None:
                     clone_request(apiurl, request.reqid, msg)
                 else:
                     change_request_state(apiurl, request.reqid, state, msg)
@@ -5987,6 +6007,73 @@ def request_interactive_review(apiurl, request):
     finally:
         if tmpfile is not None:
             tmpfile.close()
+
+def edit_submitrequest(apiurl, project, orequest, new_request=None):
+    """edit a submit action from orequest/new_request"""
+    import tempfile, shutil, subprocess
+    actions = orequest.get_actions('submit')
+    oactions = actions
+    if not orequest is None:
+        actions = new_request.get_actions('submit')
+    num = 0
+    if len(actions) > 1:
+        print 'Please chose one of the following submit actions:'
+        for i in range(len(actions)):
+            fmt = orequest._format_action(actions[i])
+            print '(%i)' % i, '%(source)s  %(target)s' % fmt
+        num = raw_input('> ')
+        try:
+            num = int(num)
+        except ValueError:
+            raise oscerr.WrongArgs('\'%s\' is not a number.' % num)
+        if num < 0 or num >= len(orequest.actions):
+            raise oscerr.WrongArgs('number \'%s\' out of range.' % num)
+
+    # the api replaced ':' with '_' in prj and pkg names (clone request)
+    package = '%s.%s' % (oactions[num].src_package.replace(':', '_'),
+        oactions[num].src_project.replace(':', '_'))
+    tmpdir = None
+    cleanup = True
+    try:
+        tmpdir = tempfile.mkdtemp(prefix='osc_editsr')
+        p = Package.init_package(apiurl, project, package, tmpdir)
+        p.update()
+        shell = os.getenv('SHELL', default='/bin/sh')
+        olddir = os.getcwd()
+        os.chdir(tmpdir)
+        print 'Checked out package \'%s\' to %s. Started a new shell (%s).\n' \
+            'Please fix the package and close the shell afterwards.' % (package, tmpdir, shell)
+        subprocess.call(shell)
+        # the pkg might have uncommitted changes...
+        cleanup = False
+        os.chdir(olddir)
+        # reread data
+        p = Package(tmpdir)
+        modified = p.get_status(False, ' ', '?', 'S')
+        if modified:
+            print 'Your working copy has the following modifications:'
+            print '\n'.join([statfrmt(st, filename) for st, filename in modified])
+            repl = raw_input('Do you want to commit the local changes first? (y|N) ')
+            if repl in ('y', 'Y'):
+                msg = get_commit_msg(p.absdir, [p])
+                p.commit(msg=msg)
+        cleanup = True
+    finally:
+        if cleanup:
+            shutil.rmtree(tmpdir)
+        else:
+            print 'Please remove the dir \'%s\' manually' % tmpdir
+    r = Request()
+    for action in orequest.get_actions():
+        new_action = Action.from_xml(action.to_xml())
+        r.actions.append(new_action)
+        if new_action.type == 'submit':
+            new_action.src_package = '%s.%s' % (action.src_package.replace(':', '_'),
+                action.src_project.replace(':', '_'))
+            new_action.src_project = project
+            # do an implicit cleanup
+            new_action.opt_sourceupdate = 'cleanup'
+    return r
 
 def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True, maintained=False, metadata=False):
     """Return all project/packages where user is involved."""
