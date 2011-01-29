@@ -2425,6 +2425,15 @@ class Request:
         """add a new action to the request"""
         self.actions.append(Action(type, **kwargs))
 
+    def get_actions(self, *types):
+        """
+        get all actions with a specific type
+        (if types is empty return all actions)
+        """
+        if not types:
+            return self.actions
+        return [i for i in self.actions if i.type in types]
+
     def get_creator(self):
         """return the creator of the request"""
         if len(self.statehistory):
