@@ -559,6 +559,19 @@ Comment: <no comment>"""
 </request>"""
         self.assertEqual(exp, r.to_str())
 
+    def test_get_actions(self):
+        """test get_actions method"""
+        from xml.etree import cElementTree as ET
+        xml = open(os.path.join(self._get_fixtures_dir(), 'test_request_list_view1.xml'), 'r').read().strip()
+        r = osc.core.Request()
+        r.read(ET.fromstring(xml))
+        sr_actions = r.get_actions('submit')
+        self.assertTrue(len(sr_actions) == 2)
+        for i in sr_actions:
+            self.assertEqual(i.type, 'submit')
+        self.assertTrue(len(r.get_actions('submit', 'delete', 'change_devel')) == 5)
+        self.assertTrue(len(r.get_actions()) == 8)
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
