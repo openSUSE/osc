@@ -3957,6 +3957,26 @@ def request_diff(apiurl, reqid):
     f = http_POST(u)
     return f.read()
 
+def submit_action_diff(apiurl, action):
+    """diff a single submit action"""
+    # backward compatiblity: only a recent api/backend supports the missingok parameter
+    try:
+        return server_diff(apiurl, action.tgt_project, action.tgt_package, None,
+            action.src_project, action.src_package, action.src_rev, True, True)
+    except urllib2.HTTPError, e:
+        if e.code == 400:
+            try:
+                return server_diff(apiurl, action.tgt_project, action.tgt_package, None,
+                    action.src_project, action.src_package, action.src_rev, True, False)
+            except urllib2.HTTPError, e:
+                if e.code != 404:
+                    raise e
+                root = ET.fromstring(e.read())
+                return 'error: \'%s\' does not exist' % root.find('summary').text
+        elif e.code == 404:
+            root = ET.fromstring(e.read())
+            return 'error: \'%s\' does not exist' % root.find('summary').text
+        raise e
 
 def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_tracking=True):
     """
@@ -5892,39 +5912,20 @@ def request_interactive_review(apiurl, request):
     print_request(request)
     try:
         msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
-        if request.actions[0].type == 'submit':
+        sr_actions = [i for i in request.actions if i.type == 'submit']
+        if sr_actions:
             msg = 'd(i)ff/%s' % msg
         while True:
             repl = raw_input(msg).strip()
-            if repl == 'i' and request.actions[0].type == 'submit':
+            if repl == 'i' and sr_actions:
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile()
-                    # backward compatiblity: only a recent api/backend supports the missingok parameter
-                    try:
-                        diff = server_diff(apiurl, request.actions[0].tgt_project, request.actions[0].tgt_package, None,
-                                           request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, True)
-                    except urllib2.HTTPError, e:
-                        if e.code == 400:
-                            try:
-                                diff = server_diff(apiurl, request.actions[0].tgt_project, request.actions[0].tgt_package, None,
-                                                   request.actions[0].src_project, request.actions[0].src_package, request.actions[0].src_rev, True, False)
-                            except urllib2.HTTPError, e:
-                                tmpfile.close()
-                                tmpfile = None
-                                if e.code != 404:
-                                    raise e
-                                root = ET.fromstring(e.read())
-                                print >>sys.stderr, root.find('summary').text
-                                continue
-                        elif e.code == 404:
-                            tmpfile.close()
-                            tmpfile = None
-                            root = ET.fromstring(e.read())
-                            print >>sys.stderr, root.find('summary').text
-                            continue
-                        else:
-                            raise e
-                    tmpfile.write(diff)
+                    for action in sr_actions:
+                        diff = 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
+                            action.tgt_project, action.tgt_package)
+                        diff += submit_action_diff(apiurl, action)
+                        diff += '\n\n'
+                        tmpfile.write(diff)
                     tmpfile.flush()
                 run_editor(tmpfile.name)
                 print_request(request)

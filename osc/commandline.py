@@ -1896,34 +1896,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         'request type: \'%s\'' % r.actions[0].type)
                 print 'Buildstatus for \'%s/%s\':' % (r.actions[0].src_project, r.actions[0].src_package)
                 print '\n'.join(get_results(apiurl, r.actions[0].src_project, r.actions[0].src_package))
-            # FIXME: will inevitably fail if the given target doesn't exist
-            # FIXME: diff should work if there are submit actions anyway
-            if opts.diff and r.actions[0].type != 'submit':
-                raise oscerr.WrongOptions('\'--diff\' is not possible for request type: \'%s\'' % r.actions[0].type)
-            elif opts.diff:
-                rdiff = ''
+            if opts.diff:
+                diff = ''
                 try:
                     # works since OBS 2.1
-                    rdiff = request_diff(apiurl, reqid)
+                    diff = request_diff(apiurl, reqid)
                 except urllib2.HTTPError, e:
                     # for OBS 2.0 and before
-                    try:
-                        rdiff = server_diff(apiurl,
-                                            r.actions[0].tgt_project, r.actions[0].tgt_package, None,
-                                            r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, True)
-                    except urllib2.HTTPError, e:
-                        if e.code != 400:
-                            e.osc_msg = 'Diff not possible'
-                            raise e
-                        # backward compatiblity: only a recent api/backend supports the missingok parameter
-                        try:
-                            rdiff = server_diff(apiurl,
-                                                r.actions[0].tgt_project, r.actions[0].tgt_package, None,
-                                                r.actions[0].src_project, r.actions[0].src_package, r.actions[0].src_rev, opts.unified, False)
-                        except urllib2.HTTPError, e:
-                            e.osc_msg = 'Diff not possible'
-                            raise
-                run_pager(rdiff)
+                    sr_actions = [i for i in r.actions if i.type == 'submit']
+                    if not sr_actions:
+                        raise oscerr.WrongOptions('\'--diff\' not possible (request has no \'submit\' actions)')
+                    for action in sr_actions:
+                        diff += 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
+                            action.tgt_project, action.tgt_package)
+                        diff += submit_action_diff(apiurl, action)
+                        diff += '\n\n'
+                run_pager(diff)
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
