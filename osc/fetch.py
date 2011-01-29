@@ -225,9 +225,12 @@ class Fetcher:
                 os.makedirs(dest, mode=0755)
             dest += '/_pubkey'
 
-            url = "%s/source/%s/_pubkey" % (buildinfo.apiurl, i)
+            url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
             try:
-                OscFileGrabber().urlgrab(url, dest)
+                if self.offline and not os.path.exists(dest):
+                    raise oscerr.OscIOError(None, 'Missing pubkey for project \'%s\': --offline not possible' % i)
+                elif not self.offline:
+                    OscFileGrabber().urlgrab(url, dest)
                 if not i in buildinfo.prjkeys: # not that many keys usually
                     buildinfo.keys.append(dest)
                     buildinfo.prjkeys.append(i)
