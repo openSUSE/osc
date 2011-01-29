@@ -1903,7 +1903,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     diff = request_diff(apiurl, reqid)
                 except urllib2.HTTPError, e:
                     # for OBS 2.0 and before
-                    sr_actions = [i for i in r.actions if i.type == 'submit']
+                    sr_actions = r.get_actions('submit')
                     if not sr_actions:
                         raise oscerr.WrongOptions('\'--diff\' not possible (request has no \'submit\' actions)')
                     for action in sr_actions:

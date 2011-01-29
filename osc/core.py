@@ -5921,7 +5921,7 @@ def request_interactive_review(apiurl, request):
     print_request(request)
     try:
         msg = '(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
-        sr_actions = [i for i in request.actions if i.type == 'submit']
+        sr_actions = request.get_actions('submit')
         if sr_actions:
             msg = 'd(i)ff/%s' % msg
         while True:
