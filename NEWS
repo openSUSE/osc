@@ -16,6 +16,7 @@
   - "review" command has been extended to handle reviews by project or by package maintainers
   - support for new source service modes: disabled, trylocal and localonly
   - support project wide source services
+  - support for armv7hl architecuture. used to denote armv7 + hardfloat binaries
 
 0.130
   - new "revert" command to restore the original working copy file (without
