@@ -2465,10 +2465,11 @@ class Request:
         xmlindent(root)
         return ET.tostring(root)
 
-    def _format_review(self, review, show_srcupdate=False):
+    @staticmethod
+    def format_review(review, show_srcupdate=False):
         """
         format a review depending on the reviewer's type.
-        A formatted str is returned.
+        A dict which contains the formatted str's is returned.
         """
 
         d = {'state': '%s:' % review.state}
@@ -2488,10 +2489,11 @@ class Request:
            d['by'] += '(%s)' % review.who
         return d
 
-    def _format_action(self, action, show_srcupdate=False):
+    @staticmethod
+    def format_action(action, show_srcupdate=False):
         """
         format an action depending on the action's type.
-        A formatted str is returned.
+        A dict which contains the formatted str's is returned.
         """
         def prj_pkg_join(prj, pkg):
             if not pkg:
@@ -2533,10 +2535,10 @@ class Request:
         lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, self.state.name, self.state.who, self.state.when)]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
-            lines.append(tmpl % self._format_action(action))
+            lines.append(tmpl % Request.format_action(action))
         tmpl = '        Review by %(type)-10s is %(state)-10s %(by)-50s'
         for review in self.reviews:
-            lines.append(tmpl % self._format_review(review))
+            lines.append(tmpl % Request.format_review(review))
         history = ['%s(%s)' % (hist.name, hist.who) for hist in self.statehistory]
         if history:
             lines.append('        From: %s' % ' -> '.join(history))
@@ -2555,7 +2557,7 @@ class Request:
             if action.type == 'delete':
                 # remove 1 whitespace because source is empty
                 tmpl = '  %(type)-12s %(source)s %(target)s'
-            lines.append(tmpl % self._format_action(action, show_srcupdate=True))
+            lines.append(tmpl % Request.format_action(action, show_srcupdate=True))
         lines.append('\n\nMessage:')
         if self.description:
             lines.append(self.description.encode(locale.getpreferredencoding(), 'replace'))
@@ -3960,7 +3962,6 @@ def server_diff_noex(apiurl,
 
         if expand:
             rdiff =  "## diff on expanded link not possible, showing unexpanded version\n"
-            print rdiff
             rdiff += server_diff_noex(apiurl,
                             old_project, old_package, old_revision,
                             new_project, new_package, new_revision,
@@ -6023,7 +6024,7 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
     if len(actions) > 1:
         print 'Please chose one of the following submit actions:'
         for i in range(len(actions)):
-            fmt = orequest._format_action(actions[i])
+            fmt = Request.format_action(actions[i])
             print '(%i)' % i, '%(source)s  %(target)s' % fmt
         num = raw_input('> ')
         try:
