@@ -4226,12 +4226,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif not arg_descr:
             msg = None
             if len(descr) > 1:
-                # prefer build descr that match the directory name
-                # only if there are no other build descrs of different build types
-                for ext in ['.spec', '.dsc', '.kiwi']:
-                    spec = os.path.basename(os.getcwd()) + ext
-                    if spec in descr and not [i for i in descr if not i.endswith(ext)]:
-                        arg_descr = spec
+                # guess/prefer build descrs like the following:
+                # <pac>-<repo>.<ext> > <pac>.<ext>
+                pac = os.path.basename(os.getcwd())
+                if is_package_dir(os.getcwd()):
+                    pac = store_read_package(os.getcwd())
+                extensions = ['spec', 'dsc', 'kiwi']
+                cands = [i for i in descr for ext in extensions if i == '%s-%s.%s' % (pac, arg_repository, ext)]
+                if len(cands) == 1:
+                    arg_descr = cands[0]
+                else:
+                    cands = [i for i in descr for ext in extensions if i == '%s.%s' % (pac, ext)]
+                    if len(cands) == 1:
+                        arg_descr = cands[0]
                 if not arg_descr:
                     msg = 'Multiple build description files found: %s' % ', '.join(descr)
             elif not ignore_descr:
