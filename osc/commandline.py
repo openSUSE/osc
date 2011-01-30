@@ -1623,6 +1623,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='only show requests created by yourself')
     @cmdln.option('-B', '--bugowner', action='store_true',
                         help='also show requests about packages where I am bugowner')
+    @cmdln.option('-e', '--edit', action='store_true',
+                        help='edit a submit action')
     @cmdln.option('-i', '--interactive', action='store_true',
                         help='interactive review of request')
     @cmdln.option('--non-interactive', action='store_true',
@@ -1886,6 +1888,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             r = get_request(apiurl, reqid)
             if opts.brief:
                 print r.list_view()
+            elif opts.edit:
+                if not r.get_actions('submit'):
+                    raise oscerr.WrongOptions('\'--edit\' not possible ' \
+                        '(request has no \'submit\' action)')
+                return request_interactive_review(apiurl, r, 'e')
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                 return request_interactive_review(apiurl, r)
             else:

@@ -5912,7 +5912,7 @@ def print_request_list(apiurl, project, package = None, states = ('new', ), forc
     for r in requests:
         print r.list_view(), '\n'
 
-def request_interactive_review(apiurl, request):
+def request_interactive_review(apiurl, request, initial_cmd=''):
     """review the request interactively"""
     import tempfile, re
 
@@ -5935,7 +5935,11 @@ def request_interactive_review(apiurl, request):
         editprj = ''
         orequest = None
         while True:
-            repl = raw_input(prompt).strip()
+            if initial_cmd:
+                repl = initial_cmd
+                initial_cmd = ''
+            else:
+                repl = raw_input(prompt).strip()
             if repl == 'i' and sr_actions:
                 if not orequest is None and tmpfile:
                     tmpfile.close()
