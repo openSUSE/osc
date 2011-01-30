@@ -185,40 +185,6 @@ buildstatus_symbols = {'succeeded':       '.',
 }
 
 
-# our own xml writer function to write xml nice, but with correct syntax
-# This function is from http://ronrothman.com/public/leftbraned/xml-dom-minidom-toprettyxml-and-silly-whitespace/
-from xml.dom import minidom
-def fixed_writexml(self, writer, indent="", addindent="", newl=""):
-    # indent = current indentation
-    # addindent = indentation to add to higher levels
-    # newl = newline string
-    writer.write(indent+"<" + self.tagName)
-
-    attrs = self._get_attributes()
-    a_names = attrs.keys()
-    a_names.sort()
-
-    for a_name in a_names:
-        writer.write(" %s=\"" % a_name)
-        minidom._write_data(writer, attrs[a_name].value)
-        writer.write("\"")
-    if self.childNodes:
-        if len(self.childNodes) == 1 \
-          and self.childNodes[0].nodeType == minidom.Node.TEXT_NODE:
-            writer.write(">")
-            self.childNodes[0].writexml(writer, "", "", "")
-            writer.write("</%s>%s" % (self.tagName, newl))
-            return
-        writer.write(">%s"%(newl))
-        for node in self.childNodes:
-            node.writexml(writer,indent+addindent,addindent,newl)
-        writer.write("%s</%s>%s" % (indent,self.tagName,newl))
-    else:
-        writer.write("/>%s"%(newl))
-# replace minidom's function with ours
-minidom.Element.writexml = fixed_writexml
-
-
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
     try:
@@ -5673,9 +5639,9 @@ def addGitSource(url):
     si.read(s)
 
     # for pretty output
-    reparsed = minidom.parseString(ET.tostring(s))
+    xmlindent(s)
     f = open(service_file, 'wb')
-    f.write(reparsed.toprettyxml(indent="  "))
+    f.write(ET.tostring(s))
     f.close()
     if addfile:
        addFiles( ['_service'] )
@@ -5694,9 +5660,9 @@ def addDownloadUrlService(url):
     si.read(s)
 
     # for pretty output
-    reparsed = minidom.parseString(ET.tostring(s))
+    xmlindent(s)
     f = open(service_file, 'wb')
-    f.write(reparsed.toprettyxml(indent="  "))
+    f.write(ET.tostring(s))
     f.close()
     if addfile:
        addFiles( ['_service'] )
@@ -5716,9 +5682,9 @@ def addDownloadUrlService(url):
           s = si.addVerifyFile(services, filename)
 
     # for pretty output
-    reparsed = minidom.parseString(ET.tostring(s))
+    xmlindent(s)
     f = open(service_file, 'wb')
-    f.write(reparsed.toprettyxml(indent="  "))
+    f.write(ET.tostring(s))
     f.close()
 
 
