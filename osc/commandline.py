@@ -5172,11 +5172,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             search_term = args[0]
 
-        # support perl package names and symbols:
-        if re.match('^\w+(::\w+)+$', search_term):
-            search_term = 'perl-' + re.sub('::','-', search_term)
-            opts.package = True
-
+        # XXX: is it a good idea to make this the default?
+        # support perl symbols:
         if re.match('^perl\(\w+(::\w+)*\)$', search_term):
             search_term = re.sub('\)','', re.sub('(::|\()','-', search_term))
             opts.package = True
