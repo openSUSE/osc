@@ -865,10 +865,6 @@ def main(apiurl, opts, argv):
         print "keyboard interrupt, killing build ..."
         subprocess.call(cmd + ["--kill"])
         raise i
-    except Exception, e:
-        # 'No such file or directory' should not trigger a stack trace
-        print "Exception: " + str(e)
-        sys.exit(1)
 
     pacdir = os.path.join(build_root, '.build.packages')
     if os.path.islink(pacdir):

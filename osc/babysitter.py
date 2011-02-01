@@ -133,6 +133,12 @@ def run(prg):
             raise
         return 1
 
+    except OSError, e:
+        if e.errno != errno.ENOENT:
+            raise
+        print >>sys.stderr, e
+        return 1
+
     except (oscerr.ConfigError, oscerr.NoConfigfile), e:
         print >>sys.stderr, e.msg
         return 1
