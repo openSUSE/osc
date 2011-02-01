@@ -2857,7 +2857,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             while inside a project directory:
                osc co PACKAGE                    # check out PACKAGE from project
             
-            with the result of rpm -q --qf '%{disturl}n' PACKAGE
+            with the result of rpm -q --qf '%%{disturl}n' PACKAGE
                osc co obs://API/PROJECT/PLATFORM/REVISION-PACKAGE       
 
         ${cmd_option_list}
