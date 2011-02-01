@@ -2867,38 +2867,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             expand_link = False
         else:
             expand_link = True
-        
+
+        # XXX: this too openSUSE-setup specific...
         # FIXME: this should go into ~jw/patches/osc/osc.proj_pack_20101201.diff 
         #        to be available to all subcommands via @cmdline.prep(proj_pack)
         # obs://build.opensuse.org/openSUSE:11.3/standard/fc6c25e795a89503e99d59da5dc94a79-screen
         m = re.match(r"obs://([^/]+)/(\S+)/([^/]+)/([A-Fa-f\d]+)\-(\S+)", args[0])
         if m and len(args) == 1:
-          apiurl   = "https://" + m.group(1)
-          project = project_dir = m.group(2)
-          # platform            = m.group(3)
-          opts.revision         = m.group(4)
-          package               = m.group(5)
-          apiurl = re.sub('/build\.', '/api.', apiurl)
-          filename = None
-
+            apiurl   = "https://" + m.group(1)
+            project = project_dir = m.group(2)
+            # platform            = m.group(3)
+            opts.revision         = m.group(4)
+            package               = m.group(5)
+            apiurl = apiurl.replace('/build.', '/api.')
+            filename = None
         else:
-          args = slash_split(args)
-          project = package = filename = None
+            args = slash_split(args)
+            project = package = filename = None
+            apiurl = self.get_api_url()
+            try:
+                project = project_dir = args[0]
+                package = args[1]
+                filename = args[2]
+            except:
+                pass
 
-          apiurl = self.get_api_url()
-
-          try:
-            project = project_dir = args[0]
-            package = args[1]
-            filename = args[2]
-          except:
-            pass
-
-          if args and len(args) == 1:
-              localdir = os.getcwd()
-              if is_project_dir(localdir):
-                project = store_read_project(localdir)
-                project_dir = localdir
+            if len(args) == 1 and is_project_dir(os.curdir):
+                project = store_read_project(os.curdir)
+                project_dir = os.curdir
                 package = args[0]
 
         rev, dummy = parseRevisionOption(opts.revision)
