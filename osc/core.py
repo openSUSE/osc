@@ -2016,12 +2016,15 @@ rev: %s
         print 'At revision %s.' % self.rev
 
     def run_source_services(self, mode=""):
+        curdir = os.getcwd()
+        os.chdir(self.absdir) # e.g. /usr/lib/obs/service/verify_file fails if not inside the project dir.
         if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
             si = Serviceinfo()
             si.read(service)
             si.readProjectFile(self.apiurl, self.prjname)
             si.execute(self.absdir, mode)
+        os.chdir(curdir)
 
     def prepare_filelist(self):
         """Prepare a list of files, which will be processed by process_filelist

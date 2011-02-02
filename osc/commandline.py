@@ -2349,7 +2349,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='do not follow a defined devel project ' \
                              '(primary project where a package is developed)')
     @cmdln.option('-c', '--checkout', action='store_true',
-                        help='Checkout branched package afterwards ' \
+                        help='Checkout branched package afterwards using "co -e -S"' \
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force branch, overwrite target')
@@ -2437,7 +2437,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         package = tpackage or args[1]
         if opts.checkout:
-            checkout_package(apiurl, targetprj, package,
+            checkout_package(apiurl, targetprj, package, server_service_files=True
                              expand_link=True, prj_dir=targetprj)
             if conf.config['verbose']:
                 print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
@@ -2829,7 +2829,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='place PACKAGE folder in the current directory' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-s', '--source-service-files', action='store_true',
-                        help='Use server side generated sources instead of local generation.' )
+                        help='Run source services.' )
     @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
                         help='Use server side generated sources instead of local generation.' )
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
