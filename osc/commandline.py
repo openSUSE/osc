@@ -5066,9 +5066,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for r in requests:
                     print r.list_view(), '\n'
                 return
-            except:
-                # skip it ... try again with old style below
-                pass
+            except urllib2.HTTPError, e:
+                if e.code == 400:
+                    # skip it ... try again with old style below
+                    pass
 
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 what.has_key('project'), what.has_key('package'),
