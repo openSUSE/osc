@@ -5056,19 +5056,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # try api side search as supported since OBS 2.2
             try:
-               u = makeurl(apiurl, ['request'], ['view=collection&user=%s' % quote_plus(user)])
-               res = http_GET(u)
-               requests = []
-               for root in res['request'].findall('request'):
-                   r = Request()
-                   r.read(root)
-                   requests.append(r)
-               for r in requests:
-                   print r.list_view(), '\n'
-               return
+                u = makeurl(apiurl, ['request'], ['view=collection&user=%s' % quote_plus(user)])
+                res = http_GET(u)
+                requests = []
+                for root in res['request'].findall('request'):
+                    r = Request()
+                    r.read(root)
+                    requests.append(r)
+                for r in requests:
+                    print r.list_view(), '\n'
+                return
             except:
-               # skip it ... try again with old style below
-               pass
+                # skip it ... try again with old style below
+                pass
 
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 what.has_key('project'), what.has_key('package'),
