@@ -4332,12 +4332,13 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     except urllib2.HTTPError, e:
         if not return_existing:
             raise
-        msg = ''.join(e.readlines())
-        msg = msg.split('<summary>')[1]
-        msg = msg.split('</summary>')[0]
-        m = re.match(r"branch target package already exists: (\S+)/(\S+)", msg)
+        root = ET.fromstring(e.read())
+        summary = root.find('summary')
+        if summary is None:
+            raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root))
+        m = re.match(r"branch target package already exists: (\S+)/(\S+)", summary.text)
         if not m:
-            e.msg += '\n' + msg
+            e.msg += '\n' + summary.text
             raise
         return (True, m.group(1), m.group(2), None, None)
 

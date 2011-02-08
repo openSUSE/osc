@@ -2419,18 +2419,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
         devloc = None
-        if not exists and (srcprj is not None and srcprj != args[0] or \
-                           srcprj is None and targetprj != expected):
-            devloc = srcprj or targetprj
-            if not srcprj and 'branches:' in targetprj:
-                devloc = targetprj.split('branches:')[1]
-            print '\nNote: The branch has been created of a different project,\n' \
-                  '              %s,\n' \
-                  '      which is the primary location of where development for\n' \
-                  '      that package takes place.\n' \
-                  '      That\'s also where you would normally make changes against.\n' \
-                  '      A direct branch of the specified package can be forced\n' \
-                  '      with the --nodevelproject option.\n' % devloc
+        if not exists and (srcprj != args[0] or srcpkg != args[1]):
+            try:
+                root = ET.fromstring(''.join(show_attribute_meta(apiurl, args[0], None, None,
+                    conf.config['maintained_update_project_attribute'], False, False)))
+                # this might raise an AttributeError
+                uproject = root.find('attribute').find('value').text
+                print '\nNote: The branch has been created from the configured update project: %s' \
+                    % uproject
+            except (AttributeError, urllib2.HTTPError), e:
+                devloc = srcprj
+                print '\nNote: The branch has been created of a different project,\n' \
+                      '              %s,\n' \
+                      '      which is the primary location of where development for\n' \
+                      '      that package takes place.\n' \
+                      '      That\'s also where you would normally make changes against.\n' \
+                      '      A direct branch of the specified package can be forced\n' \
+                      '      with the --nodevelproject option.\n' % devloc
 
         package = tpackage or args[1]
         if opts.checkout:
@@ -2447,7 +2452,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       % (apiopt, targetprj, package)
         print_request_list(apiurl, args[0], args[1])
         if devloc:
-            print_request_list(apiurl, devloc, args[1])
+            print_request_list(apiurl, devloc, srcpkg)
 
 
     def do_undelete(self, subcmd, opts, *args):
