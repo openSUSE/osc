@@ -3522,10 +3522,12 @@ def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_pro
     root = ET.parse(f).getroot()
     return root.attrib['code']
 
-def change_request_state(apiurl, reqid, newstate, message='', supersed=None):
+def change_request_state(apiurl, reqid, newstate, message='', supersed=None, force=False):
     query={'cmd': 'changestate', 'newstate': newstate }
     if supersed:
         query['superseded_by'] = supersed
+    if force:
+        query['force'] = "1"
     u = makeurl(apiurl,
                 ['request', reqid], query=query)
     f = http_POST(u, data=message)

@@ -1014,7 +1014,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      'superseded by %s' % result, result)
 
         if opts.supersede:
-            change_request_state(apiurl, opts.supersede, 'superseded', 
+            change_request_state(apiurl, opts.supersede, 'superseded',
                                  opts.message or '', result)
 
         print 'created request id', result
@@ -1198,7 +1198,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                          'superseded by %s' % result, result)
 
             if opts.supersede:
-                change_request_state(apiurl, opts.supersede, 'superseded', '', result)
+                change_request_state(apiurl, opts.supersede, 'superseded',  '', result)
 
             #print 'created request id', result
             return actionxml
@@ -1605,6 +1605,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='limit to requests which contain a given action type (submit/delete/change_devel)')
     @cmdln.option('-a', '--all', action='store_true',
                         help='all states. Same as\'-s all\'')
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='enforce state change, can be used to ignore open reviews')
     @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new' otherwise
                         help='only list requests in one of the comma separated given states (new/accepted/revoked/declined) or "all" [default=new, or all, if no args given]')
     @cmdln.option('-D', '--days', metavar='DAYS',
@@ -1873,7 +1875,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     for result in results:
                         print result.reqid, ": ",
                         r = change_request_state(apiurl,
-                                result.reqid, 'accepted', opts.message or '')
+                                result.reqid, 'accepted', opts.message or '', force=opts.force)
                         print 'Result of change request state: %s' % r
                 else:
                     print >>sys.stderr, 'Aborted...'
@@ -1955,7 +1957,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     tmpl = change_request_state_template(rq, state_map[cmd])
                     opts.message = edit_message(template=tmpl)
                 r = change_request_state(apiurl,
-                        reqid, state_map[cmd], opts.message or '')
+                        reqid, state_map[cmd], opts.message or '', force=opts.force)
                 print 'Result of change request state: %s' % r
 
     # editmeta and its aliases are all depracated

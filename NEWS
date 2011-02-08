@@ -17,6 +17,7 @@
   - support for new source service modes: disabled, trylocal and localonly
   - support project wide source services
   - support for armv7hl architecuture. used to denote armv7 + hardfloat binaries
+  - add force option to accept requests in review state.
 
 0.130
   - new "revert" command to restore the original working copy file (without
