@@ -5044,7 +5044,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': ''}
         elif type in args_sr:
             requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
-            for r in requests_sort(requests):
+            for r in sorted(requests):
                 print r.list_view(), '\n'
             return
         elif not type in args_pkg:

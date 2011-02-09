@@ -2568,7 +2568,7 @@ class Request:
         return '\n'.join(lines)
 
     def __cmp__(self, other):
-        return cmp(self.reqid, other.reqid)
+        return cmp(int(self.reqid), int(other.reqid))
 
     def create(self, apiurl):
         """create a new request"""
@@ -6121,8 +6121,5 @@ def filter_role(meta, user, role):
                 delete.append(node)
         for node in delete:
             root.remove(node)
-
-def requests_sort(requests):
-    return sorted(requests, cmp=lambda a,b: cmp(int(a.reqid), int(b.reqid)))
 
 # vim: sw=4 et
