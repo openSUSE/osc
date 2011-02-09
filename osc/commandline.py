@@ -5044,7 +5044,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': ''}
         elif type in args_sr:
             requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
-            for r in requests:
+            for r in requests_sort(requests):
                 print r.list_view(), '\n'
             return
         elif not type in args_pkg:
@@ -5075,7 +5075,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     r = Request()
                     r.read(node)
                     requests.append(r)
-                for r in requests:
+                for r in requests_sort(requests):
                     print r.list_view(), '\n'
                 return
             except urllib2.HTTPError, e:
@@ -5108,7 +5108,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # old style, only for OBS 2.1 and before. Should not be used, since it is slow and incomplete
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
-            for r in requests:
+            for r in requests_sort(requests):
                 print r.list_view(), '\n'
         else:
             for i in sorted(roles.keys()):

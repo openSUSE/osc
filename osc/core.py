@@ -6122,4 +6122,7 @@ def filter_role(meta, user, role):
         for node in delete:
             root.remove(node)
 
+def requests_sort(requests):
+    return sorted(requests, cmp=lambda a,b: cmp(int(a.reqid), int(b.reqid)))
+
 # vim: sw=4 et
