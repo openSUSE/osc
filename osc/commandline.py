@@ -5287,7 +5287,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not package is None:
                     result.append(package)
 
-                if opts.version:
+                if opts.version and package != None:
                     sr = get_source_rev(apiurl,project,package)
                     v = sr.get('version')
                     r = sr.get('rev')
@@ -5328,7 +5328,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 headline = [ '# Project', '# Package' ]
             else:
                 headline = [ '# Project' ]
-            if opts.version:
+            if opts.version and kind == 'package':
                 headline.append('# Ver')
                 headline.append('Rev')
                 headline.append('Srcmd5')
