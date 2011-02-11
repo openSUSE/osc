@@ -4363,14 +4363,16 @@ def copy_pac(src_apiurl, src_project, src_package,
     or by the server, in a single api call.
     """
 
-    src_meta = show_package_meta(src_apiurl, src_project, src_package)
-    dst_userid = conf.get_apiurl_usr(dst_apiurl)
-    src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
-                                dst_userid, keep_develproject)
+    if not (src_apiurl == dst_apiurl and src_project == dst_project \
+        and src_package == dst_package):
+        src_meta = show_package_meta(src_apiurl, src_project, src_package)
+        dst_userid = conf.get_apiurl_usr(dst_apiurl)
+        src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
+                                    dst_userid, keep_develproject)
 
-    print 'Sending meta data...'
-    u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
-    http_PUT(u, data=src_meta)
+        print 'Sending meta data...'
+        u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
+        http_PUT(u, data=src_meta)
 
     print 'Copying files...'
     if not client_side_copy:
