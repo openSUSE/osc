@@ -9,6 +9,7 @@ import cmdln
 import conf
 import oscerr
 import sys
+from util import safewriter
 from optparse import SUPPRESS_HELP
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
@@ -63,6 +64,8 @@ class Osc(cmdln.Cmdln):
     def __init__(self, *args, **kwargs):
         cmdln.Cmdln.__init__(self, *args, **kwargs)
         cmdln.Cmdln.do_help.aliases.append('h')
+        sys.stderr = safewriter.SafeWriter(sys.stderr)
+        sys.stdout = safewriter.SafeWriter(sys.stdout)
 
     def get_version(self):
         return get_osc_version()
@@ -349,10 +352,7 @@ class Osc(cmdln.Cmdln):
         elif not opts.binaries:
             if not args:
                 for prj in meta_get_project_list(apiurl, opts.deleted):
-                    try:
-                        print prj
-                    except UnicodeEncodeError:
-                        print prj.encode('unicode_escape')
+                    print prj
 
             elif len(args) == 1:
                 if opts.verbose:
@@ -361,10 +361,7 @@ class Osc(cmdln.Cmdln):
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
                 for pkg in meta_get_packagelist(apiurl, project, opts.deleted):
-                    try:
-                        print pkg
-                    except UnicodeEncodeError:
-                        print pkg.encode('unicode_escape')
+                    print pkg
 
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False

@@ -2500,7 +2500,7 @@ class Request:
 
     def list_view(self):
         """return "list view" format"""
-        import textwrap, locale
+        import textwrap
         lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, self.state.name, self.state.who, self.state.when)]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
@@ -2512,14 +2512,12 @@ class Request:
         if history:
             lines.append('        From: %s' % ' -> '.join(history))
         if self.description:
-            descr = self.description.encode(locale.getpreferredencoding(), 'replace')
-            lines.append(textwrap.fill(descr, width=80, initial_indent='        Descr: ',
+            lines.append(textwrap.fill(self.description, width=80, initial_indent='        Descr: ',
                 subsequent_indent='               '))
         return '\n'.join(lines)
 
     def __str__(self):
         """return "detailed" format"""
-        import locale
         lines = ['Request: #%s\n' % self.reqid]
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
@@ -2529,7 +2527,7 @@ class Request:
             lines.append(tmpl % Request.format_action(action, show_srcupdate=True))
         lines.append('\n\nMessage:')
         if self.description:
-            lines.append(self.description.encode(locale.getpreferredencoding(), 'replace'))
+            lines.append(self.description)
         else:
             lines.append('<no message>')
         if self.state:
@@ -5892,13 +5890,8 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
     tmpfile = None
 
     def print_request(request):
-        try:
-            # FIXME: print can fail with unicode chars in the string. 
-            #        Here we fix the symptoms, not the cause.
-            # UnicodeEncodeError: 'ascii' codec can't encode character u'\u2002' in position 309: ordinal not in range(128)
-            print request
-        except:
-            print request.__str__().encode('ascii', 'xmlcharrefreplace')
+        print request
+
     print_request(request)
     try:
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
