@@ -2500,7 +2500,7 @@ class Request:
 
     def list_view(self):
         """return "list view" format"""
-        import textwrap, locale
+        import textwrap
         lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, self.state.name, self.state.who, self.state.when)]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
@@ -2512,14 +2512,12 @@ class Request:
         if history:
             lines.append('        From: %s' % ' -> '.join(history))
         if self.description:
-            descr = self.description.encode(locale.getpreferredencoding(), 'replace')
-            lines.append(textwrap.fill(descr, width=80, initial_indent='        Descr: ',
+            lines.append(textwrap.fill(self.description, width=80, initial_indent='        Descr: ',
                 subsequent_indent='               '))
         return '\n'.join(lines)
 
     def __str__(self):
         """return "detailed" format"""
-        import locale
         lines = ['Request: #%s\n' % self.reqid]
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
@@ -2529,7 +2527,7 @@ class Request:
             lines.append(tmpl % Request.format_action(action, show_srcupdate=True))
         lines.append('\n\nMessage:')
         if self.description:
-            lines.append(self.description.encode(locale.getpreferredencoding(), 'replace'))
+            lines.append(self.description)
         else:
             lines.append('<no message>')
         if self.state:
@@ -2568,7 +2566,7 @@ class Request:
         return '\n'.join(lines)
 
     def __cmp__(self, other):
-        return cmp(self.reqid, other.reqid)
+        return cmp(int(self.reqid), int(other.reqid))
 
     def create(self, apiurl):
         """create a new request"""
@@ -3522,10 +3520,12 @@ def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_pro
     root = ET.parse(f).getroot()
     return root.attrib['code']
 
-def change_request_state(apiurl, reqid, newstate, message='', supersed=None):
+def change_request_state(apiurl, reqid, newstate, message='', supersed=None, force=False):
     query={'cmd': 'changestate', 'newstate': newstate }
     if supersed:
         query['superseded_by'] = supersed
+    if force:
+        query['force'] = "1"
     u = makeurl(apiurl,
                 ['request', reqid], query=query)
     f = http_POST(u, data=message)
@@ -3595,7 +3595,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         requests.append(r)
     return requests
 
-def get_request_list(apiurl, project='', package='', req_who='', req_state=('new',), req_type=None, exclude_target_projects=[]):
+def get_request_list(apiurl, project='', package='', req_who='', req_state=('new','review',), req_type=None, exclude_target_projects=[]):
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -3633,7 +3633,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
     return requests
 
 # old style search, this is to be removed
-def get_user_projpkgs_request_list(apiurl, user, req_state=('new',), req_type=None, exclude_projects=[], projpkgs={}):
+def get_user_projpkgs_request_list(apiurl, user, req_state=('new','review',), req_type=None, exclude_projects=[], projpkgs={}):
     """OBSOLETE: user involved request search is supported by OBS 2.2 server side in a better way
        Return all running requests for all projects/packages where is user is involved"""
     if not projpkgs:
@@ -4330,12 +4330,13 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     except urllib2.HTTPError, e:
         if not return_existing:
             raise
-        msg = ''.join(e.readlines())
-        msg = msg.split('<summary>')[1]
-        msg = msg.split('</summary>')[0]
-        m = re.match(r"branch target package already exists: (\S+)/(\S+)", msg)
+        root = ET.fromstring(e.read())
+        summary = root.find('summary')
+        if summary is None:
+            raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root))
+        m = re.match(r"branch target package already exists: (\S+)/(\S+)", summary.text)
         if not m:
-            e.msg += '\n' + msg
+            e.msg += '\n' + summary.text
             raise
         return (True, m.group(1), m.group(2), None, None)
 
@@ -5889,13 +5890,8 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
     tmpfile = None
 
     def print_request(request):
-        try:
-            # FIXME: print can fail with unicode chars in the string. 
-            #        Here we fix the symptoms, not the cause.
-            # UnicodeEncodeError: 'ascii' codec can't encode character u'\u2002' in position 309: ordinal not in range(128)
-            print request
-        except:
-            print request.__str__().encode('ascii', 'xmlcharrefreplace')
+        print request
+
     print_request(request)
     try:
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '

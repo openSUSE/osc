@@ -9,6 +9,7 @@ import cmdln
 import conf
 import oscerr
 import sys
+from util import safewriter
 from optparse import SUPPRESS_HELP
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
@@ -63,6 +64,8 @@ class Osc(cmdln.Cmdln):
     def __init__(self, *args, **kwargs):
         cmdln.Cmdln.__init__(self, *args, **kwargs)
         cmdln.Cmdln.do_help.aliases.append('h')
+        sys.stderr = safewriter.SafeWriter(sys.stderr)
+        sys.stdout = safewriter.SafeWriter(sys.stdout)
 
     def get_version(self):
         return get_osc_version()
@@ -349,10 +352,7 @@ class Osc(cmdln.Cmdln):
         elif not opts.binaries:
             if not args:
                 for prj in meta_get_project_list(apiurl, opts.deleted):
-                    try:
-                        print prj
-                    except UnicodeEncodeError:
-                        print prj.encode('unicode_escape')
+                    print prj
 
             elif len(args) == 1:
                 if opts.verbose:
@@ -361,10 +361,7 @@ class Osc(cmdln.Cmdln):
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
                 for pkg in meta_get_packagelist(apiurl, project, opts.deleted):
-                    try:
-                        print pkg
-                    except UnicodeEncodeError:
-                        print pkg.encode('unicode_escape')
+                    print pkg
 
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False
@@ -1014,7 +1011,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      'superseded by %s' % result, result)
 
         if opts.supersede:
-            change_request_state(apiurl, opts.supersede, 'superseded', 
+            change_request_state(apiurl, opts.supersede, 'superseded',
                                  opts.message or '', result)
 
         print 'created request id', result
@@ -1198,7 +1195,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                          'superseded by %s' % result, result)
 
             if opts.supersede:
-                change_request_state(apiurl, opts.supersede, 'superseded', '', result)
+                change_request_state(apiurl, opts.supersede, 'superseded',  '', result)
 
             #print 'created request id', result
             return actionxml
@@ -1605,6 +1602,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='limit to requests which contain a given action type (submit/delete/change_devel)')
     @cmdln.option('-a', '--all', action='store_true',
                         help='all states. Same as\'-s all\'')
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='enforce state change, can be used to ignore open reviews')
     @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new' otherwise
                         help='only list requests in one of the comma separated given states (new/accepted/revoked/declined) or "all" [default=new, or all, if no args given]')
     @cmdln.option('-D', '--days', metavar='DAYS',
@@ -1873,7 +1872,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     for result in results:
                         print result.reqid, ": ",
                         r = change_request_state(apiurl,
-                                result.reqid, 'accepted', opts.message or '')
+                                result.reqid, 'accepted', opts.message or '', force=opts.force)
                         print 'Result of change request state: %s' % r
                 else:
                     print >>sys.stderr, 'Aborted...'
@@ -1955,7 +1954,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     tmpl = change_request_state_template(rq, state_map[cmd])
                     opts.message = edit_message(template=tmpl)
                 r = change_request_state(apiurl,
-                        reqid, state_map[cmd], opts.message or '')
+                        reqid, state_map[cmd], opts.message or '', force=opts.force)
                 print 'Result of change request state: %s' % r
 
     # editmeta and its aliases are all depracated
@@ -2407,11 +2406,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-        if not opts.message:
-                footer='please specify the purpose of your branch'
-                template='This package was branched from %s in order to ...\n' % args[0]
-                opts.message = edit_message(footer, template)
-
         exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(apiurl, args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
@@ -2422,18 +2416,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
         devloc = None
-        if not exists and (srcprj is not None and srcprj != args[0] or \
-                           srcprj is None and targetprj != expected):
-            devloc = srcprj or targetprj
-            if not srcprj and 'branches:' in targetprj:
-                devloc = targetprj.split('branches:')[1]
-            print '\nNote: The branch has been created of a different project,\n' \
-                  '              %s,\n' \
-                  '      which is the primary location of where development for\n' \
-                  '      that package takes place.\n' \
-                  '      That\'s also where you would normally make changes against.\n' \
-                  '      A direct branch of the specified package can be forced\n' \
-                  '      with the --nodevelproject option.\n' % devloc
+        if not exists and (srcprj != args[0] or srcpkg != args[1]):
+            try:
+                root = ET.fromstring(''.join(show_attribute_meta(apiurl, args[0], None, None,
+                    conf.config['maintained_update_project_attribute'], False, False)))
+                # this might raise an AttributeError
+                uproject = root.find('attribute').find('value').text
+                print '\nNote: The branch has been created from the configured update project: %s' \
+                    % uproject
+            except (AttributeError, urllib2.HTTPError), e:
+                devloc = srcprj
+                print '\nNote: The branch has been created of a different project,\n' \
+                      '              %s,\n' \
+                      '      which is the primary location of where development for\n' \
+                      '      that package takes place.\n' \
+                      '      That\'s also where you would normally make changes against.\n' \
+                      '      A direct branch of the specified package can be forced\n' \
+                      '      with the --nodevelproject option.\n' % devloc
 
         package = tpackage or args[1]
         if opts.checkout:
@@ -2450,7 +2449,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       % (apiopt, targetprj, package)
         print_request_list(apiurl, args[0], args[1])
         if devloc:
-            print_request_list(apiurl, devloc, args[1])
+            print_request_list(apiurl, devloc, srcpkg)
 
 
     def do_undelete(self, subcmd, opts, *args):
@@ -5042,7 +5041,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': ''}
         elif type in args_sr:
             requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
-            for r in requests:
+            for r in sorted(requests):
                 print r.list_view(), '\n'
             return
         elif not type in args_pkg:
@@ -5061,19 +5060,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # try api side search as supported since OBS 2.2
             try:
-               u = makeurl(apiurl, ['request'], ['view=collection&user=%s' % quote_plus(user)])
-               res = http_GET(u)
-               requests = []
-               for root in res['request'].findall('request'):
-                   r = Request()
-                   r.read(root)
-                   requests.append(r)
-               for r in requests:
-                   print r.list_view(), '\n'
-               return
-            except:
-               # skip it ... try again with old style below
-               pass
+                u = makeurl(apiurl, ['request'], {
+                    'view' : 'collection',
+                    'state': 'pending',
+                    'user' : user,
+                    })
+                f = http_GET(u)
+                root = ET.parse(f).getroot()
+                requests = []
+                for node in root.findall('request'):
+                    r = Request()
+                    r.read(node)
+                    requests.append(r)
+                for r in sorted(requests):
+                    print r.list_view(), '\n'
+                return
+            except urllib2.HTTPError, e:
+                if e.code == 400:
+                    # skip it ... try again with old style below
+                    pass
 
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 what.has_key('project'), what.has_key('package'),
@@ -5100,7 +5105,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # old style, only for OBS 2.1 and before. Should not be used, since it is slow and incomplete
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
-            for r in requests:
+            for r in sorted(requests):
                 print r.list_view(), '\n'
         else:
             for i in sorted(roles.keys()):
