@@ -2083,6 +2083,40 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pac.update(rev=pac.latest_rev())
 
 
+    def do_detachbranch(self, subcmd, opts, *args):
+        """${cmd_name}: replace a link with its expanded sources
+
+        If a package is a link it is replaced with its expanded sources. The link
+        does not exist anymore.
+
+        usage:
+            osc detachbranch                    # can be used in package working copy
+            osc detachbranch PROJECT PACKAGE
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+        if len(args) == 0:
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+        elif len(args) == 2:
+            project, package = args
+        elif len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments (required none or two)')
+        else:
+            raise oscerr.WrongArgs('Too few arguments (required none or two)')
+
+        try:
+            copy_pac(apiurl, project, package, apiurl, project, package, expand=True)
+        except urllib2.HTTPError, e:
+            root = ET.fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
+            li = Linkinfo()
+            li.read(root.find('linkinfo'))
+            if li.islink() and li.haserror():
+                raise oscerr.LinkExpandError(project, package, li.error)
+            raise e
+
+
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
                   help='cicount attribute in the link, known values are add, copy, and local, default in buildservice is currently add.')
     @cmdln.option('-c', '--current', action='store_true',
