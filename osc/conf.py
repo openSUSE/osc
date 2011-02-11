@@ -282,7 +282,7 @@ apiurl = %(apiurl)s
 
 [%(apiurl)s]
 user = %(user)s
-passx = %(passx)s
+pass = %(pass)s
 # set aliases for this apiurl
 # aliases = foo, bar
 # email used in .changes, unless the one from osc meta prj <user> will be used
