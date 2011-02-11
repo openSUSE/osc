@@ -2083,6 +2083,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pac.update(rev=pac.latest_rev())
 
 
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify message TEXT')
     def do_detachbranch(self, subcmd, opts, *args):
         """${cmd_name}: replace a link with its expanded sources
 
@@ -2107,14 +2109,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
 
         try:
-            copy_pac(apiurl, project, package, apiurl, project, package, expand=True)
+            copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
         except urllib2.HTTPError, e:
             root = ET.fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
             li = Linkinfo()
             li.read(root.find('linkinfo'))
             if li.islink() and li.haserror():
                 raise oscerr.LinkExpandError(project, package, li.error)
-            raise e
+            elif not li.islink():
+                print >>sys.stderr, 'package \'%s/%s\' is no link' % (project, package)
+            else:
+                raise e
 
 
     @cmdln.option('-C', '--cicount', choices=['add', 'copy', 'local'],
