@@ -90,9 +90,8 @@ apiurl = http://localhost
 #source_validator_directory = /usr/lib/osc/source_validators
 
 [http://localhost]
-user = Admin
-pass = opensuse
-passx = QlpoOTFBWSZTWeTSblkAAAGBgAIBygAgADDACGNEHxaYXckU4UJDk0m5ZA==
+user=Admin
+pass=opensuse
 # set aliases for this apiurl
 # aliases = foo, bar
 # email used in .changes, unless the one from osc meta prj <user> will be used
