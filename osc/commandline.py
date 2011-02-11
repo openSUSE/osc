@@ -1658,7 +1658,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         "reopen" will set the request back to new or review.
 
-        "wipe" will permanently delete a request
+        "supersede" will supersede one request with another existing one.
 
         "revoke" will set the request state to "revoked"
 
@@ -1688,8 +1688,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request accept [-m TEXT] ID
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
-            osc request wipe ID
             osc request reopen [-m TEXT] ID
+            osc request supersede [-m TEXT] ID SUPERSEDE_ID
             osc request approvenew [-m TEXT] PROJECT
 
             osc request checkout/co ID
@@ -1700,6 +1700,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc review accept [-m TEXT] ID
             osc review decline [-m TEXT] ID
             osc review reopen [-m TEXT] ID
+            osc review supersede [-m TEXT] ID SUPERSEDE_ID
 
         ${cmd_option_list}
         """
@@ -1728,11 +1729,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if args[0] == 'help':
             return self.do_help(['help', 'request'])
 
-        cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'revoke', 'checkout', 'co' ]
+        cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'supersede', 'revoke', 'checkout', 'co' ]
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
-        cmds = [ 'list', 'add', 'decline', 'accept', 'reopen' ]
+        cmds = [ 'list', 'add', 'decline', 'accept', 'reopen', 'supersede' ]
         if subcmd == 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown review action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1744,6 +1745,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if cmd in ['list']:
             min_args, max_args = 0, 2
+        elif cmd in ['supersede']:
+            min_args, max_args = 2, 2
         else:
             min_args, max_args = 1, 1
         if len(args) < min_args:
@@ -1753,6 +1756,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if cmd in ['add'] and not opts.user and not opts.group:
             opts.user = conf.get_apiurl_usr(apiurl)
 
+        reqid = None
+        supersedid = None
         if cmd == 'list' or cmd == 'approvenew':
             package = None
             project = None
@@ -1767,6 +1772,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) > 1:
                 package = args[1]
+        elif cmd == 'supersede':
+            reqid = args[0]
+            supersedid = args[1]
         elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
@@ -1932,17 +1940,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     action.src_rev, expand_link=True, prj_dir=action.src_project)
 
         else:
-            state_map = {'reopen' : 'new', 'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked'}
+            state_map = {'reopen' : 'new', 'accept' : 'accepted', 'decline' : 'declined', 'wipe' : 'deleted', 'revoke' : 'revoked', 'supersede' : 'superseded'}
             # Change review state only
             if subcmd == 'review':
                 if not opts.message:
                    opts.message = edit_message()
-                if cmd in ['accept', 'decline', 'reopen']:
+                if cmd in ['accept', 'decline', 'reopen', 'supersede']:
                     r = change_review_state(apiurl,
-                            reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.group, opts.project, opts.package, opts.message or '')
+                            reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.group, opts.project, opts.package, opts.message or '', supersed=supersedid)
                     print r
             # Change state of entire request
-            elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke']:
+            elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
                 if rq.state.name == state_map[cmd]:
                     repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "  % (reqid, rq.state.name))
@@ -1954,7 +1962,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     tmpl = change_request_state_template(rq, state_map[cmd])
                     opts.message = edit_message(template=tmpl)
                 r = change_request_state(apiurl,
-                        reqid, state_map[cmd], opts.message or '', force=opts.force)
+                        reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
                 print 'Result of change request state: %s' % r
 
     # editmeta and its aliases are all depracated
