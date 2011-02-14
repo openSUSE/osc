@@ -5413,6 +5413,7 @@ def set_link_rev(apiurl, project, package, revision = None, use_xsrcmd5 = None, 
     # set revision element
     src_project = root.attrib['project']
     src_package = root.attrib['package']
+    xsrcmd5 = None
     if not revision:
         root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package)
     elif revision == -1:
@@ -5423,16 +5424,18 @@ def set_link_rev(apiurl, project, package, revision = None, use_xsrcmd5 = None, 
     if use_xsrcmd5:
         if use_baserev:
             try:
-               root.attrib['rev'] = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'], linkrev='base' )
+               xsrcmd5 = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'], linkrev='base' )
             except oscerr.LinkExpandError, e:
                e.osc_msg = 'Unable to merge packages via links from package \'%s\' for project \'%s\'. These revisions have never worked!' % (package, project)
                raise
         else:
             try:
-               root.attrib['rev'] = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'] )
+               xsrcmd5 = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'] )
             except oscerr.LinkExpandError, e:
                e.osc_msg = 'Unable to merge packages via links from package \'%s\' for project \'%s\'. Please try again using baserev to use source revisions when created the commits.' % (package, project)
                raise
+        if xsrcmd5:
+            root.attrib['rev'] = xsrcmd5
 
     l = ET.tostring(root)
     # upload _link file again
