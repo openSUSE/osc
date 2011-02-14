@@ -6026,6 +6026,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Please commit your local changes first!')
         # check if we need to update
         upstream_rev = p.latest_rev()
+        if not (p.isfrozen() or p.ispulled()):
+            raise oscerr.WrongArgs('osc pull makes only sense with a detached head, did you mean osc up?')
         if p.rev != upstream_rev:
             raise oscerr.WorkingCopyOutdated((p.absdir, p.rev, upstream_rev))
         elif not p.islink():
