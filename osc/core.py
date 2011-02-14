@@ -3919,7 +3919,7 @@ def server_diff_noex(apiurl,
                             old_project, old_package, old_revision,
                             new_project, new_package, new_revision,
                             unified, missingok, meta, expand)
-    except urllib2.HTTPError, e:
+    except:
         msg = None
         body = None
         try:
@@ -3931,10 +3931,13 @@ def server_diff_noex(apiurl,
 
         if expand:
             rdiff =  "## diff on expanded link not possible, showing unexpanded version\n"
-            rdiff += server_diff_noex(apiurl,
-                            old_project, old_package, old_revision,
-                            new_project, new_package, new_revision,
-                            unified, missingok, meta, False)
+            try:
+                    rdiff += server_diff_noex(apiurl,
+                                    old_project, old_package, old_revision,
+                                    new_project, new_package, new_revision,
+                                    unified, missingok, meta, False)
+            except:
+                    return 'error: diffing failed: %s' % body.find('summary').text
             return rdiff
 
 
