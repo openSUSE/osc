@@ -240,11 +240,11 @@ class Serviceinfo:
                 msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node)
                 raise oscerr.APIError(msg)
 
-    def readProjectFile(self, apiurl, project):
-        # download project wide _service file, we don't store it yet
-        u = makeurl(apiurl, ['source', project, "_project", "_service"])
+    def getProjectGlobalServices(self, apiurl, project, package):
+        # get all project wide services in one file, we don't store it yet
+        u = makeurl(apiurl, ['source', project, package], query='cmd=getprojectservices')
         try:
-            f = http_GET(u)
+            f = http_POST(u)
             root = ET.parse(f).getroot()
             self.read(root, True)
         except urllib2.HTTPError, e:
@@ -2030,7 +2030,7 @@ rev: %s
         if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
             si.read(service)
-        si.readProjectFile(self.apiurl, self.prjname)
+        si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
         si.execute(self.absdir, mode, singleservice)
         os.chdir(curdir)
 
