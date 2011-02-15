@@ -300,7 +300,7 @@ class Serviceinfo:
         r.append( s )
         return r
 
-    def execute(self, dir, callmode = ""):
+    def execute(self, dir, callmode = None, singleservice = None):
         import tempfile
 
         # cleanup existing generated files
@@ -308,8 +308,16 @@ class Serviceinfo:
             if filename.startswith('_service:') or filename.startswith('_service_'):
                 os.unlink(os.path.join(dir, filename))
 
+        allservices = self.services or []
+        if singleservice and not singleservice in allservices:
+            # set array to the manual specified singleservice, if it is not part of _service file
+            data = { 'name' : singleservice, 'command' : singleservice, 'mode' : '' }
+            allservices = [data]
+
         # recreate files
-        for service in self.services:
+        for service in allservices:
+            if singleservice and service['name'] != singleservice:
+                continue
             if service['mode'] == "disabled" and callmode != "disabled":
                 continue
             if service['mode'] != "disabled" and callmode == "disabled":
@@ -2015,15 +2023,15 @@ rev: %s
 
         print 'At revision %s.' % self.rev
 
-    def run_source_services(self, mode=""):
+    def run_source_services(self, mode=None, singleservice=None):
         curdir = os.getcwd()
         os.chdir(self.absdir) # e.g. /usr/lib/obs/service/verify_file fails if not inside the project dir.
+        si = Serviceinfo()
         if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
-            si = Serviceinfo()
             si.read(service)
-            si.readProjectFile(self.apiurl, self.prjname)
-            si.execute(self.absdir, mode)
+        si.readProjectFile(self.apiurl, self.prjname)
+        si.execute(self.absdir, mode, singleservice)
         os.chdir(curdir)
 
     def prepare_filelist(self):

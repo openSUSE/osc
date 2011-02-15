@@ -10,6 +10,8 @@
   - show review states on "review list"
   - new source service commands "localrun" and "disabledrun" to generate files without _service: prefix
   - add "request supersede" and "review supersede" to supersede with existing request
+  - make it possible to run single source services, even when not specified in _service file.
+    (For example for doing a version update without creating a _service file: osc service lr update_source)
 #
 # Features which requires OBS 2.2
 #

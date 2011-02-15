@@ -4696,10 +4696,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc service COMMAND (inside working copy)
-            osc service COMMAND PROJECT PACKAGE
+            osc service run [SOURCE_SERVICE]
+            osc service localrun [SOURCE_SERVICE]
+            osc service disabledrun
+            osc service remoterun [PROJECT PACKAGE]
 
             COMMAND can be:
-            run         r  run defined services locally
+            run         r  run defined services locally, it takes an optional parameter to run only a 
+                           specified source service. In case paramteres exists for this one in _service file
+                           they are used.
             localrun    lr run defined services locally and store files as local created (skip _service: prefix).
             disabledrun dr run only disabled services locally and store files as local created
             remoterun   rr trigger a re-run on the server side
@@ -4709,17 +4714,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
 
-        package = repo = arch = code = None
+        package = singleservice = mode = repo = arch = code = None
         apiurl = self.get_api_url()
 
-        if len(args) < 2:
+        if len(args) < 3:
             if is_package_dir(os.curdir):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
                 apiurl = store_read_apiurl(os.curdir)
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
-        elif len(args) == 3:
+            if len(args) == 2:
+                singleservice = args[1]
+        elif len(args) == 3 and command == "remoterun":
             project = args[1]
             package = args[2]
         else:
@@ -4729,17 +4736,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if command == "remoterun" or command == "rr":
             print runservice(apiurl, project, package)
+            return
 
         if command == "run" or command == "localrun" or command == "disabledrun" or command == "lr" or command == "dr" or command == "r":
             if not is_package_dir(os.curdir):
                 raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
             if command == "localrun" or command == "lr":
-                p.run_source_services( "local" )
+                mode = "local"
             elif command == "disabledrun" or command == "dr":
-                p.run_source_services( "disabled" )
-            else:
-                p.run_source_services()
+                mode = "disabled"
+
+        p.run_source_services( mode, singleservice )
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='trigger rebuilds for a specific architecture')
