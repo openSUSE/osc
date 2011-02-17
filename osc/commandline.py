@@ -4726,11 +4726,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too few arguments.')
             if len(args) == 2:
                 singleservice = args[1]
-        elif len(args) == 3 and command == "remoterun":
+        elif len(args) == 3 and args[0] == 'remoterun':
             project = args[1]
             package = args[2]
         else:
-            raise oscerr.WrongArgs('Too few arguments.')
+            raise oscerr.WrongArgs('Too many arguments.')
 
         command = args[0]
 
