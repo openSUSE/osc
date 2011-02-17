@@ -4713,15 +4713,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = slash_split(args)
-
-        package = singleservice = mode = repo = arch = code = None
+        project = package = singleservice = mode = None
         apiurl = self.get_api_url()
 
         if len(args) < 3:
             if is_package_dir(os.curdir):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
-                apiurl = store_read_apiurl(os.curdir)
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
             if len(args) == 2:
@@ -4738,7 +4736,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print runservice(apiurl, project, package)
             return
 
-        if command == "run" or command == "localrun" or command == "disabledrun" or command == "lr" or command == "dr" or command == "r":
+        if command in ('run', 'localrun', 'disabledrun', 'lr', 'dr', 'r'):
             if not is_package_dir(os.curdir):
                 raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
@@ -4747,7 +4745,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif command == "disabledrun" or command == "dr":
                 mode = "disabled"
 
-        p.run_source_services( mode, singleservice )
+        p.run_source_services(mode, singleservice)
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='trigger rebuilds for a specific architecture')
