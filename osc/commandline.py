@@ -3661,7 +3661,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
         if opts.xml:
-            print show_results_meta(*args)
+            print ''.join(show_results_meta(*args)),
         elif opts.csv:
             print '\n'.join(format_results(get_package_results(*args), opts.format))
         else:
