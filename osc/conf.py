@@ -78,7 +78,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-vmdisk-rootsize': '', # optional for VM builds
              'build-vmdisk-swapsize': '', # optional for VM builds
 
-             'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN'), # compile with N jobs
+             'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN') if 'Linux' in os.uname() else 1, # compile with N jobs
              'builtin_signature_check': '1', # by default use builtin check for verify pkgs
              'icecream': '0',
 
