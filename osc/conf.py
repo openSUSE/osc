@@ -60,6 +60,16 @@ except:
     except:
         pass
 
+def _get_processors():
+    """
+    get number of processors (online) based on
+    SC_NPROCESSORS_ONLN (returns 1 if config name does not exist).
+    """
+    try:
+        return os.sysconf('SC_NPROCESSORS_ONLN')
+    except ValueError, e:
+        return 1
+
 DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'user': 'your_username',
              'pass': 'your_password',
@@ -78,7 +88,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
              'build-vmdisk-rootsize': '', # optional for VM builds
              'build-vmdisk-swapsize': '', # optional for VM builds
 
-             'build-jobs': os.sysconf('SC_NPROCESSORS_ONLN') if 'Linux' in os.uname() else 1, # compile with N jobs
+             'build-jobs': _get_processors(),
              'builtin_signature_check': '1', # by default use builtin check for verify pkgs
              'icecream': '0',
 
