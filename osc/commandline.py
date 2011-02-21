@@ -5341,16 +5341,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     result.append(package)
 
                 if opts.version and package != None:
-                    try:
-                      sr = get_source_rev(apiurl,project,package)
-                      v = sr.get('version')
-                      r = sr.get('rev')
-                      s = sr.get('srcmd5')
-                    except:
-                      # avoid 404 here. 
-                      # ['search', 'package'] ['match=contains%28description%2C+%27redis%27%29']
-                      # returns packages in project 'Ports:DebianBased:Auto', which cannot be examined.
-                      pass
+                    sr = get_source_rev(apiurl,project,package)
+                    v = sr.get('version')
+                    r = sr.get('rev')
+                    s = sr.get('srcmd5')
                     if not v or v == 'unknown': v = '-'
                     if not r: r = '-'
                     if not s: s = '-'
