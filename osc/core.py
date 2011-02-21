@@ -709,7 +709,7 @@ class Project:
                                              pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, \
                                              prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
                         else:
-                            Package(os.path.join(self.dir, pac, progress_obj=self.progress_obj)).update()
+                            Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj).update()
                     elif state == 'A' and pac in self.pacs_available:
                         # file/dir called pac already exists and is under version control
                         msg = 'can\'t add package \'%s\': Object already exists' % pac
