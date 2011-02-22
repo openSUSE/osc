@@ -2011,8 +2011,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = self.get_api_url()
         package = None
-        use_baserev = None
-        use_xsrcmd5 = 1
+        xsrcmd5 = True
+        baserev = False
+        if opts.use_plain_revision:
+            xsrcmd5 = False
+        if opts.use_baserev:
+            baserev = True
+
+        rev = parseRevisionOption(opts.revision)[0] or ''
+        if opts.unset:
+            rev = None
+
         if len(args) == 0:
             p = findpacs(os.curdir)[0]
             project = p.prjname
@@ -2030,22 +2039,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   + self.get_cmd_help('setlinkrev'))
 
         if package:
-            packages = [ package ]
+            packages = [package]
         else:
             packages = meta_get_packagelist(apiurl, project)
 
-        if opts.use_plain_revision:
-            use_xsrcmd5 = None
-        if opts.use_baserev:
-            use_baserev = 1
-
         for p in packages:
-            print "setting revision for package", p
-            if opts.unset:
-                rev=-1
-            else:
-                rev, dummy = parseRevisionOption(opts.revision)
-            set_link_rev(apiurl, project, p, revision = rev, use_xsrcmd5 = use_xsrcmd5, use_baserev = use_baserev)
+            print 'setting revision for package %s' % p
+            set_link_rev(apiurl, project, p, revision=rev, xsrcmd5=xsrcmd5, baserev=baserev)
 
 
     def do_linktobranch(self, subcmd, opts, *args):

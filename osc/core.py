@@ -5409,7 +5409,12 @@ def search(apiurl, **kwargs):
         res[urlpath] = ET.parse(f).getroot()
     return res
 
-def set_link_rev(apiurl, project, package, revision = None, use_xsrcmd5 = None, use_baserev = None):
+def set_link_rev(apiurl, project, package, revision='', xsrcmd5=False, baserev=False):
+    """
+    updates the rev attribute of the _link xml. If revision is set to None
+    the rev attribute is removed from the _link xml. If revision is set to ''
+    the "plain" upstream revision is used (if xsrcmd5 and baserev aren't specified).
+    """
     url = makeurl(apiurl, ['source', project, package, '_link'])
     try:
         f = http_GET(url)
@@ -5419,34 +5424,22 @@ def set_link_rev(apiurl, project, package, revision = None, use_xsrcmd5 = None, 
         raise
 
     # set revision element
-    src_project = root.attrib['project']
-    src_package = root.attrib['package']
-    xsrcmd5 = None
-    if not revision:
-        root.attrib['rev'] = show_upstream_rev(apiurl, src_project, src_package)
-    elif revision == -1:
-        del root.attrib['rev']
-    else:
-        root.attrib['rev'] = revision
+    src_project = root.get('project', project)
+    src_package = root.get('package')
+    if revision is None:
+        if 'rev' in root.keys():
+            del root.attrib['rev']
+    elif baserev:
+        revision = show_upstream_xsrcmd5(apiurl, src_project, src_package, linkrev='base')
+    elif xsrcmd5:
+        revision = show_upstream_xsrcmd5(apiurl, src_project, src_package)
+    elif revision == '':
+        revision = show_upstream_rev(apiurl, src_project, src_package)
 
-    if use_xsrcmd5:
-        if use_baserev:
-            try:
-               xsrcmd5 = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'], linkrev='base' )
-            except oscerr.LinkExpandError, e:
-               e.osc_msg = 'Unable to merge packages via links from package \'%s\' for project \'%s\'. These revisions have never worked!' % (package, project)
-               raise
-        else:
-            try:
-               xsrcmd5 = show_upstream_xsrcmd5(apiurl, src_project, src_package, revision=root.attrib['rev'] )
-            except oscerr.LinkExpandError, e:
-               e.osc_msg = 'Unable to merge packages via links from package \'%s\' for project \'%s\'. Please try again using baserev to use source revisions when created the commits.' % (package, project)
-               raise
-        if xsrcmd5:
-            root.attrib['rev'] = xsrcmd5
+    if revision:
+        root.set('rev', revision)
 
     l = ET.tostring(root)
-    # upload _link file again
     http_PUT(url, data=l)
 
 
