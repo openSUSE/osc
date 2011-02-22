@@ -4753,6 +4753,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='trigger rebuilds for a specific repository')
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
+    @cmdln.option('--all', action='store_true',
+                        help='Rebuild all packages of entire project')
     @cmdln.alias('rebuildpac')
     def do_rebuild(self, subcmd, opts, *args):
         """${cmd_name}: Trigger package rebuilds
@@ -4805,6 +4807,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.failed:
             code = 'failed'
 
+        if not (opts.all or package or repo or arch or code):
+            raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
+
         print rebuild(apiurl, project, package, repo, arch, code)
 
 
@@ -4829,6 +4834,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Abort builds for a specific architecture')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Abort builds for a specific repository')
+    @cmdln.option('--all', action='store_true',
+                        help='Abort all running builds of entire project')
     def do_abortbuild(self, subcmd, opts, *args):
         """${cmd_name}: Aborts the build of a certain project/package
 
@@ -4848,6 +4855,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = args[1]
         else:
             package = None
+
+        if not (opts.all or package or repo or arch):
+            raise oscerr.WrongOptions('No option has been provided. If you want to abort all packages of the entire project, use --all option.')
 
         print abortbuild(apiurl, args[0], package, opts.arch, opts.repo)
 
