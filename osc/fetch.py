@@ -228,7 +228,8 @@ class Fetcher:
             url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
             try:
                 if self.offline and not os.path.exists(dest):
-                    raise oscerr.OscIOError(None, 'Missing pubkey for project \'%s\': --offline not possible' % i)
+                    # may need to try parent
+                    raise URLGrabError(2)
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 if not i in buildinfo.prjkeys: # not that many keys usually
