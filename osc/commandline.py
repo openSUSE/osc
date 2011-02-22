@@ -1798,7 +1798,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.message:
                 opts.message = edit_message()
             r = http_POST(url, data=opts.message)
-            print ET.parse(r).getroot().attrib['code']
+            print ET.parse(r).getroot().get('code')
 
         # list and approvenew
         elif cmd == 'list' or cmd == 'approvenew':

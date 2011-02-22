@@ -547,7 +547,7 @@ class Project:
         if node == None:
             self.new_package_entry(pac, state)
         else:
-            node.attrib['state'] = state
+            node.set('state', state)
 
     def get_package_node(self, pac):
         for node in self.pac_root.findall('package'):
@@ -3526,7 +3526,7 @@ def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_pro
     u = makeurl(apiurl, ['request', reqid], query=query)
     f = http_POST(u, data=message)
     root = ET.parse(f).getroot()
-    return root.attrib['code']
+    return root.get('code')
 
 def change_request_state(apiurl, reqid, newstate, message='', supersed=None, force=False):
     query={'cmd': 'changestate', 'newstate': newstate }
@@ -4151,10 +4151,9 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
                                template_args=None,
                                create_new=False, apiurl=apiurl)
         root = ET.fromstring(''.join(dst_meta))
-        print root.attrib['project']
-        if root.attrib['project'] != dst_project:
-           # The source comes from a different project via a project link, we need to create this instance
-           meta_change = True
+        if root.get('project') != dst_project:
+            # The source comes from a different project via a project link, we need to create this instance
+            meta_change = True
     except:
         meta_change = True
 
@@ -5593,14 +5592,14 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
             ET.SubElement(root, 'devel')
         elem = root.find('devel')
         if dprj:
-            elem.attrib['project'] = dprj
+            elem.set('project', dprj)
         else:
-            if elem.attrib.has_key('project'):
+            if 'project' in elem.keys():
                 del elem.attrib['project']
         if dpkg:
-            elem.attrib['package'] = dpkg
+            elem.set('package', dpkg)
         else:
-            if elem.attrib.has_key('package'):
+            if 'package' in elem.keys():
                 del elem.attrib['package']
         edit_meta(metatype='pkg',
                   path_args=path,
