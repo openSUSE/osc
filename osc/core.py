@@ -3667,7 +3667,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new','review',), re
         xp = ''
         for state in req_state:
             xp = xpath_join(xp, 'state/@name=\'%s\'' % state, inner=True)
-        xpath = xpath_join(xp, '(%s)' % xpath, op='and')
+        xpath = xpath_join(xp, xpath, op='and', nexpr_parentheses=True)
     res = search(apiurl, request=xpath)
     result = []
     for root in res['request'].findall('request'):
@@ -5358,11 +5358,12 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
         separator = ''
     return [separator.join(row) for row in table]
 
-def xpath_join(expr, new_expr, op='or', inner=False):
+def xpath_join(expr, new_expr, op='or', inner=False, nexpr_parentheses=False):
     """
     Join two xpath expressions. If inner is False expr will
     be surrounded with parentheses (unless it's not already
-    surrounded).
+    surrounded). If nexpr_parentheses is True new_expr will be
+    surrounded with parentheses.
     """
     if not expr:
         return new_expr
@@ -5391,6 +5392,8 @@ def xpath_join(expr, new_expr, op='or', inner=False):
                 break
     if parentheses:
         expr = '(%s)' % expr
+    if nexpr_parentheses:
+        new_expr = '(%s)' % new_expr
     return '%s %s %s' % (expr, op, new_expr)
 
 def search(apiurl, **kwargs):
