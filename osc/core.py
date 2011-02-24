@@ -3646,10 +3646,12 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new','review',), re
        Return all running requests for all projects/packages where is user is involved"""
     if not projpkgs:
         res = get_user_projpkgs(apiurl, user, exclude_projects=exclude_projects)
+        projects = []
         for i in res['project_id'].findall('project'):
             projpkgs[i.get('name')] = []
+            projects.append(i.get('name'))
         for i in res['package_id'].findall('package'):
-            if not i.get('project') in projpkgs.keys():
+            if not i.get('project') in projects:
                 projpkgs.setdefault(i.get('project'), []).append(i.get('name'))
     xpath = ''
     for prj, pacs in projpkgs.iteritems():
