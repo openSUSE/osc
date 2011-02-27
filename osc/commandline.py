@@ -3774,7 +3774,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.offset:
                 offset = offset - int(opts.offset)
             else:
-                offset = offset - ( 4 * 1024 )
+                offset = offset - ( 8 * 1024 )
             if offset < 0:
                 offset=0
         elif opts.offset:
@@ -3847,7 +3847,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.offset:
                 offset = offset - int(opts.offset)
             else:
-                offset = offset - ( 4 * 1024 )
+                offset = offset - ( 8 * 1024 )
             if offset < 0:
                 offset=0
         elif opts.offset:
