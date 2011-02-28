@@ -339,7 +339,7 @@ class Serviceinfo:
                 #        updating _services.
                 print "       (your _services file may be corrupt now)"
 
-            if service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local":
+            if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local":
                 for filename in os.listdir(temp_dir):
                     shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
             else:
