@@ -4961,8 +4961,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = None
 
         if len(args) < 1 and is_package_dir('.'):
-            project = store_read_project(os.curdir)
-            package = store_read_package(os.curdir)
             self.print_repos()
 
         architecture = None
@@ -4986,10 +4984,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Need either 1, 2 or 4 arguments')
 
-        # Get package list
+        repos = list(get_repos_of_project(apiurl, project))
+        if not [i for i in repos if repository == i.name]:
+            print >>sys.stderr, 'Invalid repository \'%s\'' % repository
+            self.print_repos()
+
         arches = [architecture]
         if architecture is None:
-            arches = [i.arch for i in get_repos_of_project(apiurl, project) if repository == i.name]
+            arches = [i.arch for i in repos if repository == i.name]
 
         if package is None:
             package = meta_get_packagelist(apiurl, project)
