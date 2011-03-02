@@ -3783,7 +3783,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(apiurl, project, package, repository, arch, offset)
 
 
-    def print_repos(self, repos_only=False):
+    def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments'):
         wd = os.curdir
         doprint = False
         if is_package_dir(wd):
@@ -3800,7 +3800,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 self.do_repositories("repos_only", None)
             else:
                 self.do_repositories(None, None)
-        raise oscerr.WrongArgs('Missing arguments')
+        raise exc_class(exc_msg)
 
     @cmdln.alias('rbl')
     @cmdln.alias('rbuildlog')
@@ -4986,8 +4986,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         repos = list(get_repos_of_project(apiurl, project))
         if not [i for i in repos if repository == i.name]:
-            print >>sys.stderr, 'Invalid repository \'%s\'' % repository
-            self.print_repos()
+            self.print_repos(exc_msg='Invalid repository \'%s\'' % repository)
 
         arches = [architecture]
         if architecture is None:
