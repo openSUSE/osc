@@ -2715,6 +2715,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--oldpkg', metavar='OLDPKG',
                   help='package to compare against'
                   ' (deprecated, use 3 argument form)')
+    @cmdln.option('-M', '--meta', action='store_true',
+                        help='diff meta data')
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
     @cmdln.option('-p', '--plain', action='store_true',
@@ -2771,9 +2773,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             new_project = args[2]
             if len(args) == 4:
                 new_package = args[3]
+        elif len(args) == 1 and opts.meta:
+            new_project = args[0]
+            new_package = '_project'
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
+        if opts.meta:
+            opts.unexpand = True
 
         if opts.change:
             try:
@@ -2796,6 +2803,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rdiff = server_diff_noex(apiurl,
                             old_project, old_package, rev1,
                             new_project, new_package, rev2, not opts.plain, opts.missingok,
+                            meta=opts.meta,
                             expand=not opts.unexpand)
 
         run_pager(rdiff)
