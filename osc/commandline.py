@@ -5081,6 +5081,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             ${cmd_option_list}
         """
 
+        # TODO: please clarify the difference between sr and rq.
+        # My first implementeation was to make no difference between requests FROM one 
+        # of my projects and TO one of my projects. The current implementation appears to make this difference.
+        # The usage above indicates, that sr would be a subset of rq, which is no the case with my tests.
+        # jw.
+
         args_rq = ('requests', 'request', 'req', 'rq')
         args_sr = ('submitrequests', 'submitrequest', 'submitreq', 'submit', 'sr')
         args_prj = ('projects', 'project', 'projs', 'proj', 'prj')
@@ -5179,6 +5185,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in sorted(requests):
                 print r.list_view(), '\n'
+            if not len(requests):
+                print " -> try also 'osc my sr' to see more."
         else:
             for i in sorted(roles.keys()):
                 out = '%s' % i
