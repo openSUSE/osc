@@ -3970,7 +3970,7 @@ def server_diff_noex(apiurl,
                             old_project, old_package, old_revision,
                             new_project, new_package, new_revision,
                             unified, missingok, meta, expand)
-    except:
+    except urllib2.HTTPError, e:
         msg = None
         body = None
         try:
