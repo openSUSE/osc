@@ -432,7 +432,7 @@ class Osc(cmdln.Cmdln):
 
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
-            query='cmd=createpatchinfo'
+            query='cmd=createpatchinfo&new_format=1'
             if args and args[0]:
                 query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
@@ -812,7 +812,7 @@ class Osc(cmdln.Cmdln):
             targetprojects = []
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
-                if p.startswith("_patchinfo:"):
+                if p.startswith("_patchinfo:") or p.startswith("patchinfo"):
                     pi.append(p)
                 else:
                     # get _link info from server, that knows about the local state ...

@@ -2283,7 +2283,9 @@ class Action:
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
                             'acceptinfo_oxsrcmd5', 'opt_updatelink'),
         'add_role': ('tgt_project', 'tgt_package', 'person_name', 'person_role', 'group_name', 'group_role'),
-        'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'),
+        'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'), # obsoleted by add_role
+        'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name'),
+        'maintenance_incident': ('src_project', 'tgt_project', 'person_name'),
         'delete': ('tgt_project', 'tgt_package'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package')}
     # attribute prefix to element name map (only needed for abbreviated attributes)
@@ -2484,6 +2486,12 @@ class Request:
         elif action.type == 'change_devel':
             d['source'] = prj_pkg_join(action.tgt_project, action.tgt_package)
             d['target'] = 'developed in %s' % prj_pkg_join(action.src_project, action.src_package)
+        elif action.type == 'maintenance_incident':
+            d['source'] = '%s ->' % action.src_project
+            d['target'] = action.tgt_project
+        elif action.type == 'maintenance_release':
+            d['source'] = '%s ->' % prj_pkg_join(action.src_project, action.src_package)
+            d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package)
         elif action.type == 'submit':
             srcupdate = ' '
             if action.opt_sourceupdate and show_srcupdate:
