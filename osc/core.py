@@ -3464,7 +3464,7 @@ def clone_request(apiurl, reqid, msg=None):
 def create_submit_request(apiurl,
                          src_project, src_package,
                          dst_project=None, dst_package=None,
-                         message=None, orev=None, src_update=None):
+                         message="", orev=None, src_update=None):
 
     import cgi
     options_block=""
@@ -3494,7 +3494,7 @@ def create_submit_request(apiurl,
        orev or show_upstream_rev(apiurl, src_project, src_package),
        targetxml,
        options_block,
-       cgi.escape(message or ""))
+       cgi.escape(unicode(message, "utf8")))
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
     f = http_POST(u, data=xml)
