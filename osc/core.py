@@ -3467,16 +3467,6 @@ def create_submit_request(apiurl,
                          message=None, orev=None, src_update=None):
 
     import cgi
-
-    try:
-      unicode(message).decode('utf-8')
-    except:
-      # UnicodeDecodeError: 'utf8' codec can't decode bytes in position 365-367: invalid data
-      # If it was not valid utf-8, we assume it was some latin-X, which needs to be 
-      # encoded in utf-8, before it goes into XML. 
-      # FIXME: Should this be handled earlier? Are there more places?
-      message = unicode(message).encode('utf-8')
-
     options_block=""
     if src_update:
         options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
