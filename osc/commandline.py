@@ -2533,7 +2533,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Delete a project or packages on the server.
 
         As a safety measure, project must be empty (i.e., you need to delete all
-        packages first). If you are sure that you want to remove this project and all
+        packages first). Also, packages must have no requests pending (i.e., you need
+        to accept/revoke such requests first).
+        If you are sure that you want to remove this project and all
         its packages use \'--force\' switch.
 
         usage:
@@ -2559,12 +2561,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not len(pkg):
                 raise oscerr.WrongArgs('Package argument is empty')
 
+            ## FIXME: core.py:commitDelPackage() should have something similar
+            rlist = get_request_list(apiurl, prj, pkg)
+            for rq in rlist: print rq
+            if len(rlist) >= 1 and not opts.force:
+              print >>sys.stderr, 'Package has pending requests. Deleting the package will break them. '\
+                                  'They should be accepted/declined/revoked before deleting the package. '\
+                                  'Or just use \'--force\'.'
+              sys.exit(1)
+
             delete_package(apiurl, prj, pkg)
 
         elif len(meta_get_packagelist(apiurl, prj)) >= 1 and not opts.force:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
-                                'packages use the \'--force\' switch'
+                                'packages use the \'--force\' switch.'
             sys.exit(1)
         else:
             delete_project(apiurl, prj)

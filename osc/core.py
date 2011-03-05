@@ -5888,7 +5888,7 @@ def check_filelist_before_commit(pacs):
                 else:
                     raise oscerr.UserAbort()
 
-def print_request_list(apiurl, project, package = None, states = ('new', ), force = False):
+def print_request_list(apiurl, project, package = None, states = ('new','review',), force = False):
     """
     prints list of pending requests for the specified project/package if "check_for_request_on_action"
     is enabled in the config or if "force" is set to True
