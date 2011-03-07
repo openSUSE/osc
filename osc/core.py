@@ -3512,7 +3512,12 @@ def create_submit_request(apiurl,
        orev or show_upstream_rev(apiurl, src_project, src_package),
        targetxml,
        options_block,
-       cgi.escape(unicode(message, "utf8")))
+       cgi.escape(message))
+
+    # Don't do cgi.escape(unicode(message, "utf8"))) above.
+    # Promoting the string to utf8, causes the post to explode with:
+    #   uncaught exception: Fatal error: Start tag expected, '&lt;' not found at :1.
+    # I guess, my original workaround was not that bad.
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
     f = http_POST(u, data=xml)
