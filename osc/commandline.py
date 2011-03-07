@@ -2360,38 +2360,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        if len(args) == 0:
-            if is_project_dir(os.getcwd()):
-                apiurl = self.get_api_url()
-                source_project = args[0]
-                if len(args) >= 2:
-                     target_project = args[1]
-                else:
-                     sys.exit('osc maintenancerequest needs a source project specified either via command line or as current directory\n')
-        
+        if len(args) == 0 and is_project_dir(os.curdir):
+            source_project = store_read_project(os.curdir)
+        elif len(args) == 0:
+            raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
             source_project = args[0]
-        
+
         if len(args) > 1:
             target_project = args[1]
         else:
-            query = { "match": "attribute/@name='" + attribute + "'" }
-            u = makeurl(apiurl, ['search', 'project_id'], query)
-            f = http_GET(u)
-            root = ET.parse(f).getroot()
-            project = root.find("project")
-            target_project = project.get("name")
-            print target_project
-            if not target_project:
-                     sys.exit('Unable to find defined OBS:Maintenance project on server.\n')
+            xpath = 'attribute/@name = \'%s\'' % attribute
+            res = search(apiurl, project_id=xpath)
+            root = res['project_id']
+            project = root.find('project')
+            if project is None:
+                sys.exit('Unable to find defined OBS:Maintenance project on server.')
+            target_project = project.get('name')
+            print 'Using target project \'%s\'' % target_project
 
         if not opts.message:
             opts.message = edit_message()
 
-        result = create_maintenance_request(apiurl, source_project, target_project, opts.message)
-        if not result:
-             sys.exit("maintenance request creation failed")
-        print result
+        r = create_maintenance_request(apiurl, source_project, target_project, opts.message)
+        print r.reqid
 
 
     @cmdln.option('-c', '--checkout', action='store_true',
