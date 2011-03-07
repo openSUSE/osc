@@ -405,6 +405,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='force generation of new patchinfo file')
+    @cmdln.option('-n', '--new', action='store_true',
+                        help='Use new, OBS 2.3 style patchinfo format. Will become default on release of OBS 2.3.')
     @cmdln.option('--force-update', action='store_true',
                         help='drops away collected packages from an already built patch and let it collect again')
     def do_patchinfo(self, subcmd, opts, *args):
@@ -432,13 +434,15 @@ class Osc(cmdln.Cmdln):
 
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
-            query='cmd=createpatchinfo&new_format=1'
+            query='cmd=createpatchinfo'
+            if opts.new:
+                query='&new_format=1'
             if args and args[0]:
                 query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
-                if p.startswith("_patchinfo:"):
+                if p.startswith("_patchinfo:") or p.startswith("patchinfo"):
                     patchinfo = p
 
         # CAUTION:
