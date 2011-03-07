@@ -5151,7 +5151,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             try:
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
-                    'state': 'pending',
+                    'state': 'new',
                     'user' : user,
                     })
                 f = http_GET(u)
