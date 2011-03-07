@@ -2330,6 +2330,70 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print r
 
 
+    @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
+                        help='Use this attribute to find default maintenance project (default is OBS:Maintenance)')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify message TEXT')
+    def do_maintenancerequest(self, subcmd, opts, *args):
+        """${cmd_name}: Create a request for starting a maintenance incident.
+
+        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
+        for information on this topic.]
+
+        This command is asking the maintence team to start a maintence incident based on a 
+        created maintenance update. Please see the "mbranch" command on how to create such a project and
+        the "patchinfo" command how add the required maintenance update informations.
+
+        usage:
+            osc maintenancerequest [ SOURCEPROJECT [ TARGETPROJECT ] ]
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+        attribute = "OBS:Maintenance" # default attribute as defined in api code.
+        if opts.attribute:
+            attribute = opts.attribute
+
+        source_project = target_project = None
+
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0:
+            if is_project_dir(os.getcwd()):
+                apiurl = self.get_api_url()
+                source_project = args[0]
+                if len(args) >= 2:
+                     target_project = args[1]
+                else:
+                     sys.exit('osc maintenancerequest needs a source project specified either via command line or as current directory\n')
+        
+        if len(args) > 0:
+            source_project = args[0]
+        
+        if len(args) > 1:
+            target_project = args[1]
+        else:
+            query = { "match": "attribute/@name='" + attribute + "'" }
+            u = makeurl(apiurl, ['search', 'project_id'], query)
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            project = root.find("project")
+            target_project = project.get("name")
+            print target_project
+            if not target_project:
+                     sys.exit('Unable to find defined OBS:Maintenance project on server.\n')
+
+        if not opts.message:
+            opts.message = edit_message()
+
+        result = create_maintenance_request(apiurl, source_project, target_project, opts.message)
+        if not result:
+             sys.exit("maintenance request creation failed")
+        print result
+
+
     @cmdln.option('-c', '--checkout', action='store_true',
                         help='Checkout branched package afterwards ' \
                                 '(\'osc bco\' is a shorthand for this option)' )
