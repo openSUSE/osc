@@ -22,7 +22,8 @@
   - support project wide source services
   - support for armv7hl architecuture. used to denote armv7 + hardfloat binaries
   - add force option to accept requests in review state.
-  - add "maintenancerequests" command to request a maintenance incident from maintenance team
+  - add "maintenancerequest" command to request a maintenance incident from maintenance team
+  - add "releaserequest" command run a maintenance update release process (for maintenance team only)
 
 0.130
   - new "revert" command to restore the original working copy file (without

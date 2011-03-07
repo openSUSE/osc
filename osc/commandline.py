@@ -2330,6 +2330,47 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print r
 
 
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify message TEXT')
+    def do_releaserequest(self, subcmd, opts, *args):
+        """${cmd_name}: Create a request for releasing a maintenance update.
+
+        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
+        for information on this topic.]
+
+        This command is used by the maintence team to start the release process of a maintenance update.
+        This includes usually testing based on the defined reviewers of the update project.
+
+        usage:
+            osc releaserequest [ SOURCEPROJECT ]
+        ${cmd_option_list}
+        """
+       
+        # FIXME: additional parameters can be a certain repo list to create a partitial release
+
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        source_project = None
+
+        if len(args) > 1:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0 and is_project_dir(os.curdir):
+            source_project = store_read_project(os.curdir)
+        elif len(args) == 0:
+            raise oscerr.WrongArgs('Too few arguments.')
+        if len(args) > 0:
+            source_project = args[0]
+
+        if not opts.message:
+            opts.message = edit_message()
+
+        r = create_release_request(apiurl, source_project, opts.message)
+        print r.reqid
+
+
+
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='Use this attribute to find default maintenance project (default is OBS:Maintenance)')
     @cmdln.option('-m', '--message', metavar='TEXT',

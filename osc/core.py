@@ -3468,6 +3468,17 @@ def clone_request(apiurl, reqid, msg=None):
         raise oscerr.APIError('invalid data from clone request:\n%s\n' % ET.tostring(root))
     return project
 
+# create a maintenance release request
+def create_release_request(apiurl, src_project, message=''):
+    import cgi
+    r = Request()
+    # api will complete the request
+    r.add_action('maintenance_release', src_project=src_project)
+    # XXX: clarify why we need the unicode(...) stuff
+    r.description = cgi.escape(unicode(message, 'utf8'))
+    r.create(apiurl)
+    return r
+
 # create a maintenance incident per request
 def create_maintenance_request(apiurl, src_project, tgt_project, message=''):
     import cgi
