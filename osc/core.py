@@ -3469,28 +3469,14 @@ def clone_request(apiurl, reqid, msg=None):
     return project
 
 # create a maintenance incident per request
-def create_maintenance_request(apiurl, src_project, dst_project, message="" ):
+def create_maintenance_request(apiurl, src_project, tgt_project, message=''):
     import cgi
-
-    xml = """\
-<request>
-    <action type="maintenance_incident">
-        <source project="%s" />
-        <target project="%s" />
-    </action>
-    <state name="new"/>
-    <description>%s</description>
-</request>
-""" % (src_project,
-       dst_project,
-       cgi.escape(unicode(message, "utf8")))
-
-    u = makeurl(apiurl, ['request'], query='cmd=create')
-    f = http_POST(u, data=xml)
-
-    root = ET.parse(f).getroot()
-    return root.get('id')
-
+    r = Request()
+    r.add_action('maintenance_incident', src_project=src_project, src_package='foo', tgt_project=tgt_project)
+    # XXX: clarify why we need the unicode(...) stuff
+    r.description = cgi.escape(unicode(message, 'utf8'))
+    r.create(apiurl)
+    return r
 
 # This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
