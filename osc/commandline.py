@@ -405,6 +405,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='force generation of new patchinfo file')
+    @cmdln.option('-n', '--new', action='store_true',
+                        help='Use new, OBS 2.3 style patchinfo format. Will become default on release of OBS 2.3.')
     @cmdln.option('--force-update', action='store_true',
                         help='drops away collected packages from an already built patch and let it collect again')
     def do_patchinfo(self, subcmd, opts, *args):
@@ -432,13 +434,15 @@ class Osc(cmdln.Cmdln):
 
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
-            query='cmd=createpatchinfo&new_format=1'
+            query='cmd=createpatchinfo'
+            if opts.new:
+                query='&new_format=1'
             if args and args[0]:
                 query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
-                if p.startswith("_patchinfo:"):
+                if p.startswith("_patchinfo:") or p.startswith("patchinfo"):
                     patchinfo = p
 
         # CAUTION:
@@ -2324,6 +2328,103 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment)
         print r
+
+
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify message TEXT')
+    def do_releaserequest(self, subcmd, opts, *args):
+        """${cmd_name}: Create a request for releasing a maintenance update.
+
+        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
+        for information on this topic.]
+
+        This command is used by the maintence team to start the release process of a maintenance update.
+        This includes usually testing based on the defined reviewers of the update project.
+
+        usage:
+            osc releaserequest [ SOURCEPROJECT ]
+        ${cmd_option_list}
+        """
+       
+        # FIXME: additional parameters can be a certain repo list to create a partitial release
+
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        source_project = None
+
+        if len(args) > 1:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0 and is_project_dir(os.curdir):
+            source_project = store_read_project(os.curdir)
+        elif len(args) == 0:
+            raise oscerr.WrongArgs('Too few arguments.')
+        if len(args) > 0:
+            source_project = args[0]
+
+        if not opts.message:
+            opts.message = edit_message()
+
+        r = create_release_request(apiurl, source_project, opts.message)
+        print r.reqid
+
+
+
+    @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
+                        help='Use this attribute to find default maintenance project (default is OBS:Maintenance)')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify message TEXT')
+    def do_maintenancerequest(self, subcmd, opts, *args):
+        """${cmd_name}: Create a request for starting a maintenance incident.
+
+        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
+        for information on this topic.]
+
+        This command is asking the maintence team to start a maintence incident based on a 
+        created maintenance update. Please see the "mbranch" command on how to create such a project and
+        the "patchinfo" command how add the required maintenance update informations.
+
+        usage:
+            osc maintenancerequest [ SOURCEPROJECT [ TARGETPROJECT ] ]
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+        attribute = "OBS:Maintenance" # default attribute as defined in api code.
+        if opts.attribute:
+            attribute = opts.attribute
+
+        source_project = target_project = None
+
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0 and is_project_dir(os.curdir):
+            source_project = store_read_project(os.curdir)
+        elif len(args) == 0:
+            raise oscerr.WrongArgs('Too few arguments.')
+        if len(args) > 0:
+            source_project = args[0]
+
+        if len(args) > 1:
+            target_project = args[1]
+        else:
+            xpath = 'attribute/@name = \'%s\'' % attribute
+            res = search(apiurl, project_id=xpath)
+            root = res['project_id']
+            project = root.find('project')
+            if project is None:
+                sys.exit('Unable to find defined OBS:Maintenance project on server.')
+            target_project = project.get('name')
+            print 'Using target project \'%s\'' % target_project
+
+        if not opts.message:
+            opts.message = edit_message()
+
+        r = create_maintenance_request(apiurl, source_project, target_project, opts.message)
+        print r.reqid
 
 
     @cmdln.option('-c', '--checkout', action='store_true',
@@ -5138,7 +5239,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             try:
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
-                    'state': 'pending',
+                    'state': 'new',
                     'user' : user,
                     })
                 f = http_GET(u)

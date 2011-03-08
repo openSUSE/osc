@@ -3468,6 +3468,27 @@ def clone_request(apiurl, reqid, msg=None):
         raise oscerr.APIError('invalid data from clone request:\n%s\n' % ET.tostring(root))
     return project
 
+# create a maintenance release request
+def create_release_request(apiurl, src_project, message=''):
+    import cgi
+    r = Request()
+    # api will complete the request
+    r.add_action('maintenance_release', src_project=src_project)
+    # XXX: clarify why we need the unicode(...) stuff
+    r.description = cgi.escape(unicode(message, 'utf8'))
+    r.create(apiurl)
+    return r
+
+# create a maintenance incident per request
+def create_maintenance_request(apiurl, src_project, tgt_project, message=''):
+    import cgi
+    r = Request()
+    r.add_action('maintenance_incident', src_project=src_project, src_package='foo', tgt_project=tgt_project)
+    # XXX: clarify why we need the unicode(...) stuff
+    r.description = cgi.escape(unicode(message, 'utf8'))
+    r.create(apiurl)
+    return r
+
 # This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
                          src_project, src_package,
@@ -3502,7 +3523,12 @@ def create_submit_request(apiurl,
        orev or show_upstream_rev(apiurl, src_project, src_package),
        targetxml,
        options_block,
-       cgi.escape(unicode(message, "utf8")))
+       cgi.escape(message))
+
+    # Don't do cgi.escape(unicode(message, "utf8"))) above.
+    # Promoting the string to utf8, causes the post to explode with:
+    #   uncaught exception: Fatal error: Start tag expected, '&lt;' not found at :1.
+    # I guess, my original workaround was not that bad.
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
     f = http_POST(u, data=xml)

@@ -14,7 +14,7 @@
     (For example for doing a version update without creating a _service file: osc service lr update_source)
   - protect rebuild and abortbuild commands with required "--all" option to mass failures by accident (similar to wipebinaries)
 #
-# Features which requires OBS 2.2
+# Features which requires OBS 2.3
 #
   - "my requests" is doing faster and complete server side lookup now if available
   - "review" command has been extended to handle reviews by project or by package maintainers
@@ -22,6 +22,8 @@
   - support project wide source services
   - support for armv7hl architecuture. used to denote armv7 + hardfloat binaries
   - add force option to accept requests in review state.
+  - add "maintenancerequest" command to request a maintenance incident from maintenance team
+  - add "releaserequest" command run a maintenance update release process (for maintenance team only)
 
 0.130
   - new "revert" command to restore the original working copy file (without
