@@ -2971,22 +2971,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit(1)
 
         if filename:
-            link_seen = False
-            # Note: this logic should follow the `osc ls' logic
+            # Note: same logic as with 'osc cat' (not 'osc ls', which never merges!)
             if expand_link:
-                l = meta_get_filelist(apiurl,
-                                  project,
-                                  package,
-                                  expand=False,
-                                  revision=rev)
-                link_seen = '_link' in l
-            if link_seen:
-                m = show_files_meta(apiurl, project, package)
-                li = Linkinfo()
-                li.read(ET.fromstring(''.join(m)).find('linkinfo'))
-                if li.haserror():
-                    raise oscerr.LinkExpandError(project, package, li.error)
-                project, package, rev = li.project, li.package, li.rev
+                rev = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=rev)
             get_source_file(apiurl, project, package, filename, revision=rev, progress_obj=self.download_progress)
 
         elif package:
