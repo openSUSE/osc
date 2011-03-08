@@ -3065,12 +3065,14 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
         raise
 
 
-def show_develproject(apiurl, prj, pac):
+def show_develproject(apiurl, prj, pac, xml_node=False):
     m = show_package_meta(apiurl, prj, pac)
-    try:
-        return ET.fromstring(''.join(m)).find('devel').get('project')
-    except:
-        return None
+    node = ET.fromstring(''.join(m)).find('devel')
+    if not node is None:
+        if xml_node:
+            return node
+        return node.get('project')
+    return None
 
 
 def show_package_disabled_repos(apiurl, prj, pac):
