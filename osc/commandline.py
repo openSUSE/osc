@@ -455,7 +455,8 @@ class Osc(cmdln.Cmdln):
         run_editor(filename)
 
     @cmdln.alias('bsdevelproject')
-    @cmdln.option('-r', '--raw', default=False, action="store_true", help='print raw xml snippet')
+    @cmdln.option('-r', '--raw', action='store_true',
+                        help='print raw xml snippet')
     def do_develproject(self, subcmd, opts, *args):
         """${cmd_name}: print the bsdevelproject of a package
 
@@ -467,20 +468,22 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) != 2:
-            if len(args) == 0:
-               project = store_read_project(os.curdir)
-               package = store_read_package(os.curdir)
-            else:
-               raise oscerr.WrongArgs('need Project and Package')
-        project = args[0]
-        package = args[1]
-        m = show_package_meta(apiurl, project, package)
-        d = ET.fromstring(''.join(m)).find('devel')
-        if opts.raw:
-          print ET.tostring(d)
+        if len(args) == 0:
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+        elif len(args) == 2:
+            project = args[0]
+            package = args[1]
         else:
-          print d.get('project')
+            raise oscerr.WrongArgs('need Project and Package')
+
+        devel = show_develproject(apiurl, project, package, opts.raw)
+        if devel is None:
+            print '\'%s/%s\' has no devel project' % (project, package)
+        elif opts.raw:
+            ET.dump(devel)
+        else:
+            print devel
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
