@@ -1,4 +1,5 @@
 0.131
+  - new command 'develproject' to print the devel project from the package meta.
   - add blt and rblt commands, aka "buildlogtail" and "remotebuildlogtail" to show
     just the end of a build log (for getting the fail reason faster).
     CHANGE: the --start parameter is now called --offset

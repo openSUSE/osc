@@ -454,6 +454,34 @@ class Osc(cmdln.Cmdln):
         filename = project_dir + "/" + patchinfo + "/_patchinfo"
         run_editor(filename)
 
+    @cmdln.alias('bsdevelproject')
+    @cmdln.option('-r', '--raw', default=False, action="store_true", help='print raw xml snippet')
+    def do_develproject(self, subcmd, opts, *args):
+        """${cmd_name}: print the bsdevelproject of a package
+
+        Examples:
+            osc develproject PRJ PKG
+            osc develproject
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        if len(args) != 2:
+            if len(args) == 0:
+               project = store_read_project(os.curdir)
+               package = store_read_package(os.curdir)
+            else:
+               raise oscerr.WrongArgs('need Project and Package')
+        project = args[0]
+        package = args[1]
+        m = show_package_meta(apiurl, project, package)
+        d = ET.fromstring(''.join(m)).find('devel')
+        if opts.raw:
+          print ET.tostring(d)
+        else:
+          print d.get('project')
+
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
