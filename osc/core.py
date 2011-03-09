@@ -6178,11 +6178,11 @@ def find_default_project(apiurl=None, package=None):
     # search through the list, where package exists ...
     for prj in candidates:
         try:
-          # any fast query will do here.
-          show_package_meta(apiurl, prj, package)
-          return prj
-        except: 
-          pass
+            # any fast query will do here.
+            show_package_meta(apiurl, prj, package)
+            return prj
+        except urllib2.HTTPError: 
+            pass
     return None
 
 
