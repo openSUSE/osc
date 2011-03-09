@@ -6164,4 +6164,27 @@ def filter_role(meta, user, role):
         for node in delete:
             root.remove(node)
 
+def find_default_project(apiurl=None, package=None):
+    """"
+    look though the list of conf.config['getpac_default_project']
+    and find the first project where the given package exists in the build service.
+    """
+    if not len(conf.config['getpac_default_project']):
+        return None
+    candidates = re.split('[, ]+', conf.config['getpac_default_project'])
+    if package is None or len(candidates) == 1:
+        return candidates[0]
+
+    # search through the list, where package exists ...
+    for prj in candidates:
+        try:
+          # any fast query will do here.
+          show_package_meta(apiurl, prj, package)
+          return prj
+        except: 
+          pass
+    return None
+
+
+
 # vim: sw=4 et

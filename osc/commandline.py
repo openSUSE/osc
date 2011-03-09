@@ -1251,11 +1251,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
+        if len(args) == 0 and is_package_dir('.') and find_default_project():
             wd = os.curdir
             devel_project = store_read_project(wd)
             devel_package = package = store_read_package(wd)
-            project = conf.config['getpac_default_project']
+            project = find_default_project(self.get_api_url(), package)
         else:
             if len(args) < 3:
                 raise oscerr.WrongArgs('Too few arguments.')
@@ -1595,11 +1595,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         import cgi
 
-        if len(args) == 0 and is_package_dir('.') and len(conf.config['getpac_default_project']):
+        if len(args) == 0 and is_package_dir('.') and find_default_project():
             wd = os.curdir
             devel_project = store_read_project(wd)
             devel_package = package = store_read_package(wd)
-            project = conf.config['getpac_default_project']
+            project = find_default_project(self.get_api_url(), package)
         elif len(args) < 3:
             raise oscerr.WrongArgs('Too few arguments.')
         elif len(args) > 4:
@@ -2548,7 +2548,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             home:USERNAME:branches:PROJECT/PACKAGE
         if nothing else specified.
 
-        With getpac or bco, the branched package will come from
+        With getpac or bco, the branched package will come from one of
             %(getpac_default_project)s
         if nothing else specified.
 
@@ -2567,9 +2567,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         tproject = tpackage = None
 
         if (subcmd == 'getpac' or subcmd == 'bco') and len(args) == 1:
-            print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['getpac_default_project'], args[0])
+            def_p = find_default_project(self.get_api_url(), args[0])
+            print >>sys.stderr, 'defaulting to %s/%s' % (def_p, args[0])
             # python has no args.unshift ???
-            args = [ conf.config['getpac_default_project'] , args[0] ]
+            args = [ def_p, args[0] ]
             
         if len(args) == 0 and is_package_dir('.'):
             args = (store_read_project('.'), store_read_package('.'))
@@ -5767,9 +5768,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         opts.devel_project = None
 
         if len(args) == 1:
-            print >>sys.stderr, 'defaulting to %s/%s' % (conf.config['getpac_default_project'], args[0])
+            def_p = find_default_project(self.get_api_url(), args[0])
+            print >>sys.stderr, 'defaulting to %s/%s' % (def_p, args[0])
             # python has no args.unshift ???
-            args = [ conf.config['getpac_default_project'] , args[0] ]
+            args = [ def_p, args[0] ]
         return self.do_maintainer(subcmd, opts, *args)
 
 
