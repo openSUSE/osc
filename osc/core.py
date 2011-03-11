@@ -3485,7 +3485,7 @@ def create_release_request(apiurl, src_project, message=''):
 def create_maintenance_request(apiurl, src_project, tgt_project, message=''):
     import cgi
     r = Request()
-    r.add_action('maintenance_incident', src_project=src_project, src_package='foo', tgt_project=tgt_project)
+    r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project)
     # XXX: clarify why we need the unicode(...) stuff
     r.description = cgi.escape(unicode(message, 'utf8'))
     r.create(apiurl)
