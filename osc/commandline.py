@@ -429,20 +429,20 @@ class Osc(cmdln.Cmdln):
             sys.exit('This command must be called in a checked out project.')
         patchinfo = None
         for p in meta_get_packagelist(apiurl, project):
-            if p.startswith("_patchinfo:"):
+            if p.startswith("_patchinfo") or p.startswith("patchinfo"):
                 patchinfo = p
 
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
             query='cmd=createpatchinfo'
             if opts.new:
-                query='&new_format=1'
+                query+='&new_format=1'
             if args and args[0]:
                 query += "&name=" + args[0]
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
-                if p.startswith("_patchinfo:") or p.startswith("patchinfo"):
+                if p.startswith("_patchinfo") or p.startswith("patchinfo"):
                     patchinfo = p
 
         # CAUTION:
@@ -2403,7 +2403,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
-                        help='Use this attribute to find default maintenance project (default is OBS:Maintenance)')
+                        help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
     def do_maintenancerequest(self, subcmd, opts, *args):
@@ -2423,7 +2423,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         apiurl = self.get_api_url()
-        attribute = "OBS:Maintenance" # default attribute as defined in api code.
+        attribute = "OBS:MaintenanceProject" # default attribute as defined in api code.
         if opts.attribute:
             attribute = opts.attribute
 
@@ -2447,7 +2447,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             root = res['project_id']
             project = root.find('project')
             if project is None:
-                sys.exit('Unable to find defined OBS:Maintenance project on server.')
+                sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
             target_project = project.get('name')
             print 'Using target project \'%s\'' % target_project
 
