@@ -626,7 +626,6 @@ class Project:
                 for filename in del_files:
                     pac.delete_localfile(filename)
                     if pac.status(filename) != '?':
-                        pac.delete_storefile(filename)
                         # this is not really necessary
                         pac.put_on_deletelist(filename)
                         print statfrmt('D', getTransActPath(os.path.join(pac.dir, filename)))
