@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import shutil
+import urlparse
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
@@ -462,9 +463,9 @@ def main(apiurl, opts, argv):
         if opts.local_package:
             pacname = os.path.splitext(build_descr)[0]
     if not build_root:
-        build_root = config['build-root'] % { 'repo': repo, 'arch': arch,
-                                                    'project' : prj, 'package' : pacname
-                                                  }
+        apihost = urlparse.urlsplit(apiurl)[1]
+        build_root = config['build-root'] % {'repo': repo, 'arch': arch,
+            'project': prj, 'package': pacname, 'apihost': apihost}
 
     extra_pkgs = []
     if not opts.extra_pkgs:

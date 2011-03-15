@@ -167,7 +167,8 @@ apiurl = %(apiurl)s
 #su-wrapper = %(su-wrapper)s
 
 # rootdir to setup the chroot environment
-# can contain %%(repo)s, %%(arch)s, %%(project)s and %%(package)s for replacement, e.g.
+# can contain %%(repo)s, %%(arch)s, %%(project)s, %%(package)s and %%(apihost)s (apihost is the hostname
+# extracted from currently used apiurl) for replacement, e.g.
 # /srv/oscbuild/%%(repo)s-%%(arch)s or
 # /srv/oscbuild/%%(repo)s-%%(arch)s-%%(project)s-%%(package)s
 #build-root = %(build-root)s
