@@ -101,6 +101,15 @@ class OscIOError(OscBaseError):
         self.e = e
         self.msg = msg
 
+class PackageNotInstalled(OscBaseError):
+    """
+    Exception raised when a package is not installed on local system
+    """
+    def __init__(self, e, msg):
+        OscBaseError.__init__(self)
+        self.e = e
+        self.msg = msg
+
 class SignalInterrupt(Exception):
     """Exception raised on SIGTERM and SIGHUP."""
 
