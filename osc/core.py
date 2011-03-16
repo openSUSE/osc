@@ -3214,7 +3214,7 @@ def meta_exists(metatype,
             raise e
     return data
 
-def make_meta_url(metatype, path_args=None, apiurl=None):
+def make_meta_url(metatype, path_args=None, apiurl=None, force=False):
     global metatypes
 
     if not apiurl:
@@ -3226,7 +3226,11 @@ def make_meta_url(metatype, path_args=None, apiurl=None):
     if path_args:
         path = path % path_args
 
-    return makeurl(apiurl, [path])
+    query = {}
+    if force:
+        query = { 'force': '1' }
+
+    return makeurl(apiurl, [path], query)
 
 
 def edit_meta(metatype,
@@ -3234,6 +3238,7 @@ def edit_meta(metatype,
               data=None,
               template_args=None,
               edit=False,
+              force=False,
               change_is_required=False,
               apiurl=None):
 
@@ -3251,7 +3256,7 @@ def edit_meta(metatype,
     if edit:
         change_is_required = True
 
-    url = make_meta_url(metatype, path_args, apiurl)
+    url = make_meta_url(metatype, path_args, apiurl, force)
     f=metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:

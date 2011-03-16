@@ -492,6 +492,8 @@ class Osc(cmdln.Cmdln):
                         help='include defined attribute defaults')
     @cmdln.option('--attribute-project', action='store_true',
                         help='include project values, if missing in packages ')
+    @cmdln.option('-f', '--force', action='store_true',
+                        help='force the save operation, allows to ignores some errors like depending repositories. For prj meta only.')
     @cmdln.option('-F', '--file', metavar='FILE',
                         help='read metadata from FILE, instead of opening an editor. '
                         '\'-\' denotes standard input. ')
@@ -645,6 +647,7 @@ class Osc(cmdln.Cmdln):
             if cmd == 'prj':
                 edit_meta(metatype='prj',
                           edit=True,
+                          force=opts.force,
                           path_args=quote_plus(project),
                           apiurl=apiurl,
                           template_args=({
@@ -707,6 +710,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj',
                           data=f,
                           edit=opts.edit,
+                          force=opts.force,
                           apiurl=apiurl,
                           path_args=quote_plus(project))
             elif cmd == 'pkg':
