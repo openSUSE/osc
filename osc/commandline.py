@@ -2554,7 +2554,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         With getpac or bco, the branched package will come from one of
             %(getpac_default_project)s
-        if nothing else specified.
+        (list of projects from oscrc:getpac_default_project)
+        if nothing else is specfied on the command line.
 
         usage:
             osc branch
