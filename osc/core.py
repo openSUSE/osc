@@ -3305,8 +3305,8 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_upstream_rev(apiurl, prj, pac, meta=False):
-    m = show_files_meta(apiurl, prj, pac, meta=meta)
+def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
     return ET.fromstring(''.join(m)).get('rev')
 
 
@@ -5470,15 +5470,21 @@ def set_link_rev(apiurl, project, package, revision='', xsrcmd5=False, baserev=F
     # set revision element
     src_project = root.get('project', project)
     src_package = root.get('package')
+    if src_project == None:
+        src_project = project
+    if src_package == None:
+        src_package = package
+    linkrev=None
+    if baserev:
+        linkrev='base'
     if revision is None:
         if 'rev' in root.keys():
             del root.attrib['rev']
-    elif baserev:
-        revision = show_upstream_xsrcmd5(apiurl, src_project, src_package, linkrev='base')
     elif xsrcmd5:
-        revision = show_upstream_xsrcmd5(apiurl, src_project, src_package)
+        # don't use xsrcmd5 sum, because packages with links on remote instance do not have a linkinfo
+        revision = show_upstream_rev(apiurl, src_project, src_package, expand=True, linkrev=linkrev)
     elif revision == '':
-        revision = show_upstream_rev(apiurl, src_project, src_package)
+        revision = show_upstream_rev(apiurl, src_project, src_package, linkrev=linkrev)
 
     if revision:
         root.set('rev', revision)
