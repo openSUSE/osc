@@ -855,7 +855,6 @@ def main(apiurl, opts, argv):
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
         cmd = [ change_personality[bi.buildarch] ] + cmd;
 
-    print cmd
     try:
         rc = subprocess.call(cmd)
         if rc:
