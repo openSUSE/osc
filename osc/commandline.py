@@ -6670,6 +6670,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for extfile in os.listdir(plugin_dir):
                 if not extfile.endswith('.py'):
                     continue
-                exec open(os.path.join(plugin_dir, extfile))
+                try:
+                    exec open(os.path.join(plugin_dir, extfile))
+                except SyntaxError, e:
+                    if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
+                        print >>sys.stderr, "%s: %s\n" % (plugin_dir, e)
+                    else:
+                        import traceback
+                        traceback.print_exc(file=sys.stderr)
+                        print >>sys.stderr, '\n%s: %s' % (plugin_dir, e)
+                        print >>sys.stderr, "\n Try 'env OSC_PLUGIN_FAIL_IGNORE=1 osc ...'"
+                        sys.exit(1)
+                    
 
 # vim: sw=4 et
