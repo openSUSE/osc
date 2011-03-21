@@ -73,7 +73,7 @@ class MyHTTPHandler(urllib2.HTTPHandler):
         else:
             raise RuntimeError('either specify text or file')
         resp = urllib2.addinfourl(f, {}, url)
-        resp.code = 200
+        resp.code = kwargs.get('code', 200)
         resp.msg = ''
         return resp
 
