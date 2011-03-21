@@ -31,15 +31,15 @@ class TestSetLinkRev(OscTestCase):
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', '42')
 
     @GET('http://localhost/source/osctest/simple/_link', file='noproject_link')
-    @GET('http://localhost/source/osctest/srcpkg?rev=latest', file='expandedsrc_filesremote')
+    @GET('http://localhost/source/osctest/srcpkg?rev=latest&expand=1', file='expandedsrc_filesremote')
     @PUT('http://localhost/source/osctest/simple/_link',
          exp='<link package="srcpkg" rev="eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" />', text='dummytext')
     def test_expandedsrc(self):
         """expand src package"""
-        osc.core.set_link_rev('http://localhost', 'osctest', 'simple', xsrcmd5=True)
+        osc.core.set_link_rev('http://localhost', 'osctest', 'simple', expand=True)
 
     @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
-    @GET('http://localhost/source/srcprj/srcpkg?linkrev=base&rev=latest', file='baserev_filesremote')
+    @GET('http://localhost/source/srcprj/srcpkg?linkrev=base&rev=latest&expand=1', file='baserev_filesremote')
     @PUT('http://localhost/source/osctest/simple/_link',
          exp='<link package="srcpkg" project="srcprj" rev="abcdeeeeeeeeeeeeeeeeeeeeeeeeeeee" />', text='dummytext')
     def test_baserev(self):
@@ -47,10 +47,12 @@ class TestSetLinkRev(OscTestCase):
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', baserev=True)
 
     @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
-    @GET('http://localhost/source/srcprj/srcpkg?rev=latest', file='linkerror_filesremote')
+    @GET('http://localhost/source/srcprj/srcpkg?rev=latest&expand=1', text='conflict in file merge', code=404)
     def test_linkerror(self):
         """link is broken"""
-        self.assertRaises(osc.oscerr.LinkExpandError, osc.core.set_link_rev, 'http://localhost', 'osctest', 'simple', xsrcmd5=True)
+        import urllib2
+        # the backend returns status 404 if we try to expand a broken _link
+        self.assertRaises(urllib2.HTTPError, osc.core.set_link_rev, 'http://localhost', 'osctest', 'simple', expand=True)
 
     @GET('http://localhost/source/osctest/simple/_link', file='rev_link')
     @PUT('http://localhost/source/osctest/simple/_link',
