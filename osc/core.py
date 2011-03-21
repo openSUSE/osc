@@ -219,7 +219,7 @@ class Serviceinfo:
         """
         if serviceinfo_node == None:
             return
-        if not append:
+        if not append or self.services == None:
             self.services = []
         services = serviceinfo_node.findall('service')
 
