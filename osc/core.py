@@ -5453,7 +5453,7 @@ def search(apiurl, **kwargs):
         res[urlpath] = ET.parse(f).getroot()
     return res
 
-def set_link_rev(apiurl, project, package, revision='', xsrcmd5=False, baserev=False):
+def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=False):
     """
     updates the rev attribute of the _link xml. If revision is set to None
     the rev attribute is removed from the _link xml. If revision is set to ''
@@ -5469,22 +5469,16 @@ def set_link_rev(apiurl, project, package, revision='', xsrcmd5=False, baserev=F
 
     # set revision element
     src_project = root.get('project', project)
-    src_package = root.get('package')
-    if src_project == None:
-        src_project = project
-    if src_package == None:
-        src_package = package
+    src_package = root.get('package', package)
     linkrev=None
     if baserev:
-        linkrev='base'
+        linkrev = 'base'
+        expand = True
     if revision is None:
         if 'rev' in root.keys():
             del root.attrib['rev']
-    elif xsrcmd5:
-        # don't use xsrcmd5 sum, because packages with links on remote instance do not have a linkinfo
-        revision = show_upstream_rev(apiurl, src_project, src_package, expand=True, linkrev=linkrev)
     elif revision == '':
-        revision = show_upstream_rev(apiurl, src_project, src_package, linkrev=linkrev)
+        revision = show_upstream_rev(apiurl, src_project, src_package, linkrev=linkrev, expand=expand)
 
     if revision:
         root.set('rev', revision)

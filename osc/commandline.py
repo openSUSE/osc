@@ -2050,10 +2050,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = self.get_api_url()
         package = None
-        xsrcmd5 = True
+        expand = True
         baserev = False
         if opts.use_plain_revision:
-            xsrcmd5 = False
+            expand = False
         if opts.use_baserev:
             baserev = True
 
@@ -2084,7 +2084,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for p in packages:
             print 'setting revision for package %s' % p
-            set_link_rev(apiurl, project, p, revision=rev, xsrcmd5=xsrcmd5, baserev=baserev)
+            set_link_rev(apiurl, project, p, revision=rev, expand=expand, baserev=baserev)
 
 
     def do_linktobranch(self, subcmd, opts, *args):
