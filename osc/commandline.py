@@ -4858,7 +4858,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = package = singleservice = mode = None
         apiurl = self.get_api_url()
 
-        if len(args) < 3:
+        if len(args) < 1:
+            raise oscerr.WrongArgs('No command given.')
+        elif len(args) < 3:
             if is_package_dir(os.curdir):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
@@ -4873,6 +4875,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments.')
 
         command = args[0]
+
+        if not (command in ( 'run', 'localrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'r', 'rr' )):
+            raise oscerr.WrongArgs('Wrong command given.')
 
         if command == "remoterun" or command == "rr":
             print runservice(apiurl, project, package)
