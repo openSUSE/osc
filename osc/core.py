@@ -5477,8 +5477,8 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
     if revision is None:
         if 'rev' in root.keys():
             del root.attrib['rev']
-    elif revision == '':
-        revision = show_upstream_rev(apiurl, src_project, src_package, linkrev=linkrev, expand=expand)
+    elif revision == '' or expand:
+        revision = show_upstream_rev(apiurl, src_project, src_package, revision=revision, linkrev=linkrev, expand=expand)
 
     if revision:
         root.set('rev', revision)
