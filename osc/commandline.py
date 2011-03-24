@@ -2962,8 +2962,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_install(self, subcmd, opts, *args):
         """${cmd_name}: install a package after build via zypper in -r
 
-        Not implemented here. 
-        Please try http://software.opensuse.org/search?q=osc-plugin-install
+        Not implemented here.  Please try 
+        http://software.opensuse.org/search?q=osc-plugin-install&include_home=true
 
 
         ${cmd_usage}
