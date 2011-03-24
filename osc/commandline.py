@@ -2962,9 +2962,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_install(self, subcmd, opts, *args):
         """${cmd_name}: install a package after build via zypper in -r
 
-        Not implemented yet. Use osc repourls,
-        select the url you best like (standard),
-        chop off after the last /, this should work with zypper.
+        Not implemented here. 
+        Please try http://software.opensuse.org/search?q=osc-plugin-install
 
 
         ${cmd_usage}
@@ -2983,7 +2982,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ##
         ## if args[0] is already an url, the use it as is.
 
-        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.1', args[1])
+        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.4', args[1])
         print self.do_install.__doc__
         print "Example: \n" + cmd
 
