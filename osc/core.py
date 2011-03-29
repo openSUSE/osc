@@ -97,8 +97,10 @@ new_package_templ = """\
 <!-- for long description -->
   </description>
 
+<!-- following roles are inherited from the parent project
   <person role="maintainer" userid="%(user)s"/>
   <person role="bugowner" userid="%(user)s"/>
+-->
 <!--
   <url>PUT_UPSTREAM_URL_HERE</url>
 -->
