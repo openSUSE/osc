@@ -158,7 +158,7 @@ def run(prg):
         print >>sys.stderr, e.msg
         return 1
 
-    except oscerr.ServiceNotInstalled, e:
+    except oscerr.PackageNotInstalled, e:
         print >>sys.stderr, e.msg
         return 1
 
@@ -205,6 +205,10 @@ def run(prg):
 
     except CpioError, e:
         print >>sys.stderr, e
+        return 1
+
+    except oscerr.OscBaseError, e:
+        print >>sys.stderr, '*** Error:', e
         return 1
 
 # vim: sw=4 et

@@ -328,9 +328,7 @@ class Serviceinfo:
             temp_dir = tempfile.mkdtemp()
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
-                msg =  "ERROR: service is not installed!\n"
-                msg += "Maybe try this: zypper in obs-service-" + name
-                raise oscerr.ServiceNotInstalled(msg)
+                raise oscerr.PackageNotInstalled("obs-service-"+name)
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1:
                 print "Run source service:", c
