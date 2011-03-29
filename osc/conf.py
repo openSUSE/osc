@@ -425,11 +425,19 @@ def _build_opener(url):
         authhandler_class = OscHTTPBasicAuthHandler
 
     options = config['api_host_options'][apiurl]
+    accepted_auth_methods = ['basic;q=0.5']
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler = authhandler_class( \
-        urllib2.HTTPPasswordMgrWithDefaultRealm())
-    authhandler.add_password(None, apiurl, options['user'], options['pass'])
+    if options.has_key('auth_prot'):
+        # XXX: should the qvalue be configurable?
+        accepted_auth_methods.append('%s;q=0.8' % options['auth_prot'].lower())
+        klass = getattr(__import__(options['auth_prot'] + 'Handler', globals()), options['auth_prot'] + 'Handler')
+        authhandler = klass.get_handler(config)
+        authhandler.add_password(None, apiurl, options['login'], options['pass'])
+    else:
+        authhandler = authhandler_class( \
+            urllib2.HTTPPasswordMgrWithDefaultRealm())
+        authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
     if options['sslcertck']:
         try:
@@ -457,6 +465,7 @@ def _build_opener(url):
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
+    opener.addheaders.append(('Accept-Authentication', ','.join(set(accepted_auth_methods))))
     _build_opener.last_opener = (apiurl, opener)
     return opener
 
@@ -829,6 +838,9 @@ def get_config(override_conffile = None,
             http_headers = http_header_regexp.findall(http_headers)
         else:
             http_headers = []
+        auth_prot = None
+        if cp.has_option(url, 'auth_prot'):
+            auth_prot = cp.get(url, 'auth_prot')
         if cp.has_option(url, 'aliases'):
             for i in cp.get(url, 'aliases').split(','):
                 key = i.strip()
@@ -843,7 +855,7 @@ def get_config(override_conffile = None,
                                      'pass': password,
                                      'http_headers': http_headers}
 
-        optional = ('email', 'sslcertck', 'cafile', 'capath')
+        optional = ('email', 'sslcertck', 'cafile', 'capath', 'login')
         for key in optional:
             if cp.has_option(url, key):
                 if key == 'sslcertck':
@@ -856,6 +868,9 @@ def get_config(override_conffile = None,
 
         if scheme == 'http':
             api_host_options[apiurl]['sslcertck'] = False
+
+        if auth_prot:
+            api_host_options[apiurl]['auth_prot'] = auth_prot
 
         if cp.has_option(url, 'trusted_prj'):
             api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
