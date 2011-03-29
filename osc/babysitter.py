@@ -158,6 +158,10 @@ def run(prg):
         print >>sys.stderr, e.msg
         return 1
 
+    except oscerr.ServiceNotInstalled, e:
+        print >>sys.stderr, e.msg
+        return 1
+
     except oscerr.WorkingCopyOutdated, e:
         print >>sys.stderr, e
         return 1

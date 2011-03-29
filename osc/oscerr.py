@@ -101,13 +101,12 @@ class OscIOError(OscBaseError):
         self.e = e
         self.msg = msg
 
-class PackageNotInstalled(OscBaseError):
+class ServiceNotInstalled(OscBaseError):
     """
-    Exception raised when a package is not installed on local system
+    Exception raised when a service is not installed on local system
     """
-    def __init__(self, e, msg):
+    def __init__(self, msg):
         OscBaseError.__init__(self)
-        self.e = e
         self.msg = msg
 
 class SignalInterrupt(Exception):

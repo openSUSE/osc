@@ -330,7 +330,7 @@ class Serviceinfo:
             if not os.path.exists("/usr/lib/obs/service/"+name):
                 msg =  "ERROR: service is not installed!\n"
                 msg += "Maybe try this: zypper in obs-service-" + name
-                raise oscerr.PackageNotInstalled(msg)
+                raise oscerr.ServiceNotInstalled(msg)
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1:
                 print "Run source service:", c
