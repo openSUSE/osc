@@ -3332,7 +3332,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
     @cmdln.option('-F', '--file', metavar='FILE',
-                  help='read log message from FILE')
+                  help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force commit - do not tests a file list')
     @cmdln.option('--skip-validation', default=False, action="store_true",
@@ -3378,10 +3378,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.message:
             msg = opts.message
         elif opts.file:
-            try:
-                msg = open(opts.file).read()
-            except:
-                sys.exit('could not open file \'%s\'.' % opts.file)
+            if opts.file == '-':
+                msg = sys.stdin.read()
+            else:
+                try:
+                    msg = open(opts.file).read()
+                except:
+                    sys.exit('could not open file \'%s\'.' % opts.file)
 
         arg_list = args[:]
         for arg in arg_list:
