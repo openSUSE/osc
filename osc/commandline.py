@@ -156,7 +156,15 @@ class Osc(cmdln.Cmdln):
         return self._str(doc)
 
     def get_api_url(self):
-        localdir = os.getcwd()
+        try:
+            localdir = os.getcwd()
+        except Exception, e:
+            ## check for Stale NFS file handle: '.'
+            try: os.stat('.')
+            except Exception, ee: e = ee
+            print >>sys.stderr, "os.getcwd() failed: ", e
+            sys.exit(1)
+
         if (is_package_dir(localdir) or is_project_dir(localdir)) and not self.options.apiurl:
            return store_read_apiurl(os.curdir)
         else:
