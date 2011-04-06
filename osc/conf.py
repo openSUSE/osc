@@ -411,6 +411,17 @@ def _build_opener(url):
                 self.retried = 0
                 return response
 
+            def http_error_404(self, *args):
+                self.retried = 0
+                return None
+
+        authhandler_class = OscHTTPBasicAuthHandler
+    elif sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1):
+        class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+            def http_error_404(self, *args):
+                self.reset_retry_count()
+                return None
+
         authhandler_class = OscHTTPBasicAuthHandler
     elif sys.version_info >= (2, 6, 5) and sys.version_info < (2, 6, 6):
         # workaround for broken urllib2 in python 2.6.5: wrong credentials
