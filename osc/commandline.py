@@ -236,6 +236,7 @@ class Osc(cmdln.Cmdln):
         Examples for listing sources:
            ls                          # list all projects (deprecated)
            ls /                        # list all projects
+           ls .                        # take PROJECT/PACKAGE from current dir.
            ls PROJECT                  # list packages in a project
            ls PROJECT PACKAGE          # list source files of package of a project
            ls PROJECT PACKAGE <file>   # list <file> if this file exists
@@ -274,12 +275,19 @@ class Osc(cmdln.Cmdln):
         fname = None
         if len(args) == 0:
             # For consistency with *all* other commands
-            # this list what the server has in the current wd.
+            # this lists what the server has in the current wd.
             # CAUTION: 'osc ls -b' already works like this.
             pass
         if len(args) > 0:
             project = args[0]
             if project == '/': project = None
+            if project == '.':
+                cwd = os.getcwd()
+                if is_project_dir(cwd):
+                    project = store_read_project(cwd)
+                elif is_package_dir(cwd):
+                    project = store_read_project(cwd)
+                    package = store_read_package(cwd)
         if len(args) > 1:
             package = args[1]
             if opts.deleted:
@@ -5913,6 +5921,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     print ', '.join(maintainers.get(role, [])) or '-'
                 print
+
+    @cmdln.alias('who')
+    @cmdln.alias('user')
+    def do_whois(self, subcmd, opts, *args):
+        """${cmd_name}: Show fullname and email of a buildservice user
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        apiurl = self.get_api_url()
+        if len(args) > 1:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+        if len(args) < 1:
+            if not conf.config['api_host_options'][apiurl].has_key('user'):
+                raise oscerr.WrongArgs('your .oscrc does not have your user name.')
+            args = (conf.config['api_host_options'][apiurl]['user'],)
+        user = get_user_data(apiurl, args[0], 'login', 'realname', 'email')
+        if len(user) > 0: user[1] = '"'+user[1]+'"'
+        print " ".join(user), "\n"
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
