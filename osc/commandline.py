@@ -5922,6 +5922,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print ', '.join(maintainers.get(role, [])) or '-'
                 print
 
+    @cmdln.alias('who')
+    @cmdln.alias('user')
+    def do_whois(self, subcmd, opts, *args):
+        """${cmd_name}: Show fullname and email of a buildservice user
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        apiurl = self.get_api_url()
+        if len(args) > 1:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+        if len(args) < 1:
+            if not conf.config['api_host_options'][apiurl].has_key('user'):
+                raise oscerr.WrongArgs('your .oscrc does not have your user name.')
+            args = (conf.config['api_host_options'][apiurl]['user'],)
+        user = get_user_data(apiurl, args[0], 'login', 'realname', 'email')
+        if len(user) > 0: user[1] = '"'+user[1]+'"'
+        print " ".join(user), "\n"
+
 
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='print out the specified revision')
