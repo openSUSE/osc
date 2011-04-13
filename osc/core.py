@@ -2066,99 +2066,6 @@ rev: %s
         os.chdir(curdir)
         return r
 
-    def prepare_filelist(self):
-        """Prepare a list of files, which will be processed by process_filelist
-        method. This allows easy modifications of a file list in commit
-        phase.
-        """
-        if not self.todo:
-            self.todo = self.filenamelist + self.filenamelist_unvers
-        self.todo.sort()
-
-        ret = ""
-        for f in [f for f in self.todo if not os.path.isdir(f)]:
-            action = 'leave'
-            status = self.status(f)
-            if status == 'S':
-                continue
-            if status == '!':
-                action = 'remove'
-            ret += "%s %s %s\n" % (action, status, f)
-
-        ret += """
-# Edit a filelist for package \'%s\'
-# Commands:
-# l, leave = leave a file as is
-# r, remove = remove a file
-# a, add   = add a file
-#
-# If you remove file from a list, it will be unchanged
-# If you remove all, commit will be aborted""" % self.name
-
-        return ret
-
-    def edit_filelist(self):
-        """Opens a package list in editor for editing. This allows easy
-        modifications of it just by simple text editing
-        """
-
-        import tempfile
-        (fd, filename) = tempfile.mkstemp(prefix = 'osc-filelist', suffix = '.txt')
-        f = os.fdopen(fd, 'w')
-        f.write(self.prepare_filelist())
-        f.close()
-        mtime_orig = os.stat(filename).st_mtime
-
-        while 1:
-            run_editor(filename)
-            mtime = os.stat(filename).st_mtime
-            if mtime_orig < mtime:
-                filelist = open(filename).readlines()
-                os.unlink(filename)
-                break
-            else:
-                raise oscerr.UserAbort()
-
-        return self.process_filelist(filelist)
-
-    def process_filelist(self, filelist):
-        """Process a filelist - it add/remove or leave files. This depends on
-        user input. If no file is processed, it raises an ValueError
-        """
-
-        loop = False
-        for line in [l.strip() for l in filelist if (l[0] != "#" or l.strip() != '')]:
-
-            foo = line.split(' ')
-            if len(foo) == 4:
-                action, state, name = (foo[0], ' ', foo[3])
-            elif len(foo) == 3:
-                action, state, name = (foo[0], foo[1], foo[2])
-            else:
-                break
-            action = action.lower()
-            loop = True
-
-            if action in ('r', 'remove'):
-                if self.status(name) == '?':
-                    os.unlink(name)
-                    if name in self.todo:
-                        self.todo.remove(name)
-                else:
-                    self.delete_file(name, True)
-            elif action in ('a', 'add'):
-                if self.status(name) != '?':
-                    print "Cannot add file %s with state %s, skipped" % (name, self.status(name))
-                else:
-                    self.addfile(name)
-            elif action in ('l', 'leave'):
-                pass
-            else:
-                raise ValueError("Unknow action `%s'" % action)
-
-        if not loop:
-            raise ValueError("Empty filelist")
-
     def revert(self, filename):
         if not filename in self.filenamelist and not filename in self.to_be_added:
             raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % filename)
@@ -5994,33 +5901,6 @@ def get_commit_msg(wc_dir, pacs):
     else:
         store_unlink_file(wc_dir, '_commit_msg')
     return msg
-
-def check_filelist_before_commit(pacs):
-
-    # warn if any of files has a ? status (usually a patch, or new source was not added to meta)
-    for p in pacs:
-        # no files given as argument? Take all files in current dir
-        if not p.todo:
-            p.todo = p.filenamelist + p.filenamelist_unvers
-        p.todo.sort()
-        for f in [f for f in p.todo if not os.path.isdir(f)]:
-            if not f.startswith('_service:') and not f.startswith('_service_') and p.status(f) in ('?', '!'):
-                print 'File "%s" found, but not listed in package meta.' % f
-                resp = raw_input('(s)kip/(r)emove/(e)dit file lists/(c)ommit/(A)bort? ')
-                if resp in ('s', 'S'):
-                    continue
-                elif resp in ('r', 'R', 'd', 'D'):
-                    p.process_filelist(['r ? %s' % f])
-                elif resp in ('e', 'E'):
-                    try:
-                        p.edit_filelist()
-                    except ValueError:
-                        print >>sys.stderr, "Error during processiong of file list."
-                        raise oscerr.UserAbort()
-                elif resp in ('c', 'C'):
-                    break
-                else:
-                    raise oscerr.UserAbort()
 
 def print_request_list(apiurl, project, package = None, states = ('new','review',), force = False):
     """
