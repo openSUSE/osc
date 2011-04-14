@@ -359,6 +359,7 @@ def main(apiurl, opts, argv):
     build_descr = argv[2]
     xp = []
     build_root = None
+    cache_dir  = None
     build_uid=''
     vm_type = config['build-type']
 
@@ -466,6 +467,8 @@ def main(apiurl, opts, argv):
         apihost = urlparse.urlsplit(apiurl)[1]
         build_root = config['build-root'] % {'repo': repo, 'arch': arch,
             'project': prj, 'package': pacname, 'apihost': apihost}
+
+    cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
     extra_pkgs = []
     if not opts.extra_pkgs:
@@ -650,7 +653,7 @@ def main(apiurl, opts, argv):
     if opts.disable_cpio_bulk_download:
         urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
-    fetcher = Fetcher(cachedir = config['packagecachedir'],
+    fetcher = Fetcher(cache_dir,
                       urllist = urllist,
                       api_host_options = config['api_host_options'],
                       offline = opts.noinit or opts.offline,
@@ -684,7 +687,7 @@ def main(apiurl, opts, argv):
                 for i in range(0, len(a)):
                     data[i] = a[i]
 
-            destdir = os.path.join(config['packagecachedir'], data[0], data[2], data[3])
+            destdir = os.path.join(cache_dir, data[0], data[2], data[3])
             old_pkg_dir = None
             try:
                 print "Downloading previous build from %s ..." % '/'.join(data)
