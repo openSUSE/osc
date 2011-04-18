@@ -155,12 +155,14 @@ class mySSLContext(SSL.Context):
     def __init__(self):
         SSL.Context.__init__(self, 'sslv23')
         self.set_options(m2.SSL_OP_ALL | m2.SSL_OP_NO_SSLv2) # m2crypto does this for us but better safe than sorry
+        self.set_session_cache_mode(m2.SSL_SESS_CACHE_CLIENT)
         self.verrs = None
         #self.set_info_callback() # debug
         self.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, depth=9, callback=lambda ok, store: verify_cb(self, ok, store))
 
 class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
     handler_order = 499
+    saved_session = None
 
     def __init__(self, *args, **kwargs):
         self.appname = kwargs.pop('appname', 'generic')
@@ -190,6 +192,8 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             selector = req.get_selector()
         # End our change
         h.set_debuglevel(self._debuglevel)
+        if self.saved_session:
+            h.set_session(self.saved_session)
 
         headers = dict(req.headers)
         headers.update(req.unredirected_hdrs)
@@ -202,6 +206,9 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         headers["Connection"] = "close"
         try:
             h.request(req.get_method(), selector, req.data, headers)
+            s = h.get_session()
+            if s:
+                self.saved_session = s
             r = h.getresponse()
         except socket.error, err: # XXX what error?
             err.filename = full_url
