@@ -5312,14 +5312,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # try api side search as supported since OBS 2.2
             try:
+                requests = []
+                # open reviews
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
-                    'state': 'new',
+                    'states': 'review',
+                    'reviewstates': 'new',
+                    'roles': 'reviewer',
                     'user' : user,
                     })
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
-                requests = []
+                for node in root.findall('request'):
+                    r = Request()
+                    r.read(node)
+                    requests.append(r)
+                # open requests
+                u = makeurl(apiurl, ['request'], {
+                    'view' : 'collection',
+                    'states': 'new',
+                    'roles': 'maintainer',
+                    'user' : user,
+                    })
+                f = http_GET(u)
+                root = ET.parse(f).getroot()
                 for node in root.findall('request'):
                     r = Request()
                     r.read(node)

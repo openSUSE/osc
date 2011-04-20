@@ -26,6 +26,7 @@
   - add "maintenancerequest" command to request a maintenance incident from maintenance team
   - add "releaserequest" command run a maintenance update release process (for maintenance team only)
   - allow to force the storage of project meta data (to ignore depending repositories for example)
+  - "my requests" is showing requests with open reviews also now
 
 0.130
   - new "revert" command to restore the original working copy file (without
