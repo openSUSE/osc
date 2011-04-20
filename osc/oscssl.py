@@ -154,7 +154,7 @@ class mySSLContext(SSL.Context):
 
     def __init__(self):
         SSL.Context.__init__(self, 'sslv23')
-        self.set_options(m2.SSL_OP_ALL | m2.SSL_OP_NO_SSLv2) # m2crypto does this for us but better safe than sorry
+        self.set_options(m2.SSL_OP_ALL | m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3)
         self.set_session_cache_mode(m2.SSL_SESS_CACHE_CLIENT)
         self.verrs = None
         #self.set_info_callback() # debug
