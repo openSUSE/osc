@@ -4933,8 +4933,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output.
 
         usage:
-            osc rebuild (inside working copy)
-            osc rebuild PROJECT [PACKAGE [REPOSITORY [ARCH]]]
+            osc rebuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
 
@@ -5002,29 +5001,47 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--all', action='store_true',
                         help='Abort all running builds of entire project')
     def do_abortbuild(self, subcmd, opts, *args):
-        """${cmd_name}: Aborts the build of a certain project/package
-
-        With the optional argument <package> you can specify a certain package
-        otherwise all builds in the project will be cancelled.
+        """${cmd_name}: Aborts the build of a certain project or package
 
         usage:
-            osc abortbuild [OPTS] PROJECT [PACKAGE]
+            osc abortbuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
+        args = slash_split(args)
+
+        package = repo = arch = code = None
         apiurl = self.get_api_url()
 
-        if len(args) < 1:
-            raise oscerr.WrongArgs('Missing <project> argument.')
+        if opts.repo:
+            repo = opts.repo
 
-        if len(args) == 2:
-            package = args[1]
+        if opts.arch:
+            arch = opts.arch
+
+        if len(args) < 1:
+            if is_package_dir(os.curdir):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
+            elif is_project_dir(os.curdir):
+                project = store_read_project(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
+            else:
+                raise oscerr.WrongArgs('Too few arguments.')
         else:
-            package = None
+            project = args[0]
+            if len(args) > 1:
+                package = args[1]
+
+        if len(args) > 2:
+            repo = args[2]
+        if len(args) > 3:
+            arch = args[3]
 
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to abort all packages of the entire project, use --all option.')
 
-        print abortbuild(apiurl, args[0], package, opts.arch, opts.repo)
+        print abortbuild(apiurl, project, package, opts.arch, opts.repo)
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
