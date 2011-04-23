@@ -3394,7 +3394,7 @@ def get_default_pager():
         return 'less'
     return 'more'
 
-def run_pager(message):
+def run_pager(message, tmp_suffix=''):
     import tempfile, sys
 
     if not message:
@@ -3403,7 +3403,7 @@ def run_pager(message):
     if not sys.stdout.isatty():
         print message
     else:
-        tmpfile = tempfile.NamedTemporaryFile()
+        tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
         tmpfile.write(message)
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
@@ -5972,7 +5972,7 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
-                    tmpfile = tempfile.NamedTemporaryFile()
+                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
                     for action in sr_actions:
                         diff = 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
                             action.tgt_project, action.tgt_package)
