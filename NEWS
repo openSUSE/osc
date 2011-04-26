@@ -14,6 +14,7 @@
   - make it possible to run single source services, even when not specified in _service file.
     (For example for doing a version update without creating a _service file: osc service lr update_source)
   - protect rebuild and abortbuild commands with required "--all" option to mass failures by accident (similar to wipebinaries)
+  - "review accept/decline" is trying to change all reviews of a requests, if a specific one is not specified by user
 #
 # Features which requires OBS 2.3
 #

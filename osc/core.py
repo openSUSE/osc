@@ -3555,7 +3555,9 @@ def get_request(apiurl, reqid):
 
 
 def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_project='', by_package='', message='', supersed=None):
-    query = {'cmd': 'changereviewstate', 'newstate': newstate, 'by_user': by_user }
+    query = {'cmd': 'changereviewstate', 'newstate': newstate }
+    if by_user:
+        query['by_user'] = by_user
     if by_group:
         query['by_group'] = by_group
     if by_project:

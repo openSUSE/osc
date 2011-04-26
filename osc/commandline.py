@@ -1744,18 +1744,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request reopen [-m TEXT] ID
-            osc request supersede [-m TEXT] ID SUPERSEDE_ID
+            osc request supersede [-m TEXT] ID SUPERSEDING_ID
             osc request approvenew [-m TEXT] PROJECT
 
             osc request checkout/co ID
             osc request clone [-m TEXT] ID
 
-            osc review list [-U USER] [-G GROUP] [-s state]
-            osc review add [-m TEXT] [-U USER] [-G GROUP] ID
-            osc review accept [-m TEXT] ID
-            osc review decline [-m TEXT] ID
-            osc review reopen [-m TEXT] ID
-            osc review supersede [-m TEXT] ID SUPERSEDE_ID
+            osc review list [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] [-s state]
+            osc review add [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
+            osc review accept [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
+            osc review decline [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
+            osc review reopen [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
+            osc review supersede [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID SUPERSEDING_ID
 
         ${cmd_option_list}
         """
@@ -1808,8 +1808,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
-        if cmd in ['add'] and not opts.user and not opts.group:
-            opts.user = conf.get_apiurl_usr(apiurl)
+        if cmd in ['add'] and not opts.user and not opts.group and not opts.project:
+            raise oscerr.WrongArgs('No reviewer specified.')
 
         reqid = None
         supersedid = None
@@ -2001,9 +2001,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.message:
                    opts.message = edit_message()
                 if cmd in ['accept', 'decline', 'reopen', 'supersede']:
-                    r = change_review_state(apiurl,
-                            reqid, state_map[cmd], conf.get_apiurl_usr(apiurl), opts.group, opts.project, opts.package, opts.message or '', supersed=supersedid)
-                    print r
+                    if opts.user or opts.group or opts.project or opts.package:
+                        r = change_review_state(apiurl,
+                             reqid, state_map[cmd], opts.user, opts.group, opts.project, opts.package, opts.message or '', supersed=supersedid)
+                        print r
+                    else:
+                        # try all, but do not fail on error
+                        rq = get_request(apiurl, reqid)
+                        for review in rq.reviews:
+                             if review.state == "new":
+                                  try:
+                                      r = change_review_state(apiurl,
+                                           reqid, state_map[cmd], review.by_user, review.by_group, review.by_project, review.by_package, opts.message or '', supersed=supersedid)
+                                      print r
+                                  except urllib2.HTTPError, e:
+                                      if review.by_user:
+                                         print "No permission on review by user %s", review.by_user
+                                      if review.by_group:
+                                         print "No permission on review by group %s", review.by_group
+                                      if review.by_package:
+                                         print "No permission on review by package %s / %s", review.by_project, review.by_package
+                                      elif review.by_project:
+                                         print "No permission on review by project %s ", review.by_project
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
