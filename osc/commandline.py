@@ -509,7 +509,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--attribute-project', action='store_true',
                         help='include project values, if missing in packages ')
     @cmdln.option('-f', '--force', action='store_true',
-                        help='force the save operation, allows to ignores some errors like depending repositories. For prj meta only.')
+                        help='force the save operation, allows one to ignores some errors like depending repositories. For prj meta only.')
     @cmdln.option('-F', '--file', metavar='FILE',
                         help='read metadata from FILE, instead of opening an editor. '
                         '\'-\' denotes standard input. ')
@@ -2451,9 +2451,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
-        This command is asking the maintence team to start a maintence incident based on a 
+        This command is asking the maintence team to start a maintence incident based on a
         created maintenance update. Please see the "mbranch" command on how to create such a project and
-        the "patchinfo" command how add the required maintenance update informations.
+        the "patchinfo" command how add the required maintenance update information.
 
         usage:
             osc maintenancerequest [ SOURCEPROJECT [ TARGETPROJECT ] ]
@@ -3918,7 +3918,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Needs to be called from within a package directory.
 
         When called as buildlogtail (or blt) it just shows the end of the logfile.
-        This is usefull to see just a build failure reasons.
+        This is useful to see just a build failure reasons.
 
         The arguments REPOSITORY and ARCH are the first two columns in the 'osc
         results' output. If the buildlog url is used buildlog command has the
