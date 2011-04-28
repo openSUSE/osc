@@ -463,8 +463,8 @@ def main(apiurl, opts, argv):
                 opts.local_package = True
         if opts.local_package:
             pacname = os.path.splitext(build_descr)[0]
+    apihost = urlparse.urlsplit(apiurl)[1]
     if not build_root:
-        apihost = urlparse.urlsplit(apiurl)[1]
         build_root = config['build-root'] % {'repo': repo, 'arch': arch,
             'project': prj, 'package': pacname, 'apihost': apihost}
 
