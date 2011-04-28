@@ -3107,6 +3107,151 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         run_pager(rdiff)
 
+    def _pdiff_raise_non_existing_package(self, project, package, msg = None):
+        raise oscerr.PackageMissing(project, package, msg or '%s/%s does not exist.' % (project, package))
+
+    def _pdiff_package_exists(self, apiurl, project, package):
+        try:
+            show_package_meta(apiurl, project, package)
+            return True
+        except urllib2.HTTPError, e:
+            if e.code != 404:
+                print >>sys.stderr, 'Cannot check that %s/%s exists: %s' % (project, package, e)
+            return False
+
+    def _pdiff_guess_parent(self, apiurl, project, package, check_exists_first = False):
+        # Make sure the parent exists
+        if check_exists_first and not self._pdiff_package_exists(apiurl, project, package):
+            self._pdiff_raise_non_existing_package(project, package)
+
+        if project.startswith('home:'):
+            guess = project[len('home:'):]
+            # remove user name
+            pos = guess.find(':')
+            if pos > 0:
+                guess = guess[guess.find(':') + 1:]
+                if guess.startswith('branches:'):
+                    guess = guess[len('branches:'):]
+                    return (guess, package)
+
+        return (None, None)
+
+    def _pdiff_get_parent_from_link(self, apiurl, project, package):
+        link_url = makeurl(apiurl, ['source', project, package, '_link'])
+
+        try:
+            file = http_GET(link_url)
+            root = ET.parse(file).getroot()
+        except urllib2.HTTPError, e:
+            return (None, None)
+        except SyntaxError, e:
+            print >>sys.stderr, 'Cannot parse %s/%s/_link: %s' % (project, package, e)
+            return (None, None)
+
+        parent_project = root.get('project')
+        parent_package = root.get('package') or package
+
+        if parent_project is None:
+            return (None, None)
+
+        return (parent_project, parent_package)
+
+    def _pdiff_get_exists_and_parent(self, apiurl, project, package):
+        link_url = makeurl(apiurl, ['public', 'source', project, package])
+        try:
+            file = http_GET(link_url)
+            root = ET.parse(file).getroot()
+        except urllib2.HTTPError, e:
+            if e.code != 404:
+                print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
+            return (None, None, None)
+        except SyntaxError, e:
+            print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
+            return (None, None, None)
+
+        link_node = root.find('linkinfo')
+        if link_node is None:
+            return (True, None, None)
+
+        parent_project = link_node.get('project')
+        parent_package = link_node.get('package') or package
+
+        if parent_project is None:
+            raise oscerr.APIError('%s/%s is a link with no parent?' % (project, package))
+
+        return (True, parent_project, parent_package)
+
+    @cmdln.option('-p', '--plain', action='store_true',
+                  dest='plain',
+                  help='output the diff in plain (not unified) diff format')
+    @cmdln.option('-n', '--nomissingok', action='store_true',
+                  dest='nomissingok',
+                  help='fail if the parent package does not exist on the server')
+    def do_pdiff(self, subcmd, opts, *args):
+        """${cmd_name}: Quick alias to diff the content of a package with its parent.
+
+        Usage:
+            osc pdiff [--plain|-p] [--nomissing-ok|-n]
+            osc pdiff [--plain|-p] [--nomissing-ok|-n] PKG
+            osc pdiff [--plain|-p] [--nomissing-ok|-n] PRJ PKG
+
+        ${cmd_option_list}
+        """
+
+        apiurl = self.get_api_url()
+        args = slash_split(args)
+
+        unified = not opts.plain
+        noparentok = not opts.nomissingok
+
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0:
+            if not is_package_dir(os.getcwd()):
+                raise oscerr.WrongArgs('Current directory is not a checked out package. Please specify a project and a package.')
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+        elif len(args) == 1:
+            if not is_project_dir(os.getcwd()):
+                raise oscerr.WrongArgs('Current directory is not a checked out project. Please specify a project and a package.')
+            project = store_read_project(os.curdir)
+            package = args[0]
+        elif len(args) == 2:
+            project = args[0]
+            package = args[1]
+        else:
+            raise RuntimeError('Internal error: bad check for arguments.')
+
+        ## Find parent package
+
+        # Old way, that does one more request to api
+        #(parent_project, parent_package) = self._pdiff_get_parent_from_link(apiurl, project, package)
+        #if not parent_project:
+        #    (parent_project, parent_package) = self._pdiff_guess_parent(apiurl, project, package, check_exists_first = True)
+        #    if parent_project and parent_package:
+        #        print 'Guessed that %s/%s is the parent package.' % (parent_project, parent_package)
+
+        # New way
+        (exists, parent_project, parent_package) = self._pdiff_get_exists_and_parent (apiurl, project, package)
+        if not exists:
+            self._pdiff_raise_non_existing_package(project, package)
+        if not parent_project:
+            (parent_project, parent_package) = self._pdiff_guess_parent(apiurl, project, package, check_exists_first = False)
+            if parent_project and parent_package:
+                print 'Guessed that %s/%s is the parent package.' % (parent_project, parent_package)
+
+        if not parent_project or not parent_package:
+            print >>sys.stderr, 'Cannot find a parent for %s/%s to diff against.' % (project, package)
+            return 1
+
+        if not noparentok and not self._pdiff_package_exists(apiurl, parent_project, parent_package):
+            self._pdiff_raise_non_existing_package(parent_project, parent_package, msg = 'Parent for %s/%s (%s/%s) does not exist.' % (project, package, parent_project, parent_package))
+
+        rdiff = server_diff(apiurl, parent_project, parent_package, None, project, package, None, unified = unified, missingok = noparentok)
+
+        run_pager(rdiff)
+
     @cmdln.hide(1)
     @cmdln.alias('in')
     def do_install(self, subcmd, opts, *args):
