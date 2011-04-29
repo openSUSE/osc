@@ -2016,13 +2016,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                       print r
                                   except urllib2.HTTPError, e:
                                       if review.by_user:
-                                         print "No permission on review by user %s", review.by_user
+                                         print 'No permission on review by user %s' % review.by_user
                                       if review.by_group:
-                                         print "No permission on review by group %s", review.by_group
+                                         print 'No permission on review by group %s' % review.by_group
                                       if review.by_package:
-                                         print "No permission on review by package %s / %s", review.by_project, review.by_package
+                                         print 'No permission on review by package %s / %s' % (review.by_project, review.by_package)
                                       elif review.by_project:
-                                         print "No permission on review by project %s ", review.by_project
+                                         print 'No permission on review by project %s' % review.by_project
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
