@@ -2445,6 +2445,55 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
+    def do_createincident(self, subcmd, opts, *args):
+        """${cmd_name}: Create a maintenance incident
+
+        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
+        for information on this topic.]
+
+        This command is asking to open an empty maintence incident. This can usually only be done by a responsible
+        maintenance team.
+        Please see the "mbranch" command on how to full such a project content and
+        the "patchinfo" command how add the required maintenance update informations.
+
+        usage:
+            osc createincident [ MAINTENANCEPROJECT ]
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+        maintenance_attribute = conf.config['maintenance_attribute']
+        if opts.attribute:
+            maintenance_attribute = opts.attribute
+
+        source_project = target_project = None
+
+        if len(args) > 1:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 1:
+            target_project = args[1]
+        else:
+            xpath = 'attribute/@name = \'%s\'' % maintenance_attribute
+            res = search(apiurl, project_id=xpath)
+            root = res['project_id']
+            project = root.find('project')
+            if project is None:
+                sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
+            target_project = project.get('name')
+            print 'Using target project \'%s\'' % target_project
+
+        query = { 'cmd': 'createmaintenanceincident' }
+        url = makeurl(apiurl, ['source', target_project], query=query)
+        r = http_POST(url, data=opts.message)
+        print ET.parse(r).getroot().get('code')
+
+
+    @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
+                        help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify message TEXT')
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
@@ -2462,9 +2511,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = slash_split(args)
         apiurl = self.get_api_url()
-        attribute = "OBS:MaintenanceProject" # default attribute as defined in api code.
+        maintenance_attribute = conf.config['maintenance_attribute']
         if opts.attribute:
-            attribute = opts.attribute
+            maintenance_attribute = opts.attribute
 
         source_project = target_project = None
 
@@ -2481,7 +2530,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 1:
             target_project = args[1]
         else:
-            xpath = 'attribute/@name = \'%s\'' % attribute
+            xpath = 'attribute/@name = \'%s\'' % maintenance_attribute
             res = search(apiurl, project_id=xpath)
             root = res['project_id']
             project = root.find('project')

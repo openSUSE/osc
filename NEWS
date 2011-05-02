@@ -1,5 +1,9 @@
 0.132
   -
+#
+# Features which requires OBS 2.3
+#
+  - new command "createincident" to create maintenance incidents without a request
 
 0.131
   - new command 'develproject' to print the devel project from the package meta.

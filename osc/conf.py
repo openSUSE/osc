@@ -139,6 +139,7 @@ DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
 
              # Maintenance defaults to OBS instance defaults
              'maintained_attribute': 'OBS:Maintained',
+             'maintenance_attribute': 'OBS:MaintenanceProject',
              'maintained_update_project_attribute': 'OBS:UpdateProject',
              'show_download_progress': '0',
 }
