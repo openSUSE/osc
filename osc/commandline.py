@@ -893,6 +893,14 @@ class Osc(cmdln.Cmdln):
                             print "  Skipping package ", p
                     else:
                         print "Skipping package ", p,  " since it is a source link pointing inside the project."
+                    serviceinfo = root.find('serviceinfo')
+                    if serviceinfo != None:
+                        if serviceinfo.get('code') != "succeeded":
+                            print "Package ", p, " has a ", serviceinfo.get('code'), " source service"
+                            sys.exit("Please fix this first")
+                        if serviceinfo.get('error'):
+                            print "Package ", p, " contains a failed source service."
+                            sys.exit("Please fix this first")
 
             # was this project created by clone request ?
             u = makeurl(apiurl, ['source', project, '_attribute', 'OBS:RequestCloned'])
@@ -992,6 +1000,19 @@ class Osc(cmdln.Cmdln):
         else:
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('request'))
+
+        # check for running source service
+        u = makeurl(apiurl, ['source', src_project, src_package])
+        f = http_GET(u)
+        root = ET.parse(f).getroot()
+        serviceinfo = root.find('serviceinfo')
+        if serviceinfo != None:
+            if serviceinfo.get('code') != "succeeded":
+                print "Package ", src_package, " has a ", serviceinfo.get('code'), " source service"
+                sys.exit("Please fix this first")
+            if serviceinfo.get('error'):
+                print "Package ", src_package, " contains a failed source service."
+                sys.exit("Please fix this first")
 
         if not opts.nodevelproject:
             devloc = None
