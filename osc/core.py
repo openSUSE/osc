@@ -1314,6 +1314,21 @@ class Package:
 
         print_request_list(self.apiurl, self.prjname, self.name)
 
+        if self.findfilebyname("_service"):
+            print 'Waiting for server side source service run',
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name])
+            while 1:
+                f = http_GET(u)
+                sfilelist = ET.parse(f).getroot()
+                s = sfilelist.find('serviceinfo')
+                if s.get('code') == "running":
+                   print '.',
+                else:
+                   break
+            self.update()
+            print " updated"
+            
+
     def __write_storelist(self, name, data):
         if len(data) == 0:
             try:
