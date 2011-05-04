@@ -4353,7 +4353,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     print 'Done.'
 
 
-def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False):
+def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False, noaccess=False):
     """
     Branch packages defined via attributes (via API call)
     """
@@ -4363,6 +4363,8 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         query['target_project'] = targetproject
     if force:
         query['force'] = "1"
+    if noaccess:
+        query['noaccess'] = "1"
     if package:
         query['package'] = package
     if maintained_update_project_attribute:
@@ -4384,7 +4386,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False):
     """
     Branch a package (via API call)
     """
@@ -4393,6 +4395,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['ignoredevel'] = '1'
     if force:
         query['force'] = '1'
+    if noaccess:
+        query['noaccess'] = '1'
     if rev:
         query['rev'] = rev
     if target_project:

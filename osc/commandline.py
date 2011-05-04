@@ -2464,6 +2464,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
+    @cmdln.option('--noaccess', action='store_true',
+                        help='Create a hidden project')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
     def do_createincident(self, subcmd, opts, *args):
@@ -2506,6 +2508,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print 'Using target project \'%s\'' % target_project
 
         query = { 'cmd': 'createmaintenanceincident' }
+        if opts.noaccess:
+           query["noaccess"] = 1
         url = makeurl(apiurl, ['source', target_project], query=query)
         r = http_POST(url, data=opts.message)
         print ET.parse(r).getroot().get('code')
@@ -2572,6 +2576,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='Use this attribute to find affected packages (default is OBS:Maintained)')
+    @cmdln.option('--noaccess', action='store_true',
+                        help='Create a hidden project')
     @cmdln.option('-u', '--update-project-attribute', metavar='UPDATE_ATTRIBUTE',
                         help='Use this attribute to find update projects (default is OBS:UpdateProject) ')
     def do_mbranch(self, subcmd, opts, *args):
@@ -2606,7 +2612,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             tproject = args[1]
 
         r = attribute_branch_pkg(apiurl, maintained_attribute, maintained_update_project_attribute, \
-                                 package, tproject)
+                                 package, tproject, noaccess = opts.noaccess)
 
         if r is None:
             print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.'
@@ -2640,6 +2646,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force branch, overwrite target')
+    @cmdln.option('--noaccess', action='store_true',
+                        help='Create a hidden project')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -2701,7 +2709,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout, msg=opts.message or '',
-                           force=opts.force)
+                           force=opts.force, noaccess=opts.noaccess)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 

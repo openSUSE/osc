@@ -4,6 +4,8 @@
 # Features which requires OBS 2.3
 #
   - new command "createincident" to create maintenance incidents without a request
+  - support to create hidden project on "branch" and "createincident" commands
+  - osc waits and updates package after checkin when a source service is used
 
 0.131
   - new command 'develproject' to print the devel project from the package meta.
