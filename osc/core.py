@@ -3645,10 +3645,13 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
     if package:
         todo['package'] = package
     for kind, val in todo.iteritems():
-        xpath = xpath_join(xpath, '(action/target/@%(kind)s=\'%(val)s\' or ' \
-                                  'action/source/@%(kind)s=\'%(val)s\' or ' \
-                                  'submit/target/@%(kind)s=\'%(val)s\' or ' \
-                                  'submit/source/@%(kind)s=\'%(val)s\')' % {'kind': kind, 'val': val}, op='and')
+        xpath_base = 'action/target/@%(kind)s=\'%(val)s\' or ' \
+                     'submit/target/@%(kind)s=\'%(val)s\''
+
+        if conf.config['include_request_from_project']:
+            xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\' or ' \
+                                                'submit/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
+        xpath = xpath_join(xpath, xpath_base % {'kind': kind, 'val': val}, op='and', nexpr_parentheses=True)
 
     if conf.config['verbose'] > 1:
         print '[ %s ]' % xpath
@@ -3677,10 +3680,14 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
     if package:
         todo['package'] = package
     for kind, val in todo.iteritems():
-        xpath = xpath_join(xpath, '(action/target/@%(kind)s=\'%(val)s\' or ' \
-                                  'action/source/@%(kind)s=\'%(val)s\' or ' \
-                                  'submit/target/@%(kind)s=\'%(val)s\' or ' \
-                                  'submit/source/@%(kind)s=\'%(val)s\')' % {'kind': kind, 'val': val}, op='and')
+        xpath_base = 'action/target/@%(kind)s=\'%(val)s\' or ' \
+                     'submit/target/@%(kind)s=\'%(val)s\''
+
+        if conf.config['include_request_from_project']:
+            xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\' or ' \
+                                                'submit/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
+        xpath = xpath_join(xpath, xpath_base % {'kind': kind, 'val': val}, op='and', nexpr_parentheses=True)
+
     if req_type:
         xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
     for i in exclude_target_projects:
