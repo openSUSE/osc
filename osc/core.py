@@ -651,7 +651,7 @@ class Project:
     def update(self, pacs = (), expand_link=False, unexpand_link=False, service_files=False):
         if len(pacs):
             for pac in pacs:
-                Package(os.path.join(self.dir, pac, progress_obj=self.progress_obj)).update()
+                Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj).update()
         else:
             # we need to make sure that the _packages file will be written (even if an exception
             # occurs)
