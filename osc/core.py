@@ -2757,21 +2757,17 @@ def filedir_to_pac(f, progress_obj=None):
 def read_filemeta(dir):
     global store
 
-    msg = '\'%s\' is not a valid working copy.\n' % dir
+    msg = '\'%s\' is not a valid working copy.' % dir
+    filesmeta = os.path.join(dir, store, '_files')
     if not is_package_dir(dir):
         raise oscerr.NoWorkingCopy(msg)
-
-    filesmeta = os.path.join(dir, store, '_files')
     if not os.path.isfile(filesmeta):
-        print >>sys.stderr, "Warning: file _files is missing, creating a default one"
-        store_write_string(os.path.join(dir, store), '_files', '<directory \>')
+        raise oscerr.NoWorkingCopy('%s (%s does not exist)' % (msg, filesmeta))
 
     try:
         r = ET.parse(filesmeta)
     except SyntaxError, e:
-        raise oscerr.NoWorkingCopy(msg + 
-                                   'When parsing .osc/_files, the following error was encountered:\n'
-                                   '%s' % (dir, e))
+        raise oscerr.NoWorkingCopy('%s\nWhen parsing .osc/_files, the following error was encountered:\n%s' % (msg, e))
     return r
 
 def store_readlist(dir, name):
