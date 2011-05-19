@@ -1035,13 +1035,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.diff:
                     sys.exit(1)
 
+        rev=opts.revision
+        if not rev:
+            # get _link info from server, that knows about the local state ...
+            u = makeurl(apiurl, ['source', src_project, src_package])
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            linkinfo = root.find('linkinfo')
+            if linkinfo != None:
+                if linkinfo.get('error'):
+                   print "Package source is a broken source link."
+                   sys.exit("Please fix this first")
+                if linkinfo.get('project') != dst_project or linkinfo.get('package') != dst_package:
+                   # the submit target is not link target. use merged md5sum references to avoid not mergable
+                   # sources when multiple request from same source get created.
+                   rev=linkinfo.get('xsrcmd5')
+
         rdiff = None
         if opts.diff or not opts.message:
             try:
-                rdiff = 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
+                rdiff = 'old: %s/%s\nnew: %s/%s rev %s' %(dst_project, dst_package, src_project, src_package, rev)
                 rdiff += server_diff(apiurl,
-                                    dst_project, dst_package, opts.revision,
-                                    src_project, src_package, None, True)
+                                    dst_project, dst_package, None,
+                                    src_project, src_package, rev, True)
             except:
                 rdiff = ''
 
@@ -1080,7 +1096,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         result = create_submit_request(apiurl,
                                        src_project, src_package,
                                        dst_project, dst_package,
-                                       opts.message, orev=opts.revision, src_update=src_update)
+                                       opts.message, orev=rev, src_update=src_update)
         if repl.lower() == 'y':
             for req in myreqs:
                 change_request_state(apiurl, req.reqid, 'superseded',
@@ -2139,7 +2155,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = meta_get_packagelist(apiurl, project)
 
         for p in packages:
-            print 'setting revision for package %s' % p
+            print 'setting revision to %s for package %s' % (rev, p)
             set_link_rev(apiurl, project, p, revision=rev, expand=expand, baserev=baserev)
 
 
@@ -2427,13 +2443,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Create a request for releasing a maintenance update.
 
         [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide/cha.obs.maintenance_setup.html
-        for information on this topic.]
+         for information on this topic.]
 
         This command is used by the maintence team to start the release process of a maintenance update.
         This includes usually testing based on the defined reviewers of the update project.
 
         usage:
             osc releaserequest [ SOURCEPROJECT ]
+
         ${cmd_option_list}
         """
        
