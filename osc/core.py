@@ -4527,12 +4527,18 @@ def undelete_project(apiurl, prj):
     http_POST(u)
 
 
-def delete_package(apiurl, prj, pac):
-    u = makeurl(apiurl, ['source', prj, pac])
+def delete_package(apiurl, prj, pac, force=False):
+    query = {}
+    if force:
+        query['force'] = "1"
+    u = makeurl(apiurl, ['source', prj, pac], query)
     http_DELETE(u)
 
-def delete_project(apiurl, prj):
-    u = makeurl(apiurl, ['source', prj])
+def delete_project(apiurl, prj, force=False):
+    query = {}
+    if force:
+        query['force'] = "1"
+    u = makeurl(apiurl, ['source', prj], query)
     http_DELETE(u)
 
 def delete_files(apiurl, prj, pac, files):

@@ -2795,8 +2795,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             undelete_project(apiurl, prj)
 
 
+    @cmdln.option('-r', '--recursive', action='store_true',
+                        help='deletes a project with packages inside')
     @cmdln.option('-f', '--force', action='store_true',
-                        help='deletes a package or an empty project')
+                        help='deletes a project where other depends on')
     def do_rdelete(self, subcmd, opts, *args):
         """${cmd_name}: Delete a project or packages on the server.
 
@@ -2804,10 +2806,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         packages first). Also, packages must have no requests pending (i.e., you need
         to accept/revoke such requests first).
         If you are sure that you want to remove this project and all
-        its packages use \'--force\' switch.
+        its packages use \'--recursive\' switch.
+        It may still not work because other depends on it. If you want to ignore this as
+        well use \'--force\' switch.
 
         usage:
-           osc rdelete [-f] PROJECT [PACKAGE]
+           osc rdelete [-r] [-f] PROJECT [PACKAGE]
 
         ${cmd_option_list}
         """
@@ -2838,15 +2842,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                   'Or just use \'--force\'.'
               sys.exit(1)
 
-            delete_package(apiurl, prj, pkg)
+            delete_package(apiurl, prj, pkg, opts.force)
 
-        elif len(meta_get_packagelist(apiurl, prj)) >= 1 and not opts.force:
+        elif (not opts.recursive) and len(meta_get_packagelist(apiurl, prj)) >= 1:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
-                                'packages use the \'--force\' switch.'
+                                'packages use the \'--with-packages\' switch.'
             sys.exit(1)
         else:
-            delete_project(apiurl, prj)
+            delete_project(apiurl, prj, opts.force)
 
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):
