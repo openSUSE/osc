@@ -829,6 +829,7 @@ def get_config(override_conffile = None,
                     if password != passwordx:
                         print >>sys.stderr, '%s: rewriting from encoded pass to plain pass' % url
                     add_section(conffile, url, user, passwordx)
+                    password = passwordx
                 else:
                     if password != passwordx:
                         print >>sys.stderr, '%s: rewriting from plain pass to encoded pass' % url
