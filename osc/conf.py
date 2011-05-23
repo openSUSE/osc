@@ -825,14 +825,14 @@ def get_config(override_conffile = None,
                 raise oscerr.ConfigError('user is blank for %s, please delete of complete the "user=" entry in %s.' % (apiurl,config['conffile']), config['conffile'])
 
             if config['plaintext_passwd'] and passwordx or not config['plaintext_passwd'] and password:
-                if not config['plaintext_passwd']:
-                    if password != passwordx:
-                        print >>sys.stderr, '%s: rewriting from plain pass to encoded pass' % url
-                    add_section(conffile, url, user, password)
-                else:
+                if config['plaintext_passwd']:
                     if password != passwordx:
                         print >>sys.stderr, '%s: rewriting from encoded pass to plain pass' % url
                     add_section(conffile, url, user, passwordx)
+                else:
+                    if password != passwordx:
+                        print >>sys.stderr, '%s: rewriting from plain pass to encoded pass' % url
+                    add_section(conffile, url, user, password)
 
             if not config['plaintext_passwd']:
                 password = passwordx
