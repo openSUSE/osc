@@ -3685,7 +3685,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     p.update(rev, opts.server_side_source_service_files, opts.limit_size)
                     rev = p.linkinfo.lsrcmd5
                 elif p.islink() and p.isexpanded():
-                    rev = p.latest_rev()
+                    rev = p.latest_rev(include_service_files=opts.server_side_source_service_files)
 
             p.update(rev, opts.server_side_source_service_files, opts.limit_size)
             if opts.source_service_files:

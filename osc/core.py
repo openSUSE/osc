@@ -1831,23 +1831,23 @@ rev: %s
         if os.path.exists(os.path.join(self.storedir, '_frozenlink')):
             os.unlink(os.path.join(self.storedir, '_frozenlink'))
 
-    def latest_rev(self):
+    def latest_rev(self, include_service_files=False):
         if self.islinkrepair():
-            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1, meta=self.meta)
+            upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1, meta=self.meta, include_service_files=include_service_files)
         elif self.islink() and self.isexpanded():
             if self.isfrozen() or self.ispulled():
-                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta)
+                upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta, include_service_files=include_service_files)
             else:
                 try:
-                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, meta=self.meta)
+                    upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, meta=self.meta, include_service_files=include_service_files)
                 except:
                     try:
-                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta)
+                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta, include_service_files=include_service_files)
                     except:
-                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev="base", meta=self.meta)
+                        upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev="base", meta=self.meta, include_service_files=include_service_files)
                     self.mark_frozen()
         else:
-            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta)
+            upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta, include_service_files=include_service_files)
         return upstream_rev
 
     def __get_files(self, fmeta_root):
@@ -3296,16 +3296,26 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
     return f.read()
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False):
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta)
-    return ET.fromstring(''.join(m)).get('srcmd5')
+    et = ET.fromstring(''.join(m))
+    if include_service_files:
+        try:
+            if et.find('serviceinfo') and et.find('serviceinfo').get('xsrcmd5'):
+                return et.find('serviceinfo').get('xsrcmd5')
+        except:
+            pass
+    return et.get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False):
-    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta)
+def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta, expand=include_service_files)
+    et = ET.fromstring(''.join(m))
+    if include_service_files:
+        return et.get('srcmd5')
     try:
         # only source link packages have a <linkinfo> element.
-        li_node = ET.fromstring(''.join(m)).find('linkinfo')
+        li_node = et.find('linkinfo')
     except:
         return None
 
@@ -3317,9 +3327,16 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False):
+def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
-    return ET.fromstring(''.join(m)).get('rev')
+    et = ET.fromstring(''.join(m))
+    if include_service_files:
+        try:
+            if et.find('serviceinfo') and et.find('serviceinfo').get('xsrcmd5'):
+                return et.find('serviceinfo').get('xsrcmd5')
+        except:
+            pass
+    return et.get('rev')
 
 
 def read_meta_from_spec(specfile, *args):
@@ -4152,9 +4169,9 @@ def checkout_package(apiurl, project, package,
         # if it is a link we use the xsrcmd5 as the revision to be
         # checked out
         try:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta)
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, include_service_files=server_service_files)
         except:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base')
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base', include_service_files=server_service_files)
             if x:
                 isfrozen = True
         if x:

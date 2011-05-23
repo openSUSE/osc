@@ -6,6 +6,8 @@
   - new command "createincident" to create maintenance incidents without a request
   - support to create hidden project on "branch" and "createincident" commands
   - osc waits and updates package after checkin when a source service is used
+  - support for the new service file mode for "update" and "checkout" command when
+    downloading server side generated files
 
 0.131
   - new command 'develproject' to print the devel project from the package meta.
