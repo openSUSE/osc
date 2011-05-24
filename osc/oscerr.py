@@ -48,6 +48,12 @@ class ExtRuntimeError(OscBaseError):
         self.msg = msg
         self.file = fname
 
+class ServiceRuntimeError(OscBaseError):
+    """Exception raised when there is source service error runtime error"""
+    def __init__(self, msg):
+        OscBaseError.__init__(self)
+        self.msg = msg
+
 class WrongArgs(OscBaseError):
     """Exception raised by the cli for wrong arguments usage"""
 

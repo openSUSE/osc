@@ -4727,9 +4727,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
 
         # check for source services
-        if not opts.noservice and not opts.noinit and os.listdir('.').count("_service"):
+        if not opts.noservice and not opts.noinit:
             p = Package('.')
-            p.run_source_services()
+            r = p.run_source_services()
+            if r != 0:
+                print >>sys.stderr, 'Source service run failed!'
+                sys.exit(1)
+                # that is currently unreadable on cli, we should not have a backtrace on standard errors:
+                #raise oscerr.ServiceRuntimeError('Service run failed: \'%s\'', r)
 
         if conf.config['no_verify']:
             opts.no_verify = True

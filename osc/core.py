@@ -317,6 +317,7 @@ class Serviceinfo:
             allservices = [data]
 
         # recreate files
+        ret = 0
         for service in allservices:
             if singleservice and service['name'] != singleservice:
                 continue
@@ -332,12 +333,13 @@ class Serviceinfo:
             c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1:
                 print "Run source service:", c
-            ret = subprocess.call(c, shell=True)
-            if ret != 0:
+            r = subprocess.call(c, shell=True)
+            if r != 0:
                 print "ERROR: service call failed: " + c
                 # FIXME: addDownloadUrlService calls si.execute after 
                 #        updating _services.
                 print "       (your _services file may be corrupt now)"
+                ret = r
 
             if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local":
                 for filename in os.listdir(temp_dir):
@@ -346,6 +348,8 @@ class Serviceinfo:
                 for filename in os.listdir(temp_dir):
                     shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
             os.rmdir(temp_dir)
+
+        return ret
 
 class Linkinfo:
     """linkinfo metadata (which is part of the xml representing a directory
@@ -2045,8 +2049,9 @@ rev: %s
             service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
             si.read(service)
         si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
-        si.execute(self.absdir, mode, singleservice)
+        r = si.execute(self.absdir, mode, singleservice)
         os.chdir(curdir)
+        return r
 
     def prepare_filelist(self):
         """Prepare a list of files, which will be processed by process_filelist
