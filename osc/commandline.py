@@ -4724,7 +4724,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # check for source services
         if not opts.noservice and not opts.noinit:
             p = Package('.')
-            r = p.run_source_services()
+            r = p.run_source_services(verbose=True)
             if r != 0:
                 print >>sys.stderr, 'Source service run failed!'
                 sys.exit(1)
