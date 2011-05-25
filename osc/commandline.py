@@ -3471,8 +3471,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='force commit - do not tests a file list')
     @cmdln.option('--skip-validation', default=False, action="store_true",
                   help='Skip the source validation')
-    @cmdln.option('--verbose-validation', default=False, action="store_true",
-                  help='Run the source validation with verbose information')
+    @cmdln.option('-v', '--verbose', default=False, action="store_true",
+                  help='Run the source services and validation with verbose information')
+    @cmdln.option('--skip-local-service-run', default=False, action="store_true",
+                  help='Skip service run of \'localonly\' or \'trylocal\' configured source services')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -3525,19 +3527,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 try:
                     prj = Project(arg)
-                    prj.validate_pacs(validators, opts.verbose_validation)
                     if not msg:
                         msg = edit_message()
-                    prj.commit(msg=msg)
+                    prj.commit(validators_dir=validators, msg=msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 except oscerr.ExtRuntimeError, e:
-                    print >>sys.stderr, "ERROR: source_validator failed", e
+                    print >>sys.stderr, "ERROR: service run failed", e
                     return 1
                 args.remove(arg)
 
         pacs = findpacs(args)
-
-        if conf.config['check_filelist'] and not opts.force:
-            check_filelist_before_commit(pacs)
 
         if conf.config['do_package_tracking'] and len(pacs) > 0:
             prj_paths = {}
@@ -3558,25 +3556,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     single_paths.append(pac.dir)
             for prj_path, packages in prj_paths.iteritems():
                 prj = Project(prj_path)
-                prj.validate_pacs(validators, opts.verbose_validation, *packages)
                 if not msg:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
-                prj.commit(packages, msg=msg, files=files)
+                prj.commit(packages, validators_dir=validators, msg=msg, files=files, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
-                p.validate(validators, opts.verbose_validation)
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg)
+                p.commit(msg, validators_dir=validators, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
         else:
             for p in pacs:
                 p = Package(pac)
-                p.validate(validators, opts.verbose_validation)
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg)
+                p.commit(msg, validators_dir=validators, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
 
     @cmdln.option('-r', '--revision', metavar='REV',
