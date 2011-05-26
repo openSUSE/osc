@@ -2767,6 +2767,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print_request_list(apiurl, devloc, srcpkg)
 
 
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify log message TEXT')
     def do_undelete(self, subcmd, opts, *args):
         """${cmd_name}: Restores a deleted project or package on the server.
 
@@ -2784,21 +2786,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 1:
             raise oscerr.WrongArgs('Missing argument.')
 
+        msg = ''
+        if opts.message:
+            msg = opts.message
+        else:
+            msg = edit_message()
+
         apiurl = self.get_api_url()
         prj = args[0]
         pkgs = args[1:]
 
         if pkgs:
             for pkg in pkgs:
-                undelete_package(apiurl, prj, pkg)
+                undelete_package(apiurl, prj, pkg, msg)
         else:
-            undelete_project(apiurl, prj)
+            undelete_project(apiurl, prj, msg)
 
 
     @cmdln.option('-r', '--recursive', action='store_true',
                         help='deletes a project with packages inside')
     @cmdln.option('-f', '--force', action='store_true',
                         help='deletes a project where other depends on')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify log message TEXT')
     def do_rdelete(self, subcmd, opts, *args):
         """${cmd_name}: Delete a project or packages on the server.
 
@@ -2823,6 +2833,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
         prj = args[0]
 
+        msg = ''
+        if opts.message:
+            msg = opts.message
+        else:
+            msg = edit_message()
+
         # empty arguments result in recursive project delete ...
         if not len(prj):
             raise oscerr.WrongArgs('Project argument is empty')
@@ -2842,7 +2858,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                   'Or just use \'--force\'.'
               sys.exit(1)
 
-            delete_package(apiurl, prj, pkg, opts.force)
+            delete_package(apiurl, prj, pkg, opts.force, msg)
 
         elif (not opts.recursive) and len(meta_get_packagelist(apiurl, prj)) >= 1:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
@@ -2850,7 +2866,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 'packages use the \'--with-packages\' switch.'
             sys.exit(1)
         else:
-            delete_project(apiurl, prj, opts.force)
+            delete_project(apiurl, prj, opts.force, msg)
 
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):

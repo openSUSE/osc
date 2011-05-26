@@ -4533,26 +4533,38 @@ def copy_pac(src_apiurl, src_project, src_package,
         return 'Done.'
 
 
-def undelete_package(apiurl, prj, pac):
-    u = makeurl(apiurl, ['source', prj, pac], query={'comment': 'undeleted via osc', 'cmd': 'undelete'})
+def undelete_package(apiurl, prj, pac, msg=None):
+    query={'cmd': 'undelete'}
+    if msg:
+        query['comment'] = msg
+    else:
+        query['comment'] = 'undeleted via osc'
+    u = makeurl(apiurl, ['source', prj, pac], query)
     http_POST(u)
 
-def undelete_project(apiurl, prj):
-    u = makeurl(apiurl, ['source', prj], query={'comment': 'undeleted via osc', 'cmd': 'undelete'})
+def undelete_project(apiurl, prj, msg=None):
+    query={'cmd': 'undelete'}
+    if msg:
+        query['comment'] = msg
+    else:
+        query['comment'] = 'undeleted via osc'
+    u = makeurl(apiurl, ['source', prj], query)
     http_POST(u)
 
 
-def delete_package(apiurl, prj, pac, force=False):
+def delete_package(apiurl, prj, pac, force=False, msg=None):
     query = {}
     if force:
         query['force'] = "1"
     u = makeurl(apiurl, ['source', prj, pac], query)
     http_DELETE(u)
 
-def delete_project(apiurl, prj, force=False):
+def delete_project(apiurl, prj, force=False, msg=None):
     query = {}
     if force:
         query['force'] = "1"
+    if msg:
+        query['comment'] = msg
     u = makeurl(apiurl, ['source', prj], query)
     http_DELETE(u)
 
