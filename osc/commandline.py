@@ -954,7 +954,7 @@ class Osc(cmdln.Cmdln):
                 print i,
 
             repl = ''
-            if len(myreqs) > 0:
+            if len(myreqs) > 0 and not opts.supersede:
                 print '\n\nThere are already following submit request: %s.' % \
                       ', '.join([str(i) for i in myreqs ])
                 repl = raw_input('\nSupersede the old requests? (y/n) ')
@@ -1071,7 +1071,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         myreqs = [ i for i in reqs if i.state.who == user ]
         repl = ''
 
-        if len(myreqs) > 0:
+        if len(myreqs) > 0 and not opts.supersede:
             print 'There are already following submit request: %s.' % \
                   ', '.join([i.reqid for i in myreqs ])
             repl = raw_input('Supersede the old requests? (y/n/c) ')
