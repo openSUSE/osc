@@ -9,6 +9,7 @@ import signal
 import errno
 from osc import oscerr
 from urllib2 import URLError, HTTPError
+from httplib import HTTPException, BadStatusLine
 from oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
@@ -121,6 +122,15 @@ def run(prg):
                 msg = msg.split('</summary>')[0]
                 print >>sys.stderr, msg
 
+        return 1
+
+    except BadStatusLine, e:
+        print >>sys.stderr, 'Server returned an invalid response:', e
+        print >>sys.stderr, e.line
+        return 1
+
+    except HTTPException, e:
+        print >>sys.stderr, e
         return 1
 
     except URLError, e:
