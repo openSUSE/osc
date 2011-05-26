@@ -3570,6 +3570,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     files[pac_path] = pac.todo
                 else:
                     single_paths.append(pac.dir)
+                    if not pac.todo:
+                        pac.todo = pac.filenamelist + pac.filenamelist_unvers
+                    pac.todo.sort()
             for prj_path, packages in prj_paths.iteritems():
                 prj = Project(prj_path)
                 if not msg:
@@ -3585,6 +3588,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             for p in pacs:
                 p = Package(pac)
+                if not p.todo:
+                    p.todo = p.filenamelist + p.filenamelist_unvers
+                p.todo.sort()
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg, validators_dir=validators, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
