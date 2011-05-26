@@ -2052,6 +2052,8 @@ rev: %s
         print 'At revision %s.' % self.rev
 
     def run_source_services(self, mode=None, singleservice=None, verbose=None):
+        if self.name.startswith("_"):
+            return 0
         curdir = os.getcwd()
         os.chdir(self.absdir) # e.g. /usr/lib/obs/service/verify_file fails if not inside the project dir.
         si = Serviceinfo()
