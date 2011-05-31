@@ -5922,7 +5922,13 @@ def get_commit_message_template(pac):
     """
     diff = []
     template = []
-    files = [i for i in pac.todo if i.endswith('.changes') and pac.status(i) in ('A', 'M')]
+
+    if pac.todo:
+        todo = pac.todo
+    else:
+        todo = pac.filenamelist + pac.filenamelist_unvers
+
+    files = [i for i in todo if i.endswith('.changes') and pac.status(i) in ('A', 'M')]
 
     for filename in files:
         if pac.status(filename) == 'M':
