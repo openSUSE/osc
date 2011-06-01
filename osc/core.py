@@ -5978,7 +5978,7 @@ def get_commit_msg(wc_dir, pacs):
             footer.extend([''.join(i) for i in p.get_diff(ignoreUnversioned=True)])
             lines.extend(get_commit_message_template(p))
     if template is None:
-        if lines[0] == '':
+        if lines and lines[0] == '':
             del lines[0]
         template = '\n'.join(lines)
     msg = ''
