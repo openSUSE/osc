@@ -1,5 +1,6 @@
 0.132
   - rdelete and undelete command requesting now a comment
+  - add 'requestbugownership' command for setting the bugowner via request
 #
 # Features which requires OBS 2.3
 #

@@ -1533,18 +1533,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
-    @cmdln.option('-r', '--role', metavar='role', default='maintainer',
+    @cmdln.option('-r', '--role', metavar='role',
                    help='specify user role (default: maintainer)')
+    @cmdln.alias("reqbugownership")
+    @cmdln.alias("requestbugownership")
     @cmdln.alias("reqmaintainership")
     @cmdln.alias("reqms")
+    @cmdln.alias("reqbs")
     def do_requestmaintainership(self, subcmd, opts, *args):
-        """${cmd_name}: requests to add user as maintainer
+        """${cmd_name}: requests to add user as maintainer or bugowner
 
         usage:
             osc requestmaintainership                           # for current user in checked out package
             osc requestmaintainership USER                      # for specified user in checked out package
             osc requestmaintainership PROJECT PACKAGE           # for current user
             osc requestmaintainership PROJECT PACKAGE USER      # request for specified user
+           
+            osc requestbugownership ...                         # accepts same parameters but uses bugowner role 
 
         ${cmd_option_list}
         """
@@ -1570,14 +1575,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        if not opts.role in ('maintainer', 'bugowner'):
+        role = 'maintainer'
+        if subcmd in ( 'reqbugownership', 'requestbugownership', 'reqbs' ):
+            role = 'bugowner'
+        if opts.role:
+            role = opts.role
+        if not role in ('maintainer', 'bugowner'):
             raise oscerr.WrongOptions('invalid \'--role\': either specify \'maintainer\' or \'bugowner\'')
         if not opts.message:
             opts.message = edit_message()
 
         r = Request()
-        r.add_action('add_role', tgt_project=project, tgt_package=package,
-            person_name=user, person_role=opts.role)
+        if role == 'bugowner':
+           r.add_action('set_bugowner', tgt_project=project, tgt_package=package,
+              person_name=user)
+        else:
+           r.add_action('add_role', tgt_project=project, tgt_package=package,
+              person_name=user, person_role=role)
         r.description = cgi.escape(opts.message or '')
         r.create(apiurl)
         print r.reqid
