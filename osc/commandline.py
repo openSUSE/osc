@@ -2877,7 +2877,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif (not opts.recursive) and len(meta_get_packagelist(apiurl, prj)) >= 1:
             print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
-                                'packages use the \'--with-packages\' switch.'
+                                'packages use the \'--recursive\' switch.'
             sys.exit(1)
         else:
             delete_project(apiurl, prj, opts.force, msg)
