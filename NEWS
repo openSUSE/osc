@@ -1,3 +1,6 @@
+0.133
+  - 
+
 0.132
   - rdelete and undelete command requesting now a comment
   - add 'requestbugownership' command for setting the bugowner via request
