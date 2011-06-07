@@ -17,10 +17,12 @@ class TestCommit(OscTestCase):
         return FIXTURES_DIR
 
     @GET('http://localhost/source/osctest/simple?rev=latest', file='testSimple_filesremote')
+    @POST('http://localhost/source/osctest/simple?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository',
-         exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
+          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_cfilesremote', expfile='testSimple_lfilelist')
     def test_simple(self):
@@ -38,6 +40,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'merge', ' ')
 
     @GET('http://localhost/source/osctest/add?rev=latest', file='testAddfile_filesremote')
+    @POST('http://localhost/source/osctest/add?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/add?comment=&cmd=commitfilelist&user=Admin',
           file='testAddfile_missingfilelist', expfile='testAddfile_lfilelist')
     @PUT('http://localhost/source/osctest/add/add?rev=repository',
@@ -61,6 +65,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'nochange', ' ')
 
     @GET('http://localhost/source/osctest/delete?rev=latest', file='testDeletefile_filesremote')
+    @POST('http://localhost/source/osctest/delete?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/delete?comment=&cmd=commitfilelist&user=Admin',
           file='testDeletefile_cfilesremote', expfile='testDeletefile_lfilelist')
     def test_deletefile(self):
@@ -78,6 +84,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'merge', ' ')
 
     @GET('http://localhost/source/osctest/conflict?rev=latest', file='testConflictfile_filesremote')
+    @POST('http://localhost/source/osctest/conflict?cmd=getprojectservices',
+          exp='', text='<services />')
     def test_conflictfile(self):
         """package has a file which is in conflict state"""
         self._change_to_pkg('conflict')
@@ -89,6 +97,8 @@ class TestCommit(OscTestCase):
         self._check_conflictlist('merge\n')
 
     @GET('http://localhost/source/osctest/nochanges?rev=latest', file='testNoChanges_filesremote')
+    @POST('http://localhost/source/osctest/nochanges?cmd=getprojectservices',
+          exp='', text='<services />')
     def test_nochanges(self):
         """package has no changes (which can be committed)"""
         self._change_to_pkg('nochanges')
@@ -102,6 +112,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'nochange', ' ')
 
     @GET('http://localhost/source/osctest/multiple?rev=latest', file='testMultiple_filesremote')
+    @POST('http://localhost/source/osctest/multiple?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/multiple?comment=&cmd=commitfilelist&user=Admin',
           file='testMultiple_missingfilelist', expfile='testMultiple_lfilelist')
     @PUT('http://localhost/source/osctest/multiple/nochange?rev=repository', exp='This file did change.\n', text=rev_dummy)
@@ -129,6 +141,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'nochange', ' ')
 
     @GET('http://localhost/source/osctest/multiple?rev=latest', file='testPartial_filesremote')
+    @POST('http://localhost/source/osctest/multiple?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/multiple?comment=&cmd=commitfilelist&user=Admin',
           file='testPartial_missingfilelist', expfile='testPartial_lfilelist')
     @PUT('http://localhost/source/osctest/multiple/add?rev=repository', exp='added file\n', text=rev_dummy)
@@ -154,6 +168,8 @@ class TestCommit(OscTestCase):
         self.assertRaises(osc.oscerr.OscIOError, p.status, 'foo')
 
     @GET('http://localhost/source/osctest/simple?rev=latest', file='testSimple_filesremote')
+    @POST('http://localhost/source/osctest/simple?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository', exp='This file didn\'t change but\nis modified.\n',
@@ -170,6 +186,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'nochange', 'M')
 
     @GET('http://localhost/source/osctest/allstates?rev=latest', file='testPartial_filesremote')
+    @POST('http://localhost/source/osctest/allstates?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/allstates?comment=&cmd=commitfilelist&user=Admin',
           file='testAllStates_missingfilelist', expfile='testAllStates_lfilelist')
     @PUT('http://localhost/source/osctest/allstates/add?rev=repository', exp='added file\n', text=rev_dummy)
@@ -198,6 +216,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'test', ' ')
 
     @GET('http://localhost/source/osctest/add?rev=latest', file='testAddfile_filesremote')
+    @POST('http://localhost/source/osctest/add?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/add?comment=&cmd=commitfilelist&user=Admin',
           file='testAddfile_cfilesremote', expfile='testAddfile_lfilelist')
     def test_remoteexists(self):
@@ -217,6 +237,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'nochange', ' ')
 
     @GET('http://localhost/source/osctest/branch?rev=latest', file='testExpand_filesremote')
+    @POST('http://localhost/source/osctest/branch?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/branch?comment=&cmd=commitfilelist&user=Admin&keeplink=1',
           file='testExpand_missingfilelist', expfile='testExpand_lfilelist')
     @PUT('http://localhost/source/osctest/branch/simple?rev=repository', exp='simple modified file.\n', text=rev_dummy)
@@ -234,6 +256,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'simple', ' ')
 
     @GET('http://localhost/source/osctest/added_missing?rev=latest', file='testAddedMissing_filesremote')
+    @POST('http://localhost/source/osctest/added_missing?cmd=getprojectservices',
+          exp='', text='<services />')
     def test_added_missing(self):
         """commit an added file which is missing"""
         self._change_to_pkg('added_missing')
@@ -245,6 +269,8 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'add', '!')
 
     @GET('http://localhost/source/osctest/added_missing?rev=latest', file='testAddedMissing_filesremote')
+    @POST('http://localhost/source/osctest/added_missing?cmd=getprojectservices',
+          exp='', text='<services />')
     @POST('http://localhost/source/osctest/added_missing?comment=&cmd=commitfilelist&user=Admin',
           file='testAddedMissing_missingfilelist', expfile='testAddedMissing_lfilelist')
     @PUT('http://localhost/source/osctest/added_missing/bar?rev=repository', exp='foobar\n', text=rev_dummy)
