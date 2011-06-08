@@ -1,5 +1,5 @@
 0.133
-  - 
+  - add --meta option also to "list", "cat" and "less" commands
 
 0.132
   - rdelete and undelete command requesting now a comment
