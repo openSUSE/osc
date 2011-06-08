@@ -250,7 +250,7 @@ class Serviceinfo:
             root = ET.parse(f).getroot()
             self.read(root, True)
         except urllib2.HTTPError, e:
-            if e.code != 404:
+            if e.code != 400:
                 raise e
 
     def addVerifyFile(self, serviceinfo_node, filename):
