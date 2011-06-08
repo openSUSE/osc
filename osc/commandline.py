@@ -3382,6 +3382,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             expand_link = True
 
+        if not args:
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('checkout'))
+
         # XXX: this too openSUSE-setup specific...
         # FIXME: this should go into ~jw/patches/osc/osc.proj_pack_20101201.diff 
         #        to be available to all subcommands via @cmdline.prep(proj_pack)
