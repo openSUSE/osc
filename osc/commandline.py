@@ -2511,7 +2511,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         This command is asking to open an empty maintence incident. This can usually only be done by a responsible
         maintenance team.
         Please see the "mbranch" command on how to full such a project content and
-        the "patchinfo" command how add the required maintenance update informations.
+        the "patchinfo" command how add the required maintenance update information.
 
         usage:
             osc createincident [ MAINTENANCEPROJECT ]
