@@ -1,3 +1,8 @@
+
+0.132.1
+  - backward compatibility fix for OBS 2.1 and before
+  - add --meta option also to "list", "cat" and "less" commands
+
 0.132
   - rdelete and undelete command requesting now a comment
   - add 'requestbugownership' command for setting the bugowner via request

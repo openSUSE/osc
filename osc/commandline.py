@@ -218,8 +218,6 @@ class Osc(cmdln.Cmdln):
                         help='specify repository (only for binaries)')
     @cmdln.option('-b', '--binaries', action='store_true',
                         help='list built binaries instead of sources')
-    @cmdln.option('-R', '--revision', metavar='REVISION',
-                        help='specify revision (only for sources)')
     @cmdln.option('-e', '--expand', action='store_true',
                         help='expand linked package (only for sources)')
     @cmdln.option('-u', '--unexpand', action='store_true',
@@ -230,6 +228,10 @@ class Osc(cmdln.Cmdln):
                         help='print extra information')
     @cmdln.option('-D', '--deleted', action='store_true',
                         help='show only the former deleted projects or packages')
+    @cmdln.option('-M', '--meta', action='store_true',
+                        help='list meta data files')
+    @cmdln.option('-R', '--revision', metavar='REVISION',
+                        help='specify revision (only for sources)')
     def do_list(self, subcmd, opts, *args):
         """${cmd_name}: List sources or binaries on the server
 
@@ -389,6 +391,7 @@ class Osc(cmdln.Cmdln):
                                       package,
                                       verbose=opts.verbose,
                                       expand=opts.expand,
+                                      meta=opts.meta,
                                       revision=rev)
                     link_seen = '_link' in l
                     if opts.verbose:
@@ -6280,6 +6283,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='force expansion of linked packages.')
     @cmdln.option('-u', '--unexpand', action='store_true',
                   help='always work with unexpanded packages.')
+    @cmdln.option('-M', '--meta', action='store_true',
+                        help='list meta data files')
     @cmdln.alias('less')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
@@ -6311,10 +6316,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         query = { }
+        if opts.meta:
+            query['meta'] = 1
         if opts.revision:
             query['rev'] = opts.revision
         if opts.expand:
-            query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
+            query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision, meta=opts.meta)
         u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
         try:
             if subcmd == 'less':

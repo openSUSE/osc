@@ -2983,13 +2983,15 @@ def meta_get_packagelist(apiurl, prj, deleted=None):
     return [ node.get('name') for node in root.findall('entry') ]
 
 
-def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revision=None):
+def meta_get_filelist(apiurl, prj, package, verbose=False, expand=False, revision=None, meta=False):
     """return a list of file names,
     or a list File() instances if verbose=True"""
 
     query = {}
     if expand:
         query['expand'] = 1
+    if meta:
+        query['meta'] = 1
     if revision:
         query['rev'] = revision
     else:
