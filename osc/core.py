@@ -1336,11 +1336,13 @@ class Package:
                 sfilelist = ET.parse(f).getroot()
                 s = sfilelist.find('serviceinfo')
                 if s.get('code') == "running":
-                   print '.',
+                   sys.stdout.write('.')
+                   sys.stdout.flush()
                 else:
                    break
-            self.update()
-            print " updated"
+            print ""
+            rev=self.latest_rev()
+            self.update(rev=rev)
             
 
     def __write_storelist(self, name, data):
@@ -3351,8 +3353,7 @@ def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=Non
     et = ET.fromstring(''.join(m))
     if include_service_files:
         try:
-            if et.find('serviceinfo') and et.find('serviceinfo').get('xsrcmd5'):
-                return et.find('serviceinfo').get('xsrcmd5')
+            return et.find('serviceinfo').get('xsrcmd5')
         except:
             pass
     return et.get('rev')
