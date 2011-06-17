@@ -3655,7 +3655,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Skip the source validation')
     @cmdln.option('-v', '--verbose', default=False, action="store_true",
                   help='Run the source services and validation with verbose information')
-    @cmdln.option('--no-service', default=False, action="store_true",
+    @cmdln.option('--skip-local-service-run', default=False, action="store_true",
                   help='Skip service run of \'localonly\' or \'trylocal\' configured source services')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
