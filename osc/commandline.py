@@ -2530,7 +2530,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments.')
 
         if len(args) == 1:
-            target_project = args[1]
+            target_project = args[0]
         else:
             xpath = 'attribute/@name = \'%s\'' % maintenance_attribute
             res = search(apiurl, project_id=xpath)
