@@ -1328,21 +1328,23 @@ class Package:
 
         print_request_list(self.apiurl, self.prjname, self.name)
 
-        if self.findfilebyname("_service"):
-            print 'Waiting for server side source service run',
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name])
-            while 1:
-                f = http_GET(u)
-                sfilelist = ET.parse(f).getroot()
-                s = sfilelist.find('serviceinfo')
-                if s != None and s.get('code') == "running":
-                   sys.stdout.write('.')
-                   sys.stdout.flush()
-                else:
-                   break
-            print ""
-            rev=self.latest_rev()
-            self.update(rev=rev)
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name])
+        first_run = True
+        while 1:
+            f = http_GET(u)
+            sfilelist = ET.parse(f).getroot()
+            s = sfilelist.find('serviceinfo')
+            if first_run:
+               print 'Waiting for server side source service run',
+               first_run = False
+            if s != None and s.get('code') == "running":
+               sys.stdout.write('.')
+               sys.stdout.flush()
+            else:
+               break
+        print ""
+        rev=self.latest_rev()
+        self.update(rev=rev)
             
 
     def __write_storelist(self, name, data):
