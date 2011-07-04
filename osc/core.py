@@ -1334,10 +1334,12 @@ class Package:
             f = http_GET(u)
             sfilelist = ET.parse(f).getroot()
             s = sfilelist.find('serviceinfo')
+            if s == None:
+               break
             if first_run:
                print 'Waiting for server side source service run',
                first_run = False
-            if s != None and s.get('code') == "running":
+            if s.get('code') == "running":
                sys.stdout.write('.')
                sys.stdout.flush()
             else:
