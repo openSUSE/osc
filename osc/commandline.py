@@ -1878,6 +1878,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     package = store_read_package(os.curdir)
                 except oscerr.NoWorkingCopy:
                     pass
+            elif opts.project:
+                project = opts.project
+                if opts.package:
+                    package = opts.package
 
             if len(args) > 1:
                 package = args[1]
