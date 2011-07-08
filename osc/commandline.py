@@ -1954,6 +1954,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        results = get_request_list(apiurl, project, package, who,
                                                   state_list, opts.type, opts.exclude_target_project or [])
 
+            # Check if project actually exists if result list is empty
+            if not results:
+                try:
+                    show_project_meta(apiurl, project)
+                    print 'No results for {0}'.format(project)
+                except:
+                    print 'Project {0} does not exist'.format(project)
+                return
+
             results.sort(reverse=True)
             import time
             days = opts.days or conf.config['request_list_days']
