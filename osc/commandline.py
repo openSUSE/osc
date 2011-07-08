@@ -4,13 +4,16 @@
 # either version 2, or version 3 (at your option).
 
 
-from core import *
 import cmdln
 import conf
 import oscerr
 import sys
-from util import safewriter
+import time
+
 from optparse import SUPPRESS_HELP
+
+from core import *
+from util import safewriter
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -1964,7 +1967,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return
 
             results.sort(reverse=True)
-            import time
             days = opts.days or conf.config['request_list_days']
             since = ''
             try:
