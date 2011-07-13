@@ -15,6 +15,7 @@ try:
 except:
     HAVE_PY2EXE = False
 
+
 class build_osc(distutils.command.build.build, object):
     """
     Custom build command which generates man page.
@@ -27,9 +28,9 @@ class build_osc(distutils.command.build.build, object):
         man_path = os.path.join('build', 'osc.1.gz')
         distutils.log.info('generating %s' % man_path)
         outfile = gzip.open(man_path, 'w')
-        osccli = commandline.Osc(stdout = outfile)
-        # FIXME: we cannot call the main method because osc expects an ~/.oscrc file
-        # (this would break builds in environments like the obs)
+        osccli = commandline.Osc(stdout=outfile)
+        # FIXME: we cannot call the main method because osc expects an ~/.oscrc
+        # file (this would break builds in environments like the obs)
         #osccli.main(argv = ['osc','man'])
         osccli.optparser = osccli.get_optparser()
         osccli.do_man(None)
@@ -43,11 +44,11 @@ addparams = {}
 if HAVE_PY2EXE:
     addparams['console'] = [{'script': 'osc-wrapper.py', 'dest_base': 'osc', 'icon_resources': [(1, 'osc.ico')]}]
     addparams['zipfile'] = 'shared.lib'
-    addparams['options'] = {'py2exe': { 'optimize': 0, 'compressed': True, 'packages': ['xml.etree', 'StringIO', 'gzip'] }}
+    addparams['options'] = {'py2exe': {'optimize': 0, 'compressed': True, 'packages': ['xml.etree', 'StringIO', 'gzip']}}
 
 data_files = []
 if sys.platform[:3] != 'win':
-    data_files.append((os.path.join('share','man','man1'), [os.path.join('build', 'osc.1.gz')]))
+    data_files.append((os.path.join('share', 'man', 'man1'), [os.path.join('build', 'osc.1.gz')]))
 
 setup(name='osc',
       version = osc.core.__version__,
@@ -56,7 +57,7 @@ setup(name='osc',
       author = 'openSUSE project',
       author_email = 'opensuse-buildservice@opensuse.org',
       license = 'GPL',
-      platforms = ['Linux','Mac OSX','Windows XP/2000/NT','Windows 95/98/ME'],
+      platforms = ['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME'],
       keywords = ['openSUSE', 'SUSE', 'RPM', 'build', 'buildservice'],
       url = 'http://en.opensuse.org/openSUSE:OSC',
       download_url = 'http://gitorious.org/opensuse/osc',

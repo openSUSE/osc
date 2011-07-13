@@ -3,7 +3,11 @@
 # this wrapper exists so it can be put into /usr/bin, but still allows the
 # python module to be called within the source directory during development
 
-import sys, locale
+import locale
+import sys
+
+from osc import commandline, babysitter
+
 # this is a hack to make osc work as expected with utf-8 characters,
 # no matter how site.py is set...
 reload(sys)
@@ -12,9 +16,6 @@ if not loc:
     loc = sys.getdefaultencoding()
 sys.setdefaultencoding(loc)
 del sys.setdefaultencoding
-
-from osc import commandline
-from osc import babysitter
 
 osccli = commandline.Osc()
 
