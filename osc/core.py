@@ -2567,6 +2567,8 @@ class Request:
         if self.description:
             lines.append(textwrap.fill(self.description, width=80, initial_indent='        Descr: ',
                 subsequent_indent='               '))
+        lines.append(textwrap.fill(self.state.comment, width=80, initial_indent='        Comment: ',
+                subsequent_indent='               '))
         return '\n'.join(lines)
 
     def __str__(self):
