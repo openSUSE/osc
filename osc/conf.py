@@ -34,6 +34,8 @@ The configuration dictionary could look like this:
 
 """
 
+import urllib
+
 import OscConfigParser
 from osc import oscerr
 from oscsslexcp import NoSecureSSLError
@@ -401,6 +403,14 @@ def _build_opener(url):
     if apiurl == _build_opener.last_opener[0]:
         return _build_opener.last_opener[1]
 
+    # respect no_proxy env variable
+    if urllib.proxy_bypass(apiurl):
+        # initialize with empty dict
+        proxyhandler = urllib2.ProxyHandler({})
+    else:
+        # read proxies from env
+        proxyhandler = urllib2.ProxyHandler()
+
     # workaround for http://bugs.python.org/issue9639
     authhandler_class = urllib2.HTTPBasicAuthHandler
     if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1) \
@@ -464,11 +474,11 @@ def _build_opener(url):
                     break
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
-        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context = ctx, appname = 'osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context = ctx, appname = 'osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
         import sys
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler)
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
     _build_opener.last_opener = (apiurl, opener)
     return opener
