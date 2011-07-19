@@ -2561,7 +2561,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            query["noaccess"] = 1
         url = makeurl(apiurl, ['source', target_project], query=query)
         r = http_POST(url, data=opts.message)
-        print ET.parse(r).getroot().get('code')
+        project = None
+        for i in ET.fromstring(r.read()).findall('data'):
+            if i.get('name') == 'targetproject':
+                project = i.text.strip()
+        if project:
+             print "Incident project created: ", project
+        else:
+             print ET.parse(r).getroot().get('code')
+             print ET.parse(r).getroot().get('error')
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
