@@ -39,9 +39,8 @@ new_project_templ = """\
 <project name="%(name)s">
 
   <title></title> <!-- Short title of NewProject -->
-  <description>
+  <description></description>
     <!-- This is for a longer description of the purpose of the project -->
-  </description>
 
   <person role="maintainer" userid="%(user)s" />
   <person role="bugowner" userid="%(user)s" />
@@ -93,9 +92,7 @@ new_package_templ = """\
 
   <title></title> <!-- Title of package -->
 
-  <description>
-<!-- for long description -->
-  </description>
+  <description></description> <!-- for long description -->
 
 <!-- following roles are inherited from the parent project
   <person role="maintainer" userid="%(user)s"/>
