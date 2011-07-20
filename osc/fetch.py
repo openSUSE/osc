@@ -171,6 +171,7 @@ class Fetcher:
             pac_obj.filename = canonname
             pac_obj.fullfilename = fullfilename
         shutil.move(tmpfile, fullfilename)
+        os.chmod(fullfilename, 0644)
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
