@@ -332,7 +332,7 @@ class Serviceinfo:
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
                 raise oscerr.PackageNotInstalled("obs-service-"+name)
-            c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir + " --projdir" + os.path.abspath(os.curdir)
+            c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1 or verbose:
                 print "Run source service:", c
             r = subprocess.call(c, shell=True)
