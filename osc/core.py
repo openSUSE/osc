@@ -337,10 +337,9 @@ class Serviceinfo:
                 print "Run source service:", c
             r = subprocess.call(c, shell=True)
             if r != 0:
-                print "ERROR: service call failed: " + c
+                print "Aborting: service call failed: " + c
                 # FIXME: addDownloadUrlService calls si.execute after 
                 #        updating _services.
-                print "       (your _services file may be corrupt now)"
                 ret = r
 
             if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
@@ -1218,7 +1217,6 @@ class Package:
         if not skip_local_service_run:
             r = self.run_source_services(mode="trylocal", verbose=verbose)
             if r is not 0:
-                print "osc: source service run failed", r
                 raise oscerr.ServiceRuntimeError(r)
 
         if not validators_dir is None:
