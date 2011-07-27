@@ -162,7 +162,7 @@ Link info: %s
 """
 
 new_pattern_template = """\
-<!-- See http://svn.opensuse.org/svn/zypp/trunk/libzypp/zypp/parser/yum/schema/patterns.rng -->
+<!-- See https://gitorious.org/opensuse/libzypp/blobs/master/zypp/parser/yum/schema/patterns.rng -->
 
 <pattern>
 </pattern>
