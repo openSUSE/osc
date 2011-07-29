@@ -67,17 +67,23 @@ def run(prg):
             raise
     except oscerr.SignalInterrupt:
         print >>sys.stderr, 'killed!'
+        return 1
     except KeyboardInterrupt:
         print >>sys.stderr, 'interrupted!'
+        return 1
     except oscerr.UserAbort:
         print >>sys.stderr, 'aborted.'
+        return 1
     except oscerr.APIError, e:
         print >>sys.stderr, 'BuildService API error:', e.msg
+        return 1
     except oscerr.LinkExpandError, e:
         print >>sys.stderr, 'Link "%s/%s" cannot be expanded:\n' % (e.prj, e.pac), e.msg
         print >>sys.stderr, 'Use "osc repairlink" to fix merge conflicts.\n'
+        return 1
     except oscerr.WorkingCopyWrongVersion, e:
         print >>sys.stderr, e
+        return 1
     except oscerr.NoWorkingCopy, e:
         print >>sys.stderr, e
         if os.path.isdir('.git'):
@@ -88,6 +94,7 @@ def run(prg):
             print >>sys.stderr, "Current directory looks like svn."
         if os.path.isdir('CVS'):
             print >>sys.stderr, "Current directory looks like cvs."
+        return 1
     except HTTPError, e:
         print >>sys.stderr, 'Server returned an error:', e
         if hasattr(e, 'osc_msg'):
@@ -108,60 +115,78 @@ def run(prg):
                 msg = body.split('<summary>')[1]
                 msg = msg.split('</summary>')[0]
                 print >>sys.stderr, msg
+        return 1
     except BadStatusLine, e:
         print >>sys.stderr, 'Server returned an invalid response:', e
         print >>sys.stderr, e.line
+        return 1
     except HTTPException, e:
         print >>sys.stderr, e
+        return 1
     except URLError, e:
         print >>sys.stderr, 'Failed to reach a server:\n', e.reason
+        return 1
     except IOError, e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:
             raise
+        return 1
     except OSError, e:
         if e.errno != errno.ENOENT:
             raise
         print >>sys.stderr, e
+        return 1
     except (oscerr.ConfigError, oscerr.NoConfigfile), e:
         print >>sys.stderr, e.msg
+        return 1
     except oscerr.OscIOError, e:
         print >>sys.stderr, e.msg
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
             print >>sys.stderr, e.e
+        return 1
     except (oscerr.WrongOptions, oscerr.WrongArgs), e:
         print >>sys.stderr, e
         return 2
     except oscerr.ExtRuntimeError, e:
         print >>sys.stderr, e.msg
+        return 1
     except oscerr.WorkingCopyOutdated, e:
         print >>sys.stderr, e
+        return 1
     except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent), e:
         print >>sys.stderr, e.msg
+        return 1
     except oscerr.PackageInternalError, e:
         print >>sys.stderr, 'a package internal error occured\n' \
             'please file a bug and attach your current package working copy ' \
             'and the following traceback to it:'
         print >>sys.stderr, e.msg
         traceback.print_exc(file=sys.stderr)
+        return 1
     except oscerr.PackageError, e:
         print >>sys.stderr, e.msg
+        return 1
     except PackageError, e:
         print >>sys.stderr, '%s:' % e.fname, e.msg
+        return 1
     except RPMError, e:
         print >>sys.stderr, e
+        return 1
     except SSLError, e:
         print >>sys.stderr, "SSL Error:", e
+        return 1
     except SSLVerificationError, e:
         print >>sys.stderr, "Certificate Verification Error:", e
+        return 1
     except NoSecureSSLError, e:
         print >>sys.stderr, e
+        return 1
     except CpioError, e:
         print >>sys.stderr, e
+        return 1
     except oscerr.OscBaseError, e:
         print >>sys.stderr, '*** Error:', e
-    finally:
         return 1
 
 # vim: sw=4 et
