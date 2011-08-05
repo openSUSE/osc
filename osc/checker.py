@@ -61,15 +61,23 @@ class Checker:
 
         key = ''
         line = fd.readline()
+        crc = None
         while line:
             if line[0:12] == "-----END PGP":
                 break
             line = line.rstrip()
-            key += line
-            line = fd.readline()
+            if (line[0] == '='):
+                crc = line[1:]
+                line = fd.readline()
+                break
+            else:
+                key += line
+                line = fd.readline()
         fd.close()
         if not line or line[0:12] != "-----END PGP":
             raise KeyError(file, "not a pgp public key")
+
+        # TODO: compute and compare CRC, see RFC 2440
 
         bkey = base64.b64decode(key)
 
