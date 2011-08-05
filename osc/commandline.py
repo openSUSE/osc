@@ -3255,7 +3255,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for pac in pacs:
             if not rev2:
                 for i in pac.get_diff(rev1):
-                    sys.stdout.write(''.join(i))
+                    diff += ''.join(i)
             else:
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
