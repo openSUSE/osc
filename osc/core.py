@@ -6067,13 +6067,20 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                     tmpfile = None
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
-                    for action in sr_actions:
-                        diff = 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
-                            action.tgt_project, action.tgt_package)
-                        diff += submit_action_diff(apiurl, action)
-                        diff += '\n\n'
+                    try:
+                        diff = request_diff(apiurl, request.reqid)
                         tmpfile.write(diff)
-                    tmpfile.flush()
+                    except urllib2.HTTPError as e:
+                        if e.code != 400:
+                            raise
+                        # backward compatible diff for old apis
+                        for action in sr_actions:
+                            diff = 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
+                                action.tgt_project, action.tgt_package)
+                            diff += submit_action_diff(apiurl, action)
+                            diff += '\n\n'
+                            tmpfile.write(diff)
+                        tmpfile.flush()
                 run_editor(tmpfile.name)
                 print_request(request)
             elif repl == 's':
