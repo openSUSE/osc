@@ -6070,7 +6070,7 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                     try:
                         diff = request_diff(apiurl, request.reqid)
                         tmpfile.write(diff)
-                    except urllib2.HTTPError as e:
+                    except urllib2.HTTPError, e:
                         if e.code != 400:
                             raise
                         # backward compatible diff for old apis
