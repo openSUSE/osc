@@ -6080,7 +6080,7 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                             diff += submit_action_diff(apiurl, action)
                             diff += '\n\n'
                             tmpfile.write(diff)
-                        tmpfile.flush()
+                    tmpfile.flush()
                 run_editor(tmpfile.name)
                 print_request(request)
             elif repl == 's':
