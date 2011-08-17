@@ -34,12 +34,20 @@ The configuration dictionary could look like this:
 
 """
 
+import base64
+import cookielib
+import httplib
+import os
+import re
+import sys
+import StringIO
 import urllib
+import urllib2
+import urlparse
 
 import OscConfigParser
 from osc import oscerr
 from oscsslexcp import NoSecureSSLError
-import os
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False
@@ -47,7 +55,6 @@ GNOME_KEYRING = False
 try:
     import keyring
     GENERIC_KEYRING = True
-
 except:
     try:
         import gobject
@@ -62,6 +69,7 @@ except:
     except:
         pass
 
+
 def _get_processors():
     """
     get number of processors (online) based on
@@ -72,79 +80,79 @@ def _get_processors():
     except ValueError, e:
         return 1
 
-DEFAULTS = { 'apiurl': 'https://api.opensuse.org',
-             'user': 'your_username',
-             'pass': 'your_password',
-             'passx': '',
-             'packagecachedir': '/var/tmp/osbuild-packagecache',
-             'su-wrapper': 'sudo',
+DEFAULTS = {'apiurl': 'https://api.opensuse.org',
+            'user': 'your_username',
+            'pass': 'your_password',
+            'passx': '',
+            'packagecachedir': '/var/tmp/osbuild-packagecache',
+            'su-wrapper': 'sudo',
 
-             # build type settings
-             'build-cmd': '/usr/bin/build',
-             'build-type': '', # may be empty for chroot, kvm or xen
-             'build-root': '/var/tmp/build-root',
-             'build-uid': '', # use the default provided by build
-             'build-device': '', # required for VM builds
-             'build-memory': '',# required for VM builds
-             'build-swap': '',  # optional for VM builds
-             'build-vmdisk-rootsize': '', # optional for VM builds
-             'build-vmdisk-swapsize': '', # optional for VM builds
+            # build type settings
+            'build-cmd': '/usr/bin/build',
+            'build-type': '',                   # may be empty for chroot, kvm or xen
+            'build-root': '/var/tmp/build-root',
+            'build-uid': '',                    # use the default provided by build
+            'build-device': '',                 # required for VM builds
+            'build-memory': '',                 # required for VM builds
+            'build-swap': '',                   # optional for VM builds
+            'build-vmdisk-rootsize': '',        # optional for VM builds
+            'build-vmdisk-swapsize': '',        # optional for VM builds
 
-             'build-jobs': _get_processors(),
-             'builtin_signature_check': '1', # by default use builtin check for verify pkgs
-             'icecream': '0',
+            'build-jobs': _get_processors(),
+            'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
+            'icecream': '0',
 
-             'debug': '0',
-             'http_debug': '0',
-             'http_full_debug': '0',
-             'http_retries': '3',
-             'verbose': '1',
-             'traceback': '0',
-             'post_mortem': '0',
-             'use_keyring': '1',
-             'gnome_keyring': '1',
-             'cookiejar': '~/.osc_cookiejar',
-             # fallback for osc build option --no-verify
-             'no_verify': '0',
-             # enable project tracking by default
-             'do_package_tracking': '1',
-             # default for osc build
-             'extra-pkgs': '',
-             # default repository
-             'build_repository': 'openSUSE_Factory',
-             # default project for branch or bco
-             'getpac_default_project': 'openSUSE:Factory',
-             # alternate filesystem layout: have multiple subdirs, where colons were.
-             'checkout_no_colon': '0',
-             # change filesystem layout: avoid checkout from within a proj or package dir.
-             'checkout_rooted': '0',
-             # local files to ignore with status, addremove, ....
-             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
-             # whether to keep passwords in plaintext.
-             'plaintext_passwd': '1',
-             # limit the age of requests shown with 'osc req list'.
-             # this is a default only, can be overridden by 'osc req list -D NNN'
-             # Use 0 for unlimted.
-             'request_list_days': 0,
-             # check for unversioned/removed files before commit
-             'check_filelist': '1',
-             # External scripts to validate sources, esp before commit. This is a directory
-             'source_validator_directory': '/usr/lib/osc/source_validators',
-             # check for pending requests after executing an action (e.g. checkout, update, commit)
-             'check_for_request_on_action': '0',
-             # what to do with the source package if the submitrequest has been accepted
-             'submitrequest_on_accept_action': '',
-             'request_show_interactive': '0',
-             'submitrequest_accepted_template': '',
-             'submitrequest_declined_template': '',
-             'linkcontrol': '0',
-             'include_request_from_project': '1',
+            'debug': '0',
+            'http_debug': '0',
+            'http_full_debug': '0',
+            'http_retries': '3',
+            'verbose': '1',
+            'traceback': '0',
+            'post_mortem': '0',
+            'use_keyring': '1',
+            'gnome_keyring': '1',
+            'cookiejar': '~/.osc_cookiejar',
+            # fallback for osc build option --no-verify
+            'no_verify': '0',
+            # enable project tracking by default
+            'do_package_tracking': '1',
+            # default for osc build
+            'extra-pkgs': '',
+            # default repository
+            'build_repository': 'openSUSE_Factory',
+            # default project for branch or bco
+            'getpac_default_project': 'openSUSE:Factory',
+            # alternate filesystem layout: have multiple subdirs, where colons were.
+            'checkout_no_colon': '0',
+            # change filesystem layout: avoid checkout from within a proj or package dir.
+            'checkout_rooted': '0',
+            # local files to ignore with status, addremove, ....
+            'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
+            # whether to keep passwords in plaintext.
+            'plaintext_passwd': '1',
+            # limit the age of requests shown with 'osc req list'.
+            # this is a default only, can be overridden by 'osc req list -D NNN'
+            # Use 0 for unlimted.
+            'request_list_days': 0,
+            # check for unversioned/removed files before commit
+            'check_filelist': '1',
+            # External scripts to validate sources, esp before commit. This is a directory
+            'source_validator_directory': '/usr/lib/osc/source_validators',
+            # check for pending requests after executing an action (e.g. checkout, update, commit)
+            'check_for_request_on_action': '0',
+            # what to do with the source package if the submitrequest has been accepted
+            'submitrequest_on_accept_action': '',
+            'request_show_interactive': '0',
+            'submitrequest_accepted_template': '',
+            'submitrequest_declined_template': '',
+            'linkcontrol': '0',
+            'include_request_from_project': '1',
 
-             # Maintenance defaults to OBS instance defaults
-             'maintained_attribute': 'OBS:Maintained',
-             'maintenance_attribute': 'OBS:MaintenanceProject',
-             'maintained_update_project_attribute': 'OBS:UpdateProject',
-             'show_download_progress': '0',
+            # Maintenance defaults to OBS instance defaults
+            'maintained_attribute': 'OBS:Maintained',
+            'maintenance_attribute': 'OBS:MaintenanceProject',
+            'maintained_update_project_attribute': 'OBS:UpdateProject',
+            'show_download_progress': '0',
 }
 
 # being global to this module, this dict can be accessed from outside
@@ -312,7 +320,7 @@ pass = %(pass)s
 """
 
 
-account_not_configured_text ="""
+account_not_configured_text = """
 Your user account / password are not configured yet.
 You will be asked for them below, and they will be stored in
 %s for future use.
@@ -333,25 +341,27 @@ your credentials for this apiurl.
 
 cookiejar = None
 
+
 def parse_apisrv_url(scheme, apisrv):
-    import urlparse
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         return urlparse.urlsplit(apisrv)[0:2]
     elif scheme != None:
         # the split/join is needed to get a proper url (e.g. without a trailing slash)
         return urlparse.urlsplit(urljoin(scheme, apisrv))[0:2]
     else:
-        from urllib2 import URLError
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
-        raise URLError(msg)
+        raise urllib22.URLError(msg)
+
 
 def urljoin(scheme, apisrv):
     return '://'.join([scheme, apisrv])
 
+
 def is_known_apiurl(url):
     """returns true if url is a known apiurl"""
     apiurl = urljoin(*parse_apisrv_url(None, url))
-    return config['api_host_options'].has_key(apiurl)
+    return apiurl in config['api_host_options']
+
 
 def get_apiurl_api_host_options(apiurl):
     """
@@ -368,6 +378,7 @@ def get_apiurl_api_host_options(apiurl):
     raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
                                      '', apiurl)
 
+
 def get_apiurl_usr(apiurl):
     """
     returns the user for this host - if this host does not exist in the
@@ -378,13 +389,13 @@ def get_apiurl_usr(apiurl):
     # actually even does this but for some reason we don't use it
     # (yet?).
 
-    import sys
     try:
         return get_apiurl_api_host_options(apiurl)['user']
     except KeyError:
         print >>sys.stderr, 'no specific section found in config file for host of [\'%s\'] - using default user: \'%s\'' \
             % (apiurl, config['user'])
         return config['user']
+
 
 # workaround m2crypto issue:
 # if multiple SSL.Context objects are created
@@ -394,11 +405,9 @@ def get_apiurl_usr(apiurl):
 # cafile/capath locations)
 def _build_opener(url):
     from osc.core import __version__
-    import urllib2
-    import sys
     global config
     apiurl = urljoin(*parse_apisrv_url(None, url))
-    if not _build_opener.__dict__.has_key('last_opener'):
+    if 'last_opener' not in _build_opener.__dict__:
         _build_opener.last_opener = (None, None)
     if apiurl == _build_opener.last_opener[0]:
         return _build_opener.last_opener[1]
@@ -417,6 +426,7 @@ def _build_opener(url):
         and not 'reset_retry_count' in dir(urllib2.HTTPBasicAuthHandler):
         print >>sys.stderr, 'warning: your urllib2 version seems to be broken. ' \
             'Using a workaround for http://bugs.python.org/issue9639'
+
         class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
             def http_error_401(self, *args):
                 response = urllib2.HTTPBasicAuthHandler.http_error_401(self, *args)
@@ -465,7 +475,7 @@ def _build_opener(url):
         cafile = options.get('cafile', None)
         capath = options.get('capath', None)
         if not cafile and not capath:
-            for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs' ]:
+            for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs']:
                 if os.path.isfile(i):
                     cafile = i
                     break
@@ -473,27 +483,21 @@ def _build_opener(url):
                     capath = i
                     break
         ctx = oscssl.mySSLContext()
-        if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1: raise Exception('No CA certificates found')
-        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context = ctx, appname = 'osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
+        if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
+            raise Exception('No CA certificates found')
+        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
-        import sys
         print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
     _build_opener.last_opener = (apiurl, opener)
     return opener
 
+
 def init_basicauth(config):
     """initialize urllib2 with the credentials for Basic Authentication"""
 
-    import cookielib
-    import urllib2
-    import sys
-    import httplib
     def filterhdrs(meth, ishdr, *hdrs):
-        import re
-        import sys
-        import StringIO
         # this is so ugly but httplib doesn't use
         # a logger object or such
         def new_method(*args, **kwargs):
@@ -551,13 +555,14 @@ def get_configParser(conffile=None, force_read=False):
     """
     conffile = conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
     conffile = os.path.expanduser(conffile)
-    if not get_configParser.__dict__.has_key('conffile'):
+    if 'conffile' not in get_configParser.__dict__:
         get_configParser.conffile = conffile
-    if force_read or not get_configParser.__dict__.has_key('cp') or conffile != get_configParser.conffile:
+    if force_read or 'cp' not in get_configParser.__dict__ or conffile != get_configParser.conffile:
         get_configParser.cp = OscConfigParser.OscConfigParser(DEFAULTS)
         get_configParser.cp.read(conffile)
         get_configParser.conffile = conffile
     return get_configParser.cp
+
 
 def config_set_option(section, opt, val=None, delete=False, update=True, **kwargs):
     """
@@ -622,13 +627,13 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
         return (opt, cp.get(section, opt, raw=True))
     return (opt, None)
 
-def write_initial_config(conffile, entries, custom_template = ''):
+
+def write_initial_config(conffile, entries, custom_template=''):
     """
     write osc's intial configuration file. entries is a dict which contains values
     for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
     custom_template is an optional configuration template.
     """
-    import StringIO, sys, base64
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
@@ -643,10 +648,10 @@ def write_initial_config(conffile, entries, custom_template = ''):
         protocol, host = \
             parse_apisrv_url(None, config['apiurl'])
         gnomekeyring.set_network_password_sync(
-            user = config['user'],
-            password = config['pass'],
-            protocol = protocol,
-            server = host)
+            user=config['user'],
+            password=config['pass'],
+            protocol=protocol,
+            server=host)
         config['user'] = ''
         config['pass'] = ''
         config['passx'] = ''
@@ -671,13 +676,14 @@ def write_initial_config(conffile, entries, custom_template = ''):
         except IOError, e:
             raise oscerr.OscIOError(e, 'cannot write configfile \'s\'' % conffile)
     finally:
-        if file: file.close()
+        if file:
+            file.close()
+
 
 def add_section(filename, url, user, passwd):
     """
     Add a section to config file for new api url.
     """
-    import base64
     global config
     cp = get_configParser(filename)
     try:
@@ -686,21 +692,19 @@ def add_section(filename, url, user, passwd):
         # Section might have existed, but was empty
         pass
     if config['use_keyring'] and GENERIC_KEYRING:
-        protocol, host = \
-            parse_apisrv_url(None, url)
+        protocol, host = parse_apisrv_url(None, url)
         keyring.set_password(host, user, passwd)
         cp.set(url, 'keyring', '1')
         cp.set(url, 'user', user)
         cp.remove_option(url, 'pass')
         cp.remove_option(url, 'passx')
     elif config['gnome_keyring'] and GNOME_KEYRING:
-        protocol, host = \
-            parse_apisrv_url(None, url)
+        protocol, host = parse_apisrv_url(None, url)
         gnomekeyring.set_network_password_sync(
-            user = user,
-            password = passwd,
-            protocol = protocol,
-            server = host)
+            user=user,
+            password=passwd,
+            protocol=protocol,
+            server=host)
         cp.set(url, 'keyring', '1')
         cp.remove_option(url, 'pass')
         cp.remove_option(url, 'passx')
@@ -715,22 +719,21 @@ def add_section(filename, url, user, passwd):
 
     file = open(filename, 'w')
     cp.write(file, True)
-    if file: file.close()
+    if file:
+        file.close()
 
 
-def get_config(override_conffile = None,
-               override_apiurl = None,
-               override_debug = None,
-               override_http_debug = None,
-               override_http_full_debug = None,
-               override_traceback = None,
-               override_post_mortem = None,
-               override_no_keyring = None,
-               override_no_gnome_keyring = None,
-               override_verbose = None):
+def get_config(override_conffile=None,
+               override_apiurl=None,
+               override_debug=None,
+               override_http_debug=None,
+               override_http_full_debug=None,
+               override_traceback=None,
+               override_post_mortem=None,
+               override_no_keyring=None,
+               override_no_gnome_keyring=None,
+               override_verbose=None):
     """do the actual work (see module documentation)"""
-    import sys
-    import re
     global config
 
     conffile = override_conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
@@ -766,7 +769,7 @@ def get_config(override_conffile = None,
     config['exclude_glob'] = config['exclude_glob'].split()
 
     re_clist = re.compile('[, ]+')
-    config['extra-pkgs'] = [ i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i ]
+    config['extra-pkgs'] = [i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i]
 
     # collect the usernames, passwords and additional options for each api host
     api_host_options = {}
@@ -786,10 +789,9 @@ def get_config(override_conffile = None,
         config['gnome_keyring'] = False
 
     aliases = {}
-    for url in [ x for x in cp.sections() if x != 'general' ]:
+    for url in [x for x in cp.sections() if x != 'general']:
         # backward compatiblity
-        scheme, host = \
-            parse_apisrv_url(config.get('scheme', 'https'), url)
+        scheme, host = parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host)
         user = None
         if config['use_keyring'] and GENERIC_KEYRING:
@@ -803,9 +805,7 @@ def get_config(override_conffile = None,
         elif config['gnome_keyring'] and GNOME_KEYRING:
             # Read from gnome keyring if available
             try:
-                gk_data = gnomekeyring.find_network_password_sync(
-                    protocol = scheme,
-                    server = host)
+                gk_data = gnomekeyring.find_network_password_sync(protocol=scheme, server=host)
                 password = gk_data[0]['password']
                 user = gk_data[0]['user']
             except gnomekeyring.NoMatchError:
@@ -821,18 +821,18 @@ def get_config(override_conffile = None,
         if user is None:
             #FIXME: this could actually be the ideal spot to take defaults
             #from the general section.
-            user         = cp.get(url, 'user', raw=True) # need to set raw to prevent '%' expansion
-            password     = cp.get(url, 'pass', raw=True) # especially on password!
+            user = cp.get(url, 'user', raw=True)        # need to set raw to prevent '%' expansion
+            password = cp.get(url, 'pass', raw=True)    # especially on password!
             try:
-                passwordx = cp.get(url, 'passx', raw=True).decode('base64').decode('bz2') # especially on password!
+                passwordx = cp.get(url, 'passx', raw=True).decode('base64').decode('bz2')  # especially on password!
             except:
                 passwordx = ''
-            
+
             if password == None or password == 'your_password':
                 password = ''
 
             if user is None or user == '':
-                raise oscerr.ConfigError('user is blank for %s, please delete of complete the "user=" entry in %s.' % (apiurl,config['conffile']), config['conffile'])
+                raise oscerr.ConfigError('user is blank for %s, please delete of complete the "user=" entry in %s.' % (apiurl, config['conffile']), config['conffile'])
 
             if config['plaintext_passwd'] and passwordx or not config['plaintext_passwd'] and password:
                 if config['plaintext_passwd']:
@@ -858,14 +858,14 @@ def get_config(override_conffile = None,
                 key = i.strip()
                 if key == '':
                     continue
-                if aliases.has_key(key):
+                if key in aliases:
                     msg = 'duplicate alias entry: \'%s\' is already used for another apiurl' % key
                     raise oscerr.ConfigError(msg, conffile)
                 aliases[key] = url
 
-        api_host_options[apiurl] = { 'user': user,
-                                     'pass': password,
-                                     'http_headers': http_headers}
+        api_host_options[apiurl] = {'user': user,
+                                    'pass': password,
+                                    'http_headers': http_headers}
 
         optional = ('email', 'sslcertck', 'cafile', 'capath')
         for key in optional:
@@ -893,15 +893,15 @@ def get_config(override_conffile = None,
     apiurl = aliases.get(config['apiurl'], config['apiurl'])
     config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
     # backward compatibility
-    if config.has_key('apisrv'):
+    if key in config:
         apisrv = config['apisrv'].lstrip('http://')
         apisrv = apisrv.lstrip('https://')
         scheme = config.get('scheme', 'https')
         config['apiurl'] = urljoin(scheme, apisrv)
-    if config.has_key('apisrv') or config.has_key('scheme'):
+    if 'apisrc' in config or 'scheme' in config:
         print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
                             'Warning: See README for migration details.'
-    if config.has_key('build_platform'):
+    if 'build_platform' in config:
         print >>sys.stderr, 'Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)'
         config['build_repository'] = config['build_platform']
 
@@ -938,5 +938,6 @@ def get_config(override_conffile = None,
 
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
     init_basicauth(config)
+
 
 # vim: sw=4 et
