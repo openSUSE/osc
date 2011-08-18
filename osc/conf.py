@@ -350,7 +350,7 @@ def parse_apisrv_url(scheme, apisrv):
         return urlparse.urlsplit(urljoin(scheme, apisrv))[0:2]
     else:
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
-        raise urllib22.URLError(msg)
+        raise urllib2.URLError(msg)
 
 
 def urljoin(scheme, apisrv):
