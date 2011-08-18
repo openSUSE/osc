@@ -2071,27 +2071,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    opts.message = edit_message()
                 if cmd in ['accept', 'decline', 'reopen', 'supersede']:
                     if opts.user or opts.group or opts.project or opts.package:
-                        r = change_review_state(apiurl,
-                             reqid, state_map[cmd], opts.user, opts.group, opts.project, opts.package, opts.message or '', supersed=supersedid)
+                        r = change_review_state(apiurl, reqid, state_map[cmd], opts.user, opts.group, opts.project,
+                                opts.package, opts.message or '', supersed=supersedid)
                         print r
                     else:
-                        # try all, but do not fail on error
                         rq = get_request(apiurl, reqid)
-                        for review in rq.reviews:
-                             if review.state == "new":
-                                  try:
-                                      r = change_review_state(apiurl,
-                                           reqid, state_map[cmd], review.by_user, review.by_group, review.by_project, review.by_package, opts.message or '', supersed=supersedid)
-                                      print r
-                                  except urllib2.HTTPError, e:
-                                      if review.by_user:
-                                         print 'No permission on review by user %s' % review.by_user
-                                      if review.by_group:
-                                         print 'No permission on review by group %s' % review.by_group
-                                      if review.by_package:
-                                         print 'No permission on review by package %s / %s' % (review.by_project, review.by_package)
-                                      elif review.by_project:
-                                         print 'No permission on review by project %s' % review.by_project
+                        if rq.state.name in ['new', 'review']:
+                            for review in rq.reviews:  # try all, but do not fail on error
+                                try:
+                                    r = change_review_state(apiurl, reqid, state_map[cmd], review.by_user, review.by_group,
+                                            review.by_project, review.by_package, opts.message or '', supersed=supersedid)
+                                    print r
+                                except urllib2.HTTPError, e:
+                                    if review.by_user:
+                                        print 'No permission on review by user %s' % review.by_user
+                                    if review.by_group:
+                                        print 'No permission on review by group %s' % review.by_group
+                                    if review.by_package:
+                                        print 'No permission on review by package %s / %s' % (review.by_project, review.by_package)
+                                    elif review.by_project:
+                                        print 'No permission on review by project %s' % review.by_project
+                        else:
+                            print 'Request is closed, please reopen the request first before changing any reviews.'
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
