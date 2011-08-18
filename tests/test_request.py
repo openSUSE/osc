@@ -441,7 +441,7 @@ class TestRequest(OscTestCase):
         submit:          srcprj/srcpackage  ->                              tgtprj/tgtpackage
         submit:          foo/bar  ->                                        baz
         delete:                                                             deleteme
-        delete:                                                             foo/bar"""
+        delete:                                                             foo/bar\n"""
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
         self.assertEqual(exp, r.list_view())
@@ -458,7 +458,7 @@ class TestRequest(OscTestCase):
         From: new(user) -> review(foobar)
         Descr: This is a simple request with a lot of ... ... text and other
                stuff. This request also contains a description. This is useful
-               to describe the request. blabla blabla"""
+               to describe the request. blabla blabla\n"""
         self.assertEqual(exp, r.list_view())
 
     def test_request_str1(self):
