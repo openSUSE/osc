@@ -1,6 +1,10 @@
 0.133
   - add --meta option also to "list", "cat" and "less" commands
   - project checkout is skipping packages linking to project local packages by default
+#
+# Features which requires OBS 2.3
+#
+  - support source services using OBS project or package name
 
 0.132
   - rdelete and undelete command requesting now a comment

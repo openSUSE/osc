@@ -249,6 +249,8 @@ class Serviceinfo:
         except urllib2.HTTPError, e:
             if e.code != 400:
                 raise e
+        self.project = project
+        self.package = package
 
     def addVerifyFile(self, serviceinfo_node, filename):
         import hashlib
@@ -312,6 +314,10 @@ class Serviceinfo:
             # set array to the manual specified singleservice, if it is not part of _service file
             data = { 'name' : singleservice, 'command' : singleservice, 'mode' : '' }
             allservices = [data]
+
+        # set environment
+        os.putenv("OBS_SERVICE_PROJECT", self.project)
+        os.putenv("OBS_SERVICE_PACKAGE", self.package)
 
         # recreate files
         ret = 0
