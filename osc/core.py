@@ -247,7 +247,7 @@ class Serviceinfo:
             root = ET.parse(f).getroot()
             self.read(root, True)
         except urllib2.HTTPError, e:
-            if e.code != 400:
+            if e.code != 403:
                 raise e
         self.project = project
         self.package = package
