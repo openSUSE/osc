@@ -211,6 +211,8 @@ class Serviceinfo:
     def __init__(self):
         """creates an empty serviceinfo instance"""
         self.services = None
+        self.project  = None
+        self.package  = None
 
     def read(self, serviceinfo_node, append=False):
         """read in the source services <services> element passed as
@@ -246,11 +248,11 @@ class Serviceinfo:
             f = http_POST(u)
             root = ET.parse(f).getroot()
             self.read(root, True)
+            self.project = project
+            self.package = package
         except urllib2.HTTPError, e:
-            if e.code != 403:
+            if e.code != 403 and e.code != 400:
                 raise e
-        self.project = project
-        self.package = package
 
     def addVerifyFile(self, serviceinfo_node, filename):
         import hashlib
@@ -315,9 +317,10 @@ class Serviceinfo:
             data = { 'name' : singleservice, 'command' : singleservice, 'mode' : '' }
             allservices = [data]
 
-        # set environment
-        os.putenv("OBS_SERVICE_PROJECT", self.project)
-        os.putenv("OBS_SERVICE_PACKAGE", self.package)
+        # set environment when using OBS 2.3 or later
+        if self.project != None:
+            os.putenv("OBS_SERVICE_PROJECT", self.project)
+            os.putenv("OBS_SERVICE_PACKAGE", self.package)
 
         # recreate files
         ret = 0
