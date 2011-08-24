@@ -2063,9 +2063,10 @@ rev: %s
         curdir = os.getcwd()
         os.chdir(self.absdir) # e.g. /usr/lib/obs/service/verify_file fails if not inside the project dir.
         si = Serviceinfo()
-        if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
-            service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
-            si.read(service)
+        if os.path.exists('_service'):
+            if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
+                service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+                si.read(service)
         si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
         r = si.execute(self.absdir, mode, singleservice, verbose)
         os.chdir(curdir)
