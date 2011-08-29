@@ -233,7 +233,9 @@ class Serviceinfo:
             try:
                 for param in service.findall('param'):
                     option = param.get('name', None)
-                    value = param.text
+                    value = ""
+                    if param.text:
+                       value = param.text
                     name += " --" + option + " '" + value + "'"
                 data['command'] = name
                 self.services.append(data)
