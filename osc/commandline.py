@@ -3718,7 +3718,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     msg = open(opts.file).read()
                 except:
                     sys.exit('could not open file \'%s\'.' % opts.file)
-
+        skip_local_service_run = False
+        if not conf.config['local_service_run'] or opts.skip_local_service_run:
+            skip_local_service_run = True
         arg_list = args[:]
         for arg in arg_list:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
@@ -3726,7 +3728,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     prj = Project(arg)
                     if not msg:
                         msg = edit_message()
-                    prj.commit(msg=msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                    prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 except oscerr.ExtRuntimeError, e:
                     print >>sys.stderr, "ERROR: service run failed", e
                     return 1
@@ -3758,13 +3760,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(prj_path)
                 if not msg:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
-                prj.commit(packages, msg=msg, files=files, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
         else:
             for p in pacs:
@@ -3774,7 +3776,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p.todo.sort()
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
 
     @cmdln.option('-r', '--revision', metavar='REV',
