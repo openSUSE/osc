@@ -4929,7 +4929,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # check for source services
         if opts.offline or opts.local_package:
             print "WARNING: source service from package or project will not be executed. This may not be the same build as on server!"
-        elif not opts.noservice and not opts.noinit:
+        elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
             p = Package('.')
             r = p.run_source_services(verbose=True)
             if r != 0:
