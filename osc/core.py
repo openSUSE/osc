@@ -4817,6 +4817,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             if i == "expansion error":
                 continue
             legend.append('%3s %-20s' % (j, i))
+        legend.append('  ? buildstatus not available (only new packages)')
 
         if vertical:
             for i in range(0, len(targets)):
