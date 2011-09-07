@@ -737,26 +737,7 @@ class Project:
             finally:
                 self.write_packages()
 
-    # TO BE OBSOLETED WITH SOURCE SERVICE VALIDATORS
-    def validate_pacs(self, validators, verbose_validation=False, *pacs):
-        if len(pacs) == 0:
-            for pac in self.pacs_broken:
-                if self.get_state(pac) != 'D':
-                    msg = 'validation failed: package \'%s\' is missing' % pac
-                    raise oscerr.PackageMissing(self.name, pac, msg)
-            pacs = self.pacs_have
-        for pac in pacs:
-            if pac in self.pacs_broken and self.get_state(pac) != 'D':
-                msg = 'validation failed: package \'%s\' is missing' % pac
-                raise oscerr.PackageMissing(self.name, pac, msg)
-            if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
-                p = Package('.')
-            else:
-                p = Package(os.path.join(self.dir, pac))
-            p.validate(validators, verbose_validation)
-
-
-    def commit(self, pacs = (), msg = '', files = {}, validators_dir = None, verbose = False, skip_local_service_run = False):
+    def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False):
         if len(pacs):
             try:
                 for pac in pacs:
@@ -765,7 +746,7 @@ class Project:
                         todo = files[pac]
                     state = self.get_state(pac)
                     if state == 'A':
-                        self.commitNewPackage(pac, msg, todo, validators_dir=validators_dir, verbose=verbose, skip_local_service_run=skip_local_service_run)
+                        self.commitNewPackage(pac, msg, todo, verbose=verbose, skip_local_service_run=skip_local_service_run)
                     elif state == 'D':
                         self.commitDelPackage(pac)
                     elif state == ' ':
@@ -775,13 +756,13 @@ class Project:
                         else:
                             p = Package(os.path.join(self.dir, pac))
                         p.todo = todo
-                        p.commit(msg, validators_dir=validators_dir, verbose=verbose, skip_local_service_run=skip_local_service_run)
+                        p.commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
                     elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
                         print 'osc: \'%s\' is not under version control' % pac
                     elif pac in self.pacs_broken:
                         print 'osc: \'%s\' package not found' % pac
                     elif state == None:
-                        self.commitExtPackage(pac, msg, todo, validators_dir=validators_dir, verbose=verbose)
+                        self.commitExtPackage(pac, msg, todo, verbose=verbose)
             finally:
                 self.write_packages()
         else:
@@ -795,15 +776,15 @@ class Project:
                     state = self.get_state(pac)
                     if state == ' ':
                         # do a simple commit
-                        Package(os.path.join(self.dir, pac)).commit(msg, validators_dir=validators_dir, verbose=verbose, skip_local_service_run=skip_local_service_run)
+                        Package(os.path.join(self.dir, pac)).commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
                     elif state == 'D':
                         self.commitDelPackage(pac)
                     elif state == 'A':
-                        self.commitNewPackage(pac, msg, validators_dir=validators_dir, verbose=verbose, skip_local_service_run=skip_local_service_run)
+                        self.commitNewPackage(pac, msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
             finally:
                 self.write_packages()
 
-    def commitNewPackage(self, pac, msg = '', files = [], validators_dir = None, verbose = False, skip_local_service_run = False):
+    def commitNewPackage(self, pac, msg = '', files = [], verbose = False, skip_local_service_run = False):
         """creates and commits a new package if it does not exist on the server"""
         if pac in self.pacs_available:
             print 'package \'%s\' already exists' % pac
@@ -824,7 +805,7 @@ class Project:
                 p = Package(os.path.join(self.dir, pac))
             p.todo = files
             print statfrmt('Sending', os.path.normpath(p.dir))
-            p.commit(msg=msg, validators_dir=validators_dir, verbose=verbose, skip_local_service_run=skip_local_service_run)
+            p.commit(msg=msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
             self.set_state(pac, ' ')
             os.chdir(olddir)
 
@@ -850,7 +831,7 @@ class Project:
         delete_package(self.apiurl, self.name, pac)
         self.del_package_node(pac)
 
-    def commitExtPackage(self, pac, msg, files = [], validators_dir=None, verbose=False):
+    def commitExtPackage(self, pac, msg, files = [], verbose=False):
         """commits a package from an external project"""
         if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
             pac_path = '.'
@@ -869,7 +850,7 @@ class Project:
                       template_args=({'name': pac, 'user': user}), apiurl=apiurl)
         p = Package(pac_path)
         p.todo = files
-        p.commit(msg=msg, validators_dir=validators_dir, verbose=verbose)
+        p.commit(msg=msg, verbose=verbose)
 
     def __str__(self):
         r = []
@@ -1198,26 +1179,7 @@ class Package:
             todo.append(n.get('name'))
         return todo
 
-    def validate(self, validators_dir, verbose_validation=False):
-        import subprocess
-        import stat
-        if validators_dir is None or self.name.startswith('_'):
-            return
-        for validator in sorted(os.listdir(validators_dir)):
-            if validator.startswith('.'):
-                continue
-            fn = os.path.join(validators_dir, validator)
-            mode = os.stat(fn).st_mode
-            if stat.S_ISREG(mode):
-                if verbose_validation:
-                    print 'osc runs source validator: %s' % fn
-                    p = subprocess.Popen([fn, '--verbose'], close_fds=True)
-                else:
-                    p = subprocess.Popen([fn], close_fds=True)
-                if p.wait() != 0:
-                    raise oscerr.ExtRuntimeError('ERROR: source_validator failed:\n%s' % p.stdout, validator)
-
-    def commit(self, msg='', validators_dir=None, verbose=False, skip_local_service_run=False):
+    def commit(self, msg='', verbose=False, skip_local_service_run=False):
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
@@ -1227,9 +1189,6 @@ class Package:
             r = self.run_source_services(mode="trylocal", verbose=verbose)
             if r is not 0:
                 raise oscerr.ServiceRuntimeError(r)
-
-        if not validators_dir is None:
-            self.validate(validators_dir, verbose)
 
         if not self.todo:
             self.todo = [i for i in self.to_be_added if not i in self.filenamelist] + self.filenamelist

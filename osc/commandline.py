@@ -3687,10 +3687,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='ignored')
-    @cmdln.option('--skip-validation', default=False, action="store_true",
-                  help='Skip the source validation')
     @cmdln.option('-v', '--verbose', default=False, action="store_true",
-                  help='Run the source services and validation with verbose information')
+                  help='Run the source services with verbose information')
     @cmdln.option('--skip-local-service-run', default=False, action="store_true",
                   help='Skip service run of \'localonly\' or \'trylocal\' configured source services')
     def do_commit(self, subcmd, opts, *args):
@@ -3708,15 +3706,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         args = parseargs(args)
-
-        validators = conf.config['source_validator_directory']
-        if opts.skip_validation:
-            validators = None
-        elif not os.path.exists(validators):
-            print >>sys.stderr, "WARNING: source_validator_directory configured but it "\
-                  "does not exist:\n\t %s \n"\
-                  "\t Install osc-source_validator to fix." % validators
-            validators = None
 
         msg = ''
         if opts.message:
@@ -3737,7 +3726,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     prj = Project(arg)
                     if not msg:
                         msg = edit_message()
-                    prj.commit(validators_dir=validators, msg=msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                    prj.commit(msg=msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 except oscerr.ExtRuntimeError, e:
                     print >>sys.stderr, "ERROR: service run failed", e
                     return 1
@@ -3769,13 +3758,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(prj_path)
                 if not msg:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
-                prj.commit(packages, validators_dir=validators, msg=msg, files=files, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                prj.commit(packages, msg=msg, files=files, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, validators_dir=validators, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                p.commit(msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
         else:
             for p in pacs:
@@ -3785,7 +3774,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p.todo.sort()
                 if not msg:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, validators_dir=validators, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
+                p.commit(msg, skip_local_service_run=opts.skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
 
     @cmdln.option('-r', '--revision', metavar='REV',

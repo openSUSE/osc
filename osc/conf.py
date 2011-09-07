@@ -136,8 +136,6 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'request_list_days': 0,
             # check for unversioned/removed files before commit
             'check_filelist': '1',
-            # External scripts to validate sources, esp before commit. This is a directory
-            'source_validator_directory': '/usr/lib/osc/source_validators',
             # check for pending requests after executing an action (e.g. checkout, update, commit)
             'check_for_request_on_action': '0',
             # what to do with the source package if the submitrequest has been accepted
@@ -299,9 +297,6 @@ apiurl = %(apiurl)s
 
 #review requests interactively (default: off)
 #request_show_review = 1
-
-# Directory with executables to validate sources, esp before committing
-#source_validator_directory = /usr/lib/osc/source_validators
 
 [%(apiurl)s]
 user = %(user)s
