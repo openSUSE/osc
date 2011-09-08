@@ -1,5 +1,13 @@
+import os.path
 import sys
 import unittest
+
+try:
+    import xmlrunner # JUnit like XML reporting
+    have_xmlrunner = True
+except ImportError:
+    have_xmlrunner = False
+
 import test_update
 import test_addfiles
 import test_deletefiles
@@ -28,5 +36,9 @@ suite.addTests(test_package_status.suite())
 suite.addTests(test_project_status.suite())
 suite.addTests(test_request.suite())
 suite.addTests(test_setlinkrev.suite())
-result = unittest.TextTestRunner(verbosity=1).run(suite)
+
+if have_xmlrunner:
+    result = xmlrunner.XMLTestRunner(output=os.path.join(os.getcwd(), 'junit-xml-results')).run(suite)
+else:
+    result = unittest.TextTestRunner(verbosity=1).run(suite)
 sys.exit(not result.wasSuccessful())
