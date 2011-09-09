@@ -6989,7 +6989,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = findpacs(files)
         for p in pacs:
             if not len(p.todo):
-                p.todo = p.filenamelist
+                p.todo = p.filenamelist + p.to_be_added
             for f in p.todo:
                 p.revert(f)
 
