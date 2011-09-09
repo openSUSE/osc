@@ -6981,6 +6981,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Examples:
             osc revert <modified file(s)>
             ose revert .
+        Note: this only works for package working copies
 
         ${cmd_usage}
         ${cmd_option_list}
