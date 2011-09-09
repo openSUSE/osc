@@ -6976,12 +6976,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
 
     def do_revert(self, subcmd, opts, *files):
-        """${cmd_name}: restore original wc file
+        """${cmd_name}: Restore changed files or the entire working copy.
 
         Examples:
             osc revert <modified file(s)>
-
-        Note: this only works for files in a package working copy
+            ose revert .
 
         ${cmd_usage}
         ${cmd_option_list}
