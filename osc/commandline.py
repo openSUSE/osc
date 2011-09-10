@@ -3687,6 +3687,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='ignored')
+    @cmdln.option('--skip-validation', default=False, action="store_true",
+                  help='deprecated, don\'t use it')
     @cmdln.option('-v', '--verbose', default=False, action="store_true",
                   help='Run the source services with verbose information')
     @cmdln.option('--skip-local-service-run', default=False, action="store_true",
@@ -3706,6 +3708,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         args = parseargs(args)
+
+        if opts.skip_validation:
+            print >>sys.stderr, "WARNING: deprecated option --skip-validation ignored."
 
         msg = ''
         if opts.message:
