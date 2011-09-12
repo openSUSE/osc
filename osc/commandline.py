@@ -4932,11 +4932,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
 
         # check for source services
-        if opts.offline or opts.local_package:
+        r = None
+        try:
+            if not opts.offline:
+               p = Package('.')
+               r = p.run_source_services(verbose=True)
+        except:
+            print "WARNING: package is not existing on server yet"
+            opts.local_package = True
+            pass
+        if opts.offline or opts.local_package or r == None:
             print "WARNING: source service from package or project will not be executed. This may not be the same build as on server!"
         elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
-            p = Package('.')
-            r = p.run_source_services(verbose=True)
             if r != 0:
                 print >>sys.stderr, 'Source service run failed!'
                 sys.exit(1)
