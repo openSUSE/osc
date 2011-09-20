@@ -6462,22 +6462,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('who')
     @cmdln.alias('user')
-    def do_whois(self, subcmd, opts, *args):
+    def do_whois(self, subcmd, opts, *usernames):
         """${cmd_name}: Show fullname and email of a buildservice user
 
         ${cmd_usage}
         ${cmd_option_list}
         """
         apiurl = self.get_api_url()
-        if len(args) > 1:
-            raise oscerr.WrongArgs('Wrong number of arguments.')
-        if len(args) < 1:
+        if len(usernames) < 1:
             if not conf.config['api_host_options'][apiurl].has_key('user'):
                 raise oscerr.WrongArgs('your .oscrc does not have your user name.')
-            args = (conf.config['api_host_options'][apiurl]['user'],)
-        user = get_user_data(apiurl, args[0], 'login', 'realname', 'email')
-        if len(user) > 0: user[1] = '"'+user[1]+'"'
-        print " ".join(user), "\n"
+            usernames = (conf.config['api_host_options'][apiurl]['user'],)
+        for name in usernames:
+            user = get_user_data(apiurl, name, 'login', 'realname', 'email')
+            if len(user) == 3:
+                print "%s: \"%s\" <%s>"%(user[0], user[1], user[2])
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
