@@ -617,7 +617,9 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
         write_config(config['conffile'], cp)
         run = True
     if run and update:
-        kw = {'override_conffile': config['conffile']}
+        kw = {'override_conffile': config['conffile'],
+              'override_no_keyring': config['use_keyring'],
+              'override_no_gnome_keyring': config['gnome_keyring']}
         kw.update(kwargs)
         get_config(**kw)
     if cp.has_option(section, opt):
