@@ -6092,7 +6092,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-d', '--data', default=None, metavar='STRING',
                         help='specify string data for e.g. POST')
     @cmdln.option('-T', '-f', '--file', default=None, metavar='FILE',
-                        help='specify filename for e.g. PUT or DELETE')
+                        help='specify filename to upload, uses PUT mode by default')
     @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING',
                         nargs=2, action='append', dest='headers',
                         help='add the specified header to the request')
@@ -6118,6 +6118,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.method in ['GET', 'PUT', 'POST', 'DELETE']:
             sys.exit('unknown method %s' % opts.method)
+
+        # default is PUT when uploading files
+        if opts.file and opts.method == 'GET':
+            opts.method = 'PUT'
 
         if not url.startswith('http'):
             if not url.startswith('/'):
