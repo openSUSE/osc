@@ -101,7 +101,7 @@ class Fetcher:
                 url = makeurl(apiurl, ['build', project, repo, arch, package], query=query)
                 sys.stdout.write("preparing download ...\r")
                 sys.stdout.flush()
-                self.gr.urlgrab(url, filename = tmparchive, text = 'fetching cpio for \'%s\'' % project)
+                self.gr.urlgrab(url, filename = tmparchive, text = 'fetching packages for \'%s\'' % project)
                 archive = cpio.CpioRead(tmparchive)
                 archive.read()
                 for hdr in archive:
