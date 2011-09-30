@@ -4701,7 +4701,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print row
 
 
-    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, repository = None, architecture = None):
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
@@ -4711,8 +4711,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi'):
                     arg_descr = arg
                 else:
-                    if arg in osc.build.can_also_build.get(osc.build.hostarch, []) or \
-                       arg in osc.build.hostarch:
+                    if (arg in osc.build.can_also_build.get(osc.build.hostarch, [])
+                        or arg in osc.build.hostarch) and arg_arch is None:
                         arg_arch = arg
                     elif not arg_repository:
                         arg_repository = arg
@@ -4722,12 +4722,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_repository, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
-
-        # take manual specified repository
-        if repository:
-            arg_repository = repository
-        if architecture:
-            arg_arch = architecture
 
         repositories = []
         # store list of repos for potential offline use
@@ -4936,7 +4930,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, args[0], args[1])
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
 
         # check for source services
         r = None
