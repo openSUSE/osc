@@ -4701,7 +4701,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print row
 
 
-    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False):
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, repository = None, architecture = None):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
@@ -4722,6 +4722,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_repository, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
+
+        # take manual specified repository
+        if repository:
+            arg_repository = repository
+        if architecture:
+            arg_arch = architecture
 
         repositories = []
         # store list of repos for potential offline use
@@ -4901,6 +4907,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc build [OPTS] REPOSITORY ARCH BUILD_DESCR
+            osc build [OPTS] REPOSITORY ARCH
             osc build [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
             osc build [OPTS] ARCH (REPOSITORY = build_repository (config option), BUILD_DESCR is detected automatically)
             osc build [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
@@ -4929,7 +4936,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, args[0], args[1])
 
         # check for source services
         r = None
