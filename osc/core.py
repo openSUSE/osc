@@ -3972,29 +3972,30 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_trac
     #      and should rename this path component by appending '.proj'
     #      and give user a warning message, to discourage such clashes
 
-    pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
-    if is_package_dir(prj_dir):
-        # we want this to become a project directory,
-        # but it already is a package directory.
-        raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving myself away not implemented')
+    path = pathname or getTransActPath(os.path.join(prj_dir, package))
 
-    if not is_project_dir(prj_dir):
-        # this directory could exist as a parent direory for one of our earlier
-        # checked out sub-projects. in this case, we still need to initialize it.
-        print statfrmt('A', prj_dir)
-        Project.init_project(apiurl, prj_dir, project, package_tracking)
+    if not pathname:
+        if is_package_dir(prj_dir):
+            # we want this to become a project directory,
+            # but it already is a package directory.
+            raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving myself away not implemented')
 
-    if is_project_dir(os.path.join(prj_dir, package)):
+        if not is_project_dir(prj_dir) and not pathname:
+            # this directory could exist as a parent direory for one of our earlier
+            # checked out sub-projects. in this case, we still need to initialize it.
+            print statfrmt('A', path)
+            Project.init_project(apiurl, prj_dir, project, package_tracking)
+
+    if is_project_dir(path):
         # the thing exists, but is a project directory and not a package directory
         # FIXME: this should be a warning message to discourage package/project clashes
         raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving project away not implemented')
-
-    if not os.path.exists(os.path.join(prj_dir, package)):
-        print statfrmt('A', pathname)
-        os.mkdir(os.path.join(prj_dir, package))
+    if not os.path.exists(path):
+        print statfrmt('A', path)
+        os.mkdir(path)
 #        os.mkdir(os.path.join(prj_dir, package, store))
 
-    return os.path.join(prj_dir, package)
+    return path
 
 
 def checkout_package(apiurl, project, package,
@@ -4051,9 +4052,6 @@ def checkout_package(apiurl, project, package,
             print "found root of %s at %s" % (oldproj, root_dots)
         prj_dir = root_dots + prj_dir
 
-    if not pathname:
-        pathname = getTransActPath(os.path.join(prj_dir, package))
-
     # before we create directories and stuff, check if the package actually
     # exists
     show_package_meta(apiurl, project, package, meta)
@@ -4075,7 +4073,7 @@ def checkout_package(apiurl, project, package,
     p = Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj)
     if isfrozen:
         p.mark_frozen()
-    if conf.config['do_package_tracking']:
+    if conf.config['do_package_tracking'] and not pathname:
         # check if we can re-use an existing project object
         if prj_obj is None:
             prj_obj = Project(prj_dir)
