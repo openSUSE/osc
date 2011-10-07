@@ -1294,26 +1294,21 @@ class Package:
 
         print_request_list(self.apiurl, self.prjname, self.name)
 
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name])
-        first_run = True
-        while 1:
-            f = http_GET(u)
-            sfilelist = ET.parse(f).getroot()
-            s = sfilelist.find('serviceinfo')
-            if s == None:
-               break
-            if first_run:
-               print 'Waiting for server side source service run',
-               first_run = False
-            if s.get('code') == "running":
-               sys.stdout.write('.')
-               sys.stdout.flush()
-            else:
-               break
-        print ""
-        rev=self.latest_rev()
-        self.update(rev=rev)
-            
+        # FIXME: add testcases for this codepath
+        sinfo = sfilelist.find('serviceinfo')
+        if sinfo is not None:
+            print 'Waiting for server side source service run'
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name])
+            while sinfo is not None and sinfo.get('code') == 'running':
+                sys.stdout.write('.')
+                sys.stdout.flush()
+                # does it make sense to add some delay?
+                sfilelist = ET.fromstring(http_GET(u).read())
+                # if sinfo is None another commit might have occured in the "meantime"
+                sinfo = sfilelist.find('serviceinfo')
+            print ''
+            rev=self.latest_rev()
+            self.update(rev=rev)
 
     def __write_storelist(self, name, data):
         if len(data) == 0:
