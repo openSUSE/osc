@@ -37,22 +37,22 @@ change_personality = {
 
 can_also_build = {
              'armv4l': [                                         'armv4l'                                             ],
-             'armv5el':[                                         'armv4l', 'armv5el'                                  ],
-             'armv6el':[                                         'armv4l', 'armv5el', 'armv6el'                       ],
-             'armv6l' :[                                         'armv4l', 'armv5el', 'armv6el'                       ],
-             'armv7el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'            ],
-             'armv7l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el'            ],
-             'armv7hl':[                        'armv7hl'                                                             ],
-             'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ],
-             'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ],
+             'armv6l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
+             'armv7l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ],
+             'armv5el':[                                         'armv4l', 'armv5l', 'armv5el'                                  ], # not existing arch, just for compatibility
+             'armv6el':[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ], # not existing arch, just for compatibility
+             'armv7el':[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ], # not existing arch, just for compatibility
+             'armv7hl':[                        'armv7hl'                                                             ], # not existing arch, just for compatibility
+             'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
+             'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
              'armv5tel':[                                        'armv4l', 'armv5el',                                 'armv5tel' ], 
              's390x':  ['s390' ],
              'ppc64':  [                        'ppc', 'ppc64' ],
              'sh4':    [                                                                                               'sh4' ],
-             'i386':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
-             'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
-             'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
-             'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
+             'i386':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
+             'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
+             'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
+             'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
              'sparc64': ['sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc'],
              'parisc': ['hppa'],
              }
@@ -591,7 +591,7 @@ def main(apiurl, opts, argv):
                 except:
                     pass
 
-                if pac == '_repository' or pkg_meta_e:
+                if pkg_meta_e:
                     print >>sys.stderr, 'ERROR: Either wrong repo/arch as parameter or a parse error of .spec/.dsc/.kiwi file due to syntax error'
                 else:
                     print >>sys.stderr, 'The package \'%s\' does not exists - please ' \
