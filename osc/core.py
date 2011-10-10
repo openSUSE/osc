@@ -5983,6 +5983,7 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                     reviews = [r for r in request.reviews if r.state == 'new']
                     if not reviews:
                         change_request_state(apiurl, request.reqid, state, msg)
+                        break
                     print 'Please chose one of the following reviews:'
                     for i in range(len(reviews)):
                         fmt = Request.format_review(reviews[i])
