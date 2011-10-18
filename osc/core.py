@@ -10,6 +10,7 @@ __version__ = '0.132git'
 # functionality to check_store_version().
 __store_version__ = '1.0'
 
+import locale
 import os
 import os.path
 import sys
@@ -3235,7 +3236,7 @@ def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=Non
 
 
 def read_meta_from_spec(specfile, *args):
-    import codecs, locale, re
+    import codecs, re
     """
     Read tags and sections from spec file. To read out
     a tag the passed argument mustn't end with a colon. To
@@ -3740,7 +3741,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
         query['rev'] = 1
     if revision:
         query['rev'] = revision
-    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename)], query=query)
+    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), 'replace'))], query=query)
     download(u, targetfilename, progress_obj, mtime)
 
 def get_binary_file(apiurl, prj, repo, arch,
@@ -5007,7 +5008,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
 
 
 def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False, deleted = False):
-    import time, locale
+    import time
 
     query = {}
     if deleted:
