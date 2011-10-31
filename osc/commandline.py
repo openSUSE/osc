@@ -2577,6 +2577,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
+    @cmdln.option('--no-cleanup', action='store_true',
+                  help='do not remove source project on accept')
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
@@ -2598,7 +2600,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.attribute:
             maintenance_attribute = opts.attribute
 
-        source_project = target_project = None
+        source_project = target_project = opt_sourceupdate = None
+        if not opts.no_cleanup:
+           opt_sourceupdate = 'cleanup'
 
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -2625,7 +2629,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             opts.message = edit_message()
 
-        r = create_maintenance_request(apiurl, source_project, target_project, opts.message)
+        r = create_maintenance_request(apiurl, source_project, target_project, opt_sourceupdate, opts.message)
         print r.reqid
 
 

@@ -2192,7 +2192,7 @@ class Action:
         'add_role': ('tgt_project', 'tgt_package', 'person_name', 'person_role', 'group_name', 'group_role'),
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'), # obsoleted by add_role
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name'),
-        'maintenance_incident': ('src_project', 'tgt_project', 'person_name'),
+        'maintenance_incident': ('src_project', 'tgt_project', 'person_name', 'opt_sourceupdate'),
         'delete': ('tgt_project', 'tgt_package'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package')}
     # attribute prefix to element name map (only needed for abbreviated attributes)
@@ -2396,6 +2396,9 @@ class Request:
         elif action.type == 'maintenance_incident':
             d['source'] = '%s ->' % action.src_project
             d['target'] = action.tgt_project
+            srcupdate = ' '
+            if action.opt_sourceupdate and show_srcupdate:
+                srcupdate = '(%s)' % action.opt_sourceupdate
         elif action.type == 'maintenance_release':
             d['source'] = '%s ->' % prj_pkg_join(action.src_project, action.src_package)
             d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package)
@@ -3411,10 +3414,10 @@ def create_release_request(apiurl, src_project, message=''):
     return r
 
 # create a maintenance incident per request
-def create_maintenance_request(apiurl, src_project, tgt_project, message=''):
+def create_maintenance_request(apiurl, src_project, tgt_project, opt_sourceupdate, message=''):
     import cgi
     r = Request()
-    r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project)
+    r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
     r.description = cgi.escape(unicode(message, 'utf8'))
     r.create(apiurl)
