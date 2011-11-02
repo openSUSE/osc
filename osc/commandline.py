@@ -3370,6 +3370,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-c', '--current-dir', action='store_true',
                         help='place PACKAGE folder in the current directory' \
                              'instead of a PROJECT/PACKAGE directory')
+    @cmdln.option('-o', '--output-dir', metavar='outdir',
+                        help='place package in the specified directory' \
+                             'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='Run source services.' )
     @cmdln.option('-S', '--server-side-source-service-files', action='store_true',
@@ -3461,7 +3464,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
+                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta,
+                             outdir=opts.output_dir)
             print_request_list(apiurl, project, package)
 
         elif project:

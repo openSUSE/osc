@@ -3959,7 +3959,7 @@ def submit_action_diff(apiurl, action):
             return 'error: \'%s\' does not exist' % root.find('summary').text
         raise e
 
-def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_tracking=True):
+def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_tracking=True, pkg_path=None):
     """
     creates the plain directory structure for a package dir.
     The 'apiurl' parameter is needed for the project dir initialization.
@@ -3967,6 +3967,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_trac
     project and the package. The optional 'pathname' parameter is used
     for printing out the message that a new dir was created (default: 'prj_dir/package').
     The optional 'prj_dir' parameter specifies the path to the project dir (default: 'project').
+    If pkg_path is not None store the package's content in pkg_path (no project structure is created)
     """
     prj_dir = prj_dir or project
 
@@ -3976,34 +3977,38 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_trac
     #      and should rename this path component by appending '.proj'
     #      and give user a warning message, to discourage such clashes
 
-    pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
-    if is_package_dir(prj_dir):
-        # we want this to become a project directory,
-        # but it already is a package directory.
-        raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving myself away not implemented')
+    if pkg_path is None:
+        pathname = pathname or getTransActPath(os.path.join(prj_dir, package))
+        pkg_path = os.path.join(prj_dir, package)
+        if is_package_dir(prj_dir):
+            # we want this to become a project directory,
+            # but it already is a package directory.
+            raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving myself away not implemented')
 
-    if not is_project_dir(prj_dir):
-        # this directory could exist as a parent direory for one of our earlier
-        # checked out sub-projects. in this case, we still need to initialize it.
-        print statfrmt('A', prj_dir)
-        Project.init_project(apiurl, prj_dir, project, package_tracking)
+        if not is_project_dir(prj_dir):
+            # this directory could exist as a parent direory for one of our earlier
+            # checked out sub-projects. in this case, we still need to initialize it.
+            print statfrmt('A', prj_dir)
+            Project.init_project(apiurl, prj_dir, project, package_tracking)
 
-    if is_project_dir(os.path.join(prj_dir, package)):
-        # the thing exists, but is a project directory and not a package directory
-        # FIXME: this should be a warning message to discourage package/project clashes
-        raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving project away not implemented')
+        if is_project_dir(os.path.join(prj_dir, package)):
+            # the thing exists, but is a project directory and not a package directory
+            # FIXME: this should be a warning message to discourage package/project clashes
+            raise oscerr.OscIOError(None, 'checkout_package: package/project clash. Moving project away not implemented')
+    else:
+        pathname = pkg_path
 
-    if not os.path.exists(os.path.join(prj_dir, package)):
+    if not os.path.exists(pkg_path):
         print statfrmt('A', pathname)
-        os.mkdir(os.path.join(prj_dir, package))
+        os.mkdir(os.path.join(pkg_path))
 #        os.mkdir(os.path.join(prj_dir, package, store))
 
-    return os.path.join(prj_dir, package)
+    return pkg_path
 
 
 def checkout_package(apiurl, project, package,
                      revision=None, pathname=None, prj_obj=None,
-                     expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, size_limit=None, meta=False):
+                     expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, size_limit=None, meta=False, outdir=None):
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
@@ -4075,11 +4080,12 @@ def checkout_package(apiurl, project, package,
                 isfrozen = True
         if x:
             revision = x
-    directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'])
+    directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
     p = Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj)
     if isfrozen:
         p.mark_frozen()
-    if conf.config['do_package_tracking']:
+    # no project structure is wanted when outdir is used
+    if conf.config['do_package_tracking'] and outdir is None:
         # check if we can re-use an existing project object
         if prj_obj is None:
             prj_obj = Project(prj_dir)
