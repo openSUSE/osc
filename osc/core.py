@@ -3873,7 +3873,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
                 new_project, new_package, new_revision,
-                unified=False, missingok=False, meta=False, expand=True):
+                unified=False, missingok=False, meta=False, expand=True, full=True):
     query = {'cmd': 'diff'}
     if expand:
         query['expand'] = 1
@@ -3891,6 +3891,8 @@ def server_diff(apiurl,
         query['missingok'] = 1
     if meta:
         query['meta'] = 1
+    if full:
+        query['filelimit'] = 0
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
 
