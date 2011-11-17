@@ -2184,8 +2184,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = meta_get_packagelist(apiurl, project)
 
         for p in packages:
-            print 'setting revision to %s for package %s' % (rev, p)
-            set_link_rev(apiurl, project, p, revision=rev, expand=expand, baserev=baserev)
+            rev = set_link_rev(apiurl, project, p, revision=rev, expand=expand, baserev=baserev)
+            if rev is None:
+                print 'removed revision from link'
+            else:
+                print 'set revision to %s for package %s' % (rev, p)
 
 
     def do_linktobranch(self, subcmd, opts, *args):

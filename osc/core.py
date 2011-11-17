@@ -5467,6 +5467,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
 
     l = ET.tostring(root)
     http_PUT(url, data=l)
+    return revision
 
 
 def delete_dir(dir):
