@@ -563,6 +563,9 @@ def get_configParser(conffile=None, force_read=False):
 
 def write_config(fname, cp):
     """write new configfile in a safe way"""
+    if os.path.exists(fname) and not os.path.isfile(fname):
+        # only write to a regular file
+        return
     with open(fname + '.new', 'w') as f:
         cp.write(f, comments=True)
     try:
