@@ -5496,7 +5496,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = args[1]
             repository   = args[2]
             architecture = args[3]
-        elif len(args) <= 2:
+        elif len(args) >= 1 and len(args) <= 2:
             if is_package_dir(os.getcwd()):
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
