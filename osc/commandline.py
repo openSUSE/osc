@@ -5541,9 +5541,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 for i in binaries:
                     # skip source rpms
-                    if not opts.sources:
-                        if i.name.endswith('src.rpm'):
-                            continue
+                    if not opts.sources and i.name.endswith('src.rpm'):
+                        continue
                     if not opts.debug:
                         if i.name.find('-debuginfo-') >= 0:
                             continue
