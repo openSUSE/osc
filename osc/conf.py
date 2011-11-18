@@ -561,6 +561,19 @@ def get_configParser(conffile=None, force_read=False):
     return get_configParser.cp
 
 
+def write_config(fname, cp):
+    """write new configfile in a safe way"""
+    with open(fname + '.new', 'w') as f:
+        cp.write(f, comments=True)
+    try:
+        os.rename(fname + '.new', fname)
+        os.chmod(fname, 0600)
+    except:
+        if os.path.exists(fname + '.new'):
+            os.unlink(fname + '.new')
+        raise
+
+
 def config_set_option(section, opt, val=None, delete=False, update=True, **kwargs):
     """
     Sets a config option. If val is not specified the current/default value is
@@ -570,18 +583,6 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
     If val is not specified and delete is True then the option is removed from the
     config/reset to the default value.
     """
-    def write_config(fname, cp):
-        """write new configfile in a safe way"""
-        try:
-            f = open(fname + '.new', 'w')
-            cp.write(f, comments=True)
-            f.close()
-            os.rename(fname + '.new', fname)
-        except:
-            if os.path.exists(fname + '.new'):
-                os.unlink(fname + '.new')
-            raise
-
     cp = get_configParser(config['conffile'])
     # don't allow "internal" options
     general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
@@ -662,21 +663,7 @@ def write_initial_config(conffile, entries, custom_template=''):
     sio = StringIO.StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
     cp.readfp(sio)
-
-    file = None
-    try:
-        file = open(conffile, 'w')
-    except IOError, e:
-        raise oscerr.OscIOError(e, 'cannot open configfile \'%s\'' % conffile)
-    try:
-        try:
-            os.chmod(conffile, 0600)
-            cp.write(file, True)
-        except IOError, e:
-            raise oscerr.OscIOError(e, 'cannot write configfile \'s\'' % conffile)
-    finally:
-        if file:
-            file.close()
+    write_config(conffile, cp)
 
 
 def add_section(filename, url, user, passwd):
@@ -715,11 +702,7 @@ def add_section(filename, url, user, passwd):
         else:
             cp.remove_option(url, 'passx')
             cp.set(url, 'pass', passwd)
-
-    file = open(filename, 'w')
-    cp.write(file, True)
-    if file:
-        file.close()
+    write_config(filename, cp)
 
 
 def get_config(override_conffile=None,
