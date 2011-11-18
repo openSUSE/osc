@@ -6872,10 +6872,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             user = conf.get_apiurl_usr(apiurl)
 
-            try:
-                os.environ['mailaddr'], os.environ['username'] = get_user_data(apiurl, user, 'email', 'realname')
-            except Exception, e:
-                sys.exit('%s\nget_user_data(email) failed. Try env mailaddr=....\n' % e)
+            data = get_user_data(apiurl, user+'x', 'email')
+            if data:
+                os.environ['mailaddr'] = data[0]
+            else:
+                print >>sys.stderr, 'Try env mailaddr=...'
 
             # mailaddr can be overrided by config one
             if conf.config['api_host_options'][apiurl].has_key('email'):
