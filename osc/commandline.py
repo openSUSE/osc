@@ -2390,6 +2390,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='do a (slower) client-side copy')
     @cmdln.option('-k', '--keep-maintainers', action='store_true',
                         help='keep original maintainers. Default is remove all and replace with the one calling the script.')
+    @cmdln.option('-K', '--keep-link', action='store_true',
+                        help='keep the source link in target, this also expands the source')
     @cmdln.option('-d', '--keep-develproject', action='store_true',
                         help='keep develproject tag in the package metadata')
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -2465,7 +2467,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      keep_develproject=opts.keep_develproject,
                      expand=opts.expand,
                      revision=rev,
-                     comment=comment)
+                     comment=comment,
+                     keep_link=opts.keep_link)
         print r
 
 

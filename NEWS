@@ -1,6 +1,7 @@
 0.133
   - add --meta option also to "list", "cat" and "less" commands
   - project checkout is skipping packages linking to project local packages by default
+  - add --keep-link option to copypac command
   - source validators are not called by default anymore:
     * They can get used via source services now
     * Allows different validations based on the code streams

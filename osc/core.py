@@ -4367,7 +4367,8 @@ def copy_pac(src_apiurl, src_project, src_package,
              keep_develproject = False,
              expand = False,
              revision = None,
-             comment = None):
+             comment = None,
+             keep_link = None):
     """
     Create a copy of a package.
 
@@ -4390,8 +4391,10 @@ def copy_pac(src_apiurl, src_project, src_package,
     print 'Copying files...'
     if not client_side_copy:
         query = {'cmd': 'copy', 'oproject': src_project, 'opackage': src_package }
-        if expand:
+        if expand or keep_link:
             query['expand'] = '1'
+        if keep_link:
+            query['keeplink'] = '1'
         if revision:
             query['orev'] = revision
         if comment:
