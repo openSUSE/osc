@@ -3702,7 +3702,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-v', '--verbose', default=False, action="store_true",
                   help='Run the source services with verbose information')
     @cmdln.option('--skip-local-service-run', default=False, action="store_true",
-                  help='Skip service run of \'localonly\' or \'trylocal\' configured source services')
+                  help='Skip service run of configured source services for local run')
     def do_commit(self, subcmd, opts, *args):
         """${cmd_name}: Upload content to the repository server
 
@@ -5214,7 +5214,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             run         r  run defined services locally, it takes an optional parameter to run only a 
                            specified source service. In case paramteres exists for this one in _service file
                            they are used.
-            disabledrun dr run only disabled services locally and store files as local created
+            disabledrun dr run disabled or server side only services locally and store files as local created
             remoterun   rr trigger a re-run on the server side
 
         ${cmd_option_list}
