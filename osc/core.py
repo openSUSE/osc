@@ -5026,7 +5026,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
             print '%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker)
 
 
-def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False, deleted = False):
+def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False, deleted = False, revision_upper=None):
     import time
 
     query = {}
@@ -5051,7 +5051,10 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             rev = int(node.get('rev'))
             #vrev = int(node.get('vrev')) # what is the meaning of vrev?
             try:
-                if revision and rev != int(revision):
+                if revision is not None and revision_upper is not None:
+                    if rev > int(revision_upper) or rev < int(revision):
+                        continue
+                elif revision is not None and rev != int(revision):
                     continue
             except ValueError:
                 if revision != srcmd5:
