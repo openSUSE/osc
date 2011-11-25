@@ -2453,6 +2453,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not rev:
                 rev = show_upstream_rev(src_apiurl, src_project, src_package)
             comment = 'osc copypac from project:%s package:%s revision:%s' % ( src_project, src_package, rev )
+            if opts.keep_link:
+              comment += ", using keep-link"
+            if opts.expand:
+              comment += ", using expand"
+            if opts.client_side_copy:
+              comment += ", using client side copy"
 
         if src_project == dst_project and \
            src_package == dst_package and \
