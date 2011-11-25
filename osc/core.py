@@ -4287,7 +4287,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     print 'Done.'
 
 
-def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False, noaccess=False):
+def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False, noaccess=False, add_repositories=False):
     """
     Branch packages defined via attributes (via API call)
     """
@@ -4299,6 +4299,8 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         query['force'] = "1"
     if noaccess:
         query['noaccess'] = "1"
+    if add_repositories:
+        query['add_repositories'] = "1"
     if package:
         query['package'] = package
     if maintained_update_project_attribute:

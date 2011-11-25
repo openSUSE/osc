@@ -2710,6 +2710,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force branch, overwrite target')
+    @cmdln.option('--add-repositories', default=False, action="store_true",
+                  help='Add repositories to target project (happens by default when project is new)')
     @cmdln.option('--noaccess', action='store_true',
                         help='Create a hidden project')
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -2773,7 +2775,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout, msg=opts.message or '',
-                           force=opts.force, noaccess=opts.noaccess)
+                           force=opts.force, noaccess=opts.noaccess, add_repositories=opts.add_repositories)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
