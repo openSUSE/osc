@@ -4322,7 +4322,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False):
     """
     Branch a package (via API call)
     """
@@ -4333,6 +4333,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['force'] = '1'
     if noaccess:
         query['noaccess'] = '1'
+    if add_repositories:
+        query['add_repositories'] = "1"
     if rev:
         query['rev'] = rev
     if target_project:
