@@ -9,6 +9,7 @@
 # Features which requires OBS 2.3
 #
   - support source services using OBS project or package name
+  - support updateing _patchinfo file with new issues just by calling "osc patchinfo" again
   - branch --add-repositories can be used to add repos from source project to target project
 
 0.132

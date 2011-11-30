@@ -426,14 +426,14 @@ class Osc(cmdln.Cmdln):
 
 
     @cmdln.option('-f', '--force', action='store_true',
-                        help='force generation of new patchinfo file')
-    @cmdln.option('--force-update', action='store_true',
-                        help='drops away collected packages from an already built patch and let it collect again')
+                        help='force generation of new patchinfo file, do not update existing one.')
     def do_patchinfo(self, subcmd, opts, *args):
         """${cmd_name}: Generate and edit a patchinfo file.
 
         A patchinfo file describes the packages for an update and the kind of
         problem it solves.
+
+        This command either creates a new _patchinfo or updates an existing one.
 
         Examples:
             osc patchinfo
@@ -442,15 +442,20 @@ class Osc(cmdln.Cmdln):
         """
 
         project_dir = localdir = os.getcwd()
+        patchinfo = None
         if is_project_dir(localdir):
             project = store_read_project(localdir)
             apiurl = self.get_api_url()
+            for p in meta_get_packagelist(apiurl, project):
+                if p.startswith("_patchinfo") or p.startswith("patchinfo"):
+                    patchinfo = p
         else:
-            sys.exit('This command must be called in a checked out project.')
-        patchinfo = None
-        for p in meta_get_packagelist(apiurl, project):
-            if p.startswith("_patchinfo") or p.startswith("patchinfo"):
-                patchinfo = p
+            if is_package_dir(localdir):
+                 project = store_read_project(localdir)
+                 patchinfo = store_read_package(localdir)
+                 apiurl = self.get_api_url()
+            else:
+                 sys.exit('This command must be called in a checked out project or patchinfo package.')
 
         if opts.force or not patchinfo:
             print "Creating initial patchinfo..."
@@ -462,14 +467,23 @@ class Osc(cmdln.Cmdln):
             for p in meta_get_packagelist(apiurl, project):
                 if p.startswith("_patchinfo") or p.startswith("patchinfo"):
                     patchinfo = p
+        else:
+            print "Update _patchinfo file..."
+            query='cmd=updatepatchinfo'
+            url = makeurl(apiurl, ['source', project, patchinfo], query=query)
+            f = http_POST(url)
 
         # CAUTION:
         #  Both conf.config['checkout_no_colon'] and conf.config['checkout_rooted'] 
         #  fool this test:
-        if not os.path.exists(project_dir + "/" + patchinfo):
+        if is_package_dir(localdir):
+            pac = Package(localdir)
+            pac.update()
+            filename = "_patchinfo"
+        else:
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
+            filename = project_dir + "/" + patchinfo + "/_patchinfo"
 
-        filename = project_dir + "/" + patchinfo + "/_patchinfo"
         run_editor(filename)
 
     @cmdln.alias('bsdevelproject')
