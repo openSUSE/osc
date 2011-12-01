@@ -2732,6 +2732,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='force branch, overwrite target')
     @cmdln.option('--add-repositories', default=False, action="store_true",
                   help='Add repositories to target project (happens by default when project is new)')
+    @cmdln.option('--extend-package-names', default=False, action="store_true",
+                  help='Extend packages names with project name as suffix')
     @cmdln.option('--noaccess', action='store_true',
                         help='Create a hidden project')
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -2795,7 +2797,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout, msg=opts.message or '',
-                           force=opts.force, noaccess=opts.noaccess, add_repositories=opts.add_repositories)
+                           force=opts.force, noaccess=opts.noaccess,
+                           add_repositories=opts.add_repositories,
+                           extend_package_names=opt.extend_package_names)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
