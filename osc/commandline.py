@@ -2799,7 +2799,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
                            add_repositories=opts.add_repositories,
-                           extend_package_names=opt.extend_package_names)
+                           extend_package_names=opts.extend_package_names)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
