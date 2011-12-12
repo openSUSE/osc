@@ -2305,8 +2305,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         See the examples in the _link file.
 
-        NOTE: In case you are not aware about the difference of 'linkpac' and 'branch' command
-              you should use the 'branch' command by default.
+        NOTE: In case you want to fix or update another package, you should use the 'branch'
+              command. A branch has correct repositories (and a link) setup up by default and
+              will be cleaned up automatically after it was submitted back.
 
         usage:
             osc linkpac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
