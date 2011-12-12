@@ -4385,12 +4385,19 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         msg = msg.split('</summary>')[0]
         raise oscerr.APIError(msg)
 
-    r = f.read()
-    if dryrun:
-        return ET.fromstring(r)
+    r = None
 
-    r = r.split('targetproject">')[1]
-    r = r.split('</data>')[0]
+    root = ET.fromstring(f.read())
+    if dryrun:
+        return root
+    # TODO: change api here and return parsed XML as class
+    if conf.config['http_debug']:
+        print >> sys.stderr, ET.tostring(root)
+    for node in root.findall('data'):
+        r = node.get('name')
+        if r and r == 'targetproject':
+            return node.text
+
     return r
 
 
@@ -4435,6 +4442,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
             raise
         return (True, m.group(1), m.group(2), None, None)
 
+    if conf.config['http_debug']:
+        print >> sys.stderr, ET.tostring(root)
     data = {}
     for i in ET.fromstring(f.read()).findall('data'):
         data[i.get('name')] = i.text
