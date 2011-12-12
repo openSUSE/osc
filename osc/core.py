@@ -348,11 +348,6 @@ class Serviceinfo:
             if conf.config['verbose'] > 1 or verbose:
                 print "Run source service:", c
             r = subprocess.call(c, shell=True)
-            if r != 0:
-                print "Aborting: service call failed: " + c
-                # FIXME: addDownloadUrlService calls si.execute after 
-                #        updating _services.
-                ret = r
 
             if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
                 for filename in os.listdir(temp_dir):
@@ -362,7 +357,13 @@ class Serviceinfo:
                     shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
             os.rmdir(temp_dir)
 
-        return ret
+            if r != 0:
+                print "Aborting: service call failed: " + c
+                # FIXME: addDownloadUrlService calls si.execute after 
+                #        updating _services.
+                return r
+
+        return 0
 
 class Linkinfo:
     """linkinfo metadata (which is part of the xml representing a directory
