@@ -5671,6 +5671,19 @@ def createPackageDir(pathname, prj_obj=None):
             msg += '\ntry svn instead of osc.'
         raise oscerr.NoWorkingCopy(msg)
 
+def createRemotePackage(apiurl, project, package):
+    """create package on the server"""
+
+    data = """
+<package project="%s" name="%s">
+  <title/>
+  <description/>
+</package>
+""" % (project, package)
+
+    url = make_meta_url("pkg", (quote_plus(project), quote_plus(package)),
+                        apiurl, False)
+    http_PUT(url, data=data)
 
 def stripETxml(node):
     node.tail = None
