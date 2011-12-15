@@ -5691,6 +5691,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # try api side search as supported since OBS 2.2
             try:
                 requests = []
+                # declined requests submitted by me
+                u = makeurl(apiurl, ['request'], {
+                    'view' : 'collection',
+                    'states': 'declined',
+                    'roles': 'creator',
+                    'user' : user,
+                    })
+                f = http_GET(u)
+                root = ET.parse(f).getroot()
+                if root.findall('request'):
+                   print "Declined requests created by you (revoke, reopen or supersede):\n"
+                   for node in root.findall('request'):
+                       r = Request()
+                       r.read(node)
+                       print r.list_view(), '\n'
+                   print ""
                 # open reviews
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
@@ -5701,10 +5717,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     })
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
-                for node in root.findall('request'):
-                    r = Request()
-                    r.read(node)
-                    requests.append(r)
+                if root.findall('request'):
+                   print "Requests which request a review by you:\n"
+                   for node in root.findall('request'):
+                       r = Request()
+                       r.read(node)
+                       print r.list_view(), '\n'
+                   print ""
                 # open requests
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
@@ -5714,12 +5733,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     })
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
-                for node in root.findall('request'):
-                    r = Request()
-                    r.read(node)
-                    requests.append(r)
-                for r in sorted(requests):
-                    print r.list_view(), '\n'
+                if root.findall('request'):
+                   print "Requests for your packages:\n"
+                   for node in root.findall('request'):
+                       r = Request()
+                       r.read(node)
+                       print r.list_view(), '\n'
+                   print ""
                 return
             except urllib2.HTTPError, e:
                 if e.code == 400:

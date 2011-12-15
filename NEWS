@@ -13,6 +13,7 @@
   - branch --add-repositories can be used to add repos from source project to target project
   - branch --extend-package-names can be used to do mbranch like branch of a single package
   - branch --new-package can be used to do branch from a not yet existing package (to define later submit target)
+  - show declined requests which created by user
 
 0.132
   - rdelete and undelete command requesting now a comment
