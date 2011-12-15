@@ -4131,7 +4131,7 @@ def link_to_branch(apiurl, project,  package):
     else:
         raise oscerr.OscIOError(None, 'no _link file inside project \'%s\' package \'%s\'' % (project, package))
 
-def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False):
+def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False, missing_target = False):
     """
     create a linked package
      - "src" is the original package
@@ -4153,8 +4153,11 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
         meta_change = True
 
     if meta_change:
-        src_meta = show_package_meta(apiurl, src_project, src_package)
-        dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+        if missing_target:
+            dst_meta = '<package name="%s"><title/><description/></package>' % dst_package
+        else:
+            src_meta = show_package_meta(apiurl, src_project, src_package)
+            dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
 
     if disable_publish:
         meta_change = True
@@ -4180,15 +4183,17 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             print >>sys.stderr, '_link file already exists...! Aborting'
             sys.exit(1)
 
+    rev = ''
     if rev:
         rev = 'rev="%s"' % rev
-    else:
-        rev = ''
 
+    missingok = ''
+    if missing_target:
+        missingok = 'missingok="true"'
+
+    cicount = ''
     if cicount:
         cicount = 'cicount="%s"' % cicount
-    else:
-        cicount = ''
 
     print 'Creating _link...',
 
@@ -4197,7 +4202,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
         project = 'project="%s"' % src_project
 
     link_template = """\
-<link %s package="%s" %s %s>
+<link %s package="%s" %s %s %s>
 <patches>
   <!-- <apply name="patch" /> apply a patch on the source directory  -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
@@ -4205,7 +4210,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
   <!-- <delete>filename</delete> delete a file -->
 </patches>
 </link>
-""" % (project, src_package, rev, cicount)
+""" % (project, src_package, missingok, rev, cicount)
 
     u = makeurl(apiurl, ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
@@ -4323,7 +4328,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False, missingok=False):
     """
     Branch a package (via API call)
     """
@@ -4336,6 +4341,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['noaccess'] = '1'
     if add_repositories:
         query['add_repositories'] = "1"
+    if missingok:
+        query['missingok'] = "1"
     if extend_package_names:
         query['extend_package_names'] = "1"
     if rev:

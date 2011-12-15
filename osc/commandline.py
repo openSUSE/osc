@@ -2289,6 +2289,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='overwrite an existing link file if it is there.')
     @cmdln.option('-d', '--disable-publish', action='store_true',
                   help='disable publishing of the linked package')
+    @cmdln.option('-N', '--new-package', action='store_true',
+                  help='create a link to a not yet existing package')
     def do_linkpac(self, subcmd, opts, *args):
         """${cmd_name}: "Link" a package to another package
 
@@ -2339,14 +2341,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # files from the same source
             opts.cicount = "copy"
 
-        if opts.current:
+        if opts.current and not opts.new_package:
             rev = show_upstream_rev(apiurl, src_project, src_package)
 
         if rev and not checkRevision(src_project, src_package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
-        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish)
+        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish, opts.new_package)
 
     @cmdln.option('--nosources', action='store_true',
                   help='ignore source packages when copying build results to destination project')
@@ -2739,6 +2741,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Create a hidden project')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
+    @cmdln.option('-N', '--new-package', action='store_true',
+                  help='create a branch pointing to a not yet existing package')
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='branch against a specific revision')
     def do_branch(self, subcmd, opts, *args):
@@ -2800,7 +2804,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
                            add_repositories=opts.add_repositories,
-                           extend_package_names=opts.extend_package_names)
+                           extend_package_names=opts.extend_package_names, missingok=opts.new_package)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
