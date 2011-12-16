@@ -457,11 +457,19 @@ class Osc(cmdln.Cmdln):
             else:
                  sys.exit('This command must be called in a checked out project or patchinfo package.')
 
-        if opts.force or not patchinfo:
+        filelist = None
+        if patchinfo:
+            filelist = meta_get_filelist(apiurl, project, patchinfo)
+
+        if opts.force or not patchinfo or not '_patchinfo' in filelist:
             print "Creating initial patchinfo..."
             query='cmd=createpatchinfo'
+            if opts.force:
+                query += "&force=1"
             if args and args[0]:
                 query += "&name=" + args[0]
+            elif patchinfo:
+                query += "&name=" + patchinfo
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
