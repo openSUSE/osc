@@ -1,3 +1,6 @@
+0.134
+  -
+
 0.133
   - add --meta option also to "list", "cat" and "less" commands
   - project checkout is skipping packages linking to project local packages by default
