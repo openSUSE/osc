@@ -6934,7 +6934,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             user = conf.get_apiurl_usr(apiurl)
 
-            data = get_user_data(apiurl, user+'x', 'email')
+            data = get_user_data(apiurl, user, 'email')
             if data:
                 os.environ['mailaddr'] = data[0]
             else:
