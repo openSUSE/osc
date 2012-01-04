@@ -3060,10 +3060,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             baserev = linkinfo.get('baserev')
             opts.revision = baserev
             if pacs:
-                print "diff working copy against linked revision %s\n" % baserev
+                print "diff working copy against last commited version\n"
             else:
                 print "diff commited package against linked revision %s\n" % baserev
-                run_pager(server_diff(self.get_api_url(), args[0], args[1], baserev, 
+                run_pager(server_diff(self.get_api_url(), linkinfo.get('project'), linkinfo.get('package'), baserev,
                   args[0], args[1], linkinfo.get('lsrcmd5'), not opts.plain, opts.missingok))
                 return
 
