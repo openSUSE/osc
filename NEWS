@@ -1,5 +1,9 @@
 0.134
   -
+#
+# Features which requires OBS 2.3
+#
+  - support dryrun of branching to preview the expected result. "osc sm" is doing this now by default.
 
 0.133
   - add --meta option also to "list", "cat" and "less" commands

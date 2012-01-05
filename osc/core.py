@@ -4293,7 +4293,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     print 'Done.'
 
 
-def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False, noaccess=False, add_repositories=False):
+def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False, noaccess=False, add_repositories=False, dryrun=False, nodevelproject=False):
     """
     Branch packages defined via attributes (via API call)
     """
@@ -4301,10 +4301,14 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     query['attribute'] = attribute
     if targetproject:
         query['target_project'] = targetproject
+    if dryrun:
+        query['dryrun'] = "1"
     if force:
         query['force'] = "1"
     if noaccess:
         query['noaccess'] = "1"
+    if nodevelproject:
+        query['ignoredevel'] = '1'
     if add_repositories:
         query['add_repositories'] = "1"
     if package:
@@ -4323,6 +4327,9 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         raise oscerr.APIError(msg)
 
     r = f.read()
+    if dryrun:
+        return ET.fromstring(r)
+
     r = r.split('targetproject">')[1]
     r = r.split('</data>')[0]
     return r

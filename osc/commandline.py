@@ -2671,24 +2671,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 '(\'osc bco\' is a shorthand for this option)' )
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='Use this attribute to find affected packages (default is OBS:Maintained)')
-    @cmdln.option('--noaccess', action='store_true',
-                        help='Create a hidden project')
     @cmdln.option('-u', '--update-project-attribute', metavar='UPDATE_ATTRIBUTE',
                         help='Use this attribute to find update projects (default is OBS:UpdateProject) ')
+    @cmdln.option('--dryrun', action='store_true',
+                        help='Just simulate the action and report back the result.')
+    @cmdln.option('--noaccess', action='store_true',
+                        help='Create a hidden project')
+    @cmdln.option('--nodevelproject', action='store_true',
+                        help='do not follow a defined devel project ' \
+                             '(primary project where a package is developed)')
+    @cmdln.alias('sm')
+    @cmdln.alias('maintained')
     def do_mbranch(self, subcmd, opts, *args):
-        """${cmd_name}: Multiple branch of a package
+        """${cmd_name}: Search or banch multiple instances of a package
+
+        This command is used for searching all relevant instances of packages
+        and creating links of them in one project.
+        This is esp. used for maintenance updates. It can also be used to branch
+        all packages marked before with a given attribute.
 
         [See http://en.opensuse.org/openSUSE:Build_Service_Concept_Maintenance
         for information on this topic.]
-
-        This command is used for creating multiple links of defined version of a package
-        in one project. This is esp. used for maintenance updates.
 
         The branched package will live in
             home:USERNAME:branches:ATTRIBUTE:PACKAGE
         if nothing else specified.
 
         usage:
+            osc sm [SOURCEPACKAGE] [-a ATTRIBUTE]
             osc mbranch [ SOURCEPACKAGE [ TARGETPROJECT ] ]
         ${cmd_option_list}
         """
@@ -2710,23 +2720,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 2:
             tproject = args[1]
 
-        r = attribute_branch_pkg(apiurl, maintained_attribute, maintained_update_project_attribute, \
-                                 package, tproject, noaccess = opts.noaccess)
+        if subcmd == 'sm' or subcmd == 'maintained':
+            opts.dryrun = 1
 
-        if r is None:
+        result = attribute_branch_pkg(apiurl, maintained_attribute, maintained_update_project_attribute, \
+                                 package, tproject, noaccess = opts.noaccess, nodevelproject=opts.nodevelproject, dryrun=opts.dryrun)
+
+        if result is None:
             print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.'
             sys.exit(1)
 
-        print "Project " + r + " created."
+        if opts.dryrun:
+            for r in result.findall('package'):
+                print "  ", r.get('project'), r.get('package')
+            return
+        
+        print "Project " + result + " created."
 
         if opts.checkout:
-            Project.init_project(apiurl, r, r, conf.config['do_package_tracking'])
-            print statfrmt('A', r)
+            Project.init_project(apiurl, result, result, conf.config['do_package_tracking'])
+            print statfrmt('A', result)
 
             # all packages
-            for package in meta_get_packagelist(apiurl, r):
+            for package in meta_get_packagelist(apiurl, result):
                 try:
-                    checkout_package(apiurl, r, package, expand_link = True, prj_dir = r)
+                    checkout_package(apiurl, result, package, expand_link = True, prj_dir = result)
                 except:
                     print >>sys.stderr, 'Error while checkout package:\n', package
 
@@ -5836,7 +5854,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search binary packages')
     @cmdln.option('-B', '--baseproject', metavar='PROJECT',
                         help='search packages built for PROJECT (implies --binary)')
-    @cmdln.alias('sm')
     @cmdln.alias('se')
     @cmdln.alias('bse')
     def do_search(self, subcmd, opts, *args):
@@ -5848,7 +5865,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc search \'search term\' <options>
-            osc sm \'source package name\'      ('osc search --maintained')
             osc bse ...                         ('osc search --binary')
             osc se 'perl(Foo::Bar)'             ('osc --package perl-Foo-Bar')
         ${cmd_option_list}
@@ -5886,8 +5902,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.substring and opts.exact:
             raise oscerr.WrongOptions('Sorry, the options \'--substring\' and \'--exact\' are mutually exclusive')
 
-        if subcmd == 'sm' or opts.maintained:
-            opts.package = True
         if not opts.substring:
             opts.exact = True
         if subcmd == 'bse' or opts.baseproject:
@@ -5930,10 +5944,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             xpath = xpath_join(xpath, build_xpath('title', search_term, opts.substring), inner=True)
             xpath = xpath_join(xpath, build_xpath('description', search_term, opts.substring), inner=True)
         what = {'project': xpath, 'package': xpath}
-        if subcmd == 'sm' or opts.maintained:
-            xpath = xpath_join(xpath, '(project/attribute/@name=\'%(attr)s\' or attribute/@name=\'%(attr)s\')' % {'attr': conf.config['maintained_attribute']}, op='and')
-            what = {'package': xpath}
-        elif opts.project and not opts.package:
+        if opts.project and not opts.package:
             what = {'project': xpath}
         elif not opts.project and opts.package:
             what = {'package': xpath}
