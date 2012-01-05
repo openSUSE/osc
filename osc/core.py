@@ -2677,7 +2677,7 @@ def store_readlist(dir, name):
 
     r = []
     if os.path.exists(os.path.join(dir, store, name)):
-        r = [line.strip() for line in open(os.path.join(dir, store, name), 'r')]
+        r = [line.rstrip('\n') for line in open(os.path.join(dir, store, name), 'r')]
     return r
 
 def read_tobeadded(dir):
