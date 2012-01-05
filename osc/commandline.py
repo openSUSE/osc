@@ -2697,6 +2697,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         tproject = None
 
         maintained_attribute = conf.config['maintained_attribute']
+        if opts.attribute:
+            maintained_attribute = opts.attribute
         maintained_update_project_attribute = conf.config['maintained_update_project_attribute']
 
         if not len(args) or len(args) > 2:
