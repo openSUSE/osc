@@ -2857,7 +2857,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       '      A direct branch of the specified package can be forced\n' \
                       '      with the --nodevelproject option.\n' % devloc
 
-        package = tpackage or args[1]
+        package = targetpkg or args[1]
         if opts.checkout:
             checkout_package(apiurl, targetprj, package, server_service_files=True,
                              expand_link=True, prj_dir=targetprj)
