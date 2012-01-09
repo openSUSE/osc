@@ -4391,6 +4391,7 @@ def copy_pac(src_apiurl, src_project, src_package,
              expand = False,
              revision = None,
              comment = None,
+             force_meta_update = None,
              keep_link = None):
     """
     Create a copy of a package.
@@ -4407,9 +4408,16 @@ def copy_pac(src_apiurl, src_project, src_package,
         src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
                                     dst_userid, keep_develproject)
 
-        print 'Sending meta data...'
-        u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
-        http_PUT(u, data=src_meta)
+        url = make_meta_url('pkg', (quote_plus(dst_project),) + (quote_plus(dst_package),), dst_apiurl)
+        found = None
+        try:
+            found = http_GET(url).readlines()
+        except urllib2.HTTPError, e:
+            pass
+        if force_meta_update or not found:
+            print 'Sending meta data...'
+            u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
+            http_PUT(u, data=src_meta)
 
     print 'Copying files...'
     if not client_side_copy:
