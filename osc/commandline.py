@@ -437,46 +437,51 @@ class Osc(cmdln.Cmdln):
 
         Examples:
             osc patchinfo
-            osc patchinfo PATCH_NAME
+            osc patchinfo [PROJECT [PATCH_NAME]]
         ${cmd_option_list}
         """
 
+        apiurl = self.get_api_url() 
         project_dir = localdir = os.getcwd()
-        patchinfo = None
-        if is_project_dir(localdir):
-            project = store_read_project(localdir)
-            apiurl = self.get_api_url()
-            for p in meta_get_packagelist(apiurl, project):
-                if p.startswith("_patchinfo") or p.startswith("patchinfo"):
-                    patchinfo = p
-        else:
-            if is_package_dir(localdir):
-                 project = store_read_project(localdir)
-                 patchinfo = store_read_package(localdir)
-                 apiurl = self.get_api_url()
+        patchinfo = 'patchinfo'
+        if len(args) == 0:
+            if is_project_dir(localdir):
+                project = store_read_project(localdir)
+                apiurl = self.get_api_url()
+                for p in meta_get_packagelist(apiurl, project):
+                    if p.startswith("_patchinfo") or p.startswith("patchinfo"):
+                        patchinfo = p
             else:
-                 sys.exit('This command must be called in a checked out project or patchinfo package.')
+                if is_package_dir(localdir):
+                     project = store_read_project(localdir)
+                     patchinfo = store_read_package(localdir)
+                     apiurl = self.get_api_url()
+                else:
+                     sys.exit('This command must be called in a checked out project or patchinfo package.')
+        else:
+            project = args[0]
+            if len(args) > 1:
+                patchinfo = args[1]
 
         filelist = None
         if patchinfo:
-            filelist = meta_get_filelist(apiurl, project, patchinfo)
+            try:
+                filelist = meta_get_filelist(apiurl, project, patchinfo)
+            except urllib2.HTTPError:
+                pass
 
-        if opts.force or not patchinfo or not '_patchinfo' in filelist:
-            print "Creating initial patchinfo..."
-            query='cmd=createpatchinfo'
+        if opts.force or not filelist or not '_patchinfo' in filelist:
+            print "Creating new patchinfo..."
+            query='cmd=createpatchinfo&name=' + patchinfo
             if opts.force:
                 query += "&force=1"
-            if args and args[0]:
-                query += "&name=" + args[0]
-            elif patchinfo:
-                query += "&name=" + patchinfo
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
                 if p.startswith("_patchinfo") or p.startswith("patchinfo"):
                     patchinfo = p
         else:
-            print "Update _patchinfo file..."
+            print "Update existing _patchinfo file..."
             query='cmd=updatepatchinfo'
             url = makeurl(apiurl, ['source', project, patchinfo], query=query)
             f = http_POST(url)

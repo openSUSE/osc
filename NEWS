@@ -1,5 +1,5 @@
 0.134
-  -
+  - patchinfo call can work without checked out copy now
 #
 # Features which requires OBS 2.3
 #
