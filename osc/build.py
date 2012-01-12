@@ -35,6 +35,14 @@ change_personality = {
             'sparcv8': 'linux32',
         }
 
+qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el',
+                   'sh4', 'mips', 'mipsel',
+                   'ppc', 'ppc64',
+                   's390', 's390x',
+                   'sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc',
+                   'hppa'
+        ]
+
 can_also_build = {
              'armv4l': [                                         'armv4l'                                             ],
              'armv6l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
@@ -49,13 +57,12 @@ can_also_build = {
              's390x':  ['s390' ],
              'ppc64':  [                        'ppc', 'ppc64' ],
              'sh4':    [                                                                                               'sh4' ],
-             'i386':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
-             'i586':   [                'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
-             'i686':   [        'i586',         'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
-             'x86_64': ['i686', 'i586', 'i386', 'ppc', 'ppc64',  'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el', 'sh4', 'mips', 'mipsel' ],
+             'i586':   [                'i386' ],
+             'i686':   [        'i586', 'i386' ],
+             'x86_64': ['i686', 'i586', 'i386' ],
              'sparc64': ['sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc'],
              'parisc': ['hppa'],
-             }
+        }
 
 # real arch of this machine
 hostarch = os.uname()[4]
@@ -619,8 +626,10 @@ def main(apiurl, opts, argv):
     # arch we are supposed to build for
     if hostarch != bi.buildarch:
         if not bi.buildarch in can_also_build.get(hostarch, []):
-            print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
-            return 1
+            if not bi.buildarch in qemu_can_build:
+                print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
+                return 1
+            print >>sys.stderr, 'WARNING: hostarch \'%s\' can build \'%s\' only via QEMU.' % (hostarch, bi.buildarch)
 
     rpmlist_prefers = []
     if prefer_pkgs:

@@ -4788,6 +4788,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     arg_descr = arg
                 else:
                     if (arg in osc.build.can_also_build.get(osc.build.hostarch, [])
+                        or arg in osc.build.qemu_can_build
                         or arg in osc.build.hostarch) and arg_arch is None:
                         arg_arch = arg
                     elif not arg_repository:
