@@ -5860,6 +5860,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search binary packages')
     @cmdln.option('-B', '--baseproject', metavar='PROJECT',
                         help='search packages built for PROJECT (implies --binary)')
+    @cmdln.option('--binaryversion', metavar='VERSION',
+                        help='search for binary with specified version (implies --binary)')
     @cmdln.alias('se')
     @cmdln.alias('bse')
     def do_search(self, subcmd, opts, *args):
@@ -5944,6 +5946,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             xpath = xpath_join(xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
         if opts.baseproject:
             xpath = xpath_join(xpath, 'path/@project=\'%s\'' % opts.baseproject, op='and')
+        if opts.binaryversion:
+            m = re.match(r'(.+)-(.*?)$', opts.binaryversion)
+            if m:
+                if m.group(2) != '':
+                    xpath = xpath_join(xpath, '@versrel=\'%s\'' % opts.binaryversion, op='and')
+                else:
+                    xpath = xpath_join(xpath, '@version=\'%s\'' % m.group(1), op='and')
+            else:
+                xpath = xpath_join(xpath, '@version=\'%s\'' % opts.binaryversion, op='and')
 
         if not xpath:
             xpath = xpath_join(xpath, build_xpath('@name', search_term, opts.substring), inner=True)
