@@ -5912,7 +5912,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.substring:
             opts.exact = True
-        if subcmd == 'bse' or opts.baseproject:
+        if subcmd == 'bse' or opts.baseproject or opts.binaryversion:
             opts.binary = True
 
         if opts.binary and (opts.title or opts.description or opts.involved or opts.bugowner or opts.maintainer
