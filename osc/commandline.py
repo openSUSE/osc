@@ -2737,7 +2737,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.dryrun:
             for r in result.findall('package'):
-                print "  ", r.get('project'), r.get('package')
+                print "%s/%s"%(r.get('project'), r.get('package'))
             return
         
         print "Project " + result + " created."
