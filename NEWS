@@ -6,6 +6,7 @@
 #
   - support dryrun of branching to preview the expected result. "osc sm" is doing this now by default.
   - maintenance requests accept package lists as source and target incidents to be merged in
+  - add "setincident" command to "request" to re-direct a maintenance request
 
 0.133
   - add --meta option also to "list", "cat" and "less" commands

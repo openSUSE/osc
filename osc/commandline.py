@@ -1793,6 +1793,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         "reopen" will set the request back to new or review.
 
+        "setincident" will direct "maintenance" requests into specific incidents
+
         "supersede" will supersede one request with another existing one.
 
         "revoke" will set the request state to "revoked"
@@ -1824,6 +1826,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request reopen [-m TEXT] ID
+            osc request setincident [-m TEXT] ID INCIDENT
             osc request supersede [-m TEXT] ID SUPERSEDING_ID
             osc request approvenew [-m TEXT] PROJECT
 
@@ -1864,7 +1867,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if args[0] == 'help':
             return self.do_help(['help', 'request'])
 
-        cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'supersede', 'revoke', 'checkout', 'co' ]
+        cmds = [ 'list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co' ]
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0],', '.join(cmds)))
@@ -1880,7 +1883,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if cmd in ['list']:
             min_args, max_args = 0, 2
-        elif cmd in ['supersede']:
+        elif cmd in ['supersede', 'setincident']:
             min_args, max_args = 2, 2
         else:
             min_args, max_args = 1, 1
@@ -1914,6 +1917,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd == 'supersede':
             reqid = args[0]
             supersedid = args[1]
+        elif cmd == 'setincident':
+            reqid = args[0]
+            incident = args[1]
         elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
             reqid = args[0]
 
@@ -1921,6 +1927,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if cmd in ['clone']:
             # should we force a message?
             print 'Cloned packages are available in project: %s' % clone_request(apiurl, reqid, opts.message)
+
+        # change incidents
+        elif cmd == 'setincident':
+            query = { 'cmd': 'setincident', 'incident': incident }
+            url = makeurl(apiurl, ['request', reqid], query)
+            r = http_POST(url, data=opts.message)
+            print ET.parse(r).getroot().get('code')
 
         # add new reviewer to existing request
         elif cmd in ['add'] and subcmd == 'review':
