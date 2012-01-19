@@ -2617,6 +2617,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify message TEXT')
     @cmdln.option('--no-cleanup', action='store_true',
                   help='do not remove source project on accept')
+    @cmdln.option('--incident', metavar='INCIDENT',
+                        help='specify incident number to merge in')
+    @cmdln.option('--incident-project', metavar='INCIDENT_PROJECT',
+                        help='specify incident project to merge in')
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
@@ -2628,7 +2632,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         the "patchinfo" command how add the required maintenance update information.
 
         usage:
-            osc maintenancerequest [ SOURCEPROJECT [ TARGETPROJECT ] ]
+            osc maintenancerequest [ SOURCEPROJECT [ SOURCEPACKAGES ] ]
         ${cmd_option_list}
         """
 
@@ -2638,12 +2642,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.attribute:
             maintenance_attribute = opts.attribute
 
-        source_project = target_project = opt_sourceupdate = None
+        source_project = source_packages = target_project = opt_sourceupdate = None
         if not opts.no_cleanup:
            opt_sourceupdate = 'cleanup'
-
-        if len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
 
         if len(args) == 0 and is_project_dir(os.curdir):
             source_project = store_read_project(os.curdir)
@@ -2651,9 +2652,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
             source_project = args[0]
-
         if len(args) > 1:
-            target_project = args[1]
+            source_packages = args[1:]
+
+        if opts.incident_project:
+            target_project = opts.incident_project
         else:
             xpath = 'attribute/@name = \'%s\'' % maintenance_attribute
             res = search(apiurl, project_id=xpath)
@@ -2662,12 +2665,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if project is None:
                 sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
             target_project = project.get('name')
+            if opts.incident:
+                target_project += ":" + opts.incident
             print 'Using target project \'%s\'' % target_project
 
         if not opts.message:
             opts.message = edit_message()
 
-        r = create_maintenance_request(apiurl, source_project, target_project, opt_sourceupdate, opts.message)
+        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, opt_sourceupdate, opts.message)
         print r.reqid
 
 
