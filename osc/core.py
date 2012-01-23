@@ -3433,12 +3433,15 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, o
 
 # This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
-                         src_project, src_package,
+                         src_project, src_package=None,
                          dst_project=None, dst_package=None,
                          message="", orev=None, src_update=None):
 
     import cgi
     options_block=""
+    package=""
+    if src_update:
+        package="""package="%s" """ % (src_package)
     if src_update:
         options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
@@ -3453,7 +3456,7 @@ def create_submit_request(apiurl,
     xml = """\
 <request type="submit">
     <submit>
-        <source project="%s" package="%s" rev="%s"/>
+        <source project="%s" %s rev="%s"/>
         %s
         %s
     </submit>
@@ -3461,7 +3464,7 @@ def create_submit_request(apiurl,
     <description>%s</description>
 </request>
 """ % (src_project,
-       src_package,
+       package,
        orev or show_upstream_rev(apiurl, src_project, src_package),
        targetxml,
        options_block,
@@ -3473,10 +3476,26 @@ def create_submit_request(apiurl,
     # I guess, my original workaround was not that bad.
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
-    f = http_POST(u, data=xml)
+    try:
+        f = http_POST(u, data=xml)
+        root = ET.parse(f).getroot()
+        r = root.get('id')
+    except urllib2.HTTPError, e:
+        if e.headers.get('X-Opensuse-Errorcode') == "submit_request_rejected":
+           print "This project is just for releasign maintenance updates. Do you want to create a maintenance incident request instead ? [y/n]"
+           if sys.stdin.read(1) == "y":
+              xpath = 'attribute/@name = \'%s\'' % conf.config['maintenance_attribute']
+              res = search(apiurl, project_id=xpath)
+              root = res['project_id']
+              project = root.find('project')
+              if project is None:
+                  sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
+              tproject = project.get('name')
+              r = create_maintenance_request(apiurl, src_project, [src_package], tproject, src_update, message)
+           else:
+              raise
 
-    root = ET.parse(f).getroot()
-    return root.get('id')
+    return r
 
 
 def get_request(apiurl, reqid):
