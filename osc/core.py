@@ -4634,10 +4634,12 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[]):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None):
     query = {}
     if package:
         query['package'] = package
+    if oldstate:
+        query['oldstate'] = oldstate
     if lastbuild:
         query['lastbuild'] = 1
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
@@ -4655,12 +4657,14 @@ def show_prj_results_meta(apiurl, prj):
     return f.readlines()
 
 
-def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[]):
+def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], oldstate=None):
     """ return a package results as a list of dicts """
     r = []
 
-    f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch)
+    f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch, oldstate)
     root = ET.fromstring(''.join(f))
+
+    r.append( {'_oldstate': root.get('state')} )
 
     for node in root.findall('result'):
         rmap = {}
@@ -4692,26 +4696,42 @@ def format_results(results, format):
     """apply selected format on each dict in results and return it as a list of strings"""
     return [format % r for r in results]
 
-def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], verbose=False):
+def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], verbose=False, wait=False, printJoin=None):
     r = []
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
+    oldstate = None
 
-    for res in get_package_results(apiurl, prj, package, lastbuild, repository, arch):
-        res['status'] = res['code']
-        if verbose and res['details'] != '':
-            if res['status'] in ('unresolvable', 'expansion error'):
-                lines = res['details'].split(',')
-                res['status'] += ': ' + '\n     '.join(lines)
+    while True:
+       waiting = False
+       r = []
+       for res in get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate):
+           if res.has_key('_oldstate'):
+               oldstate = res['_oldstate']
+               continue
+           res['status'] = res['code']
+           if verbose and res['details'] != '':
+               if res['status'] in ('unresolvable', 'expansion error'):
+                   lines = res['details'].split(',')
+                   res['status'] += ': ' + '\n     '.join(lines)
 
-            else:
-                res['status'] += ': %s' % (res['details'], )
-        if res['dirty']:
-            if verbose:
-                res['status'] = 'outdated (was: %s)' % res['status']
-            else:
-                res['status'] += '*'
+               else:
+                   res['status'] += ': %s' % (res['details'], )
+           if res['dirty']:
+               waiting=True
+               if verbose:
+                   res['status'] = 'outdated (was: %s)' % res['status']
+               else:
+                   res['status'] += '*'
+           if res['status'] in ('scheduled', 'finished', 'building', 'signing', 'dispatching'):
+               waiting=True
 
-        r.append(result_line_templ % res)
+           r.append(result_line_templ % res)
+
+       if printJoin:
+           print printJoin.join(r)
+
+       if wait==False or waiting==False:
+           break
 
     return r
 

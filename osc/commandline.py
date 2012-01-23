@@ -4191,6 +4191,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified architecture(s)')
     @cmdln.option('-v', '--verbose', action='store_true', default=False,
                         help='more verbose output')
+    @cmdln.option('-w', '--watch', action='store_true', default=False,
+                        help='permanently watch the result')
     @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
@@ -4245,7 +4247,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print '\n'.join(format_results(get_package_results(*args), opts.format))
         else:
             args.append(opts.verbose)
-            print '\n'.join(get_results(*args))
+            args.append(opts.watch)
+            args.append("\n")
+            get_results(*args)
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!
