@@ -4703,8 +4703,17 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
 
     while True:
        waiting = False
-       r = []
-       for res in get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate):
+       results = r = []
+       try:
+           results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
+       except urllib2.HTTPError, e:
+           # check for simple timeout error and fetch again
+           if e.code != 502:
+               raise
+           # re-try result request
+           continue
+
+       for res in results:
            if res.has_key('_oldstate'):
                oldstate = res['_oldstate']
                continue
@@ -4722,7 +4731,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                    res['status'] = 'outdated (was: %s)' % res['status']
                else:
                    res['status'] += '*'
-           if res['status'] in ('scheduled', 'finished', 'building', 'signing', 'dispatching'):
+           if res['status'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
                waiting=True
 
            r.append(result_line_templ % res)
