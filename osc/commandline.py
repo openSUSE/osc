@@ -4192,7 +4192,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-v', '--verbose', action='store_true', default=False,
                         help='more verbose output')
     @cmdln.option('-w', '--watch', action='store_true', default=False,
-                        help='permanently watch the result')
+                        help='watch the results until all finished building')
     @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
