@@ -3440,7 +3440,7 @@ def create_submit_request(apiurl,
     import cgi
     options_block=""
     package=""
-    if src_update:
+    if src_package:
         package="""package="%s" """ % (src_package)
     if src_update:
         options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
