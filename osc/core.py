@@ -3492,8 +3492,8 @@ def create_submit_request(apiurl,
                   sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
               tproject = project.get('name')
               r = create_maintenance_request(apiurl, src_project, [src_package], tproject, src_update, message)
-           else:
-              raise
+        else:
+           raise
 
     return r
 
