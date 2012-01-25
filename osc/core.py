@@ -4206,17 +4206,19 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             print >>sys.stderr, '_link file already exists...! Aborting'
             sys.exit(1)
 
-    rev = ''
     if rev:
         rev = 'rev="%s"' % rev
+    else:
+        rev = ''
 
     missingok = ''
     if missing_target:
         missingok = 'missingok="true"'
 
-    cicount = ''
     if cicount:
         cicount = 'cicount="%s"' % cicount
+    else:
+        cicount = ''
 
     print 'Creating _link...',
 
