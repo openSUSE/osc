@@ -4946,6 +4946,10 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         cl = f.info().get('Content-Length')
 
     if cl is not None:
+        # sometimes the proxy adds the same header again
+        # which yields in value like '3495, 3495'
+        # use the first of these values (should be all the same)
+        cl = cl.split(',')[0]
         cl = int(cl)
 
     if progress_obj:
