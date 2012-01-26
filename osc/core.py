@@ -3603,7 +3603,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         requests.append(r)
     return requests
 
-def get_request_list(apiurl, project='', package='', req_who='', req_state=('new','review',), req_type=None, exclude_target_projects=[]):
+def get_request_list(apiurl, project='', package='', req_who='', req_state=('new','review','declined'), req_type=None, exclude_target_projects=[]):
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
