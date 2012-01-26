@@ -5669,10 +5669,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='verbose listing')
     @cmdln.option('--maintained', action='store_true',
                         help='limit search results to packages with maintained attribute set.')
-    def do_my(self, subcmd, opts, type):
-        """${cmd_name}: show packages, projects or requests involving yourself
+    def do_my(self, subcmd, opts, *args):
+        """${cmd_name}: show waiting work, packages, projects or requests involving yourself
 
             Examples:
+                # list all tasks where it is expected to work on
+                osc ${cmd_name} [work]
                 # list packages where I am bugowner
                 osc ${cmd_name} pkg -b
                 # list projects where I am maintainer
@@ -5697,10 +5699,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # The usage above indicates, that sr would be a subset of rq, which is no the case with my tests.
         # jw.
 
-        args_rq = ('requests', 'request', 'req', 'rq')
+        args_rq = ('requests', 'request', 'req', 'rq', 'work')
         args_sr = ('submitrequests', 'submitrequest', 'submitreq', 'submit', 'sr')
         args_prj = ('projects', 'project', 'projs', 'proj', 'prj')
         args_pkg = ('packages', 'package', 'pack', 'pkgs', 'pkg')
+        args_patchinfos = ('patchinfos', 'work')
 
         if opts.bugowner and opts.maintainer:
             raise oscerr.WrongOptions('Sorry, \'--bugowner\' and \'maintainer\' are mutually exclusive')
@@ -5721,8 +5724,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             user = opts.user
 
-        list_requests = False
         what = {'project': '', 'package': ''}
+        type="work"
+        if len(args) > 0:
+            type=args[0]
+
+        list_patchinfos = list_requests = False
+        if type in args_patchinfos:
+            list_patchinfos = True
         if type in args_rq:
             list_requests = True
         elif type in args_prj:
@@ -5744,6 +5753,35 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             role_filter = 'maintainer'
         if opts.all:
             role_filter = ''
+
+        if list_patchinfos:
+                u = makeurl(apiurl, ['/search/package'], {
+                    'match' : "([kind='patchinfo' and issue/[@state='OPEN' and owner/@login='%s']])" % user
+                    })
+                f = http_GET(u)
+                root = ET.parse(f).getroot()
+                if root.findall('package'):
+                   print "Patchinfos with open bugs assigned to you:\n"
+                   for node in root.findall('package'):
+                       project = node.get('project')
+                       package = node.get('name')
+                       print project, "/", package, '\n'
+                       p = makeurl(apiurl, ['source', project, package], { 'view': 'issues' })
+                       fp = http_GET(p)
+                       issues = ET.parse(fp).findall('issue')
+                       for issue in issues:
+                           if issue.find('state') == None or issue.find('state').text != "OPEN":
+                              continue
+                           if issue.find('owner') == None or issue.find('owner').find('login').text != user:
+                              continue
+                           print "  #", issue.find('long_name').text, ': ',
+                           desc = issue.find('description')
+                           if desc != None:
+                               print desc.text
+                           else:
+                               print "\n"
+                   print ""
+
 
         if list_requests:
             # try api side search as supported since OBS 2.2

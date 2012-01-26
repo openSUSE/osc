@@ -9,6 +9,8 @@
   - maintenance requests accept package lists as source and target incidents to be merged in
   - add "setincident" command to "request" to re-direct a maintenance request
   - ask user to create "maintenance incident" request when submit request is failing at release project
+  - "osc my patchinfos" is showing patchinfos where any open bug is assigned to user
+  - "osc my" or "osc my work" is including assigned patchinfos
 
 0.133
   - add --meta option also to "list", "cat" and "less" commands
