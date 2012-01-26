@@ -3603,6 +3603,38 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         requests.append(r)
     return requests
 
+def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new','review','declined'), req_type=None):
+    xpath = ''
+    if not 'all' in req_state:
+        xpath = '( false'
+        for state in req_state:
+            xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, op='or', inner=True)
+        xpath += ')'
+    if req_who:
+        xpath = xpath_join(xpath, '(state/@who=\'%(who)s\' or history/@who=\'%(who)s\')' % {'who': req_who}, op='and')
+
+    xpath += " and action[source/@project='%s'" % src_project
+    if src_package:
+        xpath += " and source/@package='%s'" % src_package
+    xpath += " and target/@project='%s'" % dst_project
+    if src_project:
+        xpath += " and target/@package='%s'" % dst_package
+    xpath += "]"
+    if req_type:
+        xpath += " and action/@type=\'%s\'" % req_type
+
+    if conf.config['verbose'] > 1 or True:
+        print '[ %s ]' % xpath
+
+    res = search(apiurl, request=xpath)
+    collection = res['request']
+    requests = []
+    for root in collection.findall('request'):
+        r = Request()
+        r.read(root)
+        requests.append(r)
+    return requests
+
 def get_request_list(apiurl, project='', package='', req_who='', req_state=('new','review','declined'), req_type=None, exclude_target_projects=[]):
     xpath = ''
     if not 'all' in req_state:
