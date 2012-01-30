@@ -3606,10 +3606,9 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
 def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new','review','declined'), req_type=None):
     xpath = ''
     if not 'all' in req_state:
-        xpath = '( false'
         for state in req_state:
             xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, op='or', inner=True)
-        xpath += ')'
+        xpath = '(%s)' % xpath
     if req_who:
         xpath = xpath_join(xpath, '(state/@who=\'%(who)s\' or history/@who=\'%(who)s\')' % {'who': req_who}, op='and')
 
@@ -3623,7 +3622,7 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
     if req_type:
         xpath += " and action/@type=\'%s\'" % req_type
 
-    if conf.config['verbose'] > 1 or True:
+    if conf.config['verbose'] > 1:
         print '[ %s ]' % xpath
 
     res = search(apiurl, request=xpath)
