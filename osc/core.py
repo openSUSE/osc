@@ -3482,7 +3482,7 @@ def create_submit_request(apiurl,
         r = root.get('id')
     except urllib2.HTTPError, e:
         if e.headers.get('X-Opensuse-Errorcode') == "submit_request_rejected":
-           print "This project is just for releasign maintenance updates. Do you want to create a maintenance incident request instead ? [y/n]"
+           print "This project is just for releasing maintenance updates. Do you want to create a maintenance incident request instead? [y/n]"
            if sys.stdin.read(1) == "y":
               xpath = 'attribute/@name = \'%s\'' % conf.config['maintenance_attribute']
               res = search(apiurl, project_id=xpath)
