@@ -97,6 +97,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-swap': '',                   # optional for VM builds
             'build-vmdisk-rootsize': '',        # optional for VM builds
             'build-vmdisk-swapsize': '',        # optional for VM builds
+            'build-vmdisk-filesystem': '',        # optional for VM builds
 
             'build-jobs': _get_processors(),
             'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
@@ -216,6 +217,10 @@ apiurl = %(apiurl)s
 # build-vmdisk-swapsize is the size of the disk-image used as swap in a VM build
 # values in MB - e.g. 1024
 #build-vmdisk-swapsize = 1024
+
+# build-vmdisk-filesystem is the file system type of the disk-image used in a VM build
+# values are ext3(default) ext4 xfs reiserfs btrfs
+#build-vmdisk-filesystem = ext4
 
 # Numeric uid:gid to assign to the "abuild" user in the build-root
 # or "caller" to use the current users uid:gid

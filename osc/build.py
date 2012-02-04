@@ -842,6 +842,9 @@ def main(apiurl, opts, argv):
             vm_options += [ '--vmdisk-rootsize=' + config['build-vmdisk-rootsize'] ]
         if config['build-vmdisk-swapsize']:
             vm_options += [ '--vmdisk-swapsize=' + config['build-vmdisk-swapsize'] ]
+        if config['build-vmdisk-filesystem']:
+            vm_options += [ '--vmdisk-filesystem=' + config['build-vmdisk-filesystem'] ]
+
 
     if opts.preload:
         print "Preload done for selected repo/arch."
