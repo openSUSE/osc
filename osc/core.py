@@ -349,6 +349,15 @@ class Serviceinfo:
                 print "Run source service:", c
             r = subprocess.call(c, shell=True)
 
+            if r != 0:
+                print "Aborting: service call failed: " + c
+                # FIXME: addDownloadUrlService calls si.execute after 
+                #        updating _services.
+                for filename in os.listdir(temp_dir):
+                    os.unlink(os.path.join(temp_dir, filename)
+                os.rmdir(temp_dir)
+                return r
+
             if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
                 for filename in os.listdir(temp_dir):
                     shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
@@ -356,12 +365,6 @@ class Serviceinfo:
                 for filename in os.listdir(temp_dir):
                     shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
             os.rmdir(temp_dir)
-
-            if r != 0:
-                print "Aborting: service call failed: " + c
-                # FIXME: addDownloadUrlService calls si.execute after 
-                #        updating _services.
-                return r
 
         return 0
 
