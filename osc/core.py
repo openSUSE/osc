@@ -354,7 +354,7 @@ class Serviceinfo:
                 # FIXME: addDownloadUrlService calls si.execute after 
                 #        updating _services.
                 for filename in os.listdir(temp_dir):
-                    os.unlink(os.path.join(temp_dir, filename)
+                    os.unlink(os.path.join(temp_dir, filename))
                 os.rmdir(temp_dir)
                 return r
 
