@@ -1008,7 +1008,10 @@ class Osc(cmdln.Cmdln):
                 if len(args) == 2:
                     dst_package = args[1]
                 else:
-                    dst_package = src_package
+                    if p.islink():
+                        dst_package = p.linkinfo.package
+                    else:
+                        dst_package = src_package
             else:
                 sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                          'Please provide it the target via commandline arguments.' % p.name)
