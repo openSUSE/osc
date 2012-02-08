@@ -3479,6 +3479,7 @@ def create_submit_request(apiurl,
     # I guess, my original workaround was not that bad.
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
+    r = None
     try:
         f = http_POST(u, data=xml)
         root = ET.parse(f).getroot()
