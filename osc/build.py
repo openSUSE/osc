@@ -35,6 +35,7 @@ change_personality = {
             'sparcv8': 'linux32',
         }
 
+# FIXME: qemu_can_build should not be needed anymore since OBS 2.3
 qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el',
                    'sh4', 'mips', 'mipsel',
                    'ppc', 'ppc64',
@@ -106,6 +107,10 @@ class Buildinfo:
             self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
+        if root.find('hostarch') != None:
+            self.hostarch = root.find('hostarch').text
+        else:
+            self.hostarch = None
         if root.find('release') != None:
             self.release = root.find('release').text
         else:
@@ -624,12 +629,17 @@ def main(apiurl, opts, argv):
     # real arch of this machine
     # vs.
     # arch we are supposed to build for
-    if hostarch != bi.buildarch:
+    if bi.hostarch != None:
+        if hostarch != bi.hostarch and not hostarch in can_also_build.get(hostarch, []):
+            print >>sys.stderr, 'Error: hostarch \'%s\' is required.' % (bi.hostarch)
+            return 1
+    elif hostarch != bi.buildarch:
         if not bi.buildarch in can_also_build.get(hostarch, []):
+            # OBSOLETE: qemu_can_build should not be needed anymore since OBS 2.3
             if not bi.buildarch in qemu_can_build:
                 print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
                 return 1
-            print >>sys.stderr, 'WARNING: hostarch \'%s\' can build \'%s\' only via QEMU.' % (hostarch, bi.buildarch)
+            print >>sys.stderr, 'WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU.' % (hostarch, bi.buildarch)
 
     rpmlist_prefers = []
     if prefer_pkgs:
