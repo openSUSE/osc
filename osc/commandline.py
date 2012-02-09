@@ -2797,6 +2797,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Create a hidden project')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
+    @cmdln.option('-M', '--maintenance', default=False, action="store_true",
+                        help='Create project and package in maintenance mode')
     @cmdln.option('-N', '--new-package', action='store_true',
                   help='create a branch pointing to a not yet existing package')
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -2860,7 +2862,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
                            add_repositories=opts.add_repositories,
-                           extend_package_names=opts.extend_package_names, missingok=opts.new_package)
+                           extend_package_names=opts.extend_package_names,
+                           missingok=opts.new_package,
+                           maintenance=opts.maintenance)
         if exists:
             print >>sys.stderr, 'Using existing branch project: %s' % targetprj
 
