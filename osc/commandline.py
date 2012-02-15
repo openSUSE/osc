@@ -3709,6 +3709,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 addFiles([arg])
 
+    def do_mkrpac(self, subcmd, opts, *args):
+        """${cmd_name}: Create a new package on the server
+
+        usage:
+            osc mkrpac project new_package
+        ${cmd_option_list}
+        """
+        if len(args) != 2:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+
+        createRemotePackage(self.get_api_url(), args[0], args[1])
+        
 
     def do_mkpac(self, subcmd, opts, *args):
         """${cmd_name}: Create a new package under version control
