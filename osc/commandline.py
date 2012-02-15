@@ -2659,8 +2659,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             maintenance_attribute = opts.attribute
 
         source_project = source_packages = target_project = opt_sourceupdate = None
-        if not opts.no_cleanup:
-           opt_sourceupdate = 'cleanup'
 
         if len(args) == 0 and is_project_dir(os.curdir):
             source_project = store_read_project(os.curdir)
@@ -2670,6 +2668,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             source_project = args[0]
         if len(args) > 1:
             source_packages = args[1:]
+        if not opts.no_cleanup:
+            default_branch = 'home:%s:branches:' % (conf.get_apiurl_usr(apiurl))
+            if source_project.startswith(default_branch) and not opts.no_cleanup:
+                opt_sourceupdate = 'cleanup'
 
         if opts.incident_project:
             target_project = opts.incident_project
