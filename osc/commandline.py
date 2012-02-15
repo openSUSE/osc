@@ -2637,6 +2637,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify incident number to merge in')
     @cmdln.option('--incident-project', metavar='INCIDENT_PROJECT',
                         help='specify incident project to merge in')
+    @cmdln.option('--release-project', metavar='RELEASE_PROJECT',
+                        help='specify the project where the final package will get released')
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
@@ -2690,7 +2692,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             opts.message = edit_message()
 
-        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, opt_sourceupdate, opts.message)
+        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, opts.release_project, opt_sourceupdate, opts.message)
         print r.reqid
 
 

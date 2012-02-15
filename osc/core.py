@@ -2199,7 +2199,7 @@ class Action:
         'add_role': ('tgt_project', 'tgt_package', 'person_name', 'person_role', 'group_name', 'group_role'),
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'), # obsoleted by add_role
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name'),
-        'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'person_name', 'opt_sourceupdate'),
+        'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate'),
         'delete': ('tgt_project', 'tgt_package'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package')}
     # attribute prefix to element name map (only needed for abbreviated attributes)
@@ -3421,14 +3421,14 @@ def create_release_request(apiurl, src_project, message=''):
     return r
 
 # create a maintenance incident per request
-def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, opt_sourceupdate, message=''):
+def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message=''):
     import cgi
     r = Request()
     if src_packages:
         for p in src_packages:
-             r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, opt_sourceupdate = opt_sourceupdate)
+             r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     else:
-        r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, opt_sourceupdate = opt_sourceupdate)
+        r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
     r.description = cgi.escape(unicode(message, 'utf8'))
     r.create(apiurl)
@@ -3488,14 +3488,14 @@ def create_submit_request(apiurl,
         if e.headers.get('X-Opensuse-Errorcode') == "submit_request_rejected":
            print "This project is just for releasing maintenance updates. Do you want to create a maintenance incident request instead? [y/n]"
            if sys.stdin.read(1) == "y":
-              xpath = 'attribute/@name = \'%s\'' % conf.config['maintenance_attribute']
+              xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
               res = search(apiurl, project_id=xpath)
               root = res['project_id']
               project = root.find('project')
               if project is None:
-                  sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
+                  sys.exit('No maintenance project defined for target project on server.')
               tproject = project.get('name')
-              r = create_maintenance_request(apiurl, src_project, [src_package], tproject, src_update, message)
+              r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message)
         else:
            raise
 
