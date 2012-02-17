@@ -4571,6 +4571,8 @@ def delete_package(apiurl, prj, pac, force=False, msg=None):
     query = {}
     if force:
         query['force'] = "1"
+    if msg:
+        query['comment'] = msg
     u = makeurl(apiurl, ['source', prj, pac], query)
     http_DELETE(u)
 
