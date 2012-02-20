@@ -59,7 +59,7 @@ new_project_templ = """\
 <!-- remove this comment to enable one or more build targets
 
   <repository name="openSUSE_Factory">
-    <path project="openSUSE:Factory" repository="standard" />
+    <path project="openSUSE:Factory" repository="snapshot" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
