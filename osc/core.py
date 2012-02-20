@@ -2402,7 +2402,10 @@ class Request:
             d['target'] = 'developed in %s' % prj_pkg_join(action.src_project, action.src_package)
         elif action.type == 'maintenance_incident':
             d['source'] = '%s ->' % action.src_project
+            if action.src_package:
+                d['source'] = '%s ->' % prj_pkg_join(action.src_project, action.src_package)
             d['target'] = action.tgt_project
+            d['target'] += " (release in " + action.tgt_releaseproject + ")"
             srcupdate = ' '
             if action.opt_sourceupdate and show_srcupdate:
                 srcupdate = '(%s)' % action.opt_sourceupdate
