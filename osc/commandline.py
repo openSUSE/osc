@@ -4256,7 +4256,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             print ''.join(show_results_meta(*args)),
         elif opts.csv:
-            print '\n'.join(format_results(get_package_results(*args), opts.format))
+            # ignore _oldstate key
+            results = [r for r in get_package_results(*args) if not '_oldstate' in r]
+            print '\n'.join(format_results(results, opts.format))
         else:
             args.append(opts.verbose)
             args.append(opts.watch)
