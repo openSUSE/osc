@@ -4226,7 +4226,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 2:
             wd = os.curdir
             if is_project_dir(wd):
-                opts.csv = None
                 if opts.arch == []:
                     opts.arch = None
                 if opts.repo == []:
