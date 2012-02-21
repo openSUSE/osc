@@ -2639,8 +2639,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify incident number to merge in')
     @cmdln.option('--incident-project', metavar='INCIDENT_PROJECT',
                         help='specify incident project to merge in')
-    @cmdln.option('--release-project', metavar='RELEASE_PROJECT',
-                        help='specify the project where the final package will get released')
+    @cmdln.alias("mr")
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
@@ -2652,7 +2651,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         the "patchinfo" command how add the required maintenance update information.
 
         usage:
-            osc maintenancerequest [ SOURCEPROJECT [ SOURCEPACKAGES ] ]
+            osc maintenancerequest [ SOURCEPROJECT [ SOURCEPACKAGES RELEASEPROJECT ] ]
         ${cmd_option_list}
         """
 
@@ -2662,7 +2661,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.attribute:
             maintenance_attribute = opts.attribute
 
-        source_project = source_packages = target_project = opt_sourceupdate = None
+        source_project = source_packages = target_project = release_project = opt_sourceupdate = None
 
         if len(args) == 0 and is_project_dir(os.curdir):
             source_project = store_read_project(os.curdir)
@@ -2671,7 +2670,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 0:
             source_project = args[0]
         if len(args) > 1:
+            if len(args) == 2:
+                sys.exit('Source package defined, but no release project.')
             source_packages = args[1:]
+            release_project = args[-1]
+            source_packages.remove(release_project)
         if not opts.no_cleanup:
             default_branch = 'home:%s:branches:' % (conf.get_apiurl_usr(apiurl))
             if source_project.startswith(default_branch) and not opts.no_cleanup:
@@ -2694,7 +2697,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             opts.message = edit_message()
 
-        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, opts.release_project, opt_sourceupdate, opts.message)
+        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message)
         print r.reqid
 
 
