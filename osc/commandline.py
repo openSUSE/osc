@@ -735,6 +735,8 @@ class Osc(cmdln.Cmdln):
                 for i in opts.set.split(','):
                     values += '<value>%s</value>' % i
             aname = opts.attribute.split(":")
+            if len(aname) != 2:
+                raise oscerr.WrongOptions('Given attribute is not in "NAMESPACE:NAME" style')
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
             url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
