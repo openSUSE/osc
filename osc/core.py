@@ -3495,18 +3495,17 @@ def create_submit_request(apiurl,
         r = root.get('id')
     except urllib2.HTTPError, e:
         if e.headers.get('X-Opensuse-Errorcode') == "submit_request_rejected":
-           print "This project is just for releasing maintenance updates. Do you want to create a maintenance incident request instead? [y/n]"
-           if sys.stdin.read(1) == "y":
-              xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
-              res = search(apiurl, project_id=xpath)
-              root = res['project_id']
-              project = root.find('project')
-              if project is None:
-                  sys.exit('No maintenance project defined for target project on server.')
-              tproject = project.get('name')
-              r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message)
+            print "Project does not accept submit request, trying fallback to maintenance request ..."
+            xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
+            res = search(apiurl, project_id=xpath)
+            root = res['project_id']
+            project = root.find('project')
+            if project is None:
+                raise oscerr.APIError("Server did not define a maintenance project, can't submit.")
+            tproject = project.get('name')
+            r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message)
         else:
-           raise
+            raise
 
     return r
 
