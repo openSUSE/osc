@@ -165,7 +165,14 @@ class Fetcher:
     def move_package(self, tmpfile, destdir, pac_obj = None):
         import shutil
         pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
-        canonname = pkgq.canonname()
+        if pkgq:
+          canonname = pkgq.canonname()
+        else:
+          if pac_obj is None:
+            print >>sys.stderr, 'Unsupported file type: ', tmpfile
+            sys.exit(1)
+          canonname = pac_obj.binary
+
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
             pac_obj.filename = canonname

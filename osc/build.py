@@ -164,7 +164,7 @@ class Pac:
     def __init__(self, node, buildarch, pacsuffix, apiurl, localpkgs = []):
 
         self.mp = {}
-        for i in ['name', 'package',
+        for i in ['binary', 'package',
                   'version', 'release',
                   'project', 'repository',
                   'preinstall', 'vminstall', 'noinstall', 'runscripts',
@@ -176,6 +176,7 @@ class Pac:
         self.mp['pacsuffix']  = pacsuffix
 
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
+        self.mp['name'] = node.get('name') or self.mp['binary']
 
         # this is not the ideal place to check if the package is a localdep or not
         localdep = self.mp['name'] in localpkgs and not self.mp['noinstall']
@@ -205,7 +206,8 @@ class Pac:
         if self.mp['repopackage'] == '_repository':
             self.mp['repofilename'] = self.mp['name']
         else:
-            self.mp['repofilename'] = self.mp['filename']
+            # OBS 2.3 puts binary into product bdeps (noinstall ones)
+            self.mp['repofilename'] = self.mp['binary'] or self.mp['filename']
 
         # make the content of the dictionary accessible as class attributes
         self.__dict__.update(self.mp)

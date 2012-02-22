@@ -98,8 +98,11 @@ class PackageQuery:
             import debquery
             pkgquery = debquery.DebQuery(f)
             extra_tags = extra_debtags
+        elif magic[:5] == '<?xml':
+	    f.close()
+	    return None
         else:
-            raise PackageError('unsupported package type. magic: \'%s\' (%s)' % (magic, filename))
+            raise PackageError(filename, 'unsupported package type. magic: \'%s\'' % magic)
         pkgquery.read(all_tags, *extra_tags)
         f.close()
         return pkgquery
