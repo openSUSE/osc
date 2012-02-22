@@ -198,16 +198,16 @@ class Pac:
         self.mp['apiurl'] = apiurl
 
         if pacsuffix == 'deb':
-            self.filename = debquery.DebQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            filename = debquery.DebQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
         else:
-            self.filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
 
-        self.mp['filename'] = self.filename
+        self.mp['filename'] = node.get('binary') or filename
         if self.mp['repopackage'] == '_repository':
             self.mp['repofilename'] = self.mp['name']
         else:
             # OBS 2.3 puts binary into product bdeps (noinstall ones)
-            self.mp['repofilename'] = self.mp['binary'] or self.mp['filename']
+            self.mp['repofilename'] = self.mp['filename']
 
         # make the content of the dictionary accessible as class attributes
         self.__dict__.update(self.mp)
