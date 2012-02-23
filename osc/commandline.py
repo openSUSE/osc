@@ -5051,7 +5051,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # check for source services
         r = None
         try:
-            if not opts.offline:
+            if not opts.offline and not opts.noservice:
                p = Package('.')
                r = p.run_source_services(verbose=True)
         except:
