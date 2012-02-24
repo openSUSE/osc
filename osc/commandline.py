@@ -1072,18 +1072,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev=opts.revision
         if not rev:
             # get _link info from server, that knows about the local state ...
-            u = makeurl(apiurl, ['source', src_project, src_package])
+            u = makeurl(apiurl, ['source', src_project, src_package], query="expand=1")
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
-            if linkinfo != None:
-                if linkinfo.get('error'):
-                   print "Package source is a broken source link."
-                   sys.exit("Please fix this first")
+            if linkinfo == None:
+                rev=root.get('rev')
+            else:
                 if linkinfo.get('project') != dst_project or linkinfo.get('package') != dst_package:
                    # the submit target is not link target. use merged md5sum references to avoid not mergable
                    # sources when multiple request from same source get created.
-                   rev=linkinfo.get('xsrcmd5')
+                   rev=root.get('srcmd5')
 
         rdiff = None
         if opts.diff or not opts.message:
