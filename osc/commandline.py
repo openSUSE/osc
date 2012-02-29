@@ -2176,8 +2176,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use the specified revision.')
     @cmdln.option('-R', '--use-plain-revision', action='store_true',
                   help='Don\'t expand revsion based on baserev, the revision which was used when commit happened.')
-    @cmdln.option('-b', '--use-baserev', action='store_true',
-                  help='Use the revisions which exists when the original commit happend and don\'t try to merge later commits.')
     @cmdln.option('-u', '--unset', action='store_true',
                   help='remove revision in link, it will point always to latest revision')
     def do_setlinkrev(self, subcmd, opts, *args):
@@ -2196,11 +2194,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
         package = None
         expand = True
-        baserev = False
+        baserev = True
         if opts.use_plain_revision:
             expand = False
-        if opts.use_baserev:
-            baserev = True
+            baserev = False
 
         rev = parseRevisionOption(opts.revision)[0] or ''
         if opts.unset:
