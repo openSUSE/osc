@@ -2405,7 +2405,8 @@ class Request:
             if action.src_package:
                 d['source'] = '%s ->' % prj_pkg_join(action.src_project, action.src_package)
             d['target'] = action.tgt_project
-            d['target'] += " (release in " + action.tgt_releaseproject + ")"
+            if action.tgt_releaseproject:
+                d['target'] += " (release in " + action.tgt_releaseproject + ")"
             srcupdate = ' '
             if action.opt_sourceupdate and show_srcupdate:
                 srcupdate = '(%s)' % action.opt_sourceupdate
