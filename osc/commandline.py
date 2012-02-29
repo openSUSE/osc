@@ -5787,8 +5787,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                               continue
                            if issue.find('owner') == None or issue.find('owner').find('login').text != user:
                               continue
-                           print "  #", issue.find('long_name').text, ': ',
-                           desc = issue.find('description')
+                           print "  #", issue.find('label').text, ': ',
+                           desc = issue.find('summary')
                            if desc != None:
                                print desc.text
                            else:
