@@ -2351,6 +2351,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   + self.get_cmd_help('linkpac'))
 
         rev, dummy = parseRevisionOption(opts.revision)
+        vrev = None
 
         src_project = args[0]
         src_package = args[1]
@@ -2369,13 +2370,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.cicount = "copy"
 
         if opts.current and not opts.new_package:
-            rev = show_upstream_rev(apiurl, src_project, src_package)
+            rev, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, expand=1)
+            if rev == None or len(rev) < 32:
+                # vrev is only needed for srcmd5 and OBS instances < 2.1.17 do not support it
+                vrev = None
 
         if rev and not checkRevision(src_project, src_package, rev):
             print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
             sys.exit(1)
 
-        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish, opts.new_package)
+        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish, opts.new_package, vrev)
 
     @cmdln.option('--nosources', action='store_true',
                   help='ignore source packages when copying build results to destination project')

@@ -2,6 +2,7 @@
   - patchinfo call can work without checked out copy now
   - use qemu as fallback for building not directly supported architectures
   - "results --watch" option to watch build results until they finished building
+  - setlinkrev and linkpac ---current is setting vrev. this requires OBS 2.1.17 or 2.3
 #
 # Features which requires OBS 2.3
 #

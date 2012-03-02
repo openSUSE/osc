@@ -3238,6 +3238,11 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
+def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
+    et = ET.fromstring(''.join(m))
+    return et.get('rev'), et.get('vrev')
+
 def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
     et = ET.fromstring(''.join(m))
@@ -4193,7 +4198,7 @@ def link_to_branch(apiurl, project,  package):
     else:
         raise oscerr.OscIOError(None, 'no _link file inside project \'%s\' package \'%s\'' % (project, package))
 
-def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False, missing_target = False):
+def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish = False, missing_target = False, vrev=''):
     """
     create a linked package
      - "src" is the original package
@@ -4246,16 +4251,21 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             sys.exit(1)
 
     if rev:
-        rev = 'rev="%s"' % rev
+        rev = ' rev="%s"' % rev
     else:
         rev = ''
 
+    if vrev:
+        vrev = ' vrev="%s"' % vrev
+    else:
+        vrev = ''
+
     missingok = ''
     if missing_target:
-        missingok = 'missingok="true"'
+        missingok = ' missingok="true"'
 
     if cicount:
-        cicount = 'cicount="%s"' % cicount
+        cicount = ' cicount="%s"' % cicount
     else:
         cicount = ''
 
@@ -4266,15 +4276,16 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
         project = 'project="%s"' % src_project
 
     link_template = """\
-<link %s package="%s" %s %s %s>
+<link %s package="%s"%s%s%s%s>
 <patches>
+  <!-- <branch /> for a full copy, default case  -->
   <!-- <apply name="patch" /> apply a patch on the source directory  -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
   <!-- <add>file.patch</add> add a patch to be applied after %%setup (spec file only) -->
   <!-- <delete>filename</delete> delete a file -->
 </patches>
 </link>
-""" % (project, src_package, missingok, rev, cicount)
+""" % (project, src_package, missingok, rev, vrev, cicount)
 
     u = makeurl(apiurl, ['source', dst_project, dst_package, '_link'])
     http_PUT(u, data=link_template)
@@ -5600,6 +5611,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
     src_project = root.get('project', project)
     src_package = root.get('package', package)
     linkrev=None
+    vrev = None
     if baserev:
         linkrev = 'base'
         expand = True
@@ -5607,10 +5619,13 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
         if 'rev' in root.keys():
             del root.attrib['rev']
     elif revision == '' or expand:
-        revision = show_upstream_rev(apiurl, src_project, src_package, revision=revision, linkrev=linkrev, expand=expand)
+        revision, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, revision=revision, linkrev=linkrev, expand=expand)
 
     if revision:
         root.set('rev', revision)
+    # add vrev when revision is a srcmd5
+    if vrev and revision and len(revision) >= 32:
+        root.set('vrev', vrev)
 
     l = ET.tostring(root)
     http_PUT(url, data=l)
