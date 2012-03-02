@@ -33,7 +33,7 @@ class TestSetLinkRev(OscTestCase):
     @GET('http://localhost/source/osctest/simple/_link', file='noproject_link')
     @GET('http://localhost/source/osctest/srcpkg?rev=latest&expand=1', file='expandedsrc_filesremote')
     @PUT('http://localhost/source/osctest/simple/_link',
-         exp='<link package="srcpkg" rev="eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" />', text='dummytext')
+         exp='<link package="srcpkg" rev="eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" vrev="1" />', text='dummytext')
     def test_expandedsrc(self):
         """expand src package"""
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', expand=True)
@@ -41,7 +41,7 @@ class TestSetLinkRev(OscTestCase):
     @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
     @GET('http://localhost/source/srcprj/srcpkg?linkrev=base&rev=latest&expand=1', file='baserev_filesremote')
     @PUT('http://localhost/source/osctest/simple/_link',
-         exp='<link package="srcpkg" project="srcprj" rev="abcdeeeeeeeeeeeeeeeeeeeeeeeeeeee" />', text='dummytext')
+         exp='<link package="srcpkg" project="srcprj" rev="abcdeeeeeeeeeeeeeeeeeeeeeeeeeeee" vrev="1" />', text='dummytext')
     def test_baserev(self):
         """expanded baserev revision"""
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', baserev=True)
