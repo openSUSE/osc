@@ -1837,6 +1837,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request checkout/co ID
             osc request clone [-m TEXT] ID
 
+            osc review show [-d] [-b] ID
             osc review list [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] [-s state]
             osc review add [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
             osc review accept [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
