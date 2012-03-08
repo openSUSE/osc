@@ -883,7 +883,7 @@ def get_config(override_conffile=None,
     apiurl = aliases.get(config['apiurl'], config['apiurl'])
     config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
     # backward compatibility
-    if key in config:
+    if 'apisrv' in config:
         apisrv = config['apisrv'].lstrip('http://')
         apisrv = apisrv.lstrip('https://')
         scheme = config.get('scheme', 'https')
