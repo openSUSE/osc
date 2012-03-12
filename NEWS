@@ -3,6 +3,7 @@
   - use qemu as fallback for building not directly supported architectures
   - "results --watch" option to watch build results until they finished building
   - setlinkrev and linkpac ---current is setting vrev. this requires OBS 2.1.17 or 2.3
+  - security fix for buildlog function, terminal control characters are limited now.
 #
 # Features which requires OBS 2.3
 #
