@@ -3,7 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.134.0'
+__version__ = '0.134.1'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -2507,9 +2507,12 @@ class Request:
     def __cmp__(self, other):
         return cmp(int(self.reqid), int(other.reqid))
 
-    def create(self, apiurl):
+    def create(self, apiurl, addrevision=False):
         """create a new request"""
-        u = makeurl(apiurl, ['request'], query='cmd=create')
+        query = {'cmd'    : 'create' }
+        if addrevision:
+            query['addrevision'] = "1"
+        u = makeurl(apiurl, ['request'], query=query)
         f = http_POST(u, data=self.to_str())
         root = ET.fromstring(f.read())
         self.read(root)
@@ -3440,7 +3443,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
     r.description = cgi.escape(unicode(message, 'utf8'))
-    r.create(apiurl)
+    r.create(apiurl, addrevision=True)
     return r
 
 # This creates an old style submit request for server api 1.0
