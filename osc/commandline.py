@@ -3016,6 +3016,49 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             delete_project(apiurl, prj, opts.force, msg)
 
+
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify log message TEXT')
+    def do_unlock(self, subcmd, opts, *args):
+        """${cmd_name}: Unlocks a project or package
+
+        Unlocks a locked project or package. A comment is required.
+
+        usage:
+           osc unlock PROJECT [PACKAGE]
+
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        if len(args) < 1 or len(args) > 2:
+            raise oscerr.WrongArgs('Wrong number of arguments')
+
+        apiurl = self.get_api_url()
+        prj = args[0]
+
+        msg = ''
+        if opts.message:
+            msg = opts.message
+        else:
+            msg = edit_message()
+
+        # empty arguments result in recursive project delete ...
+        if not len(prj):
+            raise oscerr.WrongArgs('Project argument is empty')
+
+        if len(args) > 1:
+            pkg = args[1]
+
+            if not len(pkg):
+                raise oscerr.WrongArgs('Package argument is empty')
+
+            unlock_package(apiurl, prj, pkg, msg)
+
+        else:
+            unlock_project(apiurl, prj, msg)
+
+
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):
         print """${cmd_name} is obsolete !

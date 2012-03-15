@@ -4549,6 +4549,17 @@ def copy_pac(src_apiurl, src_project, src_package,
         return 'Done.'
 
 
+def unlock_package(apiurl, prj, pac, msg):
+    query={'cmd': 'unlock', 'comment': msg}
+    u = makeurl(apiurl, ['source', prj, pac], query)
+    http_POST(u)
+
+def unlock_project(apiurl, prj, msg=None):
+    query={'cmd': 'unlock', 'comment': msg}
+    u = makeurl(apiurl, ['source', prj], query)
+    http_POST(u)
+
+
 def undelete_package(apiurl, prj, pac, msg=None):
     query={'cmd': 'undelete'}
     if msg:
