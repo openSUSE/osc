@@ -456,6 +456,8 @@ class Osc(cmdln.Cmdln):
                      project = store_read_project(localdir)
                      patchinfo = store_read_package(localdir)
                      apiurl = self.get_api_url()
+                     if not os.path.exists('_patchinfo'):
+                        sys.exit('Current checked out package has no _patchinfo. Either call it from project level or specify patch name.')
                 else:
                      sys.exit('This command must be called in a checked out project or patchinfo package.')
         else:
