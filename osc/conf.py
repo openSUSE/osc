@@ -822,7 +822,7 @@ def get_config(override_conffile=None,
                 password = ''
 
             if user is None or user == '':
-                raise oscerr.ConfigError('user is blank for %s, please delete of complete the "user=" entry in %s.' % (apiurl, config['conffile']), config['conffile'])
+                raise oscerr.ConfigError('user is blank for %s, please delete or complete the "user=" entry in %s.' % (apiurl, config['conffile']), config['conffile'])
 
             if config['plaintext_passwd'] and passwordx or not config['plaintext_passwd'] and password:
                 if config['plaintext_passwd']:
