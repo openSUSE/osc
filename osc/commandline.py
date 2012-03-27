@@ -4048,7 +4048,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     print 'Unexpanding to rev', p.linkinfo.lsrcmd5
                     p.update(rev, opts.server_side_source_service_files, opts.limit_size)
-                    rev = p.linkinfo.lsrcmd5
+                    # XXX: calling update again is redundant (see below)
+                    rev = p.rev
                 elif (p.islink() and p.isexpanded()) or opts.server_side_source_service_files:
                     rev = p.latest_rev(include_service_files=opts.server_side_source_service_files)
 
