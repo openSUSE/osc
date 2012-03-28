@@ -1820,10 +1820,11 @@ rev: %s
         if os.path.exists(os.path.join(self.storedir, '_frozenlink')):
             os.unlink(os.path.join(self.storedir, '_frozenlink'))
 
-    def latest_rev(self, include_service_files=False):
+    def latest_rev(self, include_service_files=False, expand=False):
+        # if expand is True the xsrcmd5 will be returned (even if the wc is unexpanded)
         if self.islinkrepair():
             upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrepair=1, meta=self.meta, include_service_files=include_service_files)
-        elif self.islink() and self.isexpanded():
+        elif self.islink() and (self.isexpanded() or expand):
             if self.isfrozen() or self.ispulled():
                 upstream_rev = show_upstream_xsrcmd5(self.apiurl, self.prjname, self.name, linkrev=self.linkinfo.srcmd5, meta=self.meta, include_service_files=include_service_files)
             else:

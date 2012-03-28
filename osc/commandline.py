@@ -4035,20 +4035,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if not rev:
                 if opts.expand_link and p.islink() and not p.isexpanded():
-                    if p.haslinkerror():
-                        try:
-                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
-                        except:
-                            rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev, linkrev='base')
-                            p.mark_frozen()
-                    else:
-                        p.update(rev, opts.server_side_source_service_files, opts.limit_size)
-                        rev = p.linkinfo.xsrcmd5
+                    rev = p.latest_rev(expand=True)
                     print 'Expanding to rev', rev
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
-                    p.update(rev, opts.server_side_source_service_files, opts.limit_size)
-                    # XXX: calling update again is redundant (see below)
-                    rev = p.rev
+                    rev = show_upstream_rev(p.apiurl, p.prjname, p.name, meta=p.meta)
                     print 'Unexpanding to rev', rev
                 elif (p.islink() and p.isexpanded()) or opts.server_side_source_service_files:
                     rev = p.latest_rev(include_service_files=opts.server_side_source_service_files)
