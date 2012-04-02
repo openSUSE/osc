@@ -163,10 +163,24 @@ Link info: %s
 """
 
 new_pattern_template = """\
-<!-- See https://gitorious.org/opensuse/libzypp/blobs/master/zypp/parser/yum/schema/patterns.rng -->
+<!-- See https://github.com/openSUSE/libzypp/tree/master/zypp/parser/yum/schema/patterns.rng -->
 
-<pattern>
+<!--
+<pattern xmlns="http://novell.com/package/metadata/suse/pattern"
+ xmlns:rpm="http://linux.duke.edu/metadata/rpm">
+ <name></name>
+ <summary></summary>
+ <description></description>
+ <uservisible/>
+ <category lang="en"></category>
+ <rpm:recommends>
+   <rpm:entry name="package"/>
+ </rpm:recommends>
+ <rpm:suggests>
+   <rpm:entry name="anotherpackage"/>
+ </rpm:suggests>
 </pattern>
+-->
 """
 
 buildstatus_symbols = {'succeeded':       '.',
