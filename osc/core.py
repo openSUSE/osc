@@ -173,6 +173,9 @@ new_pattern_template = """\
  <description></description>
  <uservisible/>
  <category lang="en"></category>
+ <rpm:requires>
+   <rpm:entry name="must-have-package"/>
+ </rpm:requires>
  <rpm:recommends>
    <rpm:entry name="package"/>
  </rpm:recommends>
