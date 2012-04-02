@@ -602,8 +602,6 @@ class Osc(cmdln.Cmdln):
         cmd = args[0]
         del args[0]
 
-        apiurl = self.get_api_url()
-
         if cmd in ['pkg']:
             min_args, max_args = 0, 2
         elif cmd in ['pattern']:
@@ -619,6 +617,10 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
+
+        apiurl = self.get_api_url()
+        if len(args) < 2:
+            apiurl = store_read_apiurl(os.curdir)
 
         # specific arguments
         attributepath = []
