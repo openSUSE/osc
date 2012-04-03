@@ -12,6 +12,7 @@ from util import packagequery, cpio
 import conf
 import oscerr
 import tempfile
+import re
 try:
     from meter import TextMeter
 except:
@@ -112,7 +113,8 @@ class Fetcher:
                         archive.copyin_file(hdr.filename)
                         raise oscerr.APIError('CPIO archive is incomplete (see .errors file)')
                     if package == '_repository':
-                        pac = pkgs[hdr.filename.rsplit('.', 1)[0]]
+                        n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename)
+                        pac = pkgs[n.rsplit('.', 1)[0]]
                     else:
                         # this is a kiwi product
                         pac = pkgs[hdr.filename]

@@ -99,8 +99,11 @@ class PackageQuery:
             pkgquery = debquery.DebQuery(f)
             extra_tags = extra_debtags
         elif magic[:5] == '<?xml':
-	    f.close()
-	    return None
+            f.close()
+            return None
+        elif magic[:5] == '\375\067zXZ' or magic[:2] == '\037\213':
+            import archquery
+            pkgquery = archquery.ArchQuery(f)
         else:
             raise PackageError(filename, 'unsupported package type. magic: \'%s\'' % magic)
         pkgquery.read(all_tags, *extra_tags)

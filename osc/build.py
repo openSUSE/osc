@@ -14,7 +14,7 @@ from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
 from osc.core import get_binarylist, get_binary_file
-from osc.util import rpmquery, debquery
+from osc.util import rpmquery, debquery, archquery
 import osc.conf
 import oscerr
 import subprocess
@@ -105,6 +105,8 @@ class Buildinfo:
         self.pacsuffix = 'rpm'
         if self.buildtype == 'dsc':
             self.pacsuffix = 'deb'
+        if self.buildtype == 'arch':
+            self.pacsuffix = 'arch'
 
         self.buildarch = root.find('arch').text
         if root.find('hostarch') != None:
@@ -199,6 +201,8 @@ class Pac:
 
         if pacsuffix == 'deb':
             filename = debquery.DebQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
+        elif pacsuffix == 'arch':
+            filename = archquery.ArchQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
         else:
             filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
 
@@ -380,7 +384,9 @@ def main(apiurl, opts, argv):
 
     build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
-    if build_type not in ['spec', 'dsc', 'kiwi']:
+    if os.path.basename(build_descr) == 'PKGBUILD':
+        build_type = 'arch'
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch']:
         raise oscerr.WrongArgs(
                 'Unknown build type: \'%s\'. Build description should end in .spec, .dsc or .kiwi.' \
                         % build_type)
