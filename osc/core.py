@@ -3597,19 +3597,34 @@ def change_request_state_template(req, newstate):
         return ''
 
 def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=('new')):
+    # this is so ugly...
+    def build_by(xpath, val):
+        if 'all' in states:
+            return xpath_join(xpath, 'review/%s' % val, op='and')
+        elif states:
+            s_xp = ''
+            for state in states:
+                s_xp = xpath_join(s_xp, '@state=\'%s\'' % state, inner=True)
+            val = val.strip('[').strip(']')
+            return xpath_join(xpath, 'review[%s and (%s)]' % (val, s_xp), op='and')
+        return ''
+
     xpath = ''
     xpath = xpath_join(xpath, 'state/@name=\'review\'', inner=True)
     if not 'all' in states:
         for state in states:
             xpath = xpath_join(xpath, 'review/@state=\'%s\'' % state, inner=True)
+    if byuser or bygroup or bypackage or byproject:
+        # discard constructed xpath...
+        xpath = ''
     if byuser:
-        xpath = xpath_join(xpath, 'review/@by_user=\'%s\'' % byuser, op='and')
+        xpath = build_by(xpath, '@by_user=\'%s\'' % byuser)
     if bygroup:
-        xpath = xpath_join(xpath, 'review/@by_group=\'%s\'' % bygroup, op='and')
+        xpath = build_by(xpath, '@by_group=\'%s\'' % bygroup)
     if bypackage:
-        xpath = xpath_join(xpath, 'review/[@by_project=\'%s\' and @by_package=\'%s\']' % (byproject, bypackage), op='and')
+        xpath = build_by(xpath, '@by_project=\'%s\' and @by_package=\'%s\'' % (byproject, bypackage))
     elif byproject:
-        xpath = xpath_join(xpath, 'review/@by_project=\'%s\'' % byproject, op='and')
+        xpath = build_by(xpath, '@by_project=\'%s\'' % byproject)
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend

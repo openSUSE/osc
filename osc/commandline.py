@@ -1973,7 +1973,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                if opts.all:
                    state_list = ['all']
                if subcmd == 'review':
-                   state_list = ['review']
+                   # is there a special reason why we do not respect the passed states?
+                   state_list = ['new']
                elif opts.state == 'all':
                    state_list = ['all']
                else:
