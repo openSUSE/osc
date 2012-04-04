@@ -4653,7 +4653,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) < 2 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
 
-        if len(args) > 5:
+        if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = self.get_api_url()
