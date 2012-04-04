@@ -4268,29 +4268,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         apiurl = self.get_api_url()
-        if len(args) < 2:
-            wd = os.curdir
-            if is_project_dir(wd):
-                if opts.arch == []:
-                    opts.arch = None
-                if opts.repo == []:
-                    opts.repo = None
-                opts.hide_legend = None
-                opts.name_filter = None
-                opts.status_filter = None
-                opts.vertical = None
-                opts.show_non_building = None
-                opts.show_excluded = None
-                self.do_prjresults('prjresults', opts, *args)
-                sys.exit(0)
-            else:
-                project = store_read_project(wd)
-                package = store_read_package(wd)
-        elif len(args) > 2:
+        if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none, one, or two)')
-        else:
+        project = package = None
+        wd = os.curdir
+        if is_project_dir(wd):
+            project = store_read_project(wd)
+        elif is_package_dir(wd):
+            project = store_read_project(wd)
+            package = store_read_package(wd)
+        if len(args) > 0:
             project = args[0]
+        if len(args) > 1:
             package = args[1]
+
+        if project == None:
+            raise oscerr.WrongOptions("No project given")
+
+        if package == None:
+            if opts.arch == []:
+                opts.arch = None
+            if opts.repo == []:
+                opts.repo = None
+            opts.hide_legend = None
+            opts.name_filter = None
+            opts.status_filter = None
+            opts.vertical = None
+            opts.show_non_building = None
+            opts.show_excluded = None
+            self.do_prjresults('prjresults', opts, *args)
+            sys.exit(0)
 
         if opts.xml and opts.csv:
             raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
