@@ -4918,7 +4918,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not arg_repository:
             raise oscerr.WrongArgs('please specify a repository')
-        elif not arg_repository in repositories:
+        elif noinit == False and not arg_repository in repositories:
             raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ', '.join(repositories)))
 
         # can be implemented using
