@@ -3616,7 +3616,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
             xpath = xpath_join(xpath, 'review/@state=\'%s\'' % state, inner=True)
     if byuser or bygroup or bypackage or byproject:
         # discard constructed xpath...
-        xpath = ''
+        xpath = xpath_join('', 'state/@name=\'review\'', inner=True)
     if byuser:
         xpath = build_by(xpath, '@by_user=\'%s\'' % byuser)
     if bygroup:
