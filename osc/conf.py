@@ -142,6 +142,9 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             # what to do with the source package if the submitrequest has been accepted
             'submitrequest_on_accept_action': '',
             'request_show_interactive': '0',
+            # if a review is accepted in interactive mode and a group
+            # was specified the review will be accepted for this group
+            'review_inherit_group': '0',
             'submitrequest_accepted_template': '',
             'submitrequest_declined_template': '',
             'linkcontrol': '0',
@@ -161,8 +164,8 @@ config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check', 'http_full_debug', 'include_request_from_project',
-    'local_service_run']
+    'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check', 'http_full_debug',
+    'include_request_from_project', 'local_service_run']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -304,6 +307,10 @@ apiurl = %(apiurl)s
 
 #review requests interactively (default: off)
 #request_show_review = 1
+
+# if a review is accepted in interactive mode and a group
+# was specified the review will be accepted for this group (default: off)
+#review_inherit_group = 1
 
 [%(apiurl)s]
 user = %(user)s

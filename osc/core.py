@@ -6118,7 +6118,7 @@ def print_request_list(apiurl, project, package = None, states = ('new','review'
     for r in requests:
         print r.list_view(), '\n'
 
-def request_interactive_review(apiurl, request, initial_cmd=''):
+def request_interactive_review(apiurl, request, initial_cmd='', group=None):
     """review the request interactively"""
     import tempfile, re
 
@@ -6224,20 +6224,25 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                     if not reviews:
                         change_request_state(apiurl, request.reqid, state, msg)
                         break
-                    print 'Please chose one of the following reviews:'
-                    for i in range(len(reviews)):
-                        fmt = Request.format_review(reviews[i])
-                        print '(%i)' % i, 'by %(type)-10s %(by)s' % fmt
-                    num = raw_input('> ')
-                    try:
-                        num = int(num)
-                    except ValueError:
-                        print '\'%s\' is not a number.' % num
-                        continue
-                    if num < 0 or num >= len(reviews):
-                        print 'number \'%s\' out of range.' % num
-                        continue
-                    review = reviews[num]
+                    group_reviews = [r for r in reviews if (r.by_group is not None
+                                                            and r.by_group == group)]
+                    if len(group_reviews) == 1 and conf.config['review_inherit_group']:
+                        review = group_reviews[0]
+                    else:
+                        print 'Please chose one of the following reviews:'
+                        for i in range(len(reviews)):
+                            fmt = Request.format_review(reviews[i])
+                            print '(%i)' % i, 'by %(type)-10s %(by)s' % fmt
+                        num = raw_input('> ')
+                        try:
+                            num = int(num)
+                        except ValueError:
+                            print '\'%s\' is not a number.' % num
+                            continue
+                        if num < 0 or num >= len(reviews):
+                            print 'number \'%s\' out of range.' % num
+                            continue
+                        review = reviews[num]
                     change_review_state(apiurl, request.reqid, state, by_user=review.by_user,
                                         by_group=review.by_group, by_project=review.by_project,
                                         by_package=review.by_package, message=msg)

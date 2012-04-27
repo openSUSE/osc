@@ -2033,7 +2033,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for result in results:
                 if days == 0 or result.state.when > since or result.state.name == 'new':
                     if (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
-                        request_interactive_review(apiurl, result)
+                        request_interactive_review(apiurl, result, group=opts.group)
                     else:
                         print result.list_view(), '\n'
                 else:
