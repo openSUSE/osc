@@ -6131,8 +6131,13 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
     try:
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
         sr_actions = request.get_actions('submit')
+        # actions which have sources + buildresults
+        src_actions = sr_actions + request.get_actions('maintenance_release')
         if sr_actions:
             prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/(s)kip/(c)ancel > '
+        elif src_actions:
+            # no edit for maintenance release requests
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
         while True:
@@ -6141,7 +6146,7 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                 initial_cmd = ''
             else:
                 repl = raw_input(prompt).strip()
-            if repl == 'i' and sr_actions:
+            if repl == 'i' and src_actions:
                 if not orequest is None and tmpfile:
                     tmpfile.close()
                     tmpfile = None
@@ -6154,7 +6159,7 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
                         if e.code != 400:
                             raise
                         # backward compatible diff for old apis
-                        for action in sr_actions:
+                        for action in src_actions:
                             diff = 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
                                 action.tgt_project, action.tgt_package)
                             diff += submit_action_diff(apiurl, action)
@@ -6169,16 +6174,17 @@ def request_interactive_review(apiurl, request, initial_cmd=''):
             elif repl == 'c':
                 print >>sys.stderr, 'Aborting'
                 raise oscerr.UserAbort()
-            elif repl == 'b' and sr_actions:
-                for action in sr_actions:
+            elif repl == 'b' and src_actions:
+                for action in src_actions:
                     print '%s/%s:' % (action.src_project, action.src_package)
                     print '\n'.join(get_results(apiurl, action.src_project, action.src_package))
             elif repl == 'e' and sr_actions:
+                # this is only for sr_actions
                 if not editprj:
                     editprj = clone_request(apiurl, request.reqid, 'osc editrequest')
                     orequest = request
                 request = edit_submitrequest(apiurl, editprj, orequest, request)
-                sr_actions = request.get_actions('submit')
+                src_actions = sr_actions = request.get_actions('submit')
                 print_request(request)
                 prompt = 'd(i)ff/(a)ccept/(b)uildstatus/(e)dit/(s)kip/(c)ancel > '
             else:
