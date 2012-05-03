@@ -2669,7 +2669,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         source_project = source_packages = target_project = release_project = opt_sourceupdate = None
 
-        if len(args) == 0 and is_project_dir(os.curdir):
+        if len(args) == 0 and (is_project_dir(os.curdir) or is_package_dir(os.curdir)):
             source_project = store_read_project(os.curdir)
         elif len(args) == 0:
             raise oscerr.WrongArgs('Too few arguments.')
