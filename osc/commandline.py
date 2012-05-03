@@ -2071,7 +2071,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         '(request has no \'submit\' action)')
                 return request_interactive_review(apiurl, r, 'e')
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
-                return request_interactive_review(apiurl, r)
+                return request_interactive_review(apiurl, r, group=opts.group)
             else:
                 print r
             if opts.source_buildstatus:
