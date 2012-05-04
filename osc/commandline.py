@@ -2102,7 +2102,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
             r = get_request(apiurl, reqid)
-            sr_actions = r.get_actions('submit')
+            sr_actions = r.get_actions('submit', 'maintenance_release')
             if not sr_actions:
                 raise oscerr.WrongArgs('\'checkout\' not possible (request has no \'submit\' actions)')
             for action in sr_actions:
