@@ -6207,7 +6207,11 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None):
                     # the read bytes probably have a moderate size so the str won't be too large
                     footer += '\n\n' + tmpfile.read()
                 if msg is None:
-                    msg = edit_message(footer = footer, template=msg_template)
+                    try:
+                        msg = edit_message(footer = footer, template=msg_template)
+                    except oscerr.UserAbort:
+                        # do not abort (show prompt again)
+                        continue
                 else:
                     msg = msg.strip('\'').strip('"')
                 if not orequest is None:
