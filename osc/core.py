@@ -4834,7 +4834,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                continue
            res['status'] = res['code']
            if verbose and res['details'] != '':
-               if res['status'] in ('unresolvable', 'expansion error'):
+               if res['code'] in ('unresolvable', 'expansion error'):
                    lines = res['details'].split(',')
                    res['status'] += ': ' + '\n     '.join(lines)
 
@@ -4846,7 +4846,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                    res['status'] = 'outdated (was: %s)' % res['status']
                else:
                    res['status'] += '*'
-           if res['status'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
+           if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
                waiting=True
 
            r.append(result_line_templ % res)
