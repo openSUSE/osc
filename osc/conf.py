@@ -803,8 +803,14 @@ def get_config(override_conffile=None,
             # Read from gnome keyring if available
             try:
                 gk_data = gnomekeyring.find_network_password_sync(protocol=scheme, server=host)
-                password = gk_data[0]['password']
+                if not 'user' in gk_data[0]:
+                    raise oscerr.ConfigError('no user found in keyring', conffile)
                 user = gk_data[0]['user']
+                if 'password' in gk_data[0]:
+                    password = gk_data[0]['password']
+                else:
+                    # this is most likely an error
+                    print >>sys.stderr, 'warning: no password found in keyring'
             except gnomekeyring.NoMatchError:
                 # Fallback to file based auth.
                 pass
