@@ -2155,6 +2155,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
                 print 'Result of change request state: %s' % r
 
+                # check for devel instances after accepted requests
+                if cmd in ['accept']:
+                    import cgi
+                    sr_actions = rq.get_actions('submit')
+                    for action in sr_actions:
+                        u = makeurl(apiurl, ['/search/package'], {
+                              'match' : "([devel/[@project='%s' and @package='%s']])" % (action.tgt_project, action.tgt_package)
+                              })
+                        f = http_GET(u)
+                        root = ET.parse(f).getroot()
+                        if root.findall('package'):
+                           print "This package instance is defined as devel are in ", 
+                           for node in root.findall('package'):
+                               project = node.get('project')
+                               package = node.get('name')
+                               print project,
+                               if package != action.tgt_package:
+                                   print "/", package,
+                               repl = raw_input('\nForward this submit to it? (y/n)')
+                               if repl.lower() == 'y':
+                                   r = Request()
+                                   r.add_action('submit', src_project=action.tgt_project, src_package=action.tgt_package,
+                                                tgt_project=project, tgt_package=package)
+                                   r.description = cgi.escape("%s (forwarded request %s from %s)", ( rq.description, reqid, rq.get_creator))
+                                   r.create(self.get_api_url())
+                                   print r.reqid
+
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
     @cmdln.alias("createprj")
