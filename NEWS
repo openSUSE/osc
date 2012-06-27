@@ -1,5 +1,8 @@
 0.135
   - request accept is offering now to forward submit request if it is a devel area like webui does
+  - support archlinux builds (requires OBS 2.4)
+  - support maintenancerequest from local checkout
+  - bugfixes for review handling, result watching, gnome-keyring
 
 0.134
   - patchinfo call can work without checked out copy now
