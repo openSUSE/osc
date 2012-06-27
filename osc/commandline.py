@@ -2173,12 +2173,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                print project,
                                if package != action.tgt_package:
                                    print "/", package,
-                               repl = raw_input('\nForward this submit to it? (y/n)')
-                               if repl.lower() == 'y':
-                                   rid = create_submit_request(src_project=action.tgt_project, src_package=action.tgt_package,
-                                                tgt_project=project, tgt_package=package,
-                                                cgi.escape("%s (forwarded request %s from %s)", ( rq.description, reqid, rq.get_creator)))
-                                   print rid
+                               repl = raw_input('\nForward this submit to it? ([y]/n)')
+                               if repl.lower() == 'y' or repl == '':
+                                   msg = cgi.escape("%s (forwarded request %s from %s)" % ( rq.description, reqid, rq.get_creator))
+                                   rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
+                                                                       project, package, msg)
+                                   print "New request #", rid
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
