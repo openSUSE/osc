@@ -1830,7 +1830,7 @@ rev: %s
         print
         print "The link in this package is currently broken. Checking"
         print "out the last working version instead; please use 'osc pull'"
-        print "to repair the link."
+        print "to merge the conflicts."
         print
 
     def unmark_frozen(self):
