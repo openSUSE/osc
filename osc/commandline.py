@@ -2170,6 +2170,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            for node in root.findall('package'):
                                project = node.get('project')
                                package = node.get('name')
+                               # skip it when this is anyway a link to me
+                               link_url = makeurl(apiurl, ['source', project, package])
+                               links_to_project = links_to_package = None
+                               try:
+                                   file = http_GET(link_url)
+                                   root = ET.parse(file).getroot()
+                                   link_node = root.find('linkinfo')
+                                   if link_node != None:
+                                       links_to_project = link_node.get('project') or project
+                                       links_to_package = link_node.get('package') or package
+                               except urllib2.HTTPError, e:
+                                   if e.code != 404:
+                                       print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
+                               except SyntaxError, e:
+                                   print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
+                               if links_to_project==action.tgt_project and links_to_package==action.tgt_package:
+                                   # links to my request target anyway, no need to forward submit
+                                   continue
+
                                print project,
                                if package != action.tgt_package:
                                    print "/", package,
