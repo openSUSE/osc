@@ -2194,7 +2194,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                    print "/", package,
                                repl = raw_input('\nForward this submit to it? ([y]/n)')
                                if repl.lower() == 'y' or repl == '':
-                                   msg = cgi.escape("%s (forwarded request %s from %s)" % ( rq.description, reqid, rq.get_creator))
+                                   msg = "%s (forwarded request %s from %s)" % ( rq.description, reqid, rq.get_creator())
+                                   print msg
                                    rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
                                                                        project, package, msg)
                                    print "New request #", rid
