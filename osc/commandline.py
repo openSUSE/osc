@@ -6159,7 +6159,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if project is None:
                     project = node.get('name')
                 else:
-                    package = node.get('name')
+                    if kind == 'published/binary/id':
+                        package = node.get('package')
+                    else:
+                        package = node.get('name')
+
                 result.append(project)
                 if not package is None:
                     result.append(package)
