@@ -155,7 +155,7 @@ class mySSLContext(SSL.Context):
     def __init__(self):
         SSL.Context.__init__(self, 'sslv23')
         self.set_options(m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3)
-        self.set_cipher_list("ALL:!aNULL:!eNULL:!SSLv2:!LOW:!EXP:!MD5:@STRENGTH")
+        self.set_cipher_list("ECDHE-RSA-AES128-SHA256:AES128-GCM-SHA256:RC4:HIGH:!MD5:!aNULL:!EDH")
         self.set_session_cache_mode(m2.SSL_SESS_CACHE_CLIENT)
         self.verrs = None
         #self.set_info_callback() # debug
