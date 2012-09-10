@@ -1748,7 +1748,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-f', '--force', action='store_true',
                         help='enforce state change, can be used to ignore open reviews')
     @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'declined,new,review' otherwise
-                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review", or "all", if no args given]')
+                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="declined,new,review", or "all", if no args given]')
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests in state "new" or changed in the last DAYS. [default=%(request_list_days)s]')
     @cmdln.option('-U', '--user', metavar='USER',
