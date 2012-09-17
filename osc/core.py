@@ -787,7 +787,7 @@ class Project:
                     elif pac in self.pacs_broken:
                         print 'osc: \'%s\' package not found' % pac
                     elif state == None:
-                        self.commitExtPackage(pac, msg, todo, verbose=verbose)
+                        self.commitExtPackage(pac, msg, todo, verbose=verbose, skip_local_service_run=skip_local_service_run)
             finally:
                 self.write_packages()
         else:
@@ -856,7 +856,7 @@ class Project:
         delete_package(self.apiurl, self.name, pac)
         self.del_package_node(pac)
 
-    def commitExtPackage(self, pac, msg, files = [], verbose=False):
+    def commitExtPackage(self, pac, msg, files = [], verbose=False, skip_local_service_run=False):
         """commits a package from an external project"""
         if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
             pac_path = '.'
@@ -875,7 +875,7 @@ class Project:
                       template_args=({'name': pac, 'user': user}), apiurl=apiurl)
         p = Package(pac_path)
         p.todo = files
-        p.commit(msg=msg, verbose=verbose)
+        p.commit(msg=msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
 
     def __str__(self):
         r = []
