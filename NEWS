@@ -1,3 +1,6 @@
+0.135.1
+  - do not forward requests to packages which do link anyway to original request target
+
 0.135
   - request accept is offering now to forward submit request if it is a devel area like webui does
   - support archlinux builds (requires OBS 2.4)

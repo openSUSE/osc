@@ -257,13 +257,22 @@ def get_built_files(pacdir, pactype):
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    else:
+    elif pactype == 'deb':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
+    elif pactype == 'arch':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'ARCHPKGS'),
+                                    '-name', '*.pkg.tar*'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = []
+    else:
+	print >>sys.stderr, 'WARNING: Unknown package type \'%s\'.' % (pactype)
+        b_built = []
+        s_built = []
     return s_built, b_built
 
 def get_repo(path):

@@ -3,7 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-__version__ = '0.134git'
+__version__ = '0.135'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -787,7 +787,7 @@ class Project:
                     elif pac in self.pacs_broken:
                         print 'osc: \'%s\' package not found' % pac
                     elif state == None:
-                        self.commitExtPackage(pac, msg, todo, verbose=verbose)
+                        self.commitExtPackage(pac, msg, todo, verbose=verbose, skip_local_service_run=skip_local_service_run)
             finally:
                 self.write_packages()
         else:
@@ -856,7 +856,7 @@ class Project:
         delete_package(self.apiurl, self.name, pac)
         self.del_package_node(pac)
 
-    def commitExtPackage(self, pac, msg, files = [], verbose=False):
+    def commitExtPackage(self, pac, msg, files = [], verbose=False, skip_local_service_run=False):
         """commits a package from an external project"""
         if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
             pac_path = '.'
@@ -875,7 +875,7 @@ class Project:
                       template_args=({'name': pac, 'user': user}), apiurl=apiurl)
         p = Package(pac_path)
         p.todo = files
-        p.commit(msg=msg, verbose=verbose)
+        p.commit(msg=msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
 
     def __str__(self):
         r = []
@@ -1830,7 +1830,7 @@ rev: %s
         print
         print "The link in this package is currently broken. Checking"
         print "out the last working version instead; please use 'osc pull'"
-        print "to repair the link."
+        print "to merge the conflicts."
         print
 
     def unmark_frozen(self):

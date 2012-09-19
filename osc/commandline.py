@@ -1747,8 +1747,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-f', '--force', action='store_true',
                         help='enforce state change, can be used to ignore open reviews')
-    @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new,review' otherwise
-                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review", or "all", if no args given]')
+    @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'declined,new,review' otherwise
+                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="declined,new,review", or "all", if no args given]')
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests in state "new" or changed in the last DAYS. [default=%(request_list_days)s]')
     @cmdln.option('-U', '--user', metavar='USER',
@@ -1871,7 +1871,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.state = 'all'
 
         if opts.state == '':
-            opts.state = 'new,review'
+            opts.state = 'declined,new,review'
 
         if args[0] == 'help':
             return self.do_help(['help', 'request'])
@@ -2170,14 +2170,34 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            for node in root.findall('package'):
                                project = node.get('project')
                                package = node.get('name')
+                               # skip it when this is anyway a link to me
+                               link_url = makeurl(apiurl, ['source', project, package])
+                               links_to_project = links_to_package = None
+                               try:
+                                   file = http_GET(link_url)
+                                   root = ET.parse(file).getroot()
+                                   link_node = root.find('linkinfo')
+                                   if link_node != None:
+                                       links_to_project = link_node.get('project') or project
+                                       links_to_package = link_node.get('package') or package
+                               except urllib2.HTTPError, e:
+                                   if e.code != 404:
+                                       print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
+                               except SyntaxError, e:
+                                   print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
+                               if links_to_project==action.tgt_project and links_to_package==action.tgt_package:
+                                   # links to my request target anyway, no need to forward submit
+                                   continue
+
                                print project,
                                if package != action.tgt_package:
                                    print "/", package,
                                repl = raw_input('\nForward this submit to it? ([y]/n)')
                                if repl.lower() == 'y' or repl == '':
-                                   msg = cgi.escape("%s (forwarded request %s from %s)" % ( rq.description, reqid, rq.get_creator))
+                                   msg = "%s (forwarded request %s from %s)" % ( rq.description, reqid, rq.get_creator())
+                                   print msg
                                    rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
-                                                                       project, package, msg)
+                                                                       project, package, cgi.escape(msg))
                                    print "New request #", rid
 
     # editmeta and its aliases are all depracated
@@ -6139,7 +6159,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if project is None:
                     project = node.get('name')
                 else:
-                    package = node.get('name')
+                    if kind == 'published/binary/id':
+                        package = node.get('package')
+                    else:
+                        package = node.get('name')
+
                 result.append(project)
                 if not package is None:
                     result.append(package)
