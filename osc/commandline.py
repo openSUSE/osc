@@ -7154,13 +7154,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs("Source file ``%s'' does not exists" % source)
         if not opts.force and os.path.isfile(dest):
             raise oscerr.WrongArgs("Dest file ``%s'' already exists" % dest)
-        if not is_package_dir('.'):
-            raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath(dir))
+        src_pkg = findpacs([source])
+        tgt_pkg = findpacs([dest])
+        if not src_pkg:
+            raise oscerr.NoWorkingCopy("Error: \"%s\" is not located in an osc working copy." % os.path.abspath(source))
+        if not tgt_pkg:
+            raise oscerr.NoWorkingCopy("Error: \"%s\" does not point to an osc working copy." % os.path.abspath(dest))
 
-        p = findpacs('.')[0]
         os.rename(source, dest)
-        self.do_add(subcmd, opts, dest)
-        self.do_delete(subcmd, opts, source)
+        try:
+            tgt_pkg[0].addfile(os.path.basename(dest))
+        except oscerr.PackageFileConflict:
+            # file is already tracked
+            pass
+        src_pkg[0].delete_file(os.path.basename(source), force=opts.force)
 
     @cmdln.option('-d', '--delete', action='store_true',
                         help='delete option from config or reset option to the default)')
