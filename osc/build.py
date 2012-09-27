@@ -270,7 +270,7 @@ def get_built_files(pacdir, pactype):
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = []
     else:
-	print >>sys.stderr, 'WARNING: Unknown package type \'%s\'.' % (pactype)
+        print >>sys.stderr, 'WARNING: Unknown package type \'%s\'.' % pactype
         b_built = []
         s_built = []
     return s_built, b_built
