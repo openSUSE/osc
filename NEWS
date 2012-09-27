@@ -1,3 +1,13 @@
+0.136
+  - prefer TLS v1.1 or v1.2 if available
+  - declined is considered to be an open state (that is "osc rq list" also shows declined requests)
+  - added support to move files across packages via "osc mv" (fixes issue #10)
+  - various bugfixes:
+    * show source package name when running "osc se --binary ..."
+    * fixed encoding detection
+    * fixed build result listing for arch packages (affects "osc build")
+    * "osc ci --noservice" works also for "external"/flat packages
+
 0.135.1
   - do not forward requests to packages which do link anyway to original request target
 
