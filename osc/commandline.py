@@ -2686,6 +2686,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify message TEXT')
     @cmdln.option('--no-cleanup', action='store_true',
                   help='do not remove source project on accept')
+    @cmdln.option('--cleanup', action='store_true',
+                  help='do remove source project on accept')
     @cmdln.option('--incident', metavar='INCIDENT',
                         help='specify incident number to merge in')
     @cmdln.option('--incident-project', metavar='INCIDENT_PROJECT',
@@ -2726,9 +2728,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             source_packages = args[1:]
             release_project = args[-1]
             source_packages.remove(release_project)
+        if opts.cleanup:
+            opt_sourceupdate = 'cleanup'
         if not opts.no_cleanup:
             default_branch = 'home:%s:branches:' % (conf.get_apiurl_usr(apiurl))
-            if source_project.startswith(default_branch) and not opts.no_cleanup:
+            if source_project.startswith(default_branch):
                 opt_sourceupdate = 'cleanup'
 
         if opts.incident_project:
