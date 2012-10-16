@@ -646,11 +646,7 @@ def main(apiurl, opts, argv):
     # real arch of this machine
     # vs.
     # arch we are supposed to build for
-    if bi.hostarch != None:
-        if hostarch != bi.hostarch and not hostarch in can_also_build.get(hostarch, []):
-            print >>sys.stderr, 'Error: hostarch \'%s\' is required.' % (bi.hostarch)
-            return 1
-    elif hostarch != bi.buildarch:
+    if hostarch != bi.buildarch:
         if not bi.buildarch in can_also_build.get(hostarch, []):
             # OBSOLETE: qemu_can_build should not be needed anymore since OBS 2.3
             if not bi.buildarch in qemu_can_build:
