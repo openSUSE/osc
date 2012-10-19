@@ -647,7 +647,7 @@ def main(apiurl, opts, argv):
     # vs.
     # arch we are supposed to build for
     if bi.hostarch != None:
-        if hostarch != bi.hostarch and not hostarch in can_also_build.get(hostarch, []):
+        if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
             print >>sys.stderr, 'Error: hostarch \'%s\' is required.' % (bi.hostarch)
             return 1
     elif hostarch != bi.buildarch:
