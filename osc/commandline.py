@@ -4973,7 +4973,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # can be implemented using
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
-        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi')
+        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('PKGBUILD')
         
         # FIXME:
         # * request repos from server and select by build type.
@@ -4984,6 +4984,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(descr) > 1:
                 # guess/prefer build descrs like the following:
                 # <pac>-<repo>.<ext> > <pac>.<ext>
+                # no guessing for arch's PKGBUILD files (the backend does not do any guessing, too)
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
