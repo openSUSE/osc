@@ -6118,11 +6118,20 @@ def print_request_list(apiurl, project, package = None, states = ('new','review'
     for r in requests:
         print r.list_view(), '\n'
 
-def request_interactive_review(apiurl, request, initial_cmd='', group=None):
+def request_interactive_review(apiurl, request, initial_cmd='', group=None, ignore_reviews=False):
     """review the request interactively"""
     import tempfile, re
 
     tmpfile = None
+
+    def safe_change_request_state(*args, **kwargs):
+        try:
+            change_request_state(*args, **kwargs)
+            return True
+        except urllib2.HTTPError, e:
+            print >>sys.stderr, 'Server returned an error:', e
+            print >>sys.stderr, 'Try -f to force the state change'
+        return False
 
     def print_request(request):
         print request
@@ -6189,12 +6198,13 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None):
                 prompt = 'd(i)ff/(a)ccept/(b)uildstatus/(e)dit/(s)kip/(c)ancel > '
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
-                mo = re.search('^([adrl])(?:\s+-m\s+(.*))?$', repl)
+                mo = re.search('^([adrl])(?:\s+(-f)?\s*-m\s+(.*))?$', repl)
                 if mo is None or orequest and mo.group(1) != 'a':
                     print >>sys.stderr, 'invalid choice: \'%s\'' % repl
                     continue
                 state = state_map.get(mo.group(1))
-                msg = mo.group(2)
+                force = mo.group(2) is not None
+                msg = mo.group(3)
                 footer = ''
                 msg_template = ''
                 if not (state is None or request.state is None):
@@ -6216,18 +6226,23 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None):
                     msg = msg.strip('\'').strip('"')
                 if not orequest is None:
                     request.create(apiurl)
-                    change_request_state(apiurl, request.reqid, 'accepted', msg)
+                    if not safe_change_request_state(apiurl, request.reqid, 'accepted', msg, force=force):
+                        # an error occured
+                        continue
                     repl = raw_input('Supersede original request? (y|N) ')
                     if repl in ('y', 'Y'):
-                        change_request_state(apiurl, orequest.reqid, 'superseded',
-                            'superseded by %s' % request.reqid, request.reqid)
+                        safe_change_request_state(apiurl, orequest.reqid, 'superseded',
+                            'superseded by %s' % request.reqid, request.reqid, force=force)
                 elif state is None:
                     clone_request(apiurl, request.reqid, msg)
                 else:
                     reviews = [r for r in request.reviews if r.state == 'new']
-                    if not reviews:
-                        change_request_state(apiurl, request.reqid, state, msg)
-                        break
+                    if not reviews or ignore_reviews:
+                        if safe_change_request_state(apiurl, request.reqid, state, msg, force=force):
+                            break
+                        else:
+                            # an error occured
+                            continue
                     group_reviews = [r for r in reviews if (r.by_group is not None
                                                             and r.by_group == group)]
                     if len(group_reviews) == 1 and conf.config['review_inherit_group']:
