@@ -6700,7 +6700,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         apiurl = self.get_api_url()
-
+        args = slash_split(args)
         if len(args) >= 3 and len(args) <= 4:
             prj = args[0]
             package = target_package = args[1]
