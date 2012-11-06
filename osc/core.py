@@ -5644,7 +5644,9 @@ def search(apiurl, **kwargs):
     """
     res = {}
     for urlpath, xpath in kwargs.iteritems():
-        u = makeurl(apiurl, ['search', urlpath], ['match=%s' % quote_plus(xpath)])
+        path = [ 'search' ]
+        path += urlpath.split('_') # FIXME: take underscores as path seperators. I see no other way atm to fix OBS api calls and not breaking osc api
+        u = makeurl(apiurl, path, ['match=%s' % quote_plus(xpath)])
         f = http_GET(u)
         res[urlpath] = ET.parse(f).getroot()
     return res
