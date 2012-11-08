@@ -152,10 +152,8 @@ class Buildinfo:
     def remove_dep(self, name):
         # we need to iterate over all deps because if this a
         # kiwi build the same package might appear multiple times
-        for i in self.deps:
-            # only remove those which are needed for the build itself
-            if i.name == name and not i.noinstall:
-                self.deps.remove(i)
+        # NOTE: do not loop and remove items, the second same one would not get catched
+        self.deps = [i for i in self.deps if not i.name == name]
 
 
 class Pac:
@@ -181,7 +179,7 @@ class Pac:
         self.mp['name'] = node.get('name') or self.mp['binary']
 
         # this is not the ideal place to check if the package is a localdep or not
-        localdep = self.mp['name'] in localpkgs and not self.mp['noinstall']
+        localdep = self.mp['name'] in localpkgs # and not self.mp['noinstall']
         if not localdep and not (node.get('project') and node.get('repository')):
             raise oscerr.APIError('incomplete information for package %s, may be caused by a broken project configuration.'
                                   % self.mp['name'] )
@@ -777,6 +775,10 @@ def main(apiurl, opts, argv):
             shutil.rmtree('repos')
             os.mkdir('repos')
         for i in bi.deps:
+            if not i.extproject:
+                # remove
+                bi.deps.remove(i)
+                continue
             # project
             pdir = str(i.extproject).replace(':/', ':')
             # repo
@@ -789,16 +791,26 @@ def main(apiurl, opts, argv):
             pradir = prdir+"/"+adir
             # source fullfilename
             sffn = i.fullfilename
-            print "Using package: "+sffn
+            filename=sffn.split("/")[-1]
             # target fullfilename
-            tffn = pradir+"/"+sffn.split("/")[-1]
+            tffn = pradir+"/"+filename
             if not os.path.exists(os.path.join(pradir)):
                 os.makedirs(os.path.join(pradir))
             if not os.path.exists(tffn):
+                print "Using package: "+sffn
                 if opts.linksources:
                     os.link(sffn, tffn)
                 else:
                     os.symlink(sffn, tffn)
+            if prefer_pkgs:
+                for name, path in prefer_pkgs.iteritems():
+                   if name == filename:
+                       print "Using prefered package: " + path + "/" + filename
+                       os.unlink(tffn)
+                       if opts.linksources:
+                           os.link(path + "/" + filename, tffn)
+                       else:
+                           os.symlink(path + "/" + filename, tffn)
 
     if bi.pacsuffix == 'rpm':
         if opts.no_verify:
