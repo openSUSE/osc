@@ -1,3 +1,6 @@
+0.137
+  - support delete requests for repositories.
+
 0.136
   - prefer TLS v1.1 or v1.2 if available
   - declined is considered to be an open state (that is "osc rq list" also shows declined requests)

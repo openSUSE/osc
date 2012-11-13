@@ -2218,7 +2218,7 @@ class Action:
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'), # obsoleted by add_role
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name'),
         'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate'),
-        'delete': ('tgt_project', 'tgt_package'),
+        'delete': ('tgt_project', 'tgt_package', 'tgt_repository'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package')}
     # attribute prefix to element name map (only needed for abbreviated attributes)
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
@@ -2406,9 +2406,11 @@ class Request:
         format an action depending on the action's type.
         A dict which contains the formatted str's is returned.
         """
-        def prj_pkg_join(prj, pkg):
+        def prj_pkg_join(prj, pkg, repository):
             if not pkg:
-                return prj or ''
+                if not repository:
+                   return prj or ''
+                return '%s(%s)' % (prj, repository)
             return '%s/%s' % (prj, pkg)
 
         d = {'type': '%s:' % action.type}
@@ -2450,7 +2452,7 @@ class Request:
             d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package)
         elif action.type == 'delete':
             d['source'] = ''
-            d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package)
+            d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package, action.tgt_repository)
         return d
 
     def list_view(self):

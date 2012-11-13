@@ -1635,6 +1635,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('-r', '--repository', metavar='TEXT',
+                  help='specify message TEXT')
     @cmdln.alias("dr")
     @cmdln.alias("dropreq")
     @cmdln.alias("droprequest")
@@ -1645,6 +1647,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc deletereq [-m TEXT]                     # works in checked out project/package
             osc deletereq [-m TEXT] PROJECT [PACKAGE]
+            osc deletereq [-m TEXT] PROJECT [--repository REPOSITORY]
         ${cmd_option_list}
         """
         import cgi
@@ -1653,6 +1656,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         project = None
         package = None
+        repository = None
 
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -1669,6 +1673,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else: 
             raise oscerr.WrongArgs('Please specify at least a project.')
 
+        if opts.repository:
+            repository = opts.repository
+
         if not opts.message:
             import textwrap
             if package is not None:
@@ -1681,7 +1688,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.message = edit_message(footer)
 
         r = Request()
-        r.add_action('delete', tgt_project=project, tgt_package=package)
+        r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
         r.description = cgi.escape(opts.message)
         r.create(self.get_api_url())
         print r.reqid
