@@ -1,5 +1,6 @@
 0.137
   - support delete requests for repositories.
+  - support single binary download via getbinaries command
 
 0.136
   - prefer TLS v1.1 or v1.2 if available
