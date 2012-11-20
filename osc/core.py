@@ -2406,7 +2406,7 @@ class Request:
         format an action depending on the action's type.
         A dict which contains the formatted str's is returned.
         """
-        def prj_pkg_join(prj, pkg, repository):
+        def prj_pkg_join(prj, pkg, repository=None):
             if not pkg:
                 if not repository:
                    return prj or ''
