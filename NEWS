@@ -1,6 +1,10 @@
 0.137
-  - support delete requests for repositories.
   - support single binary download via getbinaries command
+#
+# Features which requires OBS 2.4
+#
+  - support delete requests for repositories.
+  - support default maintainer/bugowner search based on binary package names
 
 0.136
   - prefer TLS v1.1 or v1.2 if available

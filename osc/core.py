@@ -5653,6 +5653,32 @@ def search(apiurl, **kwargs):
         res[urlpath] = ET.parse(f).getroot()
     return res
 
+def owner(apiurl, binary, attribute=None, project=None, usefilter=None, devel=None, limit=None):
+    """
+    Perform a binary package owner search. This is supported since OBS 2.4.
+    """
+    # find default project, if not specified
+    query = { 'binary': binary }
+    if attribute:
+        query['attribute'] = attribute
+    if project:
+        query['project'] = project
+    if devel:
+        query['devel'] = devel
+    if limit:
+        query['limit'] = limit
+    if usefilter:
+        query['filter'] = ",".join(usefilter)
+    u = makeurl(apiurl, [ 'search', 'owner' ], query)
+    res = None
+    try:
+        f = http_GET(u)
+        res = ET.parse(f).getroot()
+    except urllib2.HTTPError, e:
+        # old server not supporting this search
+        pass
+    return res
+
 def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=False):
     """
     updates the rev attribute of the _link xml. If revision is set to None

@@ -6444,8 +6444,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_bugowner(self, subcmd, opts, *args):
         """${cmd_name}: Show bugowners of a project/package
 
+            osc bugowner
+            osc bugowner BINARY
             osc bugowner PRJ
             osc bugowner PRJ PKG
+
+        The tool looks up the default responsible person for a certain project or package,
+        but limits the search to bugowner settings.
+        When using with an OBS 2.4 (or later) server it is doing the lookup for
+        a given binary according to the server side configuration of default owners.
 
         PRJ and PKG default to current working-copy path.
         Prints bugowner if defined, or maintainer otherwise.
@@ -6461,11 +6468,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         opts.delete = None
         opts.devel_project = None
 
-        if len(args) == 1:
-            def_p = find_default_project(self.get_api_url(), args[0])
-            print >>sys.stderr, 'defaulting to %s/%s' % (def_p, args[0])
-            # python has no args.unshift ???
-            args = [ def_p, args[0] ]
         return self.do_maintainer(subcmd, opts, *args)
 
 
@@ -6491,18 +6493,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
 
+            osc maintainer <options>
+            osc maintainer BINARY <options>
             osc maintainer PRJ <options>
             osc maintainer PRJ PKG <options>
     
+        The tool looks up the default responsible person for a certain project or package.
+        When using with an OBS 2.4 (or later) server it is doing the lookup for
+        a given binary according to the server side configuration of default owners.
+
         PRJ and PKG default to current working-copy path.
 
         ${cmd_usage}
         ${cmd_option_list}
         """
 
-        pac = None
+        binary = None
         prj = None
-        root = None
+        pac = None
+        metaroot = None
+        searchresult = None
         roles = [ 'bugowner', 'maintainer' ]
         if len(opts.role):
             roles = opts.role
@@ -6516,7 +6526,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pass
             prj = store_read_project('.')
         elif len(args) == 1:
-            prj = args[0]
+            # it is unclear if one argument is a binary or a project, try binary first for new OBS 2.4
+            binary = prj = args[0]
         elif len(args) == 2:
             prj = args[0]
             pac = args[1]
@@ -6537,58 +6548,93 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
-                root = ET.fromstring(''.join(m))
+                metaroot = ET.fromstring(''.join(m))
                 if not opts.nodevelproject:
-                    while root.findall('devel'):
-                        d = root.find('devel')
+                    while metaroot.findall('devel'):
+                        d = metaroot.find('devel')
                         prj = d.get('project', prj)
                         pac = d.get('package', pac)
                         if opts.verbose:
                             print "Following to the development space: %s/%s" % (prj, pac)
                         m = show_package_meta(apiurl, prj, pac)
-                        root = ET.fromstring(''.join(m))
-                    if not root.findall('person'):
+                        metaroot = ET.fromstring(''.join(m))
+                    if not metaroot.findall('person'):
                         if opts.verbose:
                             print "No dedicated persons in package defined, showing the project persons."
                         pac = None
                         m = show_project_meta(apiurl, prj)
-                        root = ET.fromstring(''.join(m))
+                        metaroot = ET.fromstring(''.join(m))
             else:
-                m = show_project_meta(apiurl, prj)
-                root = ET.fromstring(''.join(m))
+                # Try the OBS 2.4 way first
+                if binary:
+                   searchresult = owner(apiurl, binary, usefilter=roles)
+                # fallback to project lookup for old servers
+                if not searchresult:
+                   m = show_project_meta(apiurl, prj)
+                   metaroot = ET.fromstring(''.join(m))
+
+            # extract the maintainers
+            projects = []
+            # from owner search
+            if searchresult:
+                for result in searchresult.findall('owner'):
+                    maintainers = {}
+                    maintainers.setdefault("project", result.get('project'))
+                    maintainers.setdefault("package", result.get('package'))
+                    for person in result.findall('person'):
+                        maintainers.setdefault(person.get('role'), []).append(person.get('name'))
+                    projects = projects + [maintainers]
+            # from meta data
+            if metaroot:
+                # we have just one result
+                maintainers = {}
+                for person in metaroot.findall('person'):
+                    maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
+                projects = [maintainers]
 
             # showing the maintainers
-            maintainers = {}
-            for person in root.findall('person'):
-                maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
-            for role in roles:
-                if opts.bugowner and not len(maintainers.get(role, [])):
-                    role = 'maintainer'
-                if pac:
-                    print "%s of %s/%s : " %(role, prj, pac)
-                else:
-                    print "%s of %s : " %(role, prj)
-                if opts.email:
-                    emails = []
-                    for maintainer in maintainers.get(role, []):
-                        user = get_user_data(apiurl, maintainer, 'email')
-                        if len(user):
-                            emails.append(''.join(user))
-                    print ', '.join(emails) or '-'
-                elif opts.verbose:
-                    userdata = []
-                    for maintainer in maintainers.get(role, []):
-                        user = get_user_data(apiurl, maintainer, 'login', 'realname', 'email')
-                        userdata.append(user[0])
-                        if user[1] !=  '-':
-                            userdata.append("%s <%s>"%(user[1], user[2]))
-                        else:
-                            userdata.append(user[2])
-                    for row in build_table(2, userdata, None, 3):
-                        print row
-                else:
-                    print ', '.join(maintainers.get(role, [])) or '-'
-                print
+            for maintainers in projects:
+               indent=""
+               definingproject=maintainers.get("project")
+               if definingproject:
+                   definingpackage=maintainers.get("package")
+                   indent="  "
+                   if definingpackage:
+                       print "Defined in package: %s/%s " %(definingproject, definingpackage)
+                   else:
+                       print "Defined in project: ", definingproject
+ 
+               for role in roles:
+                   if opts.bugowner and not len(maintainers.get(role, [])):
+                       role = 'maintainer'
+                   if pac:
+                       print "%s%s of %s/%s : " %(indent, role, prj, pac)
+                   else:
+                       print "%s%s of %s : " %(indent, role, prj)
+                   if opts.email:
+                       emails = []
+                       for maintainer in maintainers.get(role, []):
+                           user = get_user_data(apiurl, maintainer, 'email')
+                           if len(user):
+                               emails.append(''.join(user))
+                       print indent,
+                       print ', '.join(emails) or '-'
+                   elif opts.verbose:
+                       userdata = []
+                       for maintainer in maintainers.get(role, []):
+                           user = get_user_data(apiurl, maintainer, 'login', 'realname', 'email')
+                           userdata.append(user[0])
+                           if user[1] !=  '-':
+                               userdata.append("%s <%s>"%(user[1], user[2]))
+                           else:
+                               userdata.append(user[2])
+                       for row in build_table(2, userdata, None, 3):
+                           print indent,
+                           print row
+                   else:
+                       print indent,
+                       print ', '.join(maintainers.get(role, [])) or '-'
+                   print
 
     @cmdln.alias('who')
     @cmdln.alias('user')
