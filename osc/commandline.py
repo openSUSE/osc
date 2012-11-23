@@ -1448,13 +1448,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         user = args[0]
         project = args[1]
+        package = ""
         if len(args) > 2:
-            package = args[2]
+            package =  """package="%s" """ % (args[2])
 
         if get_user_meta(apiurl, user) == None:
             raise oscerr.WrongArgs('osc: an error occured.')
 
-        actionxml = """ <action type="set_bugowner"> <target project="%s" package="%s" /> <person name="%s" /> </action> """ % \
+        actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <person name="%s" /> </action> """ % \
                 (project, package, user)
 
         return actionxml
@@ -6434,41 +6435,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         out = r.read()
         sys.stdout.write(out)
 
-    @cmdln.option('-v', '--verbose', action='store_true',
-                  help='show more information')
-    @cmdln.option('--nodevelproject', action='store_true',
-                  help='do not follow a defined devel project ' \
-                       '(primary project where a package is developed)')
-    @cmdln.option('-e', '--email', action='store_true',
-                  help='show email addresses instead of user names')
-    def do_bugowner(self, subcmd, opts, *args):
-        """${cmd_name}: Show bugowners of a project/package
-
-            osc bugowner
-            osc bugowner BINARY
-            osc bugowner PRJ
-            osc bugowner PRJ PKG
-
-        The tool looks up the default responsible person for a certain project or package,
-        but limits the search to bugowner settings.
-        When using with an OBS 2.4 (or later) server it is doing the lookup for
-        a given binary according to the server side configuration of default owners.
-
-        PRJ and PKG default to current working-copy path.
-        Prints bugowner if defined, or maintainer otherwise.
-
-            Shortcut for osc maintainer -B [PRJ] PKG
-
-        ${cmd_option_list}
-        """
-        opts.role = ()
-        opts.bugowner = True
-        opts.bugowner_only = None
-        opts.add = None
-        opts.delete = None
-        opts.devel_project = None
-
-        return self.do_maintainer(subcmd, opts, *args)
 
 
     @cmdln.option('-b', '--bugowner-only', action='store_true',
@@ -6485,11 +6451,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-D', '--devel-project', metavar='devel_project',
                   help='define the project where this package is primarily developed')
     @cmdln.option('-a', '--add', metavar='user',
-                  help='add a new maintainer/bugowner (can be specified via --role)')
+                  help='add a new person for given role ("maintainer" by default)')
+    @cmdln.option('-A', '--all', action='store_true',
+                  help='list all found entries not just the first one')
+    @cmdln.option('-s', '--set-bugowner', metavar='user',
+                  help='Set the bugowner to specified person')
+    @cmdln.option('-S', '--set-bugowner-request', metavar='user',
+                  help='Set the bugowner to specified person via a request')
     @cmdln.option('-d', '--delete', metavar='user',
                   help='delete a maintainer/bugowner (can be specified via --role)')
     @cmdln.option('-r', '--role', metavar='role', action='append', default=[],
                   help='Specify user role')
+    @cmdln.alias('bugowner')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
 
@@ -6516,7 +6489,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         roles = [ 'bugowner', 'maintainer' ]
         if len(opts.role):
             roles = opts.role
-        if opts.bugowner_only or opts.bugowner:
+        if opts.bugowner_only or opts.bugowner or opts.set_bugowner or opts.set_bugowner_request or subcmd == 'bugowner':
             roles = [ 'bugowner' ]
 
         if len(args) == 0:
@@ -6536,12 +6509,77 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
+        # Try the OBS 2.4 way first. 
+        if pac==None and binary:
+           limit=None
+           if opts.all:
+               limit=0
+           filterroles=roles
+           if filterroles == [ 'bugowner', 'maintainer' ]:
+               # use server side configured default
+               filterroles=None
+           searchresult = owner(apiurl, binary, usefilter=filterroles, devel=None, limit=limit)
+
         if opts.add:
-            for role in roles:
-                addPerson(apiurl, prj, pac, opts.add, role)
+            if searchresult:
+                for result in searchresult.findall('owner'):
+                    for role in roles:
+                        addPerson(apiurl, result.get('project'), result.get('package'), opts.add, role)
+            else:
+                for role in roles:
+                    addPerson(apiurl, prj, pac, opts.add, role)
+        elif opts.set_bugowner or opts.set_bugowner_request:
+            bugowner = opts.set_bugowner or opts.set_bugowner_request
+            requestactionsxml = ""
+            if searchresult:
+                for result in searchresult.findall('owner'):
+                    if opts.set_bugowner:
+                       for role in roles:
+                           try:
+                               setBugowner(apiurl, result.get('project'), result.get('package'), bugowner)
+                           except urllib2.HTTPError, e:
+                               if e.code == 403:
+                                   print "No write permission in", result.get('project'),
+                                   if result.get('package'):
+                                       print "/", result.get('package'),
+                                   print
+                                   repl = raw_input('\nCreating a request instead? (y/n) ')
+                                   if repl.lower() == 'y':
+                                       opts.set_bugowner_request = opts.set_bugowner
+                                       opts.set_bugowner = None
+                                       break
+
+                    if opts.set_bugowner_request:
+                       for role in roles:
+                           args = [bugowner, result.get('project')]
+                           if result.get('package'):
+                               args = args + [result.get('package')]
+                           requestactionsxml += self._set_bugowner(args,opts)
+
+            else:
+                for role in roles:
+                    setBugowner(apiurl, prj, pac, opts.delete, role)
+
+            if requestactionsxml != "":
+                message = edit_message()
+
+                import cgi
+                xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
+                      (requestactionsxml, cgi.escape(message or ""))
+                u = makeurl(apiurl, ['request'], query='cmd=create')
+                f = http_POST(u, data=xml)
+
+                root = ET.parse(f).getroot()
+                print "Request ID:", root.get('id')
+
         elif opts.delete:
-            for role in roles:
-                delPerson(apiurl, prj, pac, opts.delete, role)
+            if searchresult:
+                for result in searchresult.findall('owner'):
+                    for role in roles:
+                        delPerson(apiurl, result.get('project'), result.get('package'), opts.add, role)
+            else:
+                for role in roles:
+                    delPerson(apiurl, prj, pac, opts.delete, role)
         elif opts.devel_project:
             # XXX: does it really belong to this command?
             setDevelProject(apiurl, prj, pac, opts.devel_project)
@@ -6565,9 +6603,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         m = show_project_meta(apiurl, prj)
                         metaroot = ET.fromstring(''.join(m))
             else:
-                # Try the OBS 2.4 way first
-                if binary:
-                   searchresult = owner(apiurl, binary, usefilter=roles)
                 # fallback to project lookup for old servers
                 if not searchresult:
                    m = show_project_meta(apiurl, prj)

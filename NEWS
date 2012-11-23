@@ -1,8 +1,10 @@
 0.137
   - support single binary download via getbinaries command
+  - support to set the bugowner
 #
 # Features which requires OBS 2.4
 #
+  - offer to send set_bugowner request if target is not writeable
   - support delete requests for repositories.
   - support default maintainer/bugowner search based on binary package names
 

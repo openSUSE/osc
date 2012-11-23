@@ -5665,7 +5665,7 @@ def owner(apiurl, binary, attribute=None, project=None, usefilter=None, devel=No
         query['project'] = project
     if devel:
         query['devel'] = devel
-    if limit:
+    if limit != None:
         query['limit'] = limit
     if usefilter:
         query['filter'] = ",".join(usefilter)
@@ -5853,6 +5853,35 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
             print "user \'%s\' not found in \'%s\'" % (user, pac or prj)
     else:
         print "an error occured"
+
+def setBugowner(apiurl, prj, pac, user=None, group=None):
+    """ delete all bugowners (user and group entries) and set one new one in a package or project """
+    path = quote_plus(prj),
+    kind = 'prj'
+    if pac:
+        path = path + (quote_plus(pac), )
+        kind = 'pkg'
+    data = meta_exists(metatype=kind,
+                       path_args=path,
+                       template_args=None,
+                       create_new=False)
+    if data:
+        root = ET.fromstring(''.join(data))
+        for group in root.getiterator('group'):
+            if  group.get('role') == "bugowner":
+                root.remove(group)
+        for person in root.getiterator('person'):
+            if person.get('role') == "bugowner":
+                root.remove(person)
+        if user:
+            root.insert(2, ET.Element('person', role='bugowner', userid=user))
+        elif group:
+            root.insert(2, ET.Element('group', role='bugowner', groupid=group))
+        else:
+            print "Neither user nor group is specified"
+        edit_meta(metatype=kind,
+                  path_args=path,
+                  data=ET.tostring(root))
 
 def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
     """ set the <devel project="..."> element to package metadata"""
