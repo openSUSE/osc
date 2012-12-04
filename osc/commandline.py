@@ -4749,6 +4749,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print "  ", dep.text
 
 
+    @cmdln.option('-d', '--debug', action='store_true',
+                        help='verbose output of build dependencies')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -4824,6 +4826,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print ''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
                                     specfile=build_descr_data,
+                                    debug=opts.debug,
                                     addlist=opts.extra_pkgs))
 
 

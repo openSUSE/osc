@@ -5123,11 +5123,13 @@ def get_dependson(apiurl, project, repository, arch, packages=None, reverse=None
     f = http_GET(u)
     return f.read()
 
-def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None):
+def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None, debug=None):
     query = []
     if addlist:
         for i in addlist:
             query.append('add=%s' % quote_plus(i))
+    if debug:
+        query.append('debug=1')
 
     u = makeurl(apiurl, ['build', prj, repository, arch, package, '_buildinfo'], query=query)
 

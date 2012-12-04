@@ -9,6 +9,7 @@
   - support default maintainer/bugowner search based on binary package names
   - support to lookup --all definitions of maintainers of bugowners. Either
     for showing or setting them.
+  - buildinfo --debug  option for verbose output of dependency calculation
 
 0.136
   - prefer TLS v1.1 or v1.2 if available
