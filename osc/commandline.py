@@ -548,6 +548,8 @@ class Osc(cmdln.Cmdln):
                         help='edit metadata')
     @cmdln.option('-c', '--create', action='store_true',
                         help='create attribute without values')
+    @cmdln.option('-R', '--remove-linking-repositories', action='store_true',
+                        help='Try to remove also all repositories building against remove ones.')
     @cmdln.option('-s', '--set', metavar='ATTRIBUTE_VALUES',
                         help='set attribute values')
     @cmdln.option('--delete', action='store_true',
@@ -697,6 +699,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(metatype='prj',
                           edit=True,
                           force=opts.force,
+                          remove_linking_repositories=opts.remove_linking_repositories,
                           path_args=quote_plus(project),
                           apiurl=apiurl,
                           template_args=({
@@ -762,6 +765,7 @@ class Osc(cmdln.Cmdln):
                           data=f,
                           edit=opts.edit,
                           force=opts.force,
+                          remove_linking_repositories=opts.remove_linking_repositories,
                           apiurl=apiurl,
                           path_args=quote_plus(project))
             elif cmd == 'pkg':
