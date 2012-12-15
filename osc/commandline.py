@@ -4439,6 +4439,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('buildlogtail')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log start or end from the offset')
+    @cmdln.option('-s', '--strip-time', action='store_true',
+                        help='strip leading build time from the log')
     def do_buildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
@@ -4489,8 +4491,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 offset=0
         elif opts.offset:
             offset = int(opts.offset)
-
-        print_buildlog(apiurl, project, package, repository, arch, offset)
+        strip_time = opts.strip_time or conf.config['buildlog_strip_time']
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time)
 
 
     def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments'):
@@ -4519,6 +4521,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('remotebuildlogtail')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log starting or ending from the offset')
+    @cmdln.option('-s', '--strip-time', action='store_true',
+                        help='strip leading build time from the log')
     def do_remotebuildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a package
 
@@ -4562,12 +4566,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 offset=0
         elif opts.offset:
             offset = int(opts.offset)
-
-        print_buildlog(apiurl, project, package, repository, arch, offset)
+        strip_time = opts.strip_time or conf.config['buildlog_strip_time']
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time)
 
     @cmdln.alias('lbl')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                   help='get log starting from offset')
+    @cmdln.option('-s', '--strip-time', action='store_true',
+                        help='strip leading build time from the log')
     def do_localbuildlog(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build log of a local buildchroot
 
@@ -4620,6 +4626,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         f.seek(offset)
         data = f.read(BUFSIZE)
         while len(data):
+            if opts.strip_time or conf.config['buildlog_strip_time']:
+                data = buildlog_strip_time(data)
             sys.stdout.write(data)
             data = f.read(BUFSIZE)
         f.close()

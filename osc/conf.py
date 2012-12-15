@@ -103,6 +103,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
             'icecream': '0',
 
+            'buildlog_strip_time': '0',  # strips the build time from the build log
+
             'debug': '0',
             'http_debug': '0',
             'http_full_debug': '0',
@@ -165,7 +167,7 @@ config = DEFAULTS.copy()
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check', 'http_full_debug',
-    'include_request_from_project', 'local_service_run']
+    'include_request_from_project', 'local_service_run', 'buildlog_strip_time']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -231,6 +233,9 @@ apiurl = %(apiurl)s
 # on the host.
 # This should not be 0
 # build-uid =
+
+# strip leading build time information from the build log
+# buildlog_strip_time = 1
 
 # extra packages to install when building packages locally (osc build)
 # this corresponds to osc build's -x option and can be overridden with that

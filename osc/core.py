@@ -5092,7 +5092,13 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         raise oscerr.OscIOError(None, 'Content-Length is not matching file size for %s: %i vs %i file size' % (url, cl, read))
 
 
-def print_buildlog(apiurl, prj, package, repository, arch, offset = 0):
+def buildlog_strip_time(data):
+    """Strips the leading build time from the log"""
+    time_regex = re.compile('^\[\s{0,5}\d+s\]\s', re.M)
+    return time_regex.sub('', data)
+
+
+def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False):
     """prints out the buildlog on stdout"""
 
     # to protect us against control characters
@@ -5107,6 +5113,8 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset = 0):
         u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
         for data in streamfile(u):
             offset += len(data)
+            if strip_time:
+                data = buildlog_strip_time(data)
             sys.stdout.write(data.translate(all_bytes, remove_bytes))
         if start_offset == offset:
             break
