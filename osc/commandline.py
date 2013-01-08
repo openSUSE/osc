@@ -6507,6 +6507,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.bugowner_only or opts.bugowner or opts.set_bugowner or opts.set_bugowner_request or subcmd == 'bugowner':
             roles = [ 'bugowner' ]
 
+        args = slash_split(args)
         if len(args) == 0:
             try:
                 pac = store_read_package('.')
