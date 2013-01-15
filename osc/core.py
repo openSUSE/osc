@@ -446,11 +446,68 @@ def xmlindent(elem, level=0):
             elem.tail = i
 
 class Project:
-    """represent a project directory, holding packages"""
+    """
+    Represent a checked out project directory, holding packages.
+
+    :Attributes:
+        ``dir``
+            The directory path containing the project.
+
+        ``name``
+            The name of the project.
+
+        ``apiurl``
+            The endpoint URL of the API server.
+
+        ``pacs_available``
+            List of names of packages available server-side.
+            This is only populated if ``getPackageList`` is set
+            to ``True`` in the constructor.
+
+        ``pacs_have``
+            List of names of packages which exist server-side and
+            are expected to exist in the local project directory
+            (or which *do* exist if `do_package_tracking` is disabled).
+
+        ``pacs_excluded``
+            List of names of packages in the local project directory
+            which are excluded by the `exclude_glob` configuration
+            variable.  Only set if `do_package_tracking` is enabled.
+
+        ``pacs_unvers``
+            List of names of packages in the local project directory
+            which are not registered server-side.  Only set if
+            `do_package_tracking` is enabled.
+
+        ``pacs_broken``
+            List of names of packages which exist server-side and
+            are expected to exist in the local project directory
+            but are missing.  Only set if `do_package_tracking` is
+            enabled.
+
+        ``pacs_missing``
+            List of names of packages which exist server-side but
+            are not expected to exist in the local project directory.
+    """
+
     REQ_STOREFILES = ('_project', '_apiurl')
     if conf.config['do_package_tracking']:
         REQ_STOREFILES += ('_packages',)
+
     def __init__(self, dir, getPackageList=True, progress_obj=None, wc_check=True):
+        """
+        Constructor.
+
+        :Parameters:
+            `dir` : str
+                The directory path containing the checked out project.
+
+            `getPackageList` : bool
+                Set to `False` if you want to skip retrieval from the
+                server of the list of packages in the project .
+
+            `wc_check` : bool
+        """
         import fnmatch
         self.dir = dir
         self.absdir = os.path.abspath(dir)
@@ -589,6 +646,10 @@ class Project:
         ET.SubElement(self.pac_root, 'package', name=name, state=state)
 
     def read_packages(self):
+        """
+        Returns an ``xml.etree.cElementTree`` object representing the
+        parsed contents of the project's ``.osc/_packages`` XML file.
+        """
         global store
 
         packages_file = os.path.join(self.absdir, store, '_packages')
