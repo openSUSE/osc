@@ -485,9 +485,15 @@ class Project:
             to ``True`` in the constructor.
 
         ``pacs_have``
-            List of names of packages which exist server-side and
-            are expected to exist in the local project directory
-            (or which *do* exist if `do_package_tracking` is disabled).
+            List of names of packages which exist server-side
+            and exist in the local project working copy (if
+            'do_package_tracking' is disabled).
+            If 'do_package_tracking' is enabled it represents the
+            list names of packages which are tracked in the project
+            working copy (that is it might contain packages which
+            exist on the server as well as packages which do not
+            exist on the server (for instance if the local package
+            was added or if the package was removed on the server-side)).
 
         ``pacs_excluded``
             List of names of packages in the local project directory
@@ -496,14 +502,13 @@ class Project:
 
         ``pacs_unvers``
             List of names of packages in the local project directory
-            which are not registered server-side.  Only set if
-            `do_package_tracking` is enabled.
+            which are not tracked. Only set if `do_package_tracking`
+            is enabled.
 
         ``pacs_broken``
-            List of names of packages which exist server-side and
-            are expected to exist in the local project directory
-            but are missing.  Only set if `do_package_tracking` is
-            enabled.
+            List of names of packages which are tracked but do not
+            exist in the local project working copy. Only set if
+            `do_package_tracking` is enabled.
 
         ``pacs_missing``
             List of names of packages which exist server-side but
