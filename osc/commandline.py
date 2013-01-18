@@ -4384,6 +4384,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='hide the legend')
     @cmdln.option('-c', '--csv', action='store_true',
                         help='csv output')
+    @cmdln.option('', '--xml', action='store_true', default=False,
+                        help='generate output in XML')
     @cmdln.option('-s', '--status-filter', metavar='STATUS',
                         help='show only packages with buildstatus STATUS (see legend)')
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
@@ -4416,6 +4418,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             wd = os.curdir
             project = store_read_project(wd)
+
+        if opts.xml:
+            print ''.join(show_prj_results_meta(apiurl, project))
+            return
 
         print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical, show_excluded=opts.show_excluded))
 
