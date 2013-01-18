@@ -1,0 +1,4 @@
+<directory name="common-one" rev="f53d033d63c3d6e9a8e4493225976122" srcmd5="f53d033d63c3d6e9a8e4493225976122">
+  <linkinfo baserev="896e6d6d675d03b6934946d03a976450" lsrcmd5="0cf460222270b58e2a9a3d695b1d945d" package="common-one" project="some:project" srcmd5="8c7ed3cf5ec0b4aa20ef159fd8c51b76" />
+  <entry md5="1a4c23ccf2eb12403acbfa3258233a9d" mtime="1352816081" name="common-one.spec" size="3457" />
+</directory>

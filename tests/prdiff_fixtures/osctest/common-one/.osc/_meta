@@ -1,0 +1,10 @@
+<package name="common-one" project="home:user:branches:some:project">
+  <title>blah</title>
+  <description>foo</description>
+  <debuginfo>
+    <enable repository="openSUSE_12.2"/>
+    <enable repository="openSUSE_Factory"/>
+    <enable repository="SLE_11_SP2"/>
+  </debuginfo>
+</package>
+
