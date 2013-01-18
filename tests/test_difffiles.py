@@ -294,11 +294,18 @@ Binary file 'binary' has changed.
         p = osc.core.Package('.')
         self.__check_diff(p, '', 3)
 
-    def __check_diff(self, p, exp, revision=None):
-        s = ''
+    def __check_diff(self, p, expected, revision=None):
+        got = ''
         for i in p.get_diff(revision):
-            s += ''.join(i)
-        self.assertEqual(s, exp)
+            got += ''.join(i)
+        if (got + expected).find('\n') == -1:
+            self.assertEqual(got, expected)
+        else:
+            start_delim = "\n" + (" 8< ".join(["-----"] * 8)) + "\n"
+            end_delim   = "\n" + (" >8 ".join(["-----"] * 8)) + "\n\n"
+            self.assertEqual(got, expected,
+                             "got:"      + start_delim + got + end_delim +
+                             "expected:" + start_delim + expected + end_delim)
 
 if __name__ == '__main__':
     import unittest
