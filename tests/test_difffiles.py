@@ -315,6 +315,9 @@ Binary file 'binary' has changed.
         #
         # so we need to canonise the output to avoid false negative
         # test failures.
+
+        # TODO: Package.get_diff should return a consistent format
+        #       (regardless of the used python version)
         def __canonise_diff(diff):
             diff = re.sub('^@@ -(\d+) ', '@@ -\\1,\\1 ', diff, 0, re.MULTILINE)
             diff = re.sub('^(@@ -\d+,\d+) \+(\d+) ', '\\1 +\\2,\\2 ', diff, 0, re.MULTILINE)
