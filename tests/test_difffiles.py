@@ -319,8 +319,8 @@ Binary file 'binary' has changed.
         # TODO: Package.get_diff should return a consistent format
         #       (regardless of the used python version)
         def __canonise_diff(diff):
-            diff = re.sub('^@@ -(\d+) ', '@@ -\\1,\\1 ', diff, 0, re.MULTILINE)
-            diff = re.sub('^(@@ -\d+,\d+) \+(\d+) ', '\\1 +\\2,\\2 ', diff, 0, re.MULTILINE)
+            diff = re.sub('^@@ -(\d+) ', '@@ -\\1,\\1 ', diff, re.MULTILINE)
+            diff = re.sub('^(@@ -\d+,\d+) \+(\d+) ', '\\1 +\\2,\\2 ', diff, re.MULTILINE)
             return diff
 
         got = __canonise_diff(got)
