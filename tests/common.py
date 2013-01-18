@@ -157,3 +157,13 @@ class OscTestCase(unittest.TestCase):
                 continue
             self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
             self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+
+    def assertEqualMultiline(self, got, exp):
+        if (got + exp).find('\n') == -1:
+            self.assertEqual(got, exp)
+        else:
+            start_delim = "\n" + (" 8< ".join(["-----"] * 8)) + "\n"
+            end_delim   = "\n" + (" >8 ".join(["-----"] * 8)) + "\n\n"
+            self.assertEqual(got, exp,
+                             "got:"      + start_delim + got + end_delim +
+                             "expected:" + start_delim + exp + end_delim)

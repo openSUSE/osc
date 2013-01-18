@@ -329,15 +329,7 @@ Binary file 'binary' has changed.
 
         got = __canonise_diff(got)
         exp = __canonise_diff(exp)
-
-        if (got + exp).find('\n') == -1:
-            self.assertEqual(got, exp)
-        else:
-            start_delim = "\n" + (" 8< ".join(["-----"] * 8)) + "\n"
-            end_delim   = "\n" + (" >8 ".join(["-----"] * 8)) + "\n\n"
-            self.assertEqual(got, exp,
-                             "got:"      + start_delim + got + end_delim +
-                             "expected:" + start_delim + exp + end_delim)
+        self.assertEqualMultiline(got, exp)
 
 if __name__ == '__main__':
     import unittest
