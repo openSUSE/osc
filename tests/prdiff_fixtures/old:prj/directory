@@ -1,0 +1,6 @@
+<directory count='4'>
+  <entry name="common-one"/>
+  <entry name="common-two"/>
+  <entry name="common-three"/>
+  <entry name="only-in-old"/>
+</directory>

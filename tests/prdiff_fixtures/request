@@ -1,0 +1,16 @@
+<collection matches="1">
+  <request id="148023">
+    <action type="submit">
+      <source project="home:user:branches:some:project" package="common-two" rev="7"/>
+      <target project="some:project" package="common-two"/>
+      <options>
+        <sourceupdate>update</sourceupdate>
+      </options>
+    </action>
+    <state name="new" who="user" when="2013-01-11T11:04:14">
+      <comment/>
+    </state>
+    <description>- Fix it to work
+- Improve support for something</description>
+  </request>
+</collection>
