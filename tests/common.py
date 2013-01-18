@@ -106,7 +106,8 @@ def addExpectedRequest(method, url, **kwargs):
 
 class OscTestCase(unittest.TestCase):
     def setUp(self, copytree=True):
-        osc.core.conf.get_config(override_conffile=os.path.join(self._get_fixtures_dir(), 'oscrc'))
+        osc.core.conf.get_config(override_conffile=os.path.join(self._get_fixtures_dir(), 'oscrc'),
+                                 override_no_keyring=True, override_no_gnome_keyring=True)
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
         if copytree:
             shutil.copytree(os.path.join(self._get_fixtures_dir(), 'osctest'), os.path.join(self.tmpdir, 'osctest'))
