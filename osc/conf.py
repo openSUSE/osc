@@ -856,6 +856,9 @@ def get_config(override_conffile=None,
             if not config['plaintext_passwd']:
                 password = passwordx
 
+        if password is None or len(password) == 0:
+                print >>sys.stderr, 'no password defined for ', url, '.\nPlease fix your keyring entry or python-keyring setup.'
+
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
             http_headers = http_header_regexp.findall(http_headers)
