@@ -823,6 +823,8 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
+    @cmdln.option('--seperate-requests', action='store_true',
+                  help='Create multiple request instead of a single one (when command is used for entire project)')
     @cmdln.option('--cleanup', action='store_true',
                   help='remove package if submission gets accepted (default for home:<id>:branch projects)')
     @cmdln.option('--no-cleanup', action='store_true',
@@ -870,6 +872,10 @@ class Osc(cmdln.Cmdln):
         elif opts.no_update:
             src_update = "noupdate"
 
+        myreqs = []
+        if opts.supersede:
+            myreqs = [opts.supersede]
+
         args = slash_split(args)
 
         # remove this block later again
@@ -889,94 +895,74 @@ class Osc(cmdln.Cmdln):
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        if len(args) > 0 and len(args) <= 2 and is_project_dir(os.getcwd()):
-            sys.exit('osc submitrequest from project directory is only working without target specs and for source linked files\n')
+        if len(args) == 2 and is_project_dir(os.getcwd()):
+            sys.exit('You can not specify a target package when submitting an entire project\n')
 
         apiurl = self.get_api_url()
 
-        if len(args) == 0 and is_project_dir(os.getcwd()):
+        if len(args) < 2 and is_project_dir(os.getcwd()):
             import cgi
-            # submit requests for multiple packages are currently handled via multiple requests
-            # They could be also one request with multiple actions, but that avoids to accepts parts of it.
             project = store_read_project(os.curdir)
 
             sr_ids = []
-            pi = []
-            pac = []
-            targetprojects = []
+            # for single request
+            actionxml = ""
+            options_block=""
+            if src_update:
+                options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
-                if p.startswith("_patchinfo:") or p.startswith("patchinfo"):
-                    pi.append(p)
-                else:
-                    # get _link info from server, that knows about the local state ...
-                    u = makeurl(apiurl, ['source', project, p])
-                    f = http_GET(u)
-                    root = ET.parse(f).getroot()
-                    linkinfo = root.find('linkinfo')
-                    if linkinfo == None:
-                        print "Package ", p, " is not a source link."
+                print "XXX", p
+                # get _link info from server, that knows about the local state ...
+                u = makeurl(apiurl, ['source', project, p])
+                f = http_GET(u)
+                root = ET.parse(f).getroot()
+                if len(args) == 1:
+                    target_project = args[0]
+                linkinfo = root.find('linkinfo')
+                if linkinfo == None:
+                    if len(args) < 1:
+                        print "Package ", p, " is not a source link and no target specified."
                         sys.exit("This is currently not supported.")
+                else:
                     if linkinfo.get('error'):
                         print "Package ", p, " is a broken source link."
                         sys.exit("Please fix this first")
                     t = linkinfo.get('project')
                     if t:
+                        if target_project == None:
+                            target_project = t
                         if len(root.findall('entry')) > 1: # This is not really correct, but should work mostly
                                                            # Real fix is to ask the api if sources are modificated
                                                            # but there is no such call yet.
-                            targetprojects.append(t)
-                            pac.append(p)
                             print "Submitting package ", p
                         else:
-                            print "  Skipping package ", p
+                            print "  Skipping not modified package ", p
+                            next
                     else:
                         print "Skipping package ", p,  " since it is a source link pointing inside the project."
-                    serviceinfo = root.find('serviceinfo')
-                    if serviceinfo != None:
-                        if serviceinfo.get('code') != "succeeded":
-                            print "Package ", p, " has a ", serviceinfo.get('code'), " source service"
-                            sys.exit("Please fix this first")
-                        if serviceinfo.get('error'):
-                            print "Package ", p, " contains a failed source service."
-                            sys.exit("Please fix this first")
+                        next
 
-            # was this project created by clone request ?
-            u = makeurl(apiurl, ['source', project, '_attribute', 'OBS:RequestCloned'])
-            f = http_GET(u)
-            root = ET.parse(f).getroot()
-            value = root.findtext('attribute/value')
-            myreqs = {}
-            if value:
-                myreqs = [ value ]
+                serviceinfo = root.find('serviceinfo')
+                if serviceinfo != None:
+                    if serviceinfo.get('code') != "succeeded":
+                        print "Package ", p, " has a ", serviceinfo.get('code'), " source service"
+                        sys.exit("Please fix this first")
+                    if serviceinfo.get('error'):
+                        print "Package ", p, " contains a failed source service."
+                        sys.exit("Please fix this first")
 
-            if not opts.yes:
-                if pi:
-                    print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
-                repl = raw_input('\nEverything fine? Can we create the requests ? (y/n) ')
-                if repl.lower() != 'y':
-                    print >>sys.stderr, 'Aborted...'
-                    raise oscerr.UserAbort()
-
-
-            # loop via all packages to do the action
-            for p in pac:
-                result = create_submit_request(apiurl, project, p)
-                if not result:
-#                    sys.exit(result)
-                    sys.exit("submit request creation failed")
-                sr_ids.append(result)
-
-            # create submit requests for all found patchinfos
-            actionxml=""
-            options_block=""
-            if src_update:
-                options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
-
-            for p in pi:
-                for t in targetprojects:
+                # submitting this package
+                if opts.seperate_requests:
+                    # create a single request
+                    result = create_submit_request(apiurl, project, p)
+                    if not result:
+                        sys.exit("submit request creation failed")
+                    sr_ids.append(result)
+                else:
                     s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
-                           (project, p, t, p, options_block)
+                        (project, p, t, p, options_block)
                     actionxml += s
 
             if actionxml != "":
@@ -988,18 +974,26 @@ class Osc(cmdln.Cmdln):
                 root = ET.parse(f).getroot()
                 sr_ids.append(root.get('id'))
 
-            print "Requests created: ",
+            print "Request created: ",
             for i in sr_ids:
                 print i,
 
-            repl = ''
-            if len(myreqs) > 0 and not opts.supersede:
+            # was this project created by clone request ?
+            u = makeurl(apiurl, ['source', project, '_attribute', 'OBS:RequestCloned'])
+            f = http_GET(u)
+            root = ET.parse(f).getroot()
+            value = root.findtext('attribute/value')
+            if value:
+                repl = ''
                 print '\n\nThere are already following submit request: %s.' % \
                       ', '.join([str(i) for i in myreqs ])
                 repl = raw_input('\nSupersede the old requests? (y/n) ')
                 if repl.lower() == 'y':
-                    for req in myreqs:
-                        change_request_state(apiurl, str(req), 'superseded',
+                   myreqs += [ value ]
+
+            if len(myreqs) > 0:
+                for req in myreqs:
+                     change_request_state(apiurl, str(req), 'superseded',
                                              'superseded by %s' % result, result)
 
             sys.exit('Successfully finished')

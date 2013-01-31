@@ -1,5 +1,8 @@
 0.138
   - add support to remove repositories recursively (mostly only usefull for admins)
+  - submitrequest: old not anymore used maintenance code got removed. It is possible now
+                   to create one request to submit all changed packages of an project in
+                   one request. Just run "osc sr" in the checked out project directory.
 
 0.137
   - support single binary download via getbinaries command
