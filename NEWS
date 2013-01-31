@@ -4,6 +4,7 @@
                    to create one request to submit all changed packages of an project in
                    one request. Just run "osc sr" in the checked out project directory.
   - disable keyring usage by default. print warning about misconfigured keyrings.
+  - prdiff: new command to diff entire projects
 
 0.137
   - support single binary download via getbinaries command
