@@ -9,6 +9,7 @@ import conf
 import oscerr
 import sys
 import time
+import urlparse
 
 from optparse import SUPPRESS_HELP
 
@@ -5404,8 +5405,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = os.path.splitext(descr)[0]
         else:
             package = store_read_package('.')
+        apihost = urlparse.urlsplit(self.get_api_url())[1]
         buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
-            % {'repo': repository, 'arch': arch, 'project': project, 'package': package}
+            % {'repo': repository, 'arch': arch, 'project': project, 'package': package, 'apihost': apihost}
         if not os.path.isdir(buildroot):
             raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
 
