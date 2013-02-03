@@ -41,10 +41,12 @@ qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el',
                    'ppc', 'ppc64',
                    's390', 's390x',
                    'sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc',
-                   'hppa'
+                   'hppa',
+                   'aarch64' # qemu has not support yet, but generic emulator in build script has support
         ]
 
 can_also_build = {
+             'aarch64':['aarch64'],
              'armv4l': [                                         'armv4l'                                             ],
              'armv6l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
              'armv7l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ],
