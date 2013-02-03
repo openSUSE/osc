@@ -5090,7 +5090,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print row
 
 
-    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False):
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
@@ -5321,7 +5321,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type)
 
         # check for source services
         r = None

@@ -42,7 +42,6 @@ qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el',
                    's390', 's390x',
                    'sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc',
                    'hppa',
-                   'aarch64' # qemu has not support yet, but generic emulator in build script has support
         ]
 
 can_also_build = {
@@ -653,7 +652,7 @@ def main(apiurl, opts, argv):
     elif hostarch != bi.buildarch:
         if not bi.buildarch in can_also_build.get(hostarch, []):
             # OBSOLETE: qemu_can_build should not be needed anymore since OBS 2.3
-            if not bi.buildarch in qemu_can_build:
+            if vm_type != "emulator" and not bi.buildarch in qemu_can_build + system_emulator_can_build:
                 print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
                 return 1
             print >>sys.stderr, 'WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU.' % (hostarch, bi.buildarch)
@@ -814,17 +813,16 @@ def main(apiurl, opts, argv):
                        else:
                            os.symlink(path + "/" + filename, tffn)
 
-    if bi.pacsuffix == 'rpm':
+    if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
+        print 'Skipping verification of package signatures due to secure VM build'
+    elif bi.pacsuffix == 'rpm':
         if opts.no_verify:
             print 'Skipping verification of package signatures'
         else:
             print 'Verifying integrity of cached packages'
             verify_pacs(bi)
-
     elif bi.pacsuffix == 'deb':
-        if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
-            print 'Skipping verification of package signatures due to secure VM build'
-        elif opts.no_verify or opts.noinit:
+        if opts.no_verify or opts.noinit:
             print 'Skipping verification of package signatures'
         else:
             print 'WARNING: deb packages get not verified, they can compromise your system !'
@@ -867,7 +865,7 @@ def main(apiurl, opts, argv):
             my_build_swap = build_root + '/swap'
 
         vm_options = [ '--vm-type=%s'%vm_type ]
-        if vm_type != 'lxc':
+        if vm_type != 'lxc' and vm_type != 'emulator':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
             vm_options += [ '--logfile=%s/.build.log' % build_root ]

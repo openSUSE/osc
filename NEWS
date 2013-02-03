@@ -1,5 +1,5 @@
 0.139
-  -
+  - support generic emulator virtualization
 
 0.138
   - add support to remove repositories recursively (mostly only usefull for admins)
