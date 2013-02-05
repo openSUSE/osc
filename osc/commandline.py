@@ -1294,7 +1294,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rdiff = None
         if opts.diff:
             try:
-                rdiff = 'old: %s/%s\nnew: %s/%s' %(dst_project, dst_package, src_project, src_package)
+                rdiff = 'old: %s/%s\nnew: %s/%s\n' %(dst_project, dst_package, src_project, src_package)
                 rdiff += server_diff(apiurl,
                                     dst_project, dst_package, opts.revision,
                                     src_project, src_package, None, True)
