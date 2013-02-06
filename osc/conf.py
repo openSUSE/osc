@@ -496,6 +496,8 @@ def _build_opener(url):
                 elif os.path.isdir(i):
                     capath = i
                     break
+        if not cafile and not capath:
+            raise Exception('No CA certificates found')
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
             raise Exception('No CA certificates found')
