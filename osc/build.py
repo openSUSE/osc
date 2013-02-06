@@ -414,6 +414,8 @@ def main(apiurl, opts, argv):
         buildargs.append('--changelog')
     if opts.root:
         build_root = opts.root
+    if opts.target:
+        buildargs.append('--target=%s' % opts.target)
     if opts.jobs:
         buildargs.append('--jobs=%s' % opts.jobs)
     elif config['build-jobs'] > 1:

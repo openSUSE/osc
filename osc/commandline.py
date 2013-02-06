@@ -5245,6 +5245,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use hard links instead of a deep copied source')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
+    @cmdln.option('--target', metavar='TARGET',
+                  help='define target plattform')
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
     @cmdln.option('-d', '--debuginfo', action='store_true',
