@@ -5421,7 +5421,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
             if suargs:
-                cmd.insert(1, suargs)
+                cmd[1:1] = suargs.split()
         print 'running: %s' % ' '.join(cmd)
         os.execvp(sucmd, cmd)
 
