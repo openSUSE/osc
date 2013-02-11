@@ -654,7 +654,7 @@ def main(apiurl, opts, argv):
     elif hostarch != bi.buildarch:
         if not bi.buildarch in can_also_build.get(hostarch, []):
             # OBSOLETE: qemu_can_build should not be needed anymore since OBS 2.3
-            if vm_type != "emulator" and not bi.buildarch in qemu_can_build + system_emulator_can_build:
+            if vm_type != "emulator" and not bi.buildarch in qemu_can_build:
                 print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
                 return 1
             print >>sys.stderr, 'WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU.' % (hostarch, bi.buildarch)
