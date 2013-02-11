@@ -5267,6 +5267,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             help='take previous build from DIR (special values: _self, _link)')
     @cmdln.option('--shell', action='store_true',
                   help=SUPPRESS_HELP)
+    @cmdln.option('--host', metavar='HOST',
+            help='perform the build on a remote server - user@server:~/remote/directory')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -5365,7 +5367,142 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
         print 'Building %s for %s/%s' % (args[2], args[0], args[1])
-        return osc.build.main(self.get_api_url(), opts, args)
+        if not opts.host:
+            return osc.build.main(self.get_api_url(), opts, args)
+        else:
+            return self._do_rbuild(subcmd, opts, *args)
+
+    def _do_rbuild(self, subcmd, opts, *args):
+
+        # drop the --argument, value tuple from the list
+        def drop_arg2(lst, name):
+            if not name: return lst
+            while name in lst:
+                i = lst.index(name)
+                lst.pop(i+1)
+                lst.pop(i)
+            return lst
+
+        # change the local directory to more suitable remote one in hostargs
+        # and perform the rsync to such location as well
+        def rsync_dirs_2host(hostargs, short_name, long_name, dirs):
+
+            drop_arg2(hostargs, short_name)
+            drop_arg2(hostargs, long_name)
+
+            for pdir in dirs:
+                # drop the last '/' from pdir name - this is because
+                # rsync foo  remote:/bar create /bar/foo on remote machine
+                # rsync foo/ remote:/bar copy the content of foo in the /bar
+                if pdir[-1:] == os.path.sep:
+                    pdir = pdir[:-1]
+
+                hostprefer = os.path.join(
+                        hostpath,
+                        basename,
+                        "%s__" % (long_name.replace('-','_')),
+                        os.path.basename(os.path.abspath(pdir)))
+                hostargs.append(long_name)
+                hostargs.append(hostprefer)
+
+                rsync_prefer_cmd = ['rsync', '-az', '-delete', '-e', 'ssh',
+                        pdir,
+                        "%s:%s" % (hostname, os.path.dirname(hostprefer))]
+                print 'Run: %s' % " ".join(rsync_prefer_cmd)
+                ret = subprocess.call(rsync_prefer_cmd)
+                if ret != 0:
+                    return ret
+
+            return 0
+            
+
+        cwd = os.getcwdu()
+        basename = os.path.basename(cwd)
+        if not ':' in opts.host:
+            hostname = opts.host
+            hostpath = "~/"
+        else:
+            hostname, hostpath = opts.host.split(':', 1)
+
+        # arguments for build: use all arguments behind build and drop --host 'HOST'
+        hostargs = sys.argv[sys.argv.index(subcmd)+1:]
+        drop_arg2(hostargs, '--host')
+
+        # global arguments: use first '-' up to subcmd
+        gi = 0
+        for i, a in enumerate(sys.argv):
+            if a == subcmd:
+                break
+            if a[0] == '-':
+                gi = i
+                break
+
+        if gi:
+            hostglobalargs = sys.argv[gi : sys.argv.index(subcmd)+1]
+        else:
+            hostglobalargs = (subcmd, )
+
+        # keep-pkgs
+        hostkeep = None
+        if opts.keep_pkgs:
+            drop_arg2(hostargs, '-k')
+            drop_arg2(hostargs, '--keep-pkgs')
+            hostkeep = os.path.join(
+                    hostpath,
+                    basename,
+                    "__keep_pkgs__",
+                    "")   # <--- this adds last '/', thus triggers correct rsync behavior
+            hostargs.append('--keep-pkgs')
+            hostargs.append(hostkeep)
+
+        ### run all commands ###
+        # 1.) rsync sources
+        rsync_source_cmd = ['rsync', '-az', '-delete', '-e', 'ssh', cwd, "%s:%s" % (hostname, hostpath)]
+        print 'Run: %s' % " ".join(rsync_source_cmd)
+        ret = subprocess.call(rsync_source_cmd)
+        if ret != 0:
+            return ret
+
+        # 2.) rsync prefer-pkgs dirs, overlay and rsyns-src
+        if opts.prefer_pkgs:
+            ret = rsync_dirs_2host(hostargs, '-p', '--prefer-pkgs', opts.prefer_pkgs)
+            if ret != 0:
+                return ret
+
+        for arg, long_name in ((opts.rsyncsrc, '--rsync-src'), (opts.overlay, '--overlay')):
+            if not arg: continue
+            ret = rsync_dirs_2host(hostargs, None, long_name, (arg, ))
+            if ret != 0:
+                return ret
+
+        # 3.) call osc build
+        osc_cmd = "osc"
+        for var in ('OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR'):
+            if os.getenv(var):
+                osc_cmd = "%s=%s %s" % (var, os.getenv(var), osc_cmd)
+
+        ssh_cmd = \
+            ['ssh', '-t', hostname,
+            "cd %(remote_dir)s; %(osc_cmd)s %(global_args)s %(local_args)s" % dict(
+            remote_dir = os.path.join(hostpath, basename),
+            osc_cmd = osc_cmd,
+            global_args = " ".join(hostglobalargs),
+            local_args = " ".join(hostargs))
+            ]
+        print 'Run: %s' % " ".join(ssh_cmd)
+        build_ret = subprocess.call(ssh_cmd)
+        if build_ret != 0:
+            return build_ret
+
+        # 4.) get keep-pkgs back
+        if opts.keep_pkgs:
+            ret = rsync_keep_cmd = ['rsync', '-az', '-e', 'ssh', "%s:%s" % (hostname, hostkeep), opts.keep_pkgs]
+            print 'Run: %s' % " ".join(rsync_keep_cmd)
+            ret = subprocess.call(rsync_keep_cmd)
+            if ret != 0:
+                return ret
+
+        return build_ret
 
 
     @cmdln.option('--local-package', action='store_true',
