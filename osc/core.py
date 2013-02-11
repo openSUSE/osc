@@ -5301,11 +5301,14 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
         st = int(node.get('starttime'))
         et = int(node.get('endtime'))
         endtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(et))
+        print "XXX", et, st
         waittm = time.gmtime(et-st)
-        if waittm.tm_hour:
-            waitbuild = "%2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
+        if waittm.tm_mday>1:
+            waitbuild = "%1dd %2dh %2dm %2ds" % (waittm.tm_mday-1, waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
+        elif waittm.tm_hour:
+            waitbuild = "   %2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
         else:
-            waitbuild = "    %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
+            waitbuild = "       %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
 
         if format == 'csv':
             print '%s|%s|%s|%s|%s|%s' % (endtime, package, reason, code, waitbuild, worker)
