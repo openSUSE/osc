@@ -3481,12 +3481,13 @@ def edit_message(footer='', template='', templatelen=30):
         while 1:
             run_editor(filename)
             msg = open(filename).read().split(delim)[0].rstrip()
-
-            if len(msg):
+            if msg and template != msg:
                 break
             else:
-                ri = raw_input('Log message not specified\n'
-                               'a)bort, c)ontinue, e)dit: ')
+                reason = 'Log message not specified'
+                if template and template == msg:
+                    reason = 'Log template was not changed'
+                ri = raw_input('%s\na)bort, c)ontinue, e)dit: ' % reason)
                 if ri in 'aA':
                     raise oscerr.UserAbort()
                 elif ri in 'cC':
