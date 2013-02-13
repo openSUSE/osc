@@ -765,7 +765,7 @@ class Project:
                 upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
 
                 for pac in upstream_del:
-                    if self.status(pac) != '!' or pac in self.pacs_broken:
+                    if self.status(pac) != '!':
                         p = Package(os.path.join(self.dir, pac))
                         self.delPackage(p, force = True)
                         delete_storedir(p.storedir)
@@ -773,7 +773,7 @@ class Project:
                             os.rmdir(pac)
                         except:
                             pass
-                    self.pac_root.remove(self.get_package_node(p.name))
+                    self.pac_root.remove(self.get_package_node(pac))
                     self.pacs_have.remove(pac)
 
                 for pac in self.pacs_have:
