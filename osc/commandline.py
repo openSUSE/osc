@@ -919,6 +919,7 @@ class Osc(cmdln.Cmdln):
                 u = makeurl(apiurl, ['source', project, p])
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
+                target_project = None
                 if len(args) == 1:
                     target_project = args[0]
                 linkinfo = root.find('linkinfo')
