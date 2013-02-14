@@ -914,7 +914,6 @@ class Osc(cmdln.Cmdln):
 
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
-                print "XXX", p
                 # get _link info from server, that knows about the local state ...
                 u = makeurl(apiurl, ['source', project, p])
                 f = http_GET(u)
