@@ -1,7 +1,7 @@
 0.139
   - support generic emulator virtualization
   - added "--host" argument to "osc build" (used to perform the build on a remote host)
-    (patch by Michal Vyskocil <mvyskocil@suse.cz>)
+  - "search --maintained" is obsolete. Abort on usage.
 
 0.138
   - add support to remove repositories recursively (mostly only usefull for admins)
