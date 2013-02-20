@@ -6111,7 +6111,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: show waiting work, packages, projects or requests involving yourself
 
             Examples:
-                # list all tasks where it is expected to work on
+                # list all open tasks for me
                 osc ${cmd_name} [work]
                 # list packages where I am bugowner
                 osc ${cmd_name} pkg -b
@@ -6769,6 +6769,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Set the bugowner to specified person')
     @cmdln.option('-S', '--set-bugowner-request', metavar='user',
                   help='Set the bugowner to specified person via a request')
+    @cmdln.option('-U', '--user', metavar='USER',
+                        help='All official maintained instances for the specified USER')
+    @cmdln.option('-G', '--group', metavar='GROUP',
+                        help='All official maintained instances for the specified GROUP')
     @cmdln.option('-d', '--delete', metavar='user',
                   help='delete a maintainer/bugowner (can be specified via --role)')
     @cmdln.option('-r', '--role', metavar='role', action='append', default=[],
@@ -6777,8 +6781,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers of a project/package
 
-            osc maintainer <options>
+            # Search for official maintained sources in OBS instance
             osc maintainer BINARY <options>
+            osc maintainer -U <user> <options>
+            osc maintainer -G <group> <options>
+
+            # Lookup in specific containers
+            osc maintainer <options>
             osc maintainer PRJ <options>
             osc maintainer PRJ PKG <options>
     
@@ -6804,7 +6813,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             roles = [ 'bugowner' ]
 
         args = slash_split(args)
-        if len(args) == 0:
+        if opts.user or opts.group:
+            if len(args) != 0:
+                raise oscerr.WrongArgs('Either search for user or for packages.')
+        elif len(args) == 0:
             try:
                 pac = store_read_package('.')
             except oscerr.NoWorkingCopy:
@@ -6822,7 +6834,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         # Try the OBS 2.4 way first. 
-        if pac==None and binary:
+        if binary or opts.user or opts.group:
            limit=None
            if opts.all:
                limit=0
@@ -6830,7 +6842,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            if filterroles == [ 'bugowner', 'maintainer' ]:
                # use server side configured default
                filterroles=None
-           searchresult = owner(apiurl, binary, usefilter=filterroles, devel=None, limit=limit)
+           if binary:
+               searchresult = owner(apiurl, binary, "binary", usefilter=filterroles, devel=None, limit=limit)
+           elif opts.user:
+               searchresult = owner(apiurl, opts.user, "user", usefilter=filterroles, devel=None)
+           elif opts.group:
+               searchresult = owner(apiurl, opts.group, "group", usefilter=filterroles, devel=None)
+           else:
+               raise oscerr.WrongArgs('osc bug, no valid search criteria')
 
         if opts.add:
             if searchresult:
@@ -6916,7 +6935,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         metaroot = ET.fromstring(''.join(m))
             else:
                 # fallback to project lookup for old servers
-                if not searchresult:
+                if prj and not searchresult:
                    m = show_project_meta(apiurl, prj)
                    metaroot = ET.fromstring(''.join(m))
 
@@ -6950,38 +6969,40 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        print "Defined in package: %s/%s " %(definingproject, definingpackage)
                    else:
                        print "Defined in project: ", definingproject
- 
-               for role in roles:
-                   if opts.bugowner and not len(maintainers.get(role, [])):
-                       role = 'maintainer'
-                   if pac:
-                       print "%s%s of %s/%s : " %(indent, role, prj, pac)
-                   else:
-                       print "%s%s of %s : " %(indent, role, prj)
-                   if opts.email:
-                       emails = []
-                       for maintainer in maintainers.get(role, []):
-                           user = get_user_data(apiurl, maintainer, 'email')
-                           if len(user):
-                               emails.append(''.join(user))
-                       print indent,
-                       print ', '.join(emails) or '-'
-                   elif opts.verbose:
-                       userdata = []
-                       for maintainer in maintainers.get(role, []):
-                           user = get_user_data(apiurl, maintainer, 'login', 'realname', 'email')
-                           userdata.append(user[0])
-                           if user[1] !=  '-':
-                               userdata.append("%s <%s>"%(user[1], user[2]))
-                           else:
-                               userdata.append(user[2])
-                       for row in build_table(2, userdata, None, 3):
+
+               if prj: 
+                   # not for user/group search
+                   for role in roles:
+                       if opts.bugowner and not len(maintainers.get(role, [])):
+                           role = 'maintainer'
+                       if pac:
+                           print "%s%s of %s/%s : " %(indent, role, prj, pac)
+                       else:
+                           print "%s%s of %s : " %(indent, role, prj)
+                       if opts.email:
+                           emails = []
+                           for maintainer in maintainers.get(role, []):
+                               user = get_user_data(apiurl, maintainer, 'email')
+                               if len(user):
+                                   emails.append(''.join(user))
                            print indent,
-                           print row
-                   else:
-                       print indent,
-                       print ', '.join(maintainers.get(role, [])) or '-'
-                   print
+                           print ', '.join(emails) or '-'
+                       elif opts.verbose:
+                           userdata = []
+                           for maintainer in maintainers.get(role, []):
+                               user = get_user_data(apiurl, maintainer, 'login', 'realname', 'email')
+                               userdata.append(user[0])
+                               if user[1] !=  '-':
+                                   userdata.append("%s <%s>"%(user[1], user[2]))
+                               else:
+                                   userdata.append(user[2])
+                           for row in build_table(2, userdata, None, 3):
+                               print indent,
+                               print row
+                       else:
+                           print indent,
+                           print ', '.join(maintainers.get(role, [])) or '-'
+                       print
 
     @cmdln.alias('who')
     @cmdln.alias('user')
