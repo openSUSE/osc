@@ -6889,7 +6889,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             else:
                 for role in roles:
-                    setBugowner(apiurl, prj, pac, opts.delete, role)
+                    try:
+                        setBugowner(apiurl, prj, pac, opts.delete, role)
+                    except urllib2.HTTPError, e:
+                        if e.code == 403:
+                            print "No write permission in", result.get('project'),
+                            if result.get('package'):
+                                print "/", result.get('package'),
+                            print
+                            repl = raw_input('\nCreating a request instead? (y/n) ')
+                            if repl.lower() == 'y':
+                                opts.set_bugowner_request = opts.set_bugowner
+                                opts.set_bugowner = None
+                                break
+
+                    if opts.set_bugowner_request:
+                       for role in roles:
+                           args = [bugowner, prj]
+                           if pac:
+                               args = args + [pac]
+                           requestactionsxml += self._set_bugowner(args,opts)
 
             if requestactionsxml != "":
                 message = edit_message()
