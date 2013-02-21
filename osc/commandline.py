@@ -6809,7 +6809,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         roles = [ 'bugowner', 'maintainer' ]
         if len(opts.role):
             roles = opts.role
-        if opts.bugowner_only or opts.bugowner or opts.set_bugowner or opts.set_bugowner_request or subcmd == 'bugowner':
+        if opts.bugowner_only or opts.bugowner or subcmd == 'bugowner':
             roles = [ 'bugowner' ]
 
         args = slash_split(args)
