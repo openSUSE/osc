@@ -1,4 +1,8 @@
+0.140
+  -
+
 0.139
+  - various bugfixes for owner search
   - support generic emulator virtualization
   - added "--host" argument to "osc build" (used to perform the build on a remote host)
   - "search --maintained" is obsolete. Abort on usage.
