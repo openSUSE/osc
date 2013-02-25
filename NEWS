@@ -3,6 +3,9 @@
   - added "--host" argument to "osc build" (used to perform the build on a remote host)
   - "search --maintained" is obsolete. Abort on usage.
   - "maintainer --user" support to search for all official maintained instance for given user or group
+  - added support to abort a commit after displaying a default commit message in $EDITOR. As a result
+    other commands like "submitrequest" will also ask if the user wants to proceed if the default
+    comment/message wasn't changed.
 
 0.138
   - add support to remove repositories recursively (mostly only usefull for admins)
