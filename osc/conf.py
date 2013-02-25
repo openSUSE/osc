@@ -798,6 +798,7 @@ def get_config(override_conffile=None,
         scheme, host = parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host)
         user = None
+        password = None
         if config['use_keyring'] and GENERIC_KEYRING:
             try:
                 # Read from keyring lib if available
@@ -826,6 +827,13 @@ def get_config(override_conffile=None,
             user = None
             print >>sys.stderr, 'Warning: blank user in the keyring for the ' \
                 'apiurl %s.\nPlease fix your keyring entry.'
+
+        if user is not None and password is None:
+            err = ('no password defined for "%s".\nPlease fix your keyring '
+                   'entry or gnome-keyring setup.\nAssuming an empty password.'
+                   % url)
+            print >>sys.stderr, err
+            password = ''
 
         # Read credentials from config
         if user is None:
@@ -857,9 +865,6 @@ def get_config(override_conffile=None,
 
             if not config['plaintext_passwd']:
                 password = passwordx
-
-        if password is None or len(password) == 0:
-                print >>sys.stderr, 'no password defined for ', url, '.\nPlease fix your keyring entry or python-keyring setup.'
 
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
