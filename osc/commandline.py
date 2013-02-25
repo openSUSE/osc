@@ -969,7 +969,7 @@ class Osc(cmdln.Cmdln):
             if actionxml != "":
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
                       (actionxml, cgi.escape(opts.message or ""))
-                u = makeurl(apiurl, ['request'], query='cmd=create')
+                u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
                 f = http_POST(u, data=xml)
 
                 root = ET.parse(f).getroot()
