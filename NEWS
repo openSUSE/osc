@@ -1,4 +1,5 @@
 0.140
+  - allow specifying directories as mv targets
   -
 
 0.139
