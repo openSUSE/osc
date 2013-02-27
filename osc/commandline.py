@@ -7628,9 +7628,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         if not os.path.isfile(source):
-            raise oscerr.WrongArgs("Source file ``%s'' does not exists" % source)
+            raise oscerr.WrongArgs("Source file '%s' does not exists or is no file" % source)
         if not opts.force and os.path.isfile(dest):
-            raise oscerr.WrongArgs("Dest file ``%s'' already exists" % dest)
+            raise oscerr.WrongArgs("Dest file '%s' already exists" % dest)
+        if os.path.isdir(dest):
+            dest = os.path.join(dest, os.path.basename(source))
         src_pkg = findpacs([source])
         tgt_pkg = findpacs([dest])
         if not src_pkg:
@@ -7638,8 +7640,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not tgt_pkg:
             raise oscerr.NoWorkingCopy("Error: \"%s\" does not point to an osc working copy." % os.path.abspath(dest))
 
-        if os.path.isfile(source) and os.path.isdir(dest):
-            dest = os.path.join(dest, os.path.basename(source))
         os.rename(source, dest)
         try:
             tgt_pkg[0].addfile(os.path.basename(dest))
