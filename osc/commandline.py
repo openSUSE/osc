@@ -1776,6 +1776,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='edit a submit action')
     @cmdln.option('-i', '--interactive', action='store_true',
                         help='interactive review of request')
+    @cmdln.option('--accept-or-revoke', action='store_true',
+                        help='For automatisation scripts: accepts a request when it is in new or review state. Or revoke it when it got declined. Otherwise just do nothing.')
     @cmdln.option('--non-interactive', action='store_true',
                         help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
@@ -2151,6 +2153,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
+                if opts.accept_or_revoke:
+                    if rq.state.name == "decline":
+                        cmd=revoke
+                    elif rq.state.name != "new" or rq.state.name != "review":
+                        return 0
                 if rq.state.name == state_map[cmd]:
                     repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "  % (reqid, rq.state.name))
                     if repl.lower() != 'y':
