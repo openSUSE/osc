@@ -5731,7 +5731,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             COMMAND can be:
             run         r  run defined services locally, it takes an optional parameter to run only a 
-                           specified source service. In case paramteres exists for this one in _service file
+                           specified source service. In case parameters exist for this one in _service file
                            they are used.
             disabledrun dr run disabled or server side only services locally and store files as local created
             remoterun   rr trigger a re-run on the server side
