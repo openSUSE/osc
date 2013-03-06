@@ -6777,14 +6777,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Specify user role')
     @cmdln.alias('bugowner')
     def do_maintainer(self, subcmd, opts, *args):
-        """${cmd_name}: Show maintainers of a project/package
+        """${cmd_name}: Show maintainers according to server side configuration
 
             # Search for official maintained sources in OBS instance
             osc maintainer BINARY <options>
             osc maintainer -U <user> <options>
             osc maintainer -G <group> <options>
 
-            # Lookup in specific containers
+            # Lookup via containers
             osc maintainer <options>
             osc maintainer PRJ <options>
             osc maintainer PRJ PKG <options>
@@ -6792,6 +6792,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The tool looks up the default responsible person for a certain project or package.
         When using with an OBS 2.4 (or later) server it is doing the lookup for
         a given binary according to the server side configuration of default owners.
+
+        The tool is also looking into devel packages and supports to fallback to the project
+        in case a package has no defined maintainer.
+
+        Please use "osc meta pkg" in case you need to know the definition in a specific container.
 
         PRJ and PKG default to current working-copy path.
 
