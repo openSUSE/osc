@@ -3486,7 +3486,7 @@ def edit_message(footer='', template='', templatelen=30):
             else:
                 reason = 'Log message not specified'
                 if template and template == msg:
-                    reason = 'Log template was not changed'
+                    reason = 'Default log message was not changed. Press \'c\' to continue.'
                 ri = raw_input('%s\na)bort, c)ontinue, e)dit: ' % reason)
                 if ri in 'aA':
                     raise oscerr.UserAbort()
