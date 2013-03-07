@@ -13,7 +13,7 @@ import urlparse
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
-from osc.core import get_binarylist, get_binary_file
+from osc.core import get_binarylist, get_binary_file, run_external
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
 import oscerr
@@ -913,14 +913,15 @@ def main(apiurl, opts, argv):
         cmd = [ change_personality[bi.buildarch] ] + cmd;
 
     try:
-        rc = subprocess.call(cmd)
+        rc = run_external(cmd[0], *cmd[1:])
         if rc:
             print
             print 'The buildroot was:', build_root
             sys.exit(rc)
     except KeyboardInterrupt, i:
         print "keyboard interrupt, killing build ..."
-        subprocess.call(cmd + ["--kill"])
+        cmd.append('--kill')
+        run_external(cmd[0], *cmd[1:])
         raise i
 
     pacdir = os.path.join(build_root, '.build.packages')

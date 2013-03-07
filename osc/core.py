@@ -24,6 +24,7 @@ import conf
 import subprocess
 import re
 import socket
+import errno
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -361,10 +362,10 @@ class Serviceinfo:
             name = call.split(None, 1)[0]
             if not os.path.exists("/usr/lib/obs/service/"+name):
                 raise oscerr.PackageNotInstalled("obs-service-"+name)
-            c = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
+            cmd = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
             if conf.config['verbose'] > 1 or verbose:
-                print "Run source service:", c
-            r = subprocess.call(c, shell=True)
+                print "Run source service:", cmd
+            r = run_external(cmd, shell=True)
 
             if r != 0:
                 print "Aborting: service call failed: " + c
@@ -1458,8 +1459,7 @@ class Package:
             # try merging
             # diff3 OPTIONS... MINE OLDER YOURS
             merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
-            # we would rather use the subprocess module, but it is not availablebefore 2.4
-            ret = subprocess.call(merge_cmd, shell=True)
+            ret = run_external(merge_cmd, shell=True)
 
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
@@ -3443,10 +3443,7 @@ def run_pager(message, tmp_suffix=''):
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
         try:
-            try:
-                subprocess.call('%s %s' % (pager, tmpfile.name), shell=True)
-            except OSError, e:
-                raise oscerr.ExtRuntimeError('cannot run pager \'%s\': %s' % (pager, e.strerror), pager)
+            run_external(pager, tmpfile.name)
         finally:
             tmpfile.close()
 
@@ -3454,10 +3451,7 @@ def run_editor(filename):
     editor = os.getenv('EDITOR', default=get_default_editor())
     cmd = editor.split(' ')
     cmd.append(filename)
-    try:
-        return subprocess.call(cmd)
-    except OSError, e:
-        raise oscerr.ExtRuntimeError('cannot run editor \'%s\': %s' % (editor, e.strerror), editor)
+    return run_external(cmd[0], *cmd[1:])
 
 def edit_message(footer='', template='', templatelen=30):
     delim = '--This line, and those below, will be ignored--\n'
@@ -5836,7 +5830,7 @@ def unpack_srcrpm(srpm, dir, *files):
     if os.path.isdir(dir):
         os.chdir(dir)
     cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
-    ret = subprocess.call(cmd, shell=True)
+    ret = run_external(cmd, shell=True)
     if ret != 0:
         print >>sys.stderr, 'error \'%s\' - cannot extract \'%s\'' % (ret, srpm)
         sys.exit(1)
@@ -6413,7 +6407,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
 
 def edit_submitrequest(apiurl, project, orequest, new_request=None):
     """edit a submit action from orequest/new_request"""
-    import tempfile, shutil, subprocess
+    import tempfile, shutil
     actions = orequest.get_actions('submit')
     oactions = actions
     if not orequest is None:
@@ -6446,7 +6440,7 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
         os.chdir(tmpdir)
         print 'Checked out package \'%s\' to %s. Started a new shell (%s).\n' \
             'Please fix the package and close the shell afterwards.' % (package, tmpdir, shell)
-        subprocess.call(shell)
+        run_external(shell)
         # the pkg might have uncommitted changes...
         cleanup = False
         os.chdir(olddir)
@@ -6528,6 +6522,31 @@ def raw_input(*args):
     except EOFError:
         # interpret ctrl-d as user abort
         raise oscerr.UserAbort()
+
+def run_external(filename, *args, **kwargs):
+    """Executes the program filename via subprocess.call.
+
+    *args are additional arguments which are passed to the
+    program filename. **kwargs specify additional arguments for
+    the subprocess.call function.
+    if no args are specified the plain filename is passed
+    to subprocess.call (this can be used to execute a shell
+    command). Otherwise [filename] + list(args) is passed
+    to the subprocess.call function.
+
+    """
+    # unless explicitly specified use shell=False
+    kwargs.setdefault('shell', False)
+    if args:
+        cmd = [filename] + list(args)
+    else:
+        cmd = filename
+    try:
+        return subprocess.call(cmd, **kwargs)
+    except OSError, e:
+        if e.errno != errno.ENOENT:
+            raise
+        raise oscerr.ExtRuntimeError(e.strerror, filename)
 
 # backward compatibility: local role filtering
 def filter_role(meta, user, role):

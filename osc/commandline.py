@@ -5416,7 +5416,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         pdir,
                         "%s:%s" % (hostname, os.path.dirname(hostprefer))]
                 print 'Run: %s' % " ".join(rsync_prefer_cmd)
-                ret = subprocess.call(rsync_prefer_cmd)
+                ret = run_external(rsync_prefer_cmd[0], *rsync_prefer_cmd[1:])
                 if ret != 0:
                     return ret
 
@@ -5466,7 +5466,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # 1.) rsync sources
         rsync_source_cmd = ['rsync', '-az', '-delete', '-e', 'ssh', cwd, "%s:%s" % (hostname, hostpath)]
         print 'Run: %s' % " ".join(rsync_source_cmd)
-        ret = subprocess.call(rsync_source_cmd)
+        ret = run_external(rsync_source_cmd[0], *rsync_source_cmd[1:])
         if ret != 0:
             return ret
 
@@ -5497,7 +5497,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             local_args = " ".join(hostargs))
             ]
         print 'Run: %s' % " ".join(ssh_cmd)
-        build_ret = subprocess.call(ssh_cmd)
+        build_ret = run_external(ssh_cmd[0], *ssh_cmd[1:])
         if build_ret != 0:
             return build_ret
 
@@ -5505,7 +5505,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.keep_pkgs:
             ret = rsync_keep_cmd = ['rsync', '-az', '-e', 'ssh', "%s:%s" % (hostname, hostkeep), opts.keep_pkgs]
             print 'Run: %s' % " ".join(rsync_keep_cmd)
-            ret = subprocess.call(rsync_keep_cmd)
+            ret = run_external(rsync_keep_cmd[0], *rsync_keep_cmd[1:])
             if ret != 0:
                 return ret
 
@@ -7308,14 +7308,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
 
             o = open(os.path.join(destdir,  name), 'wb')
-            code = subprocess.call(['diff3', '-m', '-E',
+            code = run_external('diff3', '-m', '-E',
               '-L', '.mine',
               os.path.join(destdir, name + '.mine'),
               '-L', '.old',
               os.path.join(destdir, name + '.old'),
               '-L', '.new',
               os.path.join(destdir, name + '.new'),
-            ], stdout=o)
+            stdout=o)
             if code == 0:
                 print statfrmt('G', name)
                 os.unlink(os.path.join(destdir, name + '.mine'))
@@ -7436,11 +7436,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
 
             o = open(name, 'wb')
-            code = subprocess.call(['diff3', '-m', '-E',
+            code = run_external('diff3', '-m', '-E',
               '-L', '.mine', name + '.mine',
               '-L', '.old', name + '.old',
               '-L', '.new', name + '.new',
-            ], stdout=o)
+            stdout=o)
             if code == 0:
                 print statfrmt('G', name)
                 os.unlink(name + '.mine')
