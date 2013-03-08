@@ -1100,21 +1100,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.diff:
             run_pager(rdiff)
             return
-
-        # Are there already requests to this package ?
-        reqs = get_exact_request_list(apiurl, src_project, dst_project, src_package, dst_package, req_type='submit', req_state=['new','review', 'declined'])
-        myreqs = [ i for i in reqs ]
-        user = conf.get_apiurl_usr(apiurl)
-        repl = ''
-
-        if len(myreqs) > 0 and not opts.supersede:
-            print 'There are already following submit request: %s.' % \
-                  ', '.join([i.reqid for i in myreqs ])
-            repl = raw_input('Supersede the old requests? (y/n/c) ')
-            if repl.lower() == 'c':
-                print >>sys.stderr, 'Aborting'
-                raise oscerr.UserAbort()
-
+        supersede_existing = False
+        reqs = []
+        if not opts.supersede:
+            (supersede_existing, reqs) = check_existing_requests(apiurl,
+                                                                 src_project,
+                                                                 src_package,
+                                                                 dst_project,
+                                                                 dst_package)
         if not opts.message:
             difflines = []
             doappend = False
@@ -1133,8 +1126,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        src_project, src_package,
                                        dst_project, dst_package,
                                        opts.message, orev=rev, src_update=src_update)
-        if repl.lower() == 'y':
-            for req in myreqs:
+        if supersede_existing:
+            for req in reqs:
                 change_request_state(apiurl, req.reqid, 'superseded',
                                      'superseded by %s' % result, result)
 
@@ -2210,11 +2203,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                    print "/", package,
                                repl = raw_input('\nForward this submit to it? ([y]/n)')
                                if repl.lower() == 'y' or repl == '':
-                                   msg = "%s (forwarded request %s from %s)" % ( rq.description, reqid, rq.get_creator())
-                                   print msg
+                                   (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
+                                                                               project, package)
+                                   msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.get_creator())
                                    rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
                                                                        project, package, cgi.escape(msg))
+                                   print msg
                                    print "New request #", rid
+                                   for req in reqs:
+                                       change_request_state(apiurl, req.reqid, 'superseded',
+                                                            'superseded by %s' % rid, rid)
 
     # editmeta and its aliases are all depracated
     @cmdln.alias("editprj")
