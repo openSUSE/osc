@@ -3871,8 +3871,8 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
                                   req_state=['new','review', 'declined'])
     repl = ''
     if reqs:
-        print 'There are already following submit request: %s.' % \
-              ', '.join([i.reqid for i in reqs ])
+        print 'There are already the following submit request: %s.' % \
+              ', '.join([i.reqid for i in reqs])
         repl = raw_input('Supersede the old requests? (y/n/c) ')
         if repl.lower() == 'c':
             print >>sys.stderr, 'Aborting'
