@@ -3851,6 +3851,21 @@ def get_request_log(apiurl, reqid):
         data.append(s)
     return data
 
+def check_existing_requests(apiurl, src_project, src_package, dst_project,
+                            dst_package):
+    reqs = get_exact_request_list(apiurl, src_project, dst_project,
+                                  src_package, dst_package,
+                                  req_type='submit',
+                                  req_state=['new','review', 'declined'])
+    repl = ''
+    if reqs:
+        print 'There are already following submit request: %s.' % \
+              ', '.join([i.reqid for i in reqs ])
+        repl = raw_input('Supersede the old requests? (y/n/c) ')
+        if repl.lower() == 'c':
+            print >>sys.stderr, 'Aborting'
+            raise oscerr.UserAbort()
+    return repl == 'y', reqs
 
 def get_group(apiurl, group):
     u = makeurl(apiurl, ['group', quote_plus(group)])
