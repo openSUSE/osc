@@ -3453,29 +3453,47 @@ def run_editor(filename):
     cmd.append(filename)
     return run_external(cmd[0], *cmd[1:])
 
-def edit_message(footer='', template='', templatelen=30):
-    delim = '--This line, and those below, will be ignored--\n'
+def _edit_message_open_editor(filename, data, orig_mtime):
+    # FIXME: import modules globally
     import tempfile
-    (fd, filename) = tempfile.mkstemp(prefix = 'osc-commitmsg', suffix = '.diff')
-    f = os.fdopen(fd, 'w')
+    editor = os.getenv('EDITOR', default=get_default_editor()).split(' ')
+    mtime = os.stat(filename).st_mtime
+    if mtime == orig_mtime:
+        # prepare file for editors
+        if editor[0] in ('vi', 'vim'):
+            with tempfile.NamedTemporaryFile() as f:
+                f.write(data)
+                f.flush()
+                editor.extend(['-c', ':r %s' % f.name, filename])
+                run_external(editor[0], *editor[1:])
+        else:
+            with open(filename, 'w') as f:
+                f.write(data)
+            orig_mtime = os.stat(filename).st_mtime
+            run_editor(filename)
+    else:
+        run_editor(filename)
+    return os.stat(filename).st_mtime != orig_mtime
+
+def edit_message(footer='', template='', templatelen=30):
+    import tempfile
+    delim = '--This line, and those below, will be ignored--\n'
+    data = ''
     if template != '':
         if not templatelen is None:
             lines = template.splitlines()
-            template = '\n'.join(lines[:templatelen])
+            data = '\n'.join(lines[:templatelen])
             if lines[templatelen:]:
                 footer = '%s\n\n%s' % ('\n'.join(lines[templatelen:]), footer)
-        f.write(template)
-    f.write('\n')
-    f.write(delim)
-    f.write('\n')
-    f.write(footer)
-    f.close()
-
+    data += '\n' + delim + '\n' + footer
     try:
+        (fd, filename) = tempfile.mkstemp(prefix='osc-commitmsg', suffix='.diff')
+        os.close(fd)
+        mtime = os.stat(filename).st_mtime
         while 1:
-            run_editor(filename)
+            file_changed = _edit_message_open_editor(filename, data, mtime)
             msg = open(filename).read().split(delim)[0].rstrip()
-            if msg and template != msg:
+            if msg and file_changed:
                 break
             else:
                 reason = 'Log message not specified'
