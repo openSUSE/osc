@@ -496,8 +496,11 @@ def main(apiurl, opts, argv):
             pacname = os.path.splitext(build_descr)[0]
     apihost = urlparse.urlsplit(apiurl)[1]
     if not build_root:
-        build_root = config['build-root'] % {'repo': repo, 'arch': arch,
-            'project': prj, 'package': pacname, 'apihost': apihost}
+        try:
+           build_root = config['build-root'] % {'repo': repo, 'arch': arch,
+                        'project': prj, 'package': pacname, 'apihost': apihost}
+        except:
+           build_root = config['build-root']
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
