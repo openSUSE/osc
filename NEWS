@@ -1,6 +1,6 @@
 0.140
   - allow specifying directories as mv targets
-  -
+  - drop the support for deprecated cbinstall and cbpreinstall directives
 
 0.139
   - various bugfixes for owner search

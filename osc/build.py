@@ -138,8 +138,6 @@ class Buildinfo:
             self.deps.append(p)
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
-        self.cbinstall_list = [ dep.name for dep in self.deps if dep.cbinstall ]
-        self.cbpreinstall_list = [ dep.name for dep in self.deps if dep.cbpreinstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
 
@@ -169,7 +167,6 @@ class Pac:
                   'version', 'release',
                   'project', 'repository',
                   'preinstall', 'vminstall', 'noinstall', 'runscripts',
-                  'cbinstall', 'cbpreinstall',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -841,8 +838,6 @@ def main(apiurl, opts, argv):
 
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
-    rpmlist.append('cbinstall: ' + ' '.join(bi.cbinstall_list) + '\n')
-    rpmlist.append('cbpreinstall: ' + ' '.join(bi.cbpreinstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
 
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
