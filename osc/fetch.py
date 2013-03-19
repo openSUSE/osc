@@ -270,6 +270,11 @@ class Fetcher:
                     os.unlink(dest)
                 sys.exit(0)
             except URLGrabError, e:
+                # Not found is okay, let's go to the next project
+                if e.code != 404:
+                    print >>sys.stderr, "Invalid answer from server", e
+                    sys.exit(1)
+
                 if self.http_debug:
                     print >>sys.stderr, "can't fetch key for %s: %s" %(i, e.strerror)
                     print >>sys.stderr, "url: %s" % url
@@ -356,7 +361,7 @@ def verify_pacs(bi):
        """
 
     pac_list = [ i.fullfilename for i in bi.deps ]
-    if not conf.config['builtin_signature_check']:
+    if conf.config['builtin_signature_check'] != True:
         return verify_pacs_old(pac_list)
 
     if not pac_list:
