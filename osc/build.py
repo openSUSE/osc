@@ -518,12 +518,10 @@ def main(apiurl, opts, argv):
         s = ''
         for i in opts.without:
             s += "%%define _without_%s 1\n" % i
-            s += "%%define _with_%s 0\n" % i
         build_descr_data = s + build_descr_data
     if opts._with:
         s = ''
         for i in opts._with:
-            s += "%%define _without_%s 0\n" % i
             s += "%%define _with_%s 1\n" % i
         build_descr_data = s + build_descr_data
     if opts.define:
