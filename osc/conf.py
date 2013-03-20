@@ -452,7 +452,7 @@ def _build_opener(url):
                 return None
 
         authhandler_class = OscHTTPBasicAuthHandler
-    elif sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1):
+    elif sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 99):
         class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
             def http_error_404(self, *args):
                 self.reset_retry_count()
