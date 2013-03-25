@@ -4736,7 +4736,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Shows the build log of a local buildchroot
 
         usage:
-            osc lbl [REPOSITORY ARCH]
+            osc lbl [REPOSITORY [ARCH]]
             osc lbl # show log of newest last local build
 
         ${cmd_option_list}
@@ -4746,10 +4746,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print >>sys.stderr, 'Not implemented for VMs'
             sys.exit(1)
 
-        if len(args) == 0:
+        if len(args) == 0 or len(args) == 1:
             package = store_read_package('.')
             import glob
             files = glob.glob(os.path.join(os.getcwd(), store, "_buildinfo-*"))
+            if args:
+                files = [f for f in files
+                         if os.path.basename(f).replace('_buildinfo-', '').startswith(args[0] + '-')]
             if not files:
                 self.print_repos()
             cfg = files[0]
