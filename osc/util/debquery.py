@@ -1,3 +1,6 @@
+
+from __future__ import print_function
+
 from . import ar
 import os.path
 import re
@@ -168,11 +171,11 @@ if __name__ == '__main__':
     try:
         debq = DebQuery.query(sys.argv[1])
     except DebError as e:
-        print e.msg
+        print(e.msg)
         sys.exit(2)
-    print debq.name(), debq.version(), debq.release(), debq.arch()
-    print debq.description()
-    print '##########'
-    print '\n'.join(debq.provides())
-    print '##########'
-    print '\n'.join(debq.requires())
+    print(debq.name(), debq.version(), debq.release(), debq.arch())
+    print(debq.description())
+    print('##########')
+    print('\n'.join(debq.provides()))
+    print('##########')
+    print('\n'.join(debq.requires()))

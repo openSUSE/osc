@@ -1,3 +1,6 @@
+
+from __future__ import print_function
+
 class PackageError(Exception):
     """base class for all package related errors"""
     def __init__(self, fname, msg):
@@ -115,13 +118,13 @@ if __name__ == '__main__':
     try:
         pkgq = PackageQuery.query(sys.argv[1])
     except PackageError as e:
-        print e.msg
+        print(e.msg)
         sys.exit(2)
-    print pkgq.name()
-    print pkgq.version()
-    print pkgq.release()
-    print pkgq.description()
-    print '##########'
-    print '\n'.join(pkgq.provides())
-    print '##########'
-    print '\n'.join(pkgq.requires())
+    print(pkgq.name())
+    print(pkgq.version())
+    print(pkgq.release())
+    print(pkgq.description())
+    print('##########')
+    print('\n'.join(pkgq.provides()))
+    print('##########')
+    print('\n'.join(pkgq.requires()))

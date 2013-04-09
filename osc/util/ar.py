@@ -13,6 +13,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
+from __future__ import print_function
+
 import os
 import re
 import sys
@@ -171,7 +173,7 @@ class Ar:
                     self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name))
             except EnvironmentError as e:
                 if e.errno == 19 or ( hasattr(e, 'winerror') and e.winerror == 5 ):
-                    print >>sys.stderr, 'cannot use mmap to read the file, falling back to the default io'
+                    print('cannot use mmap to read the file, falling back to the default io', file=sys.stderr)
                 else:
                     raise e
         else:

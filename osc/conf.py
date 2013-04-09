@@ -3,6 +3,8 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
+from __future__ import print_function
+
 """Read osc configuration and store it in a dictionary
 
 This module reads and parses ~/.oscrc. The resulting configuration is stored
@@ -414,8 +416,8 @@ def get_apiurl_usr(apiurl):
     try:
         return get_apiurl_api_host_options(apiurl)['user']
     except KeyError:
-        print >>sys.stderr, 'no specific section found in config file for host of [\'%s\'] - using default user: \'%s\'' \
-            % (apiurl, config['user'])
+        print('no specific section found in config file for host of [\'%s\'] - using default user: \'%s\'' \
+            % (apiurl, config['user']), file=sys.stderr)
         return config['user']
 
 
@@ -446,8 +448,8 @@ def _build_opener(url):
     authhandler_class = urllib2.HTTPBasicAuthHandler
     if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1) \
         and not 'reset_retry_count' in dir(urllib2.HTTPBasicAuthHandler):
-        print >>sys.stderr, 'warning: your urllib2 version seems to be broken. ' \
-            'Using a workaround for http://bugs.python.org/issue9639'
+        print('warning: your urllib2 version seems to be broken. ' \
+            'Using a workaround for http://bugs.python.org/issue9639', file=sys.stderr)
 
         class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
             def http_error_401(self, *args):
@@ -491,7 +493,7 @@ def _build_opener(url):
             from . import oscssl
             from M2Crypto import m2urllib2
         except ImportError as e:
-            print e
+            print(e)
             raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto.' % apiurl)
 
         cafile = options.get('cafile', None)
@@ -511,7 +513,7 @@ def _build_opener(url):
             raise Exception('No CA certificates found')
         opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
-        print >>sys.stderr, "WARNING: SSL certificate checks disabled. Connection is insecure!\n"
+        print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
     _build_opener.last_opener = (apiurl, opener)
@@ -826,21 +828,21 @@ def get_config(override_conffile=None,
                     password = gk_data[0]['password']
                 else:
                     # this is most likely an error
-                    print >>sys.stderr, 'warning: no password found in keyring'
+                    print('warning: no password found in keyring', file=sys.stderr)
             except gnomekeyring.NoMatchError:
                 # Fallback to file based auth.
                 pass
 
         if not user is None and len(user) == 0:
             user = None
-            print >>sys.stderr, 'Warning: blank user in the keyring for the ' \
-                'apiurl %s.\nPlease fix your keyring entry.'
+            print('Warning: blank user in the keyring for the ' \
+                'apiurl %s.\nPlease fix your keyring entry.', file=sys.stderr)
 
         if user is not None and password is None:
             err = ('no password defined for "%s".\nPlease fix your keyring '
                    'entry or gnome-keyring setup.\nAssuming an empty password.'
                    % url)
-            print >>sys.stderr, err
+            print(err, file=sys.stderr)
             password = ''
 
         # Read credentials from config
@@ -863,12 +865,12 @@ def get_config(override_conffile=None,
             if config['plaintext_passwd'] and passwordx or not config['plaintext_passwd'] and password:
                 if config['plaintext_passwd']:
                     if password != passwordx:
-                        print >>sys.stderr, '%s: rewriting from encoded pass to plain pass' % url
+                        print('%s: rewriting from encoded pass to plain pass' % url, file=sys.stderr)
                     add_section(conffile, url, user, passwordx)
                     password = passwordx
                 else:
                     if password != passwordx:
-                        print >>sys.stderr, '%s: rewriting from plain pass to encoded pass' % url
+                        print('%s: rewriting from plain pass to encoded pass' % url, file=sys.stderr)
                     add_section(conffile, url, user, password)
 
             if not config['plaintext_passwd']:
@@ -925,10 +927,10 @@ def get_config(override_conffile=None,
         scheme = config.get('scheme', 'https')
         config['apiurl'] = urljoin(scheme, apisrv)
     if 'apisrc' in config or 'scheme' in config:
-        print >>sys.stderr, 'Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
-                            'Warning: See README for migration details.'
+        print('Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
+                            'Warning: See README for migration details.', file=sys.stderr)
     if 'build_platform' in config:
-        print >>sys.stderr, 'Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)'
+        print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
         config['build_repository'] = config['build_platform']
 
     config['verbose'] = int(config['verbose'])

@@ -3,6 +3,8 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+from __future__ import print_function
+
 import M2Crypto.httpslib
 from M2Crypto.SSL.Checker import SSLVerificationError
 from M2Crypto import m2, SSL
@@ -82,7 +84,7 @@ def verify_cb(ctx, ok, store):
         return 1
 
     except Exception as e:
-        print e
+        print(e)
         return 0
 
 class FailCert:
@@ -114,12 +116,12 @@ class ValidationErrors:
     def show(self):
         for depth in self.failures.keys():
             cert = self.failures[depth].cert
-            print "*** certificate verify failed at depth %d" % depth
-            print "Subject: ", cert.get_subject()
-            print "Issuer:  ", cert.get_issuer()
-            print "Valid: ", cert.get_not_before(), "-", cert.get_not_after()
-            print "Fingerprint(MD5):  ", cert.get_fingerprint('md5')
-            print "Fingerprint(SHA1): ", cert.get_fingerprint('sha1')
+            print("*** certificate verify failed at depth %d" % depth)
+            print("Subject: ", cert.get_subject())
+            print("Issuer:  ", cert.get_issuer())
+            print("Valid: ", cert.get_not_before(), "-", cert.get_not_after())
+            print("Fingerprint(MD5):  ", cert.get_fingerprint('md5'))
+            print("Fingerprint(SHA1): ", cert.get_fingerprint('sha1'))
 
             for err in self.failures[depth].errs:
                 reason = "Unknown"
@@ -128,7 +130,7 @@ class ValidationErrors:
                     reason = M2Crypto.Err.get_x509_verify_error(err)
                 except:
                     pass
-                print "Reason:", reason
+                print("Reason:", reason)
 
     # check if the encountered errors could be ignored
     def could_ignore(self):
@@ -316,31 +318,31 @@ def verify_certificate(connection):
             if tc.is_trusted(): # ok, same cert as the stored one
                 return
             else:
-                print >>sys.stderr, "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!"
-                print >>sys.stderr, "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!"
-                print >>sys.stderr, "offending certificate is at '%s'" % tc.file
+                print("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!", file=sys.stderr)
+                print("IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!", file=sys.stderr)
+                print("offending certificate is at '%s'" % tc.file, file=sys.stderr)
                 raise SSLVerificationError("remote host identification has changed")
 
         verrs.show()
 
-        print
+        print()
 
         if not verrs.could_ignore():
             raise SSLVerificationError("Certificate validation error cannot be ignored")
 
         if not verrs.chain_ok:
-            print "A certificate in the chain failed verification"
+            print("A certificate in the chain failed verification")
         if not verrs.cert_ok:
-            print "The server certificate failed verification"
+            print("The server certificate failed verification")
 
         while True:
-            print """
+            print("""
 Would you like to
 0 - quit (default)
 1 - continue anyways
 2 - trust the server certificate permanently
 9 - review the server certificate
-"""
+""")
 
             r = raw_input("Enter choice [0129]: ")
             if not r or r == '0':
@@ -353,6 +355,6 @@ Would you like to
                 tc.trust_always()
                 return
             elif r == '9':
-                print cert.as_text()
+                print(cert.as_text())
 
 # vim: sw=4 et

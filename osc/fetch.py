@@ -3,6 +3,8 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+from __future__ import print_function
+
 import sys, os
 import urllib2
 from urllib import quote_plus
@@ -83,8 +85,8 @@ class Fetcher:
         """failure output for failovers from urlgrabber"""
         if errobj.url.startswith('file://'):
             return {}
-        print 'Trying openSUSE Build Service server for %s (%s), not found at %s.' \
-              % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
+        print('Trying openSUSE Build Service server for %s (%s), not found at %s.' \
+              % (self.curpac, self.curpac.project, errobj.url.split('/')[2]))
         return {}
 
     def __add_cpio(self, pac):
@@ -157,9 +159,9 @@ class Fetcher:
         mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport,(),{}))
 
         if self.http_debug:
-            print >>sys.stderr, '\nURLs to try for package \'%s\':' % pac
-            print >>sys.stderr, '\n'.join(pac.urllist)
-            print >>sys.stderr
+            print('\nURLs to try for package \'%s\':' % pac, file=sys.stderr)
+            print('\n'.join(pac.urllist), file=sys.stderr)
+            print(file=sys.stderr)
 
         (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
         try:
@@ -172,10 +174,10 @@ class Fetcher:
                 if self.enable_cpio and e.errno == 256:
                     self.__add_cpio(pac)
                     return
-                print
-                print >>sys.stderr, 'Error:', e.strerror
-                print >>sys.stderr, 'Failed to retrieve %s from the following locations (in order):' % pac.filename
-                print >>sys.stderr, '\n'.join(pac.urllist)
+                print()
+                print('Error:', e.strerror, file=sys.stderr)
+                print('Failed to retrieve %s from the following locations (in order):' % pac.filename, file=sys.stderr)
+                print('\n'.join(pac.urllist), file=sys.stderr)
                 sys.exit(1)
         finally:
             os.close(fd)
@@ -189,7 +191,7 @@ class Fetcher:
           canonname = pkgq.canonname()
         else:
           if pac_obj is None:
-            print >>sys.stderr, 'Unsupported file type: ', tmpfile
+            print('Unsupported file type: ', tmpfile, file=sys.stderr)
             sys.exit(1)
           canonname = pac_obj.binary
 
@@ -206,8 +208,8 @@ class Fetcher:
             try:
                 os.makedirs(dir, mode=0o755)
             except OSError as e:
-                print >>sys.stderr, 'packagecachedir is not writable for you?'
-                print >>sys.stderr, e
+                print('packagecachedir is not writable for you?', file=sys.stderr)
+                print(e, file=sys.stderr)
                 sys.exit(1)
 
     def run(self, buildinfo):
@@ -221,7 +223,7 @@ class Fetcher:
         needed = all - cached
         if all:
             miss = 100.0 * needed / all
-        print "%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss, cached, all)
+        print("%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss, cached, all))
         done = 1
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
@@ -232,15 +234,15 @@ class Fetcher:
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
-                        print '%d/%d (%s) %s' % (done, needed, i.project, i.filename)
+                        print('%d/%d (%s) %s' % (done, needed, i.project, i.filename))
                     self.fetch(i)
                     if self.progress_obj:
-                        print "  %d/%d\r" % (done, needed),
+                        print("  %d/%d\r" % (done, needed), end=' ')
                         sys.stdout.flush()
 
                 except KeyboardInterrupt:
-                    print 'Cancelled by user (ctrl-c)'
-                    print 'Exiting.'
+                    print('Cancelled by user (ctrl-c)')
+                    print('Exiting.')
                     sys.exit(0)
                 done += 1
 
@@ -264,20 +266,20 @@ class Fetcher:
                     buildinfo.keys.append(dest)
                     buildinfo.prjkeys.append(i)
             except KeyboardInterrupt:
-                print 'Cancelled by user (ctrl-c)'
-                print 'Exiting.'
+                print('Cancelled by user (ctrl-c)')
+                print('Exiting.')
                 if os.path.exists(dest):
                     os.unlink(dest)
                 sys.exit(0)
             except URLGrabError as e:
                 # Not found is okay, let's go to the next project
                 if e.code != 404:
-                    print >>sys.stderr, "Invalid answer from server", e
+                    print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
 
                 if self.http_debug:
-                    print >>sys.stderr, "can't fetch key for %s: %s" %(i, e.strerror)
-                    print >>sys.stderr, "url: %s" % url
+                    print("can't fetch key for %s: %s" %(i, e.strerror), file=sys.stderr)
+                    print("url: %s" % url, file=sys.stderr)
 
                 if os.path.exists(dest):
                     os.unlink(dest)
@@ -317,20 +319,20 @@ def verify_pacs_old(pac_list):
     for line in o.readlines():
 
         if not 'OK' in line:
-            print
-            print >>sys.stderr, 'The following package could not be verified:'
-            print >>sys.stderr, line
+            print()
+            print('The following package could not be verified:', file=sys.stderr)
+            print(line, file=sys.stderr)
             sys.exit(1)
 
         if 'NOT OK' in line:
-            print
-            print >>sys.stderr, 'The following package could not be verified:'
-            print >>sys.stderr, line
+            print()
+            print('The following package could not be verified:', file=sys.stderr)
+            print(line, file=sys.stderr)
 
             if 'MISSING KEYS' in line:
                 missing_key = line.split('#')[-1].split(')')[0]
 
-                print >>sys.stderr, """
+                print("""
 - If the key (%(name)s) is missing, install it first.
   For example, do the following:
     osc signkey PROJECT > file
@@ -343,13 +345,13 @@ def verify_pacs_old(pac_list):
 
 - You may use --no-verify to skip the verification (which is a risk for your system).
 """ % {'name': missing_key,
-       'dir': os.path.expanduser('~')}
+       'dir': os.path.expanduser('~')}, file=sys.stderr)
 
             else:
-                print >>sys.stderr, """
+                print("""
 - If the signature is wrong, you may try deleting the package manually
   and re-run this program, so it is fetched again.
-"""
+""", file=sys.stderr)
 
             sys.exit(1)
 
@@ -370,7 +372,7 @@ def verify_pacs(bi):
     if not bi.keys:
         raise oscerr.APIError("can't verify packages due to lack of GPG keys")
 
-    print "using keys from", ', '.join(bi.prjkeys)
+    print("using keys from", ', '.join(bi.prjkeys))
 
     from . import checker
     failed = False
@@ -382,7 +384,7 @@ def verify_pacs(bi):
                 checker.check(pkg)
             except Exception as e:
                 failed = True
-                print pkg, ':', e
+                print(pkg, ':', e)
     except:
         checker.cleanup()
         raise
