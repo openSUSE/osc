@@ -30,7 +30,11 @@ try:
 except ImportError:
     import cElementTree as ET
 
-
+# python 2.6 don't have memoryview
+try:
+    memoryview
+except NameError:
+    memoryview = buffer
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
@@ -2888,7 +2892,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
                     data = mmap.mmap(filefd.fileno(), os.path.getsize(file), mmap.MAP_SHARED, mmap.PROT_READ)
                 else:
                     data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
-                data = buffer(data)
+                data = memoryview(data)
             except EnvironmentError, e:
                 if e.errno == 19:
                     sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
