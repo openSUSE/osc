@@ -114,7 +114,7 @@ if __name__ == '__main__':
     import sys
     try:
         pkgq = PackageQuery.query(sys.argv[1])
-    except PackageError, e:
+    except PackageError as e:
         print e.msg
         sys.exit(2)
     print pkgq.name()

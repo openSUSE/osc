@@ -289,13 +289,13 @@ class RawCmdln(cmd.Cmd):
         if self.optparser: # i.e. optparser=None means don't process for opts
             try:
                 self.options, args = self.optparser.parse_args(argv[1:])
-            except CmdlnUserError, ex:
+            except CmdlnUserError as ex:
                 msg = "%s: %s\nTry '%s help' for info.\n"\
                       % (self.name, ex, self.name)
                 self.stderr.write(self._str(msg))
                 self.stderr.flush()
                 return 1
-            except StopOptionProcessing, ex:
+            except StopOptionProcessing as ex:
                 return 0
         else:
             self.options, args = None, argv[1:]
@@ -1174,7 +1174,7 @@ class Cmdln(RawCmdln):
 
             try:
                 return handler(argv[0], opts, *args)
-            except TypeError, ex:
+            except TypeError as ex:
                 # Some TypeError's are user errors:
                 #   do_foo() takes at least 4 arguments (3 given)
                 #   do_foo() takes at most 5 arguments (6 given)

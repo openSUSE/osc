@@ -152,7 +152,7 @@ if __name__ == '__main__':
     import sys
     try:
         archq = ArchQuery.query(sys.argv[1])
-    except ArchError, e:
+    except ArchError as e:
         print e.msg
         sys.exit(2)
     print archq.name(), archq.version(), archq.release(), archq.arch()

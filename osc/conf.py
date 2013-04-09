@@ -77,7 +77,7 @@ def _get_processors():
     """
     try:
         return os.sysconf('SC_NPROCESSORS_ONLN')
-    except ValueError, e:
+    except ValueError as e:
         return 1
 
 DEFAULTS = {'apiurl': 'https://api.opensuse.org',
@@ -482,7 +482,7 @@ def _build_opener(url):
         try:
             import oscssl
             from M2Crypto import m2urllib2
-        except ImportError, e:
+        except ImportError as e:
             print e
             raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto.' % apiurl)
 
@@ -766,7 +766,7 @@ def get_config(override_conffile=None,
     for i in boolean_opts:
         try:
             config[i] = cp.getboolean('general', i)
-        except ValueError, e:
+        except ValueError as e:
             raise oscerr.ConfigError('cannot parse \'%s\' setting: ' % i + str(e), conffile)
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
@@ -949,7 +949,7 @@ def get_config(override_conffile=None,
     # provided that there _are_ credentials for the chosen apiurl:
     try:
         config['user'] = get_apiurl_usr(config['apiurl'])
-    except oscerr.ConfigMissingApiurl, e:
+    except oscerr.ConfigMissingApiurl as e:
         e.msg = config_missing_apiurl_text % config['apiurl']
         e.file = conffile
         raise e

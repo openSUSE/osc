@@ -605,7 +605,7 @@ def main(apiurl, opts, argv):
                 bc_file = open(bc_filename, 'w')
             bc_file.write(bc)
             bc_file.flush()
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
         if e.code == 404:
             # check what caused the 404
             if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
@@ -728,7 +728,7 @@ def main(apiurl, opts, argv):
             try:
                 print "Downloading previous build from %s ..." % '/'.join(data)
                 binaries = get_binarylist(apiurl, data[0], data[2], data[3], package=data[1], verbose=True)
-            except Exception, e:
+            except Exception as e:
                 print "Error: failed to get binaries: %s" % str(e)
                 binaries = []
 
@@ -914,7 +914,7 @@ def main(apiurl, opts, argv):
             print
             print 'The buildroot was:', build_root
             sys.exit(rc)
-    except KeyboardInterrupt, i:
+    except KeyboardInterrupt as i:
         print "keyboard interrupt, killing build ..."
         cmd.append('--kill')
         run_external(cmd[0], *cmd[1:])

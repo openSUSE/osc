@@ -43,13 +43,13 @@ class OscFileGrabber:
             try:
                 for i in streamfile(url, progress_obj=self.progress_obj, text=text):
                     f.write(i)
-            except urllib2.HTTPError, e:
+            except urllib2.HTTPError as e:
                 exc = URLGrabError(14, str(e))
                 exc.url = url
                 exc.exception = e
                 exc.code = e.code
                 raise exc
-            except IOError, e:
+            except IOError as e:
                 raise URLGrabError(4, str(e))
         finally:
             f.close()
@@ -126,7 +126,7 @@ class Fetcher:
                 if not os.path.isfile(pac.fullfilename):
                     raise oscerr.APIError('failed to fetch file \'%s\': ' \
                         'does not exist in CPIO archive' % pac.repofilename)
-        except URLGrabError, e:
+        except URLGrabError as e:
             if e.errno != 14 or e.code != 414:
                 raise
             # query str was too large
@@ -168,7 +168,7 @@ class Fetcher:
                            filename = tmpfile,
                            text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
                 self.move_package(tmpfile, pac.localdir, pac)
-            except URLGrabError, e:
+            except URLGrabError as e:
                 if self.enable_cpio and e.errno == 256:
                     self.__add_cpio(pac)
                     return
@@ -205,7 +205,7 @@ class Fetcher:
         if not os.path.exists(dir):
             try:
                 os.makedirs(dir, mode=0755)
-            except OSError, e:
+            except OSError as e:
                 print >>sys.stderr, 'packagecachedir is not writable for you?'
                 print >>sys.stderr, e
                 sys.exit(1)
@@ -269,7 +269,7 @@ class Fetcher:
                 if os.path.exists(dest):
                     os.unlink(dest)
                 sys.exit(0)
-            except URLGrabError, e:
+            except URLGrabError as e:
                 # Not found is okay, let's go to the next project
                 if e.code != 404:
                     print >>sys.stderr, "Invalid answer from server", e
@@ -380,7 +380,7 @@ def verify_pacs(bi):
         for pkg in pac_list:
             try:
                 checker.check(pkg)
-            except Exception, e:
+            except Exception as e:
                 failed = True
                 print pkg, ':', e
     except:

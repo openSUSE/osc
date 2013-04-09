@@ -312,7 +312,7 @@ if __name__ == '__main__':
     import sys
     try:
         rpmq = RpmQuery.query(sys.argv[1])
-    except RpmError, e:
+    except RpmError as e:
         print e.msg
         sys.exit(2)
     print rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url()
