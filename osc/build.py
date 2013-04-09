@@ -16,14 +16,14 @@ from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store
 from osc.core import get_binarylist, get_binary_file, run_external
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
-import oscerr
+from . import oscerr
 import subprocess
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
     import cElementTree as ET
 
-from conf import config, cookiejar
+from .conf import config, cookiejar
 
 change_personality = {
             'i686':  'linux32',
@@ -298,7 +298,7 @@ def get_repo(path):
 
 def get_prefer_pkgs(dirs, wanted_arch, type):
     import glob
-    from util import repodata, packagequery, cpio
+    from .util import repodata, packagequery, cpio
     paths = []
     repositories = []
 

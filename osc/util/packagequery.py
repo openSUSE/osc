@@ -91,18 +91,18 @@ class PackageQuery:
         extra_tags = ()
         pkgquery = None
         if magic[:4] == '\xed\xab\xee\xdb':
-            import rpmquery
+            from . import rpmquery
             pkgquery = rpmquery.RpmQuery(f)
             extra_tags = extra_rpmtags
         elif magic == '!<arch>':
-            import debquery
+            from . import debquery
             pkgquery = debquery.DebQuery(f)
             extra_tags = extra_debtags
         elif magic[:5] == '<?xml':
             f.close()
             return None
         elif magic[:5] == '\375\067zXZ' or magic[:2] == '\037\213':
-            import archquery
+            from . import archquery
             pkgquery = archquery.ArchQuery(f)
         else:
             raise PackageError(filename, 'unsupported package type. magic: \'%s\'' % magic)

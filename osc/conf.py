@@ -45,9 +45,9 @@ import urllib
 import urllib2
 import urlparse
 
-import OscConfigParser
+from . import OscConfigParser
 from osc import oscerr
-from oscsslexcp import NoSecureSSLError
+from .oscsslexcp import NoSecureSSLError
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False
@@ -480,7 +480,7 @@ def _build_opener(url):
 
     if options['sslcertck']:
         try:
-            import oscssl
+            from . import oscssl
             from M2Crypto import m2urllib2
         except ImportError as e:
             print e
