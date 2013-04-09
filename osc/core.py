@@ -16,11 +16,14 @@ import os.path
 import sys
 import urllib2
 from urllib import pathname2url, quote_plus, urlencode, unquote
-from urlparse import urlsplit, urlunsplit
-from cStringIO import StringIO
+try:
+    from urllib.parse import urlsplit, urlunsplit, urlparse
+    from io import StringIO
+except ImportError:
+    #python 2.x
+    from urlparse import urlsplit, urlunsplit, urlparse
+    from cStringIO import StringIO
 import shutil
-from . import oscerr
-from . import conf
 import subprocess
 import re
 import socket
@@ -29,6 +32,9 @@ try:
     from xml.etree import cElementTree as ET
 except ImportError:
     import cElementTree as ET
+
+from . import oscerr
+from . import conf
 
 # python 2.6 don't have memoryview
 try:
@@ -298,7 +304,6 @@ class Serviceinfo:
 
 
     def addDownloadUrl(self, serviceinfo_node, url_string):
-        from urlparse import urlparse
         url = urlparse( url_string )
         protocol = url.scheme
         host = url.netloc
@@ -5164,8 +5169,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         cl = int(cl)
 
     if progress_obj:
-        import urlparse
-        basename = os.path.basename(urlparse.urlsplit(url)[2])
+        basename = os.path.basename(urlsplit(url)[2])
         progress_obj.start(basename=basename, text=text, size=cl)
     data = f.read(bufsize)
     read = len(data)
@@ -6546,9 +6550,14 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
     return res
 
 def raw_input(*args):
-    import __builtin__
     try:
-        return __builtin__.raw_input(*args)
+        import builtins
+    except ImportError:
+        #python 2.7
+        import __builtin__ as builtins
+
+    try:
+        return builtins.raw_input(*args)
     except EOFError:
         # interpret ctrl-d as user abort
         raise oscerr.UserAbort()

@@ -9,7 +9,11 @@ import os
 import re
 import sys
 import shutil
-import urlparse
+try:
+    from urllib.parse import urlsplit
+except ImportError:
+    #python 2.x
+    from urlparse import urlsplit
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
@@ -491,7 +495,7 @@ def main(apiurl, opts, argv):
                 opts.local_package = True
         if opts.local_package:
             pacname = os.path.splitext(build_descr)[0]
-    apihost = urlparse.urlsplit(apiurl)[1]
+    apihost = urlsplit(apiurl)[1]
     if not build_root:
         try:
            build_root = config['build-root'] % {'repo': repo, 'arch': arch,

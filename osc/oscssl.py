@@ -7,11 +7,17 @@ import M2Crypto.httpslib
 from M2Crypto.SSL.Checker import SSLVerificationError
 from M2Crypto import m2, SSL
 import M2Crypto.m2urllib2
-import urlparse
 import socket
 import urllib
-import httplib
 import sys
+
+try:
+    from urllib.parse import urlparse
+    from http.client import HTTPSConnection
+except ImportError:
+    #python 2.x
+    from urlparse import urlparse
+    from httplib import HTTPSConnection
 
 class TrustedCertStore:
     _tmptrusted = {}
@@ -182,7 +188,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # Our change: Check to see if we're using a proxy.
         # Then create an appropriate ssl-aware connection.
         full_url = req.get_full_url()
-        target_host = urlparse.urlparse(full_url)[1]
+        target_host = urlparse(full_url)[1]
 
         if (target_host != host):
             h = myProxyHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
@@ -249,7 +255,7 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
     def getPort(self):
         return self.port
 
-class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, httplib.HTTPSConnection):
+class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, HTTPSConnection):
     def __init__(self, *args, **kwargs):
         self.appname = kwargs.pop('appname', 'generic')
         M2Crypto.httpslib.ProxyHTTPSConnection.__init__(self, *args, **kwargs)
@@ -261,7 +267,7 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, httplib.HTT
     def endheaders(self, *args, **kwargs):
         if self._proxy_auth is None:
             self._proxy_auth = self._encode_auth()
-        httplib.HTTPSConnection.endheaders(self, *args, **kwargs)        
+        HTTPSConnection.endheaders(self, *args, **kwargs)        
 
     # broken in m2crypto: port needs to be an int
     def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):

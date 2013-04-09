@@ -14,7 +14,11 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import ConfigParser
+try:
+    import configparser
+except ImportError:
+    #python 2.x
+    import ConfigParser as configparser
 import re
 
 # inspired from http://code.google.com/p/iniparse/ - although their implementation is
@@ -106,9 +110,9 @@ class SectionLine(Line):
 
     def _add_option(self, optname, value = None, line = None, sep = '='):
         if value is None and line is None:
-            raise ConfigParser.Error('Either value or line must be passed in')
+            raise configparser.Error('Either value or line must be passed in')
         elif value and line:
-            raise ConfigParser.Error('value and line are mutually exclusive')
+            raise configparser.Error('value and line are mutually exclusive')
 
         if value is not None:
             line = '%s%s%s' % (optname, sep, value)
@@ -182,7 +186,7 @@ class OptionLine(Line):
         self.format(line)
 
     def format(self, line):
-        mo = ConfigParser.ConfigParser.OPTCRE.match(line.strip())
+        mo = configparser.ConfigParser.OPTCRE.match(line.strip())
         key, val = mo.group('option', 'value')
         self.frmt = line.replace(key.strip(), '%s', 1)
         pos = val.find(' ;')
@@ -195,7 +199,7 @@ class OptionLine(Line):
         return self.value
 
 
-class OscConfigParser(ConfigParser.SafeConfigParser):
+class OscConfigParser(configparser.SafeConfigParser):
     """
     OscConfigParser() behaves like a normal ConfigParser() object. The
     only differences is that it preserves the order+format of configuration entries
@@ -204,7 +208,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
     class.
     """
     def __init__(self, defaults={}):
-        ConfigParser.SafeConfigParser.__init__(self, defaults)
+        configparser.SafeConfigParser.__init__(self, defaults)
         self._sections = ConfigLineOrder()
 
     # XXX: unfortunately we have to override the _read() method from the ConfigParser()
@@ -245,7 +249,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                 if value:
                     #cursect[optname] = "%s\n%s" % (cursect[optname], value)
                     #self.set(cursect, optname, "%s\n%s" % (self.get(cursect, optname), value))
-                    if cursect == ConfigParser.DEFAULTSECT:
+                    if cursect == configparser.DEFAULTSECT:
                         self._defaults[optname] = "%s\n%s" % (self._defaults[optname], value)
                     else:
                         # use the raw value here (original version uses raw=False)
@@ -258,7 +262,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                     sectname = mo.group('header')
                     if sectname in self._sections:
                         cursect = self._sections[sectname]
-                    elif sectname == ConfigParser.DEFAULTSECT:
+                    elif sectname == configparser.DEFAULTSECT:
                         cursect = self._defaults
                     else:
                         #cursect = {'__name__': sectname}
@@ -270,7 +274,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                     optname = None
                 # no section header in the file?
                 elif cursect is None:
-                    raise ConfigParser.MissingSectionHeaderError(fpname, lineno, line)
+                    raise configparser.MissingSectionHeaderError(fpname, lineno, line)
                 # an option line?
                 else:
                     mo = self.OPTCRE.match(line)
@@ -287,7 +291,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                         if optval == '""':
                             optval = ''
                         optname = self.optionxform(optname.rstrip())
-                        if cursect == ConfigParser.DEFAULTSECT:
+                        if cursect == configparser.DEFAULTSECT:
                             self._defaults[optname] = optval
                         else:
                             self._sections[cursect]._add_option(optname, line=line)
@@ -297,7 +301,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
                         # raised at the end of the file and will contain a
                         # list of all bogus lines
                         if not e:
-                            e = ConfigParser.ParsingError(fpname)
+                            e = configparser.ParsingError(fpname)
                         e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
@@ -313,7 +317,7 @@ class OscConfigParser(ConfigParser.SafeConfigParser):
             fp.write(str(self))
             fp.write('\n')
         else:
-            ConfigParser.SafeConfigParser.write(self, fp)
+            configparser.SafeConfigParser.write(self, fp)
 
     # XXX: simplify!
     def __str__(self):
