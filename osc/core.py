@@ -6554,12 +6554,14 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
 def raw_input(*args):
     try:
         import builtins
+        func = builtins.input
     except ImportError:
         #python 2.7
-        import __builtin__ as builtins
+        import __builtin__
+        func = __builtin__.raw_input
 
     try:
-        return builtins.raw_input(*args)
+        return func(*args)
     except EOFError:
         # interpret ctrl-d as user abort
         raise oscerr.UserAbort()
