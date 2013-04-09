@@ -12,9 +12,11 @@ import sys
 import time
 try:
     from urllib.parse import urlsplit
+    from urllib.error import HTTPError
 except ImportError:
     #python 2.x
     from urlparse import urlsplit
+    from urllib2 import HTTPError
 
 from optparse import SUPPRESS_HELP
 
@@ -475,7 +477,7 @@ class Osc(cmdln.Cmdln):
         if patchinfo:
             try:
                 filelist = meta_get_filelist(apiurl, project, patchinfo)
-            except urllib2.HTTPError:
+            except HTTPError:
                 pass
 
         if opts.force or not filelist or not '_patchinfo' in filelist:
@@ -1060,7 +1062,7 @@ class Osc(cmdln.Cmdln):
             devloc = None
             try:
                 devloc = show_develproject(apiurl, dst_project, dst_package)
-            except urllib2.HTTPError:
+            except HTTPError:
                 print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                     % (dst_project, dst_package), file=sys.stderr)
@@ -1272,7 +1274,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             devloc = None
             try:
                 devloc = show_develproject(apiurl, dst_project, dst_package)
-            except urllib2.HTTPError:
+            except HTTPError:
                 print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                     % (dst_project, dst_package), file=sys.stderr)
@@ -2096,7 +2098,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     # works since OBS 2.1
                     diff = request_diff(apiurl, reqid)
-                except urllib2.HTTPError as e:
+                except HTTPError as e:
                     # for OBS 2.0 and before
                     sr_actions = r.get_actions('submit')
                     if not sr_actions:
@@ -2137,7 +2139,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     r = change_review_state(apiurl, reqid, state_map[cmd], review.by_user, review.by_group,
                                             review.by_project, review.by_package, opts.message or '', supersed=supersedid)
                                     print(r)
-                                except urllib2.HTTPError as e:
+                                except HTTPError as e:
                                     if review.by_user:
                                         print('No permission on review by user %s' % review.by_user)
                                     if review.by_group:
@@ -2194,7 +2196,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                    if link_node != None:
                                        links_to_project = link_node.get('project') or project
                                        links_to_package = link_node.get('package') or package
-                               except urllib2.HTTPError as e:
+                               except HTTPError as e:
                                    if e.code != 404:
                                        print('Cannot get list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
                                except SyntaxError as e:
@@ -2364,7 +2366,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             root = ET.fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
             li = Linkinfo()
             li.read(root.find('linkinfo'))
@@ -2960,7 +2962,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 uproject = root.find('attribute').find('value').text
                 print('\nNote: The branch has been created from the configured update project: %s' \
                     % uproject)
-            except (AttributeError, urllib2.HTTPError) as e:
+            except (AttributeError, HTTPError) as e:
                 devloc = srcprj
                 print('\nNote: The branch has been created of a different project,\n' \
                       '              %s,\n' \
@@ -3378,7 +3380,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             show_package_meta(apiurl, project, package)
             return True
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code != 404:
                 print('Cannot check that %s/%s exists: %s' % (project, package, e), file=sys.stderr)
             return False
@@ -3406,7 +3408,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             return (None, None)
         except SyntaxError as e:
             print('Cannot parse %s/%s/_link: %s' % (project, package, e), file=sys.stderr)
@@ -3425,7 +3427,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code != 404:
                 print('Cannot get list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
             return (None, None, None)
@@ -4446,7 +4448,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     continue
             try:
                 delete_files(apiurl, project, package, (filename, ))
-            except urllib2.HTTPError as e:
+            except HTTPError as e:
                 if opts.force:
                     print(e, file=sys.stderr)
                     body = e.read()
@@ -6288,7 +6290,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        print(r.list_view(), '\n')
                    print("")
                 return
-            except urllib2.HTTPError as e:
+            except HTTPError as e:
                 if e.code == 400:
                     # skip it ... try again with old style below
                     pass
@@ -6483,7 +6485,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'published/binary/id': xpath}
         try:
             res = search(apiurl, **what)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code != 400 or not role_filter:
                 raise e
             # backward compatibility: local role filtering
@@ -6886,7 +6888,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        for role in roles:
                            try:
                                setBugowner(apiurl, result.get('project'), result.get('package'), bugowner)
-                           except urllib2.HTTPError as e:
+                           except HTTPError as e:
                                if e.code == 403:
                                    print("No write permission in", result.get('project'), end=' ')
                                    if result.get('package'):
@@ -6909,7 +6911,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for role in roles:
                     try:
                         setBugowner(apiurl, prj, pac, opts.delete, role)
-                    except urllib2.HTTPError as e:
+                    except HTTPError as e:
                         if e.code == 403:
                             print("No write permission in", result.get('project'), end=' ')
                             if result.get('package'):
@@ -7113,7 +7115,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 for data in streamfile(u):
                     sys.stdout.write(data)
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code == 404 and not opts.expand and not opts.unexpand:
                 print('expanding link...', file=sys.stderr)
                 query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
@@ -7532,7 +7534,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     url = makeurl(apiurl, ['source', prj, '_pubkey'])
                     f = http_GET(url)
                     break
-                except urllib2.HTTPError as e:
+                except HTTPError as e:
                     l = prj.rsplit(':', 1)
                     # try key from parent project
                     if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:

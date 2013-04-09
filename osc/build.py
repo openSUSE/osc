@@ -9,11 +9,15 @@ import os
 import re
 import sys
 import shutil
+
 try:
     from urllib.parse import urlsplit
+    from urllib.request import URLError, HTTPError
 except ImportError:
     #python 2.x
     from urlparse import urlsplit
+    from urllib2 import URLError, HTTPError
+
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
@@ -100,7 +104,7 @@ class Buildinfo:
             sys.exit(1)
 
         if not (apiurl.startswith('https://') or apiurl.startswith('http://')):
-            raise urllib2.URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
+            raise URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
 
         self.buildtype = buildtype
         self.apiurl = apiurl
@@ -609,7 +613,7 @@ def main(apiurl, opts, argv):
                 bc_file = open(bc_filename, 'w')
             bc_file.write(bc)
             bc_file.flush()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         if e.code == 404:
             # check what caused the 404
             if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),

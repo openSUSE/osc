@@ -10,15 +10,16 @@ from M2Crypto.SSL.Checker import SSLVerificationError
 from M2Crypto import m2, SSL
 import M2Crypto.m2urllib2
 import socket
-import urllib
 import sys
 
 try:
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, splithost, splitport, splittype
+    from urllib.request import addinfourl
     from http.client import HTTPSConnection
 except ImportError:
     #python 2.x
     from urlparse import urlparse
+    from urllib import addinfourl, splithost, splitport, splittype
     from httplib import HTTPSConnection
 
 from .core import raw_input
@@ -239,7 +240,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         r.recv = r.read
         fp = socket._fileobject(r)
 
-        resp = urllib.addinfourl(fp, r.msg, req.get_full_url())
+        resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
         resp.msg = r.reason
         return resp
@@ -277,13 +278,13 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, HTTPSConnec
     def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):
         #putrequest is called before connect, so can interpret url and get
         #real host/port to be used to make CONNECT request to proxy
-        proto, rest = urllib.splittype(url)
+        proto, rest = splittype(url)
         if proto is None:
             raise ValueError("unknown URL type: %s" % url)
         #get host
-        host, rest = urllib.splithost(rest)
+        host, rest = splithost(rest)
         #try to get port
-        host, port = urllib.splitport(host)
+        host, port = splitport(host)
         #if port is not defined try to get from proto
         if port is None:
             try:

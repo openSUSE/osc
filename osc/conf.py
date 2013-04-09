@@ -40,20 +40,23 @@ import base64
 import os
 import re
 import sys
-import urllib
-import urllib2
 
 try:
     from http.cookiejar import LWPCookieJar, CookieJar
     from http.client import HTTPConnection, HTTPResponse
     from io import StringIO
     from urllib.parse import urlsplit
+    from urllib.error import URLError
+    from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
+    from urllib.request import build_opener, proxy_bypass
 except ImportError:
     #python 2.x
     from cookielib import LWPCookieJar, CookieJar
     from httplib import HTTPConnection, HTTPResponse
     from StringIO import StringIO
     from urlparse import urlsplit
+    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
+    from urllib2 import build_opener, proxy_bypass
 
 from . import OscConfigParser
 from osc import oscerr
@@ -374,7 +377,7 @@ def parse_apisrv_url(scheme, apisrv):
         return urlsplit(urljoin(scheme, apisrv))[0:2]
     else:
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
-        raise urllib2.URLError(msg)
+        raise URLError(msg)
 
 
 def urljoin(scheme, apisrv):
@@ -437,23 +440,23 @@ def _build_opener(url):
         return _build_opener.last_opener[1]
 
     # respect no_proxy env variable
-    if urllib.proxy_bypass(apiurl):
+    if proxy_bypass(apiurl):
         # initialize with empty dict
-        proxyhandler = urllib2.ProxyHandler({})
+        proxyhandler = ProxyHandler({})
     else:
         # read proxies from env
-        proxyhandler = urllib2.ProxyHandler()
+        proxyhandler = ProxyHandler()
 
     # workaround for http://bugs.python.org/issue9639
-    authhandler_class = urllib2.HTTPBasicAuthHandler
+    authhandler_class = HTTPBasicAuthHandler
     if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1) \
-        and not 'reset_retry_count' in dir(urllib2.HTTPBasicAuthHandler):
+        and not 'reset_retry_count' in dir(HTTPBasicAuthHandler):
         print('warning: your urllib2 version seems to be broken. ' \
             'Using a workaround for http://bugs.python.org/issue9639', file=sys.stderr)
 
-        class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
             def http_error_401(self, *args):
-                response = urllib2.HTTPBasicAuthHandler.http_error_401(self, *args)
+                response = HTTPBasicAuthHandler.http_error_401(self, *args)
                 self.retried = 0
                 return response
 
@@ -463,7 +466,7 @@ def _build_opener(url):
 
         authhandler_class = OscHTTPBasicAuthHandler
     elif sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 99):
-        class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
             def http_error_404(self, *args):
                 self.reset_retry_count()
                 return None
@@ -472,12 +475,12 @@ def _build_opener(url):
     elif sys.version_info >= (2, 6, 5) and sys.version_info < (2, 6, 6):
         # workaround for broken urllib2 in python 2.6.5: wrong credentials
         # lead to an infinite recursion
-        class OscHTTPBasicAuthHandler(urllib2.HTTPBasicAuthHandler):
+        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
             def retry_http_basic_auth(self, host, req, realm):
                 # don't retry if auth failed
                 if req.get_header(self.auth_header, None) is not None:
                     return None
-                return urllib2.HTTPBasicAuthHandler.retry_http_basic_auth(self, host, req, realm)
+                return HTTPBasicAuthHandler.retry_http_basic_auth(self, host, req, realm)
 
         authhandler_class = OscHTTPBasicAuthHandler
 
@@ -485,7 +488,7 @@ def _build_opener(url):
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
     authhandler = authhandler_class( \
-        urllib2.HTTPPasswordMgrWithDefaultRealm())
+        HTTPPasswordMgrWithDefaultRealm())
     authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
     if options['sslcertck']:
@@ -511,10 +514,10 @@ def _build_opener(url):
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
             raise Exception('No CA certificates found')
-        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
+        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
         print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
-        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
+        opener = build_opener(HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
     _build_opener.last_opener = (apiurl, opener)
     return opener
@@ -557,7 +560,7 @@ def init_basicauth(config):
         # brute force
         def urllib2_debug_init(self, debuglevel=0):
             self._debuglevel = 1
-        urllib2.AbstractHTTPHandler.__init__ = urllib2_debug_init
+        AbstractHTTPHandler.__init__ = urllib2_debug_init
 
     cookie_file = os.path.expanduser(config['cookiejar'])
     global cookiejar
