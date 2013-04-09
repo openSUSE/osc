@@ -6289,7 +6289,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     pass
 
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
-                                what.has_key('project'), what.has_key('package'),
+                                'project' in what, 'package' in what,
                                 opts.maintained, opts.verbose)
 
         # map of project =>[list of packages]
@@ -7046,7 +7046,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
         if len(usernames) < 1:
-            if not conf.config['api_host_options'][apiurl].has_key('user'):
+            if 'user' not in conf.config['api_host_options'][apiurl]:
                 raise oscerr.WrongArgs('your .oscrc does not have your user name.')
             usernames = (conf.config['api_host_options'][apiurl]['user'],)
         for name in usernames:
@@ -7595,7 +7595,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             cmd_list = ['/usr/lib/build/vc']
 
         # set user's email if no mailaddr exists
-        if not os.environ.has_key('mailaddr'):
+        if 'mailaddr' not in os.environ:
 
             if len(args) and is_package_dir(args[0]):
                 apiurl = store_read_apiurl(args[0])
@@ -7611,7 +7611,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print >>sys.stderr, 'Try env mailaddr=...'
 
             # mailaddr can be overrided by config one
-            if conf.config['api_host_options'][apiurl].has_key('email'):
+            if 'email' in conf.config['api_host_options'][apiurl]:
                 os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
 
         if meego_style:

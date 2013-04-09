@@ -478,7 +478,7 @@ def main(apiurl, opts, argv):
         if val:
             if var.startswith('OSC_'): var = var[4:]
             var = var.lower().replace('_', '-')
-            if config.has_key(var):
+            if var in config:
                 print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
             config[var] = val
 
