@@ -2955,7 +2955,7 @@ def check_store_version(dir):
         msg = 'The osc metadata of your working copy "%s"' % dir
         msg += '\nhas __store_version__ = %s, but it should be %s' % (v, __store_version__)
         msg += '\nPlease do a fresh checkout or update your client. Sorry about the inconvenience.'
-        raise oscerr.WorkingCopyWrongVersion, msg
+        raise oscerr.WorkingCopyWrongVersion(msg)
 
 
 def meta_get_packagelist(apiurl, prj, deleted=None):
