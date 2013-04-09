@@ -2832,9 +2832,9 @@ def makeurl(baseurl, l, query=[]):
     if conf.config['verbose'] > 1:
         print 'makeurl:', baseurl, l, query
 
-    if type(query) == type(list()):
+    if isinstance(query, type(list())):
         query = '&'.join(query)
-    elif type(query) == type(dict()):
+    elif isinstance(query, type(dict())):
         query = urlencode(query)
 
     scheme, netloc = urlsplit(baseurl)[0:2]
@@ -2870,7 +2870,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     if method == 'PUT' or (method == 'POST' and data):
         req.add_header('Content-Type', 'application/octet-stream')
 
-    if type(headers) == type({}):
+    if isinstance(headers, type({})):
         for i in headers.keys():
             print headers[i]
             req.add_header(i, headers[i])
@@ -3104,8 +3104,7 @@ def show_pattern_metalist(apiurl, prj):
     except urllib2.HTTPError as e:
         e.osc_msg = 'show_pattern_metalist: Error getting pattern list for project \'%s\'' % prj
         raise
-    r = [ node.get('name') for node in tree.getroot() ]
-    r.sort()
+    r = sorted([ node.get('name') for node in tree.getroot() ])
     return r
 
 
@@ -3147,7 +3146,7 @@ class metafile:
 
     def edit(self):
         try:
-            while 1:
+            while True:
                 run_editor(self.filename)
                 try:
                     self.sync()
@@ -3489,7 +3488,7 @@ def edit_message(footer='', template='', templatelen=30):
         (fd, filename) = tempfile.mkstemp(prefix='osc-commitmsg', suffix='.diff')
         os.close(fd)
         mtime = os.stat(filename).st_mtime
-        while 1:
+        while True:
             file_changed = _edit_message_open_editor(filename, data, mtime)
             msg = open(filename).read().split(delim)[0].rstrip()
             if msg and file_changed:
@@ -3997,7 +3996,7 @@ def dgst(file):
         md5 = md5
     s = md5.md5()
     f = open(file, 'rb')
-    while 1:
+    while True:
         buf = f.read(BUFSIZE)
         if not buf: break
         s.update(buf)
@@ -4744,8 +4743,7 @@ def get_platforms(apiurl):
 def get_repositories(apiurl):
     f = http_GET(makeurl(apiurl, ['platform']))
     tree = ET.parse(f)
-    r = [ node.get('name') for node in tree.getroot() ]
-    r.sort()
+    r = sorted([ node.get('name') for node in tree.getroot() ])
     return r
 
 
