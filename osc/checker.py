@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from tempfile import mkdtemp
 import os
 from shutil import rmtree
@@ -29,7 +31,7 @@ class Checker:
             try:
                 self.readkey(key)
             except KeyError as e:
-                print e
+                print(e)
 
         if not len(self.imported):
             raise KeyError('', "no key imported")

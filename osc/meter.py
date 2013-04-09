@@ -19,6 +19,7 @@
 # it uses getScreenWidth() scrapped from smart.
 # 2007-04-24, poeml
 
+from __future__ import print_function
 
 from urlgrabber.progress import BaseMeter, format_time, format_number
 import sys, os

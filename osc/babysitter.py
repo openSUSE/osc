@@ -3,6 +3,8 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+from __future__ import print_function
+
 import errno
 import os.path
 import pdb
@@ -67,42 +69,42 @@ def run(prg):
                 if sys.stdout.isatty() and not hasattr(sys, 'ps1'):
                     pdb.post_mortem(sys.exc_info()[2])
                 else:
-                    print >>sys.stderr, 'sys.stdout is not a tty. Not jumping into pdb.'
+                    print('sys.stdout is not a tty. Not jumping into pdb.', file=sys.stderr)
             raise
     except oscerr.SignalInterrupt:
-        print >>sys.stderr, 'killed!'
+        print('killed!', file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        print >>sys.stderr, 'interrupted!'
+        print('interrupted!', file=sys.stderr)
         return 1
     except oscerr.UserAbort:
-        print >>sys.stderr, 'aborted.'
+        print('aborted.', file=sys.stderr)
         return 1
     except oscerr.APIError as e:
-        print >>sys.stderr, 'BuildService API error:', e.msg
+        print('BuildService API error:', e.msg, file=sys.stderr)
         return 1
     except oscerr.LinkExpandError as e:
-        print >>sys.stderr, 'Link "%s/%s" cannot be expanded:\n' % (e.prj, e.pac), e.msg
-        print >>sys.stderr, 'Use "osc repairlink" to fix merge conflicts.\n'
+        print('Link "%s/%s" cannot be expanded:\n' % (e.prj, e.pac), e.msg, file=sys.stderr)
+        print('Use "osc repairlink" to fix merge conflicts.\n', file=sys.stderr)
         return 1
     except oscerr.WorkingCopyWrongVersion as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except oscerr.NoWorkingCopy as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         if os.path.isdir('.git'):
-            print >>sys.stderr, "Current directory looks like git."
+            print("Current directory looks like git.", file=sys.stderr)
         if os.path.isdir('.hg'):
-            print >>sys.stderr, "Current directory looks like mercurial."
+            print("Current directory looks like mercurial.", file=sys.stderr)
         if os.path.isdir('.svn'):
-            print >>sys.stderr, "Current directory looks like svn."
+            print("Current directory looks like svn.", file=sys.stderr)
         if os.path.isdir('CVS'):
-            print >>sys.stderr, "Current directory looks like cvs."
+            print("Current directory looks like cvs.", file=sys.stderr)
         return 1
     except HTTPError as e:
-        print >>sys.stderr, 'Server returned an error:', e
+        print('Server returned an error:', e, file=sys.stderr)
         if hasattr(e, 'osc_msg'):
-            print >>sys.stderr, e.osc_msg
+            print(e.osc_msg, file=sys.stderr)
 
         try:
             body = e.read()
@@ -111,24 +113,24 @@ def run(prg):
 
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
-            print >>sys.stderr, e.hdrs
-            print >>sys.stderr, body
+            print(e.hdrs, file=sys.stderr)
+            print(body, file=sys.stderr)
 
         if e.code in [400, 403, 404, 500]:
             if '<summary>' in body:
                 msg = body.split('<summary>')[1]
                 msg = msg.split('</summary>')[0]
-                print >>sys.stderr, msg
+                print(msg, file=sys.stderr)
         return 1
     except BadStatusLine as e:
-        print >>sys.stderr, 'Server returned an invalid response:', e
-        print >>sys.stderr, e.line
+        print('Server returned an invalid response:', e, file=sys.stderr)
+        print(e.line, file=sys.stderr)
         return 1
     except HTTPException as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except URLError as e:
-        print >>sys.stderr, 'Failed to reach a server:\n', e.reason
+        print('Failed to reach a server:\n', e.reason, file=sys.stderr)
         return 1
     except IOError as e:
         # ignore broken pipe
@@ -138,59 +140,59 @@ def run(prg):
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except (oscerr.ConfigError, oscerr.NoConfigfile) as e:
-        print >>sys.stderr, e.msg
+        print(e.msg, file=sys.stderr)
         return 1
     except oscerr.OscIOError as e:
-        print >>sys.stderr, e.msg
+        print(e.msg, file=sys.stderr)
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
-            print >>sys.stderr, e.e
+            print(e.e, file=sys.stderr)
         return 1
     except (oscerr.WrongOptions, oscerr.WrongArgs) as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 2
     except oscerr.ExtRuntimeError as e:
-        print >>sys.stderr, e.file + ':', e.msg
+        print(e.file + ':', e.msg, file=sys.stderr)
         return 1
     except oscerr.WorkingCopyOutdated as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent) as e:
-        print >>sys.stderr, e.msg
+        print(e.msg, file=sys.stderr)
         return 1
     except oscerr.PackageInternalError as e:
-        print >>sys.stderr, 'a package internal error occured\n' \
+        print('a package internal error occured\n' \
             'please file a bug and attach your current package working copy ' \
-            'and the following traceback to it:'
-        print >>sys.stderr, e.msg
+            'and the following traceback to it:', file=sys.stderr)
+        print(e.msg, file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         return 1
     except oscerr.PackageError as e:
-        print >>sys.stderr, e.msg
+        print(e.msg, file=sys.stderr)
         return 1
     except PackageError as e:
-        print >>sys.stderr, '%s:' % e.fname, e.msg
+        print('%s:' % e.fname, e.msg, file=sys.stderr)
         return 1
     except RPMError as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except SSLError as e:
-        print >>sys.stderr, "SSL Error:", e
+        print("SSL Error:", e, file=sys.stderr)
         return 1
     except SSLVerificationError as e:
-        print >>sys.stderr, "Certificate Verification Error:", e
+        print("Certificate Verification Error:", e, file=sys.stderr)
         return 1
     except NoSecureSSLError as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except CpioError as e:
-        print >>sys.stderr, e
+        print(e, file=sys.stderr)
         return 1
     except oscerr.OscBaseError as e:
-        print >>sys.stderr, '*** Error:', e
+        print('*** Error:', e, file=sys.stderr)
         return 1
 
 # vim: sw=4 et

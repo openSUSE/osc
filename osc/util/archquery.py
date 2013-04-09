@@ -1,3 +1,6 @@
+
+from __future__ import print_function
+
 import os.path
 import re
 import tarfile
@@ -153,12 +156,12 @@ if __name__ == '__main__':
     try:
         archq = ArchQuery.query(sys.argv[1])
     except ArchError as e:
-        print e.msg
+        print(e.msg)
         sys.exit(2)
-    print archq.name(), archq.version(), archq.release(), archq.arch()
-    print archq.canonname()
-    print archq.description()
-    print '##########'
-    print '\n'.join(archq.provides())
-    print '##########'
-    print '\n'.join(archq.requires())
+    print(archq.name(), archq.version(), archq.release(), archq.arch())
+    print(archq.canonname())
+    print(archq.description())
+    print('##########')
+    print('\n'.join(archq.provides()))
+    print('##########')
+    print('\n'.join(archq.requires()))
