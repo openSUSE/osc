@@ -17,7 +17,7 @@ except ImportError:
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
-from osc.core import get_binarylist, get_binary_file, run_external
+from osc.core import get_binarylist, get_binary_file, run_external, raw_input
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
 from . import oscerr

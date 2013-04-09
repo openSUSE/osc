@@ -21,6 +21,8 @@ except ImportError:
     from urlparse import urlparse
     from httplib import HTTPSConnection
 
+from .core import raw_input
+
 class TrustedCertStore:
     _tmptrusted = {}
 

@@ -405,7 +405,11 @@ class RawCmdln(cmd.Cmd):
             else:
                 if self.use_rawinput:
                     try:
-                        line = raw_input(self._prompt_str)
+                        try:
+                            #python 2.x
+                            line = raw_input(self._prompt_str)
+                        except NameError:
+                            line = input(self._prompt_str)
                     except EOFError:
                         line = 'EOF'
                 else:
