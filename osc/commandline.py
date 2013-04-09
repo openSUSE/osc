@@ -120,7 +120,7 @@ class Osc(cmdln.Cmdln):
                             override_no_keyring = self.options.no_keyring,
                             override_no_gnome_keyring = self.options.no_gnome_keyring,
                             override_verbose = self.options.verbose)
-        except oscerr.NoConfigfile, e:
+        except oscerr.NoConfigfile as e:
             print >>sys.stderr, e.msg
             print >>sys.stderr, 'Creating osc configuration file %s ...' % e.file
             import getpass
@@ -137,7 +137,7 @@ class Osc(cmdln.Cmdln):
             conf.write_initial_config(e.file, config)
             print >>sys.stderr, 'done'
             if try_again: self.postoptparse(try_again = False)
-        except oscerr.ConfigMissingApiurl, e:
+        except oscerr.ConfigMissingApiurl as e:
             print >>sys.stderr, e.msg
             import getpass
             user = raw_input('Username: ')
@@ -162,10 +162,10 @@ class Osc(cmdln.Cmdln):
     def get_api_url(self):
         try:
             localdir = os.getcwd()
-        except Exception, e:
+        except Exception as e:
             ## check for Stale NFS file handle: '.'
             try: os.stat('.')
-            except Exception, ee: e = ee
+            except Exception as ee: e = ee
             print >>sys.stderr, "os.getcwd() failed: ", e
             sys.exit(1)
 
@@ -2091,7 +2091,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     # works since OBS 2.1
                     diff = request_diff(apiurl, reqid)
-                except urllib2.HTTPError, e:
+                except urllib2.HTTPError as e:
                     # for OBS 2.0 and before
                     sr_actions = r.get_actions('submit')
                     if not sr_actions:
@@ -2132,7 +2132,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     r = change_review_state(apiurl, reqid, state_map[cmd], review.by_user, review.by_group,
                                             review.by_project, review.by_package, opts.message or '', supersed=supersedid)
                                     print r
-                                except urllib2.HTTPError, e:
+                                except urllib2.HTTPError as e:
                                     if review.by_user:
                                         print 'No permission on review by user %s' % review.by_user
                                     if review.by_group:
@@ -2189,10 +2189,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                    if link_node != None:
                                        links_to_project = link_node.get('project') or project
                                        links_to_package = link_node.get('package') or package
-                               except urllib2.HTTPError, e:
+                               except urllib2.HTTPError as e:
                                    if e.code != 404:
                                        print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
-                               except SyntaxError, e:
+                               except SyntaxError as e:
                                    print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
                                if links_to_project==action.tgt_project and links_to_package==action.tgt_package:
                                    # links to my request target anyway, no need to forward submit
@@ -2359,7 +2359,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             root = ET.fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
             li = Linkinfo()
             li.read(root.find('linkinfo'))
@@ -2955,7 +2955,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 uproject = root.find('attribute').find('value').text
                 print '\nNote: The branch has been created from the configured update project: %s' \
                     % uproject
-            except (AttributeError, urllib2.HTTPError), e:
+            except (AttributeError, urllib2.HTTPError) as e:
                 devloc = srcprj
                 print '\nNote: The branch has been created of a different project,\n' \
                       '              %s,\n' \
@@ -3373,7 +3373,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             show_package_meta(apiurl, project, package)
             return True
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             if e.code != 404:
                 print >>sys.stderr, 'Cannot check that %s/%s exists: %s' % (project, package, e)
             return False
@@ -3401,9 +3401,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             return (None, None)
-        except SyntaxError, e:
+        except SyntaxError as e:
             print >>sys.stderr, 'Cannot parse %s/%s/_link: %s' % (project, package, e)
             return (None, None)
 
@@ -3420,11 +3420,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             if e.code != 404:
                 print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
             return (None, None, None)
-        except SyntaxError, e:
+        except SyntaxError as e:
             print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
             return (None, None, None)
 
@@ -3864,7 +3864,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
                                      prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
-                except oscerr.LinkExpandError, e:
+                except oscerr.LinkExpandError as e:
                     print >>sys.stderr, 'Link cannot be expanded:\n', e
                     print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
                     # check out in unexpanded form at least
@@ -4108,7 +4108,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not msg:
                         msg = edit_message()
                     prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
-                except oscerr.ExtRuntimeError, e:
+                except oscerr.ExtRuntimeError as e:
                     print >>sys.stderr, "ERROR: service run failed", e
                     return 1
                 args.remove(arg)
@@ -4441,7 +4441,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     continue
             try:
                 delete_files(apiurl, project, package, (filename, ))
-            except urllib2.HTTPError, e:
+            except urllib2.HTTPError as e:
                 if opts.force:
                     print >>sys.stderr, e
                     body = e.read()
@@ -6283,7 +6283,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        print r.list_view(), '\n'
                    print ""
                 return
-            except urllib2.HTTPError, e:
+            except urllib2.HTTPError as e:
                 if e.code == 400:
                     # skip it ... try again with old style below
                     pass
@@ -6478,7 +6478,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'published/binary/id': xpath}
         try:
             res = search(apiurl, **what)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             if e.code != 400 or not role_filter:
                 raise e
             # backward compatibility: local role filtering
@@ -6881,7 +6881,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        for role in roles:
                            try:
                                setBugowner(apiurl, result.get('project'), result.get('package'), bugowner)
-                           except urllib2.HTTPError, e:
+                           except urllib2.HTTPError as e:
                                if e.code == 403:
                                    print "No write permission in", result.get('project'),
                                    if result.get('package'):
@@ -6904,7 +6904,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for role in roles:
                     try:
                         setBugowner(apiurl, prj, pac, opts.delete, role)
-                    except urllib2.HTTPError, e:
+                    except urllib2.HTTPError as e:
                         if e.code == 403:
                             print "No write permission in", result.get('project'),
                             if result.get('package'):
@@ -7108,7 +7108,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 for data in streamfile(u):
                     sys.stdout.write(data)
-        except urllib2.HTTPError, e:
+        except urllib2.HTTPError as e:
             if e.code == 404 and not opts.expand and not opts.unexpand:
                 print >>sys.stderr, 'expanding link...'
                 query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
@@ -7527,7 +7527,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     url = makeurl(apiurl, ['source', prj, '_pubkey'])
                     f = http_GET(url)
                     break
-                except urllib2.HTTPError, e:
+                except urllib2.HTTPError as e:
                     l = prj.rsplit(':', 1)
                     # try key from parent project
                     if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:
@@ -7797,7 +7797,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_project_dir(i):
                 try:
                     prj = Project(i, getPackageList=False)
-                except oscerr.WorkingCopyInconsistent, e:
+                except oscerr.WorkingCopyInconsistent as e:
                     if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
                         apiurl = get_apiurl(apiurls)
                     prj = Project(i, getPackageList=False, wc_check=False)
@@ -7817,7 +7817,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for pdir in pacs:
             try:
                 p = Package(pdir)
-            except oscerr.WorkingCopyInconsistent, e:
+            except oscerr.WorkingCopyInconsistent as e:
                 if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
                     apiurl = get_apiurl(apiurls)
                 p = Package(pdir, wc_check=False)
@@ -7841,7 +7841,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     continue
                 try:
                     exec open(os.path.join(plugin_dir, extfile))
-                except SyntaxError, e:
+                except SyntaxError as e:
                     if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
                         print >>sys.stderr, "%s: %s\n" % (plugin_dir, e)
                     else:

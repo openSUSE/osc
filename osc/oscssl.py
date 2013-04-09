@@ -75,7 +75,7 @@ def verify_cb(ctx, ok, store):
             ctx.verrs.record(store.get_current_cert(), store.get_error(), store.get_error_depth())
         return 1
 
-    except Exception, e:
+    except Exception as e:
         print e
         return 0
 
@@ -211,7 +211,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             if s:
                 self.saved_session = s
             r = h.getresponse()
-        except socket.error, err: # XXX what error?
+        except socket.error as err: # XXX what error?
             err.filename = full_url
             raise M2Crypto.m2urllib2.URLError(err)
 

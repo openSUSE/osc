@@ -19,7 +19,7 @@ class SafeWriter:
     def write(self, s):
         try:
             self.__get_writer().write(s)
-        except UnicodeEncodeError, e:
+        except UnicodeEncodeError as e:
             self.__get_writer().write(s.encode(self.__get_encoding()))
 
     def __getattr__(self, name):

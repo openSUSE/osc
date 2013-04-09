@@ -28,7 +28,7 @@ class Checker:
         for key in keys:
             try:
                 self.readkey(key)
-            except KeyError, e:
+            except KeyError as e:
                 print e
 
         if not len(self.imported):
@@ -108,7 +108,7 @@ if __name__ == "__main__":
         checker.readkeys(keyfiles)
         for pkg in pkgs:
             checker.check(pkg)
-    except Exception, e:
+    except Exception as e:
         checker.cleanup()
         raise e
 

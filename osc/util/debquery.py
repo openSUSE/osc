@@ -167,7 +167,7 @@ if __name__ == '__main__':
     import sys
     try:
         debq = DebQuery.query(sys.argv[1])
-    except DebError, e:
+    except DebError as e:
         print e.msg
         sys.exit(2)
     print debq.name(), debq.version(), debq.release(), debq.arch()
