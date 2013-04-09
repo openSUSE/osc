@@ -42,10 +42,37 @@ import os
 import re
 import cmd
 import optparse
+import sys
 from pprint import pprint
 from datetime import date
 
+# this is python 2.x style
+def introspect_handler_2(handler):
+        # Extract the introspection bits we need.
+        func = handler.im_func
+        if func.func_defaults:
+            func_defaults = func.func_defaults
+        else:
+            func_defaults = []
+        return \
+            func_defaults,   \
+            func.func_code.co_argcount, \
+            func.func_code.co_varnames, \
+            func.func_code.co_flags,    \
+            func
 
+def introspect_handler_3(handler):
+        return \
+            list(handler.__defaults__),   \
+            handler.__code__.co_argcount, \
+            handler.__code__.co_varnames, \
+            handler.__code__.co_flags,    \
+            handler.__func__
+
+if sys.version_info[0] == 2:
+    introspect_handler = introspect_handler_2
+else:
+    introspect_handler = introspect_handler_3
 
 
 #---- globals
@@ -806,15 +833,7 @@ class RawCmdln(cmd.Cmd):
         indent, indent_width = _get_indent(marker, help)
         suffix = _get_trailing_whitespace(marker, help)
 
-        # Extract the introspection bits we need.
-        func = handler.im_func
-        if func.func_defaults:
-            func_defaults = list(func.func_defaults)
-        else:
-            func_defaults = []
-        co_argcount = func.func_code.co_argcount
-        co_varnames = func.func_code.co_varnames
-        co_flags = func.func_code.co_flags
+        func_defaults, co_argcount, co_varnames, co_flags, _ = introspect_handler(handler)
         CO_FLAGS_ARGS = 4
         CO_FLAGS_KWARGS = 8
 
@@ -839,7 +858,7 @@ class RawCmdln(cmd.Cmd):
                 warnings.warn("argument '**%s' on '%s.%s' command "
                               "handler will never get values"
                               % (name, self.__class__.__name__,
-                                 func.func_name))
+                                 getattr(func, "__name__", getattr(func, "func_name"))))
             if co_flags & CO_FLAGS_ARGS:
                 name = argnames.pop(-1)
                 tail = "[%s...]" % name.upper()
@@ -1155,14 +1174,14 @@ class Cmdln(RawCmdln):
         and an appropriate error message will be raised/printed if the
         command is called with a different number of args.
         """
-        co_argcount = handler.im_func.func_code.co_argcount
+        co_argcount = introspect_handler(handler)[1]
         if co_argcount == 2:   # handler ::= do_foo(self, argv)
             return handler(argv)
         elif co_argcount >= 3: # handler ::= do_foo(self, subcmd, opts, ...)
             try:
                 optparser = handler.optparser
             except AttributeError:
-                optparser = handler.im_func.optparser = SubCmdOptionParser()
+                optparser = introspect_handler(handler)[4].optparser = SubCmdOptionParser()
             assert isinstance(optparser, SubCmdOptionParser)
             optparser.set_cmdln_info(self, argv[0])
             try:
