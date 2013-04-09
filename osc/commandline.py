@@ -5424,7 +5424,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 0
             
 
-        cwd = os.getcwdu()
+        cwd = os.getcwd()
         basename = os.path.basename(cwd)
         if not ':' in opts.host:
             hostname = opts.host
