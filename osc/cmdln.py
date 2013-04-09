@@ -707,10 +707,8 @@ class RawCmdln(cmd.Cmd):
         for attr in self.get_names():
             if attr.startswith("do_"):
                 cmdnames[attr[3:]] = True
-        cmdnames = cmdnames.keys()
-        cmdnames.sort()
         linedata = []
-        for cmdname in cmdnames:
+        for cmdname in sorted(cmdnames.keys()):
             if aliases.get(cmdname):
                 a = aliases[cmdname]
                 a.sort()
@@ -770,8 +768,7 @@ class RawCmdln(cmd.Cmd):
                 helpnames[helpname] = True
 
         if helpnames:
-            helpnames = helpnames.keys()
-            helpnames.sort()
+            helpnames = sorted(helpnames.keys())
             linedata = [(self.name+" help "+n, "") for n in helpnames]
 
             subindent = indent + ' '*4

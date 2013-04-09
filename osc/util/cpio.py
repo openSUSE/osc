@@ -62,7 +62,7 @@ class CpioHdr:
         self.namesize = namesize
         # != 0 indicates CRC format (which we do not support atm)
         self.checksum = checksum
-        for k,v in self.__dict__.iteritems():
+        for k,v in self.__dict__.items():
             self.__dict__[k] = int(v, 16)
         self.filename = filename
         # data starts at dataoff and ends at dataoff+filesize

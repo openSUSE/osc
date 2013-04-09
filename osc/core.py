@@ -1234,9 +1234,7 @@ class Package:
 
     def __generate_commitlist(self, todo_send):
         root = ET.Element('directory')
-        keys = todo_send.keys()
-        keys.sort()
-        for i in keys:
+        for i in sorted(todo_send.keys()):
             ET.SubElement(root, 'entry', name=i, md5=todo_send[i])
         return root
 
@@ -2302,10 +2300,7 @@ class Action:
                 raise oscerr.WrongArgs('invalid argument: \'%s\'' % i)
         # set all type specific attributes
         for i in Action.type_args[type]:
-            if kwargs.has_key(i):
-                setattr(self, i, kwargs[i])
-            else:
-                setattr(self, i, None)
+            setattr(self, i, kwargs.get(i))
 
     def to_xml(self):
         """
@@ -3721,7 +3716,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         todo['project'] = project
     if package:
         todo['package'] = package
-    for kind, val in todo.iteritems():
+    for kind, val in todo.items():
         xpath_base = 'action/target/@%(kind)s=\'%(val)s\' or ' \
                      'submit/target/@%(kind)s=\'%(val)s\''
 
@@ -3787,7 +3782,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
         todo['project'] = project
     if package:
         todo['package'] = package
-    for kind, val in todo.iteritems():
+    for kind, val in todo.items():
         xpath_base = 'action/target/@%(kind)s=\'%(val)s\' or ' \
                      'submit/target/@%(kind)s=\'%(val)s\''
 
@@ -3827,7 +3822,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new','review',), re
             if not i.get('project') in projects:
                 projpkgs.setdefault(i.get('project'), []).append(i.get('name'))
     xpath = ''
-    for prj, pacs in projpkgs.iteritems():
+    for prj, pacs in projpkgs.items():
         if not len(pacs):
             xpath = xpath_join(xpath, 'action/target/@project=\'%s\'' % prj, inner=True)
         else:
@@ -4493,7 +4488,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
         aggregate_template += """\
     <nosources />
 """
-    for src, tgt in repo_map.iteritems():
+    for src, tgt in repo_map.items():
         aggregate_template += """\
     <repository target="%s" source="%s" />
 """ % (tgt, src)
@@ -5758,7 +5753,7 @@ def search(apiurl, **kwargs):
     GET /search/kindN?match=xpathN
     """
     res = {}
-    for urlpath, xpath in kwargs.iteritems():
+    for urlpath, xpath in kwargs.items():
         path = [ 'search' ]
         path += urlpath.split('_') # FIXME: take underscores as path seperators. I see no other way atm to fix OBS api calls and not breaking osc api
         u = makeurl(apiurl, path, ['match=%s' % quote_plus(xpath)])
@@ -6591,7 +6586,7 @@ def filter_role(meta, user, role):
     remove all project/package nodes if no person node exists
     where @userid=user and @role=role
     """
-    for kind, root in meta.iteritems():
+    for kind, root in meta.items():
         delete = []
         for node in root.findall(kind):
             found = False
