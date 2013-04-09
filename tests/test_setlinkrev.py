@@ -50,9 +50,12 @@ class TestSetLinkRev(OscTestCase):
     @GET('http://localhost/source/srcprj/srcpkg?rev=latest&expand=1', text='conflict in file merge', code=404)
     def test_linkerror(self):
         """link is broken"""
-        import urllib2
+        try:
+            from urllib.error import HTTPError
+        except ImportError:
+            from urllib2 import HTTPError
         # the backend returns status 404 if we try to expand a broken _link
-        self.assertRaises(urllib2.HTTPError, osc.core.set_link_rev, 'http://localhost', 'osctest', 'simple', expand=True)
+        self.assertRaises(HTTPError, osc.core.set_link_rev, 'http://localhost', 'osctest', 'simple', expand=True)
 
     @GET('http://localhost/source/osctest/simple/_link', file='rev_link')
     @PUT('http://localhost/source/osctest/simple/_link',

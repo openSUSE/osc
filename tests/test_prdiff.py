@@ -4,7 +4,6 @@ import osc.oscerr
 import os
 import re
 import sys
-import urllib2
 from common import GET, POST, OscTestCase, addExpectedRequest, EXPECTED_REQUESTS
 
 

@@ -7412,7 +7412,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         entries.update(entries_new)
         for name in sorted(entries.keys()):
             if name.startswith('_service:') or name.startswith('_service_'):
-		continue
+                continue
             md5_old = entries_old.get(name, '')
             md5_new = entries_new.get(name, '')
             md5_oldpatched = entries_oldpatched.get(name, '')
