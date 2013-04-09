@@ -838,7 +838,7 @@ class Project:
             try:
                 for pac in pacs:
                     todo = []
-                    if files.has_key(pac):
+                    if pac in files:
                         todo = files[pac]
                     state = self.get_state(pac)
                     if state == 'A':
@@ -4927,7 +4927,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
            continue
 
        for res in results:
-           if res.has_key('_oldstate'):
+           if '_oldstate' in res:
                oldstate = res['_oldstate']
                continue
            res['status'] = res['code']
@@ -5066,7 +5066,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                 line.append(' ')
                 for pac in pacs[startpac:startpac+max_pacs]:
                     st = ''
-                    if not status.has_key(pac) or not status[pac].has_key(tg):
+                    if pac not in status or tg not in status[pac]:
                         # for newly added packages, status may be missing
                         st = '?'
                     else:
@@ -5095,7 +5095,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             line = []
             for tg in targets:
                 st = ''
-                if not status.has_key(pac) or not status[pac].has_key(tg):
+                if pac not in status or tg not in status[pac]:
                     # for newly added packages, status may be missing
                     st = '?'
                 else:
@@ -6539,9 +6539,9 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
             raise e
         # backward compatibility: local role filtering
         what = dict([[kind, role_filter_xpath] for kind in what.keys()])
-        if what.has_key('package'):
+        if 'package' in what:
             what['package'] = xpath_join(role_filter_xpath, excl_pkg, op='and')
-        if what.has_key('project'):
+        if 'project' in what:
             what['project'] = xpath_join(role_filter_xpath, excl_prj, op='and')
         res = search(apiurl, **what)
         filter_role(res, user, role)
