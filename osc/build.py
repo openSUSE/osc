@@ -677,7 +677,7 @@ def main(apiurl, opts, argv):
     if not opts.download_api_only:
         # transform 'url1, url2, url3' form into a list
         if 'urllist' in config:
-            if type(config['urllist']) == str:
+            if isinstance(config['urllist'], str):
                 re_clist = re.compile('[, ]+')
                 urllist = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
             else:

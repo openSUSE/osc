@@ -737,8 +737,7 @@ class RawCmdln(cmd.Cmd):
         linedata = []
         for cmdname in sorted(cmdnames.keys()):
             if aliases.get(cmdname):
-                a = aliases[cmdname]
-                a.sort()
+                a = sorted(aliases[cmdname])
                 cmdstr = "%s (%s)" % (cmdname, ", ".join(a))
             else:
                 cmdstr = cmdname
@@ -1352,7 +1351,7 @@ def line2argv(line):
     state = "default"
     arg = None  # the current argument being parsed
     i = -1
-    while 1:
+    while True:
         i += 1
         if i >= len(line): break
         ch = line[i]
