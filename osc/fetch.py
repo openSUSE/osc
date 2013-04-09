@@ -6,8 +6,14 @@
 from __future__ import print_function
 
 import sys, os
-import urllib2
-from urllib import quote_plus
+
+try:
+    from urllib.parse import quote_plus
+    from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
+except ImportError:
+    #python 2.x
+    from urllib import quote_plus
+    from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
 
 from urlgrabber.grabber import URLGrabError
 from urlgrabber.mirror import MirrorGroup
@@ -45,7 +51,7 @@ class OscFileGrabber:
             try:
                 for i in streamfile(url, progress_obj=self.progress_obj, text=text):
                     f.write(i)
-            except urllib2.HTTPError as e:
+            except HTTPError as e:
                 exc = URLGrabError(14, str(e))
                 exc.url = url
                 exc.exception = e
@@ -73,12 +79,12 @@ class Fetcher:
         self.cpio = {}
         self.enable_cpio = enable_cpio
 
-        passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        passmgr = HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
             passmgr.add_password(None, host, api_host_options[host]['user'], api_host_options[host]['pass'])
-        openers = (urllib2.HTTPBasicAuthHandler(passmgr), )
+        openers = (HTTPBasicAuthHandler(passmgr), )
         if cookiejar:
-            openers += (urllib2.HTTPCookieProcessor(cookiejar), )
+            openers += (HTTPCookieProcessor(cookiejar), )
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
     def failureReport(self, errobj):

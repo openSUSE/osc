@@ -33,10 +33,11 @@ except:
 
 try:
     from http.client import HTTPException, BadStatusLine
+    from urllib.error import URLError, HTTPError
 except ImportError:
     #python 2.x
     from httplib import HTTPException, BadStatusLine
-from urllib2 import URLError, HTTPError
+    from urllib2 import URLError, HTTPError
 
 # the good things are stolen from Matt Mackall's mercurial
 

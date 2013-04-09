@@ -16,20 +16,26 @@ import locale
 import os
 import os.path
 import sys
-import urllib2
-from urllib import pathname2url, quote_plus, urlencode, unquote
-try:
-    from urllib.parse import urlsplit, urlunsplit, urlparse
-    from io import StringIO
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit, urlunsplit, urlparse
-    from cStringIO import StringIO
 import shutil
 import subprocess
 import re
 import socket
 import errno
+
+try:
+    from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+    from urllib.error import HTTPError
+    from urllib.request import pathname2url, install_opener, urlopen
+    from urllib.request import Request as URLRequest
+    from io import StringIO
+except ImportError:
+    #python 2.x
+    from urlparse import urlsplit, urlunsplit, urlparse
+    from urllib import pathname2url, quote_plus, urlencode, unquote
+    from urllib2 import HTTPError, install_opener, urlopen
+    from urllib2 import Request as URLRequest
+    from cStringIO import StringIO
+
 
 try:
     from xml.etree import cElementTree as ET
@@ -292,7 +298,7 @@ class Serviceinfo:
             self.read(root, True)
             self.project = project
             self.package = package
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             if e.code != 403 and e.code != 400:
                 raise e
 
@@ -2869,11 +2875,11 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
         # adding data to an urllib2 request transforms it into a POST
         data = ''
 
-    req = urllib2.Request(url)
+    req = URLRequest(url)
     api_host_options = {}
     if conf.is_known_apiurl(url):
         # ok no external request
-        urllib2.install_opener(conf._build_opener(url))
+        install_opener(conf._build_opener(url))
         api_host_options = conf.get_apiurl_api_host_options(url)
         for header, value in api_host_options['http_headers']:
             req.add_header(header, value)
@@ -2920,7 +2926,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     if old_timeout != timeout and not api_host_options.get('sslcertck'):
         socket.setdefaulttimeout(timeout)
     try:
-        fd = urllib2.urlopen(req, data=data)
+        fd = urlopen(req, data=data)
     finally:
         if old_timeout != timeout and not api_host_options.get('sslcertck'):
             socket.setdefaulttimeout(old_timeout)
@@ -3041,7 +3047,7 @@ def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
     try:
         f = http_GET(url)
         return f.read()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'Error getting trigger reason for project \'%s\' package \'%s\'' % (prj, pac)
         raise
 
@@ -3059,7 +3065,7 @@ def show_package_meta(apiurl, prj, pac, meta=False):
     try:
         f = http_GET(url)
         return f.readlines()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         raise
 
@@ -3084,7 +3090,7 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
     try:
         f = http_GET(url)
         return f.readlines()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         raise
 
@@ -3116,7 +3122,7 @@ def show_pattern_metalist(apiurl, prj):
     try:
         f = http_GET(url)
         tree = ET.parse(f)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'show_pattern_metalist: Error getting pattern list for project \'%s\'' % prj
         raise
     r = sorted([ node.get('name') for node in tree.getroot() ])
@@ -3128,7 +3134,7 @@ def show_pattern_meta(apiurl, prj, pattern):
     try:
         f = http_GET(url)
         return f.readlines()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'show_pattern_meta: Error getting pattern \'%s\' for project \'%s\'' % (pattern, prj)
         raise
 
@@ -3166,7 +3172,7 @@ class metafile:
                 try:
                     self.sync()
                     break
-                except urllib2.HTTPError as e:
+                except HTTPError as e:
                     error_help = "%d" % e.code
                     if e.headers.get('X-Opensuse-Errorcode'):
                         error_help = "%s (%d)" % (e.headers.get('X-Opensuse-Errorcode'), e.code)
@@ -3229,7 +3235,7 @@ def meta_exists(metatype,
     url = make_meta_url(metatype, path_args, apiurl)
     try:
         data = http_GET(url).readlines()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         if e.code == 404 and create_new:
             data = metatypes[metatype]['template']
             if template_args:
@@ -3611,7 +3617,7 @@ def create_submit_request(apiurl,
         f = http_POST(u, data=xml)
         root = ET.parse(f).getroot()
         r = root.get('id')
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         if e.headers.get('X-Opensuse-Errorcode') == "submit_request_rejected":
             print("WARNING:")
             print("WARNING: Project does not accept submit request, request to open a NEW maintenance incident instead")
@@ -3897,7 +3903,7 @@ def get_group(apiurl, group):
     try:
         f = http_GET(u)
         return ''.join(f.readlines())
-    except urllib2.HTTPError:
+    except HTTPError:
         print('user \'%s\' not found' % group)
         return None
 
@@ -3906,7 +3912,7 @@ def get_user_meta(apiurl, user):
     try:
         f = http_GET(u)
         return ''.join(f.readlines())
-    except urllib2.HTTPError:
+    except HTTPError:
         print('user \'%s\' not found' % user)
         return None
 
@@ -4128,7 +4134,7 @@ def server_diff_noex(apiurl,
                             old_project, old_package, old_revision,
                             new_project, new_package, new_revision,
                             unified, missingok, meta, expand)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         msg = None
         body = None
         try:
@@ -4166,12 +4172,12 @@ def submit_action_diff(apiurl, action):
     try:
         return server_diff(apiurl, action.tgt_project, action.tgt_package, None,
             action.src_project, action.src_package, action.src_rev, True, True)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         if e.code == 400:
             try:
                 return server_diff(apiurl, action.tgt_project, action.tgt_package, None,
                     action.src_project, action.src_package, action.src_rev, True, False)
-            except urllib2.HTTPError as e:
+            except HTTPError as e:
                 if e.code != 404:
                     raise e
                 root = ET.fromstring(e.read())
@@ -4546,7 +4552,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     f = None
     try:
         f = http_POST(u)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         msg = ''.join(e.readlines())
         msg = msg.split('<summary>')[1]
         msg = msg.split('</summary>')[0]
@@ -4598,7 +4604,7 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     u = makeurl(apiurl, ['source', src_project, src_package], query=query)
     try:
         f = http_POST(u)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         if not return_existing:
             raise
         root = ET.fromstring(e.read())
@@ -4649,7 +4655,7 @@ def copy_pac(src_apiurl, src_project, src_package,
         found = None
         try:
             found = http_GET(url).readlines()
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             pass
         if force_meta_update or not found:
             print('Sending meta data...')
@@ -4932,7 +4938,7 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
        results = r = []
        try:
            results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
-       except urllib2.HTTPError as e:
+       except HTTPError as e:
            # check for simple timeout error and fetch again
            if e.code != 502:
                raise
@@ -5436,7 +5442,7 @@ def runservice(apiurl, prj, package):
 
     try:
         f = http_POST(u)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'could not trigger service run for project \'%s\' package \'%s\'' % (prj, package)
         raise
 
@@ -5458,7 +5464,7 @@ def rebuild(apiurl, prj, package, repo, arch, code=None):
     u = makeurl(apiurl, ['build', prj], query=query)
     try:
         f = http_POST(u)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'could not trigger rebuild for project \'%s\' package \'%s\'' % (prj, package)
         raise
 
@@ -5580,7 +5586,7 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
     u = makeurl(apiurl, ['build', project], query)
     try:
         f = http_POST(u)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'abortion failed for project %s' % project
         if package:
             e.osc_msg += ' package %s' % package
@@ -5608,7 +5614,7 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None)
     u = makeurl(apiurl, ['build', project], query)
     try:
         f = http_POST(u)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'wipe binary rpms failed for project %s' % project
         if package:
             e.osc_msg += ' package %s' % package
@@ -5794,7 +5800,7 @@ def owner(apiurl, binary, mode="binary", attribute=None, project=None, usefilter
     try:
         f = http_GET(u)
         res = ET.parse(f).getroot()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         # old server not supporting this search
         pass
     return res
@@ -5809,7 +5815,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
     try:
         f = http_GET(url)
         root = ET.parse(f).getroot()
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
         raise
 
@@ -6307,7 +6313,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
         try:
             change_request_state(*args, **kwargs)
             return True
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             print('Server returned an error:', e, file=sys.stderr)
             print('Try -f to force the state change', file=sys.stderr)
         return False
@@ -6343,7 +6349,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
                     try:
                         diff = request_diff(apiurl, request.reqid)
                         tmpfile.write(diff)
-                    except urllib2.HTTPError as e:
+                    except HTTPError as e:
                         if e.code != 400:
                             raise
                         # backward compatible diff for old apis
@@ -6546,7 +6552,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
             what['project_id'] = xpath_prj
     try:
         res = search(apiurl, **what)
-    except urllib2.HTTPError as e:
+    except HTTPError as e:
         if e.code != 400 or not role_filter_xpath:
             raise e
         # backward compatibility: local role filtering
@@ -6635,7 +6641,7 @@ def find_default_project(apiurl=None, package=None):
             # any fast query will do here.
             show_package_meta(apiurl, prj, package)
             return prj
-        except urllib2.HTTPError: 
+        except HTTPError: 
             pass
     return None
 
