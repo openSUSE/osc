@@ -277,7 +277,7 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, HTTPSConnec
         #real host/port to be used to make CONNECT request to proxy
         proto, rest = urllib.splittype(url)
         if proto is None:
-            raise ValueError, "unknown URL type: %s" % url
+            raise ValueError("unknown URL type: %s" % url)
         #get host
         host, rest = urllib.splithost(rest)
         #try to get port
@@ -287,7 +287,7 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, HTTPSConnec
             try:
                 port = self._ports[proto]
             except KeyError:
-                raise ValueError, "unknown protocol for: %s" % url
+                raise ValueError("unknown protocol for: %s" % url)
         self._real_host = host
         self._real_port = int(port)
         M2Crypto.httpslib.HTTPSConnection.putrequest(self, method, url, skip_host, skip_accept_encoding)
