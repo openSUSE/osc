@@ -29,7 +29,11 @@ except:
     # if rpm-python isn't installed (we might be on a debian system):
     RPMError = None
 
-from httplib import HTTPException, BadStatusLine
+try:
+    from http.client import HTTPException, BadStatusLine
+except ImportError:
+    #python 2.x
+    from httplib import HTTPException, BadStatusLine
 from urllib2 import URLError, HTTPError
 
 # the good things are stolen from Matt Mackall's mercurial

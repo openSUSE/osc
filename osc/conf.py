@@ -35,15 +35,23 @@ The configuration dictionary could look like this:
 """
 
 import base64
-import cookielib
-import httplib
 import os
 import re
 import sys
-import StringIO
 import urllib
 import urllib2
-import urlparse
+
+try:
+    from http.cookiejar import LWPCookieJar, CookieJar
+    from http.client import HTTPConnection, HTTPResponse
+    from io import StringIO
+    from urllib.parse import urlsplit
+except ImportError:
+    #python 2.x
+    from cookielib import LWPCookieJar, CookieJar
+    from httplib import HTTPConnection, HTTPResponse
+    from StringIO import StringIO
+    from urlparse import urlsplit
 
 from . import OscConfigParser
 from osc import oscerr
@@ -358,10 +366,10 @@ cookiejar = None
 
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
-        return urlparse.urlsplit(apisrv)[0:2]
+        return urlsplit(apisrv)[0:2]
     elif scheme != None:
         # the split/join is needed to get a proper url (e.g. without a trailing slash)
-        return urlparse.urlsplit(urljoin(scheme, apisrv))[0:2]
+        return urlsplit(urljoin(scheme, apisrv))[0:2]
     else:
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
         raise urllib2.URLError(msg)
@@ -518,7 +526,7 @@ def init_basicauth(config):
         # a logger object or such
         def new_method(*args, **kwargs):
             stdout = sys.stdout
-            sys.stdout = StringIO.StringIO()
+            sys.stdout = StringIO()
             meth(*args, **kwargs)
             hdr = sys.stdout.getvalue()
             sys.stdout = stdout
@@ -532,8 +540,8 @@ def init_basicauth(config):
         return new_method
 
     if config['http_debug'] and not config['http_full_debug']:
-        httplib.HTTPConnection.send = filterhdrs(httplib.HTTPConnection.send, True, 'Cookie', 'Authorization')
-        httplib.HTTPResponse.begin = filterhdrs(httplib.HTTPResponse.begin, False, 'header: Set-Cookie.*\n')
+        HTTPConnection.send = filterhdrs(HTTPConnection.send, True, 'Cookie', 'Authorization')
+        HTTPResponse.begin = filterhdrs(HTTPResponse.begin, False, 'header: Set-Cookie.*\n')
 
     if sys.version_info < (2, 6):
         # HTTPS proxy is not supported in old urllib2. It only leads to an error
@@ -551,7 +559,7 @@ def init_basicauth(config):
 
     cookie_file = os.path.expanduser(config['cookiejar'])
     global cookiejar
-    cookiejar = cookielib.LWPCookieJar(cookie_file)
+    cookiejar = LWPCookieJar(cookie_file)
     try:
         cookiejar.load(ignore_discard=True)
     except IOError:
@@ -560,7 +568,7 @@ def init_basicauth(config):
             os.chmod(cookie_file, 0600)
         except:
             #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
-            cookiejar = cookielib.CookieJar()
+            cookiejar = CookieJar()
 
 
 def get_configParser(conffile=None, force_read=False):
@@ -682,7 +690,7 @@ def write_initial_config(conffile, entries, custom_template=''):
     else:
         config['passx'] = base64.b64encode(config['pass'].encode('bz2'))
 
-    sio = StringIO.StringIO(conf_template.strip() % config)
+    sio = StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
     cp.readfp(sio)
     write_config(conffile, cp)

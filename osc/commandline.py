@@ -9,7 +9,11 @@ from . import conf
 from . import oscerr
 import sys
 import time
-import urlparse
+try:
+    from urllib.parse import urlsplit
+except ImportError:
+    #python 2.x
+    from urlparse import urlsplit
 
 from optparse import SUPPRESS_HELP
 
@@ -5552,7 +5556,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = os.path.splitext(descr)[0]
         else:
             package = store_read_package('.')
-        apihost = urlparse.urlsplit(self.get_api_url())[1]
+        apihost = urlsplit(self.get_api_url())[1]
         buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
             % {'repo': repository, 'arch': arch, 'project': project, 'package': package, 'apihost': apihost}
         if not os.path.isdir(buildroot):

@@ -16,8 +16,14 @@
 import os
 import re
 import sys
-import StringIO
 import stat
+
+#XXX: python 2.7 contains io.StringIO, which needs unicode instead of str
+#therefor try to import old stuff before new one here
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 # workaround for python24
 if not hasattr(os, 'SEEK_SET'):
@@ -49,10 +55,10 @@ class ArHdr:
     def __str__(self):
         return '%16s %d' % (self.file, self.size)
 
-class ArFile(StringIO.StringIO):
+class ArFile(StringIO):
     """Represents a file which resides in the archive"""
     def __init__(self, fn, uid, gid, mode, buf):
-        StringIO.StringIO.__init__(self, buf)
+        StringIO.__init__(self, buf)
         self.name = fn
         self.uid = uid
         self.gid = gid
