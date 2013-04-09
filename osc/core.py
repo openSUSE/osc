@@ -30,6 +30,7 @@ import subprocess
 import re
 import socket
 import errno
+
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
@@ -43,6 +44,13 @@ try:
     memoryview
 except NameError:
     memoryview = buffer
+
+try:
+    unicode
+except:
+    #python3 does not have unicode, so lets reimplement it
+    #as void function as it already gets unicode strings
+    unicode = lambda x, *args: x
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
