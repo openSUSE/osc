@@ -4135,7 +4135,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not pac.todo:
                         pac.todo = pac.filenamelist + pac.filenamelist_unvers
                     pac.todo.sort()
-            for prj_path, packages in prj_paths.iteritems():
+            for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
                 if not msg:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
@@ -6490,7 +6490,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if role_filter:
             role_filter = '%s (%s)' % (search_term, role_filter)
         kind_map = {'published/binary/id': 'binary'}
-        for kind, root in res.iteritems():
+        for kind, root in res.items():
             results = []
             for node in root.findall(kind_map.get(kind, kind)):
                 result = []
@@ -7791,7 +7791,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = parseargs(args)
         pacs = []
-        apiurls = conf.config['api_host_options'].keys()
+        apiurls = list(conf.config['api_host_options'].keys())
         apiurl = ''
         for i in args:
             if is_project_dir(i):

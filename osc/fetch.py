@@ -122,7 +122,7 @@ class Fetcher:
                 archive.copyin_file(hdr.filename, os.path.dirname(tmpfile), os.path.basename(tmpfile))
                 self.move_package(tmpfile, pac.localdir, pac)
                 # check if we got all packages... (because we've no .errors file)
-            for pac in pkgs.itervalues():
+            for pac in pkgs.values():
                 if not os.path.isfile(pac.fullfilename):
                     raise oscerr.APIError('failed to fetch file \'%s\': ' \
                         'does not exist in CPIO archive' % pac.repofilename)
@@ -130,7 +130,7 @@ class Fetcher:
             if e.errno != 14 or e.code != 414:
                 raise
             # query str was too large
-            keys = pkgs.keys()
+            keys = list(pkgs.keys())
             if len(keys) == 1:
                 raise oscerr.APIError('unable to fetch cpio archive: server always returns code 414')
             n = len(pkgs) / 2
@@ -145,7 +145,7 @@ class Fetcher:
                 os.unlink(tmpfile)
 
     def __fetch_cpio(self, apiurl):
-        for prpap, pkgs in self.cpio.iteritems():
+        for prpap, pkgs in self.cpio.items():
             project, repo, arch, package = prpap.split('/', 3)
             self.__download_cpio_archive(apiurl, project, repo, arch, package, **pkgs)
 
@@ -246,7 +246,7 @@ class Fetcher:
 
         self.__fetch_cpio(buildinfo.apiurl)
 
-        prjs = buildinfo.projects.keys()
+        prjs = list(buildinfo.projects.keys())
         for i in prjs:
             dest = "%s/%s" % (self.cachedir, i)
             if not os.path.exists(dest):

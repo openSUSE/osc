@@ -331,7 +331,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
         packageQueries.add(packageQuery)
 
     prefer_pkgs = dict((name, packageQuery.path())
-                       for name, packageQuery in packageQueries.iteritems())
+                       for name, packageQuery in packageQueries.items())
 
     depfile = create_deps(packageQueries.values())
     cpio = cpio.CpioWrite()
@@ -631,7 +631,7 @@ def main(apiurl, opts, argv):
         else:
             raise
 
-    bi = Buildinfo(bi_filename, apiurl, build_type, prefer_pkgs.keys())
+    bi = Buildinfo(bi_filename, apiurl, build_type, list(prefer_pkgs.keys()))
 
     if bi.debuginfo and not (opts.disable_debuginfo or '--debug' in buildargs):
         buildargs.append('--debug')
@@ -660,7 +660,7 @@ def main(apiurl, opts, argv):
     rpmlist_prefers = []
     if prefer_pkgs:
         print 'Evaluating preferred packages'
-        for name, path in prefer_pkgs.iteritems():
+        for name, path in prefer_pkgs.tems():
             if bi.has_dep(name):
                 # We remove a preferred package from the buildinfo, so that the
                 # fetcher doesn't take care about them.
@@ -804,7 +804,7 @@ def main(apiurl, opts, argv):
                 else:
                     os.symlink(sffn, tffn)
             if prefer_pkgs:
-                for name, path in prefer_pkgs.iteritems():
+                for name, path in prefer_pkgs.items():
                    if name == filename:
                        print "Using prefered package: " + path + "/" + filename
                        os.unlink(tffn)
