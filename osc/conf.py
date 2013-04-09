@@ -565,7 +565,7 @@ def init_basicauth(config):
     except IOError:
         try:
             open(cookie_file, 'w').close()
-            os.chmod(cookie_file, 0600)
+            os.chmod(cookie_file, 0o600)
         except:
             #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
             cookiejar = CookieJar()
@@ -597,7 +597,7 @@ def write_config(fname, cp):
         cp.write(f, comments=True)
     try:
         os.rename(fname + '.new', fname)
-        os.chmod(fname, 0600)
+        os.chmod(fname, 0o600)
     except:
         if os.path.exists(fname + '.new'):
             os.unlink(fname + '.new')
@@ -758,7 +758,7 @@ def get_config(override_conffile=None,
     # okay, we made sure that .oscrc exists
 
     # make sure it is not world readable, it may contain a password.
-    os.chmod(conffile, 0600)
+    os.chmod(conffile, 0o600)
 
     cp = get_configParser(conffile)
 
