@@ -4,17 +4,17 @@
 # either version 2, or version 3 (at your option).
 
 
-import cmdln
-import conf
-import oscerr
+from . import cmdln
+from . import conf
+from . import oscerr
 import sys
 import time
 import urlparse
 
 from optparse import SUPPRESS_HELP
 
-from core import *
-from util import safewriter
+from .core import *
+from .util import safewriter
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -148,7 +148,7 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            from meter import TextMeter
+            from .meter import TextMeter
             self.download_progress = TextMeter(hide_finished=True)
 
 
@@ -4990,7 +4990,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
-            from build import get_prefer_pkgs
+            from .build import get_prefer_pkgs
             print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
             prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(args[2])[1])
             cpio.add(os.path.basename(args[2]), build_descr_data)
@@ -6598,7 +6598,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         import glob
-        from util import rpmquery
+        from .util import rpmquery
 
         if opts.delete_old_files and conf.config['do_package_tracking']:
             # IMHO the --delete-old-files option doesn't really fit into our

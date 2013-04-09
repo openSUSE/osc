@@ -1,7 +1,7 @@
 import os
 import re
 import struct
-import packagequery
+from . import packagequery
 
 class RpmError(packagequery.PackageError):
     pass

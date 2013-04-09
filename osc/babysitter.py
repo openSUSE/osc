@@ -11,7 +11,7 @@ import signal
 import traceback
 
 from osc import oscerr
-from oscsslexcp import NoSecureSSLError
+from .oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
 

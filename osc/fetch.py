@@ -9,14 +9,14 @@ from urllib import quote_plus
 
 from urlgrabber.grabber import URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from core import makeurl, streamfile
-from util import packagequery, cpio
-import conf
-import oscerr
+from .core import makeurl, streamfile
+from .util import packagequery, cpio
+from . import conf
+from . import oscerr
 import tempfile
 import re
 try:
-    from meter import TextMeter
+    from .meter import TextMeter
 except:
     TextMeter = None
 
@@ -372,7 +372,7 @@ def verify_pacs(bi):
 
     print "using keys from", ', '.join(bi.prjkeys)
 
-    import checker
+    from . import checker
     failed = False
     checker = checker.Checker()
     try:

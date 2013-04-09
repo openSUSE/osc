@@ -19,8 +19,8 @@ from urllib import pathname2url, quote_plus, urlencode, unquote
 from urlparse import urlsplit, urlunsplit
 from cStringIO import StringIO
 import shutil
-import oscerr
-import conf
+from . import oscerr
+from . import conf
 import subprocess
 import re
 import socket
@@ -3960,7 +3960,7 @@ def get_binary_file(apiurl, prj, repo, arch,
                     progress_meter = False):
     progress_obj = None
     if progress_meter:
-        from meter import TextMeter
+        from .meter import TextMeter
         progress_obj = TextMeter()
 
     target_filename = target_filename or filename

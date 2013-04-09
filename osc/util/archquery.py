@@ -1,7 +1,7 @@
 import os.path
 import re
 import tarfile
-import packagequery
+from . import packagequery
 import subprocess
 
 class ArchError(packagequery.PackageError):
