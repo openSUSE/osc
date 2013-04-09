@@ -6068,7 +6068,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         target_dir = os.path.normpath(opts.destdir)
         if not os.path.isdir(target_dir):
             print 'Creating %s' % target_dir
-            os.makedirs(target_dir, 0755)
+            os.makedirs(target_dir, 0o755)
 
         for arch in arches:
             for pac in package:

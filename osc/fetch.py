@@ -198,13 +198,13 @@ class Fetcher:
             pac_obj.filename = canonname
             pac_obj.fullfilename = fullfilename
         shutil.move(tmpfile, fullfilename)
-        os.chmod(fullfilename, 0644)
+        os.chmod(fullfilename, 0o644)
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
         if not os.path.exists(dir):
             try:
-                os.makedirs(dir, mode=0755)
+                os.makedirs(dir, mode=0o755)
             except OSError as e:
                 print >>sys.stderr, 'packagecachedir is not writable for you?'
                 print >>sys.stderr, e
@@ -250,7 +250,7 @@ class Fetcher:
         for i in prjs:
             dest = "%s/%s" % (self.cachedir, i)
             if not os.path.exists(dest):
-                os.makedirs(dest, mode=0755)
+                os.makedirs(dest, mode=0o755)
             dest += '/_pubkey'
 
             url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
