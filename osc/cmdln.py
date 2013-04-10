@@ -64,8 +64,13 @@ def introspect_handler_2(handler):
             func
 
 def introspect_handler_3(handler):
+        defaults = handler.__defaults__
+        if not defaults:
+            defaults = []
+        else:
+            defaults = list(handler.__defaults__)
         return \
-            list(handler.__defaults__),   \
+            defaults,   \
             handler.__code__.co_argcount, \
             handler.__code__.co_varnames, \
             handler.__code__.co_flags,    \

@@ -45,18 +45,24 @@ except ImportError:
 from . import oscerr
 from . import conf
 
-# python 2.6 don't have memoryview
+# python 2.6 don't have memoryview, neither bytes
 try:
     memoryview
 except NameError:
     memoryview = buffer
 
 try:
+    # python 2.6 and python 2.7
     unicode
+    ET_ENCODING = "utf-8"
+    # python 2.6 does not have bytes and python 2.7 reimplements it as alias to
+    # str, but in incompatible way as it does not accept the same arguments
+    bytes = lambda x, *args: x
 except:
     #python3 does not have unicode, so lets reimplement it
     #as void function as it already gets unicode strings
     unicode = lambda x, *args: x
+    ET_ENCODING = "unicode"
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
@@ -286,7 +292,7 @@ class Serviceinfo:
                 data['command'] = name
                 self.services.append(data)
             except:
-                msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node)
+                msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node, encoding=ET_ENCODING)
                 raise oscerr.APIError(msg)
 
     def getProjectGlobalServices(self, apiurl, project, package):
@@ -721,7 +727,7 @@ class Project:
 
     def write_packages(self):
         xmlindent(self.pac_root)
-        store_write_string(self.absdir, '_packages', ET.tostring(self.pac_root))
+        store_write_string(self.absdir, '_packages', ET.tostring(self.pac_root, encoding=ET_ENCODING))
 
     def addPackage(self, pac):
         import fnmatch
@@ -1274,7 +1280,7 @@ class Package:
         if self.islinkrepair():
             query['repairlink'] = '1'
         u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-        f = http_POST(u, data=ET.tostring(local_filelist))
+        f = http_POST(u, data=ET.tostring(local_filelist, encoding=ET_ENCODING))
         root = ET.parse(f).getroot()
         return root
 
@@ -1290,7 +1296,7 @@ class Package:
         for n in server_filelist.findall('entry'):
             name = n.get('name')
             if name is None:
-                raise oscerr.APIError('missing \'name\' attribute:\n%s\n' % ET.tostring(server_filelist))
+                raise oscerr.APIError('missing \'name\' attribute:\n%s\n' % ET.tostring(server_filelist, encoding=ET_ENCODING))
             todo.append(n.get('name'))
         return todo
 
@@ -1372,7 +1378,7 @@ class Package:
         if len(send):
             raise oscerr.PackageInternalError(self.prjname, self.name,
                 'server does not accept filelist:\n%s\nmissing:\n%s\n' \
-                % (ET.tostring(filelist), ET.tostring(sfilelist)))
+                % (ET.tostring(filelist, encoding=ET_ENCODING), ET.tostring(sfilelist, encoding=ET_ENCODING)))
         # these files already exist on the server
         # just copy them into the storedir
         for filename in real_send:
@@ -1394,12 +1400,12 @@ class Package:
             li = Linkinfo()
             li.read(sfilelist.find('linkinfo'))
             if li.xsrcmd5 is None:
-                raise oscerr.APIError('linkinfo has no xsrcmd5 attr:\n%s\n' % ET.tostring(sfilelist))
+                raise oscerr.APIError('linkinfo has no xsrcmd5 attr:\n%s\n' % ET.tostring(sfilelist, encoding=ET_ENCODING))
             sfilelist = ET.fromstring(self.get_files_meta(revision=li.xsrcmd5))
         for i in sfilelist.findall('entry'):
             if i.get('name') in self.skipped:
                 i.set('skipped', 'true')
-        store_write_string(self.absdir, '_files', ET.tostring(sfilelist) + '\n')
+        store_write_string(self.absdir, '_files', ET.tostring(sfilelist, encoding=ET_ENCODING) + '\n')
         for filename in todo_delete:
             self.to_be_deleted.remove(filename)
             self.delete_storefile(filename)
@@ -1520,7 +1526,7 @@ class Package:
             if size and self.size_limit and int(size) > self.size_limit \
                 or skip_service and (e.get('name').startswith('_service:') or e.get('name').startswith('_service_')):
                 e.set('skipped', 'true')
-        return ET.tostring(root)
+        return ET.tostring(root, encoding=ET_ENCODING)
 
     def update_datastructs(self):
         """
@@ -1895,13 +1901,13 @@ rev: %s
         url.text = self.url
 
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
-        mf = metafile(u, ET.tostring(root))
+        mf = metafile(u, ET.tostring(root, encoding=ET_ENCODING))
 
         if not force:
             print('*' * 36, 'old', '*' * 36)
             print(m)
             print('*' * 36, 'new', '*' * 36)
-            print(ET.tostring(root))
+            print(ET.tostring(root, encoding=ET_ENCODING))
             print('*' * 72)
             repl = raw_input('Write? (y/N/e) ')
         else:
@@ -1949,7 +1955,7 @@ rev: %s
     def __get_files(self, fmeta_root):
         f = []
         if fmeta_root.get('rev') is None and len(fmeta_root.findall('entry')) > 0:
-            raise oscerr.APIError('missing rev attribute in _files:\n%s' % ''.join(ET.tostring(fmeta_root)))
+            raise oscerr.APIError('missing rev attribute in _files:\n%s' % ''.join(ET.tostring(fmeta_root, encoding=ET_ENCODING)))
         for i in fmeta_root.findall('entry'):
             skipped = i.get('skipped') is not None
             f.append(File(i.get('name'), i.get('md5'),
@@ -2042,7 +2048,7 @@ rev: %s
                             deleted.remove(f)
             if not service_files:
                 services = []
-            self.__update(kept, added, deleted, services, ET.tostring(root), root.get('rev'))
+            self.__update(kept, added, deleted, services, ET.tostring(root, encoding=ET_ENCODING), root.get('rev'))
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
@@ -2225,7 +2231,7 @@ class AbstractState:
         """return "pretty" XML data"""
         root = self.to_xml()
         xmlindent(root)
-        return ET.tostring(root)
+        return ET.tostring(root, encoding=ET_ENCODING)
 
 
 class ReviewState(AbstractState):
@@ -2233,7 +2239,7 @@ class ReviewState(AbstractState):
     def __init__(self, review_node):
         if not review_node.get('state'):
             raise oscerr.APIError('invalid review node (state attr expected): %s' % \
-                ET.tostring(review_node))
+                ET.tostring(review_node, encoding=ET_ENCODING))
         AbstractState.__init__(self, review_node.tag)
         self.state = review_node.get('state')
         self.by_user = review_node.get('by_user')
@@ -2259,7 +2265,7 @@ class RequestState(AbstractState):
     def __init__(self, state_node):
         if not state_node.get('name'):
             raise oscerr.APIError('invalid request state node (name attr expected): %s' % \
-                ET.tostring(state_node))
+                ET.tostring(state_node, encoding=ET_ENCODING))
         AbstractState.__init__(self, state_node.tag)
         self.name = state_node.get('name')
         self.who = state_node.get('who')
@@ -2355,7 +2361,7 @@ class Action:
         """return "pretty" XML data"""
         root = self.to_xml()
         xmlindent(root)
-        return ET.tostring(root)
+        return ET.tostring(root, encoding=ET_ENCODING)
 
     @staticmethod
     def from_xml(action_node):
@@ -2396,10 +2402,10 @@ class Request:
         """read in a request"""
         self._init_attributes()
         if not root.get('id'):
-            raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root))
+            raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.reqid = root.get('id')
         if root.find('state') is None:
-            raise oscerr.APIError('invalid request (state expected): %s\n' % ET.tostring(root))
+            raise oscerr.APIError('invalid request (state expected): %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.state = RequestState(root.find('state'))
         action_nodes = root.findall('action')
         if not action_nodes:
@@ -2460,7 +2466,7 @@ class Request:
         """return "pretty" XML data"""
         root = self.to_xml()
         xmlindent(root)
-        return ET.tostring(root)
+        return ET.tostring(root, encoding=ET_ENCODING)
 
     @staticmethod
     def format_review(review, show_srcupdate=False):
@@ -2926,7 +2932,10 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     if old_timeout != timeout and not api_host_options.get('sslcertck'):
         socket.setdefaulttimeout(timeout)
     try:
+        if isinstance(data, str):
+            data=bytes(data, "utf-8")
         fd = urlopen(req, data=data)
+
     finally:
         if old_timeout != timeout and not api_host_options.get('sslcertck'):
             socket.setdefaulttimeout(old_timeout)
@@ -3193,7 +3202,6 @@ class metafile:
         if os.path.exists(self.filename):
             print('discarding %s' % self.filename)
             os.unlink(self.filename)
-
 
 # different types of metadata
 metatypes = { 'prj':     { 'path': 'source/%s/_meta',
@@ -3539,7 +3547,7 @@ def clone_request(apiurl, reqid, msg=None):
         if i.get('name') == 'targetproject':
             project = i.text.strip()
     if not project:
-        raise oscerr.APIError('invalid data from clone request:\n%s\n' % ET.tostring(root))
+        raise oscerr.APIError('invalid data from clone request:\n%s\n' % ET.tostring(root, encoding=ET_ENCODING))
     return project
 
 # create a maintenance release request
@@ -3950,7 +3958,7 @@ def download(url, filename, progress_obj = None, mtime = None):
         try:
             o = os.fdopen(fd, 'wb')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
-                o.write(buf)
+                o.write(bytes(buf,"utf-8"))
             o.close()
             os.rename(tmpfile, filename)
         except:
@@ -4027,7 +4035,7 @@ def dgst(file):
 
 def binary(s):
     """return true if a string is binary data using diff's heuristic"""
-    if s and '\0' in s[:4096]:
+    if s and bytes('\0', "utf-8") in s[:4096]:
         return True
     return False
 
@@ -4065,11 +4073,11 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 
     f1 = f2 = None
     try:
-        f1 = open(file1, 'rb')
+        f1 = open(file1, 'rt')
         s1 = f1.readlines()
         f1.close()
 
-        f2 = open(file2, 'rb')
+        f2 = open(file2, 'rt')
         s2 = f2.readlines()
         f2.close()
     finally:
@@ -4340,7 +4348,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     if not keep_develproject:
         for dp in root.findall('devel'):
             root.remove(dp)
-    return ET.tostring(root)
+    return ET.tostring(root, encoding=ET_ENCODING)
 
 def link_to_branch(apiurl, project,  package):
     """
@@ -4389,7 +4397,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             elm = ET.SubElement(root, 'publish')
         elm.clear()
         ET.SubElement(elm, 'disable')
-        dst_meta = ET.tostring(root)
+        dst_meta = ET.tostring(root, encoding=ET_ENCODING)
 
     if meta_change:
         edit_meta('pkg',
@@ -4481,7 +4489,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
             elm = ET.SubElement(root, 'publish')
         elm.clear()
         ET.SubElement(elm, 'disable')
-        dst_meta = ET.tostring(root)
+        dst_meta = ET.tostring(root, encoding=ET_ENCODING)
     if meta_change:
         edit_meta('pkg',
                   path_args=(dst_project, dst_package),
@@ -4565,7 +4573,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
         return root
     # TODO: change api here and return parsed XML as class
     if conf.config['http_debug']:
-        print(ET.tostring(root), file=sys.stderr)
+        print(ET.tostring(root, encoding=ET_ENCODING), file=sys.stderr)
     for node in root.findall('data'):
         r = node.get('name')
         if r and r == 'targetproject':
@@ -4610,7 +4618,7 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         root = ET.fromstring(e.read())
         summary = root.find('summary')
         if summary is None:
-            raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root))
+            raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root, encoding=ET_ENCODING))
         m = re.match(r"branch target package already exists: (\S+)/(\S+)", summary.text)
         if not m:
             e.msg += '\n' + summary.text
@@ -4618,7 +4626,7 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         return (True, m.group(1), m.group(2), None, None)
 
     if conf.config['http_debug']:
-        print(ET.tostring(root), file=sys.stderr)
+        print(ET.tostring(root, encoding=ET_ENCODING), file=sys.stderr)
     data = {}
     for i in ET.fromstring(f.read()).findall('data'):
         data[i.get('name')] = i.text
@@ -5839,7 +5847,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
     if vrev and revision and len(revision) >= 32:
         root.set('vrev', vrev)
 
-    l = ET.tostring(root)
+    l = ET.tostring(root, encoding=ET_ENCODING)
     http_PUT(url, data=l)
     return revision
 
@@ -5944,7 +5952,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
             print('user \'%s\' added to \'%s\'' % (user, pac or prj))
             edit_meta(metatype=kind,
                       path_args=path,
-                      data=ET.tostring(root))
+                      data=ET.tostring(root, encoding=ET_ENCODING))
     else:
         print("osc: an error occured")
 
@@ -5974,7 +5982,7 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
         if found:
             edit_meta(metatype=kind,
                       path_args=path,
-                      data=ET.tostring(root))
+                      data=ET.tostring(root, encoding=ET_ENCODING))
         else:
             print("user \'%s\' not found in \'%s\'" % (user, pac or prj))
     else:
@@ -6007,7 +6015,7 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
             print("Neither user nor group is specified")
         edit_meta(metatype=kind,
                   path_args=path,
-                  data=ET.tostring(root))
+                  data=ET.tostring(root, encoding=ET_ENCODING))
 
 def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
     """ set the <devel project="..."> element to package metadata"""
@@ -6034,7 +6042,7 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
                 del elem.attrib['package']
         edit_meta(metatype='pkg',
                   path_args=path,
-                  data=ET.tostring(root))
+                  data=ET.tostring(root, encoding=ET_ENCODING))
     else:
         print("osc: an error occured")
 
@@ -6084,7 +6092,7 @@ def addGitSource(url):
     # for pretty output
     xmlindent(s)
     f = open(service_file, 'wb')
-    f.write(ET.tostring(s))
+    f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
        addFiles( ['_service'] )
@@ -6105,7 +6113,7 @@ def addDownloadUrlService(url):
     # for pretty output
     xmlindent(s)
     f = open(service_file, 'wb')
-    f.write(ET.tostring(s))
+    f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
        addFiles( ['_service'] )
@@ -6127,7 +6135,7 @@ def addDownloadUrlService(url):
     # for pretty output
     xmlindent(s)
     f = open(service_file, 'wb')
-    f.write(ET.tostring(s))
+    f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
 
 
