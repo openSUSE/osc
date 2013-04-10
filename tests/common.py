@@ -7,12 +7,41 @@ import sys
 from xml.etree import cElementTree as ET
 EXPECTED_REQUESTS = []
 
+if sys.version_info[0:2] in ((2, 6), (2, 7)):
+    bytes = lambda x, *args: x
+
 try:
+    #python 2.x
     from cStringIO import StringIO
     from urllib2 import HTTPHandler, addinfourl, build_opener
+    from urlparse import urlparse, parse_qs
 except ImportError:
     from io import StringIO
     from urllib.request import HTTPHandler, addinfourl, build_opener
+    from urllib.parse import urlparse, parse_qs
+
+def urlcompare(url, *args):
+    """compare all components of url except query string - it is converted to
+    dict, therefor different ordering does not makes url's different, as well
+    as quoting of a query string"""
+
+    components = urlparse(url)
+    query_args = parse_qs(components.query)
+    components = components._replace(query=None)
+
+    if not args:
+        return False
+
+    for url in args:
+        components2 = urlparse(url)
+        query_args2 = parse_qs(components2.query)
+        components2 = components2._replace(query=None)
+
+        if  components != components2 or \
+            query_args != query_args2:
+            return False
+
+    return True
 
 class RequestWrongOrder(Exception):
     """raised if an unexpected request is issued to urllib2"""
@@ -44,7 +73,7 @@ class MyHTTPHandler(HTTPHandler):
 
     def http_open(self, req):
         r = self.__exp_requests.pop(0)
-        if req.get_full_url() != r[1] or req.get_method() != r[0]:
+        if not urlcompare(req.get_full_url(), r[1]) or req.get_method() != r[0]:
             raise RequestWrongOrder(req.get_full_url(), r[1], req.get_method(), r[0])
         if req.get_method() in ('GET', 'DELETE'):
             return self.__mock_GET(r[1], **r[2])
@@ -63,7 +92,7 @@ class MyHTTPHandler(HTTPHandler):
         elif exp is None:
             raise RuntimeError('exp or expfile required')
         if exp is not None:
-            if req.get_data() != exp:
+            if req.get_data() != bytes(exp, "utf-8"):
                 raise RequestDataMismatch(req.get_full_url(), repr(req.get_data()), repr(exp))
         return self.__get_response(req.get_full_url(), **kwargs)
 

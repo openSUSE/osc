@@ -13,10 +13,12 @@ import time
 try:
     from urllib.parse import urlsplit
     from urllib.error import HTTPError
+    ET_ENCODING = "unicode"
 except ImportError:
     #python 2.x
     from urlparse import urlsplit
     from urllib2 import HTTPError
+    ET_ENCODING = "utf-8"
 
 from optparse import SUPPRESS_HELP
 
@@ -3541,10 +3543,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  close_fds=True)
-            p.stdin.write(rdiff)
+            p.stdin.write(rdiff.encode())
             p.stdin.close()
-            diffstat = "".join(p.stdout.readlines())
-            print(diffstat)
+            print("".join(x.decode() for x in p.stdout.readlines()))
         elif opts.unified:
             print()
             print(rdiff)
@@ -6669,7 +6670,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     data.find('title').text = ''.join(title)
                     data.find('description').text = ''.join(descr)
                     data.find('url').text = url
-                    data = ET.tostring(data)
+                    data = ET.tostring(data, encoding=ET_ENCODING)
                 else:
                     print('error - cannot get meta data', file=sys.stderr)
                     sys.exit(1)
