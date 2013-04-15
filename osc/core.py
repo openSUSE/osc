@@ -6309,7 +6309,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
         sr_actions = request.get_actions('submit')
         # actions which have sources + buildresults
-        src_actions = sr_actions + request.get_actions('maintenance_release')
+        src_actions = sr_actions + request.get_actions('maintenance_release', 'maintenance_incident')
         if sr_actions:
             prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/(s)kip/(c)ancel > '
         elif src_actions:
