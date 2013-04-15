@@ -3,20 +3,28 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+from __future__ import print_function
+
 import sys, os
-import urllib2
-from urllib import quote_plus
+
+try:
+    from urllib.parse import quote_plus
+    from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
+except ImportError:
+    #python 2.x
+    from urllib import quote_plus
+    from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
 
 from urlgrabber.grabber import URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from core import makeurl, streamfile
-from util import packagequery, cpio
-import conf
-import oscerr
+from .core import makeurl, streamfile
+from .util import packagequery, cpio
+from . import conf
+from . import oscerr
 import tempfile
 import re
 try:
-    from meter import TextMeter
+    from .meter import TextMeter
 except:
     TextMeter = None
 
@@ -43,13 +51,13 @@ class OscFileGrabber:
             try:
                 for i in streamfile(url, progress_obj=self.progress_obj, text=text):
                     f.write(i)
-            except urllib2.HTTPError, e:
+            except HTTPError as e:
                 exc = URLGrabError(14, str(e))
                 exc.url = url
                 exc.exception = e
                 exc.code = e.code
                 raise exc
-            except IOError, e:
+            except IOError as e:
                 raise URLGrabError(4, str(e))
         finally:
             f.close()
@@ -71,20 +79,20 @@ class Fetcher:
         self.cpio = {}
         self.enable_cpio = enable_cpio
 
-        passmgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        passmgr = HTTPPasswordMgrWithDefaultRealm()
         for host in api_host_options.keys():
             passmgr.add_password(None, host, api_host_options[host]['user'], api_host_options[host]['pass'])
-        openers = (urllib2.HTTPBasicAuthHandler(passmgr), )
+        openers = (HTTPBasicAuthHandler(passmgr), )
         if cookiejar:
-            openers += (urllib2.HTTPCookieProcessor(cookiejar), )
+            openers += (HTTPCookieProcessor(cookiejar), )
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
     def failureReport(self, errobj):
         """failure output for failovers from urlgrabber"""
         if errobj.url.startswith('file://'):
             return {}
-        print 'Trying openSUSE Build Service server for %s (%s), not found at %s.' \
-              % (self.curpac, self.curpac.project, errobj.url.split('/')[2])
+        print('Trying openSUSE Build Service server for %s (%s), not found at %s.' \
+              % (self.curpac, self.curpac.project, errobj.url.split('/')[2]))
         return {}
 
     def __add_cpio(self, pac):
@@ -122,15 +130,15 @@ class Fetcher:
                 archive.copyin_file(hdr.filename, os.path.dirname(tmpfile), os.path.basename(tmpfile))
                 self.move_package(tmpfile, pac.localdir, pac)
                 # check if we got all packages... (because we've no .errors file)
-            for pac in pkgs.itervalues():
+            for pac in pkgs.values():
                 if not os.path.isfile(pac.fullfilename):
                     raise oscerr.APIError('failed to fetch file \'%s\': ' \
                         'does not exist in CPIO archive' % pac.repofilename)
-        except URLGrabError, e:
+        except URLGrabError as e:
             if e.errno != 14 or e.code != 414:
                 raise
             # query str was too large
-            keys = pkgs.keys()
+            keys = list(pkgs.keys())
             if len(keys) == 1:
                 raise oscerr.APIError('unable to fetch cpio archive: server always returns code 414')
             n = len(pkgs) / 2
@@ -145,7 +153,7 @@ class Fetcher:
                 os.unlink(tmpfile)
 
     def __fetch_cpio(self, apiurl):
-        for prpap, pkgs in self.cpio.iteritems():
+        for prpap, pkgs in self.cpio.items():
             project, repo, arch, package = prpap.split('/', 3)
             self.__download_cpio_archive(apiurl, project, repo, arch, package, **pkgs)
 
@@ -157,9 +165,9 @@ class Fetcher:
         mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport,(),{}))
 
         if self.http_debug:
-            print >>sys.stderr, '\nURLs to try for package \'%s\':' % pac
-            print >>sys.stderr, '\n'.join(pac.urllist)
-            print >>sys.stderr
+            print('\nURLs to try for package \'%s\':' % pac, file=sys.stderr)
+            print('\n'.join(pac.urllist), file=sys.stderr)
+            print(file=sys.stderr)
 
         (fd, tmpfile) = tempfile.mkstemp(prefix='osc_build')
         try:
@@ -168,14 +176,14 @@ class Fetcher:
                            filename = tmpfile,
                            text = '%s(%s) %s' %(prefix, pac.project, pac.filename))
                 self.move_package(tmpfile, pac.localdir, pac)
-            except URLGrabError, e:
+            except URLGrabError as e:
                 if self.enable_cpio and e.errno == 256:
                     self.__add_cpio(pac)
                     return
-                print
-                print >>sys.stderr, 'Error:', e.strerror
-                print >>sys.stderr, 'Failed to retrieve %s from the following locations (in order):' % pac.filename
-                print >>sys.stderr, '\n'.join(pac.urllist)
+                print()
+                print('Error:', e.strerror, file=sys.stderr)
+                print('Failed to retrieve %s from the following locations (in order):' % pac.filename, file=sys.stderr)
+                print('\n'.join(pac.urllist), file=sys.stderr)
                 sys.exit(1)
         finally:
             os.close(fd)
@@ -189,7 +197,7 @@ class Fetcher:
           canonname = pkgq.canonname()
         else:
           if pac_obj is None:
-            print >>sys.stderr, 'Unsupported file type: ', tmpfile
+            print('Unsupported file type: ', tmpfile, file=sys.stderr)
             sys.exit(1)
           canonname = pac_obj.binary
 
@@ -198,16 +206,16 @@ class Fetcher:
             pac_obj.filename = canonname
             pac_obj.fullfilename = fullfilename
         shutil.move(tmpfile, fullfilename)
-        os.chmod(fullfilename, 0644)
+        os.chmod(fullfilename, 0o644)
 
     def dirSetup(self, pac):
         dir = os.path.join(self.cachedir, pac.localdir)
         if not os.path.exists(dir):
             try:
-                os.makedirs(dir, mode=0755)
-            except OSError, e:
-                print >>sys.stderr, 'packagecachedir is not writable for you?'
-                print >>sys.stderr, e
+                os.makedirs(dir, mode=0o755)
+            except OSError as e:
+                print('packagecachedir is not writable for you?', file=sys.stderr)
+                print(e, file=sys.stderr)
                 sys.exit(1)
 
     def run(self, buildinfo):
@@ -221,7 +229,7 @@ class Fetcher:
         needed = all - cached
         if all:
             miss = 100.0 * needed / all
-        print "%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss, cached, all)
+        print("%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss, cached, all))
         done = 1
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
@@ -232,25 +240,25 @@ class Fetcher:
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:
-                        print '%d/%d (%s) %s' % (done, needed, i.project, i.filename)
+                        print('%d/%d (%s) %s' % (done, needed, i.project, i.filename))
                     self.fetch(i)
                     if self.progress_obj:
-                        print "  %d/%d\r" % (done, needed),
+                        print("  %d/%d\r" % (done, needed), end=' ')
                         sys.stdout.flush()
 
                 except KeyboardInterrupt:
-                    print 'Cancelled by user (ctrl-c)'
-                    print 'Exiting.'
+                    print('Cancelled by user (ctrl-c)')
+                    print('Exiting.')
                     sys.exit(0)
                 done += 1
 
         self.__fetch_cpio(buildinfo.apiurl)
 
-        prjs = buildinfo.projects.keys()
+        prjs = list(buildinfo.projects.keys())
         for i in prjs:
             dest = "%s/%s" % (self.cachedir, i)
             if not os.path.exists(dest):
-                os.makedirs(dest, mode=0755)
+                os.makedirs(dest, mode=0o755)
             dest += '/_pubkey'
 
             url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
@@ -264,20 +272,20 @@ class Fetcher:
                     buildinfo.keys.append(dest)
                     buildinfo.prjkeys.append(i)
             except KeyboardInterrupt:
-                print 'Cancelled by user (ctrl-c)'
-                print 'Exiting.'
+                print('Cancelled by user (ctrl-c)')
+                print('Exiting.')
                 if os.path.exists(dest):
                     os.unlink(dest)
                 sys.exit(0)
-            except URLGrabError, e:
+            except URLGrabError as e:
                 # Not found is okay, let's go to the next project
                 if e.code != 404:
-                    print >>sys.stderr, "Invalid answer from server", e
+                    print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
 
                 if self.http_debug:
-                    print >>sys.stderr, "can't fetch key for %s: %s" %(i, e.strerror)
-                    print >>sys.stderr, "url: %s" % url
+                    print("can't fetch key for %s: %s" %(i, e.strerror), file=sys.stderr)
+                    print("url: %s" % url, file=sys.stderr)
 
                 if os.path.exists(dest):
                     os.unlink(dest)
@@ -317,20 +325,20 @@ def verify_pacs_old(pac_list):
     for line in o.readlines():
 
         if not 'OK' in line:
-            print
-            print >>sys.stderr, 'The following package could not be verified:'
-            print >>sys.stderr, line
+            print()
+            print('The following package could not be verified:', file=sys.stderr)
+            print(line, file=sys.stderr)
             sys.exit(1)
 
         if 'NOT OK' in line:
-            print
-            print >>sys.stderr, 'The following package could not be verified:'
-            print >>sys.stderr, line
+            print()
+            print('The following package could not be verified:', file=sys.stderr)
+            print(line, file=sys.stderr)
 
             if 'MISSING KEYS' in line:
                 missing_key = line.split('#')[-1].split(')')[0]
 
-                print >>sys.stderr, """
+                print("""
 - If the key (%(name)s) is missing, install it first.
   For example, do the following:
     osc signkey PROJECT > file
@@ -343,13 +351,13 @@ def verify_pacs_old(pac_list):
 
 - You may use --no-verify to skip the verification (which is a risk for your system).
 """ % {'name': missing_key,
-       'dir': os.path.expanduser('~')}
+       'dir': os.path.expanduser('~')}, file=sys.stderr)
 
             else:
-                print >>sys.stderr, """
+                print("""
 - If the signature is wrong, you may try deleting the package manually
   and re-run this program, so it is fetched again.
-"""
+""", file=sys.stderr)
 
             sys.exit(1)
 
@@ -370,9 +378,9 @@ def verify_pacs(bi):
     if not bi.keys:
         raise oscerr.APIError("can't verify packages due to lack of GPG keys")
 
-    print "using keys from", ', '.join(bi.prjkeys)
+    print("using keys from", ', '.join(bi.prjkeys))
 
-    import checker
+    from . import checker
     failed = False
     checker = checker.Checker()
     try:
@@ -380,9 +388,9 @@ def verify_pacs(bi):
         for pkg in pac_list:
             try:
                 checker.check(pkg)
-            except Exception, e:
+            except Exception as e:
                 failed = True
-                print pkg, ':', e
+                print(pkg, ':', e)
     except:
         checker.cleanup()
         raise

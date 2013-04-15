@@ -1,7 +1,10 @@
+
+from __future__ import print_function
+
 import os.path
 import re
 import tarfile
-import packagequery
+from . import packagequery
 import subprocess
 
 class ArchError(packagequery.PackageError):
@@ -152,13 +155,13 @@ if __name__ == '__main__':
     import sys
     try:
         archq = ArchQuery.query(sys.argv[1])
-    except ArchError, e:
-        print e.msg
+    except ArchError as e:
+        print(e.msg)
         sys.exit(2)
-    print archq.name(), archq.version(), archq.release(), archq.arch()
-    print archq.canonname()
-    print archq.description()
-    print '##########'
-    print '\n'.join(archq.provides())
-    print '##########'
-    print '\n'.join(archq.requires())
+    print(archq.name(), archq.version(), archq.release(), archq.arch())
+    print(archq.canonname())
+    print(archq.description())
+    print('##########')
+    print('\n'.join(archq.provides()))
+    print('##########')
+    print('\n'.join(archq.requires()))

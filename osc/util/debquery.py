@@ -1,8 +1,11 @@
-import ar
+
+from __future__ import print_function
+
+from . import ar
 import os.path
 import re
 import tarfile
-import packagequery
+from . import packagequery
 
 class DebError(packagequery.PackageError):
     pass
@@ -167,12 +170,12 @@ if __name__ == '__main__':
     import sys
     try:
         debq = DebQuery.query(sys.argv[1])
-    except DebError, e:
-        print e.msg
+    except DebError as e:
+        print(e.msg)
         sys.exit(2)
-    print debq.name(), debq.version(), debq.release(), debq.arch()
-    print debq.description()
-    print '##########'
-    print '\n'.join(debq.provides())
-    print '##########'
-    print '\n'.join(debq.requires())
+    print(debq.name(), debq.version(), debq.release(), debq.arch())
+    print(debq.description())
+    print('##########')
+    print('\n'.join(debq.provides()))
+    print('##########')
+    print('\n'.join(debq.requires()))

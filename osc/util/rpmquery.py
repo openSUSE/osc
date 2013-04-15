@@ -1,7 +1,10 @@
+
+from __future__ import print_function
+
 import os
 import re
 import struct
-import packagequery
+from . import packagequery
 
 class RpmError(packagequery.PackageError):
     pass
@@ -312,13 +315,13 @@ if __name__ == '__main__':
     import sys
     try:
         rpmq = RpmQuery.query(sys.argv[1])
-    except RpmError, e:
-        print e.msg
+    except RpmError as e:
+        print(e.msg)
         sys.exit(2)
-    print rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url()
-    print rpmq.summary()
-    print rpmq.description()
-    print '##########'
-    print '\n'.join(rpmq.provides())
-    print '##########'
-    print '\n'.join(rpmq.requires())
+    print(rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url())
+    print(rpmq.summary())
+    print(rpmq.description())
+    print('##########')
+    print('\n'.join(rpmq.provides()))
+    print('##########')
+    print('\n'.join(rpmq.requires()))

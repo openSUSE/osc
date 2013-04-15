@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 from tempfile import mkdtemp
 import os
 from shutil import rmtree
@@ -28,8 +30,8 @@ class Checker:
         for key in keys:
             try:
                 self.readkey(key)
-            except KeyError, e:
-                print e
+            except KeyError as e:
+                print(e)
 
         if not len(self.imported):
             raise KeyError('', "no key imported")
@@ -108,7 +110,7 @@ if __name__ == "__main__":
         checker.readkeys(keyfiles)
         for pkg in pkgs:
             checker.check(pkg)
-    except Exception, e:
+    except Exception as e:
         checker.cleanup()
         raise e
 

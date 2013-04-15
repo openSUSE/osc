@@ -3,27 +3,35 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-
+from __future__ import print_function
 
 import os
 import re
 import sys
 import shutil
-import urlparse
+
+try:
+    from urllib.parse import urlsplit
+    from urllib.request import URLError, HTTPError
+except ImportError:
+    #python 2.x
+    from urlparse import urlsplit
+    from urllib2 import URLError, HTTPError
+
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
-from osc.core import get_binarylist, get_binary_file, run_external
+from osc.core import get_binarylist, get_binary_file, run_external, raw_input
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
-import oscerr
+from . import oscerr
 import subprocess
 try:
     from xml.etree import cElementTree as ET
 except ImportError:
     import cElementTree as ET
 
-from conf import config, cookiejar
+from .conf import config, cookiejar
 
 change_personality = {
             'i686':  'linux32',
@@ -81,8 +89,8 @@ class Buildinfo:
         try:
             tree = ET.parse(filename)
         except:
-            print >>sys.stderr, 'could not parse the buildinfo:'
-            print >>sys.stderr, open(filename).read()
+            print('could not parse the buildinfo:', file=sys.stderr)
+            print(open(filename).read(), file=sys.stderr)
             sys.exit(1)
 
         root = tree.getroot()
@@ -96,7 +104,7 @@ class Buildinfo:
             sys.exit(1)
 
         if not (apiurl.startswith('https://') or apiurl.startswith('http://')):
-            raise urllib2.URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
+            raise URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
 
         self.buildtype = buildtype
         self.apiurl = apiurl
@@ -266,7 +274,7 @@ def get_built_files(pacdir, pactype):
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = []
     else:
-        print >>sys.stderr, 'WARNING: Unknown package type \'%s\'.' % pactype
+        print('WARNING: Unknown package type \'%s\'.' % pactype, file=sys.stderr)
         b_built = []
         s_built = []
     return s_built, b_built
@@ -298,7 +306,7 @@ def get_repo(path):
 
 def get_prefer_pkgs(dirs, wanted_arch, type):
     import glob
-    from util import repodata, packagequery, cpio
+    from .util import repodata, packagequery, cpio
     paths = []
     repositories = []
 
@@ -331,7 +339,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
         packageQueries.add(packageQuery)
 
     prefer_pkgs = dict((name, packageQuery.path())
-                       for name, packageQuery in packageQueries.iteritems())
+                       for name, packageQuery in packageQueries.items())
 
     depfile = create_deps(packageQueries.values())
     cpio = cpio.CpioWrite()
@@ -362,14 +370,14 @@ def check_trusted_projects(apiurl, projects):
     tlen = len(trusted)
     for prj in projects:
         if not prj in trusted:
-            print "\nThe build root needs packages from project '%s'." % prj
-            print "Note that malicious packages can compromise the build result or even your system."
+            print("\nThe build root needs packages from project '%s'." % prj)
+            print("Note that malicious packages can compromise the build result or even your system.")
             r = raw_input(trustprompt % { 'project':prj })
             if r == '1':
-                print "adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj,apiurl)
+                print("adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj,apiurl))
                 trusted.append(prj)
             elif r != '2':
-                print "Well, good good bye then :-)"
+                print("Well, good good bye then :-)")
                 raise oscerr.UserAbort()
 
     if tlen != len(trusted):
@@ -456,7 +464,7 @@ def main(apiurl, opts, argv):
         elif buildidre.match(build_uid):
             buildargs.append('--uid=%s' % build_uid)
         else:
-            print >>sys.stderr, 'Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"'
+            print('Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"', file=sys.stderr)
             return 1
     if opts.vm_type:
         vm_type = opts.vm_type
@@ -478,8 +486,8 @@ def main(apiurl, opts, argv):
         if val:
             if var.startswith('OSC_'): var = var[4:]
             var = var.lower().replace('_', '-')
-            if config.has_key(var):
-                print 'Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val)
+            if var in config:
+                print('Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val))
             config[var] = val
 
     pacname = pac
@@ -491,7 +499,7 @@ def main(apiurl, opts, argv):
                 opts.local_package = True
         if opts.local_package:
             pacname = os.path.splitext(build_descr)[0]
-    apihost = urlparse.urlsplit(apiurl)[1]
+    apihost = urlsplit(apiurl)[1]
     if not build_root:
         try:
            build_root = config['build-root'] % {'repo': repo, 'arch': arch,
@@ -531,7 +539,7 @@ def main(apiurl, opts, argv):
         build_descr_data = s + build_descr_data
 
     if opts.prefer_pkgs:
-        print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
+        print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
         prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type)
         cpio.add(os.path.basename(build_descr), build_descr_data)
         build_descr_data = cpio.get()
@@ -575,18 +583,18 @@ def main(apiurl, opts, argv):
         if opts.noinit:
             if not os.path.isfile(bi_filename):
                 raise oscerr.WrongOptions('--noinit is not possible, no local buildinfo file')
-            print 'Use local \'%s\' file as buildinfo' % bi_filename
+            print('Use local \'%s\' file as buildinfo' % bi_filename)
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--noinit is not possible, no local buildconfig file')
-            print 'Use local \'%s\' file as buildconfig' % bc_filename
+            print('Use local \'%s\' file as buildconfig' % bc_filename)
         elif opts.offline:
             if not os.path.isfile(bi_filename):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildinfo file')
-            print 'Use local \'%s\' file as buildinfo' % bi_filename
+            print('Use local \'%s\' file as buildinfo' % bi_filename)
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
-            print 'Getting buildinfo from server and store to %s' % bi_filename
+            print('Getting buildinfo from server and store to %s' % bi_filename)
             bi_text = ''.join(get_buildinfo(apiurl,
                                             prj,
                                             pac,
@@ -599,13 +607,13 @@ def main(apiurl, opts, argv):
             # maybe we should check for errors before saving the file
             bi_file.write(bi_text)
             bi_file.flush()
-            print 'Getting buildconfig from server and store to %s' % bc_filename
+            print('Getting buildconfig from server and store to %s' % bc_filename)
             bc = get_buildconfig(apiurl, prj, repo)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
             bc_file.write(bc)
             bc_file.flush()
-    except urllib2.HTTPError, e:
+    except HTTPError as e:
         if e.code == 404:
             # check what caused the 404
             if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
@@ -620,18 +628,18 @@ def main(apiurl, opts, argv):
                     pass
 
                 if pkg_meta_e:
-                    print >>sys.stderr, 'ERROR: Either wrong repo/arch as parameter or a parse error of .spec/.dsc/.kiwi file due to syntax error'
+                    print('ERROR: Either wrong repo/arch as parameter or a parse error of .spec/.dsc/.kiwi file due to syntax error', file=sys.stderr)
                 else:
-                    print >>sys.stderr, 'The package \'%s\' does not exists - please ' \
-                                        'rerun with \'--local-package\'' % pac
+                    print('The package \'%s\' does not exists - please ' \
+                                        'rerun with \'--local-package\'' % pac, file=sys.stderr)
             else:
-                print >>sys.stderr, 'The project \'%s\' does not exists - please ' \
-                                    'rerun with \'--alternative-project <alternative_project>\'' % prj
+                print('The project \'%s\' does not exists - please ' \
+                                    'rerun with \'--alternative-project <alternative_project>\'' % prj, file=sys.stderr)
             sys.exit(1)
         else:
             raise
 
-    bi = Buildinfo(bi_filename, apiurl, build_type, prefer_pkgs.keys())
+    bi = Buildinfo(bi_filename, apiurl, build_type, list(prefer_pkgs.keys()))
 
     if bi.debuginfo and not (opts.disable_debuginfo or '--debug' in buildargs):
         buildargs.append('--debug')
@@ -647,20 +655,20 @@ def main(apiurl, opts, argv):
     # arch we are supposed to build for
     if bi.hostarch != None:
         if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
-            print >>sys.stderr, 'Error: hostarch \'%s\' is required.' % (bi.hostarch)
+            print('Error: hostarch \'%s\' is required.' % (bi.hostarch), file=sys.stderr)
             return 1
     elif hostarch != bi.buildarch:
         if not bi.buildarch in can_also_build.get(hostarch, []):
             # OBSOLETE: qemu_can_build should not be needed anymore since OBS 2.3
             if vm_type != "emulator" and not bi.buildarch in qemu_can_build:
-                print >>sys.stderr, 'Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch)
+                print('Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch), file=sys.stderr)
                 return 1
-            print >>sys.stderr, 'WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU.' % (hostarch, bi.buildarch)
+            print('WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU.' % (hostarch, bi.buildarch), file=sys.stderr)
 
     rpmlist_prefers = []
     if prefer_pkgs:
-        print 'Evaluating preferred packages'
-        for name, path in prefer_pkgs.iteritems():
+        print('Evaluating preferred packages')
+        for name, path in prefer_pkgs.tems():
             if bi.has_dep(name):
                 # We remove a preferred package from the buildinfo, so that the
                 # fetcher doesn't take care about them.
@@ -669,15 +677,15 @@ def main(apiurl, opts, argv):
                 # not verified.
                 bi.remove_dep(name)
                 rpmlist_prefers.append((name, path))
-                print ' - %s (%s)' % (name, path)
+                print(' - %s (%s)' % (name, path))
 
-    print 'Updating cache of required packages'
+    print('Updating cache of required packages')
 
     urllist = []
     if not opts.download_api_only:
         # transform 'url1, url2, url3' form into a list
         if 'urllist' in config:
-            if type(config['urllist']) == str:
+            if isinstance(config['urllist'], str):
                 re_clist = re.compile('[, ]+')
                 urllist = [ i.strip() for i in re_clist.split(config['urllist'].strip()) ]
             else:
@@ -726,10 +734,10 @@ def main(apiurl, opts, argv):
             destdir = os.path.join(cache_dir, data[0], data[2], data[3])
             old_pkg_dir = None
             try:
-                print "Downloading previous build from %s ..." % '/'.join(data)
+                print("Downloading previous build from %s ..." % '/'.join(data))
                 binaries = get_binarylist(apiurl, data[0], data[2], data[3], package=data[1], verbose=True)
-            except Exception, e:
-                print "Error: failed to get binaries: %s" % str(e)
+            except Exception as e:
+                print("Error: failed to get binaries: %s" % str(e))
                 binaries = []
 
             if binaries:
@@ -798,15 +806,15 @@ def main(apiurl, opts, argv):
             if not os.path.exists(os.path.join(pradir)):
                 os.makedirs(os.path.join(pradir))
             if not os.path.exists(tffn):
-                print "Using package: "+sffn
+                print("Using package: "+sffn)
                 if opts.linksources:
                     os.link(sffn, tffn)
                 else:
                     os.symlink(sffn, tffn)
             if prefer_pkgs:
-                for name, path in prefer_pkgs.iteritems():
+                for name, path in prefer_pkgs.items():
                    if name == filename:
-                       print "Using prefered package: " + path + "/" + filename
+                       print("Using prefered package: " + path + "/" + filename)
                        os.unlink(tffn)
                        if opts.linksources:
                            os.link(path + "/" + filename, tffn)
@@ -814,22 +822,22 @@ def main(apiurl, opts, argv):
                            os.symlink(path + "/" + filename, tffn)
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
-        print 'Skipping verification of package signatures due to secure VM build'
+        print('Skipping verification of package signatures due to secure VM build')
     elif bi.pacsuffix == 'rpm':
         if opts.no_verify:
-            print 'Skipping verification of package signatures'
+            print('Skipping verification of package signatures')
         else:
-            print 'Verifying integrity of cached packages'
+            print('Verifying integrity of cached packages')
             verify_pacs(bi)
     elif bi.pacsuffix == 'deb':
         if opts.no_verify or opts.noinit:
-            print 'Skipping verification of package signatures'
+            print('Skipping verification of package signatures')
         else:
-            print 'WARNING: deb packages get not verified, they can compromise your system !'
+            print('WARNING: deb packages get not verified, they can compromise your system !')
     else:
-        print 'WARNING: unknown packages get not verified, they can compromise your system !'
+        print('WARNING: unknown packages get not verified, they can compromise your system !')
 
-    print 'Writing build configuration'
+    print('Writing build configuration')
 
     rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
     rpmlist += [ '%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers ]
@@ -884,10 +892,10 @@ def main(apiurl, opts, argv):
 
 
     if opts.preload:
-        print "Preload done for selected repo/arch."
+        print("Preload done for selected repo/arch.")
         sys.exit(0)
 
-    print 'Running build'
+    print('Running build')
     cmd = [ config['build-cmd'], '--root='+build_root,
                     '--rpmlist='+rpmlist_filename,
                     '--dist='+bc_filename,
@@ -911,11 +919,11 @@ def main(apiurl, opts, argv):
     try:
         rc = run_external(cmd[0], *cmd[1:])
         if rc:
-            print
-            print 'The buildroot was:', build_root
+            print()
+            print('The buildroot was:', build_root)
             sys.exit(rc)
-    except KeyboardInterrupt, i:
-        print "keyboard interrupt, killing build ..."
+    except KeyboardInterrupt as i:
+        print("keyboard interrupt, killing build ...")
         cmd.append('--kill')
         run_external(cmd[0], *cmd[1:])
         raise i
@@ -928,10 +936,10 @@ def main(apiurl, opts, argv):
     if os.path.exists(pacdir):
         (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
 
-        print
-        if s_built: print s_built
-        print
-        print b_built
+        print()
+        if s_built: print(s_built)
+        print()
+        print(b_built)
 
         if opts.keep_pkgs:
             for i in b_built.splitlines() + s_built.splitlines():

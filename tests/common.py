@@ -1,13 +1,47 @@
 import unittest
-import urllib2
 import osc.core
-import StringIO
 import shutil
 import tempfile
 import os
 import sys
 from xml.etree import cElementTree as ET
 EXPECTED_REQUESTS = []
+
+if sys.version_info[0:2] in ((2, 6), (2, 7)):
+    bytes = lambda x, *args: x
+
+try:
+    #python 2.x
+    from cStringIO import StringIO
+    from urllib2 import HTTPHandler, addinfourl, build_opener
+    from urlparse import urlparse, parse_qs
+except ImportError:
+    from io import StringIO
+    from urllib.request import HTTPHandler, addinfourl, build_opener
+    from urllib.parse import urlparse, parse_qs
+
+def urlcompare(url, *args):
+    """compare all components of url except query string - it is converted to
+    dict, therefor different ordering does not makes url's different, as well
+    as quoting of a query string"""
+
+    components = urlparse(url)
+    query_args = parse_qs(components.query)
+    components = components._replace(query=None)
+
+    if not args:
+        return False
+
+    for url in args:
+        components2 = urlparse(url)
+        query_args2 = parse_qs(components2.query)
+        components2 = components2._replace(query=None)
+
+        if  components != components2 or \
+            query_args != query_args2:
+            return False
+
+    return True
 
 class RequestWrongOrder(Exception):
     """raised if an unexpected request is issued to urllib2"""
@@ -31,15 +65,15 @@ class RequestDataMismatch(Exception):
     def __str__(self):
         return '%s, %s, %s' % (self.url, self.got, self.exp)
 
-class MyHTTPHandler(urllib2.HTTPHandler):
+class MyHTTPHandler(HTTPHandler):
     def __init__(self, exp_requests, fixtures_dir):
-        urllib2.HTTPHandler.__init__(self)
+        HTTPHandler.__init__(self)
         self.__exp_requests = exp_requests
         self.__fixtures_dir = fixtures_dir
 
     def http_open(self, req):
         r = self.__exp_requests.pop(0)
-        if req.get_full_url() != r[1] or req.get_method() != r[0]:
+        if not urlcompare(req.get_full_url(), r[1]) or req.get_method() != r[0]:
             raise RequestWrongOrder(req.get_full_url(), r[1], req.get_method(), r[0])
         if req.get_method() in ('GET', 'DELETE'):
             return self.__mock_GET(r[1], **r[2])
@@ -51,28 +85,28 @@ class MyHTTPHandler(urllib2.HTTPHandler):
 
     def __mock_PUT(self, req, **kwargs):
         exp = kwargs.get('exp', None)
-        if exp is not None and kwargs.has_key('expfile'):
+        if exp is not None and 'expfile' in kwargs:
             raise RuntimeError('either specify exp or expfile')
-        elif kwargs.has_key('expfile'):
+        elif 'expfile' in kwargs:
             exp = open(os.path.join(self.__fixtures_dir, kwargs['expfile']), 'r').read()
         elif exp is None:
             raise RuntimeError('exp or expfile required')
         if exp is not None:
-            if req.get_data() != exp:
+            if req.get_data() != bytes(exp, "utf-8"):
                 raise RequestDataMismatch(req.get_full_url(), repr(req.get_data()), repr(exp))
         return self.__get_response(req.get_full_url(), **kwargs)
 
     def __get_response(self, url, **kwargs):
         f = None
-        if kwargs.has_key('exception'):
+        if 'exception' in kwargs:
             raise kwargs['exception']
-        if not kwargs.has_key('text') and kwargs.has_key('file'):
-            f = StringIO.StringIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'r').read())
-        elif kwargs.has_key('text') and not kwargs.has_key('file'):
-            f = StringIO.StringIO(kwargs['text'])
+        if 'text' not in kwargs and 'file' in kwargs:
+            f = StringIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'r').read())
+        elif 'text' in kwargs and 'file' not in kwargs:
+            f = StringIO(kwargs['text'])
         else:
             raise RuntimeError('either specify text or file')
-        resp = urllib2.addinfourl(f, {}, url)
+        resp = addinfourl(f, {}, url)
         resp.code = kwargs.get('code', 200)
         resp.msg = ''
         return resp
@@ -116,9 +150,9 @@ class OscTestCase(unittest.TestCase):
             shutil.copytree(os.path.join(self._get_fixtures_dir(), 'osctest'), os.path.join(self.tmpdir, 'osctest'))
         global EXPECTED_REQUESTS
         EXPECTED_REQUESTS = []
-        osc.core.conf._build_opener = lambda u: urllib2.build_opener(MyHTTPHandler(EXPECTED_REQUESTS, self._get_fixtures_dir()))
+        osc.core.conf._build_opener = lambda u: build_opener(MyHTTPHandler(EXPECTED_REQUESTS, self._get_fixtures_dir()))
         self.stdout = sys.stdout
-        sys.stdout = StringIO.StringIO()
+        sys.stdout = StringIO()
 
     def tearDown(self):
         self.assertTrue(len(EXPECTED_REQUESTS) == 0)

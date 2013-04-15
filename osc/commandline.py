@@ -3,18 +3,27 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
+from __future__ import print_function
 
-import cmdln
-import conf
-import oscerr
+from . import cmdln
+from . import conf
+from . import oscerr
 import sys
 import time
-import urlparse
+try:
+    from urllib.parse import urlsplit
+    from urllib.error import HTTPError
+    ET_ENCODING = "unicode"
+except ImportError:
+    #python 2.x
+    from urlparse import urlsplit
+    from urllib2 import HTTPError
+    ET_ENCODING = "utf-8"
 
 from optparse import SUPPRESS_HELP
 
-from core import *
-from util import safewriter
+from .core import *
+from .util import safewriter
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -120,9 +129,9 @@ class Osc(cmdln.Cmdln):
                             override_no_keyring = self.options.no_keyring,
                             override_no_gnome_keyring = self.options.no_gnome_keyring,
                             override_verbose = self.options.verbose)
-        except oscerr.NoConfigfile, e:
-            print >>sys.stderr, e.msg
-            print >>sys.stderr, 'Creating osc configuration file %s ...' % e.file
+        except oscerr.NoConfigfile as e:
+            print(e.msg, file=sys.stderr)
+            print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
             import getpass
             config = {}
             config['user'] = raw_input('Username: ')
@@ -135,10 +144,10 @@ class Osc(cmdln.Cmdln):
                 config['apiurl'] = self.options.apiurl
 
             conf.write_initial_config(e.file, config)
-            print >>sys.stderr, 'done'
+            print('done', file=sys.stderr)
             if try_again: self.postoptparse(try_again = False)
-        except oscerr.ConfigMissingApiurl, e:
-            print >>sys.stderr, e.msg
+        except oscerr.ConfigMissingApiurl as e:
+            print(e.msg, file=sys.stderr)
             import getpass
             user = raw_input('Username: ')
             passwd = getpass.getpass()
@@ -148,7 +157,7 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            from meter import TextMeter
+            from .meter import TextMeter
             self.download_progress = TextMeter(hide_finished=True)
 
 
@@ -162,11 +171,11 @@ class Osc(cmdln.Cmdln):
     def get_api_url(self):
         try:
             localdir = os.getcwd()
-        except Exception, e:
+        except Exception as e:
             ## check for Stale NFS file handle: '.'
             try: os.stat('.')
-            except Exception, ee: e = ee
-            print >>sys.stderr, "os.getcwd() failed: ", e
+            except Exception as ee: e = ee
+            print("os.getcwd() failed: ", e, file=sys.stderr)
             sys.exit(1)
 
         if (is_package_dir(localdir) or is_project_dir(localdir)) and not self.options.apiurl:
@@ -206,11 +215,11 @@ class Osc(cmdln.Cmdln):
 
         if not package:
             Project.init_project(apiurl, os.curdir, project, conf.config['do_package_tracking'])
-            print 'Initializing %s (Project: %s)' % (os.curdir, project)
+            print('Initializing %s (Project: %s)' % (os.curdir, project))
         else:
             Package.init_package(apiurl, project, package, os.curdir)
             store_write_string(os.curdir, '_files', show_files_meta(apiurl, project, package) + '\n')
-            print 'Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package)
+            print('Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package))
 
     @cmdln.alias('ls')
     @cmdln.alias('ll')
@@ -360,30 +369,30 @@ class Osc(cmdln.Cmdln):
             for result in results:
                 indent = ''
                 if len(results) > 1:
-                    print '%s/%s' % (result[0].name, result[0].arch)
+                    print('%s/%s' % (result[0].name, result[0].arch))
                     indent = ' '
 
                 if opts.verbose:
                     for f in result[1]:
-                        print "%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name)
+                        print("%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name))
                 else:
                     for f in result[1]:
-                        print indent+f
+                        print(indent+f)
 
         # list sources
         elif not opts.binaries:
             if not args:
                 for prj in meta_get_project_list(apiurl, opts.deleted):
-                    print prj
+                    print(prj)
 
             elif len(args) == 1:
                 if opts.verbose:
                     if self.options.verbose:
-                        print >>sys.stderr, 'Sorry, the --verbose option is not implemented for projects.'
+                        print('Sorry, the --verbose option is not implemented for projects.', file=sys.stderr)
                 if opts.expand:
                     raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
                 for pkg in meta_get_packagelist(apiurl, project, opts.deleted):
-                    print pkg
+                    print(pkg)
 
             elif len(args) == 2 or len(args) == 3:
                 link_seen = False
@@ -403,13 +412,13 @@ class Osc(cmdln.Cmdln):
                             for i in l if not fname or fname == i.name ]
                         if len(out) > 0:
                             print_not_found = False
-                            print '\n'.join(out)
+                            print('\n'.join(out))
                     elif fname:
                         if fname in l:
-                            print fname
+                            print(fname)
                             print_not_found = False
                     else:
-                        print '\n'.join(l)
+                        print('\n'.join(l))
                     if opts.expand or opts.unexpand or not link_seen: break
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
@@ -418,12 +427,12 @@ class Osc(cmdln.Cmdln):
                         raise oscerr.LinkExpandError(project, package, li.error)
                     project, package, rev = li.project, li.package, li.rev
                     if rev:
-                        print '# -> %s %s (%s)' % (project, package, rev)
+                        print('# -> %s %s (%s)' % (project, package, rev))
                     else:
-                        print '# -> %s %s (latest)' % (project, package)
+                        print('# -> %s %s (latest)' % (project, package))
                     opts.expand = True
                 if fname and print_not_found:
-                    print 'file \'%s\' does not exist' % fname
+                    print('file \'%s\' does not exist' % fname)
 
 
     @cmdln.option('-f', '--force', action='store_true',
@@ -470,11 +479,11 @@ class Osc(cmdln.Cmdln):
         if patchinfo:
             try:
                 filelist = meta_get_filelist(apiurl, project, patchinfo)
-            except urllib2.HTTPError:
+            except HTTPError:
                 pass
 
         if opts.force or not filelist or not '_patchinfo' in filelist:
-            print "Creating new patchinfo..."
+            print("Creating new patchinfo...")
             query='cmd=createpatchinfo&name=' + patchinfo
             if opts.force:
                 query += "&force=1"
@@ -484,7 +493,7 @@ class Osc(cmdln.Cmdln):
                 if p.startswith("_patchinfo") or p.startswith("patchinfo"):
                     patchinfo = p
         else:
-            print "Update existing _patchinfo file..."
+            print("Update existing _patchinfo file...")
             query='cmd=updatepatchinfo'
             url = makeurl(apiurl, ['source', project, patchinfo], query=query)
             f = http_POST(url)
@@ -527,11 +536,11 @@ class Osc(cmdln.Cmdln):
 
         devel = show_develproject(apiurl, project, package, opts.raw)
         if devel is None:
-            print '\'%s/%s\' has no devel project' % (project, package)
+            print('\'%s/%s\' has no devel project' % (project, package))
         elif opts.raw:
             ET.dump(devel)
         else:
-            print devel
+            print(devel)
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -882,12 +891,12 @@ class Osc(cmdln.Cmdln):
         # remove this block later again
         oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
         if args and args[0] in oldcmds:
-            print >>sys.stderr, "************************************************************************"
-            print >>sys.stderr, "* WARNING: It looks that you are using this command with a             *"
-            print >>sys.stderr, "*          deprecated syntax.                                          *"
-            print >>sys.stderr, "*          Please run \"osc sr --help\" and \"osc rq --help\"              *"
-            print >>sys.stderr, "*          to see the new syntax.                                      *"
-            print >>sys.stderr, "************************************************************************"
+            print("************************************************************************", file=sys.stderr)
+            print("* WARNING: It looks that you are using this command with a             *", file=sys.stderr)
+            print("*          deprecated syntax.                                          *", file=sys.stderr)
+            print("*          Please run \"osc sr --help\" and \"osc rq --help\"              *", file=sys.stderr)
+            print("*          to see the new syntax.                                      *", file=sys.stderr)
+            print("************************************************************************", file=sys.stderr)
             if args[0] == 'create':
                 args.pop(0)
             else:
@@ -924,11 +933,11 @@ class Osc(cmdln.Cmdln):
                 linkinfo = root.find('linkinfo')
                 if linkinfo == None:
                     if len(args) < 1:
-                        print "Package ", p, " is not a source link and no target specified."
+                        print("Package ", p, " is not a source link and no target specified.")
                         sys.exit("This is currently not supported.")
                 else:
                     if linkinfo.get('error'):
-                        print "Package ", p, " is a broken source link."
+                        print("Package ", p, " is a broken source link.")
                         sys.exit("Please fix this first")
                     t = linkinfo.get('project')
                     if t:
@@ -937,21 +946,21 @@ class Osc(cmdln.Cmdln):
                         if len(root.findall('entry')) > 1: # This is not really correct, but should work mostly
                                                            # Real fix is to ask the api if sources are modificated
                                                            # but there is no such call yet.
-                            print "Submitting package ", p
+                            print("Submitting package ", p)
                         else:
-                            print "  Skipping not modified package ", p
+                            print("  Skipping not modified package ", p)
                             next
                     else:
-                        print "Skipping package ", p,  " since it is a source link pointing inside the project."
+                        print("Skipping package ", p,  " since it is a source link pointing inside the project.")
                         next
 
                 serviceinfo = root.find('serviceinfo')
                 if serviceinfo != None:
                     if serviceinfo.get('code') != "succeeded":
-                        print "Package ", p, " has a ", serviceinfo.get('code'), " source service"
+                        print("Package ", p, " has a ", serviceinfo.get('code'), " source service")
                         sys.exit("Please fix this first")
                     if serviceinfo.get('error'):
-                        print "Package ", p, " contains a failed source service."
+                        print("Package ", p, " contains a failed source service.")
                         sys.exit("Please fix this first")
 
                 # submitting this package
@@ -975,9 +984,9 @@ class Osc(cmdln.Cmdln):
                 root = ET.parse(f).getroot()
                 sr_ids.append(root.get('id'))
 
-            print "Request created: ",
+            print("Request created: ", end=' ')
             for i in sr_ids:
-                print i,
+                print(i, end=' ')
 
             # was this project created by clone request ?
             u = makeurl(apiurl, ['source', project, '_attribute', 'OBS:RequestCloned'])
@@ -986,8 +995,8 @@ class Osc(cmdln.Cmdln):
             value = root.findtext('attribute/value')
             if value:
                 repl = ''
-                print '\n\nThere are already following submit request: %s.' % \
-                      ', '.join([str(i) for i in myreqs ])
+                print('\n\nThere are already following submit request: %s.' % \
+                      ', '.join([str(i) for i in myreqs ]))
                 repl = raw_input('\nSupersede the old requests? (y/n) ')
                 if repl.lower() == 'y':
                    myreqs += [ value ]
@@ -1023,7 +1032,7 @@ class Osc(cmdln.Cmdln):
 
             modified = [i for i in p.filenamelist if not p.status(i) in (' ', '?', 'S')]
             if len(modified) > 0:
-                print 'Your working copy has local modifications.'
+                print('Your working copy has local modifications.')
                 repl = raw_input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
                     raise oscerr.UserAbort()
@@ -1045,30 +1054,30 @@ class Osc(cmdln.Cmdln):
         serviceinfo = root.find('serviceinfo')
         if serviceinfo != None:
             if serviceinfo.get('code') != "succeeded":
-                print "Package ", src_package, " has a ", serviceinfo.get('code'), " source service"
+                print("Package ", src_package, " has a ", serviceinfo.get('code'), " source service")
                 sys.exit("Please fix this first")
             if serviceinfo.get('error'):
-                print "Package ", src_package, " contains a failed source service."
+                print("Package ", src_package, " contains a failed source service.")
                 sys.exit("Please fix this first")
 
         if not opts.nodevelproject:
             devloc = None
             try:
                 devloc = show_develproject(apiurl, dst_project, dst_package)
-            except urllib2.HTTPError:
-                print >>sys.stderr, """\
+            except HTTPError:
+                print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
-                    % (dst_project, dst_package)
+                    % (dst_project, dst_package), file=sys.stderr)
                 pass
 
             if devloc and \
                dst_project != devloc and \
                src_project != devloc:
-                print """\
+                print("""\
 A different project, %s, is defined as the place where development
 of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
-                % (devloc, dst_package)
+                % (devloc, dst_package))
                 if not opts.diff:
                     sys.exit(1)
 
@@ -1135,7 +1144,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             change_request_state(apiurl, opts.supersede, 'superseded',
                                  opts.message or '', result)
 
-        print 'created request id', result
+        print('created request id', result)
 
     def _actionparser(self, opt_str, value, parser):
         value = []
@@ -1181,10 +1190,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     root = ET.parse(f).getroot()
                     linkinfo = root.find('linkinfo')
                     if linkinfo == None:
-                        print "Package ", p, " is not a source link."
+                        print("Package ", p, " is not a source link.")
                         sys.exit("This is currently not supported.")
                     if linkinfo.get('error'):
-                        print "Package ", p, " is a broken source link."
+                        print("Package ", p, " is a broken source link.")
                         sys.exit("Please fix this first")
                     t = linkinfo.get('project')
                     if t:
@@ -1199,17 +1208,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             pac.append(p)
                             rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" %(t, p, project, p,rdiff))
                         else:
-                            print "Skipping package ", p,  " since it has no difference with the target package."
+                            print("Skipping package ", p,  " since it has no difference with the target package.")
                     else:
-                        print "Skipping package ", p,  " since it is a source link pointing inside the project."
+                        print("Skipping package ", p,  " since it is a source link pointing inside the project.")
             if opts.diff:
-                print ''.join(rdiffmsg)
+                print(''.join(rdiffmsg))
                 sys.exit(0)
 
                 if not opts.yes:
                     if pi:
-                        print "Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects)
-                    print "\nEverything fine? Can we create the requests ? [y/n]"
+                        print("Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects))
+                    print("\nEverything fine? Can we create the requests ? [y/n]")
                     if sys.stdin.read(1) != "y":
                         sys.exit("Aborted...")
 
@@ -1248,7 +1257,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
             if len(modified) > 0:
-                print 'Your working copy has local modifications.'
+                print('Your working copy has local modifications.')
                 repl = raw_input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
                     sys.exit(1)
@@ -1267,20 +1276,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             devloc = None
             try:
                 devloc = show_develproject(apiurl, dst_project, dst_package)
-            except urllib2.HTTPError:
-                print >>sys.stderr, """\
+            except HTTPError:
+                print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
-                    % (dst_project, dst_package)
+                    % (dst_project, dst_package), file=sys.stderr)
                 pass
 
             if devloc and \
                dst_project != devloc and \
                src_project != devloc:
-                print """\
+                print("""\
 A different project, %s, is defined as the place where development
 of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
-                % (devloc, dst_package)
+                % (devloc, dst_package))
                 if not opts.diff:
                     sys.exit(1)
 
@@ -1301,11 +1310,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             myreqs = [ i for i in reqs if i.state.who == user ]
             repl = ''
             if len(myreqs) > 0:
-                print 'You already created the following submit request: %s.' % \
-                      ', '.join([i.reqid for i in myreqs ])
+                print('You already created the following submit request: %s.' % \
+                      ', '.join([i.reqid for i in myreqs ]))
                 repl = raw_input('Supersede the old requests? (y/n/c) ')
                 if repl.lower() == 'c':
-                    print >>sys.stderr, 'Aborting'
+                    print('Aborting', file=sys.stderr)
                     sys.exit(1)
 
             actionxml = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
@@ -1624,7 +1633,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
               person_name=user, person_role=role)
         r.description = cgi.escape(opts.message or '')
         r.create(apiurl)
-        print r.reqid
+        print(r.reqid)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
@@ -1684,7 +1693,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
         r.description = cgi.escape(opts.message)
         r.create(self.get_api_url())
-        print r.reqid
+        print(r.reqid)
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -1732,7 +1741,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             tgt_project=project, tgt_package=package)
         r.description = cgi.escape(opts.message)
         r.create(self.get_api_url())
-        print r.reqid
+        print(r.reqid)
 
 
     @cmdln.option('-d', '--diff', action='store_true',
@@ -1937,14 +1946,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # clone all packages from a given request
         if cmd in ['clone']:
             # should we force a message?
-            print 'Cloned packages are available in project: %s' % clone_request(apiurl, reqid, opts.message)
+            print('Cloned packages are available in project: %s' % clone_request(apiurl, reqid, opts.message))
 
         # change incidents
         elif cmd == 'setincident':
             query = { 'cmd': 'setincident', 'incident': incident }
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
-            print ET.parse(r).getroot().get('code')
+            print(ET.parse(r).getroot().get('code'))
 
         # add new reviewer to existing request
         elif cmd in ['add'] and subcmd == 'review':
@@ -1961,7 +1970,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.message:
                 opts.message = edit_message()
             r = http_POST(url, data=opts.message)
-            print ET.parse(r).getroot().get('code')
+            print(ET.parse(r).getroot().get('code'))
 
         # list and approvenew
         elif cmd == 'list' or cmd == 'approvenew':
@@ -1991,7 +2000,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                ## FIXME -B not implemented!
                if opts.bugowner:
                    if (self.options.debug):
-                       print 'list: option --bugowner ignored: not impl.'
+                       print('list: option --bugowner ignored: not impl.')
 
                if subcmd == 'review':
                        # FIXME: do the review list for the user and for all groups he belong to
@@ -2009,9 +2018,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not results:
                 try:
                     show_project_meta(apiurl, project)
-                    print 'No results for {0}'.format(project)
+                    print('No results for {0}'.format(project))
                 except:
-                    print 'Project {0} does not exist'.format(project)
+                    print('Project {0} does not exist'.format(project))
                 return
 
             results.sort(reverse=True)
@@ -2038,36 +2047,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         ignore_reviews = subcmd != 'review'
                         request_interactive_review(apiurl, result, group=opts.group, ignore_reviews=ignore_reviews)
                     else:
-                        print result.list_view(), '\n'
+                        print(result.list_view(), '\n')
                 else:
                     skipped += 1
             if skipped:
-                print "There are %d requests older than %s days.\n" % (skipped, days)
+                print("There are %d requests older than %s days.\n" % (skipped, days))
 
             if cmd == 'approvenew':
-                print "\n *** Approve them all ? [y/n] ***"
+                print("\n *** Approve them all ? [y/n] ***")
                 if sys.stdin.read(1) == "y":
     
                     if not opts.message:
                         opts.message = edit_message()
                     for result in results:
-                        print result.reqid, ": ",
+                        print(result.reqid, ": ", end=' ')
                         r = change_request_state(apiurl,
                                 result.reqid, 'accepted', opts.message or '', force=opts.force)
-                        print 'Result of change request state: %s' % r
+                        print('Result of change request state: %s' % r)
                 else:
-                    print >>sys.stderr, 'Aborted...'
+                    print('Aborted...', file=sys.stderr)
                     raise oscerr.UserAbort()
 
         elif cmd == 'log':
             for l in get_request_log(apiurl, reqid):
-                print l
+                print(l)
 
         # show
         elif cmd == 'show':
             r = get_request(apiurl, reqid)
             if opts.brief:
-                print r.list_view()
+                print(r.list_view())
             elif opts.edit:
                 if not r.get_actions('submit'):
                     raise oscerr.WrongOptions('\'--edit\' not possible ' \
@@ -2077,21 +2086,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 ignore_reviews = subcmd != 'review'
                 return request_interactive_review(apiurl, r, group=opts.group, ignore_reviews=ignore_reviews)
             else:
-                print r
+                print(r)
             if opts.source_buildstatus:
                 sr_actions = r.get_actions('submit')
                 if not sr_actions:
                     raise oscerr.WrongOptions( '\'--source-buildstatus\' not possible ' \
                         '(request has no \'submit\' actions)')
                 for action in sr_actions:
-                    print 'Buildstatus for \'%s/%s\':' % (action.src_project, action.src_package)
-                    print '\n'.join(get_results(apiurl, action.src_project, action.src_package))
+                    print('Buildstatus for \'%s/%s\':' % (action.src_project, action.src_package))
+                    print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
             if opts.diff:
                 diff = ''
                 try:
                     # works since OBS 2.1
                     diff = request_diff(apiurl, reqid)
-                except urllib2.HTTPError, e:
+                except HTTPError as e:
                     # for OBS 2.0 and before
                     sr_actions = r.get_actions('submit')
                     if not sr_actions:
@@ -2123,7 +2132,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if opts.user or opts.group or opts.project or opts.package:
                         r = change_review_state(apiurl, reqid, state_map[cmd], opts.user, opts.group, opts.project,
                                 opts.package, opts.message or '', supersed=supersedid)
-                        print r
+                        print(r)
                     else:
                         rq = get_request(apiurl, reqid)
                         if rq.state.name in ['new', 'review']:
@@ -2131,18 +2140,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 try:
                                     r = change_review_state(apiurl, reqid, state_map[cmd], review.by_user, review.by_group,
                                             review.by_project, review.by_package, opts.message or '', supersed=supersedid)
-                                    print r
-                                except urllib2.HTTPError, e:
+                                    print(r)
+                                except HTTPError as e:
                                     if review.by_user:
-                                        print 'No permission on review by user %s' % review.by_user
+                                        print('No permission on review by user %s' % review.by_user)
                                     if review.by_group:
-                                        print 'No permission on review by group %s' % review.by_group
+                                        print('No permission on review by group %s' % review.by_group)
                                     if review.by_package:
-                                        print 'No permission on review by package %s / %s' % (review.by_project, review.by_package)
+                                        print('No permission on review by package %s / %s' % (review.by_project, review.by_package))
                                     elif review.by_project:
-                                        print 'No permission on review by project %s' % review.by_project
+                                        print('No permission on review by project %s' % review.by_project)
                         else:
-                            print 'Request is closed, please reopen the request first before changing any reviews.'
+                            print('Request is closed, please reopen the request first before changing any reviews.')
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
@@ -2154,7 +2163,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if rq.state.name == state_map[cmd]:
                     repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "  % (reqid, rq.state.name))
                     if repl.lower() != 'y':
-                        print >>sys.stderr, 'Aborted...'
+                        print('Aborted...', file=sys.stderr)
                         raise oscerr.UserAbort()
                                             
                 if not opts.message:
@@ -2162,7 +2171,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     opts.message = edit_message(template=tmpl)
                 r = change_request_state(apiurl,
                         reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
-                print 'Result of change request state: %s' % r
+                print('Result of change request state: %s' % r)
 
                 # check for devel instances after accepted requests
                 if cmd in ['accept']:
@@ -2175,7 +2184,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         f = http_GET(u)
                         root = ET.parse(f).getroot()
                         if root.findall('package'):
-                           print "This package instance is defined as devel are in ", 
+                           print("This package instance is defined as devel are in ", end=' ')
                            for node in root.findall('package'):
                                project = node.get('project')
                                package = node.get('name')
@@ -2189,18 +2198,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                    if link_node != None:
                                        links_to_project = link_node.get('project') or project
                                        links_to_package = link_node.get('package') or package
-                               except urllib2.HTTPError, e:
+                               except HTTPError as e:
                                    if e.code != 404:
-                                       print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
-                               except SyntaxError, e:
-                                   print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
+                                       print('Cannot get list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
+                               except SyntaxError as e:
+                                   print('Cannot parse list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
                                if links_to_project==action.tgt_project and links_to_package==action.tgt_package:
                                    # links to my request target anyway, no need to forward submit
                                    continue
 
-                               print project,
+                               print(project, end=' ')
                                if package != action.tgt_package:
-                                   print "/", package,
+                                   print("/", package, end=' ')
                                repl = raw_input('\nForward this submit to it? ([y]/n)')
                                if repl.lower() == 'y' or repl == '':
                                    (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
@@ -2208,8 +2217,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                    msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.get_creator())
                                    rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
                                                                        project, package, cgi.escape(msg))
-                                   print msg
-                                   print "New request #", rid
+                                   print(msg)
+                                   print("New request #", rid)
                                    for req in reqs:
                                        change_request_state(apiurl, req.reqid, 'superseded',
                                                             'superseded by %s' % rid, rid)
@@ -2231,8 +2240,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         """
 
-        print >>sys.stderr, 'This command is obsolete. Use \'osc meta <metatype> ...\'.'
-        print >>sys.stderr, 'See \'osc help meta\'.'
+        print('This command is obsolete. Use \'osc meta <metatype> ...\'.', file=sys.stderr)
+        print('See \'osc help meta\'.', file=sys.stderr)
         #self.do_help([None, 'meta'])
         return 2
 
@@ -2292,9 +2301,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for p in packages:
             rev = set_link_rev(apiurl, project, p, revision=rev, expand=expand, baserev=baserev)
             if rev is None:
-                print 'removed revision from link'
+                print('removed revision from link')
             else:
-                print 'set revision to %s for package %s' % (rev, p)
+                print('set revision to %s for package %s' % (rev, p))
 
 
     def do_linktobranch(self, subcmd, opts, *args):
@@ -2359,14 +2368,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
-        except urllib2.HTTPError, e:
+        except HTTPError as e:
             root = ET.fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
             li = Linkinfo()
             li.read(root.find('linkinfo'))
             if li.islink() and li.haserror():
                 raise oscerr.LinkExpandError(project, package, li.error)
             elif not li.islink():
-                print >>sys.stderr, 'package \'%s/%s\' is no link' % (project, package)
+                print('package \'%s/%s\' is no link' % (project, package), file=sys.stderr)
             else:
                 raise e
 
@@ -2441,7 +2450,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 vrev = None
 
         if rev and not checkRevision(src_project, src_package, rev):
-            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
         link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish, opts.new_package, vrev)
@@ -2588,7 +2597,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print r
+        print(r)
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -2629,7 +2638,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.message = edit_message()
 
         r = create_release_request(apiurl, source_project, opts.message)
-        print r.reqid
+        print(r.reqid)
 
 
 
@@ -2676,7 +2685,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if project is None:
                 sys.exit('Unable to find defined OBS:MaintenanceProject project on server.')
             target_project = project.get('name')
-            print 'Using target project \'%s\'' % target_project
+            print('Using target project \'%s\'' % target_project)
 
         query = { 'cmd': 'createmaintenanceincident' }
         if opts.noaccess:
@@ -2688,10 +2697,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if i.get('name') == 'targetproject':
                 project = i.text.strip()
         if project:
-             print "Incident project created: ", project
+             print("Incident project created: ", project)
         else:
-             print ET.parse(r).getroot().get('code')
-             print ET.parse(r).getroot().get('error')
+             print(ET.parse(r).getroot().get('code'))
+             print(ET.parse(r).getroot().get('error'))
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -2761,13 +2770,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             target_project = project.get('name')
             if opts.incident:
                 target_project += ":" + opts.incident
-            print 'Using target project \'%s\'' % target_project
+            print('Using target project \'%s\'' % target_project)
 
         if not opts.message:
             opts.message = edit_message()
 
         r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message)
-        print r.reqid
+        print(r.reqid)
 
 
     @cmdln.option('-c', '--checkout', action='store_true',
@@ -2831,29 +2840,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  package, tproject, noaccess = opts.noaccess, nodevelproject=opts.nodevelproject, dryrun=opts.dryrun)
 
         if result is None:
-            print >>sys.stderr, 'ERROR: Attribute branch call came not back with a project.'
+            print('ERROR: Attribute branch call came not back with a project.', file=sys.stderr)
             sys.exit(1)
 
         if opts.dryrun:
             for r in result.findall('package'):
-                print "%s/%s"%(r.get('project'), r.get('package'))
+                print("%s/%s"%(r.get('project'), r.get('package')))
             return
         
-        print "Project " + result + " created."
+        print("Project " + result + " created.")
 
         if opts.checkout:
             Project.init_project(apiurl, result, result, conf.config['do_package_tracking'])
-            print statfrmt('A', result)
+            print(statfrmt('A', result))
 
             # all packages
             for package in meta_get_packagelist(apiurl, result):
                 try:
                     checkout_package(apiurl, result, package, expand_link = True, prj_dir = result)
                 except:
-                    print >>sys.stderr, 'Error while checkout package:\n', package
+                    print('Error while checkout package:\n', package, file=sys.stderr)
 
             if conf.config['verbose']:
-                print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
+                print('Note: You can use "osc delete" or "osc submitpac" when done.\n')
 
 
     @cmdln.alias('branchco')
@@ -2915,7 +2924,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if (subcmd == 'getpac' or subcmd == 'bco') and len(args) == 1:
             def_p = find_default_project(self.get_api_url(), args[0])
-            print >>sys.stderr, 'defaulting to %s/%s' % (def_p, args[0])
+            print('defaulting to %s/%s' % (def_p, args[0]), file=sys.stderr)
             # python has no args.unshift ???
             args = [ def_p, args[0] ]
             
@@ -2944,7 +2953,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            missingok=opts.new_package,
                            maintenance=opts.maintenance)
         if exists:
-            print >>sys.stderr, 'Using existing branch project: %s' % targetprj
+            print('Using existing branch project: %s' % targetprj, file=sys.stderr)
 
         devloc = None
         if not exists and (srcprj != args[0] or srcpkg != args[1]):
@@ -2953,31 +2962,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     conf.config['maintained_update_project_attribute'], False, False)))
                 # this might raise an AttributeError
                 uproject = root.find('attribute').find('value').text
-                print '\nNote: The branch has been created from the configured update project: %s' \
-                    % uproject
-            except (AttributeError, urllib2.HTTPError), e:
+                print('\nNote: The branch has been created from the configured update project: %s' \
+                    % uproject)
+            except (AttributeError, HTTPError) as e:
                 devloc = srcprj
-                print '\nNote: The branch has been created of a different project,\n' \
+                print('\nNote: The branch has been created of a different project,\n' \
                       '              %s,\n' \
                       '      which is the primary location of where development for\n' \
                       '      that package takes place.\n' \
                       '      That\'s also where you would normally make changes against.\n' \
                       '      A direct branch of the specified package can be forced\n' \
-                      '      with the --nodevelproject option.\n' % devloc
+                      '      with the --nodevelproject option.\n' % devloc)
 
         package = targetpkg or args[1]
         if opts.checkout:
             checkout_package(apiurl, targetprj, package, server_service_files=True,
                              expand_link=True, prj_dir=targetprj)
             if conf.config['verbose']:
-                print 'Note: You can use "osc delete" or "osc submitpac" when done.\n'
+                print('Note: You can use "osc delete" or "osc submitpac" when done.\n')
         else:
             apiopt = ''
             if conf.get_configParser().get('general', 'apiurl') != apiurl:
                 apiopt = '-A %s ' % apiurl
-            print 'A working copy of the branched package can be checked out with:\n\n' \
+            print('A working copy of the branched package can be checked out with:\n\n' \
                   'osc %sco %s/%s' \
-                      % (apiopt, targetprj, package)
+                      % (apiopt, targetprj, package))
         print_request_list(apiurl, args[0], args[1])
         if devloc:
             print_request_list(apiurl, devloc, srcpkg)
@@ -3067,19 +3076,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             ## FIXME: core.py:commitDelPackage() should have something similar
             rlist = get_request_list(apiurl, prj, pkg)
-            for rq in rlist: print rq
+            for rq in rlist: print(rq)
             if len(rlist) >= 1 and not opts.force:
-              print >>sys.stderr, 'Package has pending requests. Deleting the package will break them. '\
+              print('Package has pending requests. Deleting the package will break them. '\
                                   'They should be accepted/declined/revoked before deleting the package. '\
-                                  'Or just use \'--force\'.'
+                                  'Or just use \'--force\'.', file=sys.stderr)
               sys.exit(1)
 
             delete_package(apiurl, prj, pkg, opts.force, msg)
 
         elif (not opts.recursive) and len(meta_get_packagelist(apiurl, prj)) >= 1:
-            print >>sys.stderr, 'Project contains packages. It must be empty before deleting it. ' \
+            print('Project contains packages. It must be empty before deleting it. ' \
                                 'If you are sure that you want to remove this project and all its ' \
-                                'packages use the \'--recursive\' switch.'
+                                'packages use the \'--recursive\' switch.', file=sys.stderr)
             sys.exit(1)
         else:
             delete_project(apiurl, prj, opts.force, msg)
@@ -3129,12 +3138,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):
-        print """${cmd_name} is obsolete !
+        print("""${cmd_name} is obsolete !
 
                  Please use either
                    osc delete       for checked out packages or projects
                  or
-                   osc rdelete      for server side operations."""
+                   osc rdelete      for server side operations.""")
 
         sys.exit(1)
 
@@ -3233,9 +3242,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             baserev = linkinfo.get('baserev')
             opts.revision = baserev
             if pacs:
-                print "diff working copy against last commited version\n"
+                print("diff working copy against last commited version\n")
             else:
-                print "diff commited package against linked revision %s\n" % baserev
+                print("diff commited package against linked revision %s\n" % baserev)
                 run_pager(server_diff(self.get_api_url(), linkinfo.get('project'), linkinfo.get('package'), baserev,
                   args[0], args[1], linkinfo.get('lsrcmd5'), not opts.plain, opts.missingok))
                 return
@@ -3252,7 +3261,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     return
             except:
-                print >>sys.stderr, 'Revision \'%s\' not an integer' % opts.change
+                print('Revision \'%s\' not an integer' % opts.change, file=sys.stderr)
                 return
         else:
             rev1, rev2 = parseRevisionOption(opts.revision)
@@ -3352,7 +3361,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     return
             except:
-                print >>sys.stderr, 'Revision \'%s\' not an integer' % opts.change
+                print('Revision \'%s\' not an integer' % opts.change, file=sys.stderr)
                 return
         else:
             if opts.revision:
@@ -3373,9 +3382,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             show_package_meta(apiurl, project, package)
             return True
-        except urllib2.HTTPError, e:
+        except HTTPError as e:
             if e.code != 404:
-                print >>sys.stderr, 'Cannot check that %s/%s exists: %s' % (project, package, e)
+                print('Cannot check that %s/%s exists: %s' % (project, package, e), file=sys.stderr)
             return False
 
     def _pdiff_guess_parent(self, apiurl, project, package, check_exists_first = False):
@@ -3401,10 +3410,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
-        except urllib2.HTTPError, e:
+        except HTTPError as e:
             return (None, None)
-        except SyntaxError, e:
-            print >>sys.stderr, 'Cannot parse %s/%s/_link: %s' % (project, package, e)
+        except SyntaxError as e:
+            print('Cannot parse %s/%s/_link: %s' % (project, package, e), file=sys.stderr)
             return (None, None)
 
         parent_project = root.get('project')
@@ -3420,12 +3429,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
-        except urllib2.HTTPError, e:
+        except HTTPError as e:
             if e.code != 404:
-                print >>sys.stderr, 'Cannot get list of files for %s/%s: %s' % (project, package, e)
+                print('Cannot get list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
             return (None, None, None)
-        except SyntaxError, e:
-            print >>sys.stderr, 'Cannot parse list of files for %s/%s: %s' % (project, package, e)
+        except SyntaxError as e:
+            print('Cannot parse list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
             return (None, None, None)
 
         link_node = root.find('linkinfo')
@@ -3498,10 +3507,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not parent_project:
             (parent_project, parent_package) = self._pdiff_guess_parent(apiurl, project, package, check_exists_first = False)
             if parent_project and parent_package:
-                print 'Guessed that %s/%s is the parent package.' % (parent_project, parent_package)
+                print('Guessed that %s/%s is the parent package.' % (parent_project, parent_package))
 
         if not parent_project or not parent_package:
-            print >>sys.stderr, 'Cannot find a parent for %s/%s to diff against.' % (project, package)
+            print('Cannot find a parent for %s/%s to diff against.' % (project, package), file=sys.stderr)
             return 1
 
         if not noparentok and not self._pdiff_package_exists(apiurl, parent_project, parent_package):
@@ -3529,18 +3538,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _prdiff_output_diff(self, opts, rdiff):
         if opts.diffstat:
-            print
+            print()
             p = subprocess.Popen("diffstat",
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  close_fds=True)
-            p.stdin.write(rdiff)
+            p.stdin.write(rdiff.encode())
             p.stdin.close()
-            diffstat = "".join(p.stdout.readlines())
-            print diffstat
+            print("".join(x.decode() for x in p.stdout.readlines()))
         elif opts.unified:
-            print
-            print rdiff
+            print()
+            print(rdiff)
             #run_pager(rdiff)
 
     def _prdiff_output_matching_requests(self, opts, requests,
@@ -3557,8 +3565,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if action.tgt_package != pkg:
                     continue
 
-                print
-                print req.list_view()
+                print()
+                print(req.list_view())
                 break
 
     @cmdln.alias('projectdiff')
@@ -3617,7 +3625,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                'args: ' + repr(args))
 
         if opts.diffstat and opts.unified:
-            print >>sys.stderr, 'error - cannot specify both --diffstat and --unified'
+            print('error - cannot specify both --diffstat and --unified', file=sys.stderr)
             sys.exit(1)
 
         apiurl = self.get_api_url()
@@ -3635,7 +3643,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if pkg not in new_packages:
                 if opts.show_not_in_new:
-                    print "old only:  %s" % pkg
+                    print("old only:  %s" % pkg)
                 continue
 
             rdiff = server_diff_noex(
@@ -3646,14 +3654,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 )
 
             if rdiff:
-                print "differs:   %s" % pkg
+                print("differs:   %s" % pkg)
                 self._prdiff_output_diff(opts, rdiff)
 
                 if opts.requests:
                     self._prdiff_output_matching_requests(opts, requests,
                                                           newprj, pkg)
             else:
-                print "identical: %s" % pkg
+                print("identical: %s" % pkg)
 
         for pkg in new_packages:
             if self._prdiff_skip_package(opts, pkg):
@@ -3661,7 +3669,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if pkg not in old_packages:
                 if opts.show_not_in_old:
-                    print "new only:  %s" % pkg
+                    print("new only:  %s" % pkg)
 
     @cmdln.hide(1)
     @cmdln.alias('in')
@@ -3689,8 +3697,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ## if args[0] is already an url, the use it as is.
 
         cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.4', args[1])
-        print self.do_install.__doc__
-        print "Example: \n" + cmd
+        print(self.do_install.__doc__)
+        print("Example: \n" + cmd)
 
 
     def do_repourls(self, subcmd, opts, *args):
@@ -3718,7 +3726,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         url_tmpl = 'http://download.opensuse.org/repositories/%s/%s/%s.repo'
         repos = get_repositories_of_project(apiurl, project)
         for repo in repos:
-            print url_tmpl % (project.replace(':', ':/'), repo, project)
+            print(url_tmpl % (project.replace(':', ':/'), repo, project))
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -3817,7 +3825,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             rev="latest"
 
         if rev and rev != "latest" and not checkRevision(project, package, rev):
-            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
         if filename:
@@ -3845,7 +3853,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             show_project_meta(apiurl, project)
 
             Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'])
-            print statfrmt('A', prj_dir)
+            print(statfrmt('A', prj_dir))
 
             # all packages
             for package in meta_get_packagelist(apiurl, project):
@@ -3856,7 +3864,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     li.read(ET.fromstring(''.join(m)).find('linkinfo'))
                     if not li.haserror():
                        if li.project == project:
-                          print statfrmt('S', package + " link to package " + li.package)
+                          print(statfrmt('S', package + " link to package " + li.package))
                           continue
                 except:
                     pass
@@ -3864,9 +3872,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
                                      prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
-                except oscerr.LinkExpandError, e:
-                    print >>sys.stderr, 'Link cannot be expanded:\n', e
-                    print >>sys.stderr, 'Use "osc repairlink" for fixing merge conflicts:\n'
+                except oscerr.LinkExpandError as e:
+                    print('Link cannot be expanded:\n', e, file=sys.stderr)
+                    print('Use "osc repairlink" for fixing merge conflicts:\n', file=sys.stderr)
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
                                      prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
@@ -3947,7 +3955,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         lines = [l for l in lines if l[0] == '?'] + \
                 [l for l in lines if l[0] != '?']
         if lines:
-            print '\n'.join(lines)
+            print('\n'.join(lines))
 
 
     def do_add(self, subcmd, opts, *args):
@@ -3987,8 +3995,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         if not conf.config['do_package_tracking']:
-            print >>sys.stderr, "to use this feature you have to enable \'do_package_tracking\' " \
-                                "in the [general] section in the configuration file"
+            print("to use this feature you have to enable \'do_package_tracking\' " \
+                                "in the [general] section in the configuration file", file=sys.stderr)
             sys.exit(1)
 
         if len(args) != 1:
@@ -4022,7 +4030,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for pac in prj.pacs_broken:
                     if prj.get_state(pac) != 'D':
                         prj.set_state(pac, 'D')
-                        print statfrmt('D', getTransActPath(os.path.join(prj.dir, pac)))
+                        print(statfrmt('D', getTransActPath(os.path.join(prj.dir, pac))))
                 if opts.recursive:
                     for pac in prj.pacs_have:
                         state = prj.get_state(pac)
@@ -4032,8 +4040,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 args.remove(arg)
                 prj.write_packages()
             elif is_project_dir(arg):
-                print >>sys.stderr, 'osc: addremove is not supported in a project dir unless ' \
-                                    '\'do_package_tracking\' is enabled in the configuration file'
+                print('osc: addremove is not supported in a project dir unless ' \
+                                    '\'do_package_tracking\' is enabled in the configuration file', file=sys.stderr)
                 sys.exit(1)
 
         pacs = findpacs(args)
@@ -4051,7 +4059,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     p.addfile(filename)
                 elif state == '!':
                     p.delete_file(filename)
-                    print statfrmt('D', getTransActPath(os.path.join(p.dir, filename)))
+                    print(statfrmt('D', getTransActPath(os.path.join(p.dir, filename))))
 
     @cmdln.alias('ci')
     @cmdln.alias('checkin')
@@ -4084,7 +4092,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = parseargs(args)
 
         if opts.skip_validation:
-            print >>sys.stderr, "WARNING: deprecated option --skip-validation ignored."
+            print("WARNING: deprecated option --skip-validation ignored.", file=sys.stderr)
 
         msg = ''
         if opts.message:
@@ -4108,8 +4116,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not msg:
                         msg = edit_message()
                     prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
-                except oscerr.ExtRuntimeError, e:
-                    print >>sys.stderr, "ERROR: service run failed", e
+                except oscerr.ExtRuntimeError as e:
+                    print("ERROR: service run failed", e, file=sys.stderr)
                     return 1
                 args.remove(arg)
 
@@ -4135,7 +4143,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not pac.todo:
                         pac.todo = pac.filenamelist + pac.filenamelist_unvers
                     pac.todo.sort()
-            for prj_path, packages in prj_paths.iteritems():
+            for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
                 if not msg:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
@@ -4232,14 +4240,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.revision and len(args) == 1:
             rev, dummy = parseRevisionOption(opts.revision)
             if not checkRevision(pacs[0].prjname, pacs[0].name, rev, pacs[0].apiurl):
-                print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+                print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
                 sys.exit(1)
         else:
             rev = None
 
         for p in pacs:
             if len(pacs) > 1:
-                print 'Updating %s' % p.name
+                print('Updating %s' % p.name)
 
             # this shouldn't be needed anymore with the new update mechanism
             # an expand/unexpand update is treated like a normal update (there's nothing special)
@@ -4254,16 +4262,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not rev:
                 if opts.expand_link and p.islink() and not p.isexpanded():
                     rev = p.latest_rev(expand=True)
-                    print 'Expanding to rev', rev
+                    print('Expanding to rev', rev)
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     rev = show_upstream_rev(p.apiurl, p.prjname, p.name, meta=p.meta)
-                    print 'Unexpanding to rev', rev
+                    print('Unexpanding to rev', rev)
                 elif (p.islink() and p.isexpanded()) or opts.server_side_source_service_files:
                     rev = p.latest_rev(include_service_files=opts.server_side_source_service_files)
 
             p.update(rev, opts.server_side_source_service_files, opts.limit_size)
             if opts.source_service_files:
-                print 'Running local source services'
+                print('Running local source services')
                 p.run_source_services()
             if opts.unexpand_link:
                 p.unmark_frozen()
@@ -4315,7 +4323,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             prj.set_state(pac_dir, 'D')
                         else:
                             prj.del_package_node(i)
-                        print statfrmt('D', getTransActPath(i))
+                        print(statfrmt('D', getTransActPath(i)))
                         args.remove(i)
                         prj.write_packages()
         pacs = findpacs(args)
@@ -4328,14 +4336,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         prj = Project(prj_dir, False)
                         prj.delPackage(p, opts.force)
                     else:
-                        print >>sys.stderr, "WARNING: package tracking is disabled, operation skipped !"
+                        print("WARNING: package tracking is disabled, operation skipped !", file=sys.stderr)
             else:
                 pathn = getTransActPath(p.dir)
                 for filename in p.todo:
                     p.clear_from_conflictlist(filename)
                     ret, state = p.delete_file(filename, opts.force)
                     if ret:
-                        print statfrmt('D', os.path.join(pathn, filename))
+                        print(statfrmt('D', os.path.join(pathn, filename)))
                         continue
                     if state == '?':
                         sys.exit('\'%s\' is not under version control' % filename)
@@ -4373,7 +4381,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for p in pacs:
             for filename in p.todo:
-                print 'Resolved conflicted state of "%s"' % filename
+                print('Resolved conflicted state of "%s"' % filename)
                 p.clear_from_conflictlist(filename)
 
 
@@ -4395,11 +4403,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
 
-        print '\n'.join(get_distibutions(apiurl))#FIXME:, opts.discontinued))
+        print('\n'.join(get_distibutions(apiurl)))#FIXME:, opts.discontinued))
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):
-        print "Command results_meta is obsolete. Please use: osc results --xml"
+        print("Command results_meta is obsolete. Please use: osc results --xml")
         sys.exit(1)
 
     @cmdln.hide(1)
@@ -4412,7 +4420,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML (former results_meta)')
     def do_rresults(self, subcmd, opts, *args):
-        print "Command rresults is obsolete. Running 'osc results' instead"
+        print("Command rresults is obsolete. Running 'osc results' instead")
         self.do_results('results', opts, *args)
         sys.exit(1)
 
@@ -4441,15 +4449,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     continue
             try:
                 delete_files(apiurl, project, package, (filename, ))
-            except urllib2.HTTPError, e:
+            except HTTPError as e:
                 if opts.force:
-                    print >>sys.stderr, e
+                    print(e, file=sys.stderr)
                     body = e.read()
                     if e.code in [ 400, 403, 404, 500 ]:
                         if '<summary>' in body:
                             msg = body.split('<summary>')[1]
                             msg = msg.split('</summary>')[0]
-                            print >>sys.stderr, msg
+                            print(msg, file=sys.stderr)
                 else:
                     raise e
 
@@ -4519,11 +4527,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
         if opts.xml:
-            print ''.join(show_results_meta(*args)),
+            print(''.join(show_results_meta(*args)), end=' ')
         elif opts.csv:
             # ignore _oldstate key
             results = [r for r in get_package_results(*args) if not '_oldstate' in r]
-            print '\n'.join(format_results(results, opts.format))
+            print('\n'.join(format_results(results, opts.format)))
         else:
             args.append(opts.verbose)
             args.append(opts.watch)
@@ -4572,10 +4580,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
 
         if opts.xml:
-            print ''.join(show_prj_results_meta(apiurl, project))
+            print(''.join(show_prj_results_meta(apiurl, project)))
             return
 
-        print '\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical, show_excluded=opts.show_excluded))
+        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical, show_excluded=opts.show_excluded)))
 
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
@@ -4589,7 +4597,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_rprjresults(self, subcmd, opts, *args):
-        print "Command rprjresults is obsolete. Please use 'osc prjresults'"
+        print("Command rprjresults is obsolete. Please use 'osc prjresults'")
         sys.exit(1)
 
     @cmdln.alias('bl')
@@ -4664,8 +4672,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             doprint = True
 
         if doprint:
-            print 'Valid arguments for this %s are:' % msg
-            print
+            print('Valid arguments for this %s are:' % msg)
+            print()
             if repos_only:
                 self.do_repositories("repos_only", None)
             else:
@@ -4743,7 +4751,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         if conf.config['build-type']:
             # FIXME: raise Exception instead
-            print >>sys.stderr, 'Not implemented for VMs'
+            print('Not implemented for VMs', file=sys.stderr)
             sys.exit(1)
 
         if len(args) == 0 or len(args) == 1:
@@ -4838,15 +4846,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Too many arguments.')
 
-        print apiurl, project, package, repository, arch
+        print(apiurl, project, package, repository, arch)
         xml = show_package_trigger_reason(apiurl, project, package, repository, arch)
         root = ET.fromstring(xml)
         reason = root.find('explain').text
-        print reason
+        print(reason)
         if reason == "meta change":
-            print "changed keys:"
+            print("changed keys:")
             for package in root.findall('packagechange'):
-                print "  ", package.get('change'), package.get('key')
+                print("  ", package.get('change'), package.get('key'))
 
 
     # FIXME: the new osc syntax should allow to specify multiple packages
@@ -4917,9 +4925,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         root = ET.fromstring(xml)
         for package in root.findall('package'):
-            print package.get('name'), ":"
+            print(package.get('name'), ":")
             for dep in package.findall('pkgdep'):
-                print "  ", dep.text
+                print("  ", dep.text)
 
 
     @cmdln.option('-d', '--debug', action='store_true',
@@ -4990,17 +4998,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
-            from build import get_prefer_pkgs
-            print 'Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs)
+            from .build import get_prefer_pkgs
+            print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
             prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(args[2])[1])
             cpio.add(os.path.basename(args[2]), build_descr_data)
             build_descr_data = cpio.get()
 
-        print ''.join(get_buildinfo(apiurl,
+        print(''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
                                     specfile=build_descr_data,
                                     debug=opts.debug,
-                                    addlist=opts.extra_pkgs))
+                                    addlist=opts.extra_pkgs)))
 
 
     def do_buildconfig(self, subcmd, opts, *args):
@@ -5043,7 +5051,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        print ''.join(get_buildconfig(apiurl, project, repository))
+        print(''.join(get_buildconfig(apiurl, project, repository)))
 
 
     @cmdln.alias('repos')
@@ -5087,7 +5095,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if subcmd == 'repos_only':
             for repo in get_repositories_of_project(apiurl, project): 
                 if (disabled is None) or ((disabled is not None) and (repo not in disabled)):
-                    print repo
+                    print(repo)
         else:
             data = []
             for repo in get_repos_of_project(apiurl, project):
@@ -5095,7 +5103,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     data += [repo.name, repo.arch]
         
             for row in build_table(2, data, width=2):
-                print row
+                print(row)
 
 
     def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None):
@@ -5111,7 +5119,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if osc.build.can_also_build.get(arg) != None and arg_arch is None:
                         arg_arch = arg
                         if not (arg in osc.build.can_also_build.get(osc.build.hostarch, []) or arg in osc.build.hostarch):
-                             print "WARNING: native compile is not possible, an emulator must be configured!"
+                             print("WARNING: native compile is not possible, an emulator must be configured!")
                     elif not arg_repository:
                         arg_repository = arg
                     else:
@@ -5342,14 +5350,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                p = Package('.')
                r = p.run_source_services(verbose=True)
         except:
-            print "WARNING: package is not existing on server yet"
+            print("WARNING: package is not existing on server yet")
             opts.local_package = True
             pass
         if opts.offline or opts.local_package or r == None:
-            print "WARNING: source service from package or project will not be executed. This may not be the same build as on server!"
+            print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
         elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
             if r != 0:
-                print >>sys.stderr, 'Source service run failed!'
+                print('Source service run failed!', file=sys.stderr)
                 sys.exit(1)
                 # that is currently unreadable on cli, we should not have a backtrace on standard errors:
                 #raise oscerr.ServiceRuntimeError('Service run failed: \'%s\'', r)
@@ -5374,7 +5382,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
-        print 'Building %s for %s/%s' % (args[2], args[0], args[1])
+        print('Building %s for %s/%s' % (args[2], args[0], args[1]))
         if not opts.host:
             return osc.build.main(self.get_api_url(), opts, args)
         else:
@@ -5416,7 +5424,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rsync_prefer_cmd = ['rsync', '-az', '-delete', '-e', 'ssh',
                         pdir,
                         "%s:%s" % (hostname, os.path.dirname(hostprefer))]
-                print 'Run: %s' % " ".join(rsync_prefer_cmd)
+                print('Run: %s' % " ".join(rsync_prefer_cmd))
                 ret = run_external(rsync_prefer_cmd[0], *rsync_prefer_cmd[1:])
                 if ret != 0:
                     return ret
@@ -5424,7 +5432,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 0
             
 
-        cwd = os.getcwdu()
+        cwd = os.getcwd()
         basename = os.path.basename(cwd)
         if not ':' in opts.host:
             hostname = opts.host
@@ -5466,7 +5474,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ### run all commands ###
         # 1.) rsync sources
         rsync_source_cmd = ['rsync', '-az', '-delete', '-e', 'ssh', cwd, "%s:%s" % (hostname, hostpath)]
-        print 'Run: %s' % " ".join(rsync_source_cmd)
+        print('Run: %s' % " ".join(rsync_source_cmd))
         ret = run_external(rsync_source_cmd[0], *rsync_source_cmd[1:])
         if ret != 0:
             return ret
@@ -5497,7 +5505,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             global_args = " ".join(hostglobalargs),
             local_args = " ".join(hostargs))
             ]
-        print 'Run: %s' % " ".join(ssh_cmd)
+        print('Run: %s' % " ".join(ssh_cmd))
         build_ret = run_external(ssh_cmd[0], *ssh_cmd[1:])
         if build_ret != 0:
             return build_ret
@@ -5505,7 +5513,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # 4.) get keep-pkgs back
         if opts.keep_pkgs:
             ret = rsync_keep_cmd = ['rsync', '-az', '-e', 'ssh', "%s:%s" % (hostname, hostkeep), opts.keep_pkgs]
-            print 'Run: %s' % " ".join(rsync_keep_cmd)
+            print('Run: %s' % " ".join(rsync_keep_cmd))
             ret = run_external(rsync_keep_cmd[0], *rsync_keep_cmd[1:])
             if ret != 0:
                 return ret
@@ -5540,7 +5548,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
         if conf.config['build-type']:
-            print >>sys.stderr, 'Not implemented for VMs'
+            print('Not implemented for VMs', file=sys.stderr)
             sys.exit(1)
 
         user = 'abuild'
@@ -5552,7 +5560,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = os.path.splitext(descr)[0]
         else:
             package = store_read_package('.')
-        apihost = urlparse.urlsplit(self.get_api_url())[1]
+        apihost = urlsplit(self.get_api_url())[1]
         buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
             % {'repo': repository, 'arch': arch, 'project': project, 'package': package, 'apihost': apihost}
         if not os.path.isdir(buildroot):
@@ -5567,7 +5575,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
             if suargs:
                 cmd[1:1] = suargs.split()
-        print 'running: %s' % ' '.join(cmd)
+        print('running: %s' % ' '.join(cmd))
         os.execvp(sucmd, cmd)
 
 
@@ -5609,7 +5617,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.csv:
             format = 'csv'
 
-        print '\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format))
+        print('\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format)))
 
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
@@ -5665,7 +5673,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_rlog(self, subcmd, opts, *args):
-        print "Command rlog is obsolete. Please use 'osc log'"
+        print("Command rlog is obsolete. Please use 'osc log'")
         sys.exit(1)
 
 
@@ -5715,7 +5723,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         rev, rev_upper = parseRevisionOption(opts.revision)
         if rev and not checkRevision(project, package, rev, apiurl, opts.meta):
-            print >>sys.stderr, 'Revision \'%s\' does not exist' % rev
+            print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
         format = 'text'
@@ -5775,7 +5783,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong command given.')
 
         if command == "remoterun" or command == "rr":
-            print runservice(apiurl, project, package)
+            print(runservice(apiurl, project, package))
             return
 
         if command in ('run', 'localrun', 'disabledrun', 'lr', 'dr', 'r'):
@@ -5851,7 +5859,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch or code):
             raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
 
-        print rebuild(apiurl, project, package, repo, arch, code)
+        print(rebuild(apiurl, project, package, repo, arch, code))
 
 
     def do_info(self, subcmd, opts, *args):
@@ -5868,7 +5876,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pacs = findpacs(args)
 
         for p in pacs:
-            print p.info()
+            print(p.info())
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
@@ -5918,7 +5926,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to abort all packages of the entire project, use --all option.')
 
-        print abortbuild(apiurl, project, package, opts.arch, opts.repo)
+        print(abortbuild(apiurl, project, package, opts.arch, opts.repo))
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
@@ -5988,7 +5996,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # make a new request for each code= parameter
         for code in codes:
-            print wipebinaries(apiurl, project, package, opts.arch, opts.repo, code)
+            print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
 
 
     @cmdln.option('-q', '--quiet', action='store_true',
@@ -6063,16 +6071,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # Set binary target directory and create if not existing
         target_dir = os.path.normpath(opts.destdir)
         if not os.path.isdir(target_dir):
-            print 'Creating %s' % target_dir
-            os.makedirs(target_dir, 0755)
+            print('Creating %s' % target_dir)
+            os.makedirs(target_dir, 0o755)
 
         for arch in arches:
             for pac in package:
                 binaries = get_binarylist(apiurl, project, repository, arch,
                                           package=pac, verbose=True)
                 if not binaries:
-                    print >>sys.stderr, 'no binaries found: Either the package %s ' \
-                                        'does not exist or no binaries have been built.' % pac
+                    print('no binaries found: Either the package %s ' \
+                                        'does not exist or no binaries have been built.' % pac, file=sys.stderr)
                     continue
 
                 for i in binaries:
@@ -6185,7 +6193,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif type in args_sr:
             requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
             for r in sorted(requests):
-                print r.list_view(), '\n'
+                print(r.list_view(), '\n')
             return
         elif not type in args_pkg:
             raise oscerr.WrongArgs("invalid type %s" % type)
@@ -6207,11 +6215,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
                 if root.findall('package'):
-                   print "Patchinfos with open bugs assigned to you:\n"
+                   print("Patchinfos with open bugs assigned to you:\n")
                    for node in root.findall('package'):
                        project = node.get('project')
                        package = node.get('name')
-                       print project, "/", package, '\n'
+                       print(project, "/", package, '\n')
                        p = makeurl(apiurl, ['source', project, package], { 'view': 'issues' })
                        fp = http_GET(p)
                        issues = ET.parse(fp).findall('issue')
@@ -6220,13 +6228,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                               continue
                            if issue.find('owner') == None or issue.find('owner').find('login').text != user:
                               continue
-                           print "  #", issue.find('label').text, ': ',
+                           print("  #", issue.find('label').text, ': ', end=' ')
                            desc = issue.find('summary')
                            if desc != None:
-                               print desc.text
+                               print(desc.text)
                            else:
-                               print "\n"
-                   print ""
+                               print("\n")
+                   print("")
 
 
         if list_requests:
@@ -6244,12 +6252,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
                 if root.findall('request'):
-                   print "Requests which request a review by you:\n"
+                   print("Requests which request a review by you:\n")
                    for node in root.findall('request'):
                        r = Request()
                        r.read(node)
-                       print r.list_view(), '\n'
-                   print ""
+                       print(r.list_view(), '\n')
+                   print("")
                 # open requests
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
@@ -6260,12 +6268,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
                 if root.findall('request'):
-                   print "Requests for your packages:\n"
+                   print("Requests for your packages:\n")
                    for node in root.findall('request'):
                        r = Request()
                        r.read(node)
-                       print r.list_view(), '\n'
-                   print ""
+                       print(r.list_view(), '\n')
+                   print("")
                 # declined requests submitted by me
                 u = makeurl(apiurl, ['request'], {
                     'view' : 'collection',
@@ -6276,20 +6284,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
                 if root.findall('request'):
-                   print "Declined requests created by you (revoke, reopen or supersede):\n"
+                   print("Declined requests created by you (revoke, reopen or supersede):\n")
                    for node in root.findall('request'):
                        r = Request()
                        r.read(node)
-                       print r.list_view(), '\n'
-                   print ""
+                       print(r.list_view(), '\n')
+                   print("")
                 return
-            except urllib2.HTTPError, e:
+            except HTTPError as e:
                 if e.code == 400:
                     # skip it ... try again with old style below
                     pass
 
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
-                                what.has_key('project'), what.has_key('package'),
+                                'project' in what, 'package' in what,
                                 opts.maintained, opts.verbose)
 
         # map of project =>[list of packages]
@@ -6314,9 +6322,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # old style, only for OBS 2.1 and before. Should not be used, since it is slow and incomplete
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in sorted(requests):
-                print r.list_view(), '\n'
+                print(r.list_view(), '\n')
             if not len(requests):
-                print " -> try also 'osc my sr' to see more."
+                print(" -> try also 'osc my sr' to see more.")
         else:
             for i in sorted(roles.keys()):
                 out = '%s' % i
@@ -6327,7 +6335,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     out = '%s (%s)' % (i, ', '.join(sorted(roles[i])))
                     if len(prjpac) == 2:
                         out = '   %s (%s)' % (prjpac[1], ', '.join(sorted(roles[i])))
-                print out
+                print(out)
 
 
     @cmdln.option('--repos-baseurl', action='store_true',
@@ -6478,7 +6486,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'published/binary/id': xpath}
         try:
             res = search(apiurl, **what)
-        except urllib2.HTTPError, e:
+        except HTTPError as e:
             if e.code != 400 or not role_filter:
                 raise e
             # backward compatibility: local role filtering
@@ -6490,7 +6498,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if role_filter:
             role_filter = '%s (%s)' % (search_term, role_filter)
         kind_map = {'published/binary/id': 'binary'}
-        for kind, root in res.iteritems():
+        for kind, root in res.items():
             results = []
             for node in root.findall(kind_map.get(kind, kind)):
                 result = []
@@ -6534,7 +6542,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 results.append(result)
 
             if not len(results):
-                print 'No matches found for \'%s\' in %ss' % (role_filter or search_term, kind)
+                print('No matches found for \'%s\' in %ss' % (role_filter or search_term, kind))
                 continue
             # construct a sorted, flat list
             # Sort by first column, follwed by second column if we have two columns, else sort by first.
@@ -6561,10 +6569,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 headline.append('# filepath')
             if not opts.csv:
                 if len(what.keys()) > 1:
-                    print '#' * 68
-                print 'matches for \'%s\' in %ss:\n' % (role_filter or search_term, kind)
+                    print('#' * 68)
+                print('matches for \'%s\' in %ss:\n' % (role_filter or search_term, kind))
             for row in build_table(len(headline), results, headline, 2, csv = opts.csv):
-                print row
+                print(row)
 
 
     @cmdln.option('-p', '--project', metavar='project',
@@ -6598,24 +6606,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         import glob
-        from util import rpmquery
+        from .util import rpmquery
 
         if opts.delete_old_files and conf.config['do_package_tracking']:
             # IMHO the --delete-old-files option doesn't really fit into our
             # package tracking strategy
-            print >>sys.stderr, '--delete-old-files is not supported anymore'
-            print >>sys.stderr, 'when do_package_tracking is enabled'
+            print('--delete-old-files is not supported anymore', file=sys.stderr)
+            print('when do_package_tracking is enabled', file=sys.stderr)
             sys.exit(1)
 
         if '://' in srpm:
-            print 'trying to fetch', srpm
+            print('trying to fetch', srpm)
             import urlgrabber
             urlgrabber.urlgrab(srpm)
             srpm = os.path.basename(srpm)
 
         srpm = os.path.abspath(srpm)
         if not os.path.isfile(srpm):
-            print >>sys.stderr, 'file \'%s\' does not exist' % srpm
+            print('file \'%s\' does not exist' % srpm, file=sys.stderr)
             sys.exit(1)
 
         if opts.project:
@@ -6642,8 +6650,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # title and description can be empty
         if not pac:
-            print >>sys.stderr, 'please specify a package name with the \'--name\' option. ' \
-                                'The automatic detection failed'
+            print('please specify a package name with the \'--name\' option. ' \
+                                'The automatic detection failed', file=sys.stderr)
             sys.exit(1)
 
         if conf.config['do_package_tracking']:
@@ -6662,22 +6670,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     data.find('title').text = ''.join(title)
                     data.find('description').text = ''.join(descr)
                     data.find('url').text = url
-                    data = ET.tostring(data)
+                    data = ET.tostring(data, encoding=ET_ENCODING)
                 else:
-                    print >>sys.stderr, 'error - cannot get meta data'
+                    print('error - cannot get meta data', file=sys.stderr)
                     sys.exit(1)
                 edit_meta(metatype='pkg',
                           path_args=(quote_plus(project), quote_plus(pac)),
                           data = data, apiurl=apiurl)
                 Package.init_package(apiurl, project, pac, os.path.join(project_dir, pac))
             else:
-                print >>sys.stderr, 'error - local package already exists'
+                print('error - local package already exists', file=sys.stderr)
                 sys.exit(1)
 
         unpack_srcrpm(srpm, os.path.join(project_dir, pac))
         p = Package(os.path.join(project_dir, pac))
         if len(p.filenamelist) == 0 and opts.commit:
-            print 'Adding files to working copy...'
+            print('Adding files to working copy...')
             addFiles(glob.glob('%s/*' % os.path.join(project_dir, pac)))
             if conf.config['do_package_tracking']:
                 project.commit((pac, ))
@@ -6688,17 +6696,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for filename in p.filenamelist:
                 p.delete_remote_source_file(filename)
             p.update_local_filesmeta()
-            print 'Adding files to working copy...'
+            print('Adding files to working copy...')
             addFiles(glob.glob('*'))
             p.update_datastructs()
             p.commit()
         else:
-            print 'No files were committed to the server. Please ' \
-                  'commit them manually.'
-            print 'Package \'%s\' only imported locally' % pac
+            print('No files were committed to the server. Please ' \
+                  'commit them manually.')
+            print('Package \'%s\' only imported locally' % pac)
             sys.exit(1)
 
-        print 'Package \'%s\' imported successfully' % pac
+        print('Package \'%s\' imported successfully' % pac)
 
 
     @cmdln.option('-X', '-m', '--method', default='GET', metavar='HTTP_METHOD',
@@ -6881,12 +6889,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        for role in roles:
                            try:
                                setBugowner(apiurl, result.get('project'), result.get('package'), bugowner)
-                           except urllib2.HTTPError, e:
+                           except HTTPError as e:
                                if e.code == 403:
-                                   print "No write permission in", result.get('project'),
+                                   print("No write permission in", result.get('project'), end=' ')
                                    if result.get('package'):
-                                       print "/", result.get('package'),
-                                   print
+                                       print("/", result.get('package'), end=' ')
+                                   print()
                                    repl = raw_input('\nCreating a request instead? (y/n) ')
                                    if repl.lower() == 'y':
                                        opts.set_bugowner_request = opts.set_bugowner
@@ -6904,12 +6912,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for role in roles:
                     try:
                         setBugowner(apiurl, prj, pac, opts.delete, role)
-                    except urllib2.HTTPError, e:
+                    except HTTPError as e:
                         if e.code == 403:
-                            print "No write permission in", result.get('project'),
+                            print("No write permission in", result.get('project'), end=' ')
                             if result.get('package'):
-                                print "/", result.get('package'),
-                            print
+                                print("/", result.get('package'), end=' ')
+                            print()
                             repl = raw_input('\nCreating a request instead? (y/n) ')
                             if repl.lower() == 'y':
                                 opts.set_bugowner_request = opts.set_bugowner
@@ -6933,7 +6941,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 f = http_POST(u, data=xml)
 
                 root = ET.parse(f).getroot()
-                print "Request ID:", root.get('id')
+                print("Request ID:", root.get('id'))
 
         elif opts.delete:
             if searchresult:
@@ -6956,12 +6964,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         prj = d.get('project', prj)
                         pac = d.get('package', pac)
                         if opts.verbose:
-                            print "Following to the development space: %s/%s" % (prj, pac)
+                            print("Following to the development space: %s/%s" % (prj, pac))
                         m = show_package_meta(apiurl, prj, pac)
                         metaroot = ET.fromstring(''.join(m))
                     if not metaroot.findall('person'):
                         if opts.verbose:
-                            print "No dedicated persons in package defined, showing the project persons."
+                            print("No dedicated persons in package defined, showing the project persons.")
                         pac = None
                         m = show_project_meta(apiurl, prj)
                         metaroot = ET.fromstring(''.join(m))
@@ -6998,9 +7006,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    definingpackage=maintainers.get("package")
                    indent="  "
                    if definingpackage:
-                       print "Defined in package: %s/%s " %(definingproject, definingpackage)
+                       print("Defined in package: %s/%s " %(definingproject, definingpackage))
                    else:
-                       print "Defined in project: ", definingproject
+                       print("Defined in project: ", definingproject)
 
                if prj: 
                    # not for user/group search
@@ -7008,17 +7016,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        if opts.bugowner and not len(maintainers.get(role, [])):
                            role = 'maintainer'
                        if pac:
-                           print "%s%s of %s/%s : " %(indent, role, prj, pac)
+                           print("%s%s of %s/%s : " %(indent, role, prj, pac))
                        else:
-                           print "%s%s of %s : " %(indent, role, prj)
+                           print("%s%s of %s : " %(indent, role, prj))
                        if opts.email:
                            emails = []
                            for maintainer in maintainers.get(role, []):
                                user = get_user_data(apiurl, maintainer, 'email')
                                if len(user):
                                    emails.append(''.join(user))
-                           print indent,
-                           print ', '.join(emails) or '-'
+                           print(indent, end=' ')
+                           print(', '.join(emails) or '-')
                        elif opts.verbose:
                            userdata = []
                            for maintainer in maintainers.get(role, []):
@@ -7029,12 +7037,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                else:
                                    userdata.append(user[2])
                            for row in build_table(2, userdata, None, 3):
-                               print indent,
-                               print row
+                               print(indent, end=' ')
+                               print(row)
                        else:
-                           print indent,
-                           print ', '.join(maintainers.get(role, [])) or '-'
-                       print
+                           print(indent, end=' ')
+                           print(', '.join(maintainers.get(role, [])) or '-')
+                       print()
 
     @cmdln.alias('who')
     @cmdln.alias('user')
@@ -7046,13 +7054,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
         if len(usernames) < 1:
-            if not conf.config['api_host_options'][apiurl].has_key('user'):
+            if 'user' not in conf.config['api_host_options'][apiurl]:
                 raise oscerr.WrongArgs('your .oscrc does not have your user name.')
             usernames = (conf.config['api_host_options'][apiurl]['user'],)
         for name in usernames:
             user = get_user_data(apiurl, name, 'login', 'realname', 'email')
             if len(user) == 3:
-                print "%s: \"%s\" <%s>"%(user[0], user[1], user[2])
+                print("%s: \"%s\" <%s>"%(user[0], user[1], user[2]))
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -7108,9 +7116,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 for data in streamfile(u):
                     sys.stdout.write(data)
-        except urllib2.HTTPError, e:
+        except HTTPError as e:
             if e.code == 404 and not opts.expand and not opts.unexpand:
-                print >>sys.stderr, 'expanding link...'
+                print('expanding link...', file=sys.stderr)
                 query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
                 u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
                 if subcmd == "less":
@@ -7210,9 +7218,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             workingrev = linkinfo.get('lastworking')
             if workingrev == None:
                 raise oscerr.APIError('source link never worked')
-            print "using last working link target"
+            print("using last working link target")
         else:
-            print "using link target of last commit"
+            print("using link target of last commit")
 
         query = { 'expand': 1, 'emptylink': 1 }
         u = makeurl(apiurl, ['source', prj, package], query=query)
@@ -7278,19 +7286,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if md5_oldpatched == '':
                     pac.put_on_deletelist(name)
                     continue
-                print statfrmt(' ', name)
+                print(statfrmt(' ', name))
                 self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name))
                 continue
             if md5_old == md5_oldpatched:
                 if md5_new == '':
                     continue
-                print statfrmt('U', name)
+                print(statfrmt('U', name))
                 shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
                 continue
             if md5_new == md5_oldpatched:
                 if md5_new == '':
                     continue
-                print statfrmt('G', name)
+                print(statfrmt('G', name))
                 shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
                 continue
             self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name + '.mine'))
@@ -7304,7 +7312,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                binary_file(os.path.join(destdir, name + '.old')) or \
                binary_file(os.path.join(destdir, name + '.new')):
                 shutil.copy2(os.path.join(destdir, name + '.new'), os.path.join(destdir, name))
-                print statfrmt('C', name)
+                print(statfrmt('C', name))
                 pac.put_on_conflictlist(name)
                 continue
 
@@ -7318,23 +7326,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
               os.path.join(destdir, name + '.new'),
             stdout=o)
             if code == 0:
-                print statfrmt('G', name)
+                print(statfrmt('G', name))
                 os.unlink(os.path.join(destdir, name + '.mine'))
                 os.unlink(os.path.join(destdir, name + '.old'))
                 os.unlink(os.path.join(destdir, name + '.new'))
             elif code == 1:
-                print statfrmt('C', name)
+                print(statfrmt('C', name))
                 pac.put_on_conflictlist(name)
             else:
-                print statfrmt('?', name)
+                print(statfrmt('?', name))
                 pac.put_on_conflictlist(name)
 
         pac.write_deletelist()
         pac.write_conflictlist()
-        print
-        print 'Please change into the \'%s\' directory,' % destdir
-        print 'fix the conflicts (files marked with \'C\' above),'
-        print 'run \'osc resolved ...\', and commit the changes.'
+        print()
+        print('Please change into the \'%s\' directory,' % destdir)
+        print('fix the conflicts (files marked with \'C\' above),')
+        print('run \'osc resolved ...\', and commit the changes.')
 
 
     def do_pull(self, subcmd, opts, *args):
@@ -7378,7 +7386,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if linkinfo_new.get('error') != None:
             raise oscerr.APIError('link target is broken')
         if linkinfo_new.get('srcmd5') == baserev:
-            print "Already up-to-date."
+            print("Already up-to-date.")
             p.unmark_frozen()
             return
         dir_new = { 'apiurl': p.apiurl, 'project': p.prjname, 'package': p.name }
@@ -7405,7 +7413,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         entries.update(entries_new)
         for name in sorted(entries.keys()):
             if name.startswith('_service:') or name.startswith('_service_'):
-		continue
+                continue
             md5_old = entries_old.get(name, '')
             md5_new = entries_new.get(name, '')
             md5_oldpatched = entries_oldpatched.get(name, '')
@@ -7413,15 +7421,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
             if md5_old == md5_oldpatched:
                 if md5_new == '':
-                    print statfrmt('D', name)
+                    print(statfrmt('D', name))
                     p.put_on_deletelist(name)
                     os.unlink(name)
                 elif md5_old == '':
-                    print statfrmt('A', name)
+                    print(statfrmt('A', name))
                     self.download(name, md5_new, dir_new, name)
                     p.put_on_addlist(name)
                 else:
-                    print statfrmt('U', name)
+                    print(statfrmt('U', name))
                     self.download(name, md5_new, dir_new, name)
                 continue
             # need diff3 to resolve issue
@@ -7432,7 +7440,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             self.download(name, md5_old, dir_old, name + '.old')
             if binary_file(name + '.mine') or binary_file(name + '.old') or binary_file(name + '.new'):
                 shutil.copy2(name + '.new', name)
-                print statfrmt('C', name)
+                print(statfrmt('C', name))
                 p.put_on_conflictlist(name)
                 continue
 
@@ -7443,15 +7451,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
               '-L', '.new', name + '.new',
             stdout=o)
             if code == 0:
-                print statfrmt('G', name)
+                print(statfrmt('G', name))
                 os.unlink(name + '.mine')
                 os.unlink(name + '.old')
                 os.unlink(name + '.new')
             elif code == 1:
-                print statfrmt('C', name)
+                print(statfrmt('C', name))
                 p.put_on_conflictlist(name)
             else:
-                print statfrmt('?', name)
+                print(statfrmt('?', name))
                 p.put_on_conflictlist(name)
         p.write_deletelist()
         p.write_addlist()
@@ -7459,13 +7467,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # store new linkrev
         store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5') + '\n')
         p.unmark_frozen()
-        print
+        print()
         if len(p.in_conflict):
-            print 'Please fix the conflicts (files marked with \'C\' above),'
-            print 'run \'osc resolved ...\', and commit the changes'
-            print 'to update the link information.'
+            print('Please fix the conflicts (files marked with \'C\' above),')
+            print('run \'osc resolved ...\', and commit the changes')
+            print('to update the link information.')
         else:
-            print 'Please commit the changes to update the link information.'
+            print('Please commit the changes to update the link information.')
 
     @cmdln.option('--create', action='store_true', default=False,
                   help='create new gpg signing key for this project')
@@ -7527,11 +7535,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     url = makeurl(apiurl, ['source', prj, '_pubkey'])
                     f = http_GET(url)
                     break
-                except urllib2.HTTPError, e:
+                except HTTPError as e:
                     l = prj.rsplit(':', 1)
                     # try key from parent project
                     if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:
-                        print '%s has no key, trying %s' % (prj, l[0])
+                        print('%s has no key, trying %s' % (prj, l[0]))
                         prj = l[0]
                     else:
                         raise
@@ -7583,19 +7591,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if meego_style:
             if not os.path.exists('/usr/bin/vc'):
-                print >>sys.stderr, 'Error: you need meego-packaging-tools for /usr/bin/vc command'
+                print('Error: you need meego-packaging-tools for /usr/bin/vc command', file=sys.stderr)
                 return 1
             cmd_list = ['/usr/bin/vc']
         else:
             if not os.path.exists('/usr/lib/build/vc'):
-                print >>sys.stderr, 'Error: you need build.rpm with version 2009.04.17 or newer'
-                print >>sys.stderr, 'See http://download.opensuse.org/repositories/openSUSE:/Tools/'
+                print('Error: you need build.rpm with version 2009.04.17 or newer', file=sys.stderr)
+                print('See http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
                 return 1
 
             cmd_list = ['/usr/lib/build/vc']
 
         # set user's email if no mailaddr exists
-        if not os.environ.has_key('mailaddr'):
+        if 'mailaddr' not in os.environ:
 
             if len(args) and is_package_dir(args[0]):
                 apiurl = store_read_apiurl(args[0])
@@ -7608,15 +7616,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if data:
                 os.environ['mailaddr'] = data[0]
             else:
-                print >>sys.stderr, 'Try env mailaddr=...'
+                print('Try env mailaddr=...', file=sys.stderr)
 
             # mailaddr can be overrided by config one
-            if conf.config['api_host_options'][apiurl].has_key('email'):
+            if 'email' in conf.config['api_host_options'][apiurl]:
                 os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
 
         if meego_style:
             if opts.message or opts.just_edit:
-                print >>sys.stderr, 'Warning: to edit MeeGo style changelog, opts will be ignored.'
+                print('Warning: to edit MeeGo style changelog, opts will be ignored.', file=sys.stderr)
         else:
             if opts.message:
                 cmd_list.append("-m")
@@ -7691,7 +7699,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.dump or opts.dump_full:
             cp = conf.get_configParser(conf.config['conffile'])
             for sect in cp.sections():
-                print '[%s]' % sect
+                print('[%s]' % sect)
                 for opt in sorted(cp.options(sect)):
                     if sect == 'general' and opt in conf.api_host_options or \
                         sect != 'general' and not opt in conf.api_host_options:
@@ -7701,8 +7709,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     val = str(cp.get(sect, opt, raw=True))
                     # special handling for continuation lines
                     val = '\n '.join(val.split('\n'))
-                    print '%s = %s' % (opt, val)
-                print
+                    print('%s = %s' % (opt, val))
+                print()
             return
 
         section, opt, val = args[0], args[1], args[2:]
@@ -7727,18 +7735,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             val = [inp]
         opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=True)
         if newval is None and opts.delete:
-            print '\'%s\': \'%s\' got removed' % (section, opt)
+            print('\'%s\': \'%s\' got removed' % (section, opt))
         elif newval is None:
-            print '\'%s\': \'%s\' is not set' % (section, opt)
+            print('\'%s\': \'%s\' is not set' % (section, opt))
         else:
             if opts.no_echo:
                 # supress value
-                print '\'%s\': set \'%s\'' % (section, opt)
+                print('\'%s\': set \'%s\'' % (section, opt))
             elif opt == 'pass' and not conf.config['plaintext_passwd'] and newval == 'your_password':
                 opt, newval = conf.config_set_option(section, 'passx')
-                print '\'%s\': \'pass\' was rewritten to \'passx\': \'%s\'' % (section, newval)
+                print('\'%s\': \'pass\' was rewritten to \'passx\': \'%s\'' % (section, newval))
             else:
-                print '\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval)
+                print('\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval))
 
     def do_revert(self, subcmd, opts, *files):
         """${cmd_name}: Restore changed files or the entire working copy.
@@ -7776,10 +7784,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         def get_apiurl(apiurls):
-            print 'No apiurl is defined for this working copy.\n' \
-                'Please choose one from the following list (enter the number):'
+            print('No apiurl is defined for this working copy.\n' \
+                'Please choose one from the following list (enter the number):')
             for i in range(len(apiurls)):
-                print ' %d) %s' % (i, apiurls[i])
+                print(' %d) %s' % (i, apiurls[i]))
             num = raw_input('> ')
             try:
                 num = int(num)
@@ -7791,13 +7799,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = parseargs(args)
         pacs = []
-        apiurls = conf.config['api_host_options'].keys()
+        apiurls = list(conf.config['api_host_options'].keys())
         apiurl = ''
         for i in args:
             if is_project_dir(i):
                 try:
                     prj = Project(i, getPackageList=False)
-                except oscerr.WorkingCopyInconsistent, e:
+                except oscerr.WorkingCopyInconsistent as e:
                     if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
                         apiurl = get_apiurl(apiurls)
                     prj = Project(i, getPackageList=False, wc_check=False)
@@ -7812,19 +7820,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif is_package_dir(i):
                 pacs.append(i)
             else:
-                print >>sys.stderr, '\'%s\' is neither a project working copy ' \
-                    'nor a package working copy' % i
+                print('\'%s\' is neither a project working copy ' \
+                    'nor a package working copy' % i, file=sys.stderr)
         for pdir in pacs:
             try:
                 p = Package(pdir)
-            except oscerr.WorkingCopyInconsistent, e:
+            except oscerr.WorkingCopyInconsistent as e:
                 if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
                     apiurl = get_apiurl(apiurls)
                 p = Package(pdir, wc_check=False)
                 p.wc_repair(apiurl)
-                print 'done. Please check the state of the wc (via \'osc status %s\').' % i
+                print('done. Please check the state of the wc (via \'osc status %s\').' % i)
             else:
-                print >>sys.stderr, 'osc: working copy \'%s\' is not inconsistent' % i
+                print('osc: working copy \'%s\' is not inconsistent' % i, file=sys.stderr)
 # fini!
 ###############################################################################
 
@@ -7840,15 +7848,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not extfile.endswith('.py'):
                     continue
                 try:
-                    exec open(os.path.join(plugin_dir, extfile))
-                except SyntaxError, e:
+                    exec(open(os.path.join(plugin_dir, extfile)))
+                except SyntaxError as e:
                     if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
-                        print >>sys.stderr, "%s: %s\n" % (plugin_dir, e)
+                        print("%s: %s\n" % (plugin_dir, e), file=sys.stderr)
                     else:
                         import traceback
                         traceback.print_exc(file=sys.stderr)
-                        print >>sys.stderr, '\n%s: %s' % (plugin_dir, e)
-                        print >>sys.stderr, "\n Try 'env OSC_PLUGIN_FAIL_IGNORE=1 osc ...'"
+                        print('\n%s: %s' % (plugin_dir, e), file=sys.stderr)
+                        print("\n Try 'env OSC_PLUGIN_FAIL_IGNORE=1 osc ...'", file=sys.stderr)
                         sys.exit(1)
                     
 
