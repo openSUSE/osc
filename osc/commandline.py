@@ -5108,9 +5108,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or arg == 'PKGBUILD':
                     arg_descr = arg
                 else:
-                    if osc.build.can_also_build.get(arg) != None and arg_arch is None:
+                    if (arg == osc.build.hostarch or osc.build.can_also_build.get(arg) != None) and arg_arch is None:
                         arg_arch = arg
-                        if not (arg in osc.build.can_also_build.get(osc.build.hostarch, []) or arg in osc.build.hostarch):
+                        if not (arg in osc.build.can_also_build.get(osc.build.hostarch, []) or arg == osc.build.hostarch):
                              print "WARNING: native compile is not possible, an emulator must be configured!"
                     elif not arg_repository:
                         arg_repository = arg
