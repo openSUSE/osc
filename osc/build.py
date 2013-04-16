@@ -45,8 +45,6 @@ qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el',
         ]
 
 can_also_build = {
-             'aarch64':['aarch64'],
-             'armv4l': [                                         'armv4l'                                             ],
              'armv6l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
              'armv7l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ],
              'armv5el':[                                         'armv4l', 'armv5l', 'armv5el'                                  ], # not existing arch, just for compatibility
@@ -58,7 +56,6 @@ can_also_build = {
              'armv5tel':[                                        'armv4l', 'armv5el',                                 'armv5tel' ], 
              's390x':  ['s390' ],
              'ppc64':  [                        'ppc', 'ppc64' ],
-             'sh4':    [                                                                                               'sh4' ],
              'i586':   [                'i386' ],
              'i686':   [        'i586', 'i386' ],
              'x86_64': ['i686', 'i586', 'i386' ],
