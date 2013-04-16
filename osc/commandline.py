@@ -5119,7 +5119,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if (arg == osc.build.hostarch or osc.build.can_also_build.get(arg) != None) and arg_arch is None:
                         arg_arch = arg
                         if not (arg in osc.build.can_also_build.get(osc.build.hostarch, []) or arg == osc.build.hostarch):
-                             print "WARNING: native compile is not possible, an emulator must be configured!"
+                             print("WARNING: native compile is not possible, an emulator must be configured!")
                     elif not arg_repository:
                         arg_repository = arg
                     else:
