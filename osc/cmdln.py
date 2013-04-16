@@ -78,6 +78,7 @@ def introspect_handler_3(handler):
 
 if sys.version_info[0] == 2:
     introspect_handler = introspect_handler_2
+    bytes = lambda x, *args: x
 else:
     introspect_handler = introspect_handler_3
 
@@ -603,15 +604,16 @@ class RawCmdln(cmd.Cmd):
         usage:
             ${name} man
         """
-        self.stdout.write(self.man_header % {
+        self.stdout.write(bytes(
+            self.man_header % {
                 'date': date.today().strftime('%b %Y'),
                 'version': self.get_version(),
                 'name': self.name,
                 'ucname': self.name.upper()
-                }
-        )
+                },
+            "utf-8"))
 
-        self.stdout.write(self.man_commands_header)
+        self.stdout.write(bytes(self.man_commands_header, "utf-8"))
         commands = self._help_get_command_list()
         for command, doc in commands:
             cmdname = command.split(' ')[0]
@@ -622,12 +624,14 @@ class RawCmdln(cmd.Cmd):
                     line = line[8:]
                 lines.append(man_escape(line))
 
-            self.stdout.write('.TP\n\\fB%s\\fR\n%s\n' % (command, '\n'.join(lines)))
+            self.stdout.write(bytes(
+                '.TP\n\\fB%s\\fR\n%s\n' % (command, '\n'.join(lines)), "utf-8"))
 
-        self.stdout.write(self.man_options_header)
-        self.stdout.write(man_escape(self._help_preprocess('${option_list}', None)))
+        self.stdout.write(bytes(self.man_options_header, "utf-8"))
+        self.stdout.write(bytes(
+            man_escape(self._help_preprocess('${option_list}', None)), "utf-8"))
 
-        self.stdout.write(self.man_footer)
+        self.stdout.write(bytes(self.man_footer, "utf-8"))
 
         self.stdout.flush()
 
