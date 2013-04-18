@@ -2871,6 +2871,13 @@ def makeurl(baseurl, l, query=[]):
 def http_request(method, url, headers={}, data=None, file=None, timeout=100):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
+    def create_memoryview(obj):
+        if sys.version_info < (2, 7, 99):
+            # obj might be a mmap and python 2.7's mmap does not
+            # behave like a bytearray (a bytearray in turn can be used
+            # to create the memoryview). For now simply return a buffer
+            return buffer(obj)
+        return memoryview(obj)
 
     filefd = None
 
@@ -2914,7 +2921,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
                     data = mmap.mmap(filefd.fileno(), os.path.getsize(file), mmap.MAP_SHARED, mmap.PROT_READ)
                 else:
                     data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
-                data = memoryview(data)
+                data = create_memoryview(data)
             except EnvironmentError as e:
                 if e.errno == 19:
                     sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
