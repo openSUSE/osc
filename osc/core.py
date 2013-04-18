@@ -45,12 +45,6 @@ except ImportError:
 from . import oscerr
 from . import conf
 
-# python 2.6 don't have memoryview, neither bytes
-try:
-    memoryview
-except NameError:
-    memoryview = buffer
-
 try:
     # python 2.6 and python 2.7
     unicode
