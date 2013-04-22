@@ -665,7 +665,7 @@ def main(apiurl, opts, argv):
     rpmlist_prefers = []
     if prefer_pkgs:
         print('Evaluating preferred packages')
-        for name, path in prefer_pkgs.tems():
+        for name, path in prefer_pkgs.items():
             if bi.has_dep(name):
                 # We remove a preferred package from the buildinfo, so that the
                 # fetcher doesn't take care about them.
