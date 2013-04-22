@@ -393,7 +393,7 @@ class Serviceinfo:
             r = run_external(cmd, shell=True)
 
             if r != 0:
-                print("Aborting: service call failed: " + c)
+                print("Aborting: service call failed: " + cmd)
                 # FIXME: addDownloadUrlService calls si.execute after 
                 #        updating _services.
                 for filename in os.listdir(temp_dir):
