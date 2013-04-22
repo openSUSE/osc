@@ -23,7 +23,7 @@ import stat
 #XXX: python 2.7 contains io.StringIO, which needs unicode instead of str
 #therefor try to import old stuff before new one here
 try:
-    from cStringIO import StringIO
+    from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
