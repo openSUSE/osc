@@ -6978,6 +6978,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     maintainers.setdefault("package", result.get('package'))
                     for person in result.findall('person'):
                         maintainers.setdefault(person.get('role'), []).append(person.get('name'))
+                    for group in result.findall('group'):
+                        maintainers.setdefault(group.get('role'), []).append("group:"+group.get('name'))
                     projects = projects + [maintainers]
             # from meta data
             if metaroot:
@@ -6985,6 +6987,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 maintainers = {}
                 for person in metaroot.findall('person'):
                     maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
+                for group in metaroot.findall('group'):
+                    maintainers.setdefault(group.get('role'), []).append("group:"+group.get('groupid'))
                 projects = [maintainers]
 
             # showing the maintainers
