@@ -279,7 +279,7 @@ class Fetcher:
                 sys.exit(0)
             except URLGrabError as e:
                 # Not found is okay, let's go to the next project
-                if e.code != 404:
+                if e.errno == 14 and e.code != 404:
                     print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
 
