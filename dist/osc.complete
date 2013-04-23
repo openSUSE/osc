@@ -2,22 +2,46 @@
 #
 #  Helper script for completion, usage with tcsh:
 #
-#     complete osc 'p@*@`osc.complete`@'
+#     complete osc 'p@*@`\osc.complete`@'
 #
 #  usage with bash
 #
+#     COMP_WORDBREAKS="${COMP_WORDBREAKS//:}"
 #     complete -C osc.complete osc
 #
 #  Author: Werner Fink <werner@suse.de>
 #
 
+## For debugging only:
+##  Choose your terminal not identical with the test terminal
+## exec 2>/dev/pts/9
+## set -x
+
 set -o noclobber
 shopt -s extglob
 typeset -i last
+typeset -i off
 typeset -i count
+typeset -i offset
+typeset -i remove
+typeset -i colon
+typeset -r OIFS="$IFS"
 
-test "/proc/$PPID/exe" -ef /bin/tcsh || COMMAND_LINE="$COMP_LINE"
+if test "/proc/$PPID/exe" -ef /bin/tcsh ; then
+    export COMP_TYPE=63
+    export COMP_KEY=9
+    export COMP_LINE="${COMMAND_LINE}"
+    export COMP_POINT="${#COMMAND_LINE}"
+    let colon=0
+else
+    COMMAND_LINE="${COMP_LINE:0:$COMP_POINT}"
+#   let colon=1
+    let colon=0
+    [[ $COMMAND_LINE =~ \\: ]] && COMMAND_LINE="${COMMAND_LINE//\\:/:}"
+fi
+IFS="${IFS}="
 cmdline=($COMMAND_LINE)
+IFS="$OIFS"
 test "${cmdline[0]}" != "osc" && exit 1
 
 let last=${#COMMAND_LINE}
@@ -27,19 +51,29 @@ let count--
 test "${COMMAND_LINE:$last}" = " " && let count++
 unset last
 
-osccmds=(abortbuild add addremove ar aggregatepac api branch bugowner build buildconfig \
-    buildhistory buildhist buildinfo buildlog bl cat changedevelrequest changedevelreq \
-    cr checkout co commit checkin ci chroot config copypac createrequest creq delete del 
-    remove rm deleterequest deletereq dr dependson whatdependson diff di distributions dists \
-    getbinaries help importsrcpkg info init jobhistory jobhist linkpac linktobranch list ls \
-    log localbuildlog lbl maintainer man mbranch meta mkpac mv my patchinfo platforms \
-    prjresults pr pull rdelete rdiff rebuild rebuildpac remotebuildlog rbl rbuildlog \
-    repairlink repos repositories platforms repourls request rq review rremove resolved \
-    results r search bse se sm setlinkrev signkey status st submitrequest sr submitpac \
-    submitreq triggerreason tr undelete update up updatepacmetafromspec metafromspec vc \
+oscopts=(--version --help --debugger --post-mortem --traceback --http-full-debug
+    --debug --apiurl -A --config -c --no-keyring --no-gnome-keyring --verbose --quiet)
+osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
+    bsdevelproject bse bugowner build buildconfig buildhist buildhistory buildinfo
+    buildlog buildlogtail cat changedevelreq changedevelrequest checkin checkout
+    chroot ci co commit config copypac cr createincident createrequest creq del
+    delete deletereq deleterequest dependson detachbranch develproject di diff
+    distributions dists dr dropreq droprequest getbinaries getpac help importsrcpkg
+    info init jobhist jobhistory lbl ldiff less linkdiff linkpac linktobranch list
+    LL localbuildlog log ls maintained maintainer maintenancerequest man mbranch
+    meta metafromspec mkpac mr mv my patchinfo pdiff platforms pr prdiff prjresults
+    projdiff projectdiff pull r rbl rblt rbuildlog rbuildlogtail rdelete rdiff
+    rebuild rebuildpac releaserequest remotebuildlog remotebuildlogtail remove
+    repairlink repairwc repos repositories repourls reqbs reqbugownership
+    reqmaintainership reqms request requestbugownership requestmaintainership
+    resolved results revert review rm rq rremove se search service setlinkrev
+    signkey sm sr st status submitpac submitreq submitrequest tr triggerreason
+    undelete unlock up update updatepacmetafromspec user vc whatdependson who whois
     wipebinaries)
-oscreq=(list log show accept decline delete revoke wipe)
-oscmy=(pkg prj rq sr)
+oscreq=(list log show accept decline revoke reopen setincident supersede approvenew
+    checkout clone)
+oscrev=(show list add accept decline reopen supersede)
+oscmy=(work pkg prj rq sr)
 
 oscprj=""
 oscpkg=""
@@ -55,342 +89,1690 @@ fi
 if test -s ~/.osc.projects ; then
     typeset -i ctime=$(command date -d "$(command stat -c '%z' ~/.osc.projects)" +'%s')
     typeset -i   now=$(command date -d now +'%s')
-    ((now - ctime > 86400)) && command osc ls >| ~/.osc.projects
+    if ((now - ctime > 86400)) ; then
+	if tmp=$(mktemp ~/.osc.projects.XXXXXX) ; then
+	    command osc ls / >| $tmp
+	    mv -uf $tmp ~/.osc.projects
+	fi
+    fi
 else
-    command osc ls >| ~/.osc.projects
+    command osc ls / >| ~/.osc.projects
 fi
+
+projects ()
+{
+    local -a list
+    local -a argv
+    local -i argc=0
+    local arg
+    for arg; do
+	if test $arg == "--" ; then
+	    let argc++
+	    break
+	fi
+	argv[argc++]=$arg
+    done
+    shift $argc
+    if test -n "$1" ; then
+	list=($(command grep -E "^$1" ~/.osc.projects))
+    else
+	list=($(command cat ~/.osc.projects))
+    fi
+    if ((colon)) ; then
+	builtin compgen -W "${list[*]}" "$1"|sed -r 's@([^\\]):@\1\\:@g'
+    else
+	builtin compgen -W "${list[*]}" -- ${1+"$@"}
+    fi
+}
+
+packages ()
+{
+    local -a list
+    local -a argv
+    local -i argc=0
+    local arg
+    for arg; do
+	if test $arg == "--" ; then
+	    let argc++
+	    break
+	fi
+	argv[argc++]=$arg
+    done
+    shift $argc
+    if test -n "$1" ; then
+	list=($(command osc ls ${argv[@]}|command grep -E "^$1"))
+    else
+	list=($(command osc ls ${argv[@]}))
+    fi
+    builtin compgen -W "${list[*]}" -- ${1+"$@"}
+}
+
+repositories ()
+{
+    local -a list
+    local -a argv
+    local -i argc=0
+    local arg
+    for arg; do
+	if test $arg == "--" ; then
+	    let argc++
+	    break
+	fi
+	argv[argc++]=$arg
+    done
+    shift $argc
+    if test -n "$1" ; then
+	list=($(command osc meta prj ${argv[@]}|\
+	        command sed -rn '/<repository/{s@^\s*<.*name="([^"]*)".*@\1@p}'|\
+		command sort -u|command grep -E "^$1"))
+    else
+	list=($(command osc meta prj ${argv[@]}|\
+	        command sed -rn '/<repository/{s@^\s*<.*name="([^"]*)".*@\1@p}'|\
+		command sort -u))
+    fi
+    builtin compgen -W "${list[*]}" -- ${1+"$@"}
+}
+
+architectures ()
+{
+    local -a list
+    local -a argv
+    local -i argc=0
+    local arg
+    for arg; do
+	if test $arg == "--" ; then
+	    let argc++
+	    break
+	fi
+	argv[argc++]=$arg
+    done
+    shift $argc
+    if test -n "$1" ; then
+	list=($(command osc meta prj ${argv[@]}|\
+		command sed -rn '/<arch>/{s@^\s*<arch>(.*)</arch>@\1@p}'|\
+		command sort -u|command grep -E "^$1"))
+    else
+	list=($(command osc meta prj ${argv[@]}|\
+		command sed -rn '/<arch>/{s@^\s*<arch>(.*)</arch>@\1@p}'|\
+		command sort -u))
+    fi
+    builtin compgen -W "${list[*]}" -- ${1+"$@"}
+}
+
+targets ()
+{
+    local -a targets=()
+    local -a argv
+    local -i argc=0
+    local arg
+    for arg; do
+	if test $arg == "--" ; then
+	    let argc++
+	    break
+	fi
+	argv[argc++]=$arg
+    done
+    shift $argc
+    let argc=0
+    for arg in $(builtin compgen -o filenames -o bashdefault -f -X '.osc' -- ${1+"$@"}); do
+	test -d $arg && targets[argc]=$arg/ || targets[argc]=$arg
+	let argc++
+    done
+    builtin compgen -W "${argv[*]}${targets+ ${targets[*]}}" -- ${1+"$@"}
+}
+
+users ()
+{
+    if test -s ~/.osc.projects ; then
+	command sed -rn "/^home:$1/{ s/^home:([^:]*):.*/\1/p}" ~/.osc.projects|command sort -u
+    elif test -s ~/.oscrc; then
+	command sed -rn '/^(user=)/{s/(user=)//p}' ~/.oscrc|command sort -u
+    else
+	command id -un
+    fi
+}
 
 submit ()
 {
     local -i pos=$1
-    local -i off=$2
     local target
 
     if ((pos == 1)) ; then
-        if test -z "${cmdline[$((2+off))]}" -a -n "${oscprj}" ; then
-            builtin compgen -W "${oscprj}"
-        else
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((2+off))]}"
-        fi
-    fi
-    if ((pos == 2)) ; then
-        if test -z "${cmdline[$((3+off))]}" -a -n "${oscpkg}" ; then
-            builtin compgen -W "${oscpkg}"
-        else
-            builtin compgen -W "$(command osc ls "${cmdline[$((2+off))]}")" -- "${cmdline[$((3+off))]}"
-        fi
-    fi
-    if ((pos == 3)) ; then
-        if test -z "${cmdline[$((4+off))]}" -a -n "${lnkprj}" ; then
-            builtin compgen -W "${lnkprj}"
-        else
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$((4+off))]}"
-        fi
-    fi
-    if ((pos == 4)) ; then
-        target="${lnkpkg}"
-        target="${target:+$target }$oscpkg"
-        if test -n "${target}" ; then
-            builtin compgen -W "${target}" -- "${cmdline[$((5+off))]}"
-        else
-            builtin compgen -W "$(command osc ls "${cmdline[$((4+off))]}")" -- "${cmdline[$((5+off))]}"
-        fi
+	if test -n "${oscprj}" -a -z "${cmdline[2]}" ; then
+	    builtin compgen -W "${oscprj}" -- "${cmdline[2]}"
+	else
+	    if [[ -n "${oscprj}" && "${oscprj}" =~ "${cmdline[2]}" ]] ; then
+		builtin compgen -W "${oscprj}" -- "${cmdline[2]}"
+	    else
+		projects -- "${cmdline[2]}"
+	    fi
+	fi
+    elif ((pos == 2)) ; then
+	if test -n "${oscpkg}" -a -z "${cmdline[3]}" ; then
+	    builtin compgen -W "${oscpkg}" -- "${cmdline[3]}"
+	else
+	    if [[ -n "${oscpkg}" && "${oscpkg}" =~ "${cmdline[3]}" ]] ; then
+		builtin compgen -W "${oscpkg}" -- "${cmdline[3]}"
+	    else
+		packages "${cmdline[2]}" -- "${cmdline[3]}"
+	    fi
+	fi
+    elif ((pos == 3)) ; then
+	if test -n "${lnkprj}" -a -z "${cmdline[4]}" ; then
+	    builtin compgen -W "${lnkprj}" -- "${cmdline[4]}"
+	else
+	    projects -- "${cmdline[4]}"
+	fi
+    elif ((pos == 4)) ; then
+	target="${lnkpkg}"
+	target="${target:+$target }$oscpkg"
+	if test -n "${target}" ; then
+	    builtin compgen -W "${target}" -- "${cmdline[5]}"
+	else
+	    packages "${cmdline[4]}" -- "${cmdline[5]}"
+	fi
     fi
 }
 
+#
+# The main options
+#
+let remove=0
+while test "${cmdline[1+remove]::1}" = "-" ; do
+    case "${cmdline[1+remove]}" in
+    -A|--apiurl)
+	if ((count-remove == 1)); then
+	    builtin compgen -W "${oscopts[*]}" -- "${cmdline[1+remove]}"
+	    exit
+	elif ((count-remove == 2)); then
+	    if test -s ~/.oscrc ; then
+		hints=($(sed -rn '/^(aliases=|\[http)/{s/,/ /g;s/(aliases=|\[|\])//gp}' ~/.oscrc|sort -u))
+		builtin compgen -W "${hints[*]}" -- "${cmdline[2+remove]}"
+	    else
+		builtin compgen -P https:// -A hostname
+	    fi
+	    exit
+	fi
+	let remove+=2
+	;;
+    -c|--config)
+	if ((count-remove == 1)); then
+	    builtin compgen -W "${oscopts[*]}" -- "${cmdline[1+remove]}"
+	    exit
+	elif ((count-remove == 2)); then
+	    builtin compgen -o filenames -o bashdefault -f -X '.osc' -- "${cmdline[2+remove]}"
+	    exit
+	fi
+	let remove+=2
+	;;
+    -*)
+	if ((count-remove == 1)); then
+	    builtin compgen -W "${oscopts[*]}" -- "${cmdline[1+remove]}"
+	    exit
+	fi
+ 	let remove++
+	;;
+    *)	break
+    esac
+done
+if ((remove)) ; then
+    cmdline=(${cmdline[0]} ${cmdline[@]:remove+1})
+    let count-=remove
+    let remove=0
+fi
+
 case "${cmdline[1]}" in
 add|addremove|ar)
+    opts=(--help --recursive)
     if ((count == 1)) ; then
-        builtin compgen -W 'add addremove ar' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
     else
-        for x in $(builtin compgen -f -X '.osc' -- "${cmdline[2]}"); do
-            test -d $x && builtin echo $x/ || builtin echo $x
-        done
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count >= 2)) ; then
+	targets ${opts[*]} -- "${cmdline[count]}"
     fi
     ;;
-branch)
+build)
+    opts=(--help --oldpackages --disable-cpio-bulk-download --release --baselibs 
+	  --disable-debuginfo --debuginfo --alternative-project --vm-type --linksources 
+	  --local-package --build-uid --userootforbuild --define --without --with 
+	  --ccache --icecream --jobs --root --extra-pkgs --keep-pkgs --prefer-pkgs 
+	  --noservice --no-service --no-verify --nochecks --no-checks --noinit --no-init 
+	  --overlay --rsync-dest --rsync-src --no-changelog --preload --offline --clean)
     if ((count == 1)) ; then
-        builtin compgen -W 'branch' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--alternative-project)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			projects -- "${cmdline[count]}"
+			exit
+		    elif ((count-remove == off+2)) ; then
+			repositories "${cmdline[off+1+remove]}" -- "${cmdline[off+2+$remove]}"
+			exit
+		    elif ((count-remove == off+3)) ; then
+			architectures "${cmdline[off+1+remove]}" -- "${cmdline[off+3+remove]}"
+			exit
+		    fi
+		    let remove+=4
+		    ;;
+		--define)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			builtin compgen -P "'" -S "'" -W 'macro\ definition' -- "${cmdline[off+1+remvoe]}"
+			exit
+		    elif ((count-remove == off+2)) ; then
+			exit
+		    fi
+		    let remove+=3
+		    ;;
+		--@(root|oldpackages|keep-pkgs|prefer-pkgs|rsync-dest|rsync-src))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			builtin compgen -o dirnames -d -- ${cmdline[off+1+remove]}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		--@(release|icecream|jobs|without|with|overlay))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		--build-uid)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			builtin compgen -W "399:399 $(id -u):$(id -g)" -- "${cmdline[off+2+remove]}"
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi 
+    if ((count == 2)) ; then
+	specs=($(command ls *.spec))
+	builtin compgen -W "${opts[*]} ${specs[*]}" -- "${cmdline[count]}"
     fi
-    case "${cmdline[2]}" in
-    --nodevelproject)
-        if ((count == 3)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[3]}"
-        fi
-        if ((count == 4)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[3]}")" -- "${cmdline[4]}"
-        fi
-        ;;
-    -*) builtin compgen -W '--nodevelproject' -- "${cmdline[3]}" ;;
-    *)
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
-    esac
     ;;
-list|ls)
+branch|getpac|bco|branchco)
+    opts=(--help --revision --new-package --maintenance --noaccess --extend-package-names
+	  --add-repositories --force --nodevelproject)
     if ((count == 1)) ; then
-        builtin compgen -W 'list ls' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	case "${cmdline[1]}" in
+	branch)	opts[${#opts[@]}]=--checkout
+	esac
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--revision)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		--message) exit ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			((count >= 6)) && opts[${#opts[@]}]=--message
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
     if ((count == 2)) ; then
-        builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-    fi
-    if ((count == 3)) ; then
-        builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[4]}"
+	projects -- "${cmdline[4]}"
+    elif ((count == 5)) ; then
+	packages "${cmdline[4]}" -- "${cmdline[5]}"
+    elif ((count == 6)) ; then
+	builtin compgen -W "--message ${opts[*]}" -- "${cmdline[6]}"
     fi
     ;;
-sr|submitreq|submitrequest)
+list|ls|ll|LL)
+    opts=(--help --meta --deleted --long --verbose --unexpand --expand --binaries
+	  --repo --revision --arch)
     if ((count == 1)) ; then
-        builtin compgen -W 'sr submitreq submitrequest' -- "${cmdline[1]}"
+	builtin compgen -W 'list ls ll LL' -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(revision|repo|arch))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
-    case "${cmdline[2]}" in
-    --nodevelproject)
-            submit $((count - 2)) 1 ;;
-    -*) builtin compgen -W '--nodevelproject' -- "${cmdline[2]}" ;;
-    *)  submit $((count - 1)) 0 ;;
-    esac
+    if ((count == 2)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+ 	    projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	packages -u "${cmdline[2]}" "${cmdline[3]}" -- "${cmdline[4]}"
+    else
+	builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+    fi
     ;;
-rq|request)
+less|cat)
+    opts=(--help --meta --unexpand --expand --revision)
     if ((count == 1)) ; then
-        builtin compgen -W 'rq request' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--revision)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count == 2)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	    projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	packages -u "${cmdline[2]}" "${cmdline[3]}" -- "${cmdline[4]}"
+    else
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+    fi
+    ;;
+sr|submitpac|submitreq|submitrequest)
+    opts=(--help --yes --diff --no-update --no-cleanup --cleanup --seperate-requests
+	  --nodevelproject --supersede --revision)
+    if ((count == 1)) ; then
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(revision|supersede))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		--message) exit ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			((count >= 6)) && opts[${#opts[@]}]=--message
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count >= 2 && count <= 5)) ; then
+	if ((count == 2)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	fi
+	submit $((count-1)) 1
+    elif ((count == 6)) ; then
+	builtin compgen -W "--message ${opts[*]}" -- "${cmdline[6]}"
+    fi
+    ;;
+rq|request|review)
+    opts=(--help --involved-projects --exclude-target-project --non-interactive --interactive --edit)
+    if ((count == 1)) ; then
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	while test "${cmdline[2+remove]::1}" = "-" ; do
+	    case "${cmdline[2+remove]}" in
+	    --exclude-target-project)
+		if ((count-remove == 2)); then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		elif ((count-remove == 3)) ; then
+		    builtin echo -n EXCLUDE_TARGET_PROJECT
+		    exit
+		fi
+		let remove+=2
+		;; 
+	    -*)
+		if ((count-remove == 2)) ; then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		fi
+		let remove++
+	    esac
+	done
+	if ((remove)) ; then
+	    cmdline=(${cmdline[*]:0:2} ${cmdline[@]:remove+2})
+	    let count-=remove
+	    let remove=0
+	fi
     fi
     case "${cmdline[2]}" in
-    accept|decline|wipe|revoke|log)
-        if ((count == 3)) ; then
-            builtin echo -n 'ID'
-        fi
-        ;;
+    log|checkout)
+	opts=(--help)
+	if ((count == 2)) ; then
+	    builtin compgen -W 'log checkout' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    -*)
+			if ((count-remove == off)) ; then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	    builtin echo -n 'ID'
+	else
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+	fi
+	;;
+    revoke|clone)
+	opts=(--help)
+	if ((count == 2)) ; then
+	    builtin compgen -W 'revoke clone' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    --message) exit ;;
+		    -*)
+			if ((count-remove == off)) ; then
+			    ((count >= 4)) && opts[${#opts[@]}]=--message
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	    builtin echo -n 'ID'
+	elif ((count == 4)) ; then
+	    builtin compgen -W "--message ${opts[*]}" -- "${cmdline[4]}"
+	fi
+	;;
+    setincident)
+	opts=(--help)
+	if ((count == 2)) ; then
+	    builtin compgen -W 'setincident' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    --message) exit ;;
+		    -*)
+			if ((count-remove == off)) ; then
+			    ((count >= 4)) && opts[${#opts[@]}]=--message
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	    builtin echo -n 'ID'
+	elif ((count == 4)) ; then
+	    builtin echo -n 'INCIDENT'
+	elif ((count == 5)) ; then
+	    builtin compgen -W "--message ${opts[*]}" -- "${cmdline[5]}"
+	fi
+	;;
+    supersede|add|accept|decline|reopen)
+	case "${cmdline[1]}" in
+	rq|request) opts=() ;;
+	review)     opts=(--user --group --project --package)
+	esac
+	if ((count == 2)) ; then
+	    builtin compgen -W 'supersede add accept decline reopen' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    typeset -i supersede=0
+	    case "${cmdline[2]}" in
+	    supersede)	let supersede=1
+	    esac
+	    typeset project=""
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    --user)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) ; then
+			    user=($(users ${cmdline[off+1+remove]}))
+			    builtin compgen -W "${user[*]}" -- ${cmdline[off+1+remove]}
+			fi
+			let remove+=2
+			;;
+		    --group)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			    hint="${cmdline[off+remove]^^}"
+			    builtin echo -n ${hint##*-}
+			    exit
+			fi
+			let remove+=2
+			;;
+		    --project)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) ; then
+			    projects -- "${cmdline[off+1+remove]}"
+			    exit
+			else
+			    project="${cmdline[off+1+remove]}"
+			fi
+			let remove+=2
+			;;
+		    --package)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) ; then
+			    test -z "$project" && project=PROJECT_REQUIRED
+			    packages -u "$project" -- "${cmdline[off+1+remove]}"
+			    exit
+			fi
+			let remove+=2
+			;;
+		    --message) exit ;;
+		    -*)
+			if ((count-remove == off)) ; then
+			    ((count >= 4)) && opts[${#opts[@]}]=--message
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts+${opts[*]} }ID" -- "${cmdline[3]}"
+	elif ((count == 4)) ; then
+	    if ((supersede)) ; then
+		builtin echo -n 'SUPERSEDING_ID'
+	    else
+		builtin compgen -W '--message' -- "${cmdline[4]}"
+	    fi
+	elif ((count == 5 && supersede)) ; then
+	    builtin compgen -W '--message' -- "${cmdline[5]}"
+	fi
+	;;
+    approvenew)
+	opts=(--help)
+	if ((count == 2)) ; then
+	    builtin compgen -W 'approvenew' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    --message) exit ;;
+		    -*)
+			if ((count-remove == off)) ; then
+			    ((count >= 4)) && opts[${#opts[@]}]=--message
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	    projects -- "${cmdline[3]}"
+	elif ((count == 4)) ; then
+	    builtin compgen -W "--message ${opts[*]}" -- "${cmdline[4]}"
+	fi
+	;;
     show)
-        if ((count == 3)) ; then
-            builtin compgen -W '--diff' -- "${cmdline[3]}"
-        else
-            builtin echo -n 'ID'
-        fi
-        ;;
+	opts=(--diff --brief --source-buildstatus)
+	if ((count == 2)) ; then
+	    builtin compgen -W 'show' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    -*)
+			if ((count-remove == off)) ; then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=("${cmdline[@]:0:off}" "${cmdline[@]:remove+off}")
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts[*]} ID" -- "${cmdline[3]}"
+	else
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+	fi
+	;;
     list)
-        if ((count == 3)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[3]}"
-        fi
-        if ((count == 4)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[3]}")" -- "${cmdline[4]}"
-        fi
-        ;;
+	case "${cmdline[1]}" in
+	rq|request) opts=(--mine --user --state -days --type --bugowner) ;;
+	review)     opts=(--user --group --project --package)
+	esac
+	if ((count == 2)) ; then
+	    builtin compgen -W 'list' -- "${cmdline[count]}"
+	elif ((count >= 3)) ; then
+	    typeset project=""
+	    for ((off=3; off<=count; off++)) ; do
+		while test "${cmdline[off+remove]::1}" = "-" ; do
+		    case "${cmdline[off+remove]}" in
+		    --user)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) ; then
+			    user=($(users ${cmdline[off+1+remove]}))
+			    builtin compgen -W "${user[*]}" -- ${cmdline[off+1+remove]}
+			fi
+			let remove+=2
+			;;
+		    --group)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			    hint="${cmdline[off+remove]^^}"
+			    builtin echo -n ${hint##*-}
+			    exit
+			fi
+			let remove+=2
+			;;
+		    --project)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) ; then
+			    projects -- "${cmdline[off+1+remove]}"
+			    exit
+			else
+			    project="${cmdline[off+1+remove]}"
+			fi
+			let remove+=2
+			;;
+		    --package)
+			if ((count-remove == off)); then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			elif ((count-remove == off+1)) ; then
+			    test -z "$project" && project=PROJECT_REQUIRED
+			    packages -u "$project" -- "${cmdline[off+1+remove]}"
+			    exit
+			fi
+			let remove+=2
+			;;
+		    -*)
+			if ((count-remove == off)) ; then
+			    builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			    exit
+			fi
+			let remove++
+		    esac
+		done
+		if ((remove)) ; then
+		    cmdline=("${cmdline[@]:0:off}" "${cmdline[@]:remove+off}")
+		    let count-=remove
+		    let remove=0
+		fi
+	    done
+	fi
+	if ((count == 3)) ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	    projects -- "${cmdline[3]}"
+	fi
+	if ((count == 4)) ; then
+	    packages -u "${cmdline[3]}" -- "${cmdline[4]}"
+	fi
+	;;
     *)
-        ((count == 2)) && builtin compgen -W "$(builtin echo ${oscreq[@]})" -- "${cmdline[2]}"
+	if ((count == 2)) ; then
+	    case "${cmdline[1+remove]}" in
+	    rq|request) builtin compgen -W "${opts[*]} ${oscreq[*]}" -- "${cmdline[2]}" ;;
+	    review)	builtin compgen -W "${opts[*]} ${oscrev[*]}" -- "${cmdline[2]}" ;;
+	    esac
+	fi
     esac
     ;;
 my)
+    opts=(--help --maintained --verbose --exclude-project --user --all --maintainer --bugowner)
     if ((count == 1)) ; then
-        builtin compgen -W 'my' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--user)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			user=($(users ${cmdline[off+1+remove]}))
+			builtin compgen -W "${user[*]}" -- ${cmdline[off+1+remove]}
+		    fi
+		    let remove+=2
+		    ;;
+		--exclude-project)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			projects -- "${cmdline[off+1+remove]}"
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
     if ((count == 2)) ; then
-	builtin compgen -W "$(builtin echo ${oscmy[@]})" -- "${cmdline[2]}"
+	builtin compgen -W "${opts[*]} ${oscmy[*]}" -- "${cmdline[2]}"
+    elif ((count >= 3)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
     fi
     ;;
 copypac|linkpac)
+    opts=(--help --expand --to-apiurl --revision --keep-develproject --keep-link
+	  --keep-maintainers --client-side-copy)
     if ((count == 1)) ; then
-        builtin compgen -W 'copypac linkpac' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(revision|to-apiurl))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
-    case "${cmdline[2]}" in
-    *)
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
-        if ((count == 4)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[4]}"
-        fi
-        if ((count == 5)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[4]}")" -- "${cmdline[5]}"
-        fi
-    esac
+    if ((count == 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	projects -- "${cmdline[4]}"
+    elif ((count == 5)) ; then
+	packages"${cmdline[4]}" -- "${cmdline[5]}"
+    elif ((count == 6)) ; then
+	builtin compgen -W "--message ${opts[*]}" -- "${cmdline[6]}"
+    fi
     ;;
-deleterequest|deletereq|dr)
+delete)
+    opts=(--help --force)
     if ((count == 1)) ; then
-        builtin compgen -W 'deleterequest deletereq dr' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    else
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
-    case "${cmdline[2]}" in
-    *)
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
-    esac
+    if ((count >= 2)) ; then
+	targets ${opts[*]} -- "${cmdline[count]}"
+    fi
+    ;;
+deleterequest|deletereq|droprequest|dropreq|dr)
+    typeset -i repository=0
+    opts=(--help --repository --message)
+    if ((count == 1)) ; then
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count == 2)) ; then
+	projects -- "${cmdline[2]}"
+    elif ((count >= 3)) ; then
+	for ((off=3; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--repository)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    let repository++
+		    ;;
+		--message) exit ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			((count >= 4)) && opts[${#opts[@]}]=--message
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count == 3)) ; then
+	if ((repository)) ; then
+	    builtin compgen -W '--message' -- "${cmdline[4]}"
+	else
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	    packages "${cmdline[2]}" -- "${cmdline[3]}"
+	fi
+    elif ((count == 4)) ; then
+	builtin compgen -W "--message ${opts[*]}" -- "${cmdline[4]}"
+    fi
     ;;
 changedevelrequest|changedevelreq|cr)
+    opts=(--help)
     if ((count == 1)) ; then
-        builtin compgen -W 'changedevelrequest changedevelreq cr' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
-    case "${cmdline[2]}" in
-    *)
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
-        if ((count == 4)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[4]}"
-        fi
-        if ((count == 5)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[4]}")" -- "${cmdline[5]}"
-        fi
-    esac
+    if ((count == 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[4]}"
+    elif ((count == 5)) ; then
+	packages "${cmdline[4]}" -- "${cmdline[5]}"
+    fi
     ;;
 rdiff)
+    opts=(--help --unexpand --missingok --change --plain --revision --meta)
     if ((count == 1)) ; then
-        builtin compgen -W 'rdiff' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(revision|change))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
-    case "${cmdline[2]}" in
-    *)
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
-        if ((count == 4)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -P --oldprj= -- "${cmdline[4]#*=}"
-        fi
-        if ((count == 5)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[4]#*=}")" -P --oldpkg= -- "${cmdline[5]#*=}"
-        fi
-    esac
+    if ((count == 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[4]}"
+	projects -- "${cmdline[4]}"
+    elif ((count == 5)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[5]}"
+	packages "${cmdline[4]}" -- "${cmdline[5]}"
+    fi
     ;;
 ci|commit|checkin)
+    opts=(--help --skip-local-service-run --noservice --verbose --skip-validation --force
+	  --file --message)
     if ((count == 1)) ; then
-        builtin compgen -W 'ci commit checkin' -- "${cmdline[1]}"
-    else
-        for x in $(builtin compgen -f -X '.osc' -- "${cmdline[2]}"); do
-            test -d $x && builtin echo $x/ || builtin echo $x
-        done
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--file)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		--message) exit ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			((count >= 3)) && opts[${#opts[@]}]=--message
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count == 2)) ; then
+	targets ${opts[*]} -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	builtin compgen -W "--message ${opts[*]}" -- "${cmdline[3]}"
     fi
     ;;
 co|checkout)
+    opts=(--help --limit-size --server-side-source-service-files --source-service-files
+	  --output-dir --current-dir --meta --unexpand-link --expand-link --revision)
     if ((count == 1)) ; then
-        builtin compgen -W 'co copypac checkout' -- "${cmdline[1]}"
-    else
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(output-dir|revision))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		    ;;
+		*)	break
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count == 4)) ; then
+	packages "${cmdline[2]}" "${cmdline[3]}" -- "${cmdline[4]}"
     fi
     ;;
 maintainer)
+    opts=(--help --role --delete --set-bugowner-request --set-bugowner --all --add
+	  --devel-project --verbose --nodevelproject --email --bugowner --bugowner-only)
     if ((count == 1)) ; then
-        builtin compgen -W 'maintainer' -- "${cmdline[1]}"
-    else
-        if ((count == 2)) ; then
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-        fi
-        if ((count == 3)) ; then
-            builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-        fi
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(delete|set-bugowner-request|set-bugowner|add|devel-projec))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		--devel-projec)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			projects -- "${cmdline[off+1+remove]}"
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		--role)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			builtin compgen -W 'bugowner maintainer involved' -- "${cmdline[off+1+remove]}"
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
+    fi
+    if ((count == 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count > 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+	if ((count == 3)) ; then
+	    packages "${cmdline[2]}" -- "${cmdline[3]}"
+	fi
     fi
     ;;
 up|update)
+    opts=(--help --limit-size --server-side-source-service-files --source-service-files
+	  --expand-link --unexpand-link --revision)
     if ((count == 1)) ; then
-        builtin compgen -W 'up update' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	while test "${cmdline[2+remove]::1}" = "-" ; do
+	    case "${cmdline[2+remove]}" in
+	    --revision)
+		if ((count-remove == 2)); then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		elif ((count-remove == 3)) && test -z "${cmdline[3+remove]}" ; then
+		    hint="${cmdline[2+remove]^^}"
+		    builtin echo -n ${hint##*-}
+		    exit
+		fi
+		let remove+=2
+		;;
+	    -*)
+		if ((count-remove == 2)) ; then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		fi
+		let remove++
+	    esac
+	done
     fi
-    if ((count == 2)) ; then
-        builtin  compgen -W '--expand-link --unexpand-link' -- "${cmdline[2]}"
-    fi
+    builtin  compgen -W "${opts[*]}" -- "${cmdline[count]}"
     ;;
 meta)
+    opts=(--help --delete --set --remove-linking-repositories --create --edit --file
+	  --force --attribute-project --attribute-defaults --attribute)
     if ((count == 1)) ; then
-        builtin compgen -W 'meta metafromspec' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(attribute|file))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		--set)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			builtin echo -n ATTRIBUTE_VALUES
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
     if ((count == 2)) ; then
-        builtin compgen -W 'prj pkg' -- "${cmdline[2]}"
-    fi
-    if ((count == 3)) ; then
-        builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[3]}"
-    fi
-    if ((count == 4)) && test "${cmdline[2]}" = pkg ; then
-        builtin compgen -W "$(command osc ls "${cmdline[3]}")" -- "${cmdline[4]}"
-    fi
-    if ((count == 5)) ; then
-        builtin compgen -W '--edit -e' -- "${cmdline[5]}"
+	builtin compgen -W 'prj pkg prjconf user pattern attribute' -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	if test "${cmdline[2]}" = user ; then
+	    user=($(users ${cmdline[3]}))
+	    builtin compgen -W "${user[*]}" -- ${cmdline[3]}
+	else
+	    projects -- "${cmdline[3]}"
+	fi
+    elif ((count == 4)) ; then
+	if test "${cmdline[2]}" = pkg ; then
+	    packages "${cmdline[3]}" -- "${cmdline[4]}"
+	elif test "${cmdline[2]}" = attribute ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[4]}"
+	    packages "${cmdline[3]}" -- "${cmdline[4]}"
+	elif test "${cmdline[2]}" = user ; then
+	    user=($(users ${cmdline[4]}))
+	    builtin compgen -W "${user[*]}" -- ${cmdline[4]}
+	else
+	    builtin compgen -W "${opts[*]}" -- ${cmdline[4]}
+	fi
+    elif ((count == 5)) ; then
+	builtin compgen -W "${opts[*]}" -- ${cmdline[5]}
     fi
     ;;
 wipebinaries)
+    opts=(--help --all --unresolvable --broken --build-failed --build-disabled --repo --arch)
     if ((count == 1)) ; then
-        builtin compgen -W 'wipebinaries' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(repo|arch))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
     if ((count == 2)) ; then
-        builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-    fi
-    if ((count == 3)) ; then
-        builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
-    fi
-    if ((count == 4)) ; then
-        builtin compgen -W "--expansion --broken --build-failed --build-disabled" -- "${cmdline[4]}"
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count-remove == 3)) ; then
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
     fi
     ;;
 help)
     if ((count == 1)) ; then
-        builtin compgen -W 'help' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    else
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[2]}"
     fi
-    ((count == 2)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[2]}"
     ;;
 search)
+    opts=(--help --all --binaryversion --baseproject --binary --csv --mine
+	  --maintained --maintainer --bugowner --involved --version --verbose
+	  --limit-to-attribute --description --title --project --package
+	  --substring --exact --repos-baseurl)
     if ((count == 1)) ; then
-        builtin compgen -W 'search' -- "${cmdline[1]}"
-    else
-        oscsearch="--help --csv -i --involved -v --verbose --description --title \
-                   --project --package -e --exact --repos-baseurl"
-        builtin compgen -W "${oscsearch}" -- "${cmdline[$count]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	while test "${cmdline[2+remove]::1}" = "-" ; do
+	    case "${cmdline[2+remove]}" in
+	    --@(binaryversion|baseproject|limit-to-attribute))
+		if ((count-remove == 2)); then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		elif ((count-remove == 3)) && test -z "${cmdline[3+remove]}" ; then
+		    hint="${cmdline[2+remove]^^}"
+		    builtin echo -n ${hint##*-}
+		    exit
+		fi
+		let remove+=2
+		;;
+	    --@(maintainer|bugowner|involved))
+		if ((count-remove == 2)); then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		elif ((count-remove == 3)) ; then
+		    user=($(users ${cmdline[3+remove]}))
+		    builtin compgen -W "${user[*]}" -- ${cmdline[3+remove]}
+		fi
+		let remove+=2
+		;;
+	    -*)
+		if ((count-remove == 2)) ; then
+		    builtin compgen -W "${opts[*]}" -- "${cmdline[2+remove]}"
+		    exit
+		fi
+		let remove++
+	    esac
+	done
+    fi
+    if ((count-remove == 2)) ; then
+	builtin compgen -W "${opts[*]} SEARCH_TERM" -- "${cmdline[count]}"
     fi
     ;;
 pr|prjresults)
+    opts=(--help --show-excluded --vertical --repo --arch --name-filter --status-filter
+	  --xml --csv --hide-legend)
     if ((count == 1)) ; then
-        builtin compgen -W 'pr prjresults' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[2]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(repo|arch))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		--name-filter)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			builtin echo -n EXPR
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		--status-filter)
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) ; then
+			status=(disabled failed finished building succeeded broken scheduled unresolvable signing blocked)
+			builtin compgen -W  "${status[*]}" -- "${cmdline[off+1+remove]}"
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
     if ((count == 2)) ; then
-        builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
-    fi
-    if ((count > 2)) ; then
-        case "${cmdline[$((count-1))]}" in
-        -n|--name-filter*)
-            builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[$count]}"
-            ;;
-        -s|--status-filter*)
-            OIFS="$IFS"; IFS=:
-            builtin compgen -W 'disabled:failed:finished:building:succeeded:broken:scheduled:unresolvable:signing:blocked' -- "${cmdline[$count]}"
-            IFS="$OIFS"
-            ;;
-        -p|--project*)
-            builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[$count]}"
-            ;;
-        *)
-            builtin compgen -W "-n --name-filter -s --status-filter -c --csv -q --hide-legend" -- "${cmdline[$count]}"
-            ;;
-        esac
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    else
+	builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
     fi
     ;;
 r|results)
+    opts=(--help --format --csv --xml --watch --verbose --arch --repo --last-build)
     if ((count == 1)) ; then
-        builtin compgen -W 'r results' -- "${cmdline[1]}"
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(repo|arch|format))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
     if ((count == 2)) ; then
-        builtin compgen -W "$(command cat ~/.osc.projects)" -- "${cmdline[2]}"
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count > 3)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
     fi
-    if ((count == 3)) ; then
-        builtin compgen -W "$(command osc ls "${cmdline[2]}")" -- "${cmdline[3]}"
+    ;;
+diff|linkdiff)
+    opts=(--help --missingok --link --plain --revision --change)
+    typeset -i link=0
+    if ((count == 1)) ; then
+	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	case "${cmdline[1]}" in
+	linkdiff) let link++ ;;
+	esac
+	for ((off=2; off<=count; off++)) ; do
+	    while test "${cmdline[off+remove]::1}" = "-" ; do
+		case "${cmdline[off+remove]}" in
+		--@(revision|change))
+		    if ((count-remove == off)); then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    elif ((count-remove == off+1)) && test -z "${cmdline[off+1+remove]}" ; then
+			hint="${cmdline[off+remove]^^}"
+			builtin echo -n ${hint##*-}
+			exit
+		    fi
+		    let remove+=2
+		    ;; 
+		--link)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		    let link++
+		    ;;
+		-*)
+		    if ((count-remove == off)) ; then
+			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
+			exit
+		    fi
+		    let remove++
+		esac
+	    done
+	    if ((remove)) ; then
+		cmdline=(${cmdline[*]:0:off} ${cmdline[@]:remove+off})
+		let count-=remove
+		let remove=0
+	    fi
+	done
     fi
-    if ((count > 3)) ; then
-         builtin compgen -W "-r --repo -a --arch -l --last-build --xml" -- "${cmdline[$count]}"
+    if ((count == 2)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[2]}"
+	((link)) && projects -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+	((link)) && packages "${cmdline[2]}" -- "${cmdline[3]}"
+    elif ((count > 3)) ; then
+	builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
     fi
     ;;
 *)
-    ((count == 1)) && builtin compgen -W "$(builtin echo ${osccmds[@]})" -- "${cmdline[1]}"
+    opts=(--help)
+    if ((count == 1)) ; then
+	builtin compgen -W "${osccmds[*]} ${oscopts[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+	if test "${cmdline[count]::1}" = "-" ; then
+	    builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+	else
+	    targets ${opts[*]} -- "${cmdline[count]}"
+	fi
+    fi 
 esac
