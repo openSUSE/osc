@@ -383,31 +383,32 @@ class Serviceinfo:
             if service['mode'] != "trylocal" and service['mode'] != "localonly" and callmode == "trylocal":
                 continue
             call = service['command']
-            temp_dir = tempfile.mkdtemp()
-            name = call.split(None, 1)[0]
-            if not os.path.exists("/usr/lib/obs/service/"+name):
-                raise oscerr.PackageNotInstalled("obs-service-"+name)
-            cmd = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
-            if conf.config['verbose'] > 1 or verbose:
-                print("Run source service:", cmd)
-            r = run_external(cmd, shell=True)
+            temp_dir = None
+            try:
+                temp_dir = tempfile.mkdtemp()
+                name = call.split(None, 1)[0]
+                if not os.path.exists("/usr/lib/obs/service/"+name):
+                    raise oscerr.PackageNotInstalled("obs-service-"+name)
+                cmd = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
+                if conf.config['verbose'] > 1 or verbose:
+                    print("Run source service:", cmd)
+                r = run_external(cmd, shell=True)
 
-            if r != 0:
-                print("Aborting: service call failed: " + cmd)
-                # FIXME: addDownloadUrlService calls si.execute after 
-                #        updating _services.
-                for filename in os.listdir(temp_dir):
-                    os.unlink(os.path.join(temp_dir, filename))
-                os.rmdir(temp_dir)
-                return r
+                if r != 0:
+                    print("Aborting: service call failed: " + cmd)
+                    # FIXME: addDownloadUrlService calls si.execute after 
+                    #        updating _services.
+                    return r
 
-            if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
-                for filename in os.listdir(temp_dir):
-                    shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
-            else:
-                for filename in os.listdir(temp_dir):
-                    shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
-            os.rmdir(temp_dir)
+                if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
+                    for filename in os.listdir(temp_dir):
+                        shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
+                else:
+                    for filename in os.listdir(temp_dir):
+                        shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
+            finally:
+                if temp_dir is not None:
+                    shutil.rmtree(temp_dir)
 
         return 0
 
