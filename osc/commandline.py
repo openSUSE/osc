@@ -6872,6 +6872,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                filterroles=None
            if binary:
                searchresult = owner(apiurl, binary, "binary", usefilter=filterroles, devel=None, limit=limit)
+               if not searchresult and (opts.set_bugowner or opts.set_bugowner_request):
+                   # filtered search did not succeed, but maybe we want to set an owner initially?
+                   searchresult = owner(apiurl, binary, "binary", usefilter="", devel=None, limit=-1)
+                   if searchresult:
+                       print("WARNING: the binary exists, but has no matching maintainership roles defined.")
+                       print("Do you want to set it in the container where the binary appeared first?")
+                       result = searchresult.find('owner')
+                       print("This is: " + result.get('project'), end=' ')
+                       if result.get('package'):
+                             print (" / " + result.get('package'))
+                       repl = raw_input('\nUse this this container? (y/n) ')
+                       if repl.lower() != 'y':
+                             searchresult = None
            elif opts.user:
                searchresult = owner(apiurl, opts.user, "user", usefilter=filterroles, devel=None)
            elif opts.group:

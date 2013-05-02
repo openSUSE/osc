@@ -5803,7 +5803,7 @@ def owner(apiurl, binary, mode="binary", attribute=None, project=None, usefilter
         query['devel'] = devel
     if limit != None:
         query['limit'] = limit
-    if usefilter:
+    if usefilter != None:
         query['filter'] = ",".join(usefilter)
     u = makeurl(apiurl, [ 'search', 'owner' ], query)
     res = None
