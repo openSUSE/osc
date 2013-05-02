@@ -48,7 +48,7 @@ try:
     from urllib.parse import urlsplit
     from urllib.error import URLError
     from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib.request import build_opener, proxy_bypass
+    from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass
 except ImportError:
     #python 2.x
     from cookielib import LWPCookieJar, CookieJar
@@ -56,7 +56,7 @@ except ImportError:
     from StringIO import StringIO
     from urlparse import urlsplit
     from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib2 import build_opener, proxy_bypass
+    from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass
 
 from . import OscConfigParser
 from osc import oscerr
