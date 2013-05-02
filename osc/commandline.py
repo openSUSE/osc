@@ -6882,7 +6882,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        print("This is: " + result.get('project'), end=' ')
                        if result.get('package'):
                              print (" / " + result.get('package'))
-                       repl = raw_input('\nUse this this container? (y/n) ')
+                       repl = raw_input('\nUse this container? (y/n) ')
                        if repl.lower() != 'y':
                              searchresult = None
            elif opts.user:
