@@ -122,6 +122,13 @@ def run(prg):
                 msg = body.split('<summary>')[1]
                 msg = msg.split('</summary>')[0]
                 print(msg, file=sys.stderr)
+        if e.code >= 500 and e.code <= 599:
+            print('\nRequest: %s' % e.filename)
+            print('Headers:')
+            for h, v in e.hdrs.items():
+                if h != 'Set-Cookie':
+                    print("%s: %s" % (h, v))
+
         return 1
     except BadStatusLine as e:
         print('Server returned an invalid response:', e, file=sys.stderr)
