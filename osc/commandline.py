@@ -6934,7 +6934,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         setBugowner(apiurl, prj, pac, opts.delete, role)
                     except HTTPError as e:
                         if e.code == 403:
-                            print("No write permission in", result.get('project'), end=' ')
+                            print("No write permission in" + result.get('project'), end=' ')
                             if result.get('package'):
                                 print("/", result.get('package'), end=' ')
                             print()
