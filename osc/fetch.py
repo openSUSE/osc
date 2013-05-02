@@ -15,7 +15,7 @@ except ImportError:
     from urllib import quote_plus
     from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
 
-from urlgrabber.grabber import URLGrabError
+from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
 from .core import makeurl, streamfile
 from .util import packagequery, cpio
@@ -35,8 +35,9 @@ def join_url(self, base_url, rel_url):
     IOW, we make MirrorGroup ignore relative_url"""
     return base_url
 
-class OscFileGrabber:
+class OscFileGrabber(URLGrabber):
     def __init__(self, progress_obj = None):
+        super(OscFileGrabber, self).__init__()
         self.progress_obj = progress_obj
 
     def urlgrab(self, url, filename, text = None, **kwargs):
