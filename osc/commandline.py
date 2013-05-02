@@ -6800,6 +6800,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='delete a maintainer/bugowner (can be specified via --role)')
     @cmdln.option('-r', '--role', metavar='role', action='append', default=[],
                   help='Specify user role')
+    @cmdln.option('-m', '--message',
+                  help='Define message as commit entry or request description')
     @cmdln.alias('bugowner')
     def do_maintainer(self, subcmd, opts, *args):
         """${cmd_name}: Show maintainers according to server side configuration
@@ -6953,7 +6955,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                        requestactionsxml += self._set_bugowner(args,opts)
 
             if requestactionsxml != "":
-                message = edit_message()
+                if opts.message:
+                    message = opts.message
+                else:
+                    message = edit_message()
 
                 import cgi
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
