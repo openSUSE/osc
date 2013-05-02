@@ -1,4 +1,5 @@
 0.140
+  - support python 2.7 and python 3 in parallel now
   - allow specifying directories as mv targets
   - drop the support for deprecated cbinstall and cbpreinstall directives
   - allow to set maintainer or bugowner ship for a binary package initially, but ask back if
