@@ -911,6 +911,8 @@ class Osc(cmdln.Cmdln):
         apiurl = self.get_api_url()
 
         if len(args) < 2 and is_project_dir(os.getcwd()):
+            if opts.diff:
+                raise oscerr.WrongOptions('\'--diff\' is not supported in a project working copy')
             import cgi
             project = store_read_project(os.curdir)
 
