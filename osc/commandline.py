@@ -1780,8 +1780,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='edit a submit action')
     @cmdln.option('-i', '--interactive', action='store_true',
                         help='interactive review of request')
-    @cmdln.option('--accept-or-revoke', action='store_true',
-                        help='For automatisation scripts: accepts a request when it is in new or review state. Or revoke it when it got declined. Otherwise just do nothing.')
+    @cmdln.option('--or-revoke', action='store_true',
+                        help='For automatisation scripts: accepts (if using with accept argument) a request when it is in new or review state. Or revoke it when it got declined. Otherwise just do nothing.')
     @cmdln.option('--non-interactive', action='store_true',
                         help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
@@ -2157,10 +2157,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # Change state of entire request
             elif cmd in ['reopen', 'accept', 'decline', 'wipe', 'revoke', 'supersede']:
                 rq = get_request(apiurl, reqid)
-                if opts.accept_or_revoke:
-                    if rq.state.name == "decline":
-                        cmd=revoke
-                    elif rq.state.name != "new" or rq.state.name != "review":
+                if opts.or_revoke:
+                    if rq.state.name == "declined":
+                        cmd="revoke"
+                    elif rq.state.name != "new" and rq.state.name != "review":
                         return 0
                 if rq.state.name == state_map[cmd]:
                     repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "  % (reqid, rq.state.name))
@@ -2171,9 +2171,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.message:
                     tmpl = change_request_state_template(rq, state_map[cmd])
                     opts.message = edit_message(template=tmpl)
-                r = change_request_state(apiurl,
-                        reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
-                print('Result of change request state: %s' % r)
+                try:
+                    r = change_request_state(apiurl,
+                             reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
+                    print('Result of change request state: %s' % r)
+                except HTTPError as e:
+                    if opts.or_revoke:
+                        print(e, file=sys.stderr)
+                        body = e.read()
+                        if e.code in [ 400, 403, 404, 500 ]:
+                            print('Revoking it ...')
+                            r = change_request_state(apiurl,
+                                reqid, 'revoked', opts.message or '', supersed=supersedid, force=opts.force)
 
                 # check for devel instances after accepted requests
                 if cmd in ['accept']:
