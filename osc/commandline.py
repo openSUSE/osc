@@ -5280,7 +5280,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
     @cmdln.option('--target', metavar='TARGET',
-                  help='define target plattform')
+                  help='define target platform')
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
     @cmdln.option('-d', '--debuginfo', action='store_true',
