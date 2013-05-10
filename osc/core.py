@@ -4446,8 +4446,8 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
   <!-- <branch /> for a full copy, default case  -->
   <!-- <apply name="patch" /> apply a patch on the source directory  -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
-  <!-- <add>file.patch</add> add a patch to be applied after %%setup (spec file only) -->
-  <!-- <delete>filename</delete> delete a file -->
+  <!-- <add name="file.patch" /> add a patch to be applied after %%setup (spec file only) -->
+  <!-- <delete name="filename" /> delete a file -->
 </patches>
 </link>
 """ % (project, src_package, missingok, rev, vrev, cicount)
