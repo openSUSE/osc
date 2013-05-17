@@ -305,8 +305,6 @@ class Osc(cmdln.Cmdln):
                     package = store_read_package(cwd)
         if len(args) > 1:
             package = args[1]
-            if opts.deleted:
-                raise oscerr.WrongArgs("Too many arguments when listing deleted packages")
         if len(args) > 2:
             if opts.deleted:
                 raise oscerr.WrongArgs("Too many arguments when listing deleted packages")
@@ -405,6 +403,7 @@ class Osc(cmdln.Cmdln):
                                       verbose=opts.verbose,
                                       expand=opts.expand,
                                       meta=opts.meta,
+                                      deleted=opts.deleted,
                                       revision=rev)
                     link_seen = '_link' in l
                     if opts.verbose:
