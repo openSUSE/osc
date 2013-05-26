@@ -939,7 +939,7 @@ def main(apiurl, opts, argv):
         print(b_built)
 
         if opts.keep_pkgs:
-            for i in b_built.splitlines() + s_built.splitlines():
+            for i in str(b_built).splitlines() + str(s_built).splitlines():
                 shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
 
     if bi_file:
