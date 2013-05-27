@@ -50,31 +50,31 @@ from datetime import date
 
 # this is python 2.x style
 def introspect_handler_2(handler):
-        # Extract the introspection bits we need.
-        func = handler.im_func
-        if func.func_defaults:
-            func_defaults = func.func_defaults
-        else:
-            func_defaults = []
-        return \
-            func_defaults,   \
-            func.func_code.co_argcount, \
-            func.func_code.co_varnames, \
-            func.func_code.co_flags,    \
-            func
+    # Extract the introspection bits we need.
+    func = handler.im_func
+    if func.func_defaults:
+        func_defaults = func.func_defaults
+    else:
+        func_defaults = []
+    return \
+        func_defaults,   \
+        func.func_code.co_argcount, \
+        func.func_code.co_varnames, \
+        func.func_code.co_flags,    \
+        func
 
 def introspect_handler_3(handler):
-        defaults = handler.__defaults__
-        if not defaults:
-            defaults = []
-        else:
-            defaults = list(handler.__defaults__)
-        return \
-            defaults,   \
-            handler.__code__.co_argcount, \
-            handler.__code__.co_varnames, \
-            handler.__code__.co_flags,    \
-            handler.__func__
+    defaults = handler.__defaults__
+    if not defaults:
+        defaults = []
+    else:
+        defaults = list(handler.__defaults__)
+    return \
+        defaults,   \
+        handler.__code__.co_argcount, \
+        handler.__code__.co_varnames, \
+        handler.__code__.co_flags,    \
+        handler.__func__
 
 if sys.version_info[0] == 2:
     introspect_handler = introspect_handler_2
@@ -231,7 +231,6 @@ class RawCmdln(cmd.Cmd):
         error output. This is to provide least surprise for users used
         to only the 'stdin' and 'stdout' options with cmd.Cmd.
         """
-        import sys
         if self.name is None:
             self.name = os.path.basename(sys.argv[0])
         if self.prompt is None:
@@ -315,7 +314,6 @@ class RawCmdln(cmd.Cmd):
                                     otherwise, start loop
         """
         if argv is None:
-            import sys
             argv = sys.argv
         else:
             argv = argv[:] # don't modify caller's list
@@ -381,7 +379,6 @@ class RawCmdln(cmd.Cmd):
             #XXX What is the proper encoding to use here? 'utf-8' seems
             #    to work better than "getdefaultencoding" (usually
             #    'ascii'), on OS X at least.
-            #import sys
             #return s.encode(sys.getdefaultencoding(), "replace")
             return s.encode("utf-8", "replace")
 
@@ -468,7 +465,6 @@ class RawCmdln(cmd.Cmd):
         opposed to programmer error in the design of the script using
         cmdln.py).
         """
-        import sys
         exc_type, exc, traceback = sys.exc_info()
         if isinstance(exc, CmdlnUserError):
             msg = "%s %s: %s\nTry '%s help %s' for info.\n"\
@@ -520,7 +516,8 @@ class RawCmdln(cmd.Cmd):
         elif line[0] == '?':
             line = 'help ' + line[1:]
         i, n = 0, len(line)
-        while i < n and line[i] in self.identchars: i = i+1
+        while i < n and line[i] in self.identchars: 
+            i = i+1
         cmd, arg = line[:i], line[i:].strip()
         return cmd, arg, line
 
@@ -577,8 +574,10 @@ class RawCmdln(cmd.Cmd):
             doc = self.__class__.__doc__  # try class docstring
             if doc is None:
                 # Try to provide some reasonable useful default help.
-                if self.cmdlooping: prefix = ""
-                else:               prefix = self.name+' '
+                if self.cmdlooping: 
+                    prefix = ""
+                else:
+                    prefix = self.name+' '
                 doc = """usage:
                     %sSUBCOMMAND [ARGS...]
                     %shelp [SUBCOMMAND]
@@ -740,7 +739,8 @@ class RawCmdln(cmd.Cmd):
         token2canonical = self._get_canonical_map()
         aliases = {}
         for token, cmdname in token2canonical.items():
-            if token == cmdname: continue
+            if token == cmdname: 
+                continue
             aliases.setdefault(cmdname, []).append(token)
 
         # Get the list of (non-hidden) commands and their
@@ -803,7 +803,8 @@ class RawCmdln(cmd.Cmd):
         helpnames = {}
         token2cmdname = self._get_canonical_map()
         for attr in self.get_names():
-            if not attr.startswith("help_"): continue
+            if not attr.startswith("help_"): 
+                continue
             helpname = attr[5:]
             if helpname not in token2cmdname:
                 helpnames[helpname] = True
@@ -853,8 +854,10 @@ class RawCmdln(cmd.Cmd):
 
         # Adjust argcount for possible *args and **kwargs arguments.
         argcount = co_argcount
-        if co_flags & CO_FLAGS_ARGS:   argcount += 1
-        if co_flags & CO_FLAGS_KWARGS: argcount += 1
+        if co_flags & CO_FLAGS_ARGS:   
+            argcount += 1
+        if co_flags & CO_FLAGS_KWARGS: 
+            argcount += 1
 
         # Determine the usage string.
         usage = "%s %s" % (self.name, cmdname)
@@ -934,8 +937,10 @@ class RawCmdln(cmd.Cmd):
             token2canonical = {}
             cmd2funcname = {} # use a dict to strip duplicates
             for attr in self.get_names():
-                if attr.startswith("do_"):    cmdname = attr[3:]
-                elif attr.startswith("_do_"): cmdname = attr[4:]
+                if attr.startswith("do_"):    
+                    cmdname = attr[3:]
+                elif attr.startswith("_do_"): 
+                    cmdname = attr[4:]
                 else:
                     continue
                 cmd2funcname[cmdname] = attr
@@ -1214,7 +1219,6 @@ class Cmdln(RawCmdln):
                 #   do_foo() takes exactly 5 arguments (6 given)
                 # Raise CmdlnUserError for these with a suitably
                 # massaged error message.
-                import sys
                 tb = sys.exc_info()[2] # the traceback object
                 if tb.tb_next is not None:
                     # If the traceback is more than one level deep, then the
@@ -1287,7 +1291,6 @@ def _summarize_doc(doc, length=60):
     >>> _summarize_doc("this function does this\n\nand that")
     'this function does this'
     """
-    import re
     if doc is None:
         return ""
     assert length > 3, "length <= 3 is absurdly short for a doc summary"
@@ -1368,11 +1371,13 @@ def line2argv(line):
     i = -1
     while True:
         i += 1
-        if i >= len(line): break
+        if i >= len(line): 
+            break
         ch = line[i]
 
         if ch == "\\": # escaped char always added to arg, regardless of state
-            if arg is None: arg = ""
+            if arg is None: 
+                arg = ""
             i += 1
             arg += line[i]
             continue
@@ -1389,17 +1394,20 @@ def line2argv(line):
                 arg += ch
         elif state == "default":
             if ch == '"':
-                if arg is None: arg = ""
+                if arg is None: 
+                    arg = ""
                 state = "double-quoted"
             elif ch == "'":
-                if arg is None: arg = ""
+                if arg is None: 
+                    arg = ""
                 state = "single-quoted"
             elif ch in string.whitespace:
                 if arg is not None:
                     argv.append(arg)
                 arg = None
             else:
-                if arg is None: arg = ""
+                if arg is None: 
+                    arg = ""
                 arg += ch
     if arg is not None:
         argv.append(arg)
@@ -1463,7 +1471,8 @@ def _dedentlines(lines, tabsize=8, skip_first_line=False):
     indents = []
     margin = None
     for i, line in enumerate(lines):
-        if i == 0 and skip_first_line: continue
+        if i == 0 and skip_first_line:
+            continue
         indent = 0
         for ch in line:
             if ch == ' ':
@@ -1476,16 +1485,19 @@ def _dedentlines(lines, tabsize=8, skip_first_line=False):
                 break
         else:
             continue # skip all-whitespace lines
-        if DEBUG: print("dedent: indent=%d: %r" % (indent, line))
+        if DEBUG: 
+            print("dedent: indent=%d: %r" % (indent, line))
         if margin is None:
             margin = indent
         else:
             margin = min(margin, indent)
-    if DEBUG: print("dedent: margin=%r" % margin)
+    if DEBUG:
+        print("dedent: margin=%r" % margin)
 
     if margin is not None and margin > 0:
         for i, line in enumerate(lines):
-            if i == 0 and skip_first_line: continue
+            if i == 0 and skip_first_line: 
+                continue
             removed = 0
             for j, ch in enumerate(line):
                 if ch == ' ':
@@ -1493,7 +1505,8 @@ def _dedentlines(lines, tabsize=8, skip_first_line=False):
                 elif ch == '\t':
                     removed += tabsize - (removed % tabsize)
                 elif ch in '\r\n':
-                    if DEBUG: print("dedent: %r: EOL -> strip up to EOL" % line)
+                    if DEBUG: 
+                        print("dedent: %r: EOL -> strip up to EOL" % line)
                     lines[i] = lines[i][j:]
                     break
                 else:

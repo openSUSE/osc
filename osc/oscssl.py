@@ -140,7 +140,6 @@ class ValidationErrors:
         if not 0 in self.failures:
             return True
 
-        from M2Crypto import m2
         nonfatal_errors = [
                 m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY,
                 m2.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN,

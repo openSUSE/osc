@@ -371,7 +371,7 @@ def check_trusted_projects(apiurl, projects):
             print("Note that malicious packages can compromise the build result or even your system.")
             r = raw_input(trustprompt % { 'project':prj })
             if r == '1':
-                print("adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj,apiurl))
+                print("adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj, apiurl))
                 trusted.append(prj)
             elif r != '2':
                 print("Well, good good bye then :-)")
@@ -389,7 +389,7 @@ def main(apiurl, opts, argv):
     xp = []
     build_root = None
     cache_dir  = None
-    build_uid=''
+    build_uid = ''
     vm_type = config['build-type']
 
     build_descr = os.path.abspath(build_descr)
@@ -499,10 +499,10 @@ def main(apiurl, opts, argv):
     apihost = urlsplit(apiurl)[1]
     if not build_root:
         try:
-           build_root = config['build-root'] % {'repo': repo, 'arch': arch,
-                        'project': prj, 'package': pacname, 'apihost': apihost}
+            build_root = config['build-root'] % {'repo': repo, 'arch': arch,
+                         'project': prj, 'package': pacname, 'apihost': apihost}
         except:
-           build_root = config['build-root']
+            build_root = config['build-root']
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
@@ -797,7 +797,7 @@ def main(apiurl, opts, argv):
             pradir = prdir+"/"+adir
             # source fullfilename
             sffn = i.fullfilename
-            filename=sffn.split("/")[-1]
+            filename = sffn.split("/")[-1]
             # target fullfilename
             tffn = pradir+"/"+filename
             if not os.path.exists(os.path.join(pradir)):
@@ -810,13 +810,13 @@ def main(apiurl, opts, argv):
                     os.symlink(sffn, tffn)
             if prefer_pkgs:
                 for name, path in prefer_pkgs.items():
-                   if name == filename:
-                       print("Using prefered package: " + path + "/" + filename)
-                       os.unlink(tffn)
-                       if opts.linksources:
-                           os.link(path + "/" + filename, tffn)
-                       else:
-                           os.symlink(path + "/" + filename, tffn)
+                    if name == filename:
+                        print("Using prefered package: " + path + "/" + filename)
+                        os.unlink(tffn)
+                        if opts.linksources:
+                            os.link(path + "/" + filename, tffn)
+                        else:
+                            os.symlink(path + "/" + filename, tffn)
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
         print('Skipping verification of package signatures due to secure VM build')
@@ -867,7 +867,7 @@ def main(apiurl, opts, argv):
         else:
             my_build_swap = build_root + '/swap'
 
-        vm_options = [ '--vm-type=%s'%vm_type ]
+        vm_options = [ '--vm-type=%s' % vm_type ]
         if vm_type != 'lxc' and vm_type != 'emulator':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
@@ -911,7 +911,7 @@ def main(apiurl, opts, argv):
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
-        cmd = [ change_personality[bi.buildarch] ] + cmd;
+        cmd = [ change_personality[bi.buildarch] ] + cmd
 
     try:
         rc = run_external(cmd[0], *cmd[1:])
@@ -939,7 +939,7 @@ def main(apiurl, opts, argv):
         print(b_built)
 
         if opts.keep_pkgs:
-            for i in b_built.splitlines() + s_built.splitlines():
+            for i in str(b_built).splitlines() + str(s_built).splitlines():
                 shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
 
     if bi_file:

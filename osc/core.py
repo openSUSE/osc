@@ -281,7 +281,7 @@ class Serviceinfo:
                     option = param.get('name', None)
                     value = ""
                     if param.text:
-                       value = param.text
+                        value = param.text
                     name += " --" + option + " '" + value + "'"
                 data['command'] = name
                 self.services.append(data)
@@ -1423,7 +1423,7 @@ class Package:
                 # if sinfo is None another commit might have occured in the "meantime"
                 sinfo = sfilelist.find('serviceinfo')
             print('')
-            rev=self.latest_rev()
+            rev = self.latest_rev()
             self.update(rev=rev)
 
     def __write_storelist(self, name, data):
@@ -2472,19 +2472,19 @@ class Request:
 
         d = {'state': '%s:' % review.state}
         if review.by_package:
-           d['by'] = '%s/%s' % (review.by_project, review.by_package)
-           d['type'] = 'Package'
+            d['by'] = '%s/%s' % (review.by_project, review.by_package)
+            d['type'] = 'Package'
         elif review.by_project:
-           d['by'] = '%s' % review.by_project
-           d['type'] = 'Project'
+            d['by'] = '%s' % review.by_project
+            d['type'] = 'Project'
         elif review.by_group:
-           d['by'] = '%s' % review.by_group
-           d['type'] = 'Group'
+            d['by'] = '%s' % review.by_group
+            d['type'] = 'Group'
         else:
-           d['by'] = '%s' % review.by_user
-           d['type'] = 'User'
+            d['by'] = '%s' % review.by_user
+            d['type'] = 'User'
         if review.who:
-           d['by'] += '(%s)' % review.who
+            d['by'] += '(%s)' % review.who
         return d
 
     @staticmethod
@@ -2496,7 +2496,7 @@ class Request:
         def prj_pkg_join(prj, pkg, repository=None):
             if not pkg:
                 if not repository:
-                   return prj or ''
+                    return prj or ''
                 return '%s(%s)' % (prj, repository)
             return '%s/%s' % (prj, pkg)
 
@@ -2586,13 +2586,13 @@ class Request:
         for review in reversed(self.reviews):
             d = {'state': review.state}
             if review.by_user:
-              d['by'] = "User: " + review.by_user
+                d['by'] = "User: " + review.by_user
             if review.by_group:
-              d['by'] = "Group: " + review.by_group
+                d['by'] = "Group: " + review.by_group
             if review.by_package:
-              d['by'] = "Package: " + review.by_project + "/" + review.by_package 
+                d['by'] = "Package: " + review.by_project + "/" + review.by_package 
             elif review.by_project:
-              d['by'] = "Project: " + review.by_project
+                d['by'] = "Project: " + review.by_project
             d['when'] = review.when or ''
             d['who'] = review.who or ''
             d['comment'] = review.comment or ''
@@ -2633,9 +2633,9 @@ def shorttime(t):
 
     if time.localtime()[0] == time.localtime(t)[0]:
         # same year
-        return time.strftime('%b %d %H:%M',time.localtime(t))
+        return time.strftime('%b %d %H:%M', time.localtime(t))
     else:
-        return time.strftime('%b %d  %Y',time.localtime(t))
+        return time.strftime('%b %d  %Y', time.localtime(t))
 
 
 def is_project_dir(d):
@@ -2935,7 +2935,7 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=100):
         socket.setdefaulttimeout(timeout)
     try:
         if isinstance(data, str):
-            data=bytes(data, "utf-8")
+            data = bytes(data, "utf-8")
         fd = urlopen(req, data=data)
 
     finally:
@@ -2987,7 +2987,7 @@ def meta_get_packagelist(apiurl, prj, deleted=None):
 
     query = {}
     if deleted:
-       query['deleted'] = 1
+        query['deleted'] = 1
 
     u = makeurl(apiurl, ['source', prj], query)
     f = http_GET(u)
@@ -3084,7 +3084,7 @@ def show_package_meta(apiurl, prj, pac, meta=False):
 
 
 def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with_project):
-    path=[]
+    path = []
     path.append('source')
     path.append(prj)
     if pac:
@@ -3094,7 +3094,7 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
     path.append('_attribute')
     if attribute:
         path.append(attribute)
-    query=[]
+    query = []
     if with_defaults:
         query.append("with_default=1")
     if with_project:
@@ -3303,7 +3303,7 @@ def edit_meta(metatype,
         change_is_required = True
 
     url = make_meta_url(metatype, path_args, apiurl, force, remove_linking_repositories)
-    f=metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
+    f = metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:
         f.edit()
@@ -3571,7 +3571,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     r = Request()
     if src_packages:
         for p in src_packages:
-             r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
+            r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
@@ -3586,20 +3586,20 @@ def create_submit_request(apiurl,
                          message="", orev=None, src_update=None):
 
     import cgi
-    options_block=""
-    package=""
+    options_block = ""
+    package = ""
     if src_package:
-        package="""package="%s" """ % (src_package)
+        package = """package="%s" """ % (src_package)
     if src_update:
-        options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+        options_block = """<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
     # Yes, this kind of xml construction is horrible
     targetxml = ""
     if dst_project:
         packagexml = ""
         if dst_package:
-            packagexml = """package="%s" """ %( dst_package )
-        targetxml = """<target project="%s" %s /> """ %( dst_project, packagexml )
+            packagexml = """package="%s" """ % ( dst_package )
+        targetxml = """<target project="%s" %s /> """ % ( dst_project, packagexml )
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
 <request type="submit">
@@ -3676,7 +3676,7 @@ def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_pro
     return root.get('code')
 
 def change_request_state(apiurl, reqid, newstate, message='', supersed=None, force=False):
-    query={'cmd': 'changestate', 'newstate': newstate }
+    query = {'cmd': 'changestate', 'newstate': newstate }
     if supersed:
         query['superseded_by'] = supersed
     if force:
@@ -3768,7 +3768,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         requests.append(r)
     return requests
 
-def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new','review','declined'), req_type=None):
+def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new', 'review', 'declined'), req_type=None):
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -3799,7 +3799,7 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
         requests.append(r)
     return requests
 
-def get_request_list(apiurl, project='', package='', req_who='', req_state=('new','review','declined'), req_type=None, exclude_target_projects=[]):
+def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=[]):
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -3841,7 +3841,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
     return requests
 
 # old style search, this is to be removed
-def get_user_projpkgs_request_list(apiurl, user, req_state=('new','review',), req_type=None, exclude_projects=[], projpkgs={}):
+def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), req_type=None, exclude_projects=[], projpkgs={}):
     """OBSOLETE: user involved request search is supported by OBS 2.2 server side in a better way
        Return all running requests for all projects/packages where is user is involved"""
     if not projpkgs:
@@ -4269,7 +4269,7 @@ def checkout_package(apiurl, project, package,
     if conf.config['checkout_rooted']:
         if prj_dir[:1] == '/':
             if conf.config['verbose'] > 1:
-              print("checkout_rooted ignored for %s" % prj_dir)
+                print("checkout_rooted ignored for %s" % prj_dir)
             # ?? should we complain if not is_project_dir(prj_dir) ??
         else:
             # if we are inside a project or package dir, ascend to parent
@@ -4716,18 +4716,18 @@ def copy_pac(src_apiurl, src_project, src_package,
 
 
 def unlock_package(apiurl, prj, pac, msg):
-    query={'cmd': 'unlock', 'comment': msg}
+    query = {'cmd': 'unlock', 'comment': msg}
     u = makeurl(apiurl, ['source', prj, pac], query)
     http_POST(u)
 
 def unlock_project(apiurl, prj, msg=None):
-    query={'cmd': 'unlock', 'comment': msg}
+    query = {'cmd': 'unlock', 'comment': msg}
     u = makeurl(apiurl, ['source', prj], query)
     http_POST(u)
 
 
 def undelete_package(apiurl, prj, pac, msg=None):
-    query={'cmd': 'undelete'}
+    query = {'cmd': 'undelete'}
     if msg:
         query['comment'] = msg
     else:
@@ -4736,7 +4736,7 @@ def undelete_package(apiurl, prj, pac, msg=None):
     http_POST(u)
 
 def undelete_project(apiurl, prj, msg=None):
-    query={'cmd': 'undelete'}
+    query = {'cmd': 'undelete'}
     if msg:
         query['comment'] = msg
     else:
@@ -4946,45 +4946,44 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
     oldstate = None
 
     while True:
-       waiting = False
-       results = r = []
-       try:
-           results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
-       except HTTPError as e:
-           # check for simple timeout error and fetch again
-           if e.code != 502:
-               raise
-           # re-try result request
-           continue
+        waiting = False
+        results = r = []
+        try:
+            results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
+        except HTTPError as e:
+            # check for simple timeout error and fetch again
+            if e.code != 502:
+                raise
+            # re-try result request
+            continue
 
-       for res in results:
-           if '_oldstate' in res:
-               oldstate = res['_oldstate']
-               continue
-           res['status'] = res['code']
-           if verbose and res['details'] != '':
-               if res['code'] in ('unresolvable', 'expansion error'):
-                   lines = res['details'].split(',')
-                   res['status'] += ': ' + '\n     '.join(lines)
+        for res in results:
+            if '_oldstate' in res:
+                oldstate = res['_oldstate']
+                continue
+            res['status'] = res['code']
+            if verbose and res['details'] != '':
+                if res['code'] in ('unresolvable', 'expansion error'):
+                    lines = res['details'].split(',')
+                    res['status'] += ': ' + '\n     '.join(lines)
+                else:
+                    res['status'] += ': %s' % (res['details'], )
+            if res['dirty']:
+                waiting = True
+                if verbose:
+                    res['status'] = 'outdated (was: %s)' % res['status']
+                else:
+                    res['status'] += '*'
+            if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
+                waiting = True
 
-               else:
-                   res['status'] += ': %s' % (res['details'], )
-           if res['dirty']:
-               waiting=True
-               if verbose:
-                   res['status'] = 'outdated (was: %s)' % res['status']
-               else:
-                   res['status'] += '*'
-           if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
-               waiting=True
+            r.append(result_line_templ % res)
 
-           r.append(result_line_templ % res)
+        if printJoin:
+            print(printJoin.join(r))
 
-       if printJoin:
-           print(printJoin.join(r))
-
-       if wait==False or waiting==False:
-           break
+        if wait == False or waiting == False:
+            break
 
     return r
 
@@ -5286,9 +5285,9 @@ def get_source_rev(apiurl, project, package, revision=None):
     # CAUTION: We have to loop through all rev and find the highest one, if none given.
 
     if revision:
-      url = makeurl(apiurl, ['source', project, package, '_history'], {'rev':revision})
+        url = makeurl(apiurl, ['source', project, package, '_history'], {'rev':revision})
     else:
-      url = makeurl(apiurl, ['source', project, package, '_history'])
+        url = makeurl(apiurl, ['source', project, package, '_history'])
     f = http_GET(url)
     xml = ET.parse(f)
     ent = None
@@ -5302,9 +5301,9 @@ def get_source_rev(apiurl, project, package, revision=None):
         return { 'version': None, 'error':'empty revisionlist: no such package?' }
     e = {}
     for k in ent.keys():
-         e[k] = ent.get(k)
+        e[k] = ent.get(k)
     for k in list(ent):
-         e[k.tag] = k.text
+        e[k.tag] = k.text
     return e
 
 def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
@@ -5359,7 +5358,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
         et = int(node.get('endtime'))
         endtime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(et))
         waittm = time.gmtime(et-st)
-        if waittm.tm_mday>1:
+        if waittm.tm_mday > 1:
             waitbuild = "%1dd %2dh %2dm %2ds" % (waittm.tm_mday-1, waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
         elif waittm.tm_hour:
             waitbuild = "   %2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
@@ -5436,7 +5435,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('</logentry>')
         else:
             if requestid:
-                requestid="rq" + requestid
+                requestid = "rq" + requestid
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
                 '\n' + comment
@@ -5834,7 +5833,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
     # set revision element
     src_project = root.get('project', project)
     src_package = root.get('package', package)
-    linkrev=None
+    linkrev = None
     vrev = None
     if baserev:
         linkrev = 'base'
@@ -6099,7 +6098,7 @@ def addGitSource(url):
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
-       addFiles( ['_service'] )
+        addFiles( ['_service'] )
 
 def addDownloadUrlService(url):
     service_file = os.path.join(os.getcwd(), '_service')
@@ -6120,7 +6119,7 @@ def addDownloadUrlService(url):
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
-       addFiles( ['_service'] )
+        addFiles( ['_service'] )
 
     # download file
     path = os.getcwd()
@@ -6130,11 +6129,11 @@ def addDownloadUrlService(url):
 
     # add verify service for new files
     for filename in files:
-       newfiles.remove(filename)
+        newfiles.remove(filename)
 
     for filename in newfiles:
-       if filename.startswith('_service:download_url:'):
-          s = si.addVerifyFile(services, filename)
+        if filename.startswith('_service:download_url:'):
+            s = si.addVerifyFile(services, filename)
 
     # for pretty output
     xmlindent(s)
@@ -6299,7 +6298,7 @@ def get_commit_msg(wc_dir, pacs):
         store_unlink_file(wc_dir, '_commit_msg')
     return msg
 
-def print_request_list(apiurl, project, package = None, states = ('new','review',), force = False):
+def print_request_list(apiurl, project, package = None, states = ('new', 'review', ), force = False):
     """
     prints list of pending requests for the specified project/package if "check_for_request_on_action"
     is enabled in the config or if "force" is set to True

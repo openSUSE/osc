@@ -74,7 +74,7 @@ class ConfigLineOrder:
         return section
 
     def __delitem__(self, key):
-        line = self._find(line)
+        line = self._find_section(key)
         if not line:
             raise KeyError(key)
         self._lines.remove(line)
@@ -306,7 +306,7 @@ class OscConfigParser(configparser.SafeConfigParser):
                         e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
-            raise e
+            raise e # pylint: disable-msg=E0702
 
     def write(self, fp, comments = False):
         """
