@@ -872,7 +872,7 @@ class Osc(cmdln.Cmdln):
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
 
         if subcmd == 'submitpac' and not opts.no_cleanup:
-            opts.cleanup = True;
+            opts.cleanup = True
 
         if opts.cleanup:
             src_update = "cleanup"
