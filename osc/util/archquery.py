@@ -25,7 +25,7 @@ class ArchQuery(packagequery.PackageQuery):
         #if self.magic == '\375\067zXZ':
         #    self.pkgsuffix = 'pkg.tar.xz'
         fn = open('/dev/null', 'wb')
-        pipe = subprocess.Popen(['tar', '-O', '-xf', self.__path, '.PKGINFO'], stdout=subprocess.PIPE, stderr=fn).stdout;
+        pipe = subprocess.Popen(['tar', '-O', '-xf', self.__path, '.PKGINFO'], stdout=subprocess.PIPE, stderr=fn).stdout
         for line in pipe.readlines():
             line = line.rstrip().split(' = ', 2)
             if len(line) == 2:
