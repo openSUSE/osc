@@ -231,7 +231,6 @@ class RawCmdln(cmd.Cmd):
         error output. This is to provide least surprise for users used
         to only the 'stdin' and 'stdout' options with cmd.Cmd.
         """
-        import sys
         if self.name is None:
             self.name = os.path.basename(sys.argv[0])
         if self.prompt is None:
@@ -315,7 +314,6 @@ class RawCmdln(cmd.Cmd):
                                     otherwise, start loop
         """
         if argv is None:
-            import sys
             argv = sys.argv
         else:
             argv = argv[:] # don't modify caller's list
@@ -381,7 +379,6 @@ class RawCmdln(cmd.Cmd):
             #XXX What is the proper encoding to use here? 'utf-8' seems
             #    to work better than "getdefaultencoding" (usually
             #    'ascii'), on OS X at least.
-            #import sys
             #return s.encode(sys.getdefaultencoding(), "replace")
             return s.encode("utf-8", "replace")
 
@@ -468,7 +465,6 @@ class RawCmdln(cmd.Cmd):
         opposed to programmer error in the design of the script using
         cmdln.py).
         """
-        import sys
         exc_type, exc, traceback = sys.exc_info()
         if isinstance(exc, CmdlnUserError):
             msg = "%s %s: %s\nTry '%s help %s' for info.\n"\
@@ -1223,7 +1219,6 @@ class Cmdln(RawCmdln):
                 #   do_foo() takes exactly 5 arguments (6 given)
                 # Raise CmdlnUserError for these with a suitably
                 # massaged error message.
-                import sys
                 tb = sys.exc_info()[2] # the traceback object
                 if tb.tb_next is not None:
                     # If the traceback is more than one level deep, then the
