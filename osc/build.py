@@ -371,7 +371,7 @@ def check_trusted_projects(apiurl, projects):
             print("Note that malicious packages can compromise the build result or even your system.")
             r = raw_input(trustprompt % { 'project':prj })
             if r == '1':
-                print("adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj,apiurl))
+                print("adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj, apiurl))
                 trusted.append(prj)
             elif r != '2':
                 print("Well, good good bye then :-)")
@@ -389,7 +389,7 @@ def main(apiurl, opts, argv):
     xp = []
     build_root = None
     cache_dir  = None
-    build_uid=''
+    build_uid = ''
     vm_type = config['build-type']
 
     build_descr = os.path.abspath(build_descr)
@@ -797,7 +797,7 @@ def main(apiurl, opts, argv):
             pradir = prdir+"/"+adir
             # source fullfilename
             sffn = i.fullfilename
-            filename=sffn.split("/")[-1]
+            filename = sffn.split("/")[-1]
             # target fullfilename
             tffn = pradir+"/"+filename
             if not os.path.exists(os.path.join(pradir)):
@@ -867,7 +867,7 @@ def main(apiurl, opts, argv):
         else:
             my_build_swap = build_root + '/swap'
 
-        vm_options = [ '--vm-type=%s'%vm_type ]
+        vm_options = [ '--vm-type=%s' % vm_type ]
         if vm_type != 'lxc' and vm_type != 'emulator':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
