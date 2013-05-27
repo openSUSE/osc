@@ -1291,7 +1291,6 @@ def _summarize_doc(doc, length=60):
     >>> _summarize_doc("this function does this\n\nand that")
     'this function does this'
     """
-    import re
     if doc is None:
         return ""
     assert length > 3, "length <= 3 is absurdly short for a doc summary"
