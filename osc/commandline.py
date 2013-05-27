@@ -145,14 +145,16 @@ class Osc(cmdln.Cmdln):
 
             conf.write_initial_config(e.file, config)
             print('done', file=sys.stderr)
-            if try_again: self.postoptparse(try_again = False)
+            if try_again: 
+                self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
             import getpass
             user = raw_input('Username: ')
             passwd = getpass.getpass()
             conf.add_section(e.file, e.url, user, passwd)
-            if try_again: self.postoptparse(try_again = False)
+            if try_again: 
+                self.postoptparse(try_again = False)
 
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
@@ -173,8 +175,10 @@ class Osc(cmdln.Cmdln):
             localdir = os.getcwd()
         except Exception as e:
             ## check for Stale NFS file handle: '.'
-            try: os.stat('.')
-            except Exception as ee: e = ee
+            try:
+                os.stat('.')
+            except Exception as ee: 
+                e = ee
             print("os.getcwd() failed: ", e, file=sys.stderr)
             sys.exit(1)
 
@@ -295,7 +299,8 @@ class Osc(cmdln.Cmdln):
             pass
         if len(args) > 0:
             project = args[0]
-            if project == '/': project = None
+            if project == '/': 
+                project = None
             if project == '.':
                 cwd = os.getcwd()
                 if is_project_dir(cwd):
@@ -418,7 +423,8 @@ class Osc(cmdln.Cmdln):
                             print_not_found = False
                     else:
                         print('\n'.join(l))
-                    if opts.expand or opts.unexpand or not link_seen: break
+                    if opts.expand or opts.unexpand or not link_seen: 
+                        break
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
                     li.read(ET.fromstring(''.join(m)).find('linkinfo'))
@@ -1208,7 +1214,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if rdiff != '':
                             targetprojects.append(t)
                             pac.append(p)
-                            rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" % (t, p, project, p,rdiff))
+                            rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" % (t, p, project, p, rdiff))
                         else:
                             print("Skipping package ", p,  " since it has no difference with the target package.")
                     else:
@@ -2930,7 +2936,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco': opts.checkout = True
+        if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco': 
+            opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
 
@@ -3088,7 +3095,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             ## FIXME: core.py:commitDelPackage() should have something similar
             rlist = get_request_list(apiurl, prj, pkg)
-            for rq in rlist: print(rq)
+            for rq in rlist: 
+                print(rq)
             if len(rlist) >= 1 and not opts.force:
                 print('Package has pending requests. Deleting the package will break them. '\
                       'They should be accepted/declined/revoked before deleting the package. '\
@@ -5426,7 +5434,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # drop the --argument, value tuple from the list
         def drop_arg2(lst, name):
-            if not name: return lst
+            if not name: 
+                return lst
             while name in lst:
                 i = lst.index(name)
                 lst.pop(i+1)
@@ -5520,7 +5529,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return ret
 
         for arg, long_name in ((opts.rsyncsrc, '--rsync-src'), (opts.overlay, '--overlay')):
-            if not arg: continue
+            if not arg: 
+                continue
             ret = rsync_dirs_2host(hostargs, None, long_name, (arg, ))
             if ret != 0:
                 return ret
@@ -6554,9 +6564,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     v = sr.get('version')
                     r = sr.get('rev')
                     s = sr.get('srcmd5')
-                    if not v or v == 'unknown': v = '-'
-                    if not r: r = '-'
-                    if not s: s = '-'
+                    if not v or v == 'unknown':
+                        v = '-'
+                    if not r:
+                        r = '-'
+                    if not s:
+                        s = '-'
                     result.append(v)
                     result.append(r)
                     result.append(s)
@@ -7057,12 +7070,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # showing the maintainers
             for maintainers in projects:
                 indent = ""
-                definingproject=maintainers.get("project")
+                definingproject = maintainers.get("project")
                 if definingproject:
-                    definingpackage=maintainers.get("package")
+                    definingpackage = maintainers.get("package")
                     indent = "  "
                     if definingpackage:
-                        print("Defined in package: %s/%s " %(definingproject, definingpackage))
+                        print("Defined in package: %s/%s " % (definingproject, definingpackage))
                     else:
                         print("Defined in project: ", definingproject)
 
