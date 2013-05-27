@@ -1076,7 +1076,6 @@ class Osc(cmdln.Cmdln):
                 print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                     % (dst_project, dst_package), file=sys.stderr)
-                pass
 
             if devloc and \
                dst_project != devloc and \
@@ -1288,7 +1287,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
                     % (dst_project, dst_package), file=sys.stderr)
-                pass
 
             if devloc and \
                dst_project != devloc and \
@@ -5394,7 +5392,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         except:
             print("WARNING: package is not existing on server yet")
             opts.local_package = True
-            pass
+        
         if opts.offline or opts.local_package or r == None:
             print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
         elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
