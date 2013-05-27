@@ -281,7 +281,7 @@ class Serviceinfo:
                     option = param.get('name', None)
                     value = ""
                     if param.text:
-                       value = param.text
+                        value = param.text
                     name += " --" + option + " '" + value + "'"
                 data['command'] = name
                 self.services.append(data)
@@ -2472,19 +2472,19 @@ class Request:
 
         d = {'state': '%s:' % review.state}
         if review.by_package:
-           d['by'] = '%s/%s' % (review.by_project, review.by_package)
-           d['type'] = 'Package'
+            d['by'] = '%s/%s' % (review.by_project, review.by_package)
+            d['type'] = 'Package'
         elif review.by_project:
-           d['by'] = '%s' % review.by_project
-           d['type'] = 'Project'
+            d['by'] = '%s' % review.by_project
+            d['type'] = 'Project'
         elif review.by_group:
-           d['by'] = '%s' % review.by_group
-           d['type'] = 'Group'
+            d['by'] = '%s' % review.by_group
+            d['type'] = 'Group'
         else:
-           d['by'] = '%s' % review.by_user
-           d['type'] = 'User'
+            d['by'] = '%s' % review.by_user
+            d['type'] = 'User'
         if review.who:
-           d['by'] += '(%s)' % review.who
+            d['by'] += '(%s)' % review.who
         return d
 
     @staticmethod
@@ -2496,7 +2496,7 @@ class Request:
         def prj_pkg_join(prj, pkg, repository=None):
             if not pkg:
                 if not repository:
-                   return prj or ''
+                    return prj or ''
                 return '%s(%s)' % (prj, repository)
             return '%s/%s' % (prj, pkg)
 
@@ -2586,13 +2586,13 @@ class Request:
         for review in reversed(self.reviews):
             d = {'state': review.state}
             if review.by_user:
-              d['by'] = "User: " + review.by_user
+                d['by'] = "User: " + review.by_user
             if review.by_group:
-              d['by'] = "Group: " + review.by_group
+                d['by'] = "Group: " + review.by_group
             if review.by_package:
-              d['by'] = "Package: " + review.by_project + "/" + review.by_package 
+                d['by'] = "Package: " + review.by_project + "/" + review.by_package 
             elif review.by_project:
-              d['by'] = "Project: " + review.by_project
+                d['by'] = "Project: " + review.by_project
             d['when'] = review.when or ''
             d['who'] = review.who or ''
             d['comment'] = review.comment or ''
@@ -2987,7 +2987,7 @@ def meta_get_packagelist(apiurl, prj, deleted=None):
 
     query = {}
     if deleted:
-       query['deleted'] = 1
+        query['deleted'] = 1
 
     u = makeurl(apiurl, ['source', prj], query)
     f = http_GET(u)
@@ -3571,7 +3571,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     r = Request()
     if src_packages:
         for p in src_packages:
-             r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
+            r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
@@ -4269,7 +4269,7 @@ def checkout_package(apiurl, project, package,
     if conf.config['checkout_rooted']:
         if prj_dir[:1] == '/':
             if conf.config['verbose'] > 1:
-              print("checkout_rooted ignored for %s" % prj_dir)
+                print("checkout_rooted ignored for %s" % prj_dir)
             # ?? should we complain if not is_project_dir(prj_dir) ??
         else:
             # if we are inside a project or package dir, ascend to parent
@@ -4946,45 +4946,44 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
     oldstate = None
 
     while True:
-       waiting = False
-       results = r = []
-       try:
-           results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
-       except HTTPError as e:
-           # check for simple timeout error and fetch again
-           if e.code != 502:
-               raise
-           # re-try result request
-           continue
+        waiting = False
+        results = r = []
+        try:
+            results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
+        except HTTPError as e:
+            # check for simple timeout error and fetch again
+            if e.code != 502:
+                raise
+            # re-try result request
+            continue
 
-       for res in results:
-           if '_oldstate' in res:
-               oldstate = res['_oldstate']
-               continue
-           res['status'] = res['code']
-           if verbose and res['details'] != '':
-               if res['code'] in ('unresolvable', 'expansion error'):
-                   lines = res['details'].split(',')
-                   res['status'] += ': ' + '\n     '.join(lines)
+        for res in results:
+            if '_oldstate' in res:
+                oldstate = res['_oldstate']
+                continue
+            res['status'] = res['code']
+            if verbose and res['details'] != '':
+                if res['code'] in ('unresolvable', 'expansion error'):
+                    lines = res['details'].split(',')
+                    res['status'] += ': ' + '\n     '.join(lines)
+                else:
+                    res['status'] += ': %s' % (res['details'], )
+            if res['dirty']:
+                waiting=True
+                if verbose:
+                    res['status'] = 'outdated (was: %s)' % res['status']
+                else:
+                    res['status'] += '*'
+            if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
+                waiting=True
 
-               else:
-                   res['status'] += ': %s' % (res['details'], )
-           if res['dirty']:
-               waiting=True
-               if verbose:
-                   res['status'] = 'outdated (was: %s)' % res['status']
-               else:
-                   res['status'] += '*'
-           if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
-               waiting=True
+            r.append(result_line_templ % res)
 
-           r.append(result_line_templ % res)
+        if printJoin:
+            print(printJoin.join(r))
 
-       if printJoin:
-           print(printJoin.join(r))
-
-       if wait==False or waiting==False:
-           break
+        if wait==False or waiting==False:
+            break
 
     return r
 
@@ -5286,9 +5285,9 @@ def get_source_rev(apiurl, project, package, revision=None):
     # CAUTION: We have to loop through all rev and find the highest one, if none given.
 
     if revision:
-      url = makeurl(apiurl, ['source', project, package, '_history'], {'rev':revision})
+        url = makeurl(apiurl, ['source', project, package, '_history'], {'rev':revision})
     else:
-      url = makeurl(apiurl, ['source', project, package, '_history'])
+        url = makeurl(apiurl, ['source', project, package, '_history'])
     f = http_GET(url)
     xml = ET.parse(f)
     ent = None
@@ -5302,9 +5301,9 @@ def get_source_rev(apiurl, project, package, revision=None):
         return { 'version': None, 'error':'empty revisionlist: no such package?' }
     e = {}
     for k in ent.keys():
-         e[k] = ent.get(k)
+        e[k] = ent.get(k)
     for k in list(ent):
-         e[k.tag] = k.text
+        e[k.tag] = k.text
     return e
 
 def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
@@ -6099,7 +6098,7 @@ def addGitSource(url):
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
-       addFiles( ['_service'] )
+        addFiles( ['_service'] )
 
 def addDownloadUrlService(url):
     service_file = os.path.join(os.getcwd(), '_service')
@@ -6120,7 +6119,7 @@ def addDownloadUrlService(url):
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
-       addFiles( ['_service'] )
+        addFiles( ['_service'] )
 
     # download file
     path = os.getcwd()
@@ -6130,11 +6129,11 @@ def addDownloadUrlService(url):
 
     # add verify service for new files
     for filename in files:
-       newfiles.remove(filename)
+        newfiles.remove(filename)
 
     for filename in newfiles:
-       if filename.startswith('_service:download_url:'):
-          s = si.addVerifyFile(services, filename)
+        if filename.startswith('_service:download_url:'):
+            s = si.addVerifyFile(services, filename)
 
     # for pretty output
     xmlindent(s)
