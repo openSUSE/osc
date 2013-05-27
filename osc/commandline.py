@@ -685,7 +685,8 @@ class Osc(cmdln.Cmdln):
             elif cmd == 'pkg':
                 sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project)))
+                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage, 
+                                         opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
                 sys.stdout.write(''.join(show_project_conf(apiurl, project)))
             elif cmd == 'user':
@@ -2162,7 +2163,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     elif rq.state.name != "new" and rq.state.name != "review":
                         return 0
                 if rq.state.name == state_map[cmd]:
-                    repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "  % (reqid, rq.state.name))
+                    repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** " % \
+                                     (reqid, rq.state.name))
                     if repl.lower() != 'y':
                         print('Aborted...', file=sys.stderr)
                         raise oscerr.UserAbort()
@@ -3524,9 +3526,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if not noparentok and not self._pdiff_package_exists(apiurl, parent_project, parent_package):
-            self._pdiff_raise_non_existing_package(parent_project, parent_package, msg = 'Parent for %s/%s (%s/%s) does not exist.' % (project, package, parent_project, parent_package))
+            self._pdiff_raise_non_existing_package(parent_project, parent_package, 
+                                                   msg = 'Parent for %s/%s (%s/%s) does not exist.' % \
+                                                   (project, package, parent_project, parent_package))
 
-        rdiff = server_diff(apiurl, parent_project, parent_package, None, project, package, None, unified = unified, missingok = noparentok)
+        rdiff = server_diff(apiurl, parent_project, parent_package, None, project,
+                            package, None, unified = unified, missingok = noparentok)
 
         run_pager(rdiff)
 
@@ -3706,7 +3711,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ##
         ## if args[0] is already an url, the use it as is.
 
-        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':', ':/', args[0]), 'openSUSE_11.4', args[1])
+        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % \
+              (re.sub(':', ':/', args[0]), 'openSUSE_11.4', args[1])
         print(self.do_install.__doc__)
         print("Example: \n" + cmd)
 
@@ -3848,8 +3854,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.current_dir:
                 project_dir = None
             checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files = opts.source_service_files, server_service_files=opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta,
-                             outdir=opts.output_dir)
+                             prj_dir=project_dir, service_files = opts.source_service_files, \
+                             server_service_files=opts.server_side_source_service_files, \
+                             progress_obj=self.download_progress, size_limit=opts.limit_size, \
+                             meta=opts.meta, outdir=opts.output_dir)
             print_request_list(apiurl, project, package)
 
         elif project:
@@ -3881,13 +3889,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
-                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, \
+                                     server_service_files = opts.server_side_source_service_files, \
+                                     progress_obj=self.download_progress, size_limit=opts.limit_size, \
+                                     meta=opts.meta)
                 except oscerr.LinkExpandError as e:
                     print('Link cannot be expanded:\n', e, file=sys.stderr)
                     print('Use "osc repairlink" for fixing merge conflicts:\n', file=sys.stderr)
                     # check out in unexpanded form at least
                     checkout_package(apiurl, project, package, expand_link = False, \
-                                     prj_dir = prj_dir, service_files = opts.source_service_files, server_service_files = opts.server_side_source_service_files, progress_obj=self.download_progress, size_limit=opts.limit_size, meta=opts.meta)
+                                     prj_dir = prj_dir, service_files = opts.source_service_files, \
+                                     server_service_files = opts.server_side_source_service_files, \
+                                     progress_obj=self.download_progress, size_limit=opts.limit_size, \
+                                     meta=opts.meta)
             print_request_list(apiurl, project)
 
         else:
@@ -4593,8 +4607,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(''.join(show_prj_results_meta(apiurl, project)))
             return
 
-        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, csv=opts.csv, status_filter=opts.status_filter, name_filter=opts.name_filter, repo=opts.repo, arch=opts.arch, vertical=opts.vertical, show_excluded=opts.show_excluded)))
-
+        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \
+                                        csv=opts.csv, status_filter=opts.status_filter, \
+                                        name_filter=opts.name_filter, repo=opts.repo, \
+                                        arch=opts.arch, vertical=opts.vertical, \
+                                        show_excluded=opts.show_excluded)))
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
