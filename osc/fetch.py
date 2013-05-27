@@ -322,8 +322,10 @@ def verify_pacs_old(pac_list):
                 stderr=subprocess.STDOUT, close_fds=True).stdout
 
     # restore locale
-    if saved_LC_ALL: os.environ['LC_ALL'] = saved_LC_ALL
-    else: os.environ.pop('LC_ALL')
+    if saved_LC_ALL: 
+        os.environ['LC_ALL'] = saved_LC_ALL
+    else: 
+        os.environ.pop('LC_ALL')
 
     for line in o.readlines():
 
