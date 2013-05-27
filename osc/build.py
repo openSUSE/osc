@@ -499,10 +499,10 @@ def main(apiurl, opts, argv):
     apihost = urlsplit(apiurl)[1]
     if not build_root:
         try:
-           build_root = config['build-root'] % {'repo': repo, 'arch': arch,
-                        'project': prj, 'package': pacname, 'apihost': apihost}
+            build_root = config['build-root'] % {'repo': repo, 'arch': arch,
+                         'project': prj, 'package': pacname, 'apihost': apihost}
         except:
-           build_root = config['build-root']
+            build_root = config['build-root']
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
@@ -810,13 +810,13 @@ def main(apiurl, opts, argv):
                     os.symlink(sffn, tffn)
             if prefer_pkgs:
                 for name, path in prefer_pkgs.items():
-                   if name == filename:
-                       print("Using prefered package: " + path + "/" + filename)
-                       os.unlink(tffn)
-                       if opts.linksources:
-                           os.link(path + "/" + filename, tffn)
-                       else:
-                           os.symlink(path + "/" + filename, tffn)
+                    if name == filename:
+                        print("Using prefered package: " + path + "/" + filename)
+                        os.unlink(tffn)
+                        if opts.linksources:
+                            os.link(path + "/" + filename, tffn)
+                        else:
+                            os.symlink(path + "/" + filename, tffn)
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
         print('Skipping verification of package signatures due to secure VM build')
