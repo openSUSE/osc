@@ -306,7 +306,7 @@ class OscConfigParser(configparser.SafeConfigParser):
                         e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
-            raise e
+            raise e # pylint: disable-msg=E0702
 
     def write(self, fp, comments = False):
         """
