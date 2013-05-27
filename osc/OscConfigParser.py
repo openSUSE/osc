@@ -74,7 +74,7 @@ class ConfigLineOrder:
         return section
 
     def __delitem__(self, key):
-        line = self._find(line)
+        line = self._find_section(key)
         if not line:
             raise KeyError(key)
         self._lines.remove(line)
