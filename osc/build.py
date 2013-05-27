@@ -911,7 +911,7 @@ def main(apiurl, opts, argv):
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
-        cmd = [ change_personality[bi.buildarch] ] + cmd;
+        cmd = [ change_personality[bi.buildarch] ] + cmd
 
     try:
         rc = run_external(cmd[0], *cmd[1:])
