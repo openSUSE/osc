@@ -483,7 +483,7 @@ class Osc(cmdln.Cmdln):
 
         if opts.force or not filelist or not '_patchinfo' in filelist:
             print("Creating new patchinfo...")
-            query='cmd=createpatchinfo&name=' + patchinfo
+            query = 'cmd=createpatchinfo&name=' + patchinfo
             if opts.force:
                 query += "&force=1"
             url = makeurl(apiurl, ['source', project], query=query)
@@ -493,7 +493,7 @@ class Osc(cmdln.Cmdln):
                     patchinfo = p
         else:
             print("Update existing _patchinfo file...")
-            query='cmd=updatepatchinfo'
+            query = 'cmd=updatepatchinfo'
             url = makeurl(apiurl, ['source', project, patchinfo], query=query)
             f = http_POST(url)
 
@@ -918,9 +918,9 @@ class Osc(cmdln.Cmdln):
             sr_ids = []
             # for single request
             actionxml = ""
-            options_block=""
+            options_block = ""
             if src_update:
-                options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+                options_block = """<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
@@ -1082,7 +1082,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.diff:
                     sys.exit(1)
 
-        rev=opts.revision
+        rev = opts.revision
         if not rev:
             # get _link info from server, that knows about the local state ...
             u = makeurl(apiurl, ['source', src_project, src_package], query="expand=1")
@@ -1090,17 +1090,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
             if linkinfo == None:
-                rev=root.get('rev')
+                rev = root.get('rev')
             else:
                 if linkinfo.get('project') != dst_project or linkinfo.get('package') != dst_package:
                     # the submit target is not link target. use merged md5sum references to 
                     # avoid not mergable sources when multiple request from same source get created.
-                    rev=root.get('srcmd5')
+                    rev = root.get('srcmd5')
 
         rdiff = None
         if opts.diff or not opts.message:
             try:
-                rdiff = 'old: %s/%s\nnew: %s/%s rev %s\n' %(dst_project, dst_package, src_project, src_package, rev)
+                rdiff = 'old: %s/%s\nnew: %s/%s rev %s\n' % (dst_project, dst_package, src_project, src_package, rev)
                 rdiff += server_diff(apiurl,
                                     dst_project, dst_package, None,
                                     src_project, src_package, rev, True)
@@ -1169,7 +1169,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         parser.values.actiondata.append(value)
 
     def _submit_request(self, args, opts, options_block):
-        actionxml=""
+        actionxml = ""
         apiurl = self.get_api_url()
         if len(args) == 0 and is_project_dir(os.getcwd()):
             # submit requests for multiple packages are currently handled via multiple requests
@@ -1207,7 +1207,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if rdiff != '':
                             targetprojects.append(t)
                             pac.append(p)
-                            rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" %(t, p, project, p,rdiff))
+                            rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" % (t, p, project, p,rdiff))
                         else:
                             print("Skipping package ", p,  " since it has no difference with the target package.")
                     else:
@@ -1297,7 +1297,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rdiff = None
         if opts.diff:
             try:
-                rdiff = 'old: %s/%s\nnew: %s/%s\n' %(dst_project, dst_package, src_project, src_package)
+                rdiff = 'old: %s/%s\nnew: %s/%s\n' % (dst_project, dst_package, src_project, src_package)
                 rdiff += server_diff(apiurl,
                                     dst_project, dst_package, opts.revision,
                                     src_project, src_package, None, True)
@@ -1514,9 +1514,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.no_update:
             src_update = "noupdate"
 
-        options_block=""
+        options_block = ""
         if src_update:
-            options_block="""<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+            options_block = """<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
 
         args = slash_split(args)
 
@@ -1528,30 +1528,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if ai == 'submit':
                 args = opts.actiondata[i]
                 i = i+1
-                actionsxml += self._submit_request(args,opts, options_block)
+                actionsxml += self._submit_request(args, opts, options_block)
             elif ai == 'delete':
                 args = opts.actiondata[i]
-                actionsxml += self._delete_request(args,opts)
+                actionsxml += self._delete_request(args, opts)
                 i = i+1
             elif ai == 'change_devel':
                 args = opts.actiondata[i]
-                actionsxml += self._changedevel_request(args,opts)
+                actionsxml += self._changedevel_request(args, opts)
                 i = i+1
             elif ai == 'add_me':
                 args = opts.actiondata[i]
-                actionsxml += self._add_me(args,opts)
+                actionsxml += self._add_me(args, opts)
                 i = i+1
             elif ai == 'add_group':
                 args = opts.actiondata[i]
-                actionsxml += self._add_group(args,opts)
+                actionsxml += self._add_group(args, opts)
                 i = i+1
             elif ai == 'add_role':
                 args = opts.actiondata[i]
-                actionsxml += self._add_user(args,opts)
+                actionsxml += self._add_user(args, opts)
                 i = i+1
             elif ai == 'set_bugowner':
                 args = opts.actiondata[i]
-                actionsxml += self._set_bugowner(args,opts)
+                actionsxml += self._set_bugowner(args, opts)
                 i = i+1
             else:
                 raise oscerr.WrongArgs('Unsupported action %s' % ai)
@@ -1682,12 +1682,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             import textwrap
             if package is not None:
-                footer=textwrap.TextWrapper(width = 66).fill(
-                        'please explain why you like to delete package %s of project %s'
-                        % (package,project))
+                footer = textwrap.TextWrapper(width = 66).fill(
+                         'please explain why you like to delete package %s of project %s'
+                          % (package,project))
             else:
-                footer=textwrap.TextWrapper(width = 66).fill(
-                        'please explain why you like to delete project %s' % project)
+                footer = textwrap.TextWrapper(width = 66).fill(
+                         'please explain why you like to delete project %s' % project)
             opts.message = edit_message(footer)
 
         r = Request()
@@ -1732,9 +1732,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.message:
             import textwrap
-            footer=textwrap.TextWrapper(width = 66).fill(
-                    'please explain why you like to change the devel project of %s/%s to %s/%s'
-                    % (project,package,devel_project,devel_package))
+            footer = textwrap.TextWrapper(width = 66).fill(
+                     'please explain why you like to change the devel project of %s/%s to %s/%s'
+                     % (project,package,devel_project,devel_package))
             opts.message = edit_message(footer)
 
         r = Request()
@@ -2032,7 +2032,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             except ValueError:
                 days = 0
             if days > 0:
-                since = time.strftime('%Y-%m-%dT%H:%M:%S',time.localtime(time.time()-days*24*3600))
+                since = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(time.time()-days*24*3600))
 
             skipped = 0
             ## bs has received 2009-09-20 a new xquery compare() function
@@ -2158,7 +2158,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rq = get_request(apiurl, reqid)
                 if opts.or_revoke:
                     if rq.state.name == "declined":
-                        cmd="revoke"
+                        cmd = "revoke"
                     elif rq.state.name != "new" and rq.state.name != "review":
                         return 0
                 if rq.state.name == state_map[cmd]:
@@ -2213,7 +2213,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         print('Cannot get list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
                                 except SyntaxError as e:
                                     print('Cannot parse list of files for %s/%s: %s' % (project, package, e), file=sys.stderr)
-                                if links_to_project==action.tgt_project and links_to_package==action.tgt_package:
+                                if links_to_project == action.tgt_project and links_to_package == action.tgt_package:
                                     # links to my request target anyway, no need to forward submit
                                     continue
 
@@ -3706,7 +3706,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ##
         ## if args[0] is already an url, the use it as is.
 
-        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':',':/',args[0]), 'openSUSE_11.4', args[1])
+        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % (re.sub(':', ':/', args[0]), 'openSUSE_11.4', args[1])
         print(self.do_install.__doc__)
         print("Example: \n" + cmd)
 
@@ -3831,8 +3831,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 package = args[0]
 
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev==None:
-            rev="latest"
+        if rev == None:
+            rev = "latest"
 
         if rev and rev != "latest" and not checkRevision(project, package, rev):
             print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
@@ -4652,7 +4652,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository = args[0]
             arch = args[1]
 
-        offset=0
+        offset = 0
         if subcmd == "blt" or subcmd == "buildlogtail":
             query = { 'view': 'entry' }
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
@@ -4664,7 +4664,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 offset = offset - ( 8 * 1024 )
             if offset < 0:
-                offset=0
+                offset = 0
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
@@ -4727,7 +4727,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 project, package, repository, arch = args
 
-        offset=0
+        offset = 0
         if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
             query = { 'view': 'entry' }
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
@@ -4739,7 +4739,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 offset = offset - ( 8 * 1024 )
             if offset < 0:
-                offset=0
+                offset = 0
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
@@ -4941,7 +4941,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('-d', '--debug', action='store_true',
-                        help='verbose output of build dependencies')
+                  help='verbose output of build dependencies')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -6196,9 +6196,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             user = opts.user
 
         what = {'project': '', 'package': ''}
-        type="work"
+        type = "work"
         if len(args) > 0:
-            type=args[0]
+            type = args[0]
 
         list_patchinfos = list_requests = False
         if type in args_patchinfos:
@@ -6430,7 +6430,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # XXX: is it a good idea to make this the default?
         # support perl symbols:
         if re.match('^perl\(\w+(::\w+)*\)$', search_term):
-            search_term = re.sub('\)','', re.sub('(::|\()','-', search_term))
+            search_term = re.sub('\)', '', re.sub('(::|\()', '-', search_term))
             opts.package = True
 
         if opts.mine:
@@ -6533,7 +6533,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     result.append(package)
 
                 if opts.version and package != None:
-                    sr = get_source_rev(apiurl,project,package)
+                    sr = get_source_rev(apiurl, project, package)
                     v = sr.get('version')
                     r = sr.get('rev')
                     s = sr.get('srcmd5')
@@ -6874,13 +6874,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # Try the OBS 2.4 way first. 
         if binary or opts.user or opts.group:
-            limit=None
+            limit = None
             if opts.all:
-                limit=0
-            filterroles=roles
+                limit = 0
+            filterroles = roles
             if filterroles == [ 'bugowner', 'maintainer' ]:
                 # use server side configured default
-                filterroles=None
+                filterroles = None
             if binary:
                 searchresult = owner(apiurl, binary, "binary", usefilter=filterroles, devel=None, limit=limit)
                 if not searchresult and (opts.set_bugowner or opts.set_bugowner_request):
@@ -6937,7 +6937,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             args = [bugowner, result.get('project')]
                             if result.get('package'):
                                 args = args + [result.get('package')]
-                            requestactionsxml += self._set_bugowner(args,opts)
+                            requestactionsxml += self._set_bugowner(args, opts)
 
             else:
                 if opts.set_bugowner:
@@ -6961,7 +6961,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         args = [bugowner, prj]
                         if pac:
                             args = args + [pac]
-                        requestactionsxml += self._set_bugowner(args,opts)
+                        requestactionsxml += self._set_bugowner(args, opts)
 
             if requestactionsxml != "":
                 if opts.message:
@@ -7039,11 +7039,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             # showing the maintainers
             for maintainers in projects:
-                indent=""
+                indent = ""
                 definingproject=maintainers.get("project")
                 if definingproject:
                     definingpackage=maintainers.get("package")
-                    indent="  "
+                    indent = "  "
                     if definingpackage:
                         print("Defined in package: %s/%s " %(definingproject, definingpackage))
                     else:
