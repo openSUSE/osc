@@ -96,7 +96,7 @@ class Osc(cmdln.Cmdln):
         optparser.add_option('-H', '--http-debug', action='store_true',
                       help='debug HTTP traffic (filters some headers)')
         optparser.add_option('--http-full-debug', action='store_true',
-                      help='debug HTTP traffic (filters no headers)'),
+                      help='debug HTTP traffic (filters no headers)')
         optparser.add_option('-d', '--debug', action='store_true',
                       help='print info useful for debugging')
         optparser.add_option('-A', '--apiurl', dest='apiurl',
