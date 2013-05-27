@@ -197,12 +197,12 @@ class Fetcher:
         import shutil
         pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
         if pkgq:
-          canonname = pkgq.canonname()
+            canonname = pkgq.canonname()
         else:
-          if pac_obj is None:
-            print('Unsupported file type: ', tmpfile, file=sys.stderr)
-            sys.exit(1)
-          canonname = pac_obj.binary
+            if pac_obj is None:
+                print('Unsupported file type: ', tmpfile, file=sys.stderr)
+                sys.exit(1)
+            canonname = pac_obj.binary
 
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
