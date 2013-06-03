@@ -269,11 +269,11 @@ def get_built_files(pacdir, pactype):
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'ARCHPKGS'),
                                     '-name', '*.pkg.tar*'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = []
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % pactype, file=sys.stderr)
-        b_built = []
-        s_built = []
+        b_built = ''
+        s_built = ''
     return s_built, b_built
 
 def get_repo(path):
@@ -939,7 +939,7 @@ def main(apiurl, opts, argv):
         print(b_built)
 
         if opts.keep_pkgs:
-            for i in str(b_built).splitlines() + str(s_built).splitlines():
+            for i in b_built.splitlines() + s_built.splitlines():
                 shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
 
     if bi_file:
