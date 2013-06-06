@@ -7918,7 +7918,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     exec(open(os.path.join(plugin_dir, extfile)).read())
                 except SyntaxError as e:
                     if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
-                        print("%s: %s\n" % (plugin_dir, e), file=sys.stderr)
+                        print("%s: %s\n" % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                     else:
                         import traceback
                         traceback.print_exc(file=sys.stderr)
