@@ -7922,7 +7922,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     else:
                         import traceback
                         traceback.print_exc(file=sys.stderr)
-                        print('\n%s: %s' % (plugin_dir, e), file=sys.stderr)
+                        print('\n%s: %s' % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                         print("\n Try 'env OSC_PLUGIN_FAIL_IGNORE=1 osc ...'", file=sys.stderr)
                         sys.exit(1)
                     
