@@ -63,7 +63,7 @@ can_also_build = {
              'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
              'armv5tel':[                                        'armv4l', 'armv5el',                                 'armv5tel' ], 
              's390x':  ['s390' ],
-             'ppc64':  [                        'ppc', 'ppc64' ],
+             'ppc64':  [                        'ppc', 'ppc64', 'ppc64p7' ],
              'i586':   [                'i386' ],
              'i686':   [        'i586', 'i386' ],
              'x86_64': ['i686', 'i586', 'i386' ],
