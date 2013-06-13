@@ -4969,16 +4969,16 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                     res['status'] += ': ' + '\n     '.join(lines)
                 else:
                     res['status'] += ': %s' % (res['details'], )
-            if res['code'] in ('succeeded') and res['repostate'] != "published":
-                waiting = True
-                if verbose:
-                    res['status'] += '(unpublished)'
-                else:
-                    res['status'] += '*'
             if res['dirty']:
                 waiting = True
                 if verbose:
                     res['status'] = 'outdated (was: %s)' % res['status']
+                else:
+                    res['status'] += '*'
+            elif res['code'] in ('succeeded') and res['repostate'] != "published":
+                waiting = True
+                if verbose:
+                    res['status'] += '(unpublished)'
                 else:
                     res['status'] += '*'
             if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
