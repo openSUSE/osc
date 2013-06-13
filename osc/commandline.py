@@ -10,6 +10,8 @@ from . import conf
 from . import oscerr
 import sys
 import time
+import imp
+import inspect
 try:
     from urllib.parse import urlsplit
     from urllib.error import HTTPError
@@ -75,6 +77,9 @@ class Osc(cmdln.Cmdln):
     man_footer = MAN_FOOTER
 
     def __init__(self, *args, **kwargs):
+        # the plugins have to be loaded before the
+        # superclass' __init__ method is called
+        self._load_plugins()
         cmdln.Cmdln.__init__(self, *args, **kwargs)
         cmdln.Cmdln.do_help.aliases.append('h')
         sys.stderr = safewriter.SafeWriter(sys.stderr)
@@ -7900,22 +7905,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print('done. Please check the state of the wc (via \'osc status %s\').' % i)
             else:
                 print('osc: working copy \'%s\' is not inconsistent' % i, file=sys.stderr)
-# fini!
-###############################################################################
 
-    # load subcommands plugged-in locally
-    plugin_dirs = [
-        '/usr/lib/osc-plugins',
-        '/usr/local/lib/osc-plugins',
-        '/var/lib/osc-plugins',  # Kept for backward compatibility
-        os.path.expanduser('~/.osc-plugins')]
-    for plugin_dir in plugin_dirs:
-        if os.path.isdir(plugin_dir):
+    def _load_plugins(self):
+        plugin_dirs = [
+            '/usr/lib/osc-plugins',
+            '/usr/local/lib/osc-plugins',
+            '/var/lib/osc-plugins',  # Kept for backward compatibility
+            os.path.expanduser('~/.osc-plugins')]
+        for plugin_dir in plugin_dirs:
+            if not os.path.isdir(plugin_dir):
+                continue
             for extfile in os.listdir(plugin_dir):
                 if not extfile.endswith('.py'):
                     continue
                 try:
-                    exec(open(os.path.join(plugin_dir, extfile)).read())
+                    modname = os.path.splitext(extfile)[0]
+                    mod = imp.load_source(modname, os.path.join(plugin_dir, extfile))
+                    # restore the old exec semantic
+                    mod.__dict__.update(globals())
+                    for name in dir(mod):
+                        func = getattr(mod, name)
+                        if name.startswith('do_') and inspect.isfunction(func):
+                            setattr(self.__class__, name, func)
                 except SyntaxError as e:
                     if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
                         print("%s: %s\n" % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
@@ -7925,6 +7936,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         print('\n%s: %s' % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                         print("\n Try 'env OSC_PLUGIN_FAIL_IGNORE=1 osc ...'", file=sys.stderr)
                         sys.exit(1)
-                    
+
+# fini!
+###############################################################################
 
 # vim: sw=4 et
