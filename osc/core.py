@@ -4918,6 +4918,7 @@ def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arc
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
         rmap['dirty'] = node.get('dirty')
+        rmap['repostate'] = node.get('code')
 
         rmap['details'] = ''
         details = None
@@ -4968,6 +4969,12 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                     res['status'] += ': ' + '\n     '.join(lines)
                 else:
                     res['status'] += ': %s' % (res['details'], )
+            if res['code'] in ('succeeded') and res['repostate'] != "published":
+                waiting = True
+                if verbose:
+                    res['status'] += '(unpublished)'
+                else:
+                    res['status'] += '*'
             if res['dirty']:
                 waiting = True
                 if verbose:
