@@ -1,5 +1,8 @@
 0.140
   - support python 2.7 and python 3 in parallel now
+  - reworked plugin loading mechanism in order to avoid the (mass) breakage of existing
+    plugins due to the python 3 support. Nonetheless if a plugin uses the "@cmdln.option(...)"
+    decorator it has to import the cmdln module first via "from osc import cmdln".
   - allow specifying directories as mv targets
   - drop the support for deprecated cbinstall and cbpreinstall directives
   - allow to set maintainer or bugowner ship for a binary package initially, but ask back if
