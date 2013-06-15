@@ -87,7 +87,7 @@ def verify_cb(ctx, ok, store):
         return 1
 
     except Exception as e:
-        print(e)
+        print(e, file=sys.stderr)
         return 0
 
 class FailCert:
@@ -116,15 +116,15 @@ class ValidationErrors:
                 raise Exception("Certificate changed unexpectedly. This should not happen")
         self.failures[depth].errs.append(err)
 
-    def show(self):
+    def show(self, out):
         for depth in self.failures.keys():
             cert = self.failures[depth].cert
-            print("*** certificate verify failed at depth %d" % depth)
-            print("Subject: ", cert.get_subject())
-            print("Issuer:  ", cert.get_issuer())
-            print("Valid: ", cert.get_not_before(), "-", cert.get_not_after())
-            print("Fingerprint(MD5):  ", cert.get_fingerprint('md5'))
-            print("Fingerprint(SHA1): ", cert.get_fingerprint('sha1'))
+            print("*** certificate verify failed at depth %d" % depth, file=out)
+            print("Subject: ", cert.get_subject(), file=out)
+            print("Issuer:  ", cert.get_issuer(), file=out)
+            print("Valid: ", cert.get_not_before(), "-", cert.get_not_after(), file=out)
+            print("Fingerprint(MD5):  ", cert.get_fingerprint('md5'), file=out)
+            print("Fingerprint(SHA1): ", cert.get_fingerprint('sha1'), file=out)
 
             for err in self.failures[depth].errs:
                 reason = "Unknown"
@@ -133,7 +133,7 @@ class ValidationErrors:
                     reason = M2Crypto.Err.get_x509_verify_error(err)
                 except:
                     pass
-                print("Reason:", reason)
+                print("Reason:", reason, file=out)
 
     # check if the encountered errors could be ignored
     def could_ignore(self):
@@ -325,17 +325,21 @@ def verify_certificate(connection):
                 print("offending certificate is at '%s'" % tc.file, file=sys.stderr)
                 raise SSLVerificationError("remote host identification has changed")
 
-        verrs.show()
+        # if http_debug is set we redirect sys.stdout to an StringIO
+        # instance in order to do some header filtering (see conf module)
+        # so we have to use the "original" stdout for printing
+        out = getattr(connection, '_orig_stdout', sys.stdout)
+        verrs.show(out)
 
-        print()
+        print(file=out)
 
         if not verrs.could_ignore():
             raise SSLVerificationError("Certificate validation error cannot be ignored")
 
         if not verrs.chain_ok:
-            print("A certificate in the chain failed verification")
+            print("A certificate in the chain failed verification", file=out)
         if not verrs.cert_ok:
-            print("The server certificate failed verification")
+            print("The server certificate failed verification", file=out)
 
         while True:
             print("""
@@ -344,9 +348,10 @@ Would you like to
 1 - continue anyways
 2 - trust the server certificate permanently
 9 - review the server certificate
-""")
+""", file=out)
 
-            r = raw_input("Enter choice [0129]: ")
+            print("Enter choice [0129]: ", end='', file=out)
+            r = raw_input()
             if not r or r == '0':
                 connection.close()
                 raise SSLVerificationError("Untrusted Certificate")
@@ -357,6 +362,6 @@ Would you like to
                 tc.trust_always()
                 return
             elif r == '9':
-                print(cert.as_text())
+                print(cert.as_text(), file=out)
 
 # vim: sw=4 et

@@ -529,12 +529,13 @@ def init_basicauth(config):
     def filterhdrs(meth, ishdr, *hdrs):
         # this is so ugly but httplib doesn't use
         # a logger object or such
-        def new_method(*args, **kwargs):
-            stdout = sys.stdout
+        def new_method(self, *args, **kwargs):
+            self._orig_stdout = sys.stdout
             sys.stdout = StringIO()
-            meth(*args, **kwargs)
+            meth(self, *args, **kwargs)
             hdr = sys.stdout.getvalue()
-            sys.stdout = stdout
+            sys.stdout = self._orig_stdout
+            del self._orig_stdout
             for i in hdrs:
                 if ishdr:
                     hdr = re.sub(r'%s:[^\\r]*\\r\\n' % i, '', hdr)
