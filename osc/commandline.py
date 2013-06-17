@@ -2031,7 +2031,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     try:
                         show_project_meta(apiurl, project)
                         print('No results for {0}'.format(project))
-                    except TypeError:
+                    except HTTPError:
                         print('Project {0} does not exist'.format(project))
                 else:
                     print('No results')
