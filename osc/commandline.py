@@ -2027,11 +2027,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             # Check if project actually exists if result list is empty
             if not results:
-                try:
-                    show_project_meta(apiurl, project)
-                    print('No results for {0}'.format(project))
-                except TypeError:
-                    print('Project {0} does not exist'.format(project))
+                if project:
+                    try:
+                        show_project_meta(apiurl, project)
+                        print('No results for {0}'.format(project))
+                    except TypeError:
+                        print('Project {0} does not exist'.format(project))
+                else:
+                    print('No results')
                 return
 
             results.sort(reverse=True)
