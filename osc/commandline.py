@@ -2541,7 +2541,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-d', '--keep-develproject', action='store_true',
                         help='keep develproject tag in the package metadata')
     @cmdln.option('-r', '--revision', metavar='rev',
-                        help='link the specified revision.')
+                        help='copy the specified revision.')
     @cmdln.option('-t', '--to-apiurl', metavar='URL',
                         help='URL of destination api server. Default is the source api server.')
     @cmdln.option('-m', '--message', metavar='TEXT',
