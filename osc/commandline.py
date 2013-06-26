@@ -7928,7 +7928,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     mod.__dict__.update(globals())
                     for name in dir(mod):
                         func = getattr(mod, name)
-                        if name.startswith('do_') and inspect.isfunction(func):
+                        # add all functions to the class (filtering only
+                        # methods which start with "do_" breaks the old behavior)
+                        if inspect.isfunction(func):
                             setattr(self.__class__, name, func)
                 except SyntaxError as e:
                     if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
