@@ -44,7 +44,7 @@ change_personality = {
         }
 
 # FIXME: qemu_can_build should not be needed anymore since OBS 2.3
-qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv7el', 'armv7hl', 'armv8el',
+qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv6hl', 'armv7el', 'armv7hl', 'armv8el',
                    'sh4', 'mips', 'mipsel',
                    'ppc', 'ppc64',
                    's390', 's390x',
@@ -57,6 +57,7 @@ can_also_build = {
              'armv7l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ],
              'armv5el':[                                         'armv4l', 'armv5l', 'armv5el'                                  ], # not existing arch, just for compatibility
              'armv6el':[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ], # not existing arch, just for compatibility
+             'armv6hl':[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
              'armv7el':[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ], # not existing arch, just for compatibility
              'armv7hl':[                        'armv7hl'                                                             ], # not existing arch, just for compatibility
              'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
@@ -775,11 +776,9 @@ def main(apiurl, opts, argv):
 
     # Make packages from buildinfo available as repos for kiwi
     if build_type == 'kiwi':
-        if not os.path.exists('repos'):
-            os.mkdir('repos')
-        else:
+        if os.path.exists('repos'):
             shutil.rmtree('repos')
-            os.mkdir('repos')
+        os.mkdir('repos')
         for i in bi.deps:
             if not i.extproject:
                 # remove
@@ -817,6 +816,7 @@ def main(apiurl, opts, argv):
                             os.link(path + "/" + filename, tffn)
                         else:
                             os.symlink(path + "/" + filename, tffn)
+        # most simple kiwi XML parser, has to work for all kind of unknown kiwi files
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
         print('Skipping verification of package signatures due to secure VM build')
