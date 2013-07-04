@@ -5042,17 +5042,22 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         #filtering for Package Status
         if status_filter:
             if status_filter in buildstatus_symbols.values():
+                # a list is needed because if status_filter == "U"
+                # we have to filter either an "expansion error" (obsolete)
+                # or an "unresolvable" state
+                filters = []
                 for txt, sym in buildstatus_symbols.items():
                     if sym == status_filter:
-                        filt_txt = txt
-                for pkg in status.keys():
-                    for repo in status[pkg].keys():
-                        if status[pkg][repo] == filt_txt:
-                            if not name_filter:
-                                pacs_to_show.append(pkg)
-                                targets_to_show.append(repo)
-                            elif name_filter in pkg:
-                                pacs_to_show.append(pkg)
+                        filters.append(txt)
+                for filt_txt in filters:
+                    for pkg in status.keys():
+                        for repo in status[pkg].keys():
+                            if status[pkg][repo] == filt_txt:
+                                if not name_filter:
+                                    pacs_to_show.append(pkg)
+                                    targets_to_show.append(repo)
+                                elif name_filter in pkg:
+                                    pacs_to_show.append(pkg)
 
         #filtering for Package Name
         elif name_filter:
