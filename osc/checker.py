@@ -92,9 +92,13 @@ class Checker:
         # avoid errors on non rpm
         if pkg[-4:] != '.rpm': 
             return
-        fd = os.open(pkg, os.O_RDONLY)
-        hdr = self.ts.hdrFromFdno(fd)
-        os.close(fd)
+        fd = None
+        try:
+            fd = os.open(pkg, os.O_RDONLY)
+            hdr = self.ts.hdrFromFdno(fd)
+        finally:
+            if fd is not None:
+                os.close(fd)
 
 if __name__ == "__main__":
     import sys
