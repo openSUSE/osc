@@ -136,12 +136,15 @@ class Buildinfo:
         self.projects = {}
         self.keys = []
         self.prjkeys = []
+        self.pathes = []
         for node in root.findall('bdep'):
             p = Pac(node, self.buildarch, self.pacsuffix,
                     apiurl, localpkgs)
             if p.project:
                 self.projects[p.project] = 1
             self.deps.append(p)
+        for node in root.findall('path'):
+            self.pathes.append(node.get('project')+"/"+node.get('repository'))
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
@@ -816,7 +819,36 @@ def main(apiurl, opts, argv):
                             os.link(path + "/" + filename, tffn)
                         else:
                             os.symlink(path + "/" + filename, tffn)
-        # most simple kiwi XML parser, has to work for all kind of unknown kiwi files
+        # Is a obsrepositories tag used?
+        try:
+            tree = ET.parse(build_descr)
+        except:
+            print('could not parse the kiwi file:', file=sys.stderr)
+            print(open(build_descr).read(), file=sys.stderr)
+            sys.exit(1)
+        root = tree.getroot()
+        # product
+        for xml in root.findall('instsource'):
+            if xml.find('instrepo').find('source').get('path') == 'obsrepositories:/':
+                print("obsrepositories:/ for product builds is not yet supported in osc!")
+                sys.exit(1)
+        # appliance
+        for xml in root.findall('repository'):
+            if xml.find('source').get('path') == 'obsrepositories:/':
+                buildargs.append('--kiwi-parameter')
+                buildargs.append('--ignore-repos')
+                for path in bi.pathes:
+                   if not os.path.isdir("repos/"+path):
+                       continue
+                   buildargs.append('--kiwi-parameter')
+                   buildargs.append('--add-repo')
+                   buildargs.append('--kiwi-parameter')
+                   buildargs.append("repos/"+path)
+                   buildargs.append('--kiwi-parameter')
+                   buildargs.append('--add-repotype')
+                   buildargs.append('--kiwi-parameter')
+                   buildargs.append('rpm-md')
+                break
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
         print('Skipping verification of package signatures due to secure VM build')

@@ -1,3 +1,6 @@
+0.141
+  - support for kiwi appliance builds using obsrepositories:/ directive
+
 0.140
   - support python 2.7 and python 3 in parallel now
   - reworked plugin loading mechanism in order to avoid the (mass) breakage of existing
