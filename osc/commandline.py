@@ -2621,7 +2621,63 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print(r)
+        print(r.read())
+
+
+    @cmdln.option('-r', '--repo', metavar='REPO',
+                        help='Release only binaries from the specified repository')
+    @cmdln.option('--target-project', metavar='TARGETPROJECT',
+                  help='Release only to specified project')
+    @cmdln.option('--target-repository', metavar='TARGETREPOSITORY',
+                  help='Release only to specified repository')
+    def do_release(self, subcmd, opts, *args):
+        """${cmd_name}: Release sources and binaries 
+
+        This command is used to transfer sources and binaries without rebuilding them.
+        It requires defined release targets set to trigger="manual". Please refer the
+        release management chapter in the OBS book for details.
+
+        usage:
+            osc release [ SOURCEPROJECT [ SOURCEPACKAGE ] ]
+
+        ${cmd_option_list}
+        """
+       
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        source_project = source_package = None
+
+        if len(args) > 2:
+            raise oscerr.WrongArgs('Too many arguments.')
+
+        if len(args) == 0:
+            if is_project_dir(os.curdir):
+               source_project = store_read_project(os.curdir)
+            elif is_package_dir(os.curdir):
+               source_package = store_read_package(wd)
+            else:
+               raise oscerr.WrongArgs('Too few arguments.')
+        if len(args) > 0:
+            source_project = args[0]
+        if len(args) > 1:
+            source_package = args[1]
+
+        query = { 'cmd': 'release' }
+        if opts.target_project:
+            query["targetproject"] = opts.target_project
+        if opts.target_repository:
+            query["targetrepository"] = opts.target_repository
+        baseurl = ['source', source_project]
+        if source_package:
+            baseurl.append(source_package)
+        url = makeurl(apiurl, baseurl, query=query)
+        f = http_POST(url)
+        while True:
+            buf = f.read(16384)
+            if not buf:
+                break
+            sys.stdout.write(buf)
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
