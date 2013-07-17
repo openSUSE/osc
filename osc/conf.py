@@ -710,7 +710,7 @@ def add_section(filename, url, user, passwd):
     cp = get_configParser(filename)
     try:
         cp.add_section(url)
-    except OscConfigParser.ConfigParser.DuplicateSectionError:
+    except OscConfigParser.configparser.DuplicateSectionError:
         # Section might have existed, but was empty
         pass
     if config['use_keyring'] and GENERIC_KEYRING:
