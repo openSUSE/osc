@@ -363,8 +363,8 @@ def create_deps(pkgqs):
 
 trustprompt = """Would you like to ...
 0 - quit (default)
-1 - trust packages from '%(project)s' always
-2 - trust them just this time
+1 - always trust packages from '%(project)s'
+2 - trust packages just this time
 ? """
 def check_trusted_projects(apiurl, projects):
     trusted = config['api_host_options'][apiurl]['trusted_prj']
