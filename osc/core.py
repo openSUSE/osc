@@ -3481,7 +3481,10 @@ def run_pager(message, tmp_suffix=''):
 
 def run_editor(filename):
     editor = os.getenv('EDITOR', default=get_default_editor())
-    cmd = shlex.split(editor)
+    try:
+        cmd = shlex.split(editor)
+    except SyntaxError:
+        cmd = editor.split()
     cmd.append(filename)
     return run_external(cmd[0], *cmd[1:])
 
