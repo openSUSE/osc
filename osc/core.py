@@ -21,6 +21,7 @@ import subprocess
 import re
 import socket
 import errno
+import shlex
 
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
@@ -3480,7 +3481,7 @@ def run_pager(message, tmp_suffix=''):
 
 def run_editor(filename):
     editor = os.getenv('EDITOR', default=get_default_editor())
-    cmd = editor.split(' ')
+    cmd = shlex.split(editor)
     cmd.append(filename)
     return run_external(cmd[0], *cmd[1:])
 
