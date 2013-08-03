@@ -3480,18 +3480,22 @@ def run_pager(message, tmp_suffix=''):
             tmpfile.close()
 
 def run_editor(filename):
+    cmd = _editor_command()
+    cmd.append(filename)
+    return run_external(cmd[0], *cmd[1:])
+
+def _editor_command():
     editor = os.getenv('EDITOR', default=get_default_editor())
     try:
         cmd = shlex.split(editor)
     except SyntaxError:
         cmd = editor.split()
-    cmd.append(filename)
-    return run_external(cmd[0], *cmd[1:])
+    return cmd
 
 def _edit_message_open_editor(filename, data, orig_mtime):
     # FIXME: import modules globally
     import tempfile
-    editor = os.getenv('EDITOR', default=get_default_editor()).split(' ')
+    editor = _editor_command()
     mtime = os.stat(filename).st_mtime
     if mtime == orig_mtime:
         # prepare file for editors
