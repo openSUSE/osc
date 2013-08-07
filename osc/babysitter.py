@@ -51,13 +51,13 @@ for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
         signal.signal(num, catchterm)
 
 
-def run(prg):
+def run(prg, argv=None):
     try:
         try:
             if '--debugger' in sys.argv:
                 pdb.set_trace()
             # here we actually run the program:
-            return prg.main()
+            return prg.main(argv)
         except:
             # look for an option in the prg.options object and in the config
             # dict print stack trace, if desired
