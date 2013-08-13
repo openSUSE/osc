@@ -4700,6 +4700,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('bl')
     @cmdln.alias('blt')
     @cmdln.alias('buildlogtail')
+    @cmdln.option('-l', '--last', action='store_true',
+                        help='Show the last finished log file')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log start or end from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -4742,6 +4744,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         offset = 0
         if subcmd == "blt" or subcmd == "buildlogtail":
             query = { 'view': 'entry' }
+            if opts.last:
+                query['last'] = 1
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
@@ -4755,7 +4759,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time)
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last)
 
 
     def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments'):
@@ -4782,6 +4786,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('rblt')
     @cmdln.alias('rbuildlogtail')
     @cmdln.alias('remotebuildlogtail')
+    @cmdln.option('-l', '--last', action='store_true',
+                        help='Show the last finished log file')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log starting or ending from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -4817,6 +4823,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         offset = 0
         if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
             query = { 'view': 'entry' }
+            if opts.last:
+                query['last'] = 1
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
@@ -4830,7 +4838,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time)
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last)
 
     @cmdln.alias('lbl')
     @cmdln.option('-o', '--offset', metavar='OFFSET',

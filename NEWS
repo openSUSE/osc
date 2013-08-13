@@ -1,6 +1,7 @@
 0.141
   - support for kiwi appliance builds using obsrepositories:/ directive
   - support for manual release of sources and binaries
+  - add --last parameter for build logs to show last finished log file, if currently building
 
 0.140
   - support python 2.7 and python 3 in parallel now

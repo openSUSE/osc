@@ -5240,7 +5240,7 @@ def buildlog_strip_time(data):
     return time_regex.sub('', data)
 
 
-def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False):
+def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False):
     """prints out the buildlog on stdout"""
 
     # to protect us against control characters
@@ -5249,6 +5249,8 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     remove_bytes = all_bytes[:10] + all_bytes[11:32] # accept newlines
 
     query = {'nostream' : '1', 'start' : '%s' % offset}
+    if last:
+        query['last'] = 1
     while True:
         query['start'] = offset
         start_offset = offset
