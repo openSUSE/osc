@@ -185,7 +185,8 @@ class Fetcher:
             print(file=sys.stderr)
 
         try:
-            with tempfile.NamedTemporaryFile(prefix='osc_build') as tmpfile:
+            with tempfile.NamedTemporaryFile(prefix='osc_build',
+                                             delete=False) as tmpfile:
                 mg.urlgrab(pac.filename, filename=tmpfile.name,
                            text='%s(%s) %s' % (prefix, pac.project, pac.filename))
                 self.move_package(tmpfile.name, pac.localdir, pac)
@@ -199,6 +200,9 @@ class Fetcher:
                   '(in order):' % pac.filename, file=sys.stderr)
             print('\n'.join(pac.urllist), file=sys.stderr)
             sys.exit(1)
+        finally:
+            if os.path.exists(tmpfile.name):
+                os.unlink(tmpfile.name)
 
     def move_package(self, tmpfile, destdir, pac_obj=None):
         import shutil
