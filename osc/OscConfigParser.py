@@ -15,11 +15,14 @@
 
 from __future__ import print_function
 
-try:
+import sys
+
+if sys.version_info >= ( 3, ):
     import configparser
-except ImportError:
+else:
     #python 2.x
     import ConfigParser as configparser
+
 import re
 
 # inspired from http://code.google.com/p/iniparse/ - although their implementation is
