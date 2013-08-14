@@ -2390,6 +2390,7 @@ class Request:
         self.title = ''
         self.description = ''
         self.state = None
+        self.accept_at = None
         self.actions = []
         self.statehistory = []
         self.reviews = []
@@ -2415,6 +2416,8 @@ class Request:
             self.reviews.append(ReviewState(review))
         for hist_state in root.findall('history'):
             self.statehistory.append(RequestState(hist_state))
+        if not root.find('accept_at') is None and root.find('accept_at').text:
+            self.accept_at = root.find('accept_at').text.strip()
         if not root.find('title') is None:
             self.title = root.find('title').text.strip()
         if not root.find('description') is None and root.find('description').text:
@@ -2566,6 +2569,9 @@ class Request:
     def __str__(self):
         """return "detailed" format"""
         lines = ['Request: #%s\n' % self.reqid]
+        if self.accept_at and self.state.name in [ 'new', 'review' ]:
+            lines.append('    *** This request will get automatically accepted after '+self.accept_at+' ! ***\n')
+            
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
             if action.type == 'delete':
