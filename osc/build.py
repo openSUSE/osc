@@ -833,22 +833,47 @@ def main(apiurl, opts, argv):
                 print("obsrepositories:/ for product builds is not yet supported in osc!")
                 sys.exit(1)
         # appliance
+        expand_obsrepos=None
         for xml in root.findall('repository'):
             if xml.find('source').get('path') == 'obsrepositories:/':
-                buildargs.append('--kiwi-parameter')
-                buildargs.append('--ignore-repos')
-                for path in bi.pathes:
-                   if not os.path.isdir("repos/"+path):
-                       continue
+                expand_obsrepos=True
+        if expand_obsrepos:
+          buildargs.append('--kiwi-parameter')
+          buildargs.append('--ignore-repos')
+          for xml in root.findall('repository'):
+              if xml.find('source').get('path') == 'obsrepositories:/':
+                  for path in bi.pathes:
+                      if not os.path.isdir("repos/"+path):
+                          continue
+                      buildargs.append('--kiwi-parameter')
+                      buildargs.append('--add-repo')
+                      buildargs.append('--kiwi-parameter')
+                      buildargs.append("repos/"+path)
+                      buildargs.append('--kiwi-parameter')
+                      buildargs.append('--add-repotype')
+                      buildargs.append('--kiwi-parameter')
+                      buildargs.append('rpm-md')
+                      if xml.get('priority'):
+                          buildargs.append('--kiwi-parameter')
+                          buildargs.append('--add-repoprio='+xml.get('priority'))
+              else:
+                   m = re.match(r"obs://[^/]+/([^/]+)/(\S+)", xml.find('source').get('path'))
+                   if not m:
+                       # short path without obs instance name
+                       m = re.match(r"obs://([^/]+)/(.+)", xml.find('source').get('path'))
+                   project=m.group(1).replace(":",":/")
+                   repo=m.group(2)
                    buildargs.append('--kiwi-parameter')
                    buildargs.append('--add-repo')
                    buildargs.append('--kiwi-parameter')
-                   buildargs.append("repos/"+path)
+                   buildargs.append("repos/"+project+"/"+repo)
                    buildargs.append('--kiwi-parameter')
                    buildargs.append('--add-repotype')
                    buildargs.append('--kiwi-parameter')
                    buildargs.append('rpm-md')
-                break
+                   if xml.get('priority'):
+                       buildargs.append('--kiwi-parameter')
+                       buildargs.append('--add-repopriority='+xml.get('priority'))
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
         print('Skipping verification of package signatures due to secure VM build')
