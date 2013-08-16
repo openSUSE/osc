@@ -2310,7 +2310,8 @@ class Action:
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name'),
         'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate'),
         'delete': ('tgt_project', 'tgt_package', 'tgt_repository'),
-        'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package')}
+        'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package'),
+        'group': ('grouped_id')}
     # attribute prefix to element name map (only needed for abbreviated attributes)
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
 
@@ -2544,6 +2545,11 @@ class Request:
         elif action.type == 'delete':
             d['source'] = ''
             d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package, action.tgt_repository)
+        elif action.type == 'group':
+            # FIXME: dunno what makes sense to do with it.
+            raise oscerr.APIError('Unknown action type %s\n' % action.type)
+        else:
+            raise oscerr.APIError('Unknown action type %s\n' % action.type)
         return d
 
     def list_view(self):
