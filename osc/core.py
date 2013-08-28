@@ -6526,7 +6526,7 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
     import tempfile, shutil
     actions = orequest.get_actions('submit')
     oactions = actions
-    if not orequest is None:
+    if new_request is not None:
         actions = new_request.get_actions('submit')
     num = 0
     if len(actions) > 1:
