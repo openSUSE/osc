@@ -2311,7 +2311,7 @@ class Action:
         'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate'),
         'delete': ('tgt_project', 'tgt_package', 'tgt_repository'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package'),
-        'group': ('grouped_id')}
+        'group': ('grouped_id', )}
     # attribute prefix to element name map (only needed for abbreviated attributes)
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
 
@@ -2341,17 +2341,23 @@ class Action:
         root = ET.Element('action', type=self.type)
         for i in Action.type_args[self.type]:
             prefix, attr = i.split('_', 1)
-            val = getattr(self, i)
-            if val is None:
+            vals = getattr(self, i)
+            # single, plain elements are _not_ stored in a list
+            plain = False
+            if vals is None:
                 continue
-            elm = root.find(Action.prefix_to_elm.get(prefix, prefix))
-            if elm is None:
-                elm = ET.Element(Action.prefix_to_elm.get(prefix, prefix))
-                root.append(elm)
-            if prefix == 'opt':
-                ET.SubElement(elm, attr).text = val
-            else:
-                elm.set(attr, val)
+            elif not hasattr(vals, 'append'):
+                vals = [vals]
+                plain = True
+            for val in vals:
+                elm = root.find(Action.prefix_to_elm.get(prefix, prefix))
+                if elm is None or not plain:
+                    elm = ET.Element(Action.prefix_to_elm.get(prefix, prefix))
+                    root.append(elm)
+                if prefix == 'opt':
+                    ET.SubElement(elm, attr).text = val
+                else:
+                    elm.set(attr, val)
         return root
 
     def to_str(self):
@@ -2375,7 +2381,17 @@ class Action:
                 data = [('opt_%s' % opt.tag, opt.text.strip()) for opt in node if opt.text]
             else:
                 data = [('%s_%s' % (prefix, k), v) for k, v in node.items()]
-            kwargs.update(dict(data))
+            # it would be easier to store everything in a list but in
+            # this case we would lose some "structure" (see to_xml)
+            for k, v in data:
+                if k in kwargs:
+                    l = kwargs[k]
+                    if not hasattr(l, 'append'):
+                        l = [l]
+                        kwargs[k] = l
+                    l.append(v)
+                else:
+                    kwargs[k] = v
         return Action(action_node.get('type'), **kwargs)
 
 
@@ -2492,8 +2508,7 @@ class Request:
             d['by'] += '(%s)' % review.who
         return d
 
-    @staticmethod
-    def format_action(action, show_srcupdate=False):
+    def format_action(self, action, show_srcupdate=False):
         """
         format an action depending on the action's type.
         A dict which contains the formatted str's is returned.
@@ -2546,8 +2561,14 @@ class Request:
             d['source'] = ''
             d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package, action.tgt_repository)
         elif action.type == 'group':
-            # FIXME: dunno what makes sense to do with it.
-            raise oscerr.APIError('Unknown action type %s\n' % action.type)
+            l = action.grouped_id
+            if l is None:
+                # there may be no requests in a group action
+                l = ''
+            if not hasattr(l, 'append'):
+                l = [l]
+            d['source'] = ', '.join(l) + ' ->'
+            d['target'] = self.reqid
         else:
             raise oscerr.APIError('Unknown action type %s\n' % action.type)
         return d
@@ -2558,7 +2579,7 @@ class Request:
         lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, self.state.name, self.state.who, self.state.when)]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
-            lines.append(tmpl % Request.format_action(action))
+            lines.append(tmpl % self.format_action(action))
         tmpl = '        Review by %(type)-10s is %(state)-10s %(by)-50s'
         for review in self.reviews:
             lines.append(tmpl % Request.format_review(review))
@@ -2583,7 +2604,7 @@ class Request:
             if action.type == 'delete':
                 # remove 1 whitespace because source is empty
                 tmpl = '  %(type)-12s %(source)s %(target)s'
-            lines.append(tmpl % Request.format_action(action, show_srcupdate=True))
+            lines.append(tmpl % self.format_action(action, show_srcupdate=True))
         lines.append('\n\nMessage:')
         if self.description:
             lines.append(self.description)
@@ -6511,7 +6532,9 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
     if len(actions) > 1:
         print('Please chose one of the following submit actions:')
         for i in range(len(actions)):
-            fmt = Request.format_action(actions[i])
+            # it is safe to use orequest because currently the formatting
+            # of a submit action does not need instance specific data
+            fmt = orequest.format_action(actions[i])
             print('(%i)' % i, '%(source)s  %(target)s' % fmt)
         num = raw_input('> ')
         try:
