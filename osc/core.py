@@ -1305,7 +1305,9 @@ class Package:
         if not skip_local_service_run:
             r = self.run_source_services(mode="trylocal", verbose=verbose)
             if r is not 0:
-                raise oscerr.ServiceRuntimeError(r)
+                # FIXME: it is better to raise this in Serviceinfo.execute with more
+                # information (like which service/command failed)
+                raise oscerr.ServiceRuntimeError('A service failed with error: %d' % r)
 
         if not self.todo:
             self.todo = [i for i in self.to_be_added if not i in self.filenamelist] + self.filenamelist

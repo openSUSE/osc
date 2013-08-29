@@ -165,6 +165,8 @@ def run(prg, argv=None):
     except oscerr.ExtRuntimeError as e:
         print(e.file + ':', e.msg, file=sys.stderr)
         return 1
+    except oscerr.ServiceRuntimeError as e:
+        print(e.msg, file=sys.stderr)
     except oscerr.WorkingCopyOutdated as e:
         print(e, file=sys.stderr)
         return 1
