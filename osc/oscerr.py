@@ -49,7 +49,7 @@ class ExtRuntimeError(OscBaseError):
         self.file = fname
 
 class ServiceRuntimeError(OscBaseError):
-    """Exception raised when there is source service error runtime error"""
+    """Exception raised when the execution of a source service failed"""
     def __init__(self, msg):
         OscBaseError.__init__(self)
         self.msg = msg
