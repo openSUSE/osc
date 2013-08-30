@@ -2,6 +2,7 @@
   - support for kiwi appliance builds using obsrepositories:/ directive
   - support for manual release of sources and binaries
   - add --last parameter for build logs to show last finished log file, if currently building
+  - add signkey --sslcert option to fetch the optional create ssl certificate instead of gpg key
 
 0.140
   - support python 2.7 and python 3 in parallel now

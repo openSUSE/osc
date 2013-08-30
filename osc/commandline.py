@@ -7622,6 +7622,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='delete the gpg signing key in this project')
     @cmdln.option('--notraverse', action='store_true', default=False,
                   help='don\' traverse projects upwards to find key')
+    @cmdln.option('--sslcert', action='store_true', default=False,
+                  help='fetch SSL certificate instead of GPG key')
     def do_signkey(self, subcmd, opts, *args):
         """${cmd_name}: Manage Project Signing Key
 
@@ -7672,6 +7674,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             while True:
                 try:
                     url = makeurl(apiurl, ['source', prj, '_pubkey'])
+                    if opts.sslcert:
+                        url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'])
                     f = http_GET(url)
                     break
                 except HTTPError as e:
