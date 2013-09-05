@@ -7675,7 +7675,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     url = makeurl(apiurl, ['source', prj, '_pubkey'])
                     if opts.sslcert:
-                        url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'])
+                        url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'], 'meta=1')
                     f = http_GET(url)
                     break
                 except HTTPError as e:
