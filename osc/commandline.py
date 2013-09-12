@@ -7977,6 +7977,35 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print('osc: working copy \'%s\' is not inconsistent' % i, file=sys.stderr)
 
+    @cmdln.option('-n', '--dry-run', action='store_true',
+                  help='print the results without actually removing a file')
+    def do_clean(self, subcmd, opts, *args):
+        """${cmd_name}: removes all untracked files from the package working copy
+
+        Examples:
+            osc clean <path>
+
+        Note: if <path> is omitted it defaults to '.' (<path> has to
+              be a package working copy)
+
+        Warning: This command removes all files with status '?'.
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        pacs = parseargs(args)
+        # do a sanity check first
+        for pac in pacs:
+            if not is_package_dir(pac):
+                raise oscerr.WrongArgs('\'%s\' is no package working copy' % pac)
+        for pdir in pacs:
+            p = Package(pdir)
+            pdir = getTransActPath(pdir)
+            for filename in (fname for st, fname in p.get_status() if st == '?'):
+                print('Removing: %s' % os.path.join(pdir, filename))
+                if not opts.dry_run:
+                    os.unlink(os.path.join(p.absdir, filename))
+
     def _load_plugins(self):
         plugin_dirs = [
             '/usr/lib/osc-plugins',
