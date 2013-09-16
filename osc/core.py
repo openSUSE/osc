@@ -3106,8 +3106,8 @@ def show_package_meta(apiurl, prj, pac, meta=False):
     if meta:
         query['meta'] = 1
 
-    # packages like _pattern and _project do not have a _meta file
-    if pac.startswith('_pattern') or pac.startswith('_project'):
+    # The fake packages _project has no _meta file
+    if pac.startswith('_project'):
         return ""
 
     url = makeurl(apiurl, ['source', prj, pac, '_meta'], query)
