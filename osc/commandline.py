@@ -2621,7 +2621,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print(r.read())
+        print(r)
 
 
     @cmdln.option('-r', '--repo', metavar='REPO',
