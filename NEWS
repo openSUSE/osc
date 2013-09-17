@@ -1,4 +1,5 @@
 0.141
+  - crash fixes
   - support for kiwi appliance builds using obsrepositories:/ directive
   - support for manual release of sources and binaries
   - add --last parameter for build logs to show last finished log file, if currently building
