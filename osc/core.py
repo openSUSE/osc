@@ -1456,6 +1456,8 @@ class Package:
                 revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
 
         shutil.copyfile(storefilename, filename)
+        if mtime:
+            os.utime(filename, (-1, mtime))
         if not origfile is None:
             os.unlink(origfile)
 
