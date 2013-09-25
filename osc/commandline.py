@@ -1759,6 +1759,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='generate a diff')
     @cmdln.option('-u', '--unified', action='store_true',
                   help='output the diff in the unified diff format')
+    @cmdln.option('--no-devel', action='store_true',
+                  help='Do not attempt to forward to devel project')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-t', '--type', metavar='TYPE',
@@ -2207,7 +2209,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                               })
                         f = http_GET(u)
                         root = ET.parse(f).getroot()
-                        if root.findall('package'):
+                        if root.findall('package') and not opts.no_devel:
                             print("This package instance is defined as devel are in ", end=' ')
                             for node in root.findall('package'):
                                 project = node.get('project')
