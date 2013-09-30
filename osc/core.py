@@ -2901,7 +2901,7 @@ def makeurl(baseurl, l, query=[]):
     return urlunsplit((scheme, netloc, '/'.join(l), query, ''))
 
 
-def http_request(method, url, headers={}, data=None, file=None, timeout=100):
+def http_request(method, url, headers={}, data=None, file=None, timeout=0):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
     def create_memoryview(obj):
