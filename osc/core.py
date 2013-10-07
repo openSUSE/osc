@@ -3146,14 +3146,30 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
         raise
 
 
-def show_develproject(apiurl, prj, pac, xml_node=False):
+def show_devel_project(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
     node = ET.fromstring(''.join(m)).find('devel')
-    if not node is None:
-        if xml_node:
-            return node
-        return node.get('project')
-    return None
+    if node is None:
+        return None, None
+    else:
+        return node.get('project'), node.get('package', None)
+
+
+def set_devel_project(apiurl, prj, pac, devprj, devpac=None):
+    meta = show_package_meta(apiurl, prj, pac)
+    root = ET.fromstring(''.join(meta))
+    node = root.find('devel')
+    if node is None:
+        node = ET.Element('devel')
+        root.append(node)
+    else:
+        node.clear()
+    node.set('project', devprj)
+    if devpac:
+        node.set('package', devpac)
+    url = makeurl(apiurl, ['source', prj, pac, '_meta'])
+    mf = metafile(url, ET.tostring(root, encoding=ET_ENCODING))
+    mf.sync()
 
 
 def show_package_disabled_repos(apiurl, prj, pac):
