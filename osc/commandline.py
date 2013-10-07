@@ -522,10 +522,10 @@ class Osc(cmdln.Cmdln):
         run_editor(filename)
 
     @cmdln.alias('bsdevelproject')
-    @cmdln.option('-r', '--raw', action='store_true',
-                        help='print raw xml snippet')
+    @cmdln.alias('dp')
+    @cmdln.option('-r', '--raw', action='store_true', help='deprecated option')
     def do_develproject(self, subcmd, opts, *args):
-        """${cmd_name}: print the bsdevelproject of a package
+        """${cmd_name}: print the devel project / package of a package
 
         Examples:
             osc develproject PRJ PKG
@@ -544,13 +544,40 @@ class Osc(cmdln.Cmdln):
         else:
             raise oscerr.WrongArgs('need Project and Package')
 
-        devel = show_develproject(apiurl, project, package, opts.raw)
-        if devel is None:
-            print('\'%s/%s\' has no devel project' % (project, package))
-        elif opts.raw:
-            ET.dump(devel)
+        devprj, devpkg = show_devel_project(apiurl, project, package)
+        if devprj is None:
+            print('%s / %s has no devel project' % (project, package))
+        elif devpkg and devpkg != package:
+            print("%s %s" % (devprj, devpkg))
         else:
-            print(devel)
+            print(devprj)
+
+    @cmdln.alias('sdp')
+    def do_setdevelproject(self, subcmd, opts, *args):
+        """${cmd_name}: Set the devel project / package of a package
+
+        Examples:
+            osc setdevelproject [PRJ PKG] DEVPRJ [DEVPKG]
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        devprj, devpkg = None, None
+        if len(args) == 3 or len(args) == 4:
+            project, package = args[0], args[1]
+            devprj = args[2]
+            if len(args) == 4:
+                devpkg = args[3]
+        elif len(args) >= 1 and len(args) <= 2:
+            project, package = store_read_project(os.curdir), store_read_package(os.curdir)
+            devprj = args[0]
+            if len(args) == 2:
+                devpkg = args[1]
+        else:
+            raise oscerr.WrongArgs('need at least DEVPRJ (and possibly DEVPKG)')
+
+        set_devel_project(apiurl, project, package, devprj, devpkg)
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -1076,7 +1103,7 @@ class Osc(cmdln.Cmdln):
         if not opts.nodevelproject:
             devloc = None
             try:
-                devloc = show_develproject(apiurl, dst_project, dst_package)
+                devloc, _ = show_devel_project(apiurl, dst_project, dst_package)
             except HTTPError:
                 print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
@@ -1287,7 +1314,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.nodevelproject:
             devloc = None
             try:
-                devloc = show_develproject(apiurl, dst_project, dst_package)
+                devloc, _ = show_devel_project(apiurl, dst_project, dst_package)
             except HTTPError:
                 print("""\
 Warning: failed to fetch meta data for '%s' package '%s' (new package?) """ \
