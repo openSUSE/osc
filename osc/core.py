@@ -3155,18 +3155,24 @@ def show_devel_project(apiurl, prj, pac):
         return node.get('project'), node.get('package', None)
 
 
-def set_devel_project(apiurl, prj, pac, devprj, devpac=None):
+def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None):
     meta = show_package_meta(apiurl, prj, pac)
     root = ET.fromstring(''.join(meta))
     node = root.find('devel')
     if node is None:
+        if devprj is None:
+            return
         node = ET.Element('devel')
         root.append(node)
     else:
-        node.clear()
-    node.set('project', devprj)
-    if devpac:
-        node.set('package', devpac)
+        if devprj is None:
+            root.remove(node)
+        else:
+            node.clear()
+    if devprj:
+        node.set('project', devprj)
+        if devpac:
+            node.set('package', devpac)
     url = makeurl(apiurl, ['source', prj, pac, '_meta'])
     mf = metafile(url, ET.tostring(root, encoding=ET_ENCODING))
     mf.sync()
