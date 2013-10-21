@@ -553,6 +553,8 @@ class Osc(cmdln.Cmdln):
             print(devprj)
 
     @cmdln.alias('sdp')
+    @cmdln.option('-u', '--unset', action='store_true',
+                  help='remove devel project')
     def do_setdevelproject(self, subcmd, opts, *args):
         """${cmd_name}: Set the devel project / package of a package
 
@@ -575,7 +577,10 @@ class Osc(cmdln.Cmdln):
             if len(args) == 2:
                 devpkg = args[1]
         else:
-            raise oscerr.WrongArgs('need at least DEVPRJ (and possibly DEVPKG)')
+            if opts.unset:
+                project, package = store_read_project(os.curdir), store_read_package(os.curdir)
+            else:
+                raise oscerr.WrongArgs('need at least DEVPRJ (and possibly DEVPKG)')
 
         set_devel_project(apiurl, project, package, devprj, devpkg)
 
