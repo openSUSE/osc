@@ -6325,7 +6325,7 @@ def get_commit_message_template(pac):
         if pac.status(filename) == 'M':
             diff += get_source_file_diff(pac.absdir, filename, pac.rev)
         elif pac.status(filename) == 'A':
-            f = open(filename, 'r')
+            f = open(os.path.join(pac.absdir, filename), 'r')
             for line in f:
                 diff += '+' + line
             f.close()
