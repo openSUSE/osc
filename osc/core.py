@@ -5023,10 +5023,10 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
             results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
         except HTTPError as e:
             # check for simple timeout error and fetch again
-            if e.code != 502:
-                raise
-            # re-try result request
-            continue
+            if e.code == 502 or e.code == 504:
+                # re-try result request
+                continue
+            raise
 
         for res in results:
             if '_oldstate' in res:
