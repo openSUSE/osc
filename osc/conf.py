@@ -382,23 +382,38 @@ cookiejar = None
 
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
-        return urlsplit(apisrv)[0:2]
+        return urlsplit(apisrv)[0:3]
     elif scheme != None:
         # the split/join is needed to get a proper url (e.g. without a trailing slash)
-        return urlsplit(urljoin(scheme, apisrv))[0:2]
+        return urlsplit(urljoin(scheme, apisrv))[0:3]
     else:
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
         raise URLError(msg)
 
 
-def urljoin(scheme, apisrv):
-    return '://'.join([scheme, apisrv])
+def urljoin(scheme, apisrv, path=''):
+    return '://'.join([scheme, apisrv]) + path
 
 
 def is_known_apiurl(url):
     """returns true if url is a known apiurl"""
     apiurl = urljoin(*parse_apisrv_url(None, url))
     return apiurl in config['api_host_options']
+
+
+def extract_known_apiurl(url):
+    """
+    Return longest prefix of given url that is known apiurl,
+    None if there is no known apiurl that is prefix of given url.
+    """
+    scheme, host, path = parse_apisrv_url(None, url)
+    p = path.split('/')
+    while p:
+        apiurl = urljoin(scheme, host, '/'.join(p))
+        if apiurl in config['api_host_options']:
+            return apiurl
+        p.pop()
+    return None
 
 
 def get_apiurl_api_host_options(apiurl):
@@ -441,10 +456,9 @@ def get_apiurl_usr(apiurl):
 # So we need to build a new opener everytime we switch the
 # apiurl (because different apiurls may have different
 # cafile/capath locations)
-def _build_opener(url):
+def _build_opener(apiurl):
     from osc.core import __version__
     global config
-    apiurl = urljoin(*parse_apisrv_url(None, url))
     if 'last_opener' not in _build_opener.__dict__:
         _build_opener.last_opener = (None, None)
     if apiurl == _build_opener.last_opener[0]:
@@ -644,18 +658,18 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
     general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
     if section != 'general':
         section = config['apiurl_aliases'].get(section, section)
-        scheme, host = \
+        scheme, host, path = \
             parse_apisrv_url(config.get('scheme', 'https'), section)
-        section = urljoin(scheme, host)
+        section = urljoin(scheme, host, path)
 
     sections = {}
     for url in cp.sections():
         if url == 'general':
             sections[url] = url
         else:
-            scheme, host = \
+            scheme, host, path = \
                 parse_apisrv_url(config.get('scheme', 'https'), url)
-            apiurl = urljoin(scheme, host)
+            apiurl = urljoin(scheme, host, path)
             sections[apiurl] = url
 
     section = sections.get(section.rstrip('/'), section)
@@ -702,19 +716,20 @@ def write_initial_config(conffile, entries, custom_template=''):
     config.update(entries)
     # at this point use_keyring and gnome_keyring are str objects
     if config['use_keyring'] == '1' and GENERIC_KEYRING:
-        protocol, host = \
+        protocol, host, path = \
             parse_apisrv_url(None, config['apiurl'])
         keyring.set_password(host, config['user'], config['pass'])
         config['pass'] = ''
         config['passx'] = ''
     elif config['gnome_keyring'] == '1' and GNOME_KEYRING:
-        protocol, host = \
+        protocol, host, path = \
             parse_apisrv_url(None, config['apiurl'])
         gnomekeyring.set_network_password_sync(
             user=config['user'],
             password=config['pass'],
             protocol=protocol,
-            server=host)
+            server=host,
+            object=path)
         config['user'] = ''
         config['pass'] = ''
         config['passx'] = ''
@@ -741,19 +756,20 @@ def add_section(filename, url, user, passwd):
         # Section might have existed, but was empty
         pass
     if config['use_keyring'] and GENERIC_KEYRING:
-        protocol, host = parse_apisrv_url(None, url)
+        protocol, host, path = parse_apisrv_url(None, url)
         keyring.set_password(host, user, passwd)
         cp.set(url, 'keyring', '1')
         cp.set(url, 'user', user)
         cp.remove_option(url, 'pass')
         cp.remove_option(url, 'passx')
     elif config['gnome_keyring'] and GNOME_KEYRING:
-        protocol, host = parse_apisrv_url(None, url)
+        protocol, host, path = parse_apisrv_url(None, url)
         gnomekeyring.set_network_password_sync(
             user=user,
             password=passwd,
             protocol=protocol,
-            server=host)
+            server=host,
+            object=path)
         cp.set(url, 'keyring', '1')
         cp.remove_option(url, 'pass')
         cp.remove_option(url, 'passx')
@@ -836,8 +852,8 @@ def get_config(override_conffile=None,
     aliases = {}
     for url in [x for x in cp.sections() if x != 'general']:
         # backward compatiblity
-        scheme, host = parse_apisrv_url(config.get('scheme', 'https'), url)
-        apiurl = urljoin(scheme, host)
+        scheme, host, path = parse_apisrv_url(config.get('scheme', 'https'), url)
+        apiurl = urljoin(scheme, host, path)
         user = None
         password = None
         if config['use_keyring'] and GENERIC_KEYRING:
@@ -851,7 +867,7 @@ def get_config(override_conffile=None,
         elif config['gnome_keyring'] and GNOME_KEYRING:
             # Read from gnome keyring if available
             try:
-                gk_data = gnomekeyring.find_network_password_sync(protocol=scheme, server=host)
+                gk_data = gnomekeyring.find_network_password_sync(protocol=scheme, server=host, object=path)
                 if not 'user' in gk_data[0]:
                     raise oscerr.ConfigError('no user found in keyring', conffile)
                 user = gk_data[0]['user']
