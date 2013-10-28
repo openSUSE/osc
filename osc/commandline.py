@@ -6027,16 +6027,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
-                        help='Abort builds for a specific architecture')
+                        help='Restart builds for a specific architecture')
     @cmdln.option('-r', '--repo', metavar='REPO',
-                        help='Abort builds for a specific repository')
+                        help='Restart builds for a specific repository')
     @cmdln.option('--all', action='store_true',
-                        help='Abort all running builds of entire project')
-    def do_abortbuild(self, subcmd, opts, *args):
-        """${cmd_name}: Aborts the build of a certain project or package
+                        help='Restart all running builds of entire project')
+    @cmdln.alias('abortbuild')
+    def do_restartbuild(self, subcmd, opts, *args):
+        """${cmd_name}: Restart the build of a certain project or package
 
         usage:
-            osc abortbuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
+            osc restartbuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
         args = slash_split(args)
@@ -6071,9 +6072,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[3]
 
         if not (opts.all or package or repo or arch):
-            raise oscerr.WrongOptions('No option has been provided. If you want to abort all packages of the entire project, use --all option.')
+            raise oscerr.WrongOptions('No option has been provided. If you want to restart all packages of the entire project, use --all option.')
 
-        print(abortbuild(apiurl, project, package, opts.arch, opts.repo))
+        print(cmdbuild(apiurl, subcmd, project, package, opts.arch, opts.repo))
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',

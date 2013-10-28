@@ -5671,32 +5671,17 @@ def get_osc_version():
 
 
 def abortbuild(apiurl, project, package=None, arch=None, repo=None):
-    query = { 'cmd': 'abortbuild' }
-    if package:
-        query['package'] = package
-    if arch:
-        query['arch'] = arch
-    if repo:
-        query['repository'] = repo
-    u = makeurl(apiurl, ['build', project], query)
-    try:
-        f = http_POST(u)
-    except HTTPError as e:
-        e.osc_msg = 'abortion failed for project %s' % project
-        if package:
-            e.osc_msg += ' package %s' % package
-        if arch:
-            e.osc_msg += ' arch %s' % arch
-        if repo:
-            e.osc_msg += ' repo %s' % repo
-        raise
+    return cmdbuild(apiurl, 'abortbuild', project, package, arch, repo)
 
-    root = ET.parse(f).getroot()
-    return root.get('code')
+def restartbuild(apiurl, project, package=None, arch=None, repo=None):
+    return cmdbuild(apiurl, 'restartbuild', project, package, arch, repo)
+
+def wipebinaries(apiurl, project, package=None, arch=None, repo=None):
+    return cmdbuild(apiurl, 'wipebinaries', project, package, arch, repo)
 
 
-def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
-    query = { 'cmd': 'wipe' }
+def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None):
+    query = { 'cmd': cmd }
     if package:
         query['package'] = package
     if arch:
