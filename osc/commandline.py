@@ -2242,7 +2242,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         f = http_GET(u)
                         root = ET.parse(f).getroot()
                         if root.findall('package') and not opts.no_devel:
-                            print("This package instance is defined as devel are in ", end=' ')
                             for node in root.findall('package'):
                                 project = node.get('project')
                                 package = node.get('name')
