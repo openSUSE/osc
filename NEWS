@@ -1,3 +1,11 @@
+0.142
+  - ppc64p7 build support
+  - request --no-devel to disable request forwarding
+#
+# Features which requires OBS 2.5
+#
+  - authentification token support
+
 0.141
   - crash fixes
   - support for kiwi appliance builds using obsrepositories:/ directive

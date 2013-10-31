@@ -585,6 +585,52 @@ class Osc(cmdln.Cmdln):
         set_devel_project(apiurl, project, package, devprj, devpkg)
 
 
+    @cmdln.option('-c', '--create', action='store_true',
+                        help='Create a new token')
+    @cmdln.option('-d', '--delete', metavar='TOKENID',
+                        help='Create a new token')
+    def do_token(self, subcmd, opts, *args):
+        """${cmd_name}: Show and manage authentification token
+
+        Authentification token can be used to run specific commands without
+        sending credentials.
+
+        Usage:
+            osc token
+            osc token --create [<PROJECT> <PACKAGE>]
+            osc token --delete <TOKENID>
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+
+        apiurl = self.get_api_url()
+        url = apiurl + "/person/" + conf.get_apiurl_usr(apiurl) + "/token"
+
+        if opts.create:
+            print("Create a new token")
+            url += "?cmd=create"
+            if len(args) > 1:
+                url += "&project=" + args[0]
+                url += "&package=" + args[1]
+
+            f = http_POST(url)
+            while True:
+                buf = f.read(16384)
+                if not buf:
+                    break
+                sys.stdout.write(buf)
+
+        elif opts.delete:
+            print("Delete token")
+            url += "/" + opts.delete
+            http_DELETE(url)
+        else:
+            # just list token
+            for data in streamfile(url, http_GET):
+                sys.stdout.write(data)
+
+
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
     @cmdln.option('--attribute-defaults', action='store_true',
