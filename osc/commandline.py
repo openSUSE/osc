@@ -3019,7 +3019,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print("%s/%s"%(r.get('project'), r.get('package')))
             return
         
-        print("Project " + result + " created.")
+        apiopt = ''
+        if conf.get_configParser().get('general', 'apiurl') != apiurl:
+            apiopt = '-A %s ' % apiurl
+        print('A working copy of the maintenance branch can be checked out with:\n\n' \
+              'osc %sco %s' \
+                    % (apiopt, result))
 
         if opts.checkout:
             Project.init_project(apiurl, result, result, conf.config['do_package_tracking'])
