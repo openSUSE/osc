@@ -2,4 +2,4 @@
 *.swp
 tags
 build
-tests/junit-xml-results
+*junit-xml-results
