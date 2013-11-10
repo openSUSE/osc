@@ -4201,6 +4201,7 @@ def server_diff(apiurl,
         query['meta'] = 1
     if full:
         query['filelimit'] = 0
+        query['tarlimit'] = 0
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
 
