@@ -13,7 +13,7 @@ UPSTREAM = 'some:project'
 BRANCH   = 'home:user:branches:' + UPSTREAM
 
 def rdiff_url(pkg, oldprj, newprj):
-    return API_URL + 'source/%s/%s?unified=1&opackage=%s&oproject=%s&cmd=diff&expand=1&filelimit=0' % \
+    return API_URL + 'source/%s/%s?unified=1&opackage=%s&oproject=%s&cmd=diff&expand=1&tarlimit=0&filelimit=0' % \
         (newprj, pkg, pkg, oldprj.replace(':', '%3A'))
 
 def request_url(prj):
