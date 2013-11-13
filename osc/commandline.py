@@ -589,6 +589,8 @@ class Osc(cmdln.Cmdln):
                         help='Create a new token')
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Create a new token')
+    @cmdln.option('-t', '--trigger', metavar='TOKENID',
+                        help='Trigger the action of a token')
     def do_token(self, subcmd, opts, *args):
         """${cmd_name}: Show and manage authentification token
 
@@ -599,6 +601,7 @@ class Osc(cmdln.Cmdln):
             osc token
             osc token --create [<PROJECT> <PACKAGE>]
             osc token --delete <TOKENID>
+            osc token --trigger <TOKENID>
         ${cmd_option_list}
         """
 
@@ -625,6 +628,15 @@ class Osc(cmdln.Cmdln):
             print("Delete token")
             url += "/" + opts.delete
             http_DELETE(url)
+        elif opts.trigger:
+            print("Trigger token")
+            url = apiurl + "/trigger/runservice"
+            req = URLRequest(url)
+            req.get_method = lambda: "POST"
+            req.add_header('Content-Type', 'application/octet-stream')
+            req.add_header('Authorization', "Token "+opts.trigger)
+            fd = urlopen(req, data=None)
+            print(fd.read())
         else:
             # just list token
             for data in streamfile(url, http_GET):
