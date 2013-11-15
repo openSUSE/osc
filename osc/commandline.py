@@ -1410,7 +1410,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             user = conf.get_apiurl_usr(apiurl)
             myreqs = [ i for i in reqs if i.state.who == user ]
             repl = 'y'
-            if len(myreqs) > 0:
+            if len(myreqs) > 0 and not opts.yes:
                 print('You already created the following submit request: %s.' % \
                       ', '.join([i.reqid for i in myreqs ]))
                 repl = raw_input('Supersede the old requests? (y/n/c) ')
