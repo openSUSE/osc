@@ -817,7 +817,7 @@ def get_config(override_conffile=None,
             try:
                 # Read from keyring lib if available
                 user = cp.get(url, 'user', raw=True)
-                password = keyring.get_password(host, user)
+                password = str(keyring.get_password(host, user))
             except:
                 # Fallback to file based auth.
                 pass
@@ -829,7 +829,7 @@ def get_config(override_conffile=None,
                     raise oscerr.ConfigError('no user found in keyring', conffile)
                 user = gk_data[0]['user']
                 if 'password' in gk_data[0]:
-                    password = gk_data[0]['password']
+                    password = str(gk_data[0]['password'])
                 else:
                     # this is most likely an error
                     print('warning: no password found in keyring', file=sys.stderr)
