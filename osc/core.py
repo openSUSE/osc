@@ -2933,8 +2933,8 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=0):
     req.get_method = lambda: method
 
     # POST requests are application/x-www-form-urlencoded per default
-    # since we change the request into PUT, we also need to adjust the content type header
-    if method == 'PUT' or (method == 'POST' and data):
+    # but sending data requires an octet-stream type
+    if method == 'PUT' or (method == 'POST' and (data or file)):
         req.add_header('Content-Type', 'application/octet-stream')
 
     if isinstance(headers, type({})):
