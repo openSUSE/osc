@@ -5677,8 +5677,8 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
 def restartbuild(apiurl, project, package=None, arch=None, repo=None):
     return cmdbuild(apiurl, 'restartbuild', project, package, arch, repo)
 
-def wipebinaries(apiurl, project, package=None, arch=None, repo=None):
-    return cmdbuild(apiurl, 'wipebinaries', project, package, arch, repo)
+def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
+    return cmdbuild(apiurl, 'wipe', project, package, arch, repo, code)
 
 
 def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None):
@@ -5696,7 +5696,7 @@ def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None
     try:
         f = http_POST(u)
     except HTTPError as e:
-        e.osc_msg = 'wipe binary rpms failed for project %s' % project
+        e.osc_msg = '%s command failed for project %s' % (cmd, project)
         if package:
             e.osc_msg += ' package %s' % package
         if arch:
