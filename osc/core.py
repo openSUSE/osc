@@ -2911,7 +2911,7 @@ def makeurl(baseurl, l, query=[]):
     return urlunsplit((scheme, netloc, '/'.join(l), query, ''))
 
 
-def http_request(method, url, headers={}, data=None, file=None, timeout=0):
+def http_request(method, url, headers={}, data=None, file=None):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
     def create_memoryview(obj):
@@ -2977,18 +2977,12 @@ def http_request(method, url, headers={}, data=None, file=None, timeout=0):
 
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
-    old_timeout = socket.getdefaulttimeout()
-    # XXX: dirty hack as timeout doesn't work with python-m2crypto
-    if old_timeout != timeout and not api_host_options.get('sslcertck'):
-        socket.setdefaulttimeout(timeout)
     try:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
         fd = urlopen(req, data=data)
 
     finally:
-        if old_timeout != timeout and not api_host_options.get('sslcertck'):
-            socket.setdefaulttimeout(old_timeout)
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
 
