@@ -2480,6 +2480,8 @@ class Request:
             ET.SubElement(root, 'title').text = self.title
         if self.description:
             ET.SubElement(root, 'description').text = self.description
+        if self.accept_at:
+            ET.SubElement(root, 'accept_at').text = self.accept_at
         return root
 
     def to_str(self):
@@ -2487,6 +2489,14 @@ class Request:
         root = self.to_xml()
         xmlindent(root)
         return ET.tostring(root, encoding=ET_ENCODING)
+
+    def accept_at_in_hours(self, hours):
+        """set auto accept_at time"""
+        import datetime
+
+        now = datetime.datetime.utcnow()
+        now = now + datetime.timedelta(hours=hours)
+        self.accept_at = now.isoformat()
 
     @staticmethod
     def format_review(review, show_srcupdate=False):

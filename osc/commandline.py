@@ -1740,6 +1740,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify message TEXT')
     @cmdln.option('-r', '--repository', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('--accept-in-hours', metavar='TEXT',
+                  help='specify message time when request shall get accepted automatically. Only works with write permissions in target.')
     @cmdln.alias("dr")
     @cmdln.alias("dropreq")
     @cmdln.alias("droprequest")
@@ -1793,6 +1795,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r = Request()
         r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
         r.description = cgi.escape(opts.message)
+        if opts.accept_in_hours:
+          r.accept_at_in_hours(int(opts.accept_in_hours))
         r.create(self.get_api_url())
         print(r.reqid)
 
