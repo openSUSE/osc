@@ -5165,7 +5165,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         row = ['_'] + ['/'.join(tg) for tg in targets]
         r.append(';'.join(row))
         for pac in pacs:
-            row = [pac] + [status[pac][tg] for tg in targets]
+            row = [pac] + [status[pac][tg] for tg in targets if tg in status[pac]]
             r.append(';'.join(row))
         return r
 
