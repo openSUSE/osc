@@ -592,9 +592,9 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-t', '--trigger', metavar='TOKENID',
                         help='Trigger the action of a token')
     def do_token(self, subcmd, opts, *args):
-        """${cmd_name}: Show and manage authentification token
+        """${cmd_name}: Show and manage authentication token
 
-        Authentification token can be used to run specific commands without
+        Authentication token can be used to run specific commands without
         sending credentials.
 
         Usage:
