@@ -6409,10 +6409,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
     print_request(request)
     try:
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
-        sr_actions = request.get_actions('submit')
+        editable_actions = request.get_actions('submit', 'maintenance_incident')
         # actions which have sources + buildresults
-        src_actions = sr_actions + request.get_actions('maintenance_release', 'maintenance_incident')
-        if sr_actions:
+        src_actions = editable_actions + request.get_actions('maintenance_release')
+        if editable_actions:
             prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/(s)kip/(c)ancel > '
         elif src_actions:
             # no edit for maintenance release requests
@@ -6457,13 +6457,13 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
                 for action in src_actions:
                     print('%s/%s:' % (action.src_project, action.src_package))
                     print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
-            elif repl == 'e' and sr_actions:
-                # this is only for sr_actions
+            elif repl == 'e' and editable_actions:
+                # this is only for editable actions
                 if not editprj:
                     editprj = clone_request(apiurl, request.reqid, 'osc editrequest')
                     orequest = request
                 request = edit_submitrequest(apiurl, editprj, orequest, request)
-                src_actions = sr_actions = request.get_actions('submit')
+                src_actions = editable_actions = request.get_actions('submit', 'maintenance_incident')
                 print_request(request)
                 prompt = 'd(i)ff/(a)ccept/(b)uildstatus/(e)dit/(s)kip/(c)ancel > '
             else:
