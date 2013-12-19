@@ -6,7 +6,6 @@
 #
 #  usage with bash
 #
-#     COMP_WORDBREAKS="${COMP_WORDBREAKS//:}"
 #     complete -C osc.complete osc
 #
 #  Author: Werner Fink <werner@suse.de>
@@ -35,8 +34,10 @@ if test "/proc/$PPID/exe" -ef /bin/tcsh ; then
     let colon=0
 else
     COMMAND_LINE="${COMP_LINE:0:$COMP_POINT}"
-#   let colon=1
     let colon=0
+    case "$COMP_WORDBREAKS" in
+    *:*) let colon=1
+    esac
     [[ $COMMAND_LINE =~ \\: ]] && COMMAND_LINE="${COMMAND_LINE//\\:/:}"
 fi
 IFS="${IFS}="
@@ -104,7 +105,7 @@ projects ()
     local -a list
     local -a argv
     local -i argc=0
-    local arg
+    local arg cur
     for arg; do
 	if test $arg == "--" ; then
 	    let argc++
@@ -113,15 +114,18 @@ projects ()
 	argv[argc++]=$arg
     done
     shift $argc
-    if test -n "$1" ; then
-	list=($(command grep -E "^$1" ~/.osc.projects))
+    cur="$1"
+    if test -n "${cur}" ; then
+	list=($(command grep -E "^${cur}" ~/.osc.projects))
     else
 	list=($(command cat ~/.osc.projects))
     fi
     if ((colon)) ; then
-	builtin compgen -W "${list[*]}" "$1"|sed -r 's@([^\\]):@\1\\:@g'
+	local colon_word
+	colon_word=${cur%${cur##*:}}
+	builtin compgen -W "${list[*]}" -- "${cur}" | sed -r "s@^${colon_word}@@g"
     else
-	builtin compgen -W "${list[*]}" -- ${1+"$@"}
+	builtin compgen -W "${list[*]}" -- "${cur}"
     fi
 }
 
@@ -130,7 +134,7 @@ packages ()
     local -a list
     local -a argv
     local -i argc=0
-    local arg
+    local arg cur
     for arg; do
 	if test $arg == "--" ; then
 	    let argc++
@@ -139,12 +143,13 @@ packages ()
 	argv[argc++]=$arg
     done
     shift $argc
-    if test -n "$1" ; then
-	list=($(command osc ls ${argv[@]}|command grep -E "^$1"))
+    cur="$1"
+    if test -n "${cur}" ; then
+	list=($(command osc ls ${argv[@]}|command grep -E "^${cur}"))
     else
 	list=($(command osc ls ${argv[@]}))
     fi
-    builtin compgen -W "${list[*]}" -- ${1+"$@"}
+    builtin compgen -W "${list[*]}" -- "${cur}"
 }
 
 repositories ()
