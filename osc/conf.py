@@ -570,8 +570,8 @@ def init_basicauth(config):
         cookiejar.load(ignore_discard=True)
     except IOError:
         try:
-            open(cookie_file, 'w').close()
-            os.chmod(cookie_file, 0o600)
+            fd = os.open(cookie_file, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, mode=0o600)
+            os.close(fd)
         except:
             #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
             cookiejar = CookieJar()
