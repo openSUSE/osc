@@ -36,6 +36,7 @@ The configuration dictionary could look like this:
 
 """
 
+import bz2
 import base64
 import os
 import re
@@ -663,6 +664,13 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
         return (opt, cp.get(section, opt, raw=True))
     return (opt, None)
 
+def passx_decode(passx):
+    """decode the obfuscated password back to plain text password"""
+    return bz2.decompress(base64.b64decode(passx.encode("ascii"))).decode("ascii")
+
+def passx_encode(passwd):
+    """encode plain text password to obfuscated form"""
+    return base64.b64encode(bz2.compress(passwd.encode('ascii'))).decode("ascii")
 
 def write_initial_config(conffile, entries, custom_template=''):
     """
@@ -694,7 +702,7 @@ def write_initial_config(conffile, entries, custom_template=''):
     if not config['plaintext_passwd']:
         config['pass'] = ''
     else:
-        config['passx'] = base64.b64encode(config['pass'].encode('bz2'))
+        config['passx'] = passx_encode(config['pass'])
 
     sio = StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
@@ -734,7 +742,7 @@ def add_section(filename, url, user, passwd):
         cp.set(url, 'user', user)
         if not config['plaintext_passwd']:
             cp.remove_option(url, 'pass')
-            cp.set(url, 'passx', base64.b64encode(passwd.encode('bz2')))
+            cp.set(url, 'passx', passx_encode(passwd))
         else:
             cp.remove_option(url, 'passx')
             cp.set(url, 'pass', passwd)
@@ -856,7 +864,7 @@ def get_config(override_conffile=None,
             user = cp.get(url, 'user', raw=True)        # need to set raw to prevent '%' expansion
             password = cp.get(url, 'pass', raw=True)    # especially on password!
             try:
-                passwordx = cp.get(url, 'passx', raw=True).decode('base64').decode('bz2')  # especially on password!
+                passwordx = passx_decode(cp.get(url, 'passx', raw=True))  # especially on password!
             except:
                 passwordx = ''
 
