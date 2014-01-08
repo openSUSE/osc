@@ -5634,7 +5634,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 hostargs.append(long_name)
                 hostargs.append(hostprefer)
 
-                rsync_prefer_cmd = ['rsync', '-az', '-delete', '-e', 'ssh',
+                rsync_prefer_cmd = ['rsync', '-az', '--delete', '-e', 'ssh',
                         pdir,
                         "%s:%s" % (hostname, os.path.dirname(hostprefer))]
                 print('Run: %s' % " ".join(rsync_prefer_cmd))
@@ -5686,7 +5686,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ### run all commands ###
         # 1.) rsync sources
-        rsync_source_cmd = ['rsync', '-az', '-delete', '-e', 'ssh', cwd, "%s:%s" % (hostname, hostpath)]
+        rsync_source_cmd = ['rsync', '-az', '--delete', '-e', 'ssh', cwd, "%s:%s" % (hostname, hostpath)]
         print('Run: %s' % " ".join(rsync_source_cmd))
         ret = run_external(rsync_source_cmd[0], *rsync_source_cmd[1:])
         if ret != 0:
