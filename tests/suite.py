@@ -22,6 +22,7 @@ import test_project_status
 import test_request
 import test_setlinkrev
 import test_prdiff
+import test_conf
 
 suite = unittest.TestSuite()
 suite.addTests(test_addfiles.suite())
@@ -38,6 +39,7 @@ suite.addTests(test_project_status.suite())
 suite.addTests(test_request.suite())
 suite.addTests(test_setlinkrev.suite())
 suite.addTests(test_prdiff.suite())
+suite.addTests(test_conf.suite())
 
 if have_xmlrunner:
     result = xmlrunner.XMLTestRunner(output=os.path.join(os.getcwd(), 'junit-xml-results')).run(suite)

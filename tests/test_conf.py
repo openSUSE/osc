@@ -7,7 +7,7 @@ FIXTURES_DIR = os.path.join(os.getcwd(), 'conf_fixtures')
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestAddFiles)
+    return unittest.makeSuite(TestConf)
 
 class TestConf(OscTestCase):
     def _get_fixtures_dir(self):
