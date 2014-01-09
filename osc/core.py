@@ -1239,25 +1239,22 @@ class Package:
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
         http_DELETE(u)
 
-    def put_source_file(self, n, copy_only=False):
-        cdir = os.path.join(self.storedir, '_in_commit')
-        try:
-            if not os.path.isdir(cdir):
-                os.mkdir(cdir)
-            query = 'rev=repository'
-            tmpfile = os.path.join(cdir, n)
-            shutil.copyfile(os.path.join(self.dir, n), tmpfile)
-            # escaping '+' in the URL path (note: not in the URL query string) is
-            # only a workaround for ruby on rails, which swallows it otherwise
-            if not copy_only:
-                u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
-                http_PUT(u, file = os.path.join(self.dir, n))
-            os.rename(tmpfile, os.path.join(self.storedir, n))
-        finally:
-            if os.path.isdir(cdir):
-                shutil.rmtree(cdir)
+    def put_source_file(self, n, tdir, copy_only=False):
+        query = 'rev=repository'
+        tfilename = os.path.join(tdir, n)
+        shutil.copyfile(os.path.join(self.dir, n), tfilename)
+        # escaping '+' in the URL path (note: not in the URL query string) is
+        # only a workaround for ruby on rails, which swallows it otherwise
+        if not copy_only:
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
+            http_PUT(u, file = tfilename)
         if n in self.to_be_added:
             self.to_be_added.remove(n)
+
+    def __commit_update_store(self, tdir):
+        """move files from transaction directory into the store"""
+        for filename in os.listdir(tdir):
+            os.rename(os.path.join(tdir, filename), os.path.join(self.storedir, filename))
 
     def __generate_commitlist(self, todo_send):
         root = ET.Element('directory')
@@ -1368,24 +1365,33 @@ class Package:
         real_send = [i for i in real_send if not i in send]
         # abort after 3 tries
         tries = 3
-        while len(send) and tries:
-            for filename in send[:]:
-                sys.stdout.write('.')
-                sys.stdout.flush()
-                self.put_source_file(filename)
-                send.remove(filename)
-            tries -= 1
-            sfilelist = self.__send_commitlog(msg, filelist)
-            send = self.__get_todo_send(sfilelist)
-        if len(send):
-            raise oscerr.PackageInternalError(self.prjname, self.name,
-                'server does not accept filelist:\n%s\nmissing:\n%s\n' \
-                % (ET.tostring(filelist, encoding=ET_ENCODING), ET.tostring(sfilelist, encoding=ET_ENCODING)))
-        # these files already exist on the server
-        # just copy them into the storedir
-        for filename in real_send:
-            self.put_source_file(filename, copy_only=True)
-
+        tdir = None
+        try:
+            tdir = os.path.join(self.storedir, '_in_commit')
+            if os.path.isdir(tdir):
+                shutil.rmtree(tdir)
+            os.mkdir(tdir)
+            while len(send) and tries:
+                for filename in send[:]:
+                    sys.stdout.write('.')
+                    sys.stdout.flush()
+                    self.put_source_file(filename, tdir)
+                    send.remove(filename)
+                tries -= 1
+                sfilelist = self.__send_commitlog(msg, filelist)
+                send = self.__get_todo_send(sfilelist)
+            if len(send):
+                raise oscerr.PackageInternalError(self.prjname, self.name,
+                    'server does not accept filelist:\n%s\nmissing:\n%s\n' \
+                    % (ET.tostring(filelist, encoding=ET_ENCODING), ET.tostring(sfilelist, encoding=ET_ENCODING)))
+            # these files already exist on the server
+            for filename in real_send:
+                self.put_source_file(filename, tdir, copy_only=True)
+            # update store with the committed files
+            self.__commit_update_store(tdir)
+        finally:
+            if tdir is not None and os.path.isdir(tdir):
+                shutil.rmtree(tdir)
         self.rev = sfilelist.get('rev')
         print()
         print('Committed revision %s.' % self.rev)
