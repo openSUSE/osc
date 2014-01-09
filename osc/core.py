@@ -1467,7 +1467,7 @@ class Package:
 
         shutil.copyfile(storefilename, filename)
         if mtime:
-            os.utime(filename, (-1, mtime))
+            utime(filename, (-1, mtime))
         if not origfile is None:
             os.unlink(origfile)
 
@@ -4057,7 +4057,7 @@ def download(url, filename, progress_obj = None, mtime = None):
             o.close()
 
     if mtime:
-        os.utime(filename, (-1, mtime))
+        utime(filename, (-1, mtime))
 
 def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=False):
     targetfilename = targetfilename or filename
@@ -6742,6 +6742,15 @@ def find_default_project(apiurl=None, package=None):
             pass
     return None
 
-
+def utime(filename, arg, ignore_einval=True):
+    """wrapper around os.utime which ignore errno EINVAL by default"""
+    try:
+        # workaround for bnc#857610): if filename resides on a nfs share
+        # os.utime might raise EINVAL
+        os.utime(filename, arg)
+    except OSError as e:
+        if e.errno == errno.EINVAL and ignore_einval:
+            return
+        raise
 
 # vim: sw=4 et
