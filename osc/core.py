@@ -357,7 +357,11 @@ class Serviceinfo:
         # cleanup existing generated files
         for filename in os.listdir(dir):
             if filename.startswith('_service:') or filename.startswith('_service_'):
-                os.unlink(os.path.join(dir, filename))
+                ent = os.path.join(dir, filename)
+                if os.path.isdir(ent):
+                    shutil.rmtree(ent)
+                else:
+                    os.unlink(ent)
 
         allservices = self.services or []
         if singleservice and not singleservice in allservices:
