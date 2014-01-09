@@ -2,6 +2,7 @@ import osc.core
 import osc.oscerr
 import os
 import sys
+import urllib2
 from common import GET, PUT, POST, DELETE, OscTestCase
 from xml.etree import cElementTree as ET
 FIXTURES_DIR = os.path.join(os.getcwd(), 'commit_fixtures')
@@ -286,6 +287,25 @@ class TestCommit(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_status(p, 'add', '!')
         self._check_status(p, 'bar', ' ')
+
+    @GET('http://localhost/source/osctest/simple?rev=latest', file='testSimple_filesremote')
+    @POST('http://localhost/source/osctest/simple?cmd=getprojectservices',
+          exp='', text='<services />')
+    @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
+          file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
+    @PUT('http://localhost/source/osctest/simple/nochange?rev=repository',
+          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
+    @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin', 
+          expfile='testSimple_lfilelist', text='an error occured', code=500)
+    def test_commitfilelist_error(self):
+        """commit modified file but when committing the filelist the server returns status 500 (see ticket #65)"""
+        self._change_to_pkg('simple')
+        p = osc.core.Package('.')
+        self._check_status(p, 'nochange', 'M')
+        self.assertRaises(urllib2.HTTPError, p.commit)
+        exp = 'Sending    nochange\nTransmitting file data .'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self._check_status(p, 'nochange', 'M')
 
 if __name__ == '__main__':
     import unittest
