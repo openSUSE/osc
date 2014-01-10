@@ -8136,7 +8136,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if (inspect.isfunction(data) and inspect.getmodule(data) == mod
                             or inspect.ismodule(data)):
                             setattr(self.__class__, name, data)
-                except SyntaxError as e:
+                except (SyntaxError, NameError) as e:
                     if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
                         print("%s: %s\n" % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                     else:
