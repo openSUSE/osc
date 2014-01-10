@@ -731,22 +731,30 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongArgs('Too many arguments.')
 
         apiurl = self.get_api_url()
-        if len(args) < 2:
-            apiurl = store_read_apiurl(os.curdir)
 
-        # specific arguments
+        # Specific arguments
+        #
+        # If project or package arguments missing, assume to work
+        # with project and/or package in current local directory.
         attributepath = []
-        if cmd in ['pkg', 'prj', 'prjconf' ]:
-            if len(args) == 0:
+        if cmd in ['prj', 'prjconf']:
+            if len(args) < 1:
+                apiurl = store_read_apiurl(os.curdir)
                 project = store_read_project(os.curdir)
             else:
                 project = args[0]
 
-            if cmd == 'pkg':
-                if len(args) < 2:
+        elif cmd == 'pkg':
+            if len(args) < 2:
+                apiurl = store_read_apiurl(os.curdir)
+                project = store_read_project(os.curdir)
+                if len(args) < 1:
                     package = store_read_package(os.curdir)
                 else:
-                    package = args[1]
+                    package = args[0]
+            else:
+                project = args[0]
+                package = args[1]
 
         elif cmd == 'attribute':
             project = args[0]
