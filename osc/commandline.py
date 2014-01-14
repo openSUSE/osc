@@ -2137,7 +2137,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             days = opts.days or conf.config['request_list_days']
             since = ''
             try:
-                days = int(days)
+                days = float(days)
             except ValueError:
                 days = 0
             if days > 0:
