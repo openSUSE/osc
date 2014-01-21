@@ -3410,7 +3410,7 @@ def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=Fal
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
-            if sinfo and sinfo.get('xsrcmd5') and not sinfo.get('error'):
+            if sinfo != None and sinfo.get('xsrcmd5') and not sinfo.get('error'):
                 return sinfo.get('xsrcmd5')
         except:
             pass
@@ -3447,7 +3447,7 @@ def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=Non
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
-            if sinfo and sinfo.get('xsrcmd5') and not sinfo.get('error'):
+            if sinfo != None and sinfo.get('xsrcmd5') and not sinfo.get('error'):
                 return sinfo.get('xsrcmd5')
         except:
             pass
