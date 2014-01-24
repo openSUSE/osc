@@ -6086,6 +6086,9 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
                        path_args=path,
                        template_args=None,
                        create_new=False)
+    if user.startswith('group:'):
+        group=user.replace('group:','')
+        user=None
     if data:
         root = ET.fromstring(''.join(data))
         for group_element in root.getiterator('group'):

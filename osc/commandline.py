@@ -1554,11 +1554,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 2:
             package =  """package="%s" """ % (args[2])
 
-        if get_user_meta(apiurl, user) == None:
-            raise oscerr.WrongArgs('osc: an error occured.')
+        if user.startswith('group:'):
+            group = user.replace('group:','')
+            actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <group name="%s" /> </action> """ % \
+                    (project, package, group)
+            if get_group(apiurl, group) == None:
+                raise oscerr.WrongArgs('osc: an error occured.')
+        else:
+            actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <person name="%s" /> </action> """ % \
+                    (project, package, user)
+            if get_user_meta(apiurl, user) == None:
+                raise oscerr.WrongArgs('osc: an error occured.')
 
-        actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <person name="%s" /> </action> """ % \
-                (project, package, user)
 
         return actionxml
 
@@ -6999,9 +7006,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-A', '--all', action='store_true',
                   help='list all found entries not just the first one')
     @cmdln.option('-s', '--set-bugowner', metavar='user',
-                  help='Set the bugowner to specified person')
+                  help='Set the bugowner to specified person (or group via group: prefix)')
     @cmdln.option('-S', '--set-bugowner-request', metavar='user',
-                  help='Set the bugowner to specified person via a request')
+                  help='Set the bugowner to specified person via a request (or group via group: prefix)')
     @cmdln.option('-U', '--user', metavar='USER',
                         help='All official maintained instances for the specified USER')
     @cmdln.option('-G', '--group', metavar='GROUP',
@@ -7203,7 +7210,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             print("Following to the development space: %s/%s" % (prj, pac))
                         m = show_package_meta(apiurl, prj, pac)
                         metaroot = ET.fromstring(''.join(m))
-                    if not metaroot.findall('person'):
+                    if not metaroot.findall('person') and not metaroot.findall('group'):
                         if opts.verbose:
                             print("No dedicated persons in package defined, showing the project persons.")
                         pac = None
