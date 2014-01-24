@@ -6088,12 +6088,12 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
                        create_new=False)
     if data:
         root = ET.fromstring(''.join(data))
-        for group in root.getiterator('group'):
-            if  group.get('role') == "bugowner":
-                root.remove(group)
-        for person in root.getiterator('person'):
-            if person.get('role') == "bugowner":
-                root.remove(person)
+        for group_element in root.getiterator('group'):
+            if  group_element.get('role') == "bugowner":
+                root.remove(group_element)
+        for person_element in root.getiterator('person'):
+            if person_element.get('role') == "bugowner":
+                root.remove(person_element)
         if user:
             root.insert(2, ET.Element('person', role='bugowner', userid=user))
         elif group:

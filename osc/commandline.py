@@ -7120,7 +7120,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if opts.set_bugowner:
                         for role in roles:
                             try:
-                                setBugowner(apiurl, result.get('project'), result.get('package'), bugowner)
+                                setBugowner(apiurl, result.get('project'), result.get('package'), opts.set_bugowner)
                             except HTTPError as e:
                                 if e.code == 403:
                                     print("No write permission in", result.get('project'), end=' ')
@@ -7144,7 +7144,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.set_bugowner:
                     for role in roles:
                         try:
-                            setBugowner(apiurl, prj, pac, opts.delete, role)
+                            setBugowner(apiurl, prj, pac, opts.set_bugowner)
                         except HTTPError as e:
                             if e.code == 403:
                                 print("No write permission in" + result.get('project'), end=' ')
