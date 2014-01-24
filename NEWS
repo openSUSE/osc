@@ -1,5 +1,10 @@
 0.143
   - add option to add a auto-accept in future for delete requests (handy for admins)
+  - many bugfixes:
+    - plugin loading
+    - bugowner handling
+    - download of server side generated source "up -S"
+    - wipebinaries command 
 
 0.142
   - ppc64p7 build support
