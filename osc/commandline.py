@@ -2259,14 +2259,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                             review.by_project, review.by_package, opts.message or '', supersed=supersedid)
                                     print(r)
                                 except HTTPError as e:
-                                    if review.by_user:
-                                        print('No permission on review by user %s' % review.by_user)
-                                    if review.by_group:
-                                        print('No permission on review by group %s' % review.by_group)
-                                    if review.by_package:
-                                        print('No permission on review by package %s / %s' % (review.by_project, review.by_package))
-                                    elif review.by_project:
-                                        print('No permission on review by project %s' % review.by_project)
+                                    body = e.read()
+                                    if e.code in [403]:
+                                       if review.by_user:
+                                           print('No permission on review by user %s' % review.by_user)
+                                       if review.by_group:
+                                           print('No permission on review by group %s' % review.by_group)
+                                       if review.by_package:
+                                           print('No permission on review by package %s / %s' % (review.by_project, review.by_package))
+                                       elif review.by_project:
+                                           print('No permission on review by project %s' % review.by_project)
+                                    else:
+                                        print(e, file=sys.stderr)
                         else:
                             print('Request is closed, please reopen the request first before changing any reviews.')
             # Change state of entire request
@@ -2292,8 +2296,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
                     print('Result of change request state: %s' % r)
                 except HTTPError as e:
+                    print(e, file=sys.stderr)
                     if opts.or_revoke:
-                        print(e, file=sys.stderr)
                         body = e.read()
                         if e.code in [ 400, 403, 404, 500 ]:
                             print('Revoking it ...')
