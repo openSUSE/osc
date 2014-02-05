@@ -7809,7 +7809,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.stdout.write(buf)
 
     @cmdln.option('-m', '--message',
-                  help='add MESSAGE to changes (not open an editor)')
+                  help='add MESSAGE to changes (do not open an editor)')
+    @cmdln.option('-F', '--file', metavar='FILE',
+                  help='read changes message from FILE (do not open an editor)')
     @cmdln.option('-e', '--just-edit', action='store_true', default=False,
                   help='just open changes (cannot be used with -m)')
     def do_vc(self, subcmd, opts, *args):
@@ -7833,7 +7835,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from subprocess import Popen
-
+        if opts.message and opts.file:
+            raise oscerr.WrongOptions('\'--message\' and \'--file\' are mutually exclusive')
+        elif opts.message and opts.just_edit:
+            raise oscerr.WrongOptions('\'--message\' and \'--just-edit\' are mutually exclusive')
+        elif opts.file and opts.just_edit:
+            raise oscerr.WrongOptions('\'--file\' and \'--just-edit\' are mutually exclusive')
         meego_style = False
         if not args:
             import glob, re
@@ -7887,6 +7894,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.message:
                 cmd_list.append("-m")
                 cmd_list.append(opts.message)
+            if opts.file:
+                if not os.path.isfile(opts.file):
+                    raise oscerr.WrongOptions('\'%s\': is no file' % opts.file)
+                cmd_list.append("-m")
+                cmd_list.append(open(opts.file).read().strip())
 
             if opts.just_edit:
                 cmd_list.append("-e")
