@@ -7054,6 +7054,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        def get_maintainer_data(apiurl, maintainer, verbose=False):
+            tags = ('email',)
+            if maintainer.startswith('group:'):
+                group = maintainer.replace('group:', '')
+                if verbose:
+                    return [maintainer] + get_group_data(apiurl, group, 'title', *tags)
+                return get_group_data(apiurl, group, 'email')
+            if verbose:
+                tags = ('login', 'realname', 'email')
+            return get_user_data(apiurl, maintainer, *tags)
 
         binary = None
         prj = None
@@ -7276,7 +7286,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if opts.email:
                             emails = []
                             for maintainer in maintainers.get(role, []):
-                                user = get_user_data(apiurl, maintainer, 'email')
+                                user = get_maintainer_data(apiurl, maintainer, verbose=False)
                                 if len(user):
                                     emails.append(''.join(user))
                             print(indent, end=' ')
@@ -7284,7 +7294,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         elif opts.verbose:
                             userdata = []
                             for maintainer in maintainers.get(role, []):
-                                user = get_user_data(apiurl, maintainer, 'login', 'realname', 'email')
+                                user = get_maintainer_data(apiurl, maintainer, verbose=True)
                                 userdata.append(user[0])
                                 if user[1] !=  '-':
                                     userdata.append("%s <%s>"%(user[1], user[2]))

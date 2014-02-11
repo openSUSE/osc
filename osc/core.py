@@ -4013,24 +4013,28 @@ def get_user_meta(apiurl, user):
         return None
 
 
-def get_user_data(apiurl, user, *tags):
-    """get specified tags from the user meta"""
-    meta = get_user_meta(apiurl, user)
+def _get_xml_data(meta, *tags):
     data = []
     if meta != None:
         root = ET.fromstring(meta)
         for tag in tags:
-            try:
-                if root.find(tag).text != None:
-                    data.append(root.find(tag).text)
-                else:
-                    # tag is empty
-                    data.append('-')
-            except AttributeError:
-                # this part is reached if the tags tuple contains an invalid tag
-                print('The xml file for user \'%s\' seems to be broken' % user)
-                return []
+            elm = root.find(tag)
+            if elm is None or elm.text is None:
+                data.append('-')
+            else:
+                data.append(elm.text)
     return data
+
+
+def get_user_data(apiurl, user, *tags):
+    """get specified tags from the user meta"""
+    meta = get_user_meta(apiurl, user)
+    return _get_xml_data(meta, *tags)
+    
+
+def get_group_data(apiurl, group, *tags):
+    meta = get_group(apiurl, group)
+    return _get_xml_data(meta, *tags)
 
 
 def download(url, filename, progress_obj = None, mtime = None):
