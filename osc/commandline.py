@@ -4273,6 +4273,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('checkin')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
+    @cmdln.option('-n', '--no-message', default=False, action='store_true',
+                  help='do not specify a log message')
     @cmdln.option('-F', '--file', metavar='FILE',
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
@@ -4321,7 +4323,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 try:
                     prj = Project(arg)
-                    if not msg:
+                    if not msg and not opts.no_message:
                         msg = edit_message()
                     prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 except oscerr.ExtRuntimeError as e:
@@ -4353,13 +4355,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     pac.todo.sort()
             for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
-                if not msg:
+                if not msg and not opts.no_message:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
                 prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
-                if not msg:
+                if not msg and not opts.no_message:
                     msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
@@ -4369,7 +4371,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not p.todo:
                     p.todo = p.filenamelist + p.filenamelist_unvers
                 p.todo.sort()
-                if not msg:
+                if not msg and not opts.no_message:
                     msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 store_unlink_file(p.absdir, '_commit_msg')
