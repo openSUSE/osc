@@ -1310,6 +1310,23 @@ class Package:
                 # information (like which service/command failed)
                 raise oscerr.ServiceRuntimeError('A service failed with error: %d' % r)
 
+        # check if it is a link, if so, branch the package
+        orgprj = self.get_local_origin_project()
+        if self.prjname != orgprj:
+            print('Currect project:', self.prjname)
+            print('Linked project:', orgprj)
+            repl = raw_input('The package is linked from a different project.' \
+                             ' Create a local branch before commit? (y|N) ')
+            if repl in('y', 'Y'):
+                exists, targetprj, targetpkg, srcprj, srcpkg = branch_pkg(self.apiurl, orgprj, self.name,
+                                                                          target_project=self.prjname)
+                # update _meta and _files to sychronize the local package
+                # to the new branched one in OBS
+                self.update_local_pacmeta()
+                self.update_local_filesmeta()
+            else:
+                return 1
+
         if not self.todo:
             self.todo = [i for i in self.to_be_added if not i in self.filenamelist] + self.filenamelist
 
@@ -1537,6 +1554,16 @@ class Package:
                 or skip_service and (e.get('name').startswith('_service:') or e.get('name').startswith('_service_')):
                 e.set('skipped', 'true')
         return ET.tostring(root, encoding=ET_ENCODING)
+
+    def get_local_meta(self):
+        """Get the local _meta file for the package."""
+        meta = store_read_file(self.absdir, '_meta')
+        return meta
+
+    def get_local_origin_project(self):
+        """Get the originproject from the _meta file."""
+        root = ET.fromstring(self.get_local_meta())
+        return root.get('project')
 
     def update_datastructs(self):
         """
@@ -3375,6 +3402,17 @@ def edit_meta(metatype,
 
     if edit:
         change_is_required = True
+
+    if metatype == 'pkg':
+        # check if the package is a link to a different project
+        project, package = path_args
+        orgprj = ET.fromstring(''.join(data)).get('project')
+        if project != orgprj:
+            print('The package is linked from a different project.')
+            print('If you want to edit the meta of the package create first a branch.')
+            print('  osc branch %s %s %s' % (orgprj, package, unquote(project)))
+            print('  osc meta pkg %s %s -e' % (unquote(project), package))
+            return
 
     url = make_meta_url(metatype, path_args, apiurl, force, remove_linking_repositories)
     f = metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
