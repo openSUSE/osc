@@ -3407,7 +3407,7 @@ def edit_meta(metatype,
         # check if the package is a link to a different project
         project, package = path_args
         orgprj = ET.fromstring(''.join(data)).get('project')
-        if project != orgprj:
+        if orgprj is not None and project != orgprj:
             print('The package is linked from a different project.')
             print('If you want to edit the meta of the package create first a branch.')
             print('  osc branch %s %s %s' % (orgprj, package, unquote(project)))
