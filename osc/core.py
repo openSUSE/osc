@@ -860,7 +860,7 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False):
+    def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False, can_branch=False):
         if len(pacs):
             try:
                 for pac in pacs:
@@ -879,7 +879,7 @@ class Project:
                         else:
                             p = Package(os.path.join(self.dir, pac))
                         p.todo = todo
-                        p.commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
+                        p.commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run, can_branch=can_branch)
                     elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
                         print('osc: \'%s\' is not under version control' % pac)
                     elif pac in self.pacs_broken:
@@ -1297,7 +1297,7 @@ class Package:
             todo.append(n.get('name'))
         return todo
 
-    def commit(self, msg='', verbose=False, skip_local_service_run=False):
+    def commit(self, msg='', verbose=False, skip_local_service_run=False, can_branch=False):
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
@@ -1310,22 +1310,19 @@ class Package:
                 # information (like which service/command failed)
                 raise oscerr.ServiceRuntimeError('A service failed with error: %d' % r)
 
-        # FIXME: get rid of the user interaction
         # check if it is a link, if so, branch the package
-        orgprj = self.get_local_origin_project()
-        if self.prjname != orgprj:
-            print('Current project:', self.prjname)
-            print('Linked project:', orgprj)
-            repl = raw_input('The package is linked from a different project.' \
-                             ' Create a local branch before commit? (y|N) ')
-            if repl in('y', 'Y'):
-                exists, targetprj, targetpkg, srcprj, srcpkg = branch_pkg(self.apiurl, orgprj, self.name,
-                                                                          target_project=self.prjname)
+        if self.is_link_to_different_project():
+            if can_branch:
+                orgprj = self.get_local_origin_project()
+                print("Branching {} from {} to {}".format(self.name, orgprj, self.prjname))
+                exists, targetprj, targetpkg, srcprj, srcpkg = branch_pkg(
+                    self.apiurl, orgprj, self.name, target_project=self.prjname)
                 # update _meta and _files to sychronize the local package
                 # to the new branched one in OBS
                 self.update_local_pacmeta()
                 self.update_local_filesmeta()
             else:
+                print("{} Not commited because is link to a different project".format(self.name))
                 return 1
 
         if not self.todo:
@@ -1565,6 +1562,11 @@ class Package:
         """Get the originproject from the _meta file."""
         root = ET.fromstring(self.get_local_meta())
         return root.get('project')
+
+    def is_link_to_different_project(self):
+        """Check if the package is a link to a different project."""
+        orgprj = self.get_local_origin_project()
+        return self.prjname != orgprj
 
     def update_datastructs(self):
         """

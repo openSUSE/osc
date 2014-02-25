@@ -4325,6 +4325,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     prj = Project(arg)
                     if not msg and not opts.no_message:
                         msg = edit_message()
+
                     prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
                 except oscerr.ExtRuntimeError as e:
                     print("ERROR: service run failed", e, file=sys.stderr)
@@ -4357,7 +4358,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(prj_path)
                 if not msg and not opts.no_message:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
-                prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
+
+                # check any of the packages is a link, if so, as for branching
+                can_branch = False
+                if any(pac.is_link_to_different_project() for pac in pacs):
+                    repl = raw_input('Some of the packages are links to a different project!\n' \
+                                     'Create a local branch before commit? (y|N) ')
+                    if repl in('y', 'Y'):
+                        can_branch = True
+
+                prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
