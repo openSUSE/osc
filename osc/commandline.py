@@ -4326,7 +4326,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not msg and not opts.no_message:
                         msg = edit_message()
 
-                    prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
+                    # check any of the packages is a link, if so, as for branching
+                    pacs = (Package(os.path.join(prj.dir, pac))
+                            for pac in prj.pacs_have if prj.get_state(pac) == ' ')
+                    can_branch = False
+                    if any(pac.is_link_to_different_project() for pac in pacs):
+                        repl = raw_input('Some of the packages are links to a different project!\n' \
+                                         'Create a local branch before commit? (y|N) ')
+                        if repl in('y', 'Y'):
+                            can_branch = True
+
+                    prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 except oscerr.ExtRuntimeError as e:
                     print("ERROR: service run failed", e, file=sys.stderr)
                     return 1
