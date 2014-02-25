@@ -1310,10 +1310,11 @@ class Package:
                 # information (like which service/command failed)
                 raise oscerr.ServiceRuntimeError('A service failed with error: %d' % r)
 
+        # FIXME: get rid of the user interaction
         # check if it is a link, if so, branch the package
         orgprj = self.get_local_origin_project()
         if self.prjname != orgprj:
-            print('Currect project:', self.prjname)
+            print('Current project:', self.prjname)
             print('Linked project:', orgprj)
             repl = raw_input('The package is linked from a different project.' \
                              ' Create a local branch before commit? (y|N) ')
