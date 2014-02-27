@@ -438,8 +438,8 @@ class TestRequest(OscTestCase):
         add_role:        person: xyz as maintainer, group: group1 as reader foobar
         add_role:        person: abc as reviewer                            foo/bar
         change_devel:    foo/bar                                            developed in devprj/devpkg
-        submit:          srcprj/srcpackage  ->                              tgtprj/tgtpackage
-        submit:          foo/bar  ->                                        baz
+        submit:          srcprj/srcpackage ->                               tgtprj/tgtpackage
+        submit:          foo/bar ->                                         baz
         delete:                                                             deleteme
         delete:                                                             foo/bar\n"""
         r = osc.core.Request()

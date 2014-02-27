@@ -237,7 +237,7 @@ identical: common-three
 differs:   common-two
 
 148023  State:new        By:user         When:2013-01-11T11:04:14
-        submit:          home:user:branches:some:project/common-two  ->     some:project
+        submit:          home:user:branches:some:project/common-two@7 ->    some:project
         Descr: - Fix it to work - Improve support for something
 
 differs:   common-three

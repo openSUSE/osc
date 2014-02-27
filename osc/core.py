@@ -2584,7 +2584,10 @@ class Request:
         elif action.type == 'maintenance_incident':
             d['source'] = '%s ->' % action.src_project
             if action.src_package:
-                d['source'] = '%s ->' % prj_pkg_join(action.src_project, action.src_package)
+                d['source'] = '%s' % prj_pkg_join(action.src_project, action.src_package)
+                if action.src_rev:
+                    d['source'] = d['source'] + '@%s' % action.src_rev
+                d['source'] = d['source'] + ' ->'
             d['target'] = action.tgt_project
             if action.tgt_releaseproject:
                 d['target'] += " (release in " + action.tgt_releaseproject + ")"
@@ -2592,13 +2595,18 @@ class Request:
             if action.opt_sourceupdate and show_srcupdate:
                 srcupdate = '(%s)' % action.opt_sourceupdate
         elif action.type == 'maintenance_release':
-            d['source'] = '%s ->' % prj_pkg_join(action.src_project, action.src_package)
+            d['source'] = '%s' % prj_pkg_join(action.src_project, action.src_package)
+            if action.src_rev:
+                d['source'] = d['source'] + '@%s' % action.src_rev
+            d['source'] = d['source'] + ' ->'
             d['target'] = prj_pkg_join(action.tgt_project, action.tgt_package)
         elif action.type == 'submit':
-            srcupdate = ' '
+            d['source'] = '%s' % prj_pkg_join(action.src_project, action.src_package)
+            if action.src_rev:
+                d['source'] = d['source'] + '@%s' % action.src_rev
             if action.opt_sourceupdate and show_srcupdate:
-                srcupdate = '(%s)' % action.opt_sourceupdate
-            d['source'] = '%s%s ->' % (prj_pkg_join(action.src_project, action.src_package), srcupdate)
+                d['source'] = d['source'] + '(%s)' % action.opt_sourceupdate
+            d['source'] = d['source'] + ' ->'
             tgt_package = action.tgt_package
             if action.src_package == action.tgt_package:
                 tgt_package = ''
