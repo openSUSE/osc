@@ -1,4 +1,6 @@
 0.144
+  - allow commiting to package sources from linked projects. osc will ask to branch it first.
+  - group support in bugowner and maintainer command
 
 0.143
   - add option to add a auto-accept in future for delete requests (handy for admins)
