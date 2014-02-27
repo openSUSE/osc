@@ -4730,7 +4730,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.show_non_building = None
             opts.show_excluded = None
             self.do_prjresults('prjresults', opts, *args)
-            sys.exit(0)
+            return
 
         if opts.xml and opts.csv:
             raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
