@@ -1,5 +1,4 @@
-<package name="branch" project="osctest">
+<package name="delete" project="osctest">
   <title>Title example</title>
   <description>Description example</description>
-  <person role="maintainer" userid="Admin"/>
 </package>
