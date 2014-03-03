@@ -2390,7 +2390,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='use the specified revision.')
     @cmdln.option('-R', '--use-plain-revision', action='store_true',
-                  help='Don\'t expand revsion based on baserev, the revision which was used when commit happened.')
+                  help='Do not expand revision the specified or latest rev')
     @cmdln.option('-u', '--unset', action='store_true',
                   help='remove revision in link, it will point always to latest revision')
     def do_setlinkrev(self, subcmd, opts, *args):
@@ -2408,12 +2408,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         apiurl = self.get_api_url()
         package = None
-        expand = True
-        baserev = True
-        if opts.use_plain_revision:
-            expand = False
-            baserev = False
-
         rev = parseRevisionOption(opts.revision)[0] or ''
         if opts.unset:
             rev = None
@@ -2440,7 +2434,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = meta_get_packagelist(apiurl, project)
 
         for p in packages:
-            rev = set_link_rev(apiurl, project, p, revision=rev, expand=expand, baserev=baserev)
+            rev = set_link_rev(apiurl, project, p, revision=rev,
+                               expand=not opts.use_plain_revision)
             if rev is None:
                 print('removed revision from link')
             else:
@@ -2585,7 +2580,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.cicount = "copy"
 
         if opts.current and not opts.new_package:
-            rev, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, expand=1)
+            rev, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, expand=True)
             if rev == None or len(rev) < 32:
                 # vrev is only needed for srcmd5 and OBS instances < 2.1.17 do not support it
                 vrev = None

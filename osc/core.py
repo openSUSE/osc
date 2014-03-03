@@ -3485,8 +3485,8 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False):
-    m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
+def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, meta=False):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, meta=meta)
     et = ET.fromstring(''.join(m))
     return et.get('rev'), et.get('vrev')
 
@@ -5953,12 +5953,7 @@ def owner(apiurl, binary, mode="binary", attribute=None, project=None, usefilter
         pass
     return res
 
-def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=False):
-    """
-    updates the rev attribute of the _link xml. If revision is set to None
-    the rev attribute is removed from the _link xml. If revision is set to ''
-    the "plain" upstream revision is used (if xsrcmd5 and baserev aren't specified).
-    """
+def set_link_rev(apiurl, project, package, revision='', expand=False):
     url = makeurl(apiurl, ['source', project, package, '_link'])
     try:
         f = http_GET(url)
@@ -5966,29 +5961,38 @@ def set_link_rev(apiurl, project, package, revision='', expand=False, baserev=Fa
     except HTTPError as e:
         e.osc_msg = 'Unable to get _link file in package \'%s\' for project \'%s\'' % (package, project)
         raise
+    revision = _set_link_rev(apiurl, project, package, root, revision, expand=expand)
+    l = ET.tostring(root, encoding=ET_ENCODING)
+    http_PUT(url, data=l)
 
-    # set revision element
+def _set_link_rev(apiurl, project, package, root, revision='', expand=False):
+    """
+    Updates the rev attribute of the _link xml. If revision is set to None
+    the rev and vrev attributes are removed from the _link xml.
+    updates the rev attribute of the _link xml. If revision is the empty
+    string the latest rev of the link's source package is used (or the
+    xsrcmd5 if expand is True). If revision is neither None nor the empty
+    string the _link's rev attribute is set to this revision (or to the
+    xsrcmd5 if expand is True).
+    """
     src_project = root.get('project', project)
     src_package = root.get('package', package)
-    linkrev = None
     vrev = None
-    if baserev:
-        linkrev = 'base'
-        expand = True
+    if revision == '':
+        revision = root.get('rev', '')
     if revision is None:
         if 'rev' in root.keys():
             del root.attrib['rev']
-    elif revision == '' or expand:
-        revision, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, revision=revision, linkrev=linkrev, expand=expand)
+        if 'vrev' in root.keys():
+            del root.attrib['vrev']
+    elif not revision or expand:
+        revision, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, revision=revision, expand=expand)
 
     if revision:
         root.set('rev', revision)
     # add vrev when revision is a srcmd5
-    if vrev and revision and len(revision) >= 32:
+    if vrev is not None and revision is not None and len(revision) >= 32:
         root.set('vrev', vrev)
-
-    l = ET.tostring(root, encoding=ET_ENCODING)
-    http_PUT(url, data=l)
     return revision
 
 
