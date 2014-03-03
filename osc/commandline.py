@@ -5474,7 +5474,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
     @cmdln.option('--nochecks', '--no-checks', action='store_true',
-                  help='Do not run post build checks on the resulting packages.')
+                  help='Do not run build checks on the resulting packages.')
     @cmdln.option('--no-verify', '--noverify', action='store_true',
                   help='Skip signature verification of packages used for build. (Global config in .oscrc: no_verify)')
     @cmdln.option('--noservice', '--no-service', action='store_true',
