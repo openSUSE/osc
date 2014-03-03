@@ -38,6 +38,23 @@ class TestSetLinkRev(OscTestCase):
         """expand src package"""
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', expand=True)
 
+    @GET('http://localhost/source/osctest/simple/_link', file='link_with_rev')
+    @PUT('http://localhost/source/osctest/simple/_link',
+         exp='<link package="srcpkg" project="srcprj" rev="7" />', text='dummytext')
+    def test_existingrev(self):
+        """link already has a rev attribute (no expand)"""
+        # we could also avoid the superfluous PUT
+        osc.core.set_link_rev('http://localhost', 'osctest', 'simple')
+
+    @GET('http://localhost/source/osctest/simple/_link', file='link_with_rev')
+    @GET('http://localhost/source/srcprj/srcpkg?rev=7&expand=1', file='expandedsrc_filesremote')
+    @PUT('http://localhost/source/osctest/simple/_link',
+         exp='<link package="srcpkg" project="srcprj" rev="eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" vrev="1" />',
+         text='dummytext')
+    def test_expandexistingrev(self):
+        """link already has a rev attribute (expand it)"""
+        osc.core.set_link_rev('http://localhost', 'osctest', 'simple', expand=True)
+
     @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
     @GET('http://localhost/source/srcprj/srcpkg?rev=latest&expand=1', text='conflict in file merge', code=400)
     def test_linkerror(self):
