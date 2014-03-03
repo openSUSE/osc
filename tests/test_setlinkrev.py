@@ -39,22 +39,14 @@ class TestSetLinkRev(OscTestCase):
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', expand=True)
 
     @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
-    @GET('http://localhost/source/srcprj/srcpkg?linkrev=base&rev=latest&expand=1', file='baserev_filesremote')
-    @PUT('http://localhost/source/osctest/simple/_link',
-         exp='<link package="srcpkg" project="srcprj" rev="abcdeeeeeeeeeeeeeeeeeeeeeeeeeeee" vrev="1" />', text='dummytext')
-    def test_baserev(self):
-        """expanded baserev revision"""
-        osc.core.set_link_rev('http://localhost', 'osctest', 'simple', baserev=True)
-
-    @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
-    @GET('http://localhost/source/srcprj/srcpkg?rev=latest&expand=1', text='conflict in file merge', code=404)
+    @GET('http://localhost/source/srcprj/srcpkg?rev=latest&expand=1', text='conflict in file merge', code=400)
     def test_linkerror(self):
         """link is broken"""
         try:
             from urllib.error import HTTPError
         except ImportError:
             from urllib2 import HTTPError
-        # the backend returns status 404 if we try to expand a broken _link
+        # the backend returns status 400 if we try to expand a broken _link
         self.assertRaises(HTTPError, osc.core.set_link_rev, 'http://localhost', 'osctest', 'simple', expand=True)
 
     @GET('http://localhost/source/osctest/simple/_link', file='rev_link')
@@ -62,6 +54,13 @@ class TestSetLinkRev(OscTestCase):
          exp='<link package="srcpkg" project="srcprj" />', text='dummytext')
     def test_deleterev(self):
         """delete rev attribute from link xml"""
+        osc.core.set_link_rev('http://localhost', 'osctest', 'simple', revision=None)
+
+    @GET('http://localhost/source/osctest/simple/_link', file='md5_rev_link')
+    @PUT('http://localhost/source/osctest/simple/_link',
+         exp='<link package="srcpkg" project="srcprj" />', text='dummytext')
+    def test_deleterev(self):
+        """delete rev and vrev attribute from link xml"""
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', revision=None)
 
     @GET('http://localhost/source/osctest/simple/_link', file='simple_link')
