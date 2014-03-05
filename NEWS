@@ -1,3 +1,6 @@
+0.145
+  - allow to use the set-release option when running a manual release
+
 0.144
   - allow commiting to package sources from linked projects. osc will ask to branch it first.
   - group support in bugowner and maintainer command

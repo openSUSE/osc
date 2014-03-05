@@ -2742,6 +2742,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Release only to specified project')
     @cmdln.option('--target-repository', metavar='TARGETREPOSITORY',
                   help='Release only to specified repository')
+    @cmdln.option('--set-release', metavar='RELEASETAG',
+                  help='rename binaries during release using this release tag')
     def do_release(self, subcmd, opts, *args):
         """${cmd_name}: Release sources and binaries 
 
@@ -2780,6 +2782,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query["targetproject"] = opts.target_project
         if opts.target_repository:
             query["targetrepository"] = opts.target_repository
+        if opts.set_release:
+            query["setrelease"] = opts.set_release
         baseurl = ['source', source_project]
         if source_package:
             baseurl.append(source_package)
