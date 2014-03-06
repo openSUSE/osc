@@ -1560,7 +1560,13 @@ class Package:
 
     def get_local_origin_project(self):
         """Get the originproject from the _meta file."""
-        root = ET.fromstring(self.get_local_meta())
+        # if the wc was checked out via some old osc version
+        # there might be no meta file: in this case we assume
+        # that the origin project is equal to the wc's project
+        meta = self.get_local_meta()
+        if meta is None:
+            return self.project
+        root = ET.fromstring(meta)
         return root.get('project')
 
     def is_link_to_different_project(self):
