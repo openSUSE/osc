@@ -1453,6 +1453,10 @@ class Package:
             print('')
             rev = self.latest_rev()
             self.update(rev=rev)
+        elif self.get_local_meta() is None:
+            # if this was a newly added package there is no _meta
+            # file
+            self.update_local_pacmeta()
 
     def __write_storelist(self, name, data):
         if len(data) == 0:
@@ -1565,7 +1569,7 @@ class Package:
         # that the origin project is equal to the wc's project
         meta = self.get_local_meta()
         if meta is None:
-            return self.project
+            return self.prjname
         root = ET.fromstring(meta)
         return root.get('project')
 
