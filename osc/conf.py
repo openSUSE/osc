@@ -531,12 +531,20 @@ def init_basicauth(config):
         # this is so ugly but httplib doesn't use
         # a logger object or such
         def new_method(self, *args, **kwargs):
-            self._orig_stdout = sys.stdout
-            sys.stdout = StringIO()
-            meth(self, *args, **kwargs)
-            hdr = sys.stdout.getvalue()
-            sys.stdout = self._orig_stdout
-            del self._orig_stdout
+            # check if this is a recursive call (note: we do not
+            # have to care about thread safety)
+            is_rec_call = getattr(self, '_orig_stdout', None) is not None
+            try:
+                if not is_rec_call:
+                    self._orig_stdout = sys.stdout
+                    sys.stdout = StringIO()
+                meth(self, *args, **kwargs)
+                hdr = sys.stdout.getvalue()
+            finally:
+                # restore original stdout
+                if not is_rec_call:
+                    sys.stdout = self._orig_stdout
+                    del self._orig_stdout
             for i in hdrs:
                 if ishdr:
                     hdr = re.sub(r'%s:[^\\r]*\\r\\n' % i, '', hdr)
