@@ -1701,6 +1701,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc requestmaintainership                           # for current user in checked out package
             osc requestmaintainership USER                      # for specified user in checked out package
+            osc requestmaintainership PROJECT                   # for current user if cwd is not a checked out package
             osc requestmaintainership PROJECT PACKAGE           # for current user
             osc requestmaintainership PROJECT PACKAGE USER      # request for specified user
            
@@ -1727,6 +1728,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 user = conf.get_apiurl_usr(apiurl)
             else:
                 user = args[0]
+        elif len(args) == 1:
+            user = conf.get_apiurl_usr(apiurl)
+            project = args[0]
+            package = None
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
