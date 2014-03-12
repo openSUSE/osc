@@ -1142,7 +1142,7 @@ class Osc(cmdln.Cmdln):
                          'Please provide it the target via commandline arguments.' % p.name)
 
             modified = [i for i in p.filenamelist if not p.status(i) in (' ', '?', 'S')]
-            if len(modified) > 0:
+            if len(modified) > 0 and not opts.yes:
                 print('Your working copy has local modifications.')
                 repl = raw_input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
