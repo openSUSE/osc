@@ -1,5 +1,12 @@
 0.145
   - allow to use the set-release option when running a manual release
+  - added support for "osc requestmaintainership PROJECT"
+  - various bugfixes:
+    - print_buildlog: do not strip tabs
+    - fixed "osc -H ..." in combination with a proxy
+    - fixed creation of ~/.osc_cookiejar
+    - Package.commit: create _meta for newly added packages
+    - fixed behavior of set_link_rev #72
 
 0.144
   - allow commiting to package sources from linked projects. osc will ask to branch it first.
