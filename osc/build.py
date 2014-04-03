@@ -316,6 +316,8 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
     suffix = '*.rpm'
     if type == 'dsc':
         suffix = '*.deb'
+    elif type == 'arch':
+        suffix = '*.pkg.tar.xz'
 
     for dir in dirs:
         # check for repodata

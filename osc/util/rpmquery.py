@@ -69,7 +69,8 @@ class RpmQuery(packagequery.PackageQuery):
         self.filename_suffix = 'rpm'
         self.header = None
 
-    def read(self, all_tags = False, *extra_tags):
+    def read(self, all_tags=False, self_provides=True, *extra_tags):
+        # self_provides is unused because a rpm always has a self provides
         self.__read_lead()
         data = self.__file.read(RpmHeaderEntry.ENTRY_SIZE)
         hdrmgc, reserved, il, dl = struct.unpack('!I3i', data)

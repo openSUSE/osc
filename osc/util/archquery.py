@@ -19,7 +19,8 @@ class ArchQuery(packagequery.PackageQuery):
         #self.pkgsuffix = 'pkg.tar.gz'
         self.pkgsuffix = 'arch'
 
-    def read(self, *extra_tags):
+    def read(self, all_tags=True, self_provides=True, *extra_tags):
+        # all_tags and *extra_tags are currently ignored
         f = open(self.__path, 'rb')
         #self.magic = f.read(5)
         #if self.magic == '\375\067zXZ':
@@ -32,6 +33,9 @@ class ArchQuery(packagequery.PackageQuery):
                 if not line[0] in self.fields:
                     self.fields[line[0]] = []
                 self.fields[line[0]].append(line[1])
+        if self_provides:
+            prv = '%s = %s' % (self.name(), self.fields['pkgver'][0])
+            self.fields.setdefault('provides', []).append(prv)
 
     def vercmp(self, archq):
         res = cmp(int(self.epoch()), int(archq.epoch()))

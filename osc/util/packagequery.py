@@ -36,8 +36,8 @@ class PackageQueries(dict):
 
         architecture = query.arch()
 
-        if (architecture in [self.wanted_architecture, 'noarch', 'all'] or
-            self.wanted_architecture in self.architectureMap.get(architecture,
+        if (architecture in [self.wanted_architecture, 'noarch', 'all', 'any']
+            or self.wanted_architecture in self.architectureMap.get(architecture,
                                                                 [])):
             current_query = self.get(name)
 
@@ -87,7 +87,7 @@ class PackageQuery:
         raise NotImplementedError
 
     @staticmethod
-    def query(filename, all_tags = False, extra_rpmtags = (), extra_debtags = ()):
+    def query(filename, all_tags=False, extra_rpmtags=(), extra_debtags=(), self_provides=True):
         f = open(filename, 'rb')
         magic = f.read(7)
         f.seek(0)
@@ -109,7 +109,7 @@ class PackageQuery:
             pkgquery = archquery.ArchQuery(f)
         else:
             raise PackageError(filename, 'unsupported package type. magic: \'%s\'' % magic)
-        pkgquery.read(all_tags, *extra_tags)
+        pkgquery.read(all_tags, self_provides, *extra_tags)
         f.close()
         return pkgquery
 
