@@ -437,8 +437,9 @@ build)
 	done
     fi 
     if ((count == 2)) ; then
-	specs=($(command ls *.spec))
-	builtin compgen -W "${opts[*]} ${specs[*]}" -- "${cmdline[count]}"
+	specs=($(command ls *.spec 2>/dev/null))
+	images=($(command ls *.kiwi 2>/dev/null))
+	builtin compgen -W "${opts[*]} ${specs[*]} ${images[*]}" -- "${cmdline[count]}"
     fi
     ;;
 branch|getpac|bco|branchco)
