@@ -1,3 +1,6 @@
+0.146
+  - support maintenance release request with acceptinfo data (OBS 2.6)
+
 0.145
   - allow to use the set-release option when running a manual release
   - added support for "osc requestmaintainership PROJECT"

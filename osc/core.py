@@ -1682,8 +1682,11 @@ class Package:
         Update the local _meta file in the store.
         It is replaced with the version pulled from upstream.
         """
-        meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
-        store_write_string(self.absdir, '_meta', meta + '\n')
+        meta = show_package_meta(self.apiurl, self.prjname, self.name)
+        if meta != "":
+          # is empty for _project for example
+          meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
+          store_write_string(self.absdir, '_meta', meta + '\n')
 
     def findfilebyname(self, n):
         for i in self.filelist:
@@ -2361,7 +2364,9 @@ class Action:
                             'acceptinfo_oxsrcmd5', 'opt_updatelink'),
         'add_role': ('tgt_project', 'tgt_package', 'person_name', 'person_role', 'group_name', 'group_role'),
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name'), # obsoleted by add_role
-        'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name'),
+        'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name',
+                            'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
+                            'acceptinfo_oxsrcmd5'),
         'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate'),
         'delete': ('tgt_project', 'tgt_package', 'tgt_repository'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package'),
