@@ -1684,9 +1684,9 @@ class Package:
         """
         meta = show_package_meta(self.apiurl, self.prjname, self.name)
         if meta != "":
-          # is empty for _project for example
-          meta = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
-          store_write_string(self.absdir, '_meta', meta + '\n')
+            # is empty for _project for example
+            meta = ''.join(meta)
+            store_write_string(self.absdir, '_meta', meta + '\n')
 
     def findfilebyname(self, n):
         for i in self.filelist:
