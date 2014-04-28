@@ -1060,10 +1060,10 @@ class Osc(cmdln.Cmdln):
                             print("Submitting package ", p)
                         else:
                             print("  Skipping not modified package ", p)
-                            next
+                            continue
                     else:
                         print("Skipping package ", p,  " since it is a source link pointing inside the project.")
-                        next
+                        continue
 
                 serviceinfo = root.find('serviceinfo')
                 if serviceinfo != None:
