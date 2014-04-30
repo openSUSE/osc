@@ -151,6 +151,8 @@ class Buildinfo:
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
         self.runscripts_list = [ dep.name for dep in self.deps if dep.runscripts ]
+        self.noinstall_list = [ dep.name for dep in self.deps if dep.noinstall ]
+        self.installonly_list = [ dep.name for dep in self.deps if dep.installonly ]
 
 
     def has_dep(self, name):
@@ -177,7 +179,7 @@ class Pac:
         for i in ['binary', 'package',
                   'version', 'release',
                   'project', 'repository',
-                  'preinstall', 'vminstall', 'noinstall', 'runscripts',
+                  'preinstall', 'vminstall', 'noinstall', 'installonly', 'runscripts',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -897,12 +899,19 @@ def main(apiurl, opts, argv):
 
     print('Writing build configuration')
 
-    rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
+    if build_type == 'kiwi':
+        rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
+    else:
+        rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
     rpmlist += [ '%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers ]
 
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
+    if build_type != 'kiwi' and bi.noinstall_list:
+        rpmlist.append('noinstall: ' + ' '.join(bi.noinstall_list) + '\n')
+    if build_type != 'kiwi' and bi.installonly_list:
+        rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
