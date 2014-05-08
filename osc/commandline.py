@@ -7241,7 +7241,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if searchresult:
                 for result in searchresult.findall('owner'):
                     for role in roles:
-                        delPerson(apiurl, result.get('project'), result.get('package'), opts.add, role)
+                        delPerson(apiurl, result.get('project'), result.get('package'), opts.delete, role)
             else:
                 for role in roles:
                     delPerson(apiurl, prj, pac, opts.delete, role)
