@@ -7098,6 +7098,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if verbose:
                 tags = ('login', 'realname', 'email')
             return get_user_data(apiurl, maintainer, *tags)
+        def setBugownerHelper(apiurl, project, package, bugowner):
+            try:
+                setBugowner(apiurl, project, package, bugowner)
+            except HTTPError as e:
+                if e.code != 403:
+                    raise
+                print("No write permission in", project, end=' ')
+                if package:
+                    print("/", package, end=' ')
+                print()
+                repl = raw_input('\nCreating a request instead? (y/n) ')
+                if repl.lower() == 'y':
+                    opts.set_bugowner_request = bugowner
+                    opts.set_bugowner = None
 
         binary = None
         prj = None
@@ -7176,42 +7190,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if searchresult:
                 for result in searchresult.findall('owner'):
                     if opts.set_bugowner:
-                        for role in roles:
-                            try:
-                                setBugowner(apiurl, result.get('project'), result.get('package'), opts.set_bugowner)
-                            except HTTPError as e:
-                                if e.code == 403:
-                                    print("No write permission in", result.get('project'), end=' ')
-                                    if result.get('package'):
-                                        print("/", result.get('package'), end=' ')
-                                    print()
-                                    repl = raw_input('\nCreating a request instead? (y/n) ')
-                                    if repl.lower() == 'y':
-                                        opts.set_bugowner_request = opts.set_bugowner
-                                        opts.set_bugowner = None
-                                        break
-
+                        setBugownerHelper(apiurl, result.get('project'), result.get('package'), opts.set_bugowner)
                     if opts.set_bugowner_request:
-                        for role in roles:
-                            args = [bugowner, result.get('project')]
-                            if result.get('package'):
-                                args = args + [result.get('package')]
-                            requestactionsxml += self._set_bugowner(args, opts)
+                        args = [bugowner, result.get('project')]
+                        if result.get('package'):
+                            args = args + [result.get('package')]
+                        requestactionsxml += self._set_bugowner(args, opts)
 
             else:
                 if opts.set_bugowner:
-                    try:
-                        setBugowner(apiurl, prj, pac, opts.set_bugowner)
-                    except HTTPError as e:
-                        if e.code == 403:
-                            print("No write permission in" + result.get('project'), end=' ')
-                            if result.get('package'):
-                                print("/", result.get('package'), end=' ')
-                            print()
-                            repl = raw_input('\nCreating a request instead? (y/n) ')
-                            if repl.lower() == 'y':
-                                opts.set_bugowner_request = opts.set_bugowner
-                                opts.set_bugowner = None
+                    setBugownerHelper(apiurl, prj, pac, opts.set_bugowner)
 
                 if opts.set_bugowner_request:
                     args = [bugowner, prj]
