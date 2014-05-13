@@ -116,7 +116,7 @@ class DebQuery(packagequery.PackageQuery):
         return self.fields.get(num, None)
 
     def canonname(self):
-        return DebQuery.filename(self.name(), self.version(), self.release(), self.arch())
+        return DebQuery.filename(self.name(), self.epoch(), self.version(), self.release(), self.arch())
 
     @staticmethod
     def query(filename, all_tags = False, *extra_tags):
@@ -161,7 +161,7 @@ class DebQuery(packagequery.PackageQuery):
         return 0
 
     @staticmethod
-    def filename(name, version, release, arch):
+    def filename(name, epoch, version, release, arch):
         if release:
             return '%s_%s-%s_%s.deb' % (name, version, release, arch)
         else:

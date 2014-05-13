@@ -177,7 +177,7 @@ class Pac:
 
         self.mp = {}
         for i in ['binary', 'package',
-                  'version', 'release',
+                  'epoch', 'version', 'release',
                   'project', 'repository',
                   'preinstall', 'vminstall', 'noinstall', 'installonly', 'runscripts',
                  ]:
@@ -209,11 +209,11 @@ class Pac:
         self.mp['apiurl'] = apiurl
 
         if pacsuffix == 'deb':
-            filename = debquery.DebQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            filename = debquery.DebQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
         elif pacsuffix == 'arch':
-            filename = archquery.ArchQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            filename = archquery.ArchQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
         else:
-            filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
 
         self.mp['filename'] = node.get('binary') or filename
         if self.mp['repopackage'] == '_repository':

@@ -148,7 +148,12 @@ class ArchQuery(packagequery.PackageQuery):
         return cmp(ver1, ver2)
 
     @staticmethod
-    def filename(name, version, release, arch):
+    def filename(name, epoch, version, release, arch):
+        if epoch:
+            if release:
+                return '%s-%s:%s-%s-%s.arch' % (name, epoch, version, release, arch)
+            else:
+                return '%s-%s:%s-%s.arch' % (name, epoch, version, arch)
         if release:
             return '%s-%s-%s-%s.arch' % (name, version, release, arch)
         else:

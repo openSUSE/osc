@@ -240,7 +240,7 @@ class RpmQuery(packagequery.PackageQuery):
             arch = 'src'
         else:
             arch = self.arch()
-        return RpmQuery.filename(self.name(), self.version(), self.release(), arch)
+        return RpmQuery.filename(self.name(), None, self.version(), self.release(), arch)
 
     @staticmethod
     def query(filename):
@@ -298,7 +298,7 @@ class RpmQuery(packagequery.PackageQuery):
         return cmp(ver1, ver2)
 
     @staticmethod
-    def filename(name, version, release, arch):
+    def filename(name, epoch, version, release, arch):
         return '%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
 def unpack_string(data):
