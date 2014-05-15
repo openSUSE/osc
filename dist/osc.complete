@@ -350,7 +350,7 @@ add|addremove|ar)
     fi
     ;;
 build)
-    opts=(--help --oldpackages --disable-cpio-bulk-download --release --baselibs 
+    opts=(--help --oldpackages --disable-cpio-bulk-download --download-api-only --release --baselibs 
 	  --disable-debuginfo --debuginfo --alternative-project --vm-type --linksources 
 	  --local-package --build-uid --userootforbuild --define --without --with 
 	  --ccache --icecream --jobs --root --extra-pkgs --keep-pkgs --prefer-pkgs 
