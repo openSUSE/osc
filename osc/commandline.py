@@ -2313,8 +2313,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     details = e.headers.get('X-Opensuse-Errorcode')
                     if details:
                         print(details, file=sys.stderr)
+                    root = ET.fromstring(e.read())
+                    summary = root.find('summary')
+                    if not summary is None:
+                        print(summary.text)
                     if opts.or_revoke:
-                        body = e.read()
                         if e.code in [ 400, 403, 404, 500 ]:
                             print('Revoking it ...')
                             r = change_request_state(apiurl,
