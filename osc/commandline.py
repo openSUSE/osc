@@ -5541,7 +5541,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--cpio-bulk-download', action='store_false',
                   dest='disable_cpio_bulk_download', help=SUPPRESS_HELP)
     @cmdln.option('--download-api-only', action='store_true',
-                  help=SUPPRESS_HELP)
+                  help='only fetch packages from the api')
     @cmdln.option('--oldpackages', metavar='DIR',
             help='take previous build from DIR (special values: _self, _link)')
     @cmdln.option('--shell', action='store_true',
