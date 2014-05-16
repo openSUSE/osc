@@ -5982,6 +5982,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False):
     revision = _set_link_rev(apiurl, project, package, root, revision, expand=expand)
     l = ET.tostring(root, encoding=ET_ENCODING)
     http_PUT(url, data=l)
+    return revision
 
 def _set_link_rev(apiurl, project, package, root, revision='', expand=False):
     """
@@ -5996,8 +5997,6 @@ def _set_link_rev(apiurl, project, package, root, revision='', expand=False):
     src_project = root.get('project', project)
     src_package = root.get('package', package)
     vrev = None
-    if revision == '':
-        revision = root.get('rev', '')
     if revision is None:
         if 'rev' in root.keys():
             del root.attrib['rev']
