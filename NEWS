@@ -1,5 +1,12 @@
 0.146
   - support maintenance release request with acceptinfo data (OBS 2.6)
+  - setlinkrev can be used to update frozen links to current revisions again
+  - report errors in case request accept fails
+  - support epoch number handling for local builds
+  - support bugowner request handling for groups
+  - support usage of fedoras mock to build packages
+  - support build --prefer-pkgs for Arch linux
+  - support bash-completion for .kiwi files
 
 0.145
   - allow to use the set-release option when running a manual release
