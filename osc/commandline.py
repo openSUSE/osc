@@ -2322,6 +2322,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             print('Revoking it ...')
                             r = change_request_state(apiurl,
                                 reqid, 'revoked', opts.message or '', supersed=supersedid, force=opts.force)
+                    sys.exit(1)
+
 
                 # check for devel instances after accepted requests
                 if cmd in ['accept']:
