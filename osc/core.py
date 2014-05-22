@@ -5341,7 +5341,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     """
     performs http_meth on url and read bufsize bytes from the response
     until EOF is reached. After each read bufsize bytes are yielded to the
-    caller.
+    caller. A spezial usage is bufsize="line" to read line by line (text).
     """
     cl = ''
     retries = 0
@@ -5367,9 +5367,15 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         basename = os.path.basename(urlsplit(url)[2])
         progress_obj.start(basename=basename, text=text, size=cl)
 
+    if bufsize == "line":
+        bufsize = 8192
+        xread = f.readline
+    else:
+        xread = f.read
+
     read = 0
     while True:
-        data = f.read(bufsize)
+        data = xread(bufsize)
         if not len(data):
             break
         read += len(data)
