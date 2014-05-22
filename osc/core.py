@@ -5366,14 +5366,17 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     if progress_obj:
         basename = os.path.basename(urlsplit(url)[2])
         progress_obj.start(basename=basename, text=text, size=cl)
-    data = f.read(bufsize)
-    read = len(data)
-    while len(data):
+
+    read = 0
+    while True:
+        data = f.read(bufsize)
+        if not len(data):
+            break
+        read += len(data)
         if progress_obj:
             progress_obj.update(read)
         yield data
-        data = f.read(bufsize)
-        read += len(data)
+
     if progress_obj:
         progress_obj.end(read)
     f.close()
