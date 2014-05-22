@@ -3372,6 +3372,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         sys.exit(1)
 
     @cmdln.alias('metafromspec')
+    @cmdln.alias('updatepkgmetafromspec')
     @cmdln.option('', '--specfile', metavar='FILE',
                       help='Path to specfile. (if you pass more than working copy this option is ignored)')
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
