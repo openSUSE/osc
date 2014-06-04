@@ -4405,7 +4405,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 store_unlink_file(p.absdir, '_commit_msg')
         else:
             for p in pacs:
-                p = Package(pac)
                 if not p.todo:
                     p.todo = p.filenamelist + p.filenamelist_unvers
                 p.todo.sort()
