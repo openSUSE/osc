@@ -923,6 +923,8 @@ def get_config(override_conffile=None,
                     api_host_options[apiurl][key] = cp.getboolean(url, key)
                 else:
                     api_host_options[apiurl][key] = cp.get(url, key)
+        if cp.has_option(url, 'build-root', proper=True):
+            api_host_options[apiurl]['build-root'] = cp.get(url, 'build-root', raw=True)
 
         if not 'sslcertck' in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True

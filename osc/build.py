@@ -487,6 +487,7 @@ def main(apiurl, opts, argv):
     if opts.shell:
         buildargs.append("--shell")
 
+    orig_build_root = config['build-root']
     # make it possible to override configuration of the rc file
     for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
         val = os.getenv(var)
@@ -508,11 +509,15 @@ def main(apiurl, opts, argv):
             pacname = os.path.splitext(build_descr)[0]
     apihost = urlsplit(apiurl)[1]
     if not build_root:
+        build_root = config['build-root']
+        if build_root == orig_build_root:
+            # ENV var was not set
+            build_root = config['api_host_options'][apiurl].get('build-root', build_root)
         try:
-            build_root = config['build-root'] % {'repo': repo, 'arch': arch,
+            build_root = build_root % {'repo': repo, 'arch': arch,
                          'project': prj, 'package': pacname, 'apihost': apihost}
         except:
-            build_root = config['build-root']
+            pass
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
