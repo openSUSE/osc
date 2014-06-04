@@ -323,6 +323,16 @@ class OscConfigParser(configparser.SafeConfigParser):
         else:
             configparser.SafeConfigParser.write(self, fp)
 
+    def has_option(self, section, option, proper=False, **kwargs):
+        """
+        Returns True, if the passed section contains the specified option.
+        If proper is True, True is only returned if the option is owned by
+        this section and not "inherited" from the default.
+        """
+        if proper:
+            return self.optionxform(option) in self._sections[section].keys()
+        return configparser.SafeConfigParser.has_option(self, section, option, **kwargs)
+
     # XXX: simplify!
     def __str__(self):
         ret = []
