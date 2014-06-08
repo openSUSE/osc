@@ -2310,7 +2310,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print('Result of change request state: %s' % r)
                 except HTTPError as e:
                     print(e, file=sys.stderr)
-                    details = e.headers.get('X-Opensuse-Errorcode')
+                    details = e.hdrs.get('X-Opensuse-Errorcode')
                     if details:
                         print(details, file=sys.stderr)
                     root = ET.fromstring(e.read())

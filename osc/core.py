@@ -3317,8 +3317,8 @@ class metafile:
                     break
                 except HTTPError as e:
                     error_help = "%d" % e.code
-                    if e.headers.get('X-Opensuse-Errorcode'):
-                        error_help = "%s (%d)" % (e.headers.get('X-Opensuse-Errorcode'), e.code)
+                    if e.hdrs.get('X-Opensuse-Errorcode'):
+                        error_help = "%s (%d)" % (e.hdrs.get('X-Opensuse-Errorcode'), e.code)
 
                     print('BuildService API error:', error_help, file=sys.stderr)
                     # examine the error - we can't raise an exception because we might want
@@ -3781,7 +3781,7 @@ def create_submit_request(apiurl,
         root = ET.parse(f).getroot()
         r = root.get('id')
     except HTTPError as e:
-        if e.headers.get('X-Opensuse-Errorcode') == "submit_request_rejected":
+        if e.hdrs.get('X-Opensuse-Errorcode') == "submit_request_rejected":
             print("WARNING:")
             print("WARNING: Project does not accept submit request, request to open a NEW maintenance incident instead")
             print("WARNING:")
