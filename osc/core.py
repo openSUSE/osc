@@ -480,6 +480,31 @@ class Linkinfo:
         else:
             return 'None'
 
+class DirectoryServiceinfo:
+    def __init__(self):
+        self.code = None
+        self.xsrcmd5 = None
+        self.lsrcmd5 = None
+        self.error = ''
+
+    def read(self, serviceinfo_node):
+        if serviceinfo_node is None:
+            return
+        self.code = serviceinfo_node.get('code')
+        self.xsrcmd5 = serviceinfo_node.get('xsrcmd5')
+        self.lsrcmd5 = serviceinfo_node.get('lsrcmd5')
+        self.error = serviceinfo_node.find('error')
+        if self.error:
+            self.error = self.error.text
+
+    def isexpanded(self):
+        """
+        Returns true, if the directory contains the "expanded"/generated service files
+        """
+        return self.lsrcmd5 is not None and self.xsrcmd5 is None
+
+    def haserror(self):
+        return self.error is not None
 
 # http://effbot.org/zone/element-lib.htm#prettyprint
 def xmlindent(elem, level=0):
@@ -795,6 +820,8 @@ class Project:
                 # update complete project
                 # packages which no longer exists upstream
                 upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
+                sinfo_pacs = [pac for pac in self.pacs_have if self.get_state(pac) in (' ', 'D') and not pac in self.pacs_broken]
+                sinfos = get_sourceinfo(self.apiurl, self.name, True, *sinfo_pacs)
 
                 for pac in upstream_del:
                     if self.status(pac) != '!':
@@ -813,12 +840,13 @@ class Project:
                     if pac in self.pacs_broken:
                         if self.get_state(pac) != 'A':
                             checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, \
+                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self,
                                              prj_dir=self.dir, expand_link=not unexpand_link, progress_obj=self.progress_obj)
                     elif state == ' ':
                         # do a simple update
                         p = Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj)
                         rev = None
+                        needs_update = True
                         if expand_link and p.islink() and not p.isexpanded():
                             if p.haslinkerror():
                                 try:
@@ -833,19 +861,29 @@ class Project:
                             rev = p.linkinfo.lsrcmd5
                             print('Unexpanding to rev', rev)
                         elif p.islink() and p.isexpanded():
-                            rev = p.latest_rev()
+                            needs_update = p.update_needed(sinfos[p.name])
+                            if needs_update:
+                                rev = p.latest_rev()
+                        elif p.hasserviceinfo() and p.serviceinfo.isexpanded() and not service_files:
+                            # FIXME: currently, do_update does not propagate the --server-side-source-service-files 
+                            # option to this method. Consequence: an expanded service is always unexpanded during
+                            # an update (TODO: discuss if this is a reasonable behavior (at least this the default
+                            # behavior for a while))
+                            needs_update = True
+                        else:
+                            needs_update = p.update_needed(sinfos[p.name])
                         print('Updating %s' % p.name)
-                        p.update(rev, service_files)
+                        if needs_update:
+                            p.update(rev, service_files)
+                        else:
+                            print('At revision %s.' % p.rev)
                         if unexpand_link:
                             p.unmark_frozen()
                     elif state == 'D':
-                        # TODO: Package::update has to fixed to behave like svn does
-                        if pac in self.pacs_broken:
-                            checkout_package(self.apiurl, self.name, pac,
-                                             pathname=getTransActPath(os.path.join(self.dir, pac)), prj_obj=self, \
-                                             prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
-                        else:
-                            Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj).update()
+                        # pac exists (the non-existent pac case was handled in the first if block)
+                        p = Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj)
+                        if p.needs_update(sinfos[p.name]):
+                            p.update()
                     elif state == 'A' and pac in self.pacs_available:
                         # file/dir called pac already exists and is under version control
                         msg = 'can\'t add package \'%s\': Object already exists' % pac
@@ -1593,6 +1631,8 @@ class Package:
 
         self.linkinfo = Linkinfo()
         self.linkinfo.read(files_tree_root.find('linkinfo'))
+        self.serviceinfo = DirectoryServiceinfo()
+        self.serviceinfo.read(files_tree_root.find('serviceinfo'))
 
         self.filenamelist = []
         self.filelist = []
@@ -1676,6 +1716,12 @@ class Package:
         If the package is not a link it returns None.
         """
         return self.linkinfo.error
+
+    def hasserviceinfo(self):
+        """
+        Returns True, if this package contains services.
+        """
+        return self.serviceinfo.lsrcmd5 is not None or self.serviceinfo.xsrcmd5 is not None
 
     def update_local_pacmeta(self):
         """
@@ -2042,6 +2088,42 @@ rev: %s
                 deleted.append(f)
 
         return kept, added, deleted, services
+
+    def update_needed(self, sinfo):
+        # this method might return a false-positive (that is a True is returned,
+        # even though no update is needed) (for details, see comments below)
+        if self.islink():
+            if self.isexpanded():
+                # check if both revs point to the same expanded sources
+                # Note: if the package contains a _service file, sinfo.srcmd5's lsrcmd5
+                # points to the "expanded" services (xservicemd5) => chances
+                # for a false-positive are high, because osc usually works on the
+                # "unexpanded" services.
+                # Once the srcserver supports something like noservice=1, we can get rid of
+                # this false-positives (patch was already sent to the ml) (but this also
+                # requires some slight changes in osc)
+                return sinfo.get('srcmd5') != self.srcmd5
+            elif self.hasserviceinfo(): 
+                # check if we have expanded or unexpanded services
+                if self.serviceinfo.isexpanded():
+                    return sinfo.get('lsrcmd5') != self.srcmd5
+                else:
+                    # again, we might have a false-positive here, because
+                    # a mismatch of the "xservicemd5"s does not neccessarily
+                    # imply a change in the "unexpanded" services.
+                    return sinfo.get('lsrcmd5') != self.serviceinfo.xsrcmd5
+            # simple case: unexpanded sources and no services
+            # self.srcmd5 should also work
+            return sinfo.get('lsrcmd5') != self.linkinfo.lsrcmd5
+        elif self.hasserviceinfo():
+            if self.serviceinfo.isexpanded():
+                return sinfo.get('srcmd5') != self.srcmd5
+            else:
+                # cannot handle this case, because the sourceinfo does not contain
+                # information about the lservicemd5. Once the srcserver supports
+                # a noservice=1 query parameter, we can handle this case.
+                return True
+        return sinfo.get('srcmd5') != self.srcmd5
 
     def update(self, rev = None, service_files = False, size_limit = None):
         import tempfile
@@ -3501,6 +3583,25 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     if li.haserror():
         raise oscerr.LinkExpandError(prj, pac, li.error)
     return li.xsrcmd5
+
+
+def show_sourceinfo(apiurl, project, nofilename, *packages):
+    query = ['view=info']
+    if packages:
+        query.extend(['package=%s' % p for p in packages])
+    if nofilename:
+        query.append('nofilename=1')
+    f = http_GET(makeurl(apiurl, ['source', project], query=query))
+    return f.read()
+
+
+def get_sourceinfo(apiurl, project, nofilename, *packages):
+    si = show_sourceinfo(apiurl, project, nofilename, *packages)
+    root = ET.fromstring(si)
+    res = {}
+    for sinfo in root.findall('sourceinfo'):
+        res[sinfo.get('package')] = sinfo
+    return res
 
 
 def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, meta=False):
