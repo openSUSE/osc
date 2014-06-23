@@ -3596,7 +3596,19 @@ def show_sourceinfo(apiurl, project, nofilename, *packages):
 
 
 def get_sourceinfo(apiurl, project, nofilename, *packages):
-    si = show_sourceinfo(apiurl, project, nofilename, *packages)
+    try:
+        si = show_sourceinfo(apiurl, project, nofilename, *packages)
+    except HTTPError, e:
+        if e.code != 414:
+            raise
+        if len(packages) == 1:
+            raise oscerr.APIError('package name too long: %s' % packages[0])
+        n = len(packages) / 2
+        pkgs = packages[:n]
+        res = get_sourceinfo(apiurl, project, nofilename, *pkgs)
+        pkgs = packages[n:]
+        res.update(get_sourceinfo(apiurl, project, nofilename, *pkgs))
+        return res
     root = ET.fromstring(si)
     res = {}
     for sinfo in root.findall('sourceinfo'):
