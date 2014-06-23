@@ -821,7 +821,7 @@ class Project:
                 # packages which no longer exists upstream
                 upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
                 sinfo_pacs = [pac for pac in self.pacs_have if self.get_state(pac) in (' ', 'D') and not pac in self.pacs_broken]
-                sinfos = get_sourceinfo(self.apiurl, self.name, True, *sinfo_pacs)
+                sinfos = get_project_sourceinfo(self.apiurl, self.name, True, *sinfo_pacs)
 
                 for pac in upstream_del:
                     if self.status(pac) != '!':
@@ -3585,7 +3585,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_sourceinfo(apiurl, project, nofilename, *packages):
+def show_project_sourceinfo(apiurl, project, nofilename, *packages):
     query = ['view=info']
     if packages:
         query.extend(['package=%s' % p for p in packages])
@@ -3595,9 +3595,9 @@ def show_sourceinfo(apiurl, project, nofilename, *packages):
     return f.read()
 
 
-def get_sourceinfo(apiurl, project, nofilename, *packages):
+def get_project_sourceinfo(apiurl, project, nofilename, *packages):
     try:
-        si = show_sourceinfo(apiurl, project, nofilename, *packages)
+        si = show_project_sourceinfo(apiurl, project, nofilename, *packages)
     except HTTPError, e:
         if e.code != 414:
             raise
@@ -3605,9 +3605,9 @@ def get_sourceinfo(apiurl, project, nofilename, *packages):
             raise oscerr.APIError('package name too long: %s' % packages[0])
         n = len(packages) / 2
         pkgs = packages[:n]
-        res = get_sourceinfo(apiurl, project, nofilename, *pkgs)
+        res = get_project_sourceinfo(apiurl, project, nofilename, *pkgs)
         pkgs = packages[n:]
-        res.update(get_sourceinfo(apiurl, project, nofilename, *pkgs))
+        res.update(get_project_sourceinfo(apiurl, project, nofilename, *pkgs))
         return res
     root = ET.fromstring(si)
     res = {}
