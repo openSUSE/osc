@@ -3588,7 +3588,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
 def show_project_sourceinfo(apiurl, project, nofilename, *packages):
     query = ['view=info']
     if packages:
-        query.extend(['package=%s' % p for p in packages])
+        query.extend(['package=%s' % quote_plus(p) for p in packages])
     if nofilename:
         query.append('nofilename=1')
     f = http_GET(makeurl(apiurl, ['source', project], query=query))
