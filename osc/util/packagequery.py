@@ -15,7 +15,7 @@ class PackageQueries(dict):
     """
 
     # map debian arches to common obs arches
-    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64']}
+    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64'], 'ppc64el': ['ppc64le']}
 
     def __init__(self, wanted_architecture):
         self.wanted_architecture = wanted_architecture
