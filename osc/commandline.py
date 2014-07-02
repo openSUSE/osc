@@ -5388,7 +5388,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     elif not arg_repository:
                         arg_repository = arg
                     else:
-                        raise oscerr.WrongArgs('\'%s\' is neither a build description nor a supported arch' % arg)
+#                        raise oscerr.WrongArgs('\'%s\' is neither a build description nor a supported arch' % arg)
+                        # take it as arch (even though this is no supported arch) - hopefully, this invalid
+                        # arch will be detected below
+                        arg_arch = arg
         else:
             arg_repository, arg_arch, arg_descr = args
 
