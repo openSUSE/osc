@@ -5398,36 +5398,35 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # store list of repos for potential offline use
         repolistfile = os.path.join(os.getcwd(), osc.core.store, "_build_repositories")
         if noinit:
-            if os.path.exists(repolistfile):
-                f = open(repolistfile, 'r')
-                repositories = [ l.strip()for l in f.readlines()]
-                f.close()
+            repositories = Repo.fromfile(repolistfile)
         else:
             project = alternative_project or store_read_project('.')
             apiurl = self.get_api_url()
-            repositories = get_repositories_of_project(apiurl, project)
+            repositories = list(get_repos_of_project(apiurl, project))
             if not len(repositories):
                 raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
-            try:
-                f = open(repolistfile, 'w')
-                f.write('\n'.join(repositories) + '\n')
-                f.close()
-            except:
-                pass
+            if alternative_project is None:
+                # only persist our own repos
+                Repo.tofile(repolistfile, repositories)
 
-        if not arg_repository and len(repositories):
+        repo_names = [r.name for r in repositories]
+        if not arg_repository and repositories:
             # Use a default value from config, but just even if it's available
             # unless try standard, or openSUSE_Factory
-            arg_repository = repositories[-1]
+            arg_repository = repositories[-1].name
             for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
-                if repository in repositories:
+                if repository in repo_names:
                     arg_repository = repository
                     break
 
         if not arg_repository:
             raise oscerr.WrongArgs('please specify a repository')
-        elif noinit == False and not arg_repository in repositories:
-            raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ', '.join(repositories)))
+        if not noinit:
+            if not arg_repository in repo_names:
+                raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ', '.join(repo_names)))
+            arches = [r.arch for r in repositories if r.name == arg_repository and r.arch]
+            if arches and not arg_arch in arches:
+                raise oscerr.WrongArgs('%s is not a valid arch for the repository %s, use one of: %s' % (arg_arch, arg_repository, ', '.join(arches)))
 
         # can be implemented using
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))

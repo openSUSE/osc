@@ -5113,6 +5113,27 @@ class Repo:
     def __str__(self):
         return self.repo_line_templ % (self.name, self.arch)
 
+    @staticmethod
+    def fromfile(filename):
+        if not os.path.exists(filename):
+            return []
+        repos = []
+        lines = open(filename, 'r').readlines()
+        for line in lines:
+            data = line.split()
+            if len(data) == 2:
+                repos.append(Repo(data[0], data[1]))
+            elif len(data) == 1:
+                # only for backward compatibility
+                repos.append(Repo(data[0], ''))
+        return repos
+
+    @staticmethod
+    def tofile(filename, repos):
+        with open(filename, 'w') as f:
+            for repo in repos:
+                f.write('%s %s\n' % (repo.name, repo.arch))
+
 def get_repos_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
     root = ET.fromstring(''.join(f))
