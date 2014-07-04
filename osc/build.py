@@ -254,32 +254,32 @@ class Pac:
 
 
 
-def get_built_files(pacdir, pactype):
-    if pactype == 'rpm':
+def get_built_files(pacdir, buildtype):
+    if buildtype == 'spec':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'),
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'),
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    elif pactype == 'kiwi':
+    elif buildtype == 'kiwi':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    elif pactype == 'deb':
+    elif buildtype == 'dsc':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    elif pactype == 'arch':
+    elif buildtype == 'arch':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'ARCHPKGS'),
                                     '-name', '*.pkg.tar*'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
     else:
-        print('WARNING: Unknown package type \'%s\'.' % pactype, file=sys.stderr)
+        print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
         s_built = ''
     return s_built, b_built
@@ -1006,7 +1006,7 @@ def main(apiurl, opts, argv):
         pacdir = os.path.join(build_root, pacdir)
 
     if os.path.exists(pacdir):
-        (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
+        (s_built, b_built) = get_built_files(pacdir, bi.buildtype)
 
         print()
         if s_built: print(s_built)
