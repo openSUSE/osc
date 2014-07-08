@@ -116,6 +116,8 @@ class Buildinfo:
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
+        if self.buildtype == 'livebuild':
+            self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
         if root.find('hostarch') != None:
@@ -278,6 +280,11 @@ def get_built_files(pacdir, buildtype):
                                     '-name', '*.pkg.tar*'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'livebuild':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-name', '*.iso*'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -406,9 +413,9 @@ def main(apiurl, opts, argv):
     build_type = os.path.splitext(build_descr)[1][1:]
     if os.path.basename(build_descr) == 'PKGBUILD':
         build_type = 'arch'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'livebuild']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc or .kiwi.' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi or .livebuild.' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
