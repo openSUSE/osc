@@ -7128,7 +7128,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         roles = [ 'bugowner', 'maintainer' ]
         if len(opts.role):
             roles = opts.role
-        if opts.bugowner_only or opts.bugowner or subcmd == 'bugowner':
+        elif opts.bugowner_only or opts.bugowner or subcmd == 'bugowner':
             roles = [ 'bugowner' ]
 
         args = slash_split(args)
@@ -7163,19 +7163,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 filterroles = None
             if binary:
                 searchresult = owner(apiurl, binary, "binary", usefilter=filterroles, devel=None, limit=limit)
-                if not searchresult and (opts.set_bugowner or opts.set_bugowner_request):
-                    # filtered search did not succeed, but maybe we want to set an owner initially?
-                    searchresult = owner(apiurl, binary, "binary", usefilter="", devel=None, limit=-1)
-                    if searchresult:
-                        print("WARNING: the binary exists, but has no matching maintainership roles defined.")
-                        print("Do you want to set it in the container where the binary appeared first?")
-                        result = searchresult.find('owner')
-                        print("This is: " + result.get('project'), end=' ')
-                        if result.get('package'):
-                            print (" / " + result.get('package'))
-                        repl = raw_input('\nUse this container? (y/n) ')
-                        if repl.lower() != 'y':
-                            searchresult = None
+                if searchresult != None and len(searchresult) == 0:
+                    # We talk to an OBS 2.4 or later understanding the call
+                    if opts.set_bugowner or opts.set_bugowner_request:
+                        # filtered search did not succeed, but maybe we want to set an owner initially?
+                        searchresult = owner(apiurl, binary, "binary", usefilter="", devel=None, limit=-1)
+                        if searchresult:
+                            print("WARNING: the binary exists, but has no matching maintainership roles defined.")
+                            print("Do you want to set it in the container where the binary appeared first?")
+                            result = searchresult.find('owner')
+                            print("This is: " + result.get('project'), end=' ')
+                            if result.get('package'):
+                                print (" / " + result.get('package'))
+                            repl = raw_input('\nUse this container? (y/n) ')
+                            if repl.lower() != 'y':
+                                searchresult = None
+                    else:
+                       print("Empty search result, you may want to search with other or all roles via -r ''")
+                       return
             elif opts.user:
                 searchresult = owner(apiurl, opts.user, "user", usefilter=filterroles, devel=None)
             elif opts.group:
