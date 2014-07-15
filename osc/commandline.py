@@ -5258,8 +5258,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.prefer_pkgs:
             from .build import get_prefer_pkgs
             print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
-            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(args[2])[1])
-            cpio.add(os.path.basename(args[2]), build_descr_data)
+            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(build_descr)[1])
+            cpio.add(os.path.basename(build_descr), build_descr_data)
             build_descr_data = cpio.get()
 
         print(''.join(get_buildinfo(apiurl,
