@@ -5377,7 +5377,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for subarch in osc.build.can_also_build.get(mainarch):
                     all_archs.append(subarch)
             for arg in args:
-                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or arg == 'PKGBUILD':
+                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or arg.endswith('.livebuild') or arg == 'PKGBUILD':
                     arg_descr = arg
                 else:
                     if (arg == osc.build.hostarch or arg in all_archs) and arg_arch is None:
@@ -5434,7 +5434,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # can be implemented using
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
-        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('PKGBUILD')
+        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') + glob.glob('PKGBUILD')
         
         # FIXME:
         # * request repos from server and select by build type.
@@ -5449,7 +5449,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
-                extensions = ['spec', 'dsc', 'kiwi']
+                extensions = ['spec', 'dsc', 'kiwi', 'livebuild']
                 cands = [i for i in descr for ext in extensions if i == '%s-%s.%s' % (pac, arg_repository, ext)]
                 if len(cands) == 1:
                     arg_descr = cands[0]
@@ -5460,7 +5460,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not arg_descr:
                     msg = 'Multiple build description files found: %s' % ', '.join(descr)
             elif not ignore_descr:
-                msg = 'Missing argument: build description (spec, dsc or kiwi file)'
+                msg = 'Missing argument: build description (spec, dsc, kiwi or livebuild file)'
                 try:
                     p = Package('.')
                     if p.islink() and not p.isexpanded():

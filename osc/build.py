@@ -116,6 +116,8 @@ class Buildinfo:
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
+        if self.buildtype == 'livebuild':
+            self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
         if root.find('hostarch') != None:
@@ -254,32 +256,37 @@ class Pac:
 
 
 
-def get_built_files(pacdir, pactype):
-    if pactype == 'rpm':
+def get_built_files(pacdir, buildtype):
+    if buildtype == 'spec':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'),
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'),
                                     '-name', '*.rpm'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    elif pactype == 'kiwi':
+    elif buildtype == 'kiwi':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    elif pactype == 'deb':
+    elif buildtype == 'dsc':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
-    elif pactype == 'arch':
+    elif buildtype == 'arch':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'ARCHPKGS'),
                                     '-name', '*.pkg.tar*'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'livebuild':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-name', '*.iso*'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
-        print('WARNING: Unknown package type \'%s\'.' % pactype, file=sys.stderr)
+        print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
         s_built = ''
     return s_built, b_built
@@ -406,9 +413,9 @@ def main(apiurl, opts, argv):
     build_type = os.path.splitext(build_descr)[1][1:]
     if os.path.basename(build_descr) == 'PKGBUILD':
         build_type = 'arch'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'livebuild']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc or .kiwi.' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi or .livebuild.' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
@@ -1006,7 +1013,7 @@ def main(apiurl, opts, argv):
         pacdir = os.path.join(build_root, pacdir)
 
     if os.path.exists(pacdir):
-        (s_built, b_built) = get_built_files(pacdir, bi.pacsuffix)
+        (s_built, b_built) = get_built_files(pacdir, bi.buildtype)
 
         print()
         if s_built: print(s_built)
