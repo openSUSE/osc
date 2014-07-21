@@ -5412,7 +5412,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # only persist our own repos
                 Repo.tofile(repolistfile, repositories)
 
-        repo_names = [r.name for r in repositories]
+        repo_names = sorted(set([r.name for r in repositories]))
         if not arg_repository and repositories:
             # Use a default value from config, but just even if it's available
             # unless try standard, or openSUSE_Factory
