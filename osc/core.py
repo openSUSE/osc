@@ -335,6 +335,12 @@ class Serviceinfo:
         r.append( s )
         return r
 
+    def addSetVersion(self, serviceinfo_node):
+        r = serviceinfo_node
+        s = ET.Element( "service", name="set_version" )
+        r.append( s )
+        return r
+
     def addGitUrl(self, serviceinfo_node, url_string):
         r = serviceinfo_node
         s = ET.Element( "service", name="tar_scm" )
@@ -6394,6 +6400,7 @@ def addGitSource(url):
     si = Serviceinfo()
     s = si.addGitUrl(services, url)
     s = si.addRecompressTar(services)
+    s = si.addSetVersion(services)
     si.read(s)
 
     # for pretty output
