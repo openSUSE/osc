@@ -347,7 +347,7 @@ class Serviceinfo:
         r = serviceinfo_node
         s = ET.Element( "service", name="recompress" )
         ET.SubElement(s, "param", name="file").text = "*.tar"
-        ET.SubElement(s, "param", name="compression").text = "bz2"
+        ET.SubElement(s, "param", name="compression").text = "xz"
         r.append( s )
         return r
 
