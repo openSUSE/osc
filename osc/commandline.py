@@ -5040,9 +5040,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 self.print_repos()
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
+        # TODO: refactor/unify buildroot calculation and move it to core.py
         buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root'])
+        apihost = urlsplit(self.get_api_url())[1]
         buildroot = buildroot % {'project': project, 'package': package,
-                                 'repo': repo, 'arch': arch}
+                                 'repo': repo, 'arch': arch, 'apihost': apihost}
         offset = 0
         if opts.offset:
             offset = int(opts.offset)
