@@ -397,9 +397,7 @@ class Osc(cmdln.Cmdln):
                 if opts.verbose:
                     if self.options.verbose:
                         print('Sorry, the --verbose option is not implemented for projects.', file=sys.stderr)
-                if opts.expand:
-                    raise oscerr.WrongOptions('Sorry, the --expand option is not implemented for projects.')
-                for pkg in meta_get_packagelist(apiurl, project, opts.deleted):
+                for pkg in meta_get_packagelist(apiurl, project, deleted = opts.deleted, expand = opts.expand):
                     print(pkg)
 
             elif len(args) == 2 or len(args) == 3:

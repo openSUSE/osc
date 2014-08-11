@@ -3179,11 +3179,13 @@ def check_store_version(dir):
         raise oscerr.WorkingCopyWrongVersion(msg)
 
 
-def meta_get_packagelist(apiurl, prj, deleted=None):
+def meta_get_packagelist(apiurl, prj, deleted=None, expand=False):
 
     query = {}
     if deleted:
         query['deleted'] = 1
+    if expand:
+        query['expand'] = 1
 
     u = makeurl(apiurl, ['source', prj], query)
     f = http_GET(u)
