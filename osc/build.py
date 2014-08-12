@@ -63,7 +63,7 @@ can_also_build = {
              'armv7hl':[                        'armv7hl'                                                             ], # not existing arch, just for compatibility
              'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
              'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
-             'armv5tel':[                                        'armv4l', 'armv5el',                                 'armv5tel' ], 
+             'armv5tel':[                                        'armv4l', 'armv5el',                                 'armv5tel' ],
              's390x':  ['s390' ],
              'ppc64':  [                        'ppc', 'ppc64', 'ppc64p7', 'ppc64le' ],
              'ppc64le':[ 'ppc64le' ],
@@ -640,8 +640,8 @@ def main(apiurl, opts, argv):
                 pkg_meta_e = None
                 try:
                     # take care, not to run into double trouble.
-                    pkg_meta_e = meta_exists(metatype='pkg', path_args=(quote_plus(prj), 
-                                        quote_plus(pac)), template_args=None, create_new=False, 
+                    pkg_meta_e = meta_exists(metatype='pkg', path_args=(quote_plus(prj),
+                                        quote_plus(pac)), template_args=None, create_new=False,
                                         apiurl=apiurl)
                 except:
                     pass

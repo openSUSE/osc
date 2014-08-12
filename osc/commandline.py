@@ -150,7 +150,7 @@ class Osc(cmdln.Cmdln):
 
             conf.write_initial_config(e.file, config)
             print('done', file=sys.stderr)
-            if try_again: 
+            if try_again:
                 self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
@@ -158,7 +158,7 @@ class Osc(cmdln.Cmdln):
             user = raw_input('Username: ')
             passwd = getpass.getpass()
             conf.add_section(e.file, e.url, user, passwd)
-            if try_again: 
+            if try_again:
                 self.postoptparse(try_again = False)
 
         self.options.verbose = conf.config['verbose']
@@ -182,7 +182,7 @@ class Osc(cmdln.Cmdln):
             ## check for Stale NFS file handle: '.'
             try:
                 os.stat('.')
-            except Exception as ee: 
+            except Exception as ee:
                 e = ee
             print("os.getcwd() failed: ", e, file=sys.stderr)
             sys.exit(1)
@@ -304,7 +304,7 @@ class Osc(cmdln.Cmdln):
             pass
         if len(args) > 0:
             project = args[0]
-            if project == '/': 
+            if project == '/':
                 project = None
             if project == '.':
                 cwd = os.getcwd()
@@ -340,7 +340,7 @@ class Osc(cmdln.Cmdln):
         if opts.binaries and opts.expand:
             raise oscerr.WrongOptions('Sorry, --binaries and --expand are mutual exclusive.')
 
-        apiurl = self.get_api_url() 
+        apiurl = self.get_api_url()
 
         # list binaries
         if opts.binaries:
@@ -428,7 +428,7 @@ class Osc(cmdln.Cmdln):
                             print_not_found = False
                     else:
                         print('\n'.join(l))
-                    if opts.expand or opts.unexpand or not link_seen: 
+                    if opts.expand or opts.unexpand or not link_seen:
                         break
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
@@ -461,7 +461,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
-        apiurl = self.get_api_url() 
+        apiurl = self.get_api_url()
         project_dir = localdir = os.getcwd()
         patchinfo = 'patchinfo'
         if len(args) == 0:
@@ -509,7 +509,7 @@ class Osc(cmdln.Cmdln):
             f = http_POST(url)
 
         # CAUTION:
-        #  Both conf.config['checkout_no_colon'] and conf.config['checkout_rooted'] 
+        #  Both conf.config['checkout_no_colon'] and conf.config['checkout_rooted']
         #  fool this test:
         if is_package_dir(localdir):
             pac = Package(localdir)
@@ -794,7 +794,7 @@ class Osc(cmdln.Cmdln):
             elif cmd == 'pkg':
                 sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage, 
+                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage,
                                          opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
                 sys.stdout.write(''.join(show_project_conf(apiurl, project)))
@@ -1202,7 +1202,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rev = root.get('rev')
             else:
                 if linkinfo.get('project') != dst_project or linkinfo.get('package') != dst_package:
-                    # the submit target is not link target. use merged md5sum references to 
+                    # the submit target is not link target. use merged md5sum references to
                     # avoid not mergable sources when multiple request from same source get created.
                     rev = root.get('srcmd5')
 
@@ -1603,10 +1603,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: create multiple requests with a single command
 
         usage:
-            osc creq [OPTIONS] [ 
-                -a submit SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG] 
-                -a delete PROJECT [PACKAGE] 
-                -a change_devel PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE] 
+            osc creq [OPTIONS] [
+                -a submit SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
+                -a delete PROJECT [PACKAGE]
+                -a change_devel PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
                 -a add_me ROLE PROJECT [PACKAGE]
                 -a add_group GROUP ROLE PROJECT [PACKAGE]
                 -a add_role USER ROLE PROJECT [PACKAGE]
@@ -1705,7 +1705,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc requestmaintainership PROJECT PACKAGE           # for current user
             osc requestmaintainership PROJECT PACKAGE USER      # request for specified user
            
-            osc requestbugownership ...                         # accepts same parameters but uses bugowner role 
+            osc requestbugownership ...                         # accepts same parameters but uses bugowner role
 
         ${cmd_option_list}
         """
@@ -1795,7 +1795,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif is_package_dir(os.getcwd()):
             project = store_read_project(os.curdir)
             package = store_read_package(os.curdir)
-        else: 
+        else:
             raise oscerr.WrongArgs('Please specify at least a project.')
 
         if opts.repository:
@@ -1828,7 +1828,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_changedevelrequest(self, subcmd, opts, *args):
         """${cmd_name}: Create request to change the devel package definition.
 
-        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration 
+        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration
         for information on this topic.]
 
         See the "request" command for showing and modifing existing requests.
@@ -1954,7 +1954,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The 'review' command has the following sub commands:
 
         "list" lists open requests that need to be reviewed by the
-        specified user or group 
+        specified user or group
 
         "add" adds a person or group as reviewer to a request
 
@@ -2755,7 +2755,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--set-release', metavar='RELEASETAG',
                   help='rename binaries during release using this release tag')
     def do_release(self, subcmd, opts, *args):
-        """${cmd_name}: Release sources and binaries 
+        """${cmd_name}: Release sources and binaries
 
         This command is used to transfer sources and binaries without rebuilding them.
         It requires defined release targets set to trigger="manual". Please refer the
@@ -3129,7 +3129,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco': 
+        if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco':
             opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
@@ -3288,7 +3288,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             ## FIXME: core.py:commitDelPackage() should have something similar
             rlist = get_request_list(apiurl, prj, pkg)
-            for rq in rlist: 
+            for rq in rlist:
                 print(rq)
             if len(rlist) >= 1 and not opts.force:
                 print('Package has pending requests. Deleting the package will break them. '\
@@ -3423,11 +3423,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 Default: all files.
 
             osc diff --link
-            osc linkdiff                
+            osc linkdiff
                 Compare current checkout directory against the link base.
 
-            osc diff --link PROJ PACK      
-            osc linkdiff PROJ PACK      
+            osc diff --link PROJ PACK
+            osc linkdiff PROJ PACK
                 Compare a package against the link base (ignoring working copy changes).
 
         ${cmd_option_list}
@@ -3728,7 +3728,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if not noparentok and not self._pdiff_package_exists(apiurl, parent_project, parent_package):
-            self._pdiff_raise_non_existing_package(parent_project, parent_package, 
+            self._pdiff_raise_non_existing_package(parent_project, parent_package,
                                                    msg = 'Parent for %s/%s (%s/%s) does not exist.' % \
                                                    (project, package, parent_project, parent_package))
 
@@ -3893,7 +3893,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_install(self, subcmd, opts, *args):
         """${cmd_name}: install a package after build via zypper in -r
 
-        Not implemented here.  Please try 
+        Not implemented here.  Please try
         http://software.opensuse.org/search?q=osc-plugin-install&include_home=true
 
 
@@ -3995,7 +3995,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                osc co PACKAGE                    # check out PACKAGE from project
             
             with the result of rpm -q --qf '%%{DISTURL}\\n' PACKAGE
-               osc co obs://API/PROJECT/PLATFORM/REVISION-PACKAGE       
+               osc co obs://API/PROJECT/PLATFORM/REVISION-PACKAGE
 
         ${cmd_option_list}
         """
@@ -4010,7 +4010,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   + self.get_cmd_help('checkout'))
 
         # XXX: this too openSUSE-setup specific...
-        # FIXME: this should go into ~jw/patches/osc/osc.proj_pack_20101201.diff 
+        # FIXME: this should go into ~jw/patches/osc/osc.proj_pack_20101201.diff
         #        to be available to all subcommands via @cmdline.prep(proj_pack)
         # obs://build.opensuse.org/openSUSE:11.3/standard/fc6c25e795a89503e99d59da5dc94a79-screen
         m = re.match(r"obs://([^/]+)/(\S+)/([^/]+)/([A-Fa-f\d]+)\-(\S+)", args[0])
@@ -4641,10 +4641,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Shows all available distributions
 
         This command shows the available distributions. For active distributions
-        it shows the name, project and name of the repository and a suggested default repository name. 
+        it shows the name, project and name of the repository and a suggested default repository name.
 
         usage:
-            osc distributions                           
+            osc distributions
 
         ${cmd_option_list}
         """
@@ -5281,7 +5281,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         which is directly readable by the build script. It contains RPM macros
         and BuildRequires expansions, for example.
 
-        The argument REPOSITORY an be taken from the first column of the 
+        The argument REPOSITORY an be taken from the first column of the
         'osc repos' output.
 
         usage:
@@ -5353,7 +5353,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             disabled = show_package_disabled_repos(apiurl, project, package)
 
         if subcmd == 'repos_only':
-            for repo in get_repositories_of_project(apiurl, project): 
+            for repo in get_repositories_of_project(apiurl, project):
                 if (disabled is None) or ((disabled is not None) and (repo not in disabled)):
                     print(repo)
         else:
@@ -5661,7 +5661,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # drop the --argument, value tuple from the list
         def drop_arg2(lst, name):
-            if not name: 
+            if not name:
                 return lst
             while name in lst:
                 i = lst.index(name)
@@ -5756,7 +5756,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return ret
 
         for arg, long_name in ((opts.rsyncsrc, '--rsync-src'), (opts.overlay, '--overlay')):
-            if not arg: 
+            if not arg:
                 continue
             ret = rsync_dirs_2host(hostargs, None, long_name, (arg, ))
             if ret != 0:
@@ -6019,7 +6019,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc service remoterun [PROJECT PACKAGE]
 
             COMMAND can be:
-            run         r  run defined services locally, it takes an optional parameter to run only a 
+            run         r  run defined services locally, it takes an optional parameter to run only a
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
             disabledrun dr run disabled or server side only services locally and store files as local created
@@ -6337,7 +6337,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if package is None:
             package = meta_get_packagelist(apiurl, project)
-        else: 
+        else:
             package = [package]
 
         # Set binary target directory and create if not existing
@@ -6420,7 +6420,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         # TODO: please clarify the difference between sr and rq.
-        # My first implementeation was to make no difference between requests FROM one 
+        # My first implementeation was to make no difference between requests FROM one
         # of my projects and TO one of my projects. The current implementation appears to make this difference.
         # The usage above indicates, that sr would be a subset of rq, which is no the case with my tests.
         # jw.
@@ -6627,7 +6627,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='match only when given attribute exists in meta data')
     @cmdln.option('-v', '--verbose', action='store_true',
                         help='show more information')
-    @cmdln.option('-V', '--version', action='store_true', 
+    @cmdln.option('-V', '--version', action='store_true',
                         help='show package version, revision, and srcmd5. CAUTION: This is slow and unreliable')
     @cmdln.option('-i', '--involved', action='store_true',
                         help='show projects/packages where given person (or myself) is involved as bugowner or maintainer')
@@ -6820,7 +6820,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
             # construct a sorted, flat list
             # Sort by first column, follwed by second column if we have two columns, else sort by first.
-            results.sort(lambda x, y: ( cmp(x[0], y[0]) or 
+            results.sort(lambda x, y: ( cmp(x[0], y[0]) or
                                        (len(x)>1 and len(y)>1 and cmp(x[1], y[1])) ))
             new = []
             for i in results:
@@ -7154,7 +7154,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        # Try the OBS 2.4 way first. 
+        # Try the OBS 2.4 way first.
         if binary or opts.user or opts.group:
             limit = None
             if opts.all:
@@ -7307,7 +7307,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     else:
                         print("Defined in project: ", definingproject)
 
-                if prj: 
+                if prj:
                     # not for user/group search
                     for role in roles:
                         if opts.bugowner and not len(maintainers.get(role, [])):

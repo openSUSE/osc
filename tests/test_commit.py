@@ -295,7 +295,7 @@ class TestCommit(OscTestCase):
           file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository',
           exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
-    @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin', 
+    @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           expfile='testSimple_lfilelist', text='an error occured', code=500)
     def test_commitfilelist_error(self):
         """commit modified file but when committing the filelist the server returns status 500 (see ticket #65)"""
