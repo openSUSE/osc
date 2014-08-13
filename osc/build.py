@@ -53,20 +53,20 @@ qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el',
         ]
 
 can_also_build = {
-             'aarch64':['aarch64'], # only needed due to used heuristics in build parameter evaluation
-             'armv6l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
-             'armv7l' :[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ],
-             'armv5el':[                                         'armv4l', 'armv5l', 'armv5el'                                  ], # not existing arch, just for compatibility
-             'armv6el':[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ], # not existing arch, just for compatibility
-             'armv6hl':[                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
-             'armv7el':[                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ], # not existing arch, just for compatibility
-             'armv7hl':[                        'armv7hl'                                                             ], # not existing arch, just for compatibility
-             'armv8el':[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
-             'armv8l' :[                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
-             'armv5tel':[                                        'armv4l', 'armv5el',                                 'armv5tel' ], 
+             'aarch64': ['aarch64'], # only needed due to used heuristics in build parameter evaluation
+             'armv6l': [                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
+             'armv7l': [                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ],
+             'armv5el': [                                         'armv4l', 'armv5l', 'armv5el'                                  ], # not existing arch, just for compatibility
+             'armv6el': [                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ], # not existing arch, just for compatibility
+             'armv6hl': [                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
+             'armv7el': [                                         'armv4l', 'armv5l', 'armv6l', 'armv7l', 'armv5el', 'armv6el', 'armv7el'            ], # not existing arch, just for compatibility
+             'armv7hl': [                        'armv7hl'                                                             ], # not existing arch, just for compatibility
+             'armv8el': [                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
+             'armv8l': [                                         'armv4l', 'armv5el', 'armv6el', 'armv7el', 'armv8el' ], # not existing arch, just for compatibility
+             'armv5tel': [                                        'armv4l', 'armv5el',                                 'armv5tel' ], 
              's390x':  ['s390' ],
              'ppc64':  [                        'ppc', 'ppc64', 'ppc64p7', 'ppc64le' ],
-             'ppc64le':[ 'ppc64le' ],
+             'ppc64le': [ 'ppc64le' ],
              'i586':   [                'i386' ],
              'i686':   [        'i586', 'i386' ],
              'x86_64': ['i686', 'i586', 'i386' ],
@@ -386,7 +386,7 @@ def check_trusted_projects(apiurl, projects):
         if not prj in trusted:
             print("\nThe build root needs packages from project '%s'." % prj)
             print("Note that malicious packages can compromise the build result or even your system.")
-            r = raw_input(trustprompt % { 'project':prj })
+            r = raw_input(trustprompt % { 'project': prj })
             if r == '1':
                 print("adding '%s' to ~/.oscrc: ['%s']['trusted_prj']" % (prj, apiurl))
                 trusted.append(prj)
@@ -879,7 +879,7 @@ def main(apiurl, opts, argv):
                    if not m:
                        # short path without obs instance name
                        m = re.match(r"obs://([^/]+)/(.+)", xml.find('source').get('path'))
-                   project=m.group(1).replace(":",":/")
+                   project=m.group(1).replace(":", ":/")
                    repo=m.group(2)
                    buildargs.append('--kiwi-parameter')
                    buildargs.append('--add-repo')

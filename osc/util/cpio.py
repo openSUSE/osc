@@ -64,7 +64,7 @@ class CpioHdr:
         self.namesize = namesize
         # != 0 indicates CRC format (which we do not support atm)
         self.checksum = checksum
-        for k,v in self.__dict__.items():
+        for k, v in self.__dict__.items():
             self.__dict__[k] = int(v, 16)
         self.filename = filename
         # data starts at dataoff and ends at dataoff+filesize
@@ -82,7 +82,7 @@ class CpioRead:
 
     # supported formats - use name -> mgc mapping to increase readabilty
     sfmt = {
-             'newascii' : '070701',
+             'newascii': '070701',
            }
 
     # header format

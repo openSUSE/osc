@@ -1263,7 +1263,7 @@ def _format_linedata(linedata, indent, indent_width):
     SPACING = 3
     MAX_NAME_WIDTH = 15
 
-    NAME_WIDTH = min(max([len(s) for s,d in linedata]), MAX_NAME_WIDTH)
+    NAME_WIDTH = min(max([len(s) for s, d in linedata]), MAX_NAME_WIDTH)
     DOC_WIDTH = WIDTH - NAME_WIDTH - SPACING
     for namestr, doc in linedata:
         line = indent + namestr
