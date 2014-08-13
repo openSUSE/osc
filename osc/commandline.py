@@ -1412,7 +1412,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.diff:
             run_pager(rdiff)
         else:
-            reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new','review'])
+            reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new', 'review'])
             user = conf.get_apiurl_usr(apiurl)
             myreqs = [ i for i in reqs if i.state.who == user ]
             repl = 'y'
@@ -1561,7 +1561,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package =  """package="%s" """ % (args[2])
 
         if user.startswith('group:'):
-            group = user.replace('group:','')
+            group = user.replace('group:', '')
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <group name="%s" /> </action> """ % \
                     (project, package, group)
             if get_group(apiurl, group) == None:
@@ -1575,7 +1575,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         return actionxml
 
-    @cmdln.option('-a', '--action', action='callback', callback = _actionparser,dest = 'actions',
+    @cmdln.option('-a', '--action', action='callback', callback = _actionparser, dest = 'actions',
                   help='specify action type of a request, can be : submit/delete/change_devel/add_role/set_bugowner')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
@@ -1804,7 +1804,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if package is not None:
                 footer = textwrap.TextWrapper(width = 66).fill(
                          'please explain why you like to delete package %s of project %s'
-                          % (package,project))
+                          % (package, project))
             else:
                 footer = textwrap.TextWrapper(width = 66).fill(
                          'please explain why you like to delete project %s' % project)
@@ -1856,7 +1856,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             import textwrap
             footer = textwrap.TextWrapper(width = 66).fill(
                      'please explain why you like to change the devel project of %s/%s to %s/%s'
-                     % (project,package,devel_project,devel_package))
+                     % (project, package, devel_project, devel_package))
             opts.message = edit_message(footer)
 
         r = Request()
@@ -2015,11 +2015,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         cmds = ['list', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co']
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
-                                               % (args[0],', '.join(cmds)))
+                                               % (args[0], ', '.join(cmds)))
         cmds = ['show', 'list', 'add', 'decline', 'accept', 'reopen', 'supersede']
         if subcmd == 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown review action %s. Choose one of %s.' \
-                                               % (args[0],', '.join(cmds)))
+                                               % (args[0], ', '.join(cmds)))
 
         cmd = args[0]
         del args[0]
@@ -5684,7 +5684,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 hostprefer = os.path.join(
                         hostpath,
                         basename,
-                        "%s__" % (long_name.replace('-','_')),
+                        "%s__" % (long_name.replace('-', '_')),
                         os.path.basename(os.path.abspath(pdir)))
                 hostargs.append(long_name)
                 hostargs.append(hostprefer)
@@ -6512,11 +6512,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 requests = []
                 # open reviews
                 u = makeurl(apiurl, ['request'], {
-                    'view' : 'collection',
+                    'view': 'collection',
                     'states': 'review',
                     'reviewstates': 'new',
                     'roles': 'reviewer',
-                    'user' : user,
+                    'user': user,
                     })
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
@@ -6529,10 +6529,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print("")
                 # open requests
                 u = makeurl(apiurl, ['request'], {
-                    'view' : 'collection',
+                    'view': 'collection',
                     'states': 'new',
                     'roles': 'maintainer',
-                    'user' : user,
+                    'user': user,
                     })
                 f = http_GET(u)
                 root = ET.parse(f).getroot()
@@ -6545,10 +6545,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print("")
                 # declined requests submitted by me
                 u = makeurl(apiurl, ['request'], {
-                    'view' : 'collection',
+                    'view': 'collection',
                     'states': 'declined',
                     'roles': 'creator',
-                    'user' : user,
+                    'user': user,
                     })
                 f = http_GET(u)
                 root = ET.parse(f).getroot()

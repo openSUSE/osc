@@ -4171,7 +4171,7 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
     reqs = get_exact_request_list(apiurl, src_project, dst_project,
                                   src_package, dst_package,
                                   req_type='submit',
-                                  req_state=['new','review', 'declined'])
+                                  req_state=['new', 'review', 'declined'])
     repl = ''
     if reqs:
         print('There are already the following submit request: %s.' % \
@@ -4238,7 +4238,7 @@ def download(url, filename, progress_obj = None, mtime = None):
         try:
             o = os.fdopen(fd, 'wb')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
-                o.write(bytes(buf,"utf-8"))
+                o.write(bytes(buf, "utf-8"))
             o.close()
             os.rename(tmpfile, filename)
         except:
@@ -5069,12 +5069,12 @@ def get_distibutions(apiurl, discon=False):
         for node in root.findall('entry'):
             if node.get('name').startswith('DISCONTINUED:'):
                 rmap = {}
-                rmap['name'] = node.get('name').replace('DISCONTINUED:','').replace(':', ' ')
+                rmap['name'] = node.get('name').replace('DISCONTINUED:', '').replace(':', ' ')
                 rmap['project'] = node.get('name')
                 r.append (result_line_templ % rmap)
 
-        r.insert(0,'distribution              project')
-        r.insert(1,'------------              -------')
+        r.insert(0, 'distribution              project')
+        r.insert(1, '------------              -------')
 
     else:
         result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
@@ -5093,8 +5093,8 @@ def get_distibutions(apiurl, discon=False):
                 rmap['reponame'] = node5.text
             r.append(result_line_templ % rmap)
 
-        r.insert(0,'distribution              project                   repository                reponame')
-        r.insert(1,'------------              -------                   ----------                --------')
+        r.insert(0, 'distribution              project                   repository                reponame')
+        r.insert(1, '------------              -------                   ----------                --------')
 
     return r
 
@@ -5606,7 +5606,7 @@ def get_source_rev(apiurl, project, package, revision=None):
     # CAUTION: We have to loop through all rev and find the highest one, if none given.
 
     if revision:
-        url = makeurl(apiurl, ['source', project, package, '_history'], {'rev':revision})
+        url = makeurl(apiurl, ['source', project, package, '_history'], {'rev': revision})
     else:
         url = makeurl(apiurl, ['source', project, package, '_history'])
     f = http_GET(url)
@@ -5619,7 +5619,7 @@ def get_source_rev(apiurl, project, package, revision=None):
         elif ent.find('time').text < new.find('time').text:
             ent = new
     if not ent:
-        return { 'version': None, 'error':'empty revisionlist: no such package?' }
+        return { 'version': None, 'error': 'empty revisionlist: no such package?' }
     e = {}
     for k in ent.keys():
         e[k] = ent.get(k)
@@ -6312,7 +6312,7 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
                        template_args=None,
                        create_new=False)
     if user.startswith('group:'):
-        group=user.replace('group:','')
+        group=user.replace('group:', '')
         user=None
     if data:
         root = ET.fromstring(''.join(data))
