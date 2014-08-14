@@ -516,7 +516,7 @@ class RawCmdln(cmd.Cmd):
         elif line[0] == '?':
             line = 'help ' + line[1:]
         i, n = 0, len(line)
-        while i < n and line[i] in self.identchars: 
+        while i < n and line[i] in self.identchars:
             i = i+1
         cmd, arg = line[:i], line[i:].strip()
         return cmd, arg, line
@@ -574,7 +574,7 @@ class RawCmdln(cmd.Cmd):
             doc = self.__class__.__doc__  # try class docstring
             if doc is None:
                 # Try to provide some reasonable useful default help.
-                if self.cmdlooping: 
+                if self.cmdlooping:
                     prefix = ""
                 else:
                     prefix = self.name+' '
@@ -739,7 +739,7 @@ class RawCmdln(cmd.Cmd):
         token2canonical = self._get_canonical_map()
         aliases = {}
         for token, cmdname in token2canonical.items():
-            if token == cmdname: 
+            if token == cmdname:
                 continue
             aliases.setdefault(cmdname, []).append(token)
 
@@ -803,7 +803,7 @@ class RawCmdln(cmd.Cmd):
         helpnames = {}
         token2cmdname = self._get_canonical_map()
         for attr in self.get_names():
-            if not attr.startswith("help_"): 
+            if not attr.startswith("help_"):
                 continue
             helpname = attr[5:]
             if helpname not in token2cmdname:
@@ -854,9 +854,9 @@ class RawCmdln(cmd.Cmd):
 
         # Adjust argcount for possible *args and **kwargs arguments.
         argcount = co_argcount
-        if co_flags & CO_FLAGS_ARGS:   
+        if co_flags & CO_FLAGS_ARGS:
             argcount += 1
-        if co_flags & CO_FLAGS_KWARGS: 
+        if co_flags & CO_FLAGS_KWARGS:
             argcount += 1
 
         # Determine the usage string.
@@ -937,9 +937,9 @@ class RawCmdln(cmd.Cmd):
             token2canonical = {}
             cmd2funcname = {} # use a dict to strip duplicates
             for attr in self.get_names():
-                if attr.startswith("do_"):    
+                if attr.startswith("do_"):
                     cmdname = attr[3:]
-                elif attr.startswith("_do_"): 
+                elif attr.startswith("_do_"):
                     cmdname = attr[4:]
                 else:
                     continue
@@ -1371,12 +1371,12 @@ def line2argv(line):
     i = -1
     while True:
         i += 1
-        if i >= len(line): 
+        if i >= len(line):
             break
         ch = line[i]
 
         if ch == "\\": # escaped char always added to arg, regardless of state
-            if arg is None: 
+            if arg is None:
                 arg = ""
             i += 1
             arg += line[i]
@@ -1394,11 +1394,11 @@ def line2argv(line):
                 arg += ch
         elif state == "default":
             if ch == '"':
-                if arg is None: 
+                if arg is None:
                     arg = ""
                 state = "double-quoted"
             elif ch == "'":
-                if arg is None: 
+                if arg is None:
                     arg = ""
                 state = "single-quoted"
             elif ch in string.whitespace:
@@ -1406,7 +1406,7 @@ def line2argv(line):
                     argv.append(arg)
                 arg = None
             else:
-                if arg is None: 
+                if arg is None:
                     arg = ""
                 arg += ch
     if arg is not None:
@@ -1485,7 +1485,7 @@ def _dedentlines(lines, tabsize=8, skip_first_line=False):
                 break
         else:
             continue # skip all-whitespace lines
-        if DEBUG: 
+        if DEBUG:
             print("dedent: indent=%d: %r" % (indent, line))
         if margin is None:
             margin = indent
@@ -1496,7 +1496,7 @@ def _dedentlines(lines, tabsize=8, skip_first_line=False):
 
     if margin is not None and margin > 0:
         for i, line in enumerate(lines):
-            if i == 0 and skip_first_line: 
+            if i == 0 and skip_first_line:
                 continue
             removed = 0
             for j, ch in enumerate(line):
@@ -1505,7 +1505,7 @@ def _dedentlines(lines, tabsize=8, skip_first_line=False):
                 elif ch == '\t':
                     removed += tabsize - (removed % tabsize)
                 elif ch in '\r\n':
-                    if DEBUG: 
+                    if DEBUG:
                         print("dedent: %r: EOL -> strip up to EOL" % line)
                     lines[i] = lines[i][j:]
                     break

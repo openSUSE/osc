@@ -90,7 +90,7 @@ class Checker:
 
     def check(self, pkg):
         # avoid errors on non rpm
-        if pkg[-4:] != '.rpm': 
+        if pkg[-4:] != '.rpm':
             return
         fd = None
         try:

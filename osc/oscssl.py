@@ -271,7 +271,7 @@ class myProxyHTTPSConnection(M2Crypto.httpslib.ProxyHTTPSConnection, HTTPSConnec
     def endheaders(self, *args, **kwargs):
         if self._proxy_auth is None:
             self._proxy_auth = self._encode_auth()
-        HTTPSConnection.endheaders(self, *args, **kwargs)        
+        HTTPSConnection.endheaders(self, *args, **kwargs)
 
     # broken in m2crypto: port needs to be an int
     def putrequest(self, method, url, skip_host=0, skip_accept_encoding=0):

@@ -407,7 +407,7 @@ class Serviceinfo:
 
                 if r != 0:
                     print("Aborting: service call failed: " + cmd)
-                    # FIXME: addDownloadUrlService calls si.execute after 
+                    # FIXME: addDownloadUrlService calls si.execute after
                     #        updating _services.
                     return r
 
@@ -871,7 +871,7 @@ class Project:
                             if needs_update:
                                 rev = p.latest_rev()
                         elif p.hasserviceinfo() and p.serviceinfo.isexpanded() and not service_files:
-                            # FIXME: currently, do_update does not propagate the --server-side-source-service-files 
+                            # FIXME: currently, do_update does not propagate the --server-side-source-service-files
                             # option to this method. Consequence: an expanded service is always unexpanded during
                             # an update (TODO: discuss if this is a reasonable behavior (at least this the default
                             # behavior for a while))
@@ -2109,7 +2109,7 @@ rev: %s
                 # this false-positives (patch was already sent to the ml) (but this also
                 # requires some slight changes in osc)
                 return sinfo.get('srcmd5') != self.srcmd5
-            elif self.hasserviceinfo(): 
+            elif self.hasserviceinfo():
                 # check if we have expanded or unexpanded services
                 if self.serviceinfo.isexpanded():
                     return sinfo.get('lsrcmd5') != self.srcmd5
@@ -2792,7 +2792,7 @@ class Request:
             if review.by_group:
                 d['by'] = "Group: " + review.by_group
             if review.by_package:
-                d['by'] = "Package: " + review.by_project + "/" + review.by_package 
+                d['by'] = "Package: " + review.by_project + "/" + review.by_package
             elif review.by_project:
                 d['by'] = "Project: " + review.by_project
             d['when'] = review.when or ''
@@ -3970,7 +3970,7 @@ def change_request_state_template(req, newstate):
     action = req.actions[0]
     tmpl_name = '%srequest_%s_template' % (action.type, newstate)
     tmpl = conf.config.get(tmpl_name, '')
-    tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')    
+    tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')
     data = {'reqid': req.reqid, 'type': action.type, 'who': req.get_creator()}
     if req.actions[0].type == 'submit':
         data.update({'src_project': action.src_project,
@@ -4556,13 +4556,13 @@ def checkout_package(apiurl, project, package,
                 # if we are in a package dir, goto parent.
                 # Hmm, with 'checkout_no_colon' in effect, we have directory levels that
                 # do not easily reveal the fact, that they are part of a project path.
-                # At least this test should find that the parent of 'home/username/branches' 
+                # At least this test should find that the parent of 'home/username/branches'
                 #  is a project (hack alert). Also goto parent in this case.
                 root_dots = "../"
             elif is_project_dir("../.."):
                 # testing two levels is better than one.
-                # May happen in case of checkout_no_colon, or 
-                # if project roots were previously inconsistent 
+                # May happen in case of checkout_no_colon, or
+                # if project roots were previously inconsistent
                 root_dots = "../../"
             if is_project_dir(root_dots):
                 if conf.config['checkout_no_colon']:
@@ -6967,7 +6967,7 @@ def find_default_project(apiurl=None, package=None):
             # any fast query will do here.
             show_package_meta(apiurl, prj, package)
             return prj
-        except HTTPError: 
+        except HTTPError:
             pass
     return None
 

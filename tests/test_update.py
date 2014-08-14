@@ -70,7 +70,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/conflict/_meta', file='meta.xml')
     def testUpdateConflict(self):
         """
-        a file was modified in the remote package (local file is also modified 
+        a file was modified in the remote package (local file is also modified
         and a merge isn't possible)
         """
         self._change_to_pkg('conflict')
