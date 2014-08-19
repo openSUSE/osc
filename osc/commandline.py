@@ -1697,13 +1697,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: requests to add user as maintainer or bugowner
 
         usage:
-            osc requestmaintainership                           # for current user in checked out package
-            osc requestmaintainership USER                      # for specified user in checked out package
-            osc requestmaintainership PROJECT                   # for current user if cwd is not a checked out package
-            osc requestmaintainership PROJECT PACKAGE           # for current user
-            osc requestmaintainership PROJECT PACKAGE USER      # request for specified user
+            osc requestmaintainership                            # for current user in checked out package
+            osc requestmaintainership USER                       # for specified user in checked out package
+            osc requestmaintainership PROJECT                    # for current user if cwd is not a checked out package
+            osc requestmaintainership PROJECT PACKAGE            # for current user
+            osc requestmaintainership PROJECT PACKAGE USER       # request for specified user
+            osc requestmaintainership PROJECT PACKAGE group:NAME # request for specified group
            
-            osc requestbugownership ...                         # accepts same parameters but uses bugowner role
+            osc requestbugownership ...                          # accepts same parameters but uses bugowner role 
 
         ${cmd_option_list}
         """
@@ -1744,7 +1745,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.message = edit_message()
 
         r = Request()
-        if role == 'bugowner':
+        if user.startswith('group:'):
+           group = user.replace('group:', '')
+           if role == 'bugowner':
+               r.add_action('set_bugowner', tgt_project=project, tgt_package=package,
+                 group_name=group)
+           else:
+               r.add_action('add_role', tgt_project=project, tgt_package=package,
+                 group_name=group, group_role=role)
+        elif role == 'bugowner':
             r.add_action('set_bugowner', tgt_project=project, tgt_package=package,
               person_name=user)
         else:
