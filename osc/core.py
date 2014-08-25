@@ -3983,7 +3983,7 @@ def change_request_state_template(req, newstate):
         print('error: cannot interpolate \'%s\' in \'%s\'' % (e.args[0], tmpl_name), file=sys.stderr)
         return ''
 
-def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=('new')):
+def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=()):
     # this is so ugly...
     def build_by(xpath, val):
         if 'all' in states:
@@ -3994,16 +3994,16 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
                 s_xp = xpath_join(s_xp, '@state=\'%s\'' % state, inner=True)
             val = val.strip('[').strip(']')
             return xpath_join(xpath, 'review[%s and (%s)]' % (val, s_xp), op='and')
+        else:
+            # default case
+            return xpath_join(xpath, 'review[%s and @state=\'new\']' % val, op='and')
         return ''
 
     xpath = ''
-    xpath = xpath_join(xpath, 'state/@name=\'review\'', inner=True)
-    if not 'all' in states:
-        for state in states:
-            xpath = xpath_join(xpath, 'review/@state=\'%s\'' % state, inner=True)
-    if byuser or bygroup or bypackage or byproject:
-        # discard constructed xpath...
-        xpath = xpath_join('', 'state/@name=\'review\'', inner=True)
+    if states == ():
+        # default: requests which are still open and have reviews in "new" state
+        xpath = xpath_join('', 'state/@name=\'review\'', op='and')
+        xpath = xpath_join(xpath, 'review/@state=\'new\'', op='and')
     if byuser:
         xpath = build_by(xpath, '@by_user=\'%s\'' % byuser)
     if bygroup:

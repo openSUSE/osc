@@ -2015,7 +2015,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.state == '':
                 opts.state = 'all'
 
-        if opts.state == '':
+        if opts.state == '' and subcmd != 'review':
             opts.state = 'declined,new,review'
 
         if args[0] == 'help':
@@ -2115,12 +2115,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 results = get_request_list(apiurl, project, package, '', ['new'])
             else:
                 state_list = opts.state.split(',')
+                if state_list == ['']:
+                    state_list = ()
                 if opts.all:
-                    state_list = ['all']
-                if subcmd == 'review':
-                    # is there a special reason why we do not respect the passed states?
-                    state_list = ['new']
-                elif opts.state == 'all':
                     state_list = ['all']
                 else:
                     for s in state_list:
