@@ -1,5 +1,13 @@
 0.147
   - support groups in maintainership requests
+  - fixing listing of review requests
+  - support expanded package listing (when using project links)
+  - fixing "osc add git://" behaviour
+  - using xz as default compression
+  - support local debian live (image) build format
+  - handle ppc64le for debian as well
+  - fix buildlog --strip-time
+  - some more minor bugfixes
 
 0.146
   - support maintenance release request with acceptinfo data (OBS 2.6)
