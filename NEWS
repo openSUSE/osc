@@ -11,6 +11,7 @@
   - handle ppc64le for debian as well
   - fix buildlog --strip-time
   - some more minor bugfixes
+  - speedup update of a project working copy (in some cases)
 
 0.146
   - support maintenance release request with acceptinfo data (OBS 2.6)
