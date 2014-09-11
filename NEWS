@@ -3,6 +3,7 @@
   - display request priorities, if important or critical
   - add "osc rq priorize" command to re-priorize existing requests
   - allow also "osc rq ls" shortcut
+  - fish shell completion support
 
 0.147
   - support groups in maintainership requests
