@@ -4,8 +4,12 @@
     <person name="buguser" />
   </action>
   <state name="accepted" when="2010-12-29T16:37:45" who="foobar" />
-  <history name="new" when="2010-12-28T16:37:45" who="user" />
-  <history name="review" when="2010-12-28T18:37:45" who="foobar" />
+  <history when="2010-12-28T16:37:45" who="user" >
+    <description>Created Request</description>
+  </history>
+  <history when="2010-12-28T18:37:45" who="foobar" >
+    <description>Review Approved</description>
+  </history>
   <description>This is
 a simple request with a lot of ... ... text and other stuff. This request also contains a
 description. This is useful to

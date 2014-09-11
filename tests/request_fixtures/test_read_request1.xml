@@ -7,7 +7,8 @@
     <target project="deleteme" />
   </action>
   <state name="accepted" when="2010-12-27T01:36:29" who="user1" />
-  <history name="new" when="2010-12-13T13:02:03" who="creator">
+  <history when="2010-12-13T13:02:03" who="creator">
+    <description>Create Request</description>
     <comment>foobar</comment>
   </history>
   <title>title of the request</title>
