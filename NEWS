@@ -1,5 +1,8 @@
 0.148
   - support new history including review history of OBS 2.6
+  - display request priorities, if important or critical
+  - add "osc rq priorize" command to re-priorize existing requests
+  - allow also "osc rq ls" shortcut
 
 0.147
   - support groups in maintainership requests

@@ -2581,6 +2581,7 @@ class Request:
         self.reqid = None
         self.title = ''
         self.description = ''
+        self.priority = None
         self.state = None
         self.accept_at = None
         self.actions = []
@@ -2608,6 +2609,8 @@ class Request:
             self.reviews.append(ReviewState(review))
         for history_element in root.findall('history'):
             self.statehistory.append(RequestHistory(history_element))
+        if not root.find('priority') is None:
+            self.priority = root.find('priority').text.strip()
         if not root.find('accept_at') is None and root.find('accept_at').text:
             self.accept_at = root.find('accept_at').text.strip()
         if not root.find('title') is None:
@@ -2653,6 +2656,8 @@ class Request:
             ET.SubElement(root, 'description').text = self.description
         if self.accept_at:
             ET.SubElement(root, 'accept_at').text = self.accept_at
+        if self.priority:
+            ET.SubElement(root, 'priority').text = self.priority
         return root
 
     def to_str(self):
@@ -2779,7 +2784,7 @@ class Request:
         tmpl = '        Review by %(type)-10s is %(state)-10s %(by)-50s'
         for review in self.reviews:
             lines.append(tmpl % Request.format_review(review))
-        history = ['%s(%s)' % (hist.name, hist.who) for hist in self.statehistory]
+        history = ['%s: %s' % (hist.description, hist.who) for hist in self.statehistory]
         if history:
             lines.append('        From: %s' % ' -> '.join(history))
         if self.description:
@@ -2794,6 +2799,8 @@ class Request:
         lines = ['Request: #%s\n' % self.reqid]
         if self.accept_at and self.state.name in [ 'new', 'review' ]:
             lines.append('    *** This request will get automatically accepted after '+self.accept_at+' ! ***\n')
+        if self.priority in [ 'critical', 'important' ] and self.state.name in [ 'new', 'review' ]:
+            lines.append('    *** This request has classified as '+self.priority+' ! ***\n')
             
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
