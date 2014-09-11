@@ -342,7 +342,6 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.state.when, '2010-12-27T01:36:29')
         self.assertEqual(r.state.who, 'user1')
         self.assertEqual(r.state.comment, '')
-        self.assertEqual(r.statehistory[0].name, 'new')
         self.assertEqual(r.statehistory[0].when, '2010-12-13T13:02:03')
         self.assertEqual(r.statehistory[0].who, 'creator')
         self.assertEqual(r.statehistory[0].comment, 'foobar')
@@ -382,7 +381,6 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.reviews[0].who, 'abc')
         self.assertEqual(r.reviews[0].comment, 'review start')
         self.assertTrue(r.reviews[0].by_user is None)
-        self.assertEqual(r.statehistory[0].name, 'new')
         self.assertEqual(r.statehistory[0].when, '2010-12-11T00:00:00')
         self.assertEqual(r.statehistory[0].who, 'creator')
         self.assertEqual(r.statehistory[0].comment, '')
@@ -455,7 +453,7 @@ class TestRequest(OscTestCase):
         exp = """\
     21  State:accepted   By:foobar       When:2010-12-29T16:37:45
         set_bugowner:    buguser                                            foo
-        From: new(user) -> review(foobar)
+        From: Created Request: user -> Review Approved: foobar
         Descr: This is a simple request with a lot of ... ... text and other
                stuff. This request also contains a description. This is useful
                to describe the request. blabla blabla\n"""
@@ -488,8 +486,8 @@ Comment: currently in review
 Review:  accepted   Group: group1                                      2010-12-29T00:11:22 abc                   accepted
          new        Group: group1                                      2010-12-28T00:11:22 abc                   review start
 
-History: revoked    2010-12-12T00:00:00 creator
-         new        2010-12-11T00:00:00 creator"""
+History: 2010-12-12T00:00:00 creator      revoked
+         2010-12-11T00:00:00 creator      new"""
         self.assertEqual(exp, str(r))
 
     def test_request_str2(self):

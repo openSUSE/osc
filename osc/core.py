@@ -2357,6 +2357,10 @@ class AbstractState:
         """return data from <comment /> tag"""
         raise NotImplementedError()
 
+    def get_description(self):
+        """return data from <description /> tag"""
+        raise NotImplementedError()
+
     def to_xml(self):
         """serialize object to XML"""
         root = ET.Element(self.get_node_name())
@@ -2364,6 +2368,8 @@ class AbstractState:
             val = getattr(self, attr)
             if not val is None:
                 root.set(attr, val)
+        if self.get_description():
+            ET.SubElement(root, 'description').text = self.get_description()
         if self.get_comment():
             ET.SubElement(root, 'comment').text = self.get_comment()
         return root
@@ -2400,6 +2406,9 @@ class ReviewState(AbstractState):
     def get_comment(self):
         return self.comment
 
+    def get_description(self):
+        return None
+
 
 class RequestHistory(AbstractState):
     """Represents a history element of a request"""
@@ -2420,7 +2429,10 @@ class RequestHistory(AbstractState):
             self.comment = history_node.find('comment').text.strip()
 
     def get_node_attrs(self):
-        return ('who', 'when', 'description')
+        return ('who', 'when')
+
+    def get_description(self):
+        return self.description
 
     def get_comment(self):
         return self.comment
@@ -2449,6 +2461,9 @@ class RequestState(AbstractState):
 
     def get_comment(self):
         return self.comment
+
+    def get_description(self):
+        return None
 
 
 class Action:
