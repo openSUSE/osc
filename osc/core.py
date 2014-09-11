@@ -2401,6 +2401,31 @@ class ReviewState(AbstractState):
         return self.comment
 
 
+class RequestHistory(AbstractState):
+    """Represents a history element of a request"""
+    def __init__(self, history_node):
+        AbstractState.__init__(self, history_node.tag)
+        self.who = history_node.get('who')
+        self.when = history_node.get('when')
+        if not history_node.find('description') is None and \
+            history_node.find('description').text:
+            # OBS 2.6
+            self.description = history_node.find('description').text.strip()
+        else:
+            # OBS 2.5 and before
+            self.description = history_node.get('name')
+        self.comment = ''
+        if not history_node.find('comment') is None and \
+            history_node.find('comment').text:
+            self.comment = history_node.find('comment').text.strip()
+
+    def get_node_attrs(self):
+        return ('who', 'when', 'description')
+
+    def get_comment(self):
+        return self.comment
+
+
 class RequestState(AbstractState):
     """Represents the state of a request"""
     def __init__(self, state_node):
@@ -2411,6 +2436,9 @@ class RequestState(AbstractState):
         self.name = state_node.get('name')
         self.who = state_node.get('who')
         self.when = state_node.get('when')
+        if state_node.find('description') is None:
+            # OBS 2.6 has it always, before it did not exist
+            self.description = state_node.get('description')
         self.comment = ''
         if not state_node.find('comment') is None and \
             state_node.find('comment').text:
@@ -2578,8 +2606,8 @@ class Request:
             self.actions.append(Action.from_xml(action))
         for review in root.findall('review'):
             self.reviews.append(ReviewState(review))
-        for hist_state in root.findall('history'):
-            self.statehistory.append(RequestState(hist_state))
+        for history_element in root.findall('history'):
+            self.statehistory.append(RequestHistory(history_element))
         if not root.find('accept_at') is None and root.find('accept_at').text:
             self.accept_at = root.find('accept_at').text.strip()
         if not root.find('title') is None:
@@ -2802,11 +2830,10 @@ class Request:
         if reviews:
             lines.append('\nReview:  %s' % indent.join(reviews))
 
-        tmpl = '%(name)-10s %(when)-12s %(who)s'
+        tmpl = '%(when)-10s %(who)-12s %(desc)s'
         histories = []
         for hist in reversed(self.statehistory):
-            d = {'name': hist.name, 'when': hist.when,
-                'who': hist.who}
+            d = {'when': hist.when, 'who': hist.who, 'desc': hist.description}
             histories.append(tmpl % d)
         if histories:
             lines.append('\nHistory: %s' % indent.join(histories))
@@ -3921,7 +3948,7 @@ def create_submit_request(apiurl,
 
 
 def get_request(apiurl, reqid):
-    u = makeurl(apiurl, ['request', reqid])
+    u = makeurl(apiurl, ['request', reqid], {'withfullhistory': '1'})
     f = http_GET(u)
     root = ET.parse(f).getroot()
 
