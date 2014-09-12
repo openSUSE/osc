@@ -2624,7 +2624,7 @@ class Request:
             self.reviews.append(ReviewState(review))
         for history_element in root.findall('history'):
             self.statehistory.append(RequestHistory(history_element))
-        if not root.find('priority') is None:
+        if not root.find('priority') is None and root.find('priority').text:
             self.priority = root.find('priority').text.strip()
         if not root.find('accept_at') is None and root.find('accept_at').text:
             self.accept_at = root.find('accept_at').text.strip()
