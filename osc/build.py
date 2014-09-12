@@ -181,7 +181,7 @@ class Pac:
         for i in ['binary', 'package',
                   'epoch', 'version', 'release',
                   'project', 'repository',
-                  'preinstall', 'vminstall', 'noinstall', 'installonly', 'runscripts',
+                  'preinstall', 'vminstall', 'noinstall', 'notmeta', 'installonly', 'runscripts',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -802,6 +802,8 @@ def main(apiurl, opts, argv):
             shutil.rmtree('repos')
         os.mkdir('repos')
         for i in bi.deps:
+            if i.notmeta:
+                continue
             if not i.extproject:
                 # remove
                 bi.deps.remove(i)
