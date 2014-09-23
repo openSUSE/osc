@@ -1331,7 +1331,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            (project, p, t, p, options_block)
                     actionxml += s
 
-            return actionxml
+            return actionxml, []
 
         elif len(args) <= 2:
             # try using the working copy at hand
@@ -1389,7 +1389,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new', 'review'])
         user = conf.get_apiurl_usr(apiurl)
-        myreqs = [ i for i in reqs if i.state.who == user ]
+        myreqs = [ i for i in reqs if i.state.who == user and i.reqid != opts.supersede ]
         repl = 'y'
         if len(myreqs) > 0 and not opts.yes:
             print('You already created the following submit request: %s.' % \
@@ -1398,19 +1398,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if repl.lower() == 'c':
                 print('Aborting', file=sys.stderr)
                 sys.exit(1)
+            elif repl.lower() != 'y':
+                myreqs = []
 
         actionxml = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
                 (src_project, src_package, opts.revision or show_upstream_rev(apiurl, src_project, src_package), dst_project, dst_package, options_block)
-        if repl.lower() == 'y':
-            for req in myreqs:
-                change_request_state(apiurl, req.reqid, 'superseded',
-                                     'superseded by %s' % result, result)
-
         if opts.supersede:
-            change_request_state(apiurl, opts.supersede, 'superseded',  '', result)
+            myreqs.append(opts.supersede)
 
         #print 'created request id', result
-        return actionxml
+        return actionxml, myreqs
 
     def _delete_request(self, args, opts):
         if len(args) < 1:
@@ -1610,11 +1607,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         
         i = 0
         actionsxml = ""
+        supersede = []
         for ai in opts.actions:
             if ai == 'submit':
                 args = opts.actiondata[i]
                 i = i+1
-                actionsxml += self._submit_request(args, opts, options_block)
+                actions, to_supersede = self._submit_request(args, opts, options_block)
+                actionsxml += actions
+                supersede.extend(to_supersede)
             elif ai == 'delete':
                 args = opts.actiondata[i]
                 actionsxml += self._delete_request(args, opts)
@@ -1654,7 +1654,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         f = http_POST(u, data=xml)
 
         root = ET.parse(f).getroot()
-        return root.get('id')
+        rid = root.get('id')
+        for srid in supersede:
+            change_request_state(apiurl, srid, 'superseded',
+                                 'superseded by %s' % rid, rid)
+        return rid
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
