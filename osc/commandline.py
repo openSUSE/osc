@@ -1286,7 +1286,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pi = []
             pac = []
             targetprojects = []
-            rdiffmsg = []
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
                 if p.startswith("_patchinfo:"):
@@ -1314,21 +1313,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if rdiff != '':
                             targetprojects.append(t)
                             pac.append(p)
-                            rdiffmsg.append("old: %s/%s\nnew: %s/%s\n%s" % (t, p, project, p, rdiff))
                         else:
                             print("Skipping package ", p,  " since it has no difference with the target package.")
                     else:
                         print("Skipping package ", p,  " since it is a source link pointing inside the project.")
-            if opts.diff:
-                print(''.join(rdiffmsg))
-                sys.exit(0)
-
-                if not opts.yes:
-                    if pi:
-                        print("Submitting patchinfo ", ', '.join(pi), " to ", ', '.join(targetprojects))
-                    print("\nEverything fine? Can we create the requests ? [y/n]")
-                    if sys.stdin.read(1) != "y":
-                        sys.exit("Aborted...")
 
             # loop via all packages to do the action
             for p in pac:
@@ -1397,45 +1385,32 @@ A different project, %s, is defined as the place where development
 of the package %s primarily takes place.
 Please submit there instead, or use --nodevelproject to force direct submission.""" \
                 % (devloc, dst_package))
-                if not opts.diff:
-                    sys.exit(1)
+                sys.exit(1)
 
-        rdiff = None
-        if opts.diff:
-            try:
-                rdiff = 'old: %s/%s\nnew: %s/%s\n' % (dst_project, dst_package, src_project, src_package)
-                rdiff += server_diff(apiurl,
-                                    dst_project, dst_package, opts.revision,
-                                    src_project, src_package, None, True)
-            except:
-                rdiff = ''
-        if opts.diff:
-            run_pager(rdiff)
-        else:
-            reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new', 'review'])
-            user = conf.get_apiurl_usr(apiurl)
-            myreqs = [ i for i in reqs if i.state.who == user ]
-            repl = 'y'
-            if len(myreqs) > 0 and not opts.yes:
-                print('You already created the following submit request: %s.' % \
-                      ', '.join([i.reqid for i in myreqs ]))
-                repl = raw_input('Supersede the old requests? (y/n/c) ')
-                if repl.lower() == 'c':
-                    print('Aborting', file=sys.stderr)
-                    sys.exit(1)
+        reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new', 'review'])
+        user = conf.get_apiurl_usr(apiurl)
+        myreqs = [ i for i in reqs if i.state.who == user ]
+        repl = 'y'
+        if len(myreqs) > 0 and not opts.yes:
+            print('You already created the following submit request: %s.' % \
+                  ', '.join([i.reqid for i in myreqs ]))
+            repl = raw_input('Supersede the old requests? (y/n/c) ')
+            if repl.lower() == 'c':
+                print('Aborting', file=sys.stderr)
+                sys.exit(1)
 
-            actionxml = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
-                    (src_project, src_package, opts.revision or show_upstream_rev(apiurl, src_project, src_package), dst_project, dst_package, options_block)
-            if repl.lower() == 'y':
-                for req in myreqs:
-                    change_request_state(apiurl, req.reqid, 'superseded',
-                                         'superseded by %s' % result, result)
+        actionxml = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
+                (src_project, src_package, opts.revision or show_upstream_rev(apiurl, src_project, src_package), dst_project, dst_package, options_block)
+        if repl.lower() == 'y':
+            for req in myreqs:
+                change_request_state(apiurl, req.reqid, 'superseded',
+                                     'superseded by %s' % result, result)
 
-            if opts.supersede:
-                change_request_state(apiurl, opts.supersede, 'superseded',  '', result)
+        if opts.supersede:
+            change_request_state(apiurl, opts.supersede, 'superseded',  '', result)
 
-            #print 'created request id', result
-            return actionxml
+        #print 'created request id', result
+        return actionxml
 
     def _delete_request(self, args, opts):
         if len(args) < 1:
@@ -1592,8 +1567,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='never remove source package on accept, but update its content')
     @cmdln.option('--no-update', action='store_true',
                   help='never touch source package on accept (will break source links)')
-    @cmdln.option('-d', '--diff', action='store_true',
-                  help='show diff only instead of creating the actual request')
     @cmdln.option('--yes', action='store_true',
                   help='proceed without asking.')
     @cmdln.alias("creq")
