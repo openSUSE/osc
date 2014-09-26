@@ -450,7 +450,7 @@ def _build_opener(url):
 
     # workaround for http://bugs.python.org/issue9639
     authhandler_class = HTTPBasicAuthHandler
-    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1) \
+    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 99) \
         and not 'reset_retry_count' in dir(HTTPBasicAuthHandler):
         print('warning: your urllib2 version seems to be broken. ' \
             'Using a workaround for http://bugs.python.org/issue9639', file=sys.stderr)
