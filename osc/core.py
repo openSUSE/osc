@@ -579,8 +579,6 @@ class Project:
     """
 
     REQ_STOREFILES = ('_project', '_apiurl')
-    if conf.config['do_package_tracking']:
-        REQ_STOREFILES += ('_packages',)
 
     def __init__(self, dir, getPackageList=True, progress_obj=None, wc_check=True):
         """
@@ -641,7 +639,10 @@ class Project:
     def wc_check(self):
         global store
         dirty_files = []
-        for fname in Project.REQ_STOREFILES:
+        req_storefiles = Project.REQ_STOREFILES
+        if conf.config['do_package_tracking']:
+            req_storefiles += ('_packages',)
+        for fname in req_storefiles:
             if not os.path.exists(os.path.join(self.absdir, store, fname)):
                 dirty_files.append(fname)
         return dirty_files
