@@ -6063,7 +6063,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif command == "disabledrun" or command == "dr":
                 mode = "disabled"
 
-        p.run_source_services(mode, singleservice)
+        return p.run_source_services(mode, singleservice)
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='trigger rebuilds for a specific architecture')
