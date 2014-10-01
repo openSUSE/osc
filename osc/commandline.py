@@ -5596,7 +5596,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         import osc.build
 
         if not os.path.exists('/usr/lib/build/debtransform') \
-                and not os.path.exists('/usr/lib/lbuild/debtransform'):
+                and not os.path.exists('/usr/lib/lbuild/debtransform') \
+                and not os.path.exists(os.path.join('/usr/lib/', os.path.basename(conf.config['build-cmd']), 'debtransform')):
             sys.stderr.write('Error: you need build.rpm with version 2007.3.12 or newer.\n')
             sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
             return 1
