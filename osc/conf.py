@@ -172,6 +172,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'maintenance_attribute': 'OBS:MaintenanceProject',
             'maintained_update_project_attribute': 'OBS:UpdateProject',
             'show_download_progress': '0',
+            # path to the vc script
+            'vc-cmd': '/usr/lib/build/vc'
 }
 
 # being global to this module, this dict can be accessed from outside

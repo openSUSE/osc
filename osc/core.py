@@ -7032,4 +7032,17 @@ def utime(filename, arg, ignore_einval=True):
             return
         raise
 
+def which(name):
+    """Searches "name" in PATH."""
+    name = os.path.expanduser(name)
+    if os.path.isabs(name):
+        if os.path.exists(name):
+            return name
+        return None
+    for directory in os.environ.get('PATH', '').split(':'):
+        path = os.path.join(directory, name)
+        if os.path.exists(path):
+            return path
+    return None
+
 # vim: sw=4 et

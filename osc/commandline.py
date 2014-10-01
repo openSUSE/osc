@@ -5595,10 +5595,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         import osc.build
 
-        if not os.path.exists('/usr/lib/build/debtransform') \
-                and not os.path.exists('/usr/lib/lbuild/debtransform'):
-            sys.stderr.write('Error: you need build.rpm with version 2007.3.12 or newer.\n')
-            sys.stderr.write('See http://download.opensuse.org/repositories/openSUSE:/Tools/\n')
+        if which(conf.config['build-cmd']) is None:
+            print('Error: build (\'%s\') command not found' % conf.config['build-cmd'], file=sys.stderr)
+            print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
             return 1
 
         if opts.debuginfo and opts.disable_debuginfo:
@@ -7894,18 +7893,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             except IndexError:
                 pass
 
+        cmd_list = [conf.config['vc-cmd']]
         if meego_style:
             if not os.path.exists('/usr/bin/vc'):
                 print('Error: you need meego-packaging-tools for /usr/bin/vc command', file=sys.stderr)
                 return 1
             cmd_list = ['/usr/bin/vc']
-        else:
-            if not os.path.exists('/usr/lib/build/vc'):
-                print('Error: you need build.rpm with version 2009.04.17 or newer', file=sys.stderr)
-                print('See http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
-                return 1
-
-            cmd_list = ['/usr/lib/build/vc']
+        elif which(cmd_list[0]) is None:
+            print('Error: vc (\'%s\') command not found' % cmd_list[0], file=sys.stderr)
+            print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
+            return 1
 
         # set user's email if no mailaddr exists
         if 'mailaddr' not in os.environ:
