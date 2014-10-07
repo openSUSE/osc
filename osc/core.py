@@ -3956,7 +3956,7 @@ def create_submit_request(apiurl,
             print("WARNING:")
             print("WARNING: Project does not accept submit request, request to open a NEW maintenance incident instead")
             print("WARNING:")
-            xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
+            xpath = 'attribute/@name = \'%s\'' % conf.config['maintenance_attribute']
             res = search(apiurl, project_id=xpath)
             root = res['project_id']
             project = root.find('project')
