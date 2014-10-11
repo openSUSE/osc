@@ -889,7 +889,7 @@ class Project:
                     elif state == 'D':
                         # pac exists (the non-existent pac case was handled in the first if block)
                         p = Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj)
-                        if p.needs_update(sinfos[p.name]):
+                        if p.update_needed(sinfos[p.name]):
                             p.update()
                     elif state == 'A' and pac in self.pacs_available:
                         # file/dir called pac already exists and is under version control
