@@ -273,18 +273,22 @@ class Serviceinfo:
 
         for service in services:
             name = service.get('name')
+            if len(name) < 3 or '/' in name:
+                raise oscerr.APIError("invalid service name")
             mode = service.get('mode', None)
             data = { 'name' : name, 'mode' : '' }
             if mode:
                 data['mode'] = mode
             try:
+                command = [ name ]
                 for param in service.findall('param'):
                     option = param.get('name', None)
                     value = ""
                     if param.text:
                         value = param.text
-                    name += " --" + option + " '" + value + "'"
-                data['command'] = name
+                    command.append("--"+option)
+                    command.append(value)
+                data['command'] = command
                 self.services.append(data)
             except:
                 msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node, encoding=ET_ENCODING)
@@ -372,7 +376,7 @@ class Serviceinfo:
         allservices = self.services or []
         if singleservice and not singleservice in allservices:
             # set array to the manual specified singleservice, if it is not part of _service file
-            data = { 'name' : singleservice, 'command' : singleservice, 'mode' : '' }
+            data = { 'name' : singleservice, 'command' : [ singleservice ], 'mode' : '' }
             allservices = [data]
 
         # set environment when using OBS 2.3 or later
@@ -393,17 +397,17 @@ class Serviceinfo:
                 continue
             if service['mode'] != "trylocal" and service['mode'] != "localonly" and callmode == "trylocal":
                 continue
-            call = service['command']
             temp_dir = None
             try:
                 temp_dir = tempfile.mkdtemp()
-                name = call.split(None, 1)[0]
-                if not os.path.exists("/usr/lib/obs/service/"+name):
-                    raise oscerr.PackageNotInstalled("obs-service-"+name)
-                cmd = "/usr/lib/obs/service/" + call + " --outdir " + temp_dir
+                cmd = service['command']
+                if not os.path.exists("/usr/lib/obs/service/"+cmd[0]):
+                    raise oscerr.PackageNotInstalled("obs-service-%s"%cmd[0])
+                cmd[0] = "/usr/lib/obs/service/"+cmd[0]
+                cmd = cmd + [ "--outdir", temp_dir ]
                 if conf.config['verbose'] > 1 or verbose:
                     print("Run source service:", cmd)
-                r = run_external(cmd, shell=True)
+                r = run_external(*cmd)
 
                 if r != 0:
                     print("Aborting: service call failed: " + cmd)
