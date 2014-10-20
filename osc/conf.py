@@ -513,10 +513,10 @@ def _build_opener(url):
                     capath = i
                     break
         if not cafile and not capath:
-            raise Exception('No CA certificates found')
+            raise oscerr.OscIOError(None, 'No CA certificates found')
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
-            raise Exception('No CA certificates found')
+            raise oscerr.OscIOError(None, 'No CA certificates found')
         opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
         print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
