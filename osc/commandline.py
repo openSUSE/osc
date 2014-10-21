@@ -4271,7 +4271,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for p in pacs:
             todo = list(set(p.filenamelist + p.filenamelist_unvers + p.to_be_added))
             for filename in todo:
-                if os.path.isdir(filename):
+                abs_filename = os.path.join(p.absdir, filename)
+                if os.path.isdir(abs_filename):
                     continue
                 # ignore foo.rXX, foo.mine for files which are in 'C' state
                 if os.path.splitext(filename)[0] in p.in_conflict:
