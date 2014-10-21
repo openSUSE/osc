@@ -4281,6 +4281,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if state == '?':
                     # TODO: should ignore typical backup files suffix ~ or .orig
                     p.addfile(filename)
+                elif state == 'D' and os.path.isfile(abs_filename):
+                    # if the "deleted" file exists in the wc, track it again
+                    p.addfile(filename)
                 elif state == '!':
                     p.delete_file(filename)
                     print(statfrmt('D', getTransActPath(os.path.join(p.dir, filename))))
