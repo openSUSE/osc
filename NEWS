@@ -1,5 +1,8 @@
 0.149
-  -
+  - removed "--diff" option from the "createrequest" command
+  - introduced new "vc-cmd" config option, which is used to specify the path
+    to the vc script
+  - various bugfixes
 
 0.148
   - support new history including review history of OBS 2.6
