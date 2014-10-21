@@ -4269,8 +4269,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = findpacs(args)
         for p in pacs:
-            p.todo = list(set(p.filenamelist + p.filenamelist_unvers + p.to_be_added))
-            for filename in p.todo:
+            todo = list(set(p.filenamelist + p.filenamelist_unvers + p.to_be_added))
+            for filename in todo:
                 if os.path.isdir(filename):
                     continue
                 # ignore foo.rXX, foo.mine for files which are in 'C' state
