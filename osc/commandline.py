@@ -6985,6 +6985,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-X', '-m', '--method', default='GET', metavar='HTTP_METHOD',
                         help='specify HTTP method to use (GET|PUT|DELETE|POST)')
+    @cmdln.option('-e', '--edit', default=None, action='store_true',
+                        help='GET, edit and PUT the location')
     @cmdln.option('-d', '--data', default=None, metavar='STRING',
                         help='specify string data for e.g. POST')
     @cmdln.option('-T', '-f', '--file', default=None, metavar='FILE',
@@ -7005,6 +7007,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Examples:
           osc api /source/home:user
           osc api -X PUT -T /etc/fstab source/home:user/test5/myfstab
+          osc api -e /build/_dispatchprios
 
         ${cmd_usage}
         ${cmd_option_list}
@@ -7032,10 +7035,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          data=opts.data,
                          file=opts.file,
                          headers=opts.headers)
-
         out = r.read()
-        sys.stdout.write(out)
 
+        if opts.edit:
+            text = edit_text(out)
+            r = http_request("PUT",
+                         url,
+                         data=text,
+                         headers=opts.headers)
+            out = r.read()
+
+        sys.stdout.write(out)
 
 
     @cmdln.option('-b', '--bugowner-only', action='store_true',

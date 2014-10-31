@@ -3829,7 +3829,6 @@ def _edit_message_open_editor(filename, data, orig_mtime):
     return os.stat(filename).st_mtime != orig_mtime
 
 def edit_message(footer='', template='', templatelen=30):
-    import tempfile
     delim = '--This line, and those below, will be ignored--\n'
     data = ''
     if template != '':
@@ -3839,13 +3838,19 @@ def edit_message(footer='', template='', templatelen=30):
             if lines[templatelen:]:
                 footer = '%s\n\n%s' % ('\n'.join(lines[templatelen:]), footer)
     data += '\n' + delim + '\n' + footer
+    edit_text(data, delim)
+
+def edit_text(data='', delim=None):
+    import tempfile
     try:
-        (fd, filename) = tempfile.mkstemp(prefix='osc-commitmsg', suffix='.diff')
+        (fd, filename) = tempfile.mkstemp(prefix='osc-editor', suffix='.txt')
         os.close(fd)
         mtime = os.stat(filename).st_mtime
         while True:
             file_changed = _edit_message_open_editor(filename, data, mtime)
-            msg = open(filename).read().split(delim)[0].rstrip()
+            msg = open(filename).read()
+            if delim:
+                msg = msg.split(delim)[0].rstrip()
             if msg and file_changed:
                 break
             else:
