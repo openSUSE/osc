@@ -7007,7 +7007,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Examples:
           osc api /source/home:user
           osc api -X PUT -T /etc/fstab source/home:user/test5/myfstab
-          osc api -e /build/_dispatchprios
+          osc api -e /configuration
 
         ${cmd_usage}
         ${cmd_option_list}
