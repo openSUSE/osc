@@ -3838,12 +3838,12 @@ def edit_message(footer='', template='', templatelen=30):
             if lines[templatelen:]:
                 footer = '%s\n\n%s' % ('\n'.join(lines[templatelen:]), footer)
     data += '\n' + delim + '\n' + footer
-    edit_text(data, delim)
+    edit_text(data, delim, suffix='.diff')
 
-def edit_text(data='', delim=None):
+def edit_text(data='', delim=None, suffix='.txt'):
     import tempfile
     try:
-        (fd, filename) = tempfile.mkstemp(prefix='osc-editor', suffix='.txt')
+        (fd, filename) = tempfile.mkstemp(prefix='osc-editor', suffix=suffix)
         os.close(fd)
         mtime = os.stat(filename).st_mtime
         while True:
