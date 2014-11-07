@@ -317,9 +317,9 @@ def get_repo(path):
 
     return repositoryDirectory
 
-def get_prefer_pkgs(dirs, wanted_arch, type):
+def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     import glob
-    from .util import repodata, packagequery, cpio
+    from .util import repodata, packagequery
     paths = []
     repositories = []
 
@@ -346,7 +346,9 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
             packageQueries.add(packageQuery)
 
     for path in paths:
-        if path.endswith('src.rpm'):
+        if path.endswith('.src.rpm') or path.endswith('.nosrc.rpm'):
+            continue
+        if path.endswith('.patch.rpm') or path.endswith('.delta.rpm'):
             continue
         if path.find('-debuginfo-') > 0:
             continue
@@ -357,9 +359,8 @@ def get_prefer_pkgs(dirs, wanted_arch, type):
                        for name, packageQuery in packageQueries.items())
 
     depfile = create_deps(packageQueries.values())
-    cpio = cpio.CpioWrite()
     cpio.add('deps', '\n'.join(depfile))
-    return prefer_pkgs, cpio
+    return prefer_pkgs
 
 
 def create_deps(pkgqs):
@@ -558,11 +559,31 @@ def main(apiurl, opts, argv):
             s += "%%define %s\n" % i
         build_descr_data = s + build_descr_data
 
+    cpiodata = None
+    buildenvfile = os.path.join(os.path.dirname(build_descr), "_buildenv." + repo + "." + arch)
+    if not os.path.isfile(buildenvfile):
+        buildenvfile = os.path.join(os.path.dirname(build_descr), "_buildenv")
+        if not os.path.isfile(buildenvfile):
+            buildenvfile = None
+    if buildenvfile:
+        print('Using buildenv file: %s' % os.path.basename(buildenvfile))
+        from .util import cpio
+        if not cpiodata:
+            cpiodata = cpio.CpioWrite()
+
     if opts.prefer_pkgs:
         print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
-        prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type)
-        cpio.add(os.path.basename(build_descr), build_descr_data)
-        build_descr_data = cpio.get()
+        from .util import cpio
+        if not cpiodata:
+            cpiodata = cpio.CpioWrite()
+        prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type, cpiodata)
+
+    if cpiodata:
+        cpiodata.add(os.path.basename(build_descr), build_descr_data)
+        # buildenv must come last for compatibility reasons...
+        if buildenvfile:
+            cpiodata.add("_buildenv", open(buildenvfile).read())
+        build_descr_data = cpiodata.get()
 
     # special handling for overlay and rsync-src/dest
     specialcmdopts = []
