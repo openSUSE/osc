@@ -582,7 +582,7 @@ def main(apiurl, opts, argv):
         cpiodata.add(os.path.basename(build_descr), build_descr_data)
         # buildenv must come last for compatibility reasons...
         if buildenvfile:
-            cpiodata.add("_buildenv", open(buildenvfile).read())
+            cpiodata.add("buildenv", open(buildenvfile).read())
         build_descr_data = cpiodata.get()
 
     # special handling for overlay and rsync-src/dest
