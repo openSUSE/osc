@@ -1,5 +1,6 @@
 0.150
   - add "osc api --edit" option to be able to edit some meta files directly
+  - follow the request order of the api (sorting according to priorization)
 
 0.149
   - removed "--diff" option from the "createrequest" command

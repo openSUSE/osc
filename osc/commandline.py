@@ -2150,7 +2150,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print('No results')
                 return
 
-            results.sort(reverse=True)
+            # we must not sort the results here, since the api is doing it already "the right way"
             days = opts.days or conf.config['request_list_days']
             since = ''
             try:
