@@ -3838,9 +3838,9 @@ def edit_message(footer='', template='', templatelen=30):
             if lines[templatelen:]:
                 footer = '%s\n\n%s' % ('\n'.join(lines[templatelen:]), footer)
     data += '\n' + delim + '\n' + footer
-    edit_text(data, delim, suffix='.diff')
+    edit_text(data, delim, suffix='.diff', template=template)
 
-def edit_text(data='', delim=None, suffix='.txt'):
+def edit_text(data='', delim=None, suffix='.txt', template=''):
     import tempfile
     try:
         (fd, filename) = tempfile.mkstemp(prefix='osc-editor', suffix=suffix)
@@ -3855,7 +3855,7 @@ def edit_text(data='', delim=None, suffix='.txt'):
                 break
             else:
                 reason = 'Log message not specified'
-                if template and template == msg:
+                if template == msg:
                     reason = 'Default log message was not changed. Press \'c\' to continue.'
                 ri = raw_input('%s\na)bort, c)ontinue, e)dit: ' % reason)
                 if ri in 'aA':
