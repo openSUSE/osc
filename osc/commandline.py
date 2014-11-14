@@ -5798,8 +5798,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify the used build target project')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='do not guess/verify specified repository')
-    @cmdln.option('-r', '--root', action='store_true',
+    @cmdln.option('-r', '--login-as-root', action='store_true',
                   help='login as root instead of abuild')
+    @cmdln.option('--root', metavar='ROOT',
+                  help='Path to the buildroot')
     @cmdln.option('-o', '--offline', action='store_true',
                   help='Use cached data without contacting the api server')
     def do_chroot(self, subcmd, opts, *args):
@@ -5823,17 +5825,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit(1)
 
         user = 'abuild'
-        if opts.root:
+        if opts.login_as_root:
             user = 'root'
-        repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
-        project = opts.alternative_project or store_read_project('.')
-        if opts.local_package:
-            package = os.path.splitext(descr)[0]
-        else:
-            package = store_read_package('.')
-        apihost = urlsplit(self.get_api_url())[1]
-        buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
-            % {'repo': repository, 'arch': arch, 'project': project, 'package': package, 'apihost': apihost}
+        buildroot = opts.root
+        if buildroot is None:
+            repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
+            project = opts.alternative_project or store_read_project('.')
+            if opts.local_package:
+                package = os.path.splitext(descr)[0]
+            else:
+                package = store_read_package('.')
+            apihost = urlsplit(self.get_api_url())[1]
+            if buildroot is None:
+                buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
+                    % {'repo': repository, 'arch': arch, 'project': project, 'package': package, 'apihost': apihost}
         if not os.path.isdir(buildroot):
             raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
 
