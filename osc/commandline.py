@@ -5417,10 +5417,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         repo_names = sorted(set([r.name for r in repositories]))
         if not arg_repository and repositories:
+            # XXX: we should avoid hardcoding repository names
             # Use a default value from config, but just even if it's available
-            # unless try standard, or openSUSE_Factory
+            # unless try standard, or openSUSE_Factory, or openSUSE_Tumbleweed
             arg_repository = repositories[-1].name
-            for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory'):
+            for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory', 'openSUSE_Tumbleweed'):
                 if repository in repo_names:
                     arg_repository = repository
                     break
