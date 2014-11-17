@@ -69,7 +69,7 @@ class RpmQuery(packagequery.PackageQuery):
         self.filename_suffix = 'rpm'
         self.header = None
 
-    def read(self, all_tags=False, self_provides=True, *extra_tags):
+    def read(self, all_tags=False, self_provides=True, *extra_tags, **extra_kw):
         # self_provides is unused because a rpm always has a self provides
         self.__read_lead()
         data = self.__file.read(RpmHeaderEntry.ENTRY_SIZE)
@@ -80,8 +80,10 @@ class RpmQuery(packagequery.PackageQuery):
         size = il * RpmHeaderEntry.ENTRY_SIZE + dl
         # data is 8 byte aligned
         pad = (size + 7) & ~7
-        self.__file.read(pad)
-        data = self.__file.read(RpmHeaderEntry.ENTRY_SIZE)
+        querysig = extra_kw.get('querysig')
+        if not querysig:
+            self.__file.read(pad)
+            data = self.__file.read(RpmHeaderEntry.ENTRY_SIZE)
         hdrmgc, reserved, il, dl = struct.unpack('!I3i', data)
         self.header = RpmHeader(pad, dl)
         if self.HEADER_MAGIC != hdrmgc:
@@ -115,9 +117,10 @@ class RpmQuery(packagequery.PackageQuery):
             entry.data = struct.unpack('!%dh' % entry.count, data[off:off + 2 * entry.count])
         elif entry.type == 4:
             entry.data = struct.unpack('!%di' % entry.count, data[off:off + 4 * entry.count])
-        elif entry.type == 6 or entry.type == 7:
-            # XXX: what to do with binary data? for now treat it as a string
+        elif entry.type == 6:
             entry.data = unpack_string(data[off:])
+        elif entry.type == 7:
+            entry.data = data[off:off + entry.count]
         elif entry.type == 8 or entry.type == 9:
             cnt = entry.count
             entry.data = []
@@ -251,6 +254,17 @@ class RpmQuery(packagequery.PackageQuery):
         return rpmq
 
     @staticmethod
+    def queryhdrmd5(filename):
+        f = open(filename, 'rb')
+        rpmq = RpmQuery(f)
+        rpmq.read(1004, querysig=True)
+        f.close()
+        entry = rpmq.gettag(1004)
+        if entry is None:
+            return None
+        return ''.join([ "%02x" % x for x in struct.unpack('16B', entry.data) ])
+
+    @staticmethod
     def rpmvercmp(ver1, ver2):
         """
         implementation of RPM's version comparison algorithm
@@ -326,3 +340,5 @@ if __name__ == '__main__':
     print('\n'.join(rpmq.provides()))
     print('##########')
     print('\n'.join(rpmq.requires()))
+    print('##########')
+    print(RpmQuery.queryhdrmd5(sys.argv[1]))

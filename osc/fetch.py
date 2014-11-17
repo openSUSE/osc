@@ -239,6 +239,12 @@ class Fetcher:
             i.makeurls(self.cachedir, self.urllist)
             if os.path.exists(i.fullfilename):
                 cached += 1
+                if i.hdrmd5:
+                    from .util import packagequery
+                    hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
+                    if not hdrmd5 or hdrmd5 != i.hdrmd5:
+                        os.unlink(i.fullfilename)
+                        cached -= 1
         miss = 0
         needed = all - cached
         if all:
@@ -254,6 +260,10 @@ class Fetcher:
                                             '--offline not possible.' %
                                             i.fullfilename)
                 self.dirSetup(i)
+                if i.hdrmd5 and self.enable_cpio:
+                    self.__add_cpio(i)
+                    done += 1
+                    continue
                 try:
                     # if there isn't a progress bar, there is no output at all
                     if not self.progress_obj:

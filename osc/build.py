@@ -179,7 +179,7 @@ class Pac:
 
         self.mp = {}
         for i in ['binary', 'package',
-                  'epoch', 'version', 'release',
+                  'epoch', 'version', 'release', 'hdrmd5',
                   'project', 'repository',
                   'preinstall', 'vminstall', 'noinstall', 'installonly', 'runscripts',
                  ]:
@@ -930,6 +930,17 @@ def main(apiurl, opts, argv):
             print('WARNING: deb packages get not verified, they can compromise your system !')
     else:
         print('WARNING: unknown packages get not verified, they can compromise your system !')
+
+    for i in bi.deps:
+        if i.hdrmd5:
+            from .util import packagequery
+            hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
+            if not hdrmd5:
+                print("Error: cannot get hdrmd5 for %s" % i.fullfilename)
+                sys.exit(1)
+            if hdrmd5 != i.hdrmd5:
+                print("Error: hdrmd5 mismatch for %s: %s != %s" % (i.fullfilename, hdrmd5, i.hdrmd5))
+                sys.exit(1)
 
     print('Writing build configuration')
 
