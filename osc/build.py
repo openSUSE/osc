@@ -991,6 +991,11 @@ def main(apiurl, opts, argv):
                 if os.access(build_root, os.W_OK) and os.access('/dev/kvm', os.W_OK):
                     # so let's hope there's also an fstab entry
                     need_root = False
+                if config['build-kernel']:
+                    vm_options += [ '--vm-kernel=' + config['build-kernel'] ]
+                if config['build-initrd']:
+                    vm_options += [ '--vm-initrd=' + config['build-initrd'] ]
+
             build_root += '/.mount'
 
         if config['build-memory']:
