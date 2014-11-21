@@ -2029,7 +2029,7 @@ rev: %s
     def mark_frozen(self):
         store_write_string(self.absdir, '_frozenlink', '')
         print()
-        print("The link in this package is currently broken. Checking")
+        print("The link in this package (\"%s\") is currently broken. Checking" % self.name)
         print("out the last working version instead; please use 'osc pull'")
         print("to merge the conflicts.")
         print()
