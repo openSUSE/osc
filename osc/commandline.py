@@ -4131,6 +4131,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           'M' Modified
           '?' item is not under version control
           '!' item is missing (removed by non-osc command) or incomplete
+          'F' Frozen (use "osc pull" to merge conflicts) (package-only state)
 
         examples:
           osc st
@@ -4164,7 +4165,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         # state is != ' '
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(prj.dir, pac))))
                         continue
-                    if st == ' ' and opts.verbose or st != ' ':
+                    if p.isfrozen():
+                        lines.append(statfrmt('F', os.path.normpath(os.path.join(prj.dir, pac))))
+                    elif st == ' ' and opts.verbose or st != ' ':
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(prj.dir, pac))))
                     states = p.get_status(opts.show_excluded, *excl_states)
                     for st, filename in sorted(states, lambda x, y: cmp(x[1], y[1])):
