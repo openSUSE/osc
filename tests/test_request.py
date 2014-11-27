@@ -426,6 +426,23 @@ class TestRequest(OscTestCase):
 
         self.assertEqual(exp, r.to_str())
 
+    def test_read_request_review_history(self):
+        """test history of reviews is parsed."""
+        from xml.etree import cElementTree as ET
+        xml = open(os.path.join(self._get_fixtures_dir(),
+                                'test_read_request3.xml'),
+                   'r').read().strip()
+        r = osc.core.Request()
+        r.read(ET.fromstring(xml))
+        self.assertEqual(r.reqid, '123')
+        self.assertEqual(len(r.reviews[0].statehistory), 1)
+        self.assertEqual(r.reviews[0].statehistory[0].who, 'abc')
+        self.assertEqual(r.reviews[0].statehistory[0].when,
+                         '2010-12-28T00:11:22')
+        self.assertEqual(r.reviews[0].statehistory[0].description,
+                         'Review got accepted')
+        self.assertEqual(r.reviews[0].statehistory[0].comment, 'review start')
+
     def test_request_list_view1(self):
         """test the list_view method"""
         from xml.etree import cElementTree as ET

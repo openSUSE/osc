@@ -2400,6 +2400,9 @@ class ReviewState(AbstractState):
         if not review_node.find('comment') is None and \
             review_node.find('comment').text:
             self.comment = review_node.find('comment').text.strip()
+        self.statehistory = []
+        for history_element in review_node.findall('history'):
+            self.statehistory.append(RequestHistory(history_element))
 
     def get_node_attrs(self):
         return ('state', 'by_user', 'by_group', 'by_project', 'by_package', 'who', 'when')
