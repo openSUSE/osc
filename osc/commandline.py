@@ -137,16 +137,12 @@ class Osc(cmdln.Cmdln):
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
+            config = conf.make_default_config(override_apiurl = self.options.apiurl,
+                                              override_no_keyring = self.options.no_keyring,
+                                              override_no_gnome_keyring = self.options.no_gnome_keyring)
             import getpass
-            config = {}
             config['user'] = raw_input('Username: ')
             config['pass'] = getpass.getpass()
-            if self.options.no_keyring:
-                config['use_keyring'] = '0'
-            if self.options.no_gnome_keyring:
-                config['gnome_keyring'] = '0'
-            if self.options.apiurl:
-                config['apiurl'] = self.options.apiurl
 
             conf.write_initial_config(e.file, config)
             print('done', file=sys.stderr)

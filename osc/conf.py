@@ -10,10 +10,8 @@ from __future__ import print_function
 This module reads and parses ~/.oscrc. The resulting configuration is stored
 for later usage in a dictionary named 'config'.
 The .oscrc is kept mode 0600, so that it is not publically readable.
-This gives no real security for storing passwords.
-If in doubt, use your favourite keyring.
-Password is stored on ~/.oscrc as bz2 compressed and base64 encoded, so that is fairly
-large and not to be recognized or remembered easily by an occasional spectator.
+Your username and password is stored in the system keyring, if available, otherwise
+it is stored in plaintext in ~/.oscrc, which gives no real security.
 
 If information is missing, it asks the user questions.
 
@@ -312,7 +310,8 @@ apiurl = %(apiurl)s
 #traceback = 1
 
 # use KDE/Gnome/MacOS/Windows keyring for credentials if available
-#use_keyring = 1
+use_keyring = %(use_keyring)s
+gnome_keyring = %(gnome_keyring)s
 
 # check for unversioned/removed files before commit
 #check_filelist = 1
@@ -691,15 +690,39 @@ def passx_encode(passwd):
     """encode plain text password to obfuscated form"""
     return base64.b64encode(bz2.compress(passwd.encode('ascii'))).decode("ascii")
 
-def write_initial_config(conffile, entries, custom_template=''):
+def make_default_config(override_apiurl=None,
+                        override_no_keyring=None,
+                        override_no_gnome_keyring=None):
     """
-    write osc's intial configuration file. entries is a dict which contains values
-    for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
+    create and return a dict containing osc's default configuration file,
+    which may vary according to platform and installed software.
+    """
+    config = DEFAULTS.copy()
+
+    if override_no_keyring:
+        config['use_keyring'] = '0'
+    elif GENERIC_KEYRING:
+        # Use the keyring by default if its supported
+        config['use_keyring'] = '1'
+
+    if override_no_gnome_keyring:
+        config['gnome_keyring'] = '0'
+    elif GNOME_KEYRING:
+        # Use the keyring by default if its supported
+        config['gnome_keyring'] = '1'
+
+    if override_apiurl:
+        config['apiurl'] = self.options.apiurl
+
+    return config
+
+def write_initial_config(conffile, config, custom_template=''):
+    """
+    write osc's intial configuration file. config is a dict
+    created using make_default_config() and potentially modified.
     custom_template is an optional configuration template.
     """
     conf_template = custom_template or new_conf_template
-    config = DEFAULTS.copy()
-    config.update(entries)
     # at this point use_keyring and gnome_keyring are str objects
     if config['use_keyring'] == '1' and GENERIC_KEYRING:
         protocol, host = \
@@ -785,8 +808,13 @@ def get_config(override_conffile=None,
     conffile = os.path.expanduser(conffile)
 
     if not os.path.exists(conffile):
+        key_stored_in = conffile
+        if GENERIC_KEYRING and not override_no_keyring:
+            key_stored_in = 'the system keyring'
+        if GNOME_KEYRING and not override_no_gnome_keyring:
+            key_stored_in = 'the system keyring'
         raise oscerr.NoConfigfile(conffile, \
-                                  account_not_configured_text % conffile)
+                                  account_not_configured_text % key_stored_in)
 
     # okay, we made sure that .oscrc exists
 
