@@ -88,6 +88,12 @@ class ArchQuery(packagequery.PackageQuery):
     def requires(self):
         return self.fields['depend'] if 'depend' in self.fields else []
 
+    def conflicts(self):
+        return self.fields['conflict'] if 'conflict' in self.fields else []
+
+    def obsoletes(self):
+        return self.fields['replaces'] if 'replaces' in self.fields else []
+
     def canonname(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
         return self.name() + '-' + pkgver + '-' + self.arch() + '.' + self.pkgsuffix

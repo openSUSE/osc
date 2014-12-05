@@ -77,6 +77,12 @@ class PackageQuery:
     def requires(self):
         raise NotImplementedError
 
+    def conflicts(self):
+        raise NotImplementedError
+
+    def obsoletes(self):
+        raise NotImplementedError
+
     def gettag(self):
         raise NotImplementedError
 
@@ -85,6 +91,13 @@ class PackageQuery:
 
     def canonname(self):
         raise NotImplementedError
+
+    def evr(self):
+        evr = self.version() + "-" + self.release()
+        epoch = self.epoch()
+        if epoch is not None and epoch != 0:
+            evr = epoch + ":" + evr 
+        return evr 
 
     @staticmethod
     def query(filename, all_tags=False, extra_rpmtags=(), extra_debtags=(), self_provides=True):

@@ -60,7 +60,9 @@ class RpmQuery(packagequery.PackageQuery):
 
     default_tags = (1000, 1001, 1002, 1003, 1004, 1022, 1005, 1020,
         1047, 1112, 1113, # provides
-        1049, 1048, 1050 # requires
+        1049, 1048, 1050, # requires
+        1054, 1053, 1055, # conflicts
+        1090, 1114, 1115  # obsoletes
     )
 
     def __init__(self, fh):
@@ -154,7 +156,10 @@ class RpmQuery(packagequery.PackageQuery):
             raise RpmHeaderError(self.__path, 'unsupported tag type \'%d\' (tag: \'%s\'' % (entry.type, entry.tag))
 
     def __reqprov(self, tag, flags, version):
-        pnames = self.header.gettag(tag).data
+        pnames = self.header.gettag(tag)
+        if not pnames:
+	    return []
+        pnames = pnames.data
         pflags = self.header.gettag(flags).data
         pvers = self.header.gettag(version).data
         if not (pnames and pflags and pvers):
@@ -223,6 +228,12 @@ class RpmQuery(packagequery.PackageQuery):
 
     def requires(self):
         return self.__reqprov(1049, 1048, 1050)
+
+    def conflicts(self):
+        return self.__reqprov(1054, 1053, 1055)
+
+    def obsoletes(self):
+        return self.__reqprov(1090, 1114, 1115)
 
     def is_src(self):
         # SOURCERPM = 1044

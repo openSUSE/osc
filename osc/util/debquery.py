@@ -13,7 +13,7 @@ class DebError(packagequery.PackageError):
 class DebQuery(packagequery.PackageQuery):
 
     default_tags = ('package', 'version', 'release', 'epoch', 'architecture', 'description',
-        'provides', 'depends', 'pre_depends')
+        'provides', 'depends', 'pre_depends', 'conflicts', 'breaks')
 
     def __init__(self, fh):
         self.__file = fh
@@ -71,9 +71,11 @@ class DebQuery(packagequery.PackageQuery):
         self.fields['provides'] = [ i.strip() for i in re.split(',\s*', self.fields.get('provides', '')) if i ]
         self.fields['depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('depends', '')) if i ]
         self.fields['pre_depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('pre_depends', '')) if i ]
+        self.fields['conflicts'] = [ i.strip() for i in re.split(',\s*', self.fields.get('conflicts', '')) if i ]
+        self.fields['breaks'] = [ i.strip() for i in re.split(',\s*', self.fields.get('breaks', '')) if i ]
         if self_provides:
             # add self provides entry
-            self.fields['provides'].append('%s = %s' % (self.name(), '-'.join(versrel)))
+            self.fields['provides'].append('%s (= %s)' % (self.name(), '-'.join(versrel)))
 
     def vercmp(self, debq):
         res = cmp(int(self.epoch()), int(debq.epoch()))
@@ -110,7 +112,13 @@ class DebQuery(packagequery.PackageQuery):
         return self.fields['provides']
 
     def requires(self):
-        return self.fields['depends']
+        return self.fields['depends'] + self.fields['pre_depends']
+
+    def conflicts(self):
+        return self.fields['conflicts'] + self.fields['breaks']
+
+    def obsoletes(self):
+        return []
 
     def gettag(self, num):
         return self.fields.get(num, None)
