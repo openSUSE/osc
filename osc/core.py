@@ -3838,7 +3838,7 @@ def edit_message(footer='', template='', templatelen=30):
             if lines[templatelen:]:
                 footer = '%s\n\n%s' % ('\n'.join(lines[templatelen:]), footer)
     data += '\n' + delim + '\n' + footer
-    edit_text(data, delim, suffix='.diff', template=template)
+    return edit_text(data, delim, suffix='.diff', template=template)
 
 def edit_text(data='', delim=None, suffix='.txt', template=''):
     import tempfile
