@@ -365,14 +365,21 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
 
 def create_deps(pkgqs):
     """
-    creates a list of requires/provides which corresponds to build's internal
+    creates a list of dependencies which corresponds to build's internal
     dependency file format
     """
     depfile = []
     for p in pkgqs:
         id = '%s.%s-0/0/0: ' % (p.name(), p.arch())
-        depfile.append('R:%s%s' % (id, ' '.join(p.requires())))
         depfile.append('P:%s%s' % (id, ' '.join(p.provides())))
+        depfile.append('R:%s%s' % (id, ' '.join(p.requires())))
+        d = p.conflicts()
+        if d:
+            depfile.append('C:%s%s' % (id, ' '.join(d)))
+        d = p.obsoletes()
+        if d:
+            depfile.append('O:%s%s' % (id, ' '.join(d)))
+        depfile.append('I:%s%s-%s 0-%s' % (id, p.name(), p.evr(), p.arch()))
     return depfile
 
 
