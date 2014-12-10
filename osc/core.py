@@ -5176,6 +5176,9 @@ class Repo:
     def __str__(self):
         return self.repo_line_templ % (self.name, self.arch)
 
+    def __repr__(self):
+        return 'Repo(%s %s)' % (self.name, self.arch)
+
     @staticmethod
     def fromfile(filename):
         if not os.path.exists(filename):
