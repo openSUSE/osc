@@ -2910,6 +2910,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
+    @cmdln.option('--release-project', metavar='RELEASEPROJECT',
+                        help='Specify the release project')
     @cmdln.option('--no-cleanup', action='store_true',
                   help='do not remove source project on accept')
     @cmdln.option('--cleanup', action='store_true',
@@ -2933,6 +2935,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc maintenancerequest [ SOURCEPROJECT [ SOURCEPACKAGES RELEASEPROJECT ] ]
         ${cmd_option_list}
         """
+        #FIXME: the follow syntax would make more sense and would obsolete the --release-project parameter
+        #       but is incompatible with the current one
+        # osc maintenancerequest [ SOURCEPROJECT [ RELEASEPROJECT [ SOURCEPACKAGES ] ]
 
         args = slash_split(args)
         apiurl = self.get_api_url()
@@ -2960,6 +2965,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             default_branch = 'home:%s:branches:' % (conf.get_apiurl_usr(apiurl))
             if source_project.startswith(default_branch):
                 opt_sourceupdate = 'cleanup'
+
+        if opts.release_project:
+            release_project = opts.release_project
 
         if opts.incident_project:
             target_project = opts.incident_project
