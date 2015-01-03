@@ -793,8 +793,9 @@ def main(apiurl, opts, argv):
                     """ temporary directory that removes itself"""
                     def __init__(self, *args, **kwargs):
                         self.name = mkdtemp(*args, **kwargs)
+                    _rmtree = staticmethod(shutil.rmtree)
                     def cleanup(self):
-                        shutil.rmtree(self.name)
+                        self._rmtree(self.name)
                     def __del__(self):
                         self.cleanup()
                     def __exit__(self):
