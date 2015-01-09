@@ -3961,10 +3961,16 @@ def create_submit_request(apiurl,
             print("WARNING:")
             print("WARNING: Project does not accept submit request, request to open a NEW maintenance incident instead")
             print("WARNING:")
-            xpath = 'attribute/@name = \'%s\'' % conf.config['maintenance_attribute']
+            xpath = 'maintenance/maintains/@project = \'%s\' and attribute/@name = \'%s\'' % dst_project, conf.config['maintenance_attribute']
             res = search(apiurl, project_id=xpath)
             root = res['project_id']
             project = root.find('project')
+            if project is None:
+               print("WARNING: This project is not maintained in the maintenance project specified by '%s', looking elsewhere" % conf.config['maintenance_attribute'])
+               xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
+               res = search(apiurl, project_id=xpath)
+               root = res['project_id']
+               project = root.find('project')
             if project is None:
                 raise oscerr.APIError("Server did not define a default maintenance project, can't submit.")
             tproject = project.get('name')
