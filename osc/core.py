@@ -2493,13 +2493,13 @@ class Action:
     # allowed types + the corresponding (allowed) attributes
     type_args = {'submit': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'opt_sourceupdate',
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
-                            'acceptinfo_oxsrcmd5', 'opt_updatelink'),
+                            'acceptinfo_oxsrcmd5', 'opt_updatelink', 'opt_makeoriginolder'),
         'add_role': ('tgt_project', 'tgt_package', 'person_name', 'person_role', 'group_name', 'group_role'),
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name', 'group_name'),
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name',
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
                             'acceptinfo_oxsrcmd5'),
-        'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate'),
+        'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate', 'opt_makeoriginolder'),
         'delete': ('tgt_project', 'tgt_package', 'tgt_repository'),
         'change_devel': ('src_project', 'src_package', 'tgt_project', 'tgt_package'),
         'group': ('grouped_id', )}
@@ -2766,6 +2766,8 @@ class Request:
             if action.src_package == action.tgt_package:
                 tgt_package = ''
             d['target'] = prj_pkg_join(action.tgt_project, tgt_package)
+            if action.opt_makeoriginolder:
+                d['target'] = d['target'] + ' ***makeoriginolder***'
         elif action.type == 'add_role':
             roles = []
             if action.person_name and action.person_role:
