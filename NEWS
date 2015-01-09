@@ -1,4 +1,5 @@
 0.150
+  - support local builds using builenv (for same build environment as a former build)
   - add "osc api --edit" option to be able to edit some meta files directly
   - follow the request order of the api (sorting according to priorization)
   - add mr --release-project option for kgraft updates
