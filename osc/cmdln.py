@@ -393,47 +393,63 @@ class RawCmdln(cmd.Cmd):
         """
         self.cmdlooping = True
         self.preloop()
-        if intro is None:
-            intro = self.intro
-        if intro:
-            intro_str = self._str(intro)
-            self.stdout.write(intro_str+'\n')
-        self.stop = False
-        retval = None
-        while not self.stop:
-            if self.cmdqueue:
-                argv = self.cmdqueue.pop(0)
-                assert isinstance(argv, (list, tuple)), \
-                        "item on 'cmdqueue' is not a sequence: %r" % argv
-            else:
-                if self.use_rawinput:
-                    try:
-                        try:
-                            #python 2.x
-                            line = raw_input(self._prompt_str)
-                        except NameError:
-                            line = input(self._prompt_str)
-                    except EOFError:
-                        line = 'EOF'
-                else:
-                    self.stdout.write(self._prompt_str)
-                    self.stdout.flush()
-                    line = self.stdin.readline()
-                    if not len(line):
-                        line = 'EOF'
-                    else:
-                        line = line[:-1] # chop '\n'
-                argv = line2argv(line)
+        if self.use_rawinput and self.completekey:
             try:
-                argv = self.precmd(argv)
-                retval = self.onecmd(argv)
-                self.postcmd(argv)
-            except:
-                if not self.cmdexc(argv):
-                    raise
-                retval = 1
-            self.lastretval = retval
-        self.postloop()
+                import readline
+                self.old_completer = readline.get_completer()
+                readline.set_completer(self.complete)
+                readline.parse_and_bind(self.completekey+": complete")
+            except ImportError:
+                pass
+        try:
+            if intro is None:
+                intro = self.intro
+            if intro:
+                intro_str = self._str(intro)
+                self.stdout.write(intro_str+'\n')
+            self.stop = False
+            retval = None
+            while not self.stop:
+                if self.cmdqueue:
+                    argv = self.cmdqueue.pop(0)
+                    assert isinstance(argv, (list, tuple)), \
+                            "item on 'cmdqueue' is not a sequence: %r" % argv
+                else:
+                    if self.use_rawinput:
+                        try:
+                            try:
+                                #python 2.x
+                                line = raw_input(self._prompt_str)
+                            except NameError:
+                                line = input(self._prompt_str)
+                        except EOFError:
+                            line = 'EOF'
+                    else:
+                        self.stdout.write(self._prompt_str)
+                        self.stdout.flush()
+                        line = self.stdin.readline()
+                        if not len(line):
+                            line = 'EOF'
+                        else:
+                            line = line[:-1] # chop '\n'
+                    argv = line2argv(line)
+                try:
+                    argv = self.precmd(argv)
+                    retval = self.onecmd(argv)
+                    self.postcmd(argv)
+                except:
+                    if not self.cmdexc(argv):
+                        raise
+                    retval = 1
+                self.lastretval = retval
+            self.postloop()
+        finally:
+            if self.use_rawinput and self.completekey:
+                try:
+                    import readline
+                    readline.set_completer(self.old_completer)
+                except ImportError:
+                    pass
         self.cmdlooping = False
         return retval
 
