@@ -3984,6 +3984,7 @@ def create_submit_request(apiurl,
                 raise oscerr.APIError("Server did not define a default maintenance project, can't submit.")
             tproject = project.get('name')
             r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message)
+            r = r.reqid
         else:
             raise
 
