@@ -5701,7 +5701,7 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
 
     r = []
     for node in root.findall('entry'):
-        rev = int(node.get('rev'))
+        rev = node.get('rev')
         srcmd5 = node.get('srcmd5')
         versrel = node.get('versrel')
         bcnt = int(node.get('bcnt'))
@@ -5709,12 +5709,13 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
         if format == 'csv':
-            r.append('%s|%s|%d|%s.%d' % (t, srcmd5, rev, versrel, bcnt))
+            r.append('%s|%s|%s|%s.%d' % (t, srcmd5, rev, versrel, bcnt))
         else:
-            r.append('%s   %s %6d    %s.%d' % (t, srcmd5, rev, versrel, bcnt))
+            bversrel='%s.%d' % (versrel, bcnt)
+            r.append('%s   %s    %s %s' % (t, srcmd5, bversrel.ljust(16)[:16], rev))
 
     if format == 'text':
-        r.insert(0, 'time                  srcmd5                              rev   vers-rel.bcnt')
+        r.insert(0, 'time                  srcmd5                              vers-rel.bcnt    rev')
 
     return r
 
