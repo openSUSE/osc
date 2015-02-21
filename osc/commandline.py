@@ -47,7 +47,7 @@ For additional information, see
  * http://en.opensuse.org/openSUSE:Build_Service_Tutorial
  * http://en.opensuse.org/openSUSE:OSC
 .PP
-You can modify osc commands, or roll you own, via the plugin API:
+You can modify osc commands, or roll your own, via the plugin API:
  * http://en.opensuse.org/openSUSE:OSC_plugins
 .SH AUTHOR
 osc was written by several authors. This man page is automatically generated.
@@ -67,7 +67,7 @@ class Osc(cmdln.Cmdln):
     * http://en.opensuse.org/openSUSE:Build_Service_Tutorial
     * http://en.opensuse.org/openSUSE:OSC
 
-    You can modify osc commands, or roll you own, via the plugin API:
+    You can modify osc commands, or roll your own, via the plugin API:
     * http://en.opensuse.org/openSUSE:OSC_plugins
     """
     name = 'osc'
