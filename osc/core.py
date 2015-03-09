@@ -2767,7 +2767,9 @@ class Request:
                 tgt_package = ''
             d['target'] = prj_pkg_join(action.tgt_project, tgt_package)
             if action.opt_makeoriginolder:
-                d['target'] = d['target'] + ' ***makeoriginolder***'
+                d['target'] = d['target'] + ' ***make origin older***'
+            if action.opt_updatelink:
+                d['target'] = d['target'] + ' ***update link***'
         elif action.type == 'add_role':
             roles = []
             if action.person_name and action.person_role:
@@ -3923,7 +3925,7 @@ def create_submit_request(apiurl,
     if src_update:
         options_block += """<sourceupdate>%s</sourceupdate>""" % (src_update)
     if dst_updatelink:
-        options_block += """<updatelink>true</updatelink></options>"""
+        options_block += """<updatelink>true</updatelink>"""
     options_block += "</options>"
 
 
