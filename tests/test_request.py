@@ -470,7 +470,7 @@ class TestRequest(OscTestCase):
         exp = """\
 Request: #123
 
-  submit:       xyz/abc(cleanup) -> foo
+  submit:       xyz/abc(cleanup) -> foo ***update link***
   add_role:     person: bar as maintainer, group: groupxyz as reader home:foo
 
 
