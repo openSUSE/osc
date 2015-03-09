@@ -2413,6 +2413,8 @@ class ReviewState(AbstractState):
 
 class RequestHistory(AbstractState):
     """Represents a history element of a request"""
+    re_name = re.compile(r'^Request (?:got )?([^\s]+)$')
+
     def __init__(self, history_node):
         AbstractState.__init__(self, history_node.tag)
         self.who = history_node.get('who')
@@ -2428,6 +2430,17 @@ class RequestHistory(AbstractState):
         if not history_node.find('comment') is None and \
             history_node.find('comment').text:
             self.comment = history_node.find('comment').text.strip()
+        self.name = self._parse_name(history_node)
+
+    def _parse_name(self, history_node):
+        name = history_node.get('name', None)
+        if name is not None:
+            # OBS 2.5 and before
+            return name
+        mo = self.re_name.search(self.description)
+        if mo is not None:
+            return mo.group(1)
+        return self.description
 
     def get_node_attrs(self):
         return ('who', 'when')
