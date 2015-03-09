@@ -948,6 +948,8 @@ class Osc(cmdln.Cmdln):
                   help='never remove source package on accept, but update its content')
     @cmdln.option('--no-update', action='store_true',
                   help='never touch source package on accept (will break source links)')
+    @cmdln.option('--update-link', action='store_true',
+                  help='This transfers the source including the _link file.')
     @cmdln.option('-d', '--diff', action='store_true',
                   help='show diff only instead of creating the actual request')
     @cmdln.option('--yes', action='store_true',
@@ -1026,9 +1028,12 @@ class Osc(cmdln.Cmdln):
             sr_ids = []
             # for single request
             actionxml = ""
-            options_block = ""
+            options_block = "<options>"
             if src_update:
-                options_block = """<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+                options_block += """<sourceupdate>%s</sourceupdate>""" % (src_update)
+            if opts.update_link:
+                options_block  + """<updatelink>true</updatelink></options> """
+            options_block += "</options>"
 
             # loop via all packages for checking their state
             for p in meta_get_packagelist(apiurl, project):
@@ -1242,7 +1247,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         result = create_submit_request(apiurl,
                                        src_project, src_package,
                                        dst_project, dst_package,
-                                       opts.message, orev=rev, src_update=src_update)
+                                       opts.message, orev=rev,
+				       src_update=src_update, dst_updatelink=opts.update_link)
         if supersede_existing:
             for req in reqs:
                 change_request_state(apiurl, req.reqid, 'superseded',

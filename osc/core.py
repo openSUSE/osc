@@ -3908,19 +3908,24 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     r.create(apiurl, addrevision=True)
     return r
 
-# This creates an old style submit request for server api 1.0
 def create_submit_request(apiurl,
                          src_project, src_package=None,
                          dst_project=None, dst_package=None,
-                         message="", orev=None, src_update=None):
+                         message="", orev=None, src_update=None, dst_updatelink=None):
 
     import cgi
     options_block = ""
     package = ""
     if src_package:
         package = """package="%s" """ % (src_package)
+    options_block = "<options>"
+    print("ASD", dst_updatelink)
     if src_update:
-        options_block = """<options><sourceupdate>%s</sourceupdate></options> """ % (src_update)
+        options_block += """<sourceupdate>%s</sourceupdate>""" % (src_update)
+    if dst_updatelink:
+        options_block += """<updatelink>true</updatelink></options>"""
+    options_block += "</options>"
+
 
     # Yes, this kind of xml construction is horrible
     targetxml = ""
@@ -3931,12 +3936,12 @@ def create_submit_request(apiurl,
         targetxml = """<target project="%s" %s /> """ % ( dst_project, packagexml )
     # XXX: keep the old template for now in order to work with old obs instances
     xml = """\
-<request type="submit">
-    <submit>
+<request>
+    <action type="submit">
         <source project="%s" %s rev="%s"/>
         %s
         %s
-    </submit>
+    </action>
     <state name="new"/>
     <description>%s</description>
 </request>

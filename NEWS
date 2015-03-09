@@ -1,5 +1,6 @@
 0.151
   - fix times when data comes from OBS backend
+  - support updateing the link in target package for submit requests
 
 0.150
   - support local builds using builenv (for same build environment as a former build)
