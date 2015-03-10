@@ -5664,9 +5664,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not os.path.isdir(d):
                     raise oscerr.WrongOptions('Preferred package location \'%s\' is not a directory' % d)
 
-        if opts.noinit and opts.offline:
-            raise oscerr.WrongOptions('--noinit and --offline are mutually exclusive')
-
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
