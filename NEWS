@@ -1,6 +1,8 @@
 0.151
+  - fixed shell command injection via crafted _service files (CVE-2015-0778)
   - fix times when data comes from OBS backend
   - support updateing the link in target package for submit requests
+  - various minor bugfixes
 
 0.150
   - support local builds using builenv (for same build environment as a former build)
