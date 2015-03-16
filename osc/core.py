@@ -419,6 +419,7 @@ class Serviceinfo:
                     for filename in os.listdir(temp_dir):
                         shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
                 else:
+                    name = service['name']
                     for filename in os.listdir(temp_dir):
                         shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
             finally:
