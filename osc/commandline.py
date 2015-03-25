@@ -1109,9 +1109,13 @@ class Osc(cmdln.Cmdln):
             value = root.findtext('attribute/value')
             if value and not opts.yes:
                 repl = ''
-                print('\n\nThere are already following submit request: %s.' % \
-                      ', '.join([str(i) for i in myreqs ]))
-                repl = raw_input('\nSupersede the old requests? (y/n) ')
+                if opts.submit_devel:
+                    # In case the user passed --submit-devel, we don't ask anymore
+                    repl = 'y'
+                else:
+                    print('\n\nThere are already following submit request: %s.' % \
+                          ', '.join([str(i) for i in myreqs ]))
+                    repl = raw_input('\nSupersede the old requests? (y/n) ')
                 if repl.lower() == 'y':
                     myreqs += [ value ]
 
@@ -1865,6 +1869,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='output the diff in the unified diff format')
     @cmdln.option('--no-devel', action='store_true',
                   help='Do not attempt to forward to devel project')
+    @cmdln.option('--submit-devel', action='store_true',
+                  help='Attempt to forward to devel project if defined, superseding any existing request')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-t', '--type', metavar='TYPE',
@@ -2364,10 +2370,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 print(project, end=' ')
                                 if package != action.tgt_package:
                                     print("/", package, end=' ')
-                                repl = raw_input('\nForward this submit to it? ([y]/n)')
+                                if not opts.submit_devel:
+                                    repl = raw_input('\nForward this submit to it? ([y]/n)')
+                                else:
+                                    repl = 'y'
                                 if repl.lower() == 'y' or repl == '':
                                     (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
-                                                                                project, package)
+                                                                                project, package, opts.submit_devel)
                                     msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.get_creator())
                                     rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
                                                                 project, package, cgi.escape(msg))
