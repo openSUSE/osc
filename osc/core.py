@@ -406,11 +406,11 @@ class Serviceinfo:
                 cmd[0] = "/usr/lib/obs/service/"+cmd[0]
                 cmd = cmd + [ "--outdir", temp_dir ]
                 if conf.config['verbose'] > 1 or verbose:
-                    print("Run source service:", cmd)
+                    print("Run source service:", ' '.join(cmd))
                 r = run_external(*cmd)
 
                 if r != 0:
-                    print("Aborting: service call failed: ", cmd)
+                    print("Aborting: service call failed: ", ' '.join(cmd))
                     # FIXME: addDownloadUrlService calls si.execute after
                     #        updating _services.
                     return r
