@@ -4044,12 +4044,8 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=None, for
                 ['request', reqid], query=query)
     f = http_POST(u, data=message)
 
-    r = f.read()
-    if r.startswith('<status code="'):
-        r = r.split('<status code="')[1]
-        r = r.split('" />')[0]
-
-    return r
+    root = ET.parse(f).getroot()
+    return root.get('code', 'unknown')
 
 def change_request_state_template(req, newstate):
     if not len(req.actions):
