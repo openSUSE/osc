@@ -444,6 +444,8 @@ def main(apiurl, opts, argv):
         build_root = opts.root
     if opts.target:
         buildargs.append('--target=%s' % opts.target)
+    if opts.threads:
+        buildargs.append('--threads=%s' % opts.threads)
     if opts.jobs:
         buildargs.append('--jobs=%s' % opts.jobs)
     elif config['build-jobs'] > 1:

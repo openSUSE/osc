@@ -5527,6 +5527,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Build in specified directory')
     @cmdln.option('-j', '--jobs', metavar='N',
                   help='Compile with N jobs')
+    @cmdln.option('-t', '--threads', metavar='N',
+                  help='Compile with N threads')
     @cmdln.option('--icecream', metavar='N',
                   help='use N parallel build jobs with icecream')
     @cmdln.option('--ccache', action='store_true',
