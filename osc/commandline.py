@@ -5888,6 +5888,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
+
         if len(args) < 2 and is_package_dir('.'):
             self.print_repos()
 
