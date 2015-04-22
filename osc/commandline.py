@@ -6761,10 +6761,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             role_filter = '%s (%s)' % (search_term, search_type)
         role_filter_xpath = xpath
         if opts.bugowner and not opts.maintainer:
-            xpath = xpath_join(xpath, 'person/@role=\'bugowner\'', op='and')
+            xpath = xpath_join(xpath, '%s/@role=\'bugowner\'' % search_type, op='and')
             role_filter = 'bugowner'
         elif not opts.bugowner and opts.maintainer:
-            xpath = xpath_join(xpath, 'person/@role=\'maintainer\'', op='and')
+            xpath = xpath_join(xpath, '%s/@role=\'maintainer\'' % search_type, op='and')
             role_filter = 'maintainer'
         if opts.limit_to_attribute:
             xpath = xpath_join(xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
