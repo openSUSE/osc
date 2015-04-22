@@ -6655,7 +6655,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-V', '--version', action='store_true',
                         help='show package version, revision, and srcmd5. CAUTION: This is slow and unreliable')
     @cmdln.option('-i', '--involved', action='store_true',
-                        help='show projects/packages where given person (or myself) is involved as bugowner or maintainer')
+                        help='show projects/packages where given person (or myself) is involved as bugowner or maintainer [[{group|person}/]<name>] default: person')
     @cmdln.option('-b', '--bugowner', action='store_true',
                         help='as -i, but only bugowner')
     @cmdln.option('-m', '--maintainer', action='store_true',
@@ -6746,8 +6746,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # role filter
         role_filter = ''
         if opts.bugowner or opts.maintainer or opts.involved:
-            xpath = xpath_join(xpath, 'person/@userid = \'%s\'' % search_term, inner=True)
-            role_filter = '%s (%s)' % (search_term, 'person')
+            tmp = search_term.split('/')
+            if len(tmp) > 1:
+                search_type, search_term = [tmp[0], tmp[1]]
+            else:
+                search_type = 'person'
+            search_dict = { 'person' : 'userid',
+                            'group'  : 'groupid' }
+            try:
+                search_id = search_dict[ search_type ]
+            except KeyError:
+                search_type, search_id = [ 'person', 'userid' ]
+            xpath = xpath_join(xpath, '%s/@%s = \'%s\'' % (search_type, search_id, search_term), inner=True)
+            role_filter = '%s (%s)' % (search_term, search_type)
         role_filter_xpath = xpath
         if opts.bugowner and not opts.maintainer:
             xpath = xpath_join(xpath, 'person/@role=\'bugowner\'', op='and')
