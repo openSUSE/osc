@@ -569,13 +569,21 @@ def main(apiurl, opts, argv):
         build_descr_data = s + build_descr_data
 
     cpiodata = None
+    servicefile = os.path.join(os.path.dirname(build_descr), "_service")
+    if not os.path.isfile(servicefile):
+        servicefile = os.path.join(os.path.dirname(build_descr), "_service")
+        if not os.path.isfile(servicefile):
+            servicefile = None
+        else:
+            print('Using local _service file')
     buildenvfile = os.path.join(os.path.dirname(build_descr), "_buildenv." + repo + "." + arch)
     if not os.path.isfile(buildenvfile):
         buildenvfile = os.path.join(os.path.dirname(build_descr), "_buildenv")
         if not os.path.isfile(buildenvfile):
             buildenvfile = None
-    if buildenvfile:
-        print('Using buildenv file: %s' % os.path.basename(buildenvfile))
+        else:
+            print('Using local buildenv file: %s' % os.path.basename(buildenvfile))
+    if buildenvfile or servicefile:
         from .util import cpio
         if not cpiodata:
             cpiodata = cpio.CpioWrite()
@@ -592,6 +600,8 @@ def main(apiurl, opts, argv):
         # buildenv must come last for compatibility reasons...
         if buildenvfile:
             cpiodata.add("buildenv", open(buildenvfile).read())
+        if servicefile:
+            cpiodata.add("_service", open(servicefile).read())
         build_descr_data = cpiodata.get()
 
     # special handling for overlay and rsync-src/dest

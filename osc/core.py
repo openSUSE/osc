@@ -389,6 +389,8 @@ class Serviceinfo:
         for service in allservices:
             if singleservice and service['name'] != singleservice:
                 continue
+            if service['mode'] == "buildtime":
+                continue
             if service['mode'] == "serveronly" and callmode != "disabled":
                 continue
             if service['mode'] == "disabled" and callmode != "disabled":
