@@ -1,3 +1,7 @@
+0.152
+  - support buildtime source services
+  - add support searching for groups via "group:" prefix
+
 0.151
   - fixed shell command injection via crafted _service files (CVE-2015-0778)
   - fix times when data comes from OBS backend

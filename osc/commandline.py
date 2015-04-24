@@ -6746,7 +6746,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # role filter
         role_filter = ''
         if opts.bugowner or opts.maintainer or opts.involved:
-            tmp = search_term.split('/')
+            tmp = search_term.split(':')
             if len(tmp) > 1:
                 search_type, search_term = [tmp[0], tmp[1]]
             else:
