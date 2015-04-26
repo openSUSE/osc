@@ -1748,10 +1748,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
-    @cmdln.option('-r', '--repository', metavar='TEXT',
-                  help='specify message TEXT')
-    @cmdln.option('--accept-in-hours', metavar='TEXT',
-                  help='specify message time when request shall get accepted automatically. Only works with write permissions in target.')
+    @cmdln.option('-r', '--repository', metavar='REPOSITORY',
+                  help='specify repository')
+    @cmdln.option('--accept-in-hours', metavar='HOURS',
+                  help='specify time when request shall get accepted automatically. Only works with write permissions in target.')
     @cmdln.alias("dr")
     @cmdln.alias("dropreq")
     @cmdln.alias("droprequest")
