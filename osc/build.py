@@ -1003,7 +1003,7 @@ def main(apiurl, opts, argv):
             my_build_swap = build_root + '/swap'
 
         vm_options = [ '--vm-type=%s' % vm_type ]
-        if vm_type != 'lxc' and vm_type != 'emulator':
+        if vm_type != 'lxc':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
             vm_options += [ '--logfile=%s/.build.log' % build_root ]
