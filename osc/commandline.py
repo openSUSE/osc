@@ -4088,18 +4088,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             # all packages
             for package in meta_get_packagelist(apiurl, project):
-                # don't check out local links by default
-                try:
-                    m = show_files_meta(apiurl, project, package)
-                    li = Linkinfo()
-                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
-                    if not li.haserror():
-                        if li.project == project:
-                            print(statfrmt('S', package + " link to package " + li.package))
-                            continue
-                except:
-                    pass
-
                 try:
                     checkout_package(apiurl, project, package, expand_link = expand_link, \
                                      prj_dir = prj_dir, service_files = opts.source_service_files, \
