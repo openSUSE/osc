@@ -1,6 +1,7 @@
 0.152
   - support buildtime source services
   - add support searching for groups via "group:" prefix
+  - show possible used incident projects on "maintained" command
 
 0.151
   - fixed shell command injection via crafted _service files (CVE-2015-0778)

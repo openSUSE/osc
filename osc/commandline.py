@@ -3062,7 +3062,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.dryrun:
             for r in result.findall('package'):
-                print("%s/%s"%(r.get('project'), r.get('package')))
+                line="%s/%s"%(r.get('project'), r.get('package'))
+                for d in r.findall('devel'):
+                   line+=" using sources from %s/%s"%(d.get('project'), d.get('package'))
+                print(line)
             return
         
         apiopt = ''
