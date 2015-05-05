@@ -81,7 +81,7 @@ new_project_templ = """\
     <enable />
   </build>
   <debuginfo>
-    <disable />
+    <enable />
   </debuginfo>
 
 <!-- remove this comment to enable one or more build targets
@@ -91,23 +91,23 @@ new_project_templ = """\
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_11.2">
-    <path project="openSUSE:11.2" repository="standard"/>
+  <repository name="openSUSE_13.2">
+    <path project="openSUSE:13.2" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_11.1">
-    <path project="openSUSE:11.1" repository="standard"/>
+  <repository name="openSUSE_13.1">
+    <path project="openSUSE:13.1" repository="standard"/>
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="Fedora_12">
-    <path project="Fedora:12" repository="standard" />
+  <repository name="Fedora_21">
+    <path project="Fedora:21" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
-  <repository name="SLE_11">
-    <path project="SUSE:SLE-11" repository="standard" />
+  <repository name="SLE_12">
+    <path project="SUSE:SLE-12:GA" repository="standard" />
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>
