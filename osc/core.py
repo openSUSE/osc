@@ -5634,7 +5634,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     # to protect us against control characters
     import string
     all_bytes = string.maketrans('', '')
-    remove_bytes = all_bytes[:9] + all_bytes[11:32] # accept tabs and newlines
+    remove_bytes = all_bytes[:8] + all_bytes[14:32] # accept tabs and newlines
 
     query = {'nostream' : '1', 'start' : '%s' % offset}
     if last:
