@@ -5,6 +5,7 @@
 
 import locale
 import sys
+import os
 
 from osc import commandline, babysitter
 
@@ -20,6 +21,10 @@ try:
 except NameError:
     #reload, neither setdefaultencoding are in python3
     pass
+
+# avoid buffering output on pipes (bnc#930137)
+if sys.stdout.name == '<stdout>':
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 osccli = commandline.Osc()
 
