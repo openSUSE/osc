@@ -750,7 +750,13 @@ class Project:
 
         packages_file = os.path.join(self.absdir, store, '_packages')
         if os.path.isfile(packages_file) and os.path.getsize(packages_file):
-            return ET.parse(packages_file)
+            try:
+                result = ET.parse(packages_file)
+            except:
+                msg = 'Cannot read package file \'%s\'. ' % packages_file
+                msg += 'You can try to remove it and then run osc repairwc.'
+                raise oscerr.OscIOError(None, msg)
+            return result
         else:
             # scan project for existing packages and migrate them
             cur_pacs = []
