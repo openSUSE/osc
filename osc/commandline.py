@@ -5855,10 +5855,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-o', '--offline', action='store_true',
                   help='Use cached data without contacting the api server')
     def do_chroot(self, subcmd, opts, *args):
-        """${cmd_name}: chroot into the buildchroot
+        """${cmd_name}: opens a shell inside of the build root
 
-        chroot into the buildchroot for the given repository, arch and build description
-        (NOTE: this command does not work if "build-type" is set in the config)
+        chroot into the build root for the given repository, arch and build description
+        (NOTE: this command does not work if a VM is used)
 
         usage:
             osc chroot [OPTS] REPOSITORY ARCH BUILD_DESCR
@@ -5870,7 +5870,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
-        if conf.config['build-type']:
+        if conf.config['build-type'] and conf.config['build-type'] != "lxc":
             print('Not implemented for VMs', file=sys.stderr)
             sys.exit(1)
 
