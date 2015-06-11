@@ -2,6 +2,7 @@
   - support buildtime source services
   - add support searching for groups via "group:" prefix
   - show possible used incident projects on "maintained" command
+  - support maintenance_incident requests with acceptinfo data (OBS 2.7)
 
 0.151
   - fixed shell command injection via crafted _service files (CVE-2015-0778)
