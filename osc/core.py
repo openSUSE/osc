@@ -407,7 +407,7 @@ class Serviceinfo:
                     raise oscerr.PackageNotInstalled("obs-service-%s"%cmd[0])
                 cmd[0] = "/usr/lib/obs/service/"+cmd[0]
                 cmd = cmd + [ "--outdir", temp_dir ]
-                if conf.config['verbose'] > 1 or verbose:
+                if conf.config['verbose'] > 1 or verbose or conf.config['debug']:
                     print("Run source service:", ' '.join(cmd))
                 r = run_external(*cmd)
 

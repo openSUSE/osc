@@ -2236,8 +2236,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 except HTTPError as e:
                     # for OBS 2.0 and before
                     sr_actions = r.get_actions('submit')
-                    if not sr_actions:
-                        raise oscerr.WrongOptions('\'--diff\' not possible (request has no \'submit\' actions)')
+                    if not r.get_actions('submit') and not r.get_actions('maintenance_incident') and not r.get_actions('maintenance_release'):
+                        raise oscerr.WrongOptions('\'--diff\' not possible (request has no supported actions)')
                     for action in sr_actions:
                         diff += 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
                             action.tgt_project, action.tgt_package)
