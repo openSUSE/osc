@@ -217,7 +217,7 @@ class Fetcher:
 
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
-            pac_obj.filename = canonname
+            pac_obj.canonname = canonname
             pac_obj.fullfilename = fullfilename
         shutil.move(tmpfile, fullfilename)
         os.chmod(fullfilename, 0o644)

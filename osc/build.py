@@ -211,13 +211,15 @@ class Pac:
         self.mp['apiurl'] = apiurl
 
         if pacsuffix == 'deb':
-            filename = debquery.DebQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            canonname = debquery.DebQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
         elif pacsuffix == 'arch':
-            filename = archquery.ArchQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            canonname = archquery.ArchQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
         else:
-            filename = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            canonname = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
 
-        self.mp['filename'] = node.get('binary') or filename
+        self.mp['canonname'] = canonname
+        # maybe we should rename filename key to binary
+        self.mp['filename'] = node.get('binary') or canonname
         if self.mp['repopackage'] == '_repository':
             self.mp['repofilename'] = self.mp['name']
         else:
@@ -238,7 +240,7 @@ class Pac:
         # or if-modified-since, so the caching is simply name-based (on the assumption
         # that the filename is suitable as identifier)
         self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
-        self.fullfilename = os.path.join(self.localdir, self.filename)
+        self.fullfilename = os.path.join(self.localdir, self.canonname)
         self.url_local = 'file://%s' % self.fullfilename
 
         # first, add the local URL
