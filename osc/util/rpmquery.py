@@ -48,7 +48,7 @@ class RpmHeaderEntry:
         self.count = count
         self.data = None
 
-class RpmQuery(packagequery.PackageQuery):
+class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     LEAD_SIZE = 96
     LEAD_MAGIC = 0xedabeedb
     HEADER_MAGIC = 0x8eade801
@@ -101,6 +101,7 @@ class RpmQuery(packagequery.PackageQuery):
                 try: # this may fail for -debug* packages
                     self.__read_data(i, data)
                 except: pass
+        return self
 
     def __read_lead(self):
         data = self.__file.read(self.LEAD_SIZE)

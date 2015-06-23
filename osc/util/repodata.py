@@ -13,6 +13,7 @@ except ImportError:
 
 # project modules
 import osc.util.rpmquery
+import osc.util.packagequery
 
 def namespace(name):
     return "{http://linux.duke.edu/metadata/%s}" % name
@@ -52,7 +53,7 @@ def queries(directory):
 
     @param directory path to a repository directory (parent directory of
                      repodata directory)
-    @return list of RepoDataQuery instances
+    @return list of RepoDataQueryResult instances
     @raise IOError if repomd.xml contains no primary location
     """
     path = primaryPath(directory)
@@ -63,16 +64,16 @@ def queries(directory):
 
     packageQueries = []
     for packageElement in root:
-        packageQuery = RepoDataQuery(directory, packageElement)
+        packageQuery = RepoDataQueryResult(directory, packageElement)
         packageQueries.append(packageQuery)
 
     return packageQueries
 
-class RepoDataQuery(object):
-    """PackageQuery that reads in data from the repodata directory files."""
+class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
+    """PackageQueryResult that reads in data from the repodata directory files."""
 
     def __init__(self, directory, element):
-        """Creates a RepoDataQuery from the a package Element under a metadata
+        """Creates a RepoDataQueryResult from the a package Element under a metadata
         Element in a primary.xml file.
 
         @param directory repository directory path.  Used to convert relative
@@ -146,6 +147,20 @@ class RepoDataQuery(object):
 
     def requires(self):
         return self.__parseEntryCollection("requires")
+
+    def conflicts(self):
+        return self.__parseEntryCollection('conflicts')
+
+    def obsoletes(self):
+        return self.__parseEntryCollection('obsoletes')
+
+    def canonname(self):
+        return osc.util.rpmquery.RpmQuery.filename(self.name(), None,
+            self.version(), self.release(), self.arch())
+
+    def gettag(self, tag):
+        # implement me, if needed
+        return None
 
     def vercmp(self, other):
         res = osc.util.rpmquery.RpmQuery.rpmvercmp(str(self.epoch()), str(other.epoch()))

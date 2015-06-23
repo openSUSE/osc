@@ -48,8 +48,52 @@ class PackageQueries(dict):
 class PackageQuery:
     """abstract base class for all package types"""
     def read(self, all_tags = False, *extra_tags):
+        """Returns a PackageQueryResult instance"""
         raise NotImplementedError
 
+    # Hmmm... this should be a module function (inherting this stuff
+    # does not make much sense) (the same is true for the queryhdrmd5 method)
+    @staticmethod
+    def query(filename, all_tags=False, extra_rpmtags=(), extra_debtags=(), self_provides=True):
+        f = open(filename, 'rb')
+        magic = f.read(7)
+        f.seek(0)
+        extra_tags = ()
+        pkgquery = None
+        if magic[:4] == '\xed\xab\xee\xdb':
+            from . import rpmquery
+            pkgquery = rpmquery.RpmQuery(f)
+            extra_tags = extra_rpmtags
+        elif magic == '!<arch>':
+            from . import debquery
+            pkgquery = debquery.DebQuery(f)
+            extra_tags = extra_debtags
+        elif magic[:5] == '<?xml':
+            f.close()
+            return None
+        elif magic[:5] == '\375\067zXZ' or magic[:2] == '\037\213':
+            from . import archquery
+            pkgquery = archquery.ArchQuery(f)
+        else:
+            raise PackageError(filename, 'unsupported package type. magic: \'%s\'' % magic)
+        pkgqueryresult = pkgquery.read(all_tags, self_provides, *extra_tags)
+        f.close()
+        return pkgqueryresult
+
+    @staticmethod
+    def queryhdrmd5(filename):
+        f = open(filename, 'rb')
+        magic = f.read(7)
+        f.seek(0)
+        if magic[:4] == '\xed\xab\xee\xdb':
+            from . import rpmquery
+            f.close()
+            return rpmquery.RpmQuery.queryhdrmd5(filename)
+        return None
+
+
+class PackageQueryResult:
+    """abstract base class that represents the result of a package query"""
     def name(self):
         raise NotImplementedError
 
@@ -83,7 +127,7 @@ class PackageQuery:
     def obsoletes(self):
         raise NotImplementedError
 
-    def gettag(self):
+    def gettag(self, tag):
         raise NotImplementedError
 
     def vercmp(self, pkgquery):
@@ -98,44 +142,6 @@ class PackageQuery:
         if epoch is not None and epoch != 0:
             evr = epoch + ":" + evr 
         return evr 
-
-    @staticmethod
-    def query(filename, all_tags=False, extra_rpmtags=(), extra_debtags=(), self_provides=True):
-        f = open(filename, 'rb')
-        magic = f.read(7)
-        f.seek(0)
-        extra_tags = ()
-        pkgquery = None
-        if magic[:4] == '\xed\xab\xee\xdb':
-            from . import rpmquery
-            pkgquery = rpmquery.RpmQuery(f)
-            extra_tags = extra_rpmtags
-        elif magic == '!<arch>':
-            from . import debquery
-            pkgquery = debquery.DebQuery(f)
-            extra_tags = extra_debtags
-        elif magic[:5] == '<?xml':
-            f.close()
-            return None
-        elif magic[:5] == '\375\067zXZ' or magic[:2] == '\037\213':
-            from . import archquery
-            pkgquery = archquery.ArchQuery(f)
-        else:
-            raise PackageError(filename, 'unsupported package type. magic: \'%s\'' % magic)
-        pkgquery.read(all_tags, self_provides, *extra_tags)
-        f.close()
-        return pkgquery
-
-    @staticmethod
-    def queryhdrmd5(filename):
-        f = open(filename, 'rb')
-        magic = f.read(7)
-        f.seek(0)
-        if magic[:4] == '\xed\xab\xee\xdb':
-            from . import rpmquery
-            f.close()
-            return rpmquery.RpmQuery.queryhdrmd5(filename)
-        return None
 
 if __name__ == '__main__':
     import sys

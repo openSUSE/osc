@@ -10,7 +10,7 @@ from . import packagequery
 class DebError(packagequery.PackageError):
     pass
 
-class DebQuery(packagequery.PackageQuery):
+class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     default_tags = ('package', 'version', 'release', 'epoch', 'architecture', 'description',
         'provides', 'depends', 'pre_depends', 'conflicts', 'breaks')
@@ -43,6 +43,7 @@ class DebQuery(packagequery.PackageQuery):
         except KeyError:
             raise DebError(self.__path, 'missing \'control\' file in control.tar.gz')
         self.__parse_control(control, all_tags, self_provides, *extra_tags)
+        return self
 
     def __parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
