@@ -13,7 +13,7 @@ INSTALLATION:
 RPM packages are here (rpm-md repository):
 http://download.opensuse.org/repositories/openSUSE:/Tools/
 
-To install from svn, do
+To install from git, do
 
         python setup.py build
         python setup.py install
