@@ -3447,6 +3447,11 @@ def show_pattern_meta(apiurl, prj, pattern):
         e.osc_msg = 'show_pattern_meta: Error getting pattern \'%s\' for project \'%s\'' % (pattern, prj)
         raise
 
+def show_configuration(apiurl):
+    u = makeurl(apiurl, ['public', 'configuration'])
+    f = http_GET(u)
+    return f.readlines()
+
 
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""

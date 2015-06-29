@@ -3981,8 +3981,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        # XXX: API should somehow tell that
-        url_tmpl = 'http://download.opensuse.org/repositories/%s/%s/%s.repo'
+        root = ET.fromstring(''.join(show_configuration(apiurl)))
+        elm = root.find('download_url')
+        if elm is None or not elm.text:
+            raise oscerr.APIError('download_url configuration element expected')
+
+        url_tmpl = elm.text + '/%s/%s/%s.repo'
         repos = get_repositories_of_project(apiurl, project)
         for repo in repos:
             print(url_tmpl % (project.replace(':', ':/'), repo, project))
