@@ -3981,8 +3981,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        # XXX: API should somehow tell that
-        url_tmpl = 'http://download.opensuse.org/repositories/%s/%s/%s.repo'
+        try:
+            u = makeurl(apiurl, ['configuration'])
+            f = http_GET(u)
+            tree = ET.parse(f)
+        except HTTPError as e:
+            e.osc_msg = 'repourls: Error getting OBS configuration from \'%s\'' % apiurl
+            raise
+
+        # set the default download url to opensuse.org
+        download_url = 'http://download.opensuse.org/repositories'
+
+        if tree is not None:
+            obs_config = tree.getroot()
+            url_element = obs_config.find('download_url')
+            if ET.iselement(url_element):
+                download_url = url_element.text
+
+        url_tmpl = download_url + '/%s/%s/%s.repo'
         repos = get_repositories_of_project(apiurl, project)
         for repo in repos:
             print(url_tmpl % (project.replace(':', ':/'), repo, project))
