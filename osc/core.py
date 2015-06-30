@@ -2518,7 +2518,7 @@ class Action:
         'set_bugowner': ('tgt_project', 'tgt_package', 'person_name', 'group_name'),
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name',
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
-                            'acceptinfo_oxsrcmd5'),
+                            'acceptinfo_oxsrcmd5', 'acceptinfo_oproject', 'acceptinfo_opackage'),
         'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate', 'opt_makeoriginolder',
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
                             'acceptinfo_oxsrcmd5'),
