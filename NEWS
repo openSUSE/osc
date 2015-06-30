@@ -1,9 +1,10 @@
 0.152
-  - support buildtime source services
   - add support searching for groups via "group:" prefix
   - show possible used incident projects on "maintained" command
-  - support maintenance_incident requests with acceptinfo data (OBS 2.7)
-  - support maintenance_release requests with acceptinfo data (OBS 2.7)
+  OBS 2.7 only:
+  - support buildtime source services
+  - support maintenance_incident requests with acceptinfo data
+  - support maintenance_release requests with acceptinfo data
 
 0.151
   - fixed shell command injection via crafted _service files (CVE-2015-0778)
