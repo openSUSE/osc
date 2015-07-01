@@ -2278,15 +2278,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     body = e.read()
                                     if e.code in [403]:
                                        if review.by_user:
-                                           print('No permission on review by user %s' % review.by_user)
+                                           print('No permission on review by user %s:' % review.by_user)
                                        if review.by_group:
                                            print('No permission on review by group %s' % review.by_group)
                                        if review.by_package:
                                            print('No permission on review by package %s / %s' % (review.by_project, review.by_package))
                                        elif review.by_project:
                                            print('No permission on review by project %s' % review.by_project)
-                                    else:
-                                        print(e, file=sys.stderr)
+                                    print(e, file=sys.stderr)
                         else:
                             print('Request is closed, please reopen the request first before changing any reviews.')
             # Change state of entire request
