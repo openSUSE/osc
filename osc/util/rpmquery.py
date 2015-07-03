@@ -286,11 +286,21 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             return 0
         res = 0
         while res == 0:
-            # remove all leading non alphanumeric chars
-            ver1 = re.sub('^[^a-zA-Z0-9]*', '', ver1)
-            ver2 = re.sub('^[^a-zA-Z0-9]*', '', ver2)
+            # remove all leading non alphanumeric or tilde chars
+            ver1 = re.sub('^[^a-zA-Z0-9~]*', '', ver1)
+            ver2 = re.sub('^[^a-zA-Z0-9~]*', '', ver2)
+            if ver1.startswith('~') or ver2.startswith('~'):
+                if not ver1.startswith('~'):
+                    return 1
+                elif not ver2.startswith('~'):
+                    return -1
+                ver1 = ver1[1:]
+                ver2 = ver2[1:]
+                continue
+
             if not (len(ver1) and len(ver2)):
                 break
+
             # check if we have a digits segment
             mo1 = re.match('(\d+)', ver1)
             mo2 = re.match('(\d+)', ver2)
