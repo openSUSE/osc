@@ -1,3 +1,7 @@
+0.153
+  OBS 2.7 only:
+  - add "addchannels" and "enablechannel" commands
+
 0.152
   - add support searching for groups via "group:" prefix
   - show possible used incident projects on "maintained" command

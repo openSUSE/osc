@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 
-__version__ = '0.152'
+__version__ = '0.152git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -3988,10 +3988,12 @@ def create_submit_request(apiurl,
     u = makeurl(apiurl, ['request'], query='cmd=create')
     r = None
     try:
+        print("TRY")
         f = http_POST(u, data=xml)
         root = ET.parse(f).getroot()
         r = root.get('id')
     except HTTPError as e:
+        print("except")
         if e.hdrs.get('X-Opensuse-Errorcode') == "submit_request_rejected":
             print("WARNING:")
             print("WARNING: Project does not accept submit request, request to open a NEW maintenance incident instead")

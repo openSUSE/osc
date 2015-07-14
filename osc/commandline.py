@@ -443,6 +443,64 @@ class Osc(cmdln.Cmdln):
                     print('file \'%s\' does not exist' % fname)
 
 
+    @cmdln.option('-s', '--skip-disabled', action='store_true',
+                        help='Skip disabled channels. Otherwise the source gets added, but not the repositories.')
+    @cmdln.option('-e', '--enable-all', action='store_true',
+                        help='Enable all added channels including the ones disabled by default.')
+    @cmdln.alias('enablechannel')
+    @cmdln.alias('enablechannels')
+    def do_addchannels(self, subcmd, opts, *args):
+        """${cmd_name}: Add channels to project.
+
+        The command adds all channels which are defined to be used for the source packages. 
+        The source link target is used to lookup the channels.
+
+        Examples:
+            osc addchannels [PROJECT]
+            osc enablechannels [PROJECT [CHANNEL_PACKAGE]]
+        ${cmd_option_list}
+        """
+
+        apiurl = self.get_api_url()
+        project_dir = localdir = os.getcwd()
+        channel = None
+        command = "addchannels"
+        if len(args) == 0:
+            if is_project_dir(localdir):
+                project = store_read_project(localdir)
+                apiurl = self.get_api_url()
+            elif is_package_dir(localdir):
+                project = store_read_project(localdir)
+                channel = store_read_package(localdir)
+                apiurl = self.get_api_url()
+        else:
+            project = args[0]
+            if subcmd == 'enablechannels' or subcmd == 'enablechannel':
+                command = "modifychannels"
+                mode="enable_all"
+            if len(args) > 1:
+                channel = args[1]
+                
+        mode=""
+        if subcmd == 'enablechannels' or subcmd == 'enablechannel':
+            command = "enablechannel"
+            if channel == None:
+               sys.exit("enablechannel needs a channel package")
+        else:
+            if opts.enable_all and opts.skip_disabled:
+                sys.exit('--enable-all and --skip-disabled option are exclusive')
+            elif opts.enable_all:
+                mode+="&enable_all=1"
+            elif opts.skip_disabled:
+                mode+="&skip_disabled=1"
+       
+        print("Looking for channels...")
+        query = 'cmd=' + command + mode
+        url = makeurl(apiurl, ['source', project], query=query)
+        if channel:
+           url = makeurl(apiurl, ['source', project, channel], query=query)
+        f = http_POST(url)
+
     @cmdln.option('-f', '--force', action='store_true',
                         help='force generation of new patchinfo file, do not update existing one.')
     def do_patchinfo(self, subcmd, opts, *args):
