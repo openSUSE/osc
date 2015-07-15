@@ -3988,12 +3988,10 @@ def create_submit_request(apiurl,
     u = makeurl(apiurl, ['request'], query='cmd=create')
     r = None
     try:
-        print("TRY")
         f = http_POST(u, data=xml)
         root = ET.parse(f).getroot()
         r = root.get('id')
     except HTTPError as e:
-        print("except")
         if e.hdrs.get('X-Opensuse-Errorcode') == "submit_request_rejected":
             print("WARNING:")
             print("WARNING: Project does not accept submit request, request to open a NEW maintenance incident instead")
