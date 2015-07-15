@@ -485,7 +485,8 @@ class Osc(cmdln.Cmdln):
         if subcmd == 'enablechannels' or subcmd == 'enablechannel':
             command = "enablechannel"
             if channel == None:
-               sys.exit("enablechannel needs a channel package")
+                command = "modifychannels"
+                mode="enable_all"
         else:
             if opts.enable_all and opts.skip_disabled:
                 sys.exit('--enable-all and --skip-disabled option are exclusive')
