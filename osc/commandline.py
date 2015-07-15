@@ -462,44 +462,38 @@ class Osc(cmdln.Cmdln):
         """
 
         apiurl = self.get_api_url()
-        project_dir = localdir = os.getcwd()
+        localdir = os.getcwd()
         channel = None
-        command = "addchannels"
-        if len(args) == 0:
+        if not args:
             if is_project_dir(localdir):
                 project = store_read_project(localdir)
-                apiurl = self.get_api_url()
             elif is_package_dir(localdir):
                 project = store_read_project(localdir)
                 channel = store_read_package(localdir)
-                apiurl = self.get_api_url()
+            # XXX: error handling?
         else:
             project = args[0]
-            if subcmd == 'enablechannels' or subcmd == 'enablechannel':
-                command = "modifychannels"
-                mode="enable_all"
             if len(args) > 1:
                 channel = args[1]
-                
-        mode=""
-        if subcmd == 'enablechannels' or subcmd == 'enablechannel':
-            command = "enablechannel"
-            if channel == None:
-                command = "modifychannels"
-                mode="enable_all"
+
+        query = {'cmd': 'addchannels'}
+        if subcmd in ('enablechannels', 'enablechannel'):
+            query['cmd'] = 'enablechannel'
+            if channel is None:
+                query['cmd'] = 'modifychannels'
+                query['enable_all'] = '1'
         else:
             if opts.enable_all and opts.skip_disabled:
-                sys.exit('--enable-all and --skip-disabled option are exclusive')
+                raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
             elif opts.enable_all:
-                mode+="&enable_all=1"
+                query['enable_all'] = '1'
             elif opts.skip_disabled:
-                mode+="&skip_disabled=1"
+                query['skip_disabled'] = '1'
        
         print("Looking for channels...")
-        query = 'cmd=' + command + mode
         url = makeurl(apiurl, ['source', project], query=query)
         if channel:
-           url = makeurl(apiurl, ['source', project, channel], query=query)
+            url = makeurl(apiurl, ['source', project, channel], query=query)
         f = http_POST(url)
 
     @cmdln.option('-f', '--force', action='store_true',
