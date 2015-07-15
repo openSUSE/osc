@@ -470,7 +470,8 @@ class Osc(cmdln.Cmdln):
             elif is_package_dir(localdir):
                 project = store_read_project(localdir)
                 channel = store_read_package(localdir)
-            # XXX: error handling?
+            else:
+                raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
         else:
             project = args[0]
             if len(args) > 1:
