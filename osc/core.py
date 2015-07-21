@@ -5769,9 +5769,6 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
         if not reason:
             reason = "unknown"
         code = node.get('code')
-        rt = int(node.get('readytime'))
-        readyt = time.gmtime(rt)
-        readyt = time.strftime('%Y-%m-%d %H:%M:%S %Z', readyt)
         st = int(node.get('starttime'))
         et = int(node.get('endtime'))
         endtime = time.strftime('%Y-%m-%d %H:%M:%S %Z', time.gmtime(et))
