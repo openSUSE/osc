@@ -1,6 +1,7 @@
 0.153
   OBS 2.7 only:
   - add "addchannels" and "enablechannel" commands
+  - support new package instances on branching when using -N parameter
 
 0.152
   - add support searching for groups via "group:" prefix

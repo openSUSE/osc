@@ -68,6 +68,9 @@ class WrongOptions(OscBaseError):
 class NoWorkingCopy(OscBaseError):
     """Exception raised when directory is neither a project dir nor a package dir"""
 
+class NotMissing(OscBaseError):
+    """Exception raised when link target should not exist, but it does"""
+
 class WorkingCopyWrongVersion(OscBaseError):
     """Exception raised when working copy's .osc/_osclib_version doesn't match"""
 

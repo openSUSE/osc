@@ -4956,7 +4956,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False, missingok=False, maintenance=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False, missingok=False, maintenance=False, newinstance=False):
     """
     Branch a package (via API call)
     """
@@ -4973,6 +4973,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['maintenance'] = "1"
     if missingok:
         query['missingok'] = "1"
+    if newinstance:
+        query['newinstance'] = "1"
     if extend_package_names:
         query['extend_package_names'] = "1"
     if rev:
@@ -4987,9 +4989,12 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     try:
         f = http_POST(u)
     except HTTPError as e:
+        root = ET.fromstring(e.read())
+        if missingok:
+           if root and root.get('code') == "not_missing":
+              raise oscerr.NotMissing("Package exists already via project link, but link will point to given project")
         if not return_existing:
             raise
-        root = ET.fromstring(e.read())
         summary = root.find('summary')
         if summary is None:
             raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root, encoding=ET_ENCODING))

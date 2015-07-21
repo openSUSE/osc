@@ -3221,7 +3221,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-        exists, targetprj, targetpkg, srcprj, srcpkg = \
+        try:
+          exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(apiurl, args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            target_project=tproject, target_package=tpackage,
@@ -3231,6 +3232,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            extend_package_names=opts.extend_package_names,
                            missingok=opts.new_package,
                            maintenance=opts.maintenance)
+        except oscerr.NotMissing as e:
+          print('NOTE: Package target exists already via project links, link will point to given project.')
+          print('      A submission will initialize a new instance.')
+          exists, targetprj, targetpkg, srcprj, srcpkg = \
+                branch_pkg(apiurl, args[0], args[1],
+                           nodevelproject=opts.nodevelproject, rev=opts.revision,
+                           target_project=tproject, target_package=tpackage,
+                           return_existing=opts.checkout, msg=opts.message or '',
+                           force=opts.force, noaccess=opts.noaccess,
+                           add_repositories=opts.add_repositories,
+                           extend_package_names=opts.extend_package_names,
+                           missingok=False,
+                           maintenance=opts.maintenance,
+                           newinstance=opts.new_package)
+          
         if exists:
             print('Using existing branch project: %s' % targetprj, file=sys.stderr)
 
