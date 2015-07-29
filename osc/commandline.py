@@ -6539,7 +6539,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 osc ${cmd_name} rq
                 # list requests, excluding project 'foo' and 'bar'
                 osc ${cmd_name} rq --exclude-project foo,bar
-                # list submitrequests I made
+                # list requests I made
                 osc ${cmd_name} sr
 
             ${cmd_usage}
@@ -6593,7 +6593,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif type in args_prj:
             what = {'project': ''}
         elif type in args_sr:
-            requests = get_request_list(apiurl, req_who=user, exclude_target_projects=exclude_projects)
+            requests = get_request_collection(apiurl, 'creator', req_who=user)
             for r in sorted(requests):
                 print(r.list_view(), '\n')
             return

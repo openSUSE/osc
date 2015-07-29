@@ -4133,6 +4133,28 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         requests.append(r)
     return requests
 
+# this function uses the logic in the api which is faster and more exact then the xpath search
+def get_request_collection(apiurl, role=None, req_who=None, req_states=('new', 'review', 'declined')):
+
+    query={ "view" : "collection" }
+    if role:
+       query["roles"] = role
+    if req_who:
+       query["user"] = req_who
+
+    query["states"] = ",".join(req_states)
+
+    u = makeurl(apiurl, ['request'], query)
+    f = http_GET(u)
+    res = ET.parse(f).getroot()
+
+    requests = []
+    for root in res.findall('request'):
+        r = Request()
+        r.read(root)
+        requests.append(r)
+    return requests
+
 def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new', 'review', 'declined'), req_type=None):
     xpath = ''
     if not 'all' in req_state:
