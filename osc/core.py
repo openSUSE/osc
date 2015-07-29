@@ -3688,6 +3688,9 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
     try:
         si = show_project_sourceinfo(apiurl, project, nofilename, *packages)
     except HTTPError, e:
+        # old API servers do not know the 'nofilename' parameter, so retry without
+        if e.code == 400 and nofilename:
+            return get_project_sourceinfo(apiurl, project, False, *packages)
         if e.code != 414:
             raise
         if len(packages) == 1:
