@@ -2201,11 +2201,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # Check if project actually exists if result list is empty
             if not results:
                 if project:
+                    msg = 'No results for %(kind)s %(entity)s'
+                    emsg = '%(kind)s %(entity)s does not exist'
+                    d = {'entity': [project], 'kind': 'project'}
+                    meth = show_project_meta
+                    if package:
+                        d['kind'] = 'package'
+                        d['entity'].append(package)
+                        meth = show_package_meta
                     try:
-                        show_project_meta(apiurl, project)
-                        print('No results for {0}'.format(project))
+                        entity = d['entity']
+                        d['entity'] = '/'.join(entity)
+                        meth(apiurl, *entity)
+                        print(msg % d)
                     except HTTPError:
-                        print('Project {0} does not exist'.format(project))
+                        print(emsg % d)
                 else:
                     print('No results')
                 return
