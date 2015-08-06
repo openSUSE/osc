@@ -4306,7 +4306,7 @@ def get_group(apiurl, group):
         f = http_GET(u)
         return ''.join(f.readlines())
     except HTTPError:
-        print('user \'%s\' not found' % group)
+        print('group \'%s\' not found' % group)
         return None
 
 def get_user_meta(apiurl, user):
