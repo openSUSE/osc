@@ -2911,7 +2911,7 @@ def shorttime(t):
 
     if time.gmtime()[0] == time.gmtime(t)[0]:
         # same year
-        return time.strftime('%b %d %H:%M %Z', time.gmtime(t))
+        return time.strftime('%b %d %H:%M', time.gmtime(t))
     else:
         return time.strftime('%b %d  %Y', time.gmtime(t))
 
@@ -5763,7 +5763,7 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
         versrel = node.get('versrel')
         bcnt = int(node.get('bcnt'))
         t = time.gmtime(int(node.get('time')))
-        t = time.strftime('%Y-%m-%d %H:%M:%S %Z', t)
+        t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
         if format == 'csv':
             r.append('%s|%s|%s|%s.%d' % (t, srcmd5, rev, versrel, bcnt))
@@ -5796,19 +5796,16 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
         if not reason:
             reason = "unknown"
         code = node.get('code')
-        rt = int(node.get('readytime'))
-        readyt = time.gmtime(rt)
-        readyt = time.strftime('%Y-%m-%d %H:%M:%S %Z', readyt)
         st = int(node.get('starttime'))
         et = int(node.get('endtime'))
-        endtime = time.strftime('%Y-%m-%d %H:%M:%S %Z', time.gmtime(et))
-        waittm = time.gmtime(et-st)
-        if waittm.tm_mday > 1:
-            waitbuild = "%1dd %2dh %2dm %2ds" % (waittm.tm_mday-1, waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
-        elif waittm.tm_hour:
-            waitbuild = "   %2dh %2dm %2ds" % (waittm.tm_hour, waittm.tm_min, waittm.tm_sec)
+        endtime = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(et))
+        waittm = et-st
+        if waittm > 24*60*60:
+            waitbuild = "%1dd %2dh %2dm %2ds" % (waittm / (24*60*60), (waittm / (60*60)) % 24, (waittm / 60) % 60, waittm % 60)
+        elif waittm > 60*60:
+            waitbuild = "   %2dh %2dm %2ds" % (waittm / (60*60), (waittm / 60) % 60, waittm % 60)
         else:
-            waitbuild = "       %2dm %2ds" % (waittm.tm_min, waittm.tm_sec)
+            waitbuild = "       %2dm %2ds" % (waittm / 60, waittm % 60)
 
         if format == 'csv':
             print('%s|%s|%s|%s|%s|%s' % (endtime, package, reason, code, waitbuild, worker))
@@ -5863,7 +5860,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
         except:
             requestid = ""
         t = time.gmtime(int(node.find('time').text))
-        t = time.strftime('%Y-%m-%d %H:%M:%S %Z', t)
+        t = time.strftime('%Y-%m-%d %H:%M:%S', t)
 
         if format == 'csv':
             s = '%s|%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version,
