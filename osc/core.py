@@ -4171,7 +4171,7 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
     if src_package:
         xpath += " and source/@package='%s'" % src_package
     xpath += " and target/@project='%s'" % dst_project
-    if src_project:
+    if dst_package:
         xpath += " and target/@package='%s'" % dst_package
     xpath += "]"
     if req_type:
@@ -4293,6 +4293,24 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
     repl = ''
     if reqs:
         print('There are already the following submit request: %s.' % \
+              ', '.join([i.reqid for i in reqs]))
+        repl = raw_input('Supersede the old requests? (y/n/c) ')
+        if repl.lower() == 'c':
+            print('Aborting', file=sys.stderr)
+            raise oscerr.UserAbort()
+    return repl == 'y', reqs
+
+def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_project,
+                            release_project):
+    reqs = []
+    for src_package in src_packages:
+       reqs += get_exact_request_list(apiurl, src_project, dst_project,
+                                  src_package, None,
+                                  req_type='maintenance_incident',
+                                  req_state=['new', 'review', 'declined'])
+    repl = ''
+    if reqs:
+        print('There are already the following maintenance incident request: %s.' % \
               ', '.join([i.reqid for i in reqs]))
         repl = raw_input('Supersede the old requests? (y/n/c) ')
         if repl.lower() == 'c':

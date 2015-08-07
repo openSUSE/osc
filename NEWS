@@ -1,5 +1,6 @@
 0.153
   - "my sr" is using the server side request collection to get right results
+  - maintenance request offers to supersede old, but still open requests
   OBS 2.7 only:
   - add "addchannels" and "enablechannel" commands
   - support new package instances on branching when using -N parameter

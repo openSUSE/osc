@@ -1284,6 +1284,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                  src_package,
                                                                  dst_project,
                                                                  dst_package)
+            if not supersede_existing:
+               (supersede_existing, reqs) = check_existing_maintenance_requests(apiurl,
+                                                                 src_project,
+                                                                 [src_package],
+                                                                 dst_project, None)
         if not opts.message:
             difflines = []
             doappend = False
@@ -2989,6 +2994,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify incident number to merge in')
     @cmdln.option('--incident-project', metavar='INCIDENT_PROJECT',
                         help='specify incident project to merge in')
+    @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
+                  help='Superseding another request by this one')
     @cmdln.alias("mr")
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
@@ -3055,8 +3062,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             opts.message = edit_message()
 
+        supersede_existing = False
+        reqs = []
+        if not opts.supersede:
+            (supersede_existing, reqs) = check_existing_maintenance_requests(apiurl,
+                                                                 source_project,
+                                                                 source_packages,
+                                                                 target_project,
+                                                                 None) # unspecified release project
+
         r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message)
         print(r.reqid)
+
+        if supersede_existing:
+            for req in reqs:
+                change_request_state(apiurl, req.reqid, 'superseded',
+                                     'superseded by %s' % r.reqid, r.reqid)
+
+        if opts.supersede:
+            change_request_state(apiurl, opts.supersede, 'superseded',
+                                 opts.message or '', r.reqid)
 
 
     @cmdln.option('-c', '--checkout', action='store_true',
