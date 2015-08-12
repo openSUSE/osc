@@ -326,7 +326,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     repositories = []
 
     suffix = '*.rpm'
-    if type == 'dsc':
+    if type == 'dsc' or type == 'livebuild':
         suffix = '*.deb'
     elif type == 'arch':
         suffix = '*.pkg.tar.xz'
