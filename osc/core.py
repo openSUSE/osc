@@ -2296,7 +2296,12 @@ rev: %s
         si = Serviceinfo()
         if os.path.exists('_service'):
             if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
-                service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+                try:
+                    service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+                except ET.ParseError as v:
+                    line, column = v.position
+                    print('XML error in _service file on line %s, column %s' % (line, column))
+                    sys.exit(1)
                 si.read(service)
         si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
         r = si.execute(self.absdir, mode, singleservice, verbose)
