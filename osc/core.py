@@ -3148,8 +3148,8 @@ def makeurl(baseurl, l, query=[]):
     elif isinstance(query, type(dict())):
         query = urlencode(query)
 
-    scheme, netloc = urlsplit(baseurl)[0:2]
-    return urlunsplit((scheme, netloc, '/'.join(l), query, ''))
+    scheme, netloc, path = urlsplit(baseurl)[0:3]
+    return urlunsplit((scheme, netloc, '/'.join([path] + l), query, ''))
 
 
 def http_request(method, url, headers={}, data=None, file=None):
@@ -3174,10 +3174,11 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     req = URLRequest(url)
     api_host_options = {}
-    if conf.is_known_apiurl(url):
+    apiurl = conf.extract_known_apiurl(url)
+    if apiurl is not None:
         # ok no external request
-        install_opener(conf._build_opener(url))
-        api_host_options = conf.get_apiurl_api_host_options(url)
+        install_opener(conf._build_opener(apiurl))
+        api_host_options = conf.get_apiurl_api_host_options(apiurl)
         for header, value in api_host_options['http_headers']:
             req.add_header(header, value)
 
