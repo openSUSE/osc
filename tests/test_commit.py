@@ -2,9 +2,14 @@ import osc.core
 import osc.oscerr
 import os
 import sys
-import urllib2
 from common import GET, PUT, POST, DELETE, OscTestCase
 from xml.etree import cElementTree as ET
+try:
+    from urllib.error import HTTPError
+except ImportError:
+    #python 2.x
+    from urllib2 import HTTPError
+
 FIXTURES_DIR = os.path.join(os.getcwd(), 'commit_fixtures')
 
 def suite():
@@ -302,7 +307,7 @@ class TestCommit(OscTestCase):
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
         self._check_status(p, 'nochange', 'M')
-        self.assertRaises(urllib2.HTTPError, p.commit)
+        self.assertRaises(HTTPError, p.commit)
         exp = 'Sending    nochange\nTransmitting file data .'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_status(p, 'nochange', 'M')

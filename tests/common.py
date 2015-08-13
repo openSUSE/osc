@@ -92,7 +92,7 @@ class MyHTTPHandler(HTTPHandler):
         elif exp is None:
             raise RuntimeError('exp or expfile required')
         if exp is not None:
-            if req.get_data() != bytes(exp, "utf-8"):
+            if req.data != bytes(exp, "utf-8"):
                 raise RequestDataMismatch(req.get_full_url(), repr(req.get_data()), repr(exp))
         return self.__get_response(req.get_full_url(), **kwargs)
 
