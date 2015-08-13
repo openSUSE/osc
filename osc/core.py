@@ -2885,7 +2885,9 @@ class Request:
                 d['by'] = "Project: " + review.by_project
             d['when'] = review.when or ''
             d['who'] = review.who or ''
-            d['comment'] = review.comment or ''
+            d['comment'] = ''
+            if review.comment:
+                d['comment'] = '\n  ' + review.comment
             reviews.append(tmpl % d)
         if reviews:
             lines.append('\nReview:  %s' % indent.join(reviews))
