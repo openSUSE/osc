@@ -4453,7 +4453,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-F', '--file', metavar='FILE',
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
-                  help='ignored')
+                  help='force commit, even if there were no changes')
     @cmdln.option('--skip-validation', default=False, action="store_true",
                   help='deprecated, don\'t use it')
     @cmdln.option('-v', '--verbose', default=False, action="store_true",
@@ -4552,13 +4552,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if repl in('y', 'Y'):
                         can_branch = True
 
-                prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
+                prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch, force=opts.force)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
                 if not msg and not opts.no_message:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
+                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
                 store_unlink_file(p.absdir, '_commit_msg')
         else:
             for p in pacs:
@@ -4567,7 +4567,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p.todo.sort()
                 if not msg and not opts.no_message:
                     msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose)
+                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
                 store_unlink_file(p.absdir, '_commit_msg')
 
     @cmdln.option('-r', '--revision', metavar='REV',

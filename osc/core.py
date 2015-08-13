@@ -918,7 +918,7 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False, can_branch=False):
+    def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False, can_branch=False, force=False):
         if len(pacs):
             try:
                 for pac in pacs:
@@ -937,7 +937,7 @@ class Project:
                         else:
                             p = Package(os.path.join(self.dir, pac))
                         p.todo = todo
-                        p.commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run, can_branch=can_branch)
+                        p.commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run, can_branch=can_branch, force=force)
                     elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
                         print('osc: \'%s\' is not under version control' % pac)
                     elif pac in self.pacs_broken:
@@ -1355,7 +1355,7 @@ class Package:
             todo.append(n.get('name'))
         return todo
 
-    def commit(self, msg='', verbose=False, skip_local_service_run=False, can_branch=False):
+    def commit(self, msg='', verbose=False, skip_local_service_run=False, can_branch=False, force=False):
         # commit only if the upstream revision is the same as the working copy's
         upstream_rev = self.latest_rev()
         if self.rev != upstream_rev:
@@ -1427,7 +1427,7 @@ class Package:
                         % (filename, st))
                 todo_send[filename] = f.md5
 
-        if not real_send and not todo_delete and not self.islinkrepair() and not self.ispulled():
+        if not force and not real_send and not todo_delete and not self.islinkrepair() and not self.ispulled():
             print('nothing to do for package %s' % self.name)
             return 1
 
