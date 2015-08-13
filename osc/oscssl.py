@@ -250,7 +250,12 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         M2Crypto.httpslib.HTTPSConnection.__init__(self, *args, **kwargs)
 
     def connect(self, *args):
-        M2Crypto.httpslib.HTTPSConnection.connect(self, *args)
+        self.sock = SSL.Connection(self.ssl_ctx)
+        if self.session:
+            self.sock.set_session(self.session)
+        if hasattr(self.sock, 'set_tlsext_host_name'):
+            self.sock.set_tlsext_host_name(self.host)
+        self.sock.connect((self.host, self.port))
         verify_certificate(self)
 
     def getHost(self):
