@@ -3151,7 +3151,7 @@ def makeurl(baseurl, l, query=[]):
         query = urlencode(query)
 
     scheme, netloc, path = urlsplit(baseurl)[0:3]
-    return urlunsplit((scheme, netloc, '/'.join([path] + l), query, ''))
+    return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
 
 
 def http_request(method, url, headers={}, data=None, file=None):
