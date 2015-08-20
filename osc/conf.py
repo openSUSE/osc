@@ -382,13 +382,14 @@ cookiejar = None
 
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
-        return urlsplit(apisrv)[0:3]
+        url = apisrv
     elif scheme != None:
-        # the split/join is needed to get a proper url (e.g. without a trailing slash)
-        return urlsplit(urljoin(scheme, apisrv))[0:3]
+        url = scheme + apisrv
     else:
         msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
         raise URLError(msg)
+    scheme, url, path = urlsplit(url)[0:3]
+    return scheme, url, path.rstrip('/')
 
 
 def urljoin(scheme, apisrv, path=''):
