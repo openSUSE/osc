@@ -3046,6 +3046,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc maintenancerequest [ SOURCEPROJECT [ SOURCEPACKAGES RELEASEPROJECT ] ]
+            osc maintenancerequest .
+
+        The 2nd line when issued within a package directory provides a short cut to submit a single 
+        package (the one in the current directory) from the project of this package to be submitted
+        to the release project this package links to. This syntax is only valid when specified from
+        a package subdirectory.
         ${cmd_option_list}
         """
         #FIXME: the follow syntax would make more sense and would obsolete the --release-project parameter
@@ -3066,7 +3072,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) == 0:
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
-            source_project = args[0]
+            if len(args) == 1 and args[0] == '.':
+                if is_package_dir(os.curdir):
+                    source_project = store_read_project(os.curdir)
+                    source_packages = [store_read_package(os.curdir)]
+                    p = Package(os.curdir)
+                    release_project = p.linkinfo.project
+                else:
+                    raise oscerr.WrongArgs('No package directory')
+            else:
+                source_project = args[0]
         if len(args) > 1:
             if len(args) == 2:
                 sys.exit('Source package defined, but no release project.')
