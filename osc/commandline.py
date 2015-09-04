@@ -478,19 +478,20 @@ class Osc(cmdln.Cmdln):
                 channel = args[1]
 
         query = {'cmd': 'addchannels'}
-        if subcmd in ('enablechannels', 'enablechannel'):
-            query['cmd'] = 'enablechannel'
+        if opts.enable_all or subcmd in ('enablechannels', 'enablechannel'):
+            query['enable_all'] = '1'
             if channel is None:
                 query['cmd'] = 'modifychannels'
-                query['enable_all'] = '1'
-        else:
-            if opts.enable_all and opts.skip_disabled:
-                raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
-            elif opts.enable_all:
-                query['enable_all'] = '1'
-            elif opts.skip_disabled:
-                query['skip_disabled'] = '1'
-       
+        if channel:
+            query['cmd'] = 'enablechannel'
+
+        if opts.enable_all and opts.skip_disabled:
+            raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
+        elif opts.enable_all:
+            query['enable_all'] = '1'
+        elif opts.skip_disabled:
+            query['skip_disabled'] = '1'
+
         print("Looking for channels...")
         url = makeurl(apiurl, ['source', project], query=query)
         if channel:
