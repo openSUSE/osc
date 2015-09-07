@@ -2076,6 +2076,9 @@ rev: %s
         if fmeta_root.get('rev') is None and len(fmeta_root.findall('entry')) > 0:
             raise oscerr.APIError('missing rev attribute in _files:\n%s' % ''.join(ET.tostring(fmeta_root, encoding=ET_ENCODING)))
         for i in fmeta_root.findall('entry'):
+            error = i.get('error')
+            if error is not None:
+                raise oscerr.APIError('broken files meta: %s' % error)
             skipped = i.get('skipped') is not None
             f.append(File(i.get('name'), i.get('md5'),
                      int(i.get('size')), int(i.get('mtime')), skipped))
