@@ -2861,9 +2861,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         query = { 'cmd': 'release' }
         if opts.target_project:
-            query["targetproject"] = opts.target_project
+            query["target_project"] = opts.target_project
         if opts.target_repository:
-            query["targetrepository"] = opts.target_repository
+            query["target_repository"] = opts.target_repository
+        if opts.repo:
+            query["repository"] = opts.repo
         if opts.set_release:
             query["setrelease"] = opts.set_release
         baseurl = ['source', source_project]
