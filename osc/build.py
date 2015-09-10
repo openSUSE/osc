@@ -112,7 +112,7 @@ class Buildinfo:
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        if self.buildtype == 'dsc':
+        if self.buildtype == 'dsc' or self.buildtype == 'collax':
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
@@ -271,7 +271,7 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
-    elif buildtype == 'dsc':
+    elif buildtype == 'dsc' or buildtype == 'collax':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
@@ -326,7 +326,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     repositories = []
 
     suffix = '*.rpm'
-    if type == 'dsc' or type == 'livebuild':
+    if type == 'dsc' or type == 'collax' or type == 'livebuild':
         suffix = '*.deb'
     elif type == 'arch':
         suffix = '*.pkg.tar.xz'
@@ -424,7 +424,9 @@ def main(apiurl, opts, argv):
     build_type = os.path.splitext(build_descr)[1][1:]
     if os.path.basename(build_descr) == 'PKGBUILD':
         build_type = 'arch'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'livebuild']:
+    if os.path.basename(build_descr) == 'build.collax':
+        build_type = 'collax'
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild']:
         raise oscerr.WrongArgs(
                 'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi or .livebuild.' \
                         % build_type)
