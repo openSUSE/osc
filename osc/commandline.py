@@ -8149,7 +8149,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         if not os.path.isfile(source):
-            raise oscerr.WrongArgs("Source file '%s' does not exists or is no file" % source)
+            raise oscerr.WrongArgs("Source file '%s' does not exist or is not a file" % source)
         if not opts.force and os.path.isfile(dest):
             raise oscerr.WrongArgs("Dest file '%s' already exists" % dest)
         if os.path.isdir(dest):

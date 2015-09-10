@@ -694,10 +694,10 @@ def main(apiurl, opts, argv):
                 if pkg_meta_e:
                     print('ERROR: Either wrong repo/arch as parameter or a parse error of .spec/.dsc/.kiwi file due to syntax error', file=sys.stderr)
                 else:
-                    print('The package \'%s\' does not exists - please ' \
+                    print('The package \'%s\' does not exist - please ' \
                                         'rerun with \'--local-package\'' % pac, file=sys.stderr)
             else:
-                print('The project \'%s\' does not exists - please ' \
+                print('The project \'%s\' does not exist - please ' \
                                     'rerun with \'--alternative-project <alternative_project>\'' % prj, file=sys.stderr)
             sys.exit(1)
         else:
