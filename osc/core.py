@@ -2989,14 +2989,14 @@ def slash_split(l):
 def expand_proj_pack(args, idx=0, howmany=0):
     """looks for occurance of '.' at the position idx.
     If howmany is 2, both proj and pack are expanded together
-    using the current directory, or none of them, if not possible.
+    using the current directory, or none of them if not possible.
     If howmany is 0, proj is expanded if possible, then, if there
     is no idx+1 element in args (or args[idx+1] == '.'), pack is also
     expanded, if possible.
     If howmany is 1, only proj is expanded if possible.
 
-    If args[idx] does not exists, an implicit '.' is assumed.
-    if not enough elements up to idx exist, an error is raised.
+    If args[idx] does not exist, an implicit '.' is assumed.
+    If not enough elements up to idx exist, an error is raised.
 
     See also parseargs(args), slash_split(args), findpacs(args)
     All these need unification, somehow.
