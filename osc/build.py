@@ -100,7 +100,12 @@ class Buildinfo:
         if root.find('error') != None:
             sys.stderr.write('buildinfo is broken... it says:\n')
             error = root.find('error').text
-            sys.stderr.write(error + '\n')
+            if error.startswith('unresolvable: '):
+                sys.stderr.write('unresolvable: ')
+                sys.stderr.write('\n     '.join(error[14:].split(',')))
+            else:
+                sys.stderr.write(error)
+            sys.stderr.write('\n')
             sys.exit(1)
 
         if not (apiurl.startswith('https://') or apiurl.startswith('http://')):
