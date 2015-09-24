@@ -3024,7 +3024,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.attribute:
             maintenance_attribute = opts.attribute
 
-        source_project = source_packages = target_project = release_project = opt_sourceupdate = None
+        source_project = target_project = release_project = opt_sourceupdate = None
+        source_packages = []
 
         if len(args) == 0 and (is_project_dir(os.curdir) or is_package_dir(os.curdir)):
             source_project = store_read_project(os.curdir)
