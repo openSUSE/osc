@@ -4281,11 +4281,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # check if the project does exist (show_project_meta will throw an exception)
             show_project_meta(apiurl, project)
 
-            Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'])
+            if opts.output_dir is not None:
+                init_dir=opts.output_dir
+            else:
+                init_dir=prj_dir
+            Project.init_project(apiurl, init_dir, project, conf.config['do_package_tracking'])
             print(statfrmt('A', prj_dir))
 
             # all packages
             for package in meta_get_packagelist(apiurl, project):
+                if opts.output_dir is not None:
+                    outputdir = os.path.join(opts.output_dir, package)
+                    if not os.path.exists(opts.output_dir):
+                        os.mkdir(os.path.join(opts.output_dir))
+                else:
+                    outputdir=None
+
                 # don't check out local links by default
                 try:
                     m = show_files_meta(apiurl, project, package)
@@ -4303,7 +4314,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      prj_dir = prj_dir, service_files = opts.source_service_files, \
                                      server_service_files = opts.server_side_source_service_files, \
                                      progress_obj=self.download_progress, size_limit=opts.limit_size, \
-                                     meta=opts.meta)
+                                     meta=opts.meta,outdir=outputdir)
                 except oscerr.LinkExpandError as e:
                     print('Link cannot be expanded:\n', e, file=sys.stderr)
                     print('Use "osc repairlink" for fixing merge conflicts:\n', file=sys.stderr)
