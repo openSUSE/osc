@@ -3310,7 +3310,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         package = targetpkg or args[1]
         if opts.checkout:
-            checkout_package(apiurl, targetprj, package, server_service_files=True,
+            checkout_package(apiurl, targetprj, package, server_service_files=False,
                              expand_link=True, prj_dir=targetprj)
             if conf.config['verbose']:
                 print('Note: You can use "osc delete" or "osc submitpac" when done.\n')
