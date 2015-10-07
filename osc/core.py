@@ -5064,10 +5064,11 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
             raise
         return (True, m.group(1), m.group(2), None, None)
 
+    root = ET.fromstring(f.read())
     if conf.config['http_debug']:
         print(ET.tostring(root, encoding=ET_ENCODING), file=sys.stderr)
     data = {}
-    for i in ET.fromstring(f.read()).findall('data'):
+    for i in root.findall('data'):
         data[i.get('name')] = i.text
     return (False, data.get('targetproject', None), data.get('targetpackage', None),
             data.get('sourceproject', None), data.get('sourcepackage', None))
