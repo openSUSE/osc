@@ -73,7 +73,7 @@ osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
     resolved results revert review rm rq rremove se search service setlinkrev
     signkey sm sr st status submitpac submitreq submitrequest tr triggerreason
     undelete unlock up update updatepacmetafromspec user vc whatdependson who whois
-    wipebinaries)
+    wipebinaries password)
 oscreq=(list log show accept decline revoke reopen setincident supersede approvenew
     checkout clone)
 oscrev=(show list add accept decline reopen supersede)
