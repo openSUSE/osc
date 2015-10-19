@@ -7155,4 +7155,27 @@ def which(name):
             return path
     return None
 
+
+def get_comments(apiurl, kind, name):
+    url = makeurl(apiurl, ['comments', kind, name])
+    f = http_GET(url)
+    return ET.parse(f).getroot()
+
+
+def print_comments(apiurl, kind, name):
+    def print_rec(comments, indent=''):
+        for comment in comments:
+            print(indent, end='')
+            print('On', comment.get('when'), comment.get('who'), 'wrote:')
+            text = indent + comment.text.replace('\r\n',' \n')
+            print(('\n' + indent).join(text.split('\n')))
+            print()
+            print_rec([c for c in root if c.get('parent') == comment.get('id')], indent + '  ')
+
+    root = get_comments(apiurl, kind, name)
+    comments = [c for c in root if c.get('parent') is None]
+    if comments:
+        print('\nComments:')
+        print_rec(comments)
+
 # vim: sw=4 et

@@ -2290,6 +2290,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return request_interactive_review(apiurl, r, group=opts.group, ignore_reviews=ignore_reviews)
             else:
                 print(r)
+                print_comments(apiurl, 'request', reqid)
             if opts.source_buildstatus:
                 sr_actions = r.get_actions('submit')
                 if not sr_actions:
