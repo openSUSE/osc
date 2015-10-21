@@ -447,16 +447,58 @@ class Osc(cmdln.Cmdln):
                         help='Skip disabled channels. Otherwise the source gets added, but not the repositories.')
     @cmdln.option('-e', '--enable-all', action='store_true',
                         help='Enable all added channels including the ones disabled by default.')
-    @cmdln.alias('enablechannel')
-    @cmdln.alias('enablechannels')
     def do_addchannels(self, subcmd, opts, *args):
         """${cmd_name}: Add channels to project.
 
-        The command adds all channels which are defined to be used for the source packages. 
-        The source link target is used to lookup the channels.
+        The command adds all channels which are defined to be used for a given source package. 
+        The source link target is used to lookup the channels. The command can be
+        used for a certain package or for all in the specified project.
+
+        In case no channel is defined the operation is just returning.
 
         Examples:
-            osc addchannels [PROJECT]
+            osc addchannels [PROJECT [PACKAGE]]
+        ${cmd_option_list}
+        """
+
+        apiurl = self.get_api_url()
+        localdir = os.getcwd()
+        channel = None
+        if not args:
+            if is_project_dir(localdir) or is_package_dir(localdir):
+                project = store_read_project(localdir)
+            elif is_package_dir(localdir):
+                project = store_read_project(localdir)
+                channel = store_read_package(localdir)
+            else:
+                raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
+        else:
+            project = args[0]
+
+        query = {'cmd': 'addchannels'}
+
+        if opts.enable_all and opts.skip_disabled:
+            raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
+        elif opts.enable_all:
+            query['mode'] = 'enable_all'
+        elif opts.skip_disabled:
+            query['mode'] = 'skip_disabled'
+
+        print("Looking for channels...")
+        url = makeurl(apiurl, ['source', project], query=query)
+        if channel:
+            url = makeurl(apiurl, ['source', project, channel], query=query)
+        f = http_POST(url)
+
+    @cmdln.alias('enablechannel')
+    def do_enablechannels(self, subcmd, opts, *args):
+        """${cmd_name}: Enables channels
+
+        Enables existing channel packages in a project. Enabling means adding the
+        needed repositories for building.
+        The command can be used to enable a specific one or all channels of a project.
+
+        Examples:
             osc enablechannels [PROJECT [CHANNEL_PACKAGE]]
         ${cmd_option_list}
         """
@@ -477,22 +519,13 @@ class Osc(cmdln.Cmdln):
             if len(args) > 1:
                 channel = args[1]
 
-        query = {'cmd': 'addchannels'}
-        if opts.enable_all or subcmd in ('enablechannels', 'enablechannel'):
-            query['enable_all'] = '1'
-            if channel is None:
-                query['cmd'] = 'modifychannels'
+        query = {}
         if channel:
             query['cmd'] = 'enablechannel'
+        else:
+            query = {'cmd': 'modifychannels', 'mode': 'enable_all'}
 
-        if opts.enable_all and opts.skip_disabled:
-            raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
-        elif opts.enable_all:
-            query['enable_all'] = '1'
-        elif opts.skip_disabled:
-            query['skip_disabled'] = '1'
-
-        print("Looking for channels...")
+        print("Enable channel(s)...")
         url = makeurl(apiurl, ['source', project], query=query)
         if channel:
             url = makeurl(apiurl, ['source', project, channel], query=query)
