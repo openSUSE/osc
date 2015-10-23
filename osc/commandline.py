@@ -3241,6 +3241,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='create a branch pointing to a not yet existing package')
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='branch against a specific revision')
+    @cmdln.option('--linkrev', metavar='linkrev',
+                        help='specify the used revision in the link target.')
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
@@ -3258,6 +3260,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             %(getpac_default_project)s
         (list of projects from oscrc:getpac_default_project)
         if nothing else is specfied on the command line.
+
+        In case of branch errors, where the source has currently merge
+        conflicts use --linkrev=base option.
 
         usage:
             osc branch
@@ -3298,6 +3303,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(apiurl, args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
+                           linkrev=opts.linkrev,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
@@ -3311,6 +3317,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(apiurl, args[0], args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
+                           linkrev=opts.linkrev,
                            target_project=tproject, target_package=tpackage,
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
@@ -7716,9 +7723,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.APIError('source link is not broken')
         workingrev = None
 
-        baserev = linkinfo.get('baserev')
-        if baserev != None:
-            query = { 'rev': 'latest', 'linkrev': baserev }
+        if linkinfo.get('baserev'):
+            query = { 'rev': 'latest', 'linkrev': 'base' }
             u = makeurl(apiurl, ['source', prj, package], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()

@@ -5016,7 +5016,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False, missingok=False, maintenance=False, newinstance=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, linkrev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False, missingok=False, maintenance=False, newinstance=False):
     """
     Branch a package (via API call)
     """
@@ -5039,6 +5039,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['extend_package_names'] = "1"
     if rev:
         query['rev'] = rev
+    if linkrev:
+        query['linkrev'] = linkrev
     if target_project:
         query['target_project'] = target_project
     if target_package:
