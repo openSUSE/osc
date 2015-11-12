@@ -6251,6 +6251,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc service COMMAND (inside working copy)
             osc service run [SOURCE_SERVICE]
+            osc service localrun
             osc service disabledrun
             osc service remoterun [PROJECT PACKAGE]
 
@@ -6258,6 +6259,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             run         r  run defined services locally, it takes an optional parameter to run only a
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
+            localrun    lr run services locally and store files as local created
             disabledrun dr run disabled or server side only services locally and store files as local created
             remoterun   rr trigger a re-run on the server side
 
