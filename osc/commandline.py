@@ -5761,6 +5761,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use hard links instead of a deep copied source')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
+    @cmdln.option('--vm-telnet', metavar='TELNET',
+                  help='Launch a telnet server inside of VM build')
     @cmdln.option('--target', metavar='TARGET',
                   help='define target platform')
     @cmdln.option('--alternative-project', metavar='PROJECT',

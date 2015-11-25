@@ -424,6 +424,7 @@ def main(apiurl, opts, argv):
     cache_dir  = None
     build_uid = ''
     vm_type = config['build-type']
+    vm_telnet = None
 
     build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
@@ -502,6 +503,8 @@ def main(apiurl, opts, argv):
             return 1
     if opts.vm_type:
         vm_type = opts.vm_type
+    if opts.vm_telnet:
+        vm_telnet = opts.vm_telnet
     if opts.alternative_project:
         prj = opts.alternative_project
         pac = '_repository'
@@ -1013,6 +1016,10 @@ def main(apiurl, opts, argv):
             my_build_swap = build_root + '/swap'
 
         vm_options = [ '--vm-type=%s' % vm_type ]
+        if vm_telnet:
+            vm_options += [ '--vm-telnet=' + vm_telnet ]
+        if config['build-memory']:
+            vm_options += [ '--memory=' + config['build-memory'] ]
         if vm_type != 'lxc':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
