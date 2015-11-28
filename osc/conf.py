@@ -41,6 +41,7 @@ import base64
 import os
 import re
 import sys
+import ssl
 
 try:
     from http.cookiejar import LWPCookieJar, CookieJar
@@ -49,7 +50,7 @@ try:
     from urllib.parse import urlsplit
     from urllib.error import URLError
     from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass
+    from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
 except ImportError:
     #python 2.x
     from cookielib import LWPCookieJar, CookieJar
@@ -57,7 +58,7 @@ except ImportError:
     from StringIO import StringIO
     from urlparse import urlsplit
     from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass
+    from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
 
 from . import OscConfigParser
 from osc import oscerr
@@ -542,8 +543,15 @@ def _build_opener(apiurl):
             raise oscerr.OscIOError(None, 'No CA certificates found')
         opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
+        handlers = [HTTPCookieProcessor(cookiejar), authhandler, proxyhandler]
+        try:
+            # disable ssl cert check in python >= 2.7.9
+            ctx = ssl._create_unverified_context()
+            handlers.append(HTTPSHandler(context=ctx))
+        except AttributeError:
+            pass
         print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
-        opener = build_opener(HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
+        opener = build_opener(*handlers)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
     _build_opener.last_opener = (apiurl, opener)
     return opener
