@@ -5791,9 +5791,12 @@ def get_source_rev(apiurl, project, package, revision=None):
         e[k.tag] = k.text
     return e
 
-def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text'):
+def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', limit = None):
     import time
-    u = makeurl(apiurl, ['build', prj, repository, arch, package, '_history'])
+    query = {}
+    if limit != None and int(limit) > 0:
+        query['limit'] = int(limit)
+    u = makeurl(apiurl, ['build', prj, repository, arch, package, '_history'], query)
     f = http_GET(u)
     root = ET.parse(f).getroot()
 

@@ -6088,6 +6088,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
+    @cmdln.option('-l', '--limit', metavar='limit',
+                        help='for setting the number of results')
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build history of a package
@@ -6126,7 +6128,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.csv:
             format = 'csv'
 
-        print('\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format)))
+        print('\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format, opts.limit)))
 
     @cmdln.option('', '--csv', action='store_true',
                         help='generate output in CSV (separated by |)')
