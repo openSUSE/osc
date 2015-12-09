@@ -12,6 +12,7 @@ import sys
 import time
 import imp
 import inspect
+import itertools
 try:
     from urllib.parse import urlsplit
     from urllib.error import HTTPError
@@ -4951,6 +4952,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
                         help='generate output in CSV format')
+    @cmdln.option('', '--from-csv', action = 'store_true', default = False,
+                        help="Read ^<project>|<package>$ from stdin. $ osc search --package foo --csv | osc results --from-csv")
     @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
                         help='format string for csv output')
     def do_results(self, subcmd, opts, *args):
@@ -4962,6 +4965,58 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
+        class NResultsPrintJoin(object):
+          def __init__(pj, xs):
+            pj.xs = xs
+            pj.n = 0
+
+          def join(pj, y):
+            """
+            show_result(*pj.xs[pj.n]) == y
+            """
+            pj.n += 1
+            prj, pkg = pj.xs[pj.n-1]
+
+            return "Results of {} in {}\n{}{}".format(
+              pkg
+            , prj
+            , "\n".join(y)
+            , '\n' if pj.n < len(pj.xs) else ''
+            )
+
+        def show_result(project, package, printJoin = "\n"):
+            if project == None:
+                raise oscerr.WrongOptions("No project given")
+
+            if package == None:
+                if opts.arch == []:
+                    opts.arch = None
+                if opts.repo == []:
+                    opts.repo = None
+                opts.hide_legend = None
+                opts.name_filter = None
+                opts.status_filter = None
+                opts.vertical = None
+                opts.show_non_building = None
+                opts.show_excluded = None
+                self.do_prjresults('prjresults', opts, *args)
+                return
+
+            if opts.xml and opts.csv:
+                raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
+
+            args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
+            if opts.xml:
+                print(''.join(show_results_meta(*args)), end=' ')
+            elif opts.csv:
+                # ignore _oldstate key
+                results = [r for r in get_package_results(*args) if not '_oldstate' in r]
+                print('\n'.join(format_results(results, opts.format)))
+            else:
+                args.append(opts.verbose)
+                args.append(opts.watch)
+                args.append(printJoin)
+                get_results(*args)
 
         args = slash_split(args)
 
@@ -4969,49 +5024,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none, one, or two)')
         project = package = None
-        wd = os.curdir
-        if is_project_dir(wd):
-            project = store_read_project(wd)
-        elif is_package_dir(wd):
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-        if len(args) > 0:
-            project = args[0]
-        if len(args) > 1:
-            package = args[1]
 
-        if project == None:
-            raise oscerr.WrongOptions("No project given")
+        if opts.from_csv:
+          xs = [l.rstrip().split('|') for l in sys.stdin.readlines()]
+          pj = NResultsPrintJoin(xs)
+          xs = [x + [pj] for x in xs]
+          xs = [tuple(x) for x in xs]
 
-        if package == None:
-            if opts.arch == []:
-                opts.arch = None
-            if opts.repo == []:
-                opts.repo = None
-            opts.hide_legend = None
-            opts.name_filter = None
-            opts.status_filter = None
-            opts.vertical = None
-            opts.show_non_building = None
-            opts.show_excluded = None
-            self.do_prjresults('prjresults', opts, *args)
-            return
-
-        if opts.xml and opts.csv:
-            raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
-
-        args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
-        if opts.xml:
-            print(''.join(show_results_meta(*args)), end=' ')
-        elif opts.csv:
-            # ignore _oldstate key
-            results = [r for r in get_package_results(*args) if not '_oldstate' in r]
-            print('\n'.join(format_results(results, opts.format)))
+          for x in xs:
+            show_result(*x)
         else:
-            args.append(opts.verbose)
-            args.append(opts.watch)
-            args.append("\n")
-            get_results(*args)
+            wd = os.curdir
+            if is_project_dir(wd):
+                project = store_read_project(wd)
+            elif is_package_dir(wd):
+                project = store_read_project(wd)
+                package = store_read_package(wd)
+
+            if len(args) > 0:
+                project = args[0]
+            if len(args) > 1:
+                package = args[1]
+
+            show_result(project, package)
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!
