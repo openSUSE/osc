@@ -5833,6 +5833,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         import osc.build
 
+        if conf.config['build-type'] and conf.config['build-type'] == "none":
+            print('Error: build command has been disabled for this platform, cannot run local builds')
+            return 1
+
         if which(conf.config['build-cmd']) is None:
             print('Error: build (\'%s\') command not found' % conf.config['build-cmd'], file=sys.stderr)
             print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)

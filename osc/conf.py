@@ -104,7 +104,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
 
             # build type settings
             'build-cmd': '/usr/bin/build',
-            'build-type': '',                   # may be empty for chroot, kvm or xen
+            'build-type': '',                   # may be empty for chroot, kvm or xen, none to disable local builds
             'build-root': '/var/tmp/build-root/%(repo)s-%(arch)s',
             'build-uid': '',                    # use the default provided by build
             'build-device': '',                 # required for VM builds
