@@ -1320,11 +1320,38 @@ class Package:
             ET.SubElement(root, 'entry', name=i, md5=todo_send[i])
         return root
 
+    @staticmethod
+    def commit_filelist(apiurl, project, package, filelist, msg='', user=None, **query):
+        """send the commitlog and the local filelist to the server"""
+        if user is None:
+            user = conf.get_apiurl_usr(apiurl)
+        query.update({'cmd': 'commitfilelist', 'user': user, 'comment': msg})
+        u = makeurl(apiurl, ['source', project, package], query=query)
+        f = http_POST(u, data=ET.tostring(filelist, encoding=ET_ENCODING))
+        root = ET.parse(f).getroot()
+        return root
+
+    @staticmethod
+    def commit_get_missing(filelist):
+        """returns list of missing files (filelist is the result of commit_filelist)"""
+        error = filelist.get('error')
+        if error is None:
+            return []
+        elif error != 'missing':
+            raise oscerr.APIError('commit_get_missing_files: '
+                'unexpected \'error\' attr: \'%s\'' % error)
+        todo = []
+        for n in filelist.findall('entry'):
+            name = n.get('name')
+            if name is None:
+                raise oscerr.APIError('missing \'name\' attribute:\n%s\n'
+                    % ET.tostring(filelist, encoding=ET_ENCODING))
+            todo.append(n.get('name'))
+        return todo
+
     def __send_commitlog(self, msg, local_filelist):
         """send the commitlog and the local filelist to the server"""
-        query = {'cmd'    : 'commitfilelist',
-                 'user'   : conf.get_apiurl_usr(self.apiurl),
-                 'comment': msg}
+        query = {}
         if self.islink() and self.isexpanded():
             query['keeplink'] = '1'
             if conf.config['linkcontrol'] or self.isfrozen():
@@ -1334,26 +1361,8 @@ class Package:
                 query['linkrev'] = self.get_pulled_srcmd5()
         if self.islinkrepair():
             query['repairlink'] = '1'
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name], query=query)
-        f = http_POST(u, data=ET.tostring(local_filelist, encoding=ET_ENCODING))
-        root = ET.parse(f).getroot()
-        return root
-
-    def __get_todo_send(self, server_filelist):
-        """parse todo from a previous __send_commitlog call"""
-        error = server_filelist.get('error')
-        if error is None:
-            return []
-        elif error != 'missing':
-            raise oscerr.PackageInternalError(self.prjname, self.name,
-                '__get_todo_send: unexpected \'error\' attr: \'%s\'' % error)
-        todo = []
-        for n in server_filelist.findall('entry'):
-            name = n.get('name')
-            if name is None:
-                raise oscerr.APIError('missing \'name\' attribute:\n%s\n' % ET.tostring(server_filelist, encoding=ET_ENCODING))
-            todo.append(n.get('name'))
-        return todo
+        return self.commit_filelist(self.apiurl, self.prjname, self.name,
+                                    local_filelist, msg, **query)
 
     def commit(self, msg='', verbose=False, skip_local_service_run=False, can_branch=False, force=False):
         # commit only if the upstream revision is the same as the working copy's
@@ -1434,7 +1443,7 @@ class Package:
         print('Transmitting file data', end=' ')
         filelist = self.__generate_commitlist(todo_send)
         sfilelist = self.__send_commitlog(msg, filelist)
-        send = self.__get_todo_send(sfilelist)
+        send = self.commit_get_missing(sfilelist)
         real_send = [i for i in real_send if not i in send]
         # abort after 3 tries
         tries = 3
@@ -1452,7 +1461,7 @@ class Package:
                     send.remove(filename)
                 tries -= 1
                 sfilelist = self.__send_commitlog(msg, filelist)
-                send = self.__get_todo_send(sfilelist)
+                send = self.commit_get_missing(sfilelist)
             if len(send):
                 raise oscerr.PackageInternalError(self.prjname, self.name,
                     'server does not accept filelist:\n%s\nmissing:\n%s\n' \
@@ -5131,25 +5140,34 @@ def copy_pac(src_apiurl, src_project, src_package,
         # copy one file after the other
         import tempfile
         query = {'rev': 'upload'}
-        revision = show_upstream_srcmd5(src_apiurl, src_project, src_package, expand=expand, revision=revision)
-        for n in meta_get_filelist(src_apiurl, src_project, src_package, expand=expand, revision=revision):
-            if n.startswith('_service:') or n.startswith('_service_'):
-                continue
-            print('  ', n)
-            tmpfile = None
-            try:
-                (fd, tmpfile) = tempfile.mkstemp(prefix='osc-copypac')
-                get_source_file(src_apiurl, src_project, src_package, n, targetfilename=tmpfile, revision=revision)
-                u = makeurl(dst_apiurl, ['source', dst_project, dst_package, pathname2url(n)], query=query)
-                http_PUT(u, file = tmpfile)
-            finally:
-                if not tmpfile is None:
-                    os.unlink(tmpfile)
-        if comment:
-            query['comment'] = comment
-        query['cmd'] = 'commit'
-        u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
-        http_POST(u)
+        xml = show_files_meta(src_apiurl, src_project, src_package,
+                              expand=expand, revision=revision)
+        filelist = ET.fromstring(xml)
+        revision = filelist.get('srcmd5')
+        # filter out _service: files
+        for entry in filelist.findall('entry'):
+            # hmm the old code also checked for _service_ (but this is
+            # probably a relict from former times (if at all))
+            if entry.get('name').startswith('_service:'):
+                filelist.remove(entry)
+        filelist = Package.commit_filelist(dst_apiurl, dst_project,
+                                           dst_package, filelist, msg=comment)
+        todo = Package.commit_get_missing(filelist)
+        for filename in todo:
+            print(' ', filename)
+            # hmm ideally, we would pass a file-like (that delegates to
+            # streamfile) to http_PUT...
+            with tempfile.NamedTemporaryFile(prefix='osc-copypac') as f:
+                get_source_file(src_apiurl, src_project, src_package, filename,
+                                targetfilename=f.name, revision=revision)
+                path = ['source', dst_project, dst_package, pathname2url(filename)]
+                u = makeurl(dst_apiurl, path, query={'rev': 'repository'})
+                http_PUT(u, file=f.name)
+        filelist = Package.commit_filelist(dst_apiurl, dst_project, dst_package,
+                                           filelist, msg=comment)
+        todo = Package.commit_get_missing(filelist)
+        if todo:
+            raise oscerr.APIError('failed to copy: %s' % ', '.join(todo))
         return 'Done.'
 
 
