@@ -5212,7 +5212,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         cfg = files[0]
         # find newest file
         for f in files[1:]:
-            if os.stat(f).st_mtime > os.stat(cfg).st_mtime:
+            if os.stat(f).st_atime > os.stat(cfg).st_atime:
                 cfg = f
         root = ET.parse(cfg).getroot()
         repo = root.get("repository")
