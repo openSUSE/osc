@@ -96,8 +96,8 @@ class Fetcher:
         """failure output for failovers from urlgrabber"""
         if errobj.url.startswith('file://'):
             return {}
-        print('Trying openSUSE Build Service server for %s (%s), not found at %s.'
-              % (self.curpac, self.curpac.project, errobj.url.split('/')[2]))
+        print('%s/%s: attempting download from api, since not found at %s'
+              % (self.curpac.project, self.curpac, errobj.url.split('/')[2]))
         return {}
 
     def __add_cpio(self, pac):
