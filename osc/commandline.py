@@ -4093,36 +4093,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.show_not_in_old:
                     print("new only:  %s" % pkg)
 
-    @cmdln.hide(1)
-    @cmdln.alias('in')
-    def do_install(self, subcmd, opts, *args):
-        """${cmd_name}: install a package after build via zypper in -r
-
-        Not implemented here.  Please try
-        http://software.opensuse.org/search?q=osc-plugin-install&include_home=true
-
-
-        ${cmd_usage}
-        ${cmd_option_list}
-        """
-
-        args = slash_split(args)
-        args = expand_proj_pack(args)
-
-        ## FIXME:
-        ## if there is only one argument, and it ends in .ymp
-        ## then fetch it, Parse XML to get the first
-        ##  metapackage.group.repositories.repository.url
-        ## and construct zypper cmd's for all
-        ##  metapackage.group.software.item.name
-        ##
-        ## if args[0] is already an url, the use it as is.
-
-        cmd = "sudo zypper -p http://download.opensuse.org/repositories/%s/%s --no-refresh -v in %s" % \
-              (re.sub(':', ':/', args[0]), 'openSUSE_11.4', args[1])
-        print(self.do_install.__doc__)
-        print("Example: \n" + cmd)
-
 
     def do_repourls(self, subcmd, opts, *args):
         """${cmd_name}: Shows URLs of .repo files
