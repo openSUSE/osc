@@ -5074,23 +5074,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage} [REPOSITORY ARCH | BUILDLOGURL]
         ${cmd_option_list}
         """
+        import osc.build
 
-        repository = arch = None
+        project = package = repository = arch = None
 
         apiurl = self.get_api_url()
 
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
-        elif len(args) < 2:
-            self.print_repos()
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
         else:
-            wd = os.curdir
-            package = store_read_package(wd)
-            project = store_read_project(wd)
-            repository = args[0]
-            arch = args[1]
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+            if len(args) == 1:
+                repository, arch = self._find_last_repo_arch(args[0], fatal=False)
+                if repository is None:
+                    # no local build with this repo was done
+                    print('failed to guess arch, using hostarch')
+                    repository = args[0]
+                    arch = osc.build.hostarch
+            elif len(args) < 2:
+                self.print_repos()
+            elif len(args) > 2:
+                raise oscerr.WrongArgs('Too many arguments.')
+            else:
+                repository = args[0]
+                arch = args[1]
 
         offset = 0
         if subcmd == "blt" or subcmd == "buildlogtail":
@@ -5191,6 +5199,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
         print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last)
 
+    def _find_last_repo_arch(self, repo=None, fatal=True):
+        import glob
+        files = glob.glob(os.path.join(os.getcwd(), store, "_buildinfo-*"))
+        if repo is not None:
+            files = [f for f in files
+                     if os.path.basename(f).replace('_buildinfo-', '').startswith(repo + '-')]
+        if not files:
+            if not fatal:
+                return None, None
+            self.print_repos()
+        cfg = files[0]
+        # find newest file
+        for f in files[1:]:
+            if os.stat(f).st_mtime > os.stat(cfg).st_mtime:
+                cfg = f
+        root = ET.parse(cfg).getroot()
+        repo = root.get("repository")
+        arch = root.find("arch").text
+        return repo, arch
+
     @cmdln.alias('lbl')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                   help='get log starting from offset')
@@ -5211,23 +5239,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit(1)
 
         if len(args) == 0 or len(args) == 1:
+            project = store_read_project('.')
             package = store_read_package('.')
-            import glob
-            files = glob.glob(os.path.join(os.getcwd(), store, "_buildinfo-*"))
+            repo = None
             if args:
-                files = [f for f in files
-                         if os.path.basename(f).replace('_buildinfo-', '').startswith(args[0] + '-')]
-            if not files:
-                self.print_repos()
-            cfg = files[0]
-            # find newest file
-            for f in files[1:]:
-                if os.stat(f).st_mtime > os.stat(cfg).st_mtime:
-                    cfg = f
-            root = ET.parse(cfg).getroot()
-            project = root.get("project")
-            repo = root.get("repository")
-            arch = root.find("arch").text
+                repo = args[0]
+            repo, arch = self._find_last_repo_arch(repo)
         elif len(args) == 2:
             project = store_read_project('.')
             package = store_read_package('.')
