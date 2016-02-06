@@ -5381,64 +5381,53 @@ def show_prj_results_meta(apiurl, prj):
     return f.readlines()
 
 
-def get_package_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], oldstate=None):
-    """ return a package results as a list of dicts """
+def result_xml_to_dicts(xml):
+    # assumption: xml contains at most one status element (maybe we should
+    # generalize this to arbitrary status element)
+    root = ET.fromstring(xml)
     r = []
-
-    f = show_results_meta(apiurl, prj, package, lastbuild, repository, arch, oldstate)
-    root = ET.fromstring(''.join(f))
-
-    r.append( {'_oldstate': root.get('state')} )
-
     for node in root.findall('result'):
         rmap = {}
-        rmap['project'] = rmap['prj'] = prj
-        rmap['pkg'] = rmap['package'] = rmap['pac'] = package
+        rmap['project'] = rmap['prj'] = node.get('project')
         rmap['repository'] = rmap['repo'] = rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
         rmap['dirty'] = node.get('dirty')
         rmap['repostate'] = node.get('code')
-
+        rmap['pkg'] = rmap['package'] = rmap['pac'] = ''
+        rmap['code'] = ''
         rmap['details'] = ''
         details = None
         statusnode = node.find('status')
-        if statusnode != None:
+        if statusnode is not None:
+            # the way currently use this function, there should be
+            # always a status element
+            rmap['pkg'] = rmap['package'] = rmap['pac'] = statusnode.get('package')
             rmap['code'] = statusnode.get('code', '')
             details = statusnode.find('details')
-        else:
-            rmap['code'] = ''
-
-        if details != None:
+        if details is not None:
             rmap['details'] = details.text
-
         rmap['dirty'] = rmap['dirty'] == 'true'
 
         r.append(rmap)
     return r
 
+
 def format_results(results, format):
     """apply selected format on each dict in results and return it as a list of strings"""
     return [format % r for r in results]
 
-def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], verbose=False, wait=False, printJoin=None):
-    r = []
+
+def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **kwargs):
+    """returns list of/or prints a human readable status for the specified package"""
+    # hmm the function name is a bit too generic - something like
+    # get_package_results_human would be better, but this would break the existing
+    # api (unless we keep get_results around as well)...
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
-    oldstate = None
-
-    while True:
-        waiting = False
-        results = r = []
-        try:
-            results = get_package_results(apiurl, prj, package, lastbuild, repository, arch, oldstate)
-        except HTTPError as e:
-            # check for simple timeout error and fetch again
-            if e.code == 502 or e.code == 504:
-                # re-try result request
-                continue
-            raise
-
-        for res in results:
+    r = []
+    for results in get_package_results(apiurl, project, package, **kwargs):
+        r = []
+        for res in result_xml_to_dicts(results):
             if '_oldstate' in res:
                 oldstate = res['_oldstate']
                 continue
@@ -5450,29 +5439,58 @@ def get_results(apiurl, prj, package, lastbuild=None, repository=[], arch=[], ve
                 else:
                     res['status'] += ': %s' % (res['details'], )
             if res['dirty']:
-                waiting = True
                 if verbose:
                     res['status'] = 'outdated (was: %s)' % res['status']
                 else:
                     res['status'] += '*'
             elif res['code'] in ('succeeded') and res['repostate'] != "published":
-                waiting = True
                 if verbose:
                     res['status'] += '(unpublished)'
                 else:
                     res['status'] += '*'
-            if res['code'] in ('blocked', 'scheduled', 'dispatching', 'building', 'signing', 'finished'):
-                waiting = True
 
             r.append(result_line_templ % res)
 
         if printJoin:
             print(printJoin.join(r))
-
-        if wait == False or waiting == False:
-            break
-
     return r
+
+
+def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
+    """generator that returns a the package results as an xml structure"""
+    xml = ''
+    waiting_states = ('blocked', 'scheduled', 'dispatching', 'building',
+                      'signing', 'finished')
+    while True:
+        waiting = False
+        try:
+            xml = ''.join(show_results_meta(apiurl, project, package, *args, **kwargs))
+        except HTTPError as e:
+            # check for simple timeout error and fetch again
+            if e.code == 502 or e.code == 504:
+                # re-try result request
+                continue
+            raise
+        root = ET.fromstring(xml)
+        kwargs['oldstate'] = root.get('state')
+        for result in root.findall('result'):
+            if result.get('dirty') is not None:
+                waiting = True
+                break
+            elif result.get('code') in waiting_states:
+                waiting = True
+                break
+            elif (result.get('code') == 'succeeded'
+                  and result.get('repostate') != 'published'):
+                waiting = True
+                break
+
+        if not wait or not waiting:
+            break
+        else:
+            yield xml 
+    yield xml
+
 
 def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
     #print '----------------------------------------'

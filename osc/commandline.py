@@ -4970,18 +4970,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml and opts.csv:
             raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
 
-        args = [ apiurl, project, package, opts.last_build, opts.repo, opts.arch ]
-        if opts.xml:
-            print(''.join(show_results_meta(*args)), end=' ')
-        elif opts.csv:
-            # ignore _oldstate key
-            results = [r for r in get_package_results(*args) if not '_oldstate' in r]
-            print('\n'.join(format_results(results, opts.format)))
+        kwargs = {'apiurl': apiurl, 'project': project, 'package': package,
+                  'lastbuild': opts.last_build, 'repository': opts.repo,
+                  'arch': opts.arch, 'wait': opts.watch}
+        if opts.xml or opts.csv:
+            for xml in get_package_results(**kwargs):
+                if opts.xml:
+                    print(xml, end='')
+                else:
+                    # csv formatting
+                    results = result_xml_to_dicts(xml)
+                    print('\n'.join(format_results(results, opts.format)))
         else:
-            args.append(opts.verbose)
-            args.append(opts.watch)
-            args.append("\n")
-            get_results(*args)
+            kwargs['verbose'] = opts.verbose
+            kwargs['wait'] = opts.watch
+            kwargs['printJoin'] = '\n'
+            get_results(**kwargs)
+
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!
