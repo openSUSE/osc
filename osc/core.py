@@ -1845,6 +1845,10 @@ class Package:
                 'This might be caused by an old wc format. Please backup your current\n'
                 'wc and checkout the package again. Afterwards copy all files (except the\n'
                 '.osc/ dir) into the new package wc.' % n)
+        elif os.path.islink(os.path.join(self.absdir, n)):
+            # dangling symlink, whose name is _not_ tracked: treat it
+            # as unversioned
+            state = '?'
         else:
             # this case shouldn't happen (except there was a typo in the filename etc.)
             raise oscerr.OscIOError(None, 'osc: \'%s\' is not under version control' % n)
