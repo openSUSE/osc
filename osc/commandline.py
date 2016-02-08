@@ -4705,9 +4705,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 #                    sys.exit(1)
 
             if not rev:
-                if opts.expand_link and p.islink() and not p.isexpanded():
+                if opts.expand_link:
                     rev = p.latest_rev(expand=True)
-                    print('Expanding to rev', rev)
+                    if p.islink() and not p.isexpanded():
+                        print('Expanding to rev', rev)
                 elif opts.unexpand_link and p.islink() and p.isexpanded():
                     rev = show_upstream_rev(p.apiurl, p.prjname, p.name, meta=p.meta)
                     print('Unexpanding to rev', rev)
