@@ -3692,10 +3692,9 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     et = ET.fromstring(''.join(m))
     if include_service_files:
         return et.get('srcmd5')
-    try:
-        # only source link packages have a <linkinfo> element.
-        li_node = et.find('linkinfo')
-    except:
+
+    li_node = et.find('linkinfo')
+    if li_node is None:
         return None
 
     li = Linkinfo()
