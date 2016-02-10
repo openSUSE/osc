@@ -6833,7 +6833,8 @@ def print_request_list(apiurl, project, package = None, states = ('new', 'review
     for r in requests:
         print(r.list_view(), '\n')
 
-def request_interactive_review(apiurl, request, initial_cmd='', group=None, ignore_reviews=False):
+def request_interactive_review(apiurl, request, initial_cmd='', group=None,
+                               ignore_reviews=False, source_buildstatus=False):
     """review the request interactively"""
     import tempfile, re
 
@@ -6851,6 +6852,15 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
     def print_request(request):
         print(request)
 
+    def print_source_buildstatus(src_actions, newline=False):
+        if newline:
+            print()
+        if not src_actions:
+            print('unable to get source buildstatus: no source actions defined')
+        for action in src_actions:
+            print('%s/%s:' % (action.src_project, action.src_package))
+            print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
+
     print_request(request)
     try:
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
@@ -6864,6 +6874,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
             prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
+        if source_buildstatus:
+            print_source_buildstatus(src_actions, newline=True)
         while True:
             if initial_cmd:
                 repl = initial_cmd
@@ -6899,9 +6911,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None, igno
                 print('Aborting', file=sys.stderr)
                 raise oscerr.UserAbort()
             elif repl == 'b' and src_actions:
-                for action in src_actions:
-                    print('%s/%s:' % (action.src_project, action.src_package))
-                    print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
+                print_source_buildstatus(src_actions)
             elif repl == 'e' and editable_actions:
                 # this is only for editable actions
                 if not editprj:

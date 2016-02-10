@@ -1997,7 +1997,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--involved-projects', action='store_true',
                         help='show all requests for project/packages where USER is involved')
     @cmdln.option('--source-buildstatus', action='store_true',
-                        help='print the buildstatus of the source package (only works with "show")')
+                        help='print the buildstatus of the source package (only works with "show" and the interactive review)')
     @cmdln.alias("rq")
     @cmdln.alias("review")
     # FIXME: rewrite this mess and split request and review
@@ -2281,7 +2281,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if days == 0 or result.state.when > since or result.state.name == 'new':
                     if (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                         ignore_reviews = subcmd != 'review'
-                        request_interactive_review(apiurl, result, group=opts.group, ignore_reviews=ignore_reviews)
+                        request_interactive_review(apiurl, result, group=opts.group,
+                                                   ignore_reviews=ignore_reviews,
+                                                   source_buildstatus=opts.source_buildstatus)
                     else:
                         print(result.list_view(), '\n')
                 else:
@@ -2320,7 +2322,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return request_interactive_review(apiurl, r, 'e')
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                 ignore_reviews = subcmd != 'review'
-                return request_interactive_review(apiurl, r, group=opts.group, ignore_reviews=ignore_reviews)
+                return request_interactive_review(apiurl, r, group=opts.group,
+                                                  ignore_reviews=ignore_reviews,
+                                                  source_buildstatus=opts.source_buildstatus)
             else:
                 print(r)
                 print_comments(apiurl, 'request', reqid)
