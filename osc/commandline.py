@@ -2130,6 +2130,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if cmd in ['add'] and not opts.user and not opts.group and not opts.project:
             raise oscerr.WrongArgs('No reviewer specified.')
 
+        source_buildstatus = conf.config['request_show_source_buildstatus'] or opts.source_buildstatus
+
         reqid = None
         supersedid = None
         if cmd == 'list' or cmd == 'approvenew':
@@ -2283,7 +2285,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         ignore_reviews = subcmd != 'review'
                         request_interactive_review(apiurl, result, group=opts.group,
                                                    ignore_reviews=ignore_reviews,
-                                                   source_buildstatus=opts.source_buildstatus)
+                                                   source_buildstatus=source_buildstatus)
                     else:
                         print(result.list_view(), '\n')
                 else:
@@ -2324,11 +2326,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 ignore_reviews = subcmd != 'review'
                 return request_interactive_review(apiurl, r, group=opts.group,
                                                   ignore_reviews=ignore_reviews,
-                                                  source_buildstatus=opts.source_buildstatus)
+                                                  source_buildstatus=source_buildstatus)
             else:
                 print(r)
                 print_comments(apiurl, 'request', reqid)
-            if opts.source_buildstatus:
+            if source_buildstatus:
                 sr_actions = r.get_actions('submit')
                 if not sr_actions:
                     raise oscerr.WrongOptions( '\'--source-buildstatus\' not possible ' \
