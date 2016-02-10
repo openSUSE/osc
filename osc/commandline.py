@@ -4370,10 +4370,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 p = findpacs([arg])[0]
                 for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), lambda x, y: cmp(x[1], y[1])):
                     lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
-        # arrange the lines in order: unknown files first
-        # filenames are already sorted
-        lines = [l for l in lines if l[0] == '?'] + \
-                [l for l in lines if l[0] != '?']
         if lines:
             print('\n'.join(lines))
 
