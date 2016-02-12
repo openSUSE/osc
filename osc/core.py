@@ -5155,9 +5155,9 @@ def copy_pac(src_apiurl, src_project, src_package,
             # probably a relict from former times (if at all))
             if entry.get('name').startswith('_service:'):
                 filelist.remove(entry)
-        filelist = Package.commit_filelist(dst_apiurl, dst_project,
-                                           dst_package, filelist, msg=comment)
-        todo = Package.commit_get_missing(filelist)
+        tfilelist = Package.commit_filelist(dst_apiurl, dst_project,
+                                            dst_package, filelist, msg=comment)
+        todo = Package.commit_get_missing(tfilelist)
         for filename in todo:
             print(' ', filename)
             # hmm ideally, we would pass a file-like (that delegates to
@@ -5168,9 +5168,9 @@ def copy_pac(src_apiurl, src_project, src_package,
                 path = ['source', dst_project, dst_package, pathname2url(filename)]
                 u = makeurl(dst_apiurl, path, query={'rev': 'repository'})
                 http_PUT(u, file=f.name)
-        filelist = Package.commit_filelist(dst_apiurl, dst_project, dst_package,
-                                           filelist, msg=comment)
-        todo = Package.commit_get_missing(filelist)
+        tfilelist = Package.commit_filelist(dst_apiurl, dst_project, dst_package,
+                                            filelist, msg=comment)
+        todo = Package.commit_get_missing(tfilelist)
         if todo:
             raise oscerr.APIError('failed to copy: %s' % ', '.join(todo))
         return 'Done.'
