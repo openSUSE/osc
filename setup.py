@@ -40,6 +40,30 @@ class build_osc(distutils.command.build.build, object):
         super(build_osc, self).run()
         self.build_man_page()
 
+
+# Support for documentation (sphinx)
+class build_docs(distutils.command.build.Command):
+    description = 'builds documentation using sphinx'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        # metadata contains information supplied in setup()
+        metadata = self.distribution.metadata
+        # package_dir may be None, in that case use the current directory.
+        src_dir = (self.distribution.package_dir or {'': ''})['']
+        src_dir = os.path.join(os.getcwd(),  src_dir)
+        import sphinx
+        sphinx.main(['runme', 
+                    '-D', 'version=%s' % metadata.get_version(), 
+                    os.path.join('docs',), os.path.join('build', 'docs')])
+
+
 addparams = {}
 if HAVE_PY2EXE:
     addparams['console'] = [{'script': 'osc-wrapper.py', 'dest_base': 'osc', 'icon_resources': [(1, 'osc.ico')]}]
@@ -68,6 +92,7 @@ setup(name='osc',
       # Override certain command classes with our own ones
       cmdclass = {
         'build': build_osc,
+        'build_docs' : build_docs,
         },
       **addparams
      )
