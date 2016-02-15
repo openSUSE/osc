@@ -1342,6 +1342,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        dst_project, dst_package,
                                        opts.message, orev=rev,
 				       src_update=src_update, dst_updatelink=opts.update_link)
+        print('created request id', result)
+
         if supersede_existing:
             for req in reqs:
                 change_request_state(apiurl, req.reqid, 'superseded',
@@ -1350,8 +1352,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.supersede:
             change_request_state(apiurl, opts.supersede, 'superseded',
                                  opts.message or '', result)
-
-        print('created request id', result)
 
     def _actionparser(self, opt_str, value, parser):
         value = []
