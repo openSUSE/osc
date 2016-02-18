@@ -113,6 +113,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-vmdisk-rootsize': '',        # optional for VM builds
             'build-vmdisk-swapsize': '',        # optional for VM builds
             'build-vmdisk-filesystem': '',        # optional for VM builds
+            'build-vm-user': '',                # optional for VM builds
             'build-kernel': '',                 # optional for VM builds
             'build-initrd': '',                 # optional for VM builds
 

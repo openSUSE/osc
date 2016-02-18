@@ -1043,6 +1043,8 @@ def main(apiurl, opts, argv):
             vm_options += [ '--vmdisk-swapsize=' + config['build-vmdisk-swapsize'] ]
         if config['build-vmdisk-filesystem']:
             vm_options += [ '--vmdisk-filesystem=' + config['build-vmdisk-filesystem'] ]
+        if config['build-vm-user']:
+            vm_options += [ '--vm-user=' + config['build-vm-user'] ]
 
 
     if opts.preload:
