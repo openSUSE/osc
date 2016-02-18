@@ -27,7 +27,7 @@ import kerberos as k
 def getLogger():
     log = logging.getLogger("http_kerberos_auth_handler")
     handler = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+    formatter = logging.Formatter('%(message)s')
     handler.setFormatter(formatter)
     log.addHandler(handler)
     return log
@@ -56,9 +56,10 @@ class AbstractKerberosAuthHandler:
 
         return None
 
-    def __init__(self):
+    def __init__(self, princ):
         self.retried = 0
         self.context = None
+        self.principal = princ
 
     def generate_request_header(self, req, headers, neg_value):
         self.retried += 1
@@ -69,8 +70,11 @@ class AbstractKerberosAuthHandler:
 
         tail, sep, head = host.rpartition(':')
         domain = tail if tail else head
-                
-        result, self.context = k.authGSSClientInit("HTTP@%s" % domain)
+
+        try:
+            result, self.context = k.authGSSClientInit("HTTP@%s" % domain, self.principal)
+        except TypeError:
+            result, self.context = k.authGSSClientInit("HTTP@%s" % domain)
 
         if result < 1:
             log.warning("authGSSClientInit returned result %d" % result)
@@ -137,7 +141,8 @@ class AbstractKerberosAuthHandler:
             return resp
 
         except k.GSSError, e:
-            log.critical("GSSAPI Error: %s/%s" % (e[0][0], e[1][0]))
+            log.critical("Error: %s" % e[1][0])
+            log.debug("GSSAPI Error: %s/%s" % (e[0][0], e[1][0]))
             return None
 
         finally:

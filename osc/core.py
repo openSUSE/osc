@@ -45,6 +45,7 @@ except ImportError:
 
 from . import oscerr
 from . import conf
+from . import babysitter
 
 try:
     # python 2.6 and python 2.7
@@ -3280,14 +3281,36 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
-    try:
-        if isinstance(data, str):
-            data = bytes(data, "utf-8")
-        fd = urlopen(req, data=data)
-
-    finally:
-        if hasattr(conf.cookiejar, 'save'):
-            conf.cookiejar.save(ignore_discard=True)
+    for retry in [ True, False ]:
+        try:
+            if isinstance(data, str):
+                data = bytes(data, "utf-8")
+            fd = urlopen(req, data=data)
+        except HTTPError as e:
+            if e.code == 401:
+                if conf.use_kerberos_for_url(url):
+                    e.osc_msg = "Please make sure you have a valid Kerberos ticket for '%s' (see 'klist' and 'kinit')." % apiurl
+                    if not retry or not babysitter.run_baby_sitter:
+                        raise e
+                    tool=which('kinit')
+                    if tool is None:
+                        print("error: 'kinit' command not found")
+                        raise e
+                    authtool=[tool, conf.get_apiurl_usr(apiurl)+'@'+conf.kerberos_realm_for_url(apiurl)]
+                    print("Your Kerberos ticket is invalid, please re-authenticate.")
+                    if conf.config['verbose'] > 1 or conf.config['debug']:
+                        print("Running: %s" % ' '.join(authtool))
+                    ret = run_external(authtool)
+                    if ret:
+                        sys.exit(ret)
+                    continue
+                else:
+                    e.osc_msg = 'Please make sure your password / username combination is up to date.'
+            raise e
+        finally:
+            if hasattr(conf.cookiejar, 'save'):
+                conf.cookiejar.save(ignore_discard=True)
+        break
 
     if filefd: filefd.close()
 
@@ -3298,7 +3321,6 @@ def http_GET(*args, **kwargs):    return http_request('GET', *args, **kwargs)
 def http_POST(*args, **kwargs):   return http_request('POST', *args, **kwargs)
 def http_PUT(*args, **kwargs):    return http_request('PUT', *args, **kwargs)
 def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
-
 
 def check_store_version(dir):
     global store
