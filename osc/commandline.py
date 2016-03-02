@@ -6604,7 +6604,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if binary != None and binary != i.name:
                         continue
                     # skip source rpms
-                    if (not opts.sources and i.name.endswith('src.rpm')) or (not opts.sources and i.name.endswith('sdeb')):
+                    if not opts.sources and (i.name.endswith('src.rpm') or i.name.endswith('sdeb')):
                         continue
                     if not opts.debug:
                         if i.name.find('-debuginfo-') >= 0:
