@@ -3264,6 +3264,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='branch against a specific revision')
     @cmdln.option('--linkrev', metavar='linkrev',
                         help='specify the used revision in the link target.')
+    @cmdln.option('--add-repositories-block', metavar='add_repositories_block',
+                        help='specify the used block strategy for new repositories')
+    @cmdln.option('--add-repositories-rebuild', metavar='add_repositories_rebuild',
+                        help='specify the used rebuild strategy for new repositories')
     def do_branch(self, subcmd, opts, *args):
         """${cmd_name}: Branch a package
 
@@ -3329,6 +3333,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
                            add_repositories=opts.add_repositories,
+                           add_repositories_block=opts.add_repositories_block,
+                           add_repositories_rebuild=opts.add_repositories_rebuild,
                            extend_package_names=opts.extend_package_names,
                            missingok=opts.new_package,
                            maintenance=opts.maintenance)
@@ -3343,6 +3349,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            return_existing=opts.checkout, msg=opts.message or '',
                            force=opts.force, noaccess=opts.noaccess,
                            add_repositories=opts.add_repositories,
+                           add_repositories_block=opts.add_repositories_block,
+                           add_repositories_rebuild=opts.add_repositories_rebuild,
                            extend_package_names=opts.extend_package_names,
                            missingok=False,
                            maintenance=opts.maintenance,

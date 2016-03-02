@@ -5030,7 +5030,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, linkrev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, extend_package_names=False, missingok=False, maintenance=False, newinstance=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, linkrev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, add_repositories_block=None, add_repositories_rebuild=None, extend_package_names=False, missingok=False, maintenance=False, newinstance=False):
     """
     Branch a package (via API call)
     """
@@ -5043,6 +5043,10 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         query['noaccess'] = '1'
     if add_repositories:
         query['add_repositories'] = "1"
+    if add_repositories_block:
+        query['add_repositories_block'] = add_repositories_block
+    if add_repositories_rebuild:
+        query['add_repositories_rebuild'] = add_repositories_rebuild
     if maintenance:
         query['maintenance'] = "1"
     if missingok:
