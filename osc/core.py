@@ -5991,6 +5991,34 @@ def runservice(apiurl, prj, package):
     root = ET.parse(f).getroot()
     return root.get('code')
 
+def waitservice(apiurl, prj, package):
+    u = makeurl(apiurl, ['source', prj, package], query={'cmd': 'waitservice'})
+
+    try:
+        f = http_POST(u)
+    except HTTPError as e:
+        e.osc_msg = 'The service for project \'%s\' package \'%s\' failed' % (prj, package)
+        raise
+
+    root = ET.parse(f).getroot()
+    return root.get('code')
+
+def mergeservice(apiurl, prj, package):
+    # first waiting that the service finishes and that it did not fail
+    waitservice(apiurl, prj, package)
+
+    # real merge
+    u = makeurl(apiurl, ['source', prj, package], query={'cmd': 'mergeservice'})
+
+    try:
+        f = http_POST(u)
+    except HTTPError as e:
+        e.osc_msg = 'could not merge service files in project \'%s\' package \'%s\'' % (prj, package)
+        raise
+
+    root = ET.parse(f).getroot()
+    return root.get('code')
+
 
 def rebuild(apiurl, prj, package, repo, arch, code=None):
     query = { 'cmd': 'rebuild' }

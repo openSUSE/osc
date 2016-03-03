@@ -9,6 +9,8 @@
   - add --linkrev option to branch command
   - add --add-repository-block option to branch command
   - add --add-repository-rebuild option to branch command
+  - add service merge command
+  - add service wait command
 
 0.152
   - add support searching for groups via "group:" prefix

@@ -6261,6 +6261,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc service localrun
             osc service disabledrun
             osc service remoterun [PROJECT PACKAGE]
+            osc service merge [PROJECT PACKAGE]
+            osc service wait [PROJECT PACKAGE]
 
             COMMAND can be:
             run         r  run defined services locally, it takes an optional parameter to run only a
@@ -6269,6 +6271,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             localrun    lr run services locally and store files as local created
             disabledrun dr run disabled or server side only services locally and store files as local created
             remoterun   rr trigger a re-run on the server side
+            merge          commits all server side generated files and drops the _service definition
+            wait           waits until the service finishes and returns with an error if it failed
 
         ${cmd_option_list}
         """
@@ -6287,7 +6291,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too few arguments.')
             if len(args) == 2:
                 singleservice = args[1]
-        elif len(args) == 3 and args[0] in ('remoterun', 'rr'):
+        elif len(args) == 3 and args[0] in ('remoterun', 'rr', 'merge', 'wait'):
             project = args[1]
             package = args[2]
         else:
@@ -6295,11 +6299,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         command = args[0]
 
-        if not (command in ( 'run', 'localrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'r', 'rr' )):
+        if not (command in ( 'run', 'localrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'r', 'rr', 'merge', 'wait' )):
             raise oscerr.WrongArgs('Wrong command given.')
 
         if command == "remoterun" or command == "rr":
             print(runservice(apiurl, project, package))
+            return
+
+        if command == "wait":
+            print(waitservice(apiurl, project, package))
+            return
+
+        if command == "merge":
+            print(mergeservice(apiurl, project, package))
             return
 
         if command in ('run', 'localrun', 'disabledrun', 'lr', 'dr', 'r'):
