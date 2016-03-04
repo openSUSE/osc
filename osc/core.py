@@ -401,7 +401,7 @@ class Serviceinfo:
                 continue
             temp_dir = None
             try:
-                temp_dir = tempfile.mkdtemp()
+                temp_dir = tempfile.mkdtemp(suffix='.%s.service' % service['name'])
                 cmd = service['command']
                 if not os.path.exists("/usr/lib/obs/service/"+cmd[0]):
                     raise oscerr.PackageNotInstalled("obs-service-%s"%cmd[0])
@@ -419,11 +419,11 @@ class Serviceinfo:
 
                 if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
                     for filename in os.listdir(temp_dir):
-                        shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, filename) )
+                        os.rename(os.path.join(temp_dir, filename), os.path.join(dir, filename))
                 else:
                     name = service['name']
                     for filename in os.listdir(temp_dir):
-                        shutil.move( os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename) )
+                        os.rename(os.path.join(temp_dir, filename), os.path.join(dir, "_service:"+name+":"+filename))
             finally:
                 if temp_dir is not None:
                     shutil.rmtree(temp_dir)
