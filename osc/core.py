@@ -401,7 +401,7 @@ class Serviceinfo:
                 continue
             temp_dir = None
             try:
-                temp_dir = tempfile.mkdtemp(suffix='.%s.service' % service['name'])
+                temp_dir = tempfile.mkdtemp(dir=dir, suffix='.%s.service' % service['name'])
                 cmd = service['command']
                 if not os.path.exists("/usr/lib/obs/service/"+cmd[0]):
                     raise oscerr.PackageNotInstalled("obs-service-%s"%cmd[0])
