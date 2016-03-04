@@ -257,7 +257,7 @@ class Serviceinfo:
     """
     def __init__(self):
         """creates an empty serviceinfo instance"""
-        self.services = None
+        self.services = []
         self.project  = None
         self.package  = None
 
@@ -265,34 +265,36 @@ class Serviceinfo:
         """read in the source services <services> element passed as
         elementtree node.
         """
-        if serviceinfo_node == None:
+        def error(msg, xml):
+            data = 'invalid service format:\n%s' % ET.tostring(xml, encoding=ET_ENCODING)
+            raise ValueError("%s\n\n%s" % (data, msg))
+
+        if serviceinfo_node is None:
             return
-        if not append or self.services == None:
+        if not append:
             self.services = []
         services = serviceinfo_node.findall('service')
 
         for service in services:
             name = service.get('name')
             if len(name) < 3 or '/' in name:
-                raise oscerr.APIError("invalid service name")
-            mode = service.get('mode', None)
-            data = { 'name' : name, 'mode' : '' }
-            if mode:
-                data['mode'] = mode
-            try:
-                command = [ name ]
-                for param in service.findall('param'):
-                    option = param.get('name', None)
-                    value = ""
-                    if param.text:
-                        value = param.text
-                    command.append("--"+option)
-                    command.append(value)
-                data['command'] = command
-                self.services.append(data)
-            except:
-                msg = 'invalid service format:\n%s' % ET.tostring(serviceinfo_node, encoding=ET_ENCODING)
-                raise oscerr.APIError(msg)
+                error("invalid service name: %s" % name, service)
+            mode = service.get('mode', '')
+            data = { 'name' : name, 'mode' : mode }
+            command = [ name ]
+            for param in service.findall('param'):
+                option = param.get('name')
+                if option is None:
+                    error("%s: a parameter requires a name" % name, service)
+                value = ''
+                if param.text:
+                    value = param.text
+                command.append('--' + option)
+                # hmm is this reasonable or do we want to allow real
+                # options (e.g., "--force" (without an argument)) as well?
+                command.append(value)
+            data['command'] = command
+            self.services.append(data)
 
     def getProjectGlobalServices(self, apiurl, project, package):
         # get all project wide services in one file, we don't store it yet
