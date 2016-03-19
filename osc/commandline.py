@@ -3160,7 +3160,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('sm')
     @cmdln.alias('maintained')
     def do_mbranch(self, subcmd, opts, *args):
-        """${cmd_name}: Search or banch multiple instances of a package
+        """${cmd_name}: Search or branch multiple instances of a package
 
         This command is used for searching all relevant instances of packages
         and creating links of them in one project.
