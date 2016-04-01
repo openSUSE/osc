@@ -381,6 +381,9 @@ class Serviceinfo:
             data = { 'name' : singleservice, 'command' : [ singleservice ], 'mode' : '' }
             allservices = [data]
 
+        # services can detect that they run via osc this way
+        os.putenv("OSC_VERSION", get_osc_version())
+
         # set environment when using OBS 2.3 or later
         if self.project != None:
             os.putenv("OBS_SERVICE_PROJECT", self.project)

@@ -1,5 +1,5 @@
 0.154
-  -
+  - set OSC_VERSION environment for source services
 
 0.153
   - "my sr" is using the server side request collection to get right results
