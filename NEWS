@@ -1,4 +1,5 @@
 0.154
+  - switch to new obs_scm service when adding git URL's
   - set OSC_VERSION environment for source services
 
 0.153

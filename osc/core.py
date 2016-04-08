@@ -343,21 +343,27 @@ class Serviceinfo:
 
     def addSetVersion(self, serviceinfo_node):
         r = serviceinfo_node
-        s = ET.Element( "service", name="set_version" )
+        s = ET.Element( "service", name="set_version", mode="buildtime" )
         r.append( s )
         return r
 
     def addGitUrl(self, serviceinfo_node, url_string):
         r = serviceinfo_node
-        s = ET.Element( "service", name="tar_scm" )
+        s = ET.Element( "service", name="obs_scm" )
         ET.SubElement(s, "param", name="url").text = url_string
         ET.SubElement(s, "param", name="scm").text = "git"
         r.append( s )
         return r
 
+    def addTarUp(self, serviceinfo_node):
+        r = serviceinfo_node
+        s = ET.Element( "service", name="tar", mode="buildtime" )
+        r.append( s )
+        return r
+
     def addRecompressTar(self, serviceinfo_node):
         r = serviceinfo_node
-        s = ET.Element( "service", name="recompress" )
+        s = ET.Element( "service", name="recompress", mode="buildtime" )
         ET.SubElement(s, "param", name="file").text = "*.tar"
         ET.SubElement(s, "param", name="compression").text = "xz"
         r.append( s )
@@ -6644,6 +6650,7 @@ def addGitSource(url):
     stripETxml( services )
     si = Serviceinfo()
     s = si.addGitUrl(services, url)
+    s = si.addTarUp(services)
     s = si.addRecompressTar(services)
     s = si.addSetVersion(services)
     si.read(s)
