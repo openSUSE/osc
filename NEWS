@@ -1,6 +1,7 @@
 0.154
   - switch to new obs_scm service when adding git URL's
   - set OSC_VERSION environment for source services
+    (allows to work in local git checkouts when using obs_scm)
 
 0.153
   - "my sr" is using the server side request collection to get right results
