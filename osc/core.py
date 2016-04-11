@@ -5084,11 +5084,11 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
         if missingok:
            if root and root.get('code') == "not_missing":
               raise oscerr.NotMissing("Package exists already via project link, but link will point to given project")
-        if not return_existing:
-            raise
         summary = root.find('summary')
         if summary is None:
             raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root, encoding=ET_ENCODING))
+        if not return_existing:
+            raise oscerr.APIError('failed to branch: %s' % summary.text)
         m = re.match(r"branch target package already exists: (\S+)/(\S+)", summary.text)
         if not m:
             e.msg += '\n' + summary.text
