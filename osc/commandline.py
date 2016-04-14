@@ -5490,10 +5490,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
             from .build import get_prefer_pkgs
+            from .util import cpio
             print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
-            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch, os.path.splitext(build_descr)[1])
-            cpio.add(os.path.basename(build_descr), build_descr_data)
-            build_descr_data = cpio.get()
+            cpiodata = cpio.CpioWrite()
+            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch,
+                                                os.path.splitext(build_descr)[1],
+                                                cpiodata)
+            cpiodata.add(os.path.basename(build_descr), build_descr_data)
+            build_descr_data = cpiodata.get()
 
         print(''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
