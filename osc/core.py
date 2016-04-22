@@ -6903,7 +6903,12 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             print('unable to get source buildstatus: no source actions defined')
         for action in src_actions:
             print('%s/%s:' % (action.src_project, action.src_package))
-            print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
+            try:
+                print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
+            except HTTPError as e:
+                if e.code != 404:
+                    raise
+                print('unable to retrieve the buildstatus: %s' % e)
 
     print_request(request)
     try:
