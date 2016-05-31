@@ -3215,8 +3215,9 @@ def http_request(method, url, headers={}, data=None, file=None):
     if method == 'PUT' or (method == 'POST' and (data or file)):
         req.add_header('Content-Type', 'application/octet-stream')
 
-    for i in headers.keys():
-        req.add_header(i, headers[i])
+    if isinstance(headers, type({})):
+        for i in headers.keys():
+            req.add_header(i, headers[i])
 
     if file is not None and not req.has_header('Content-length'):
         req.add_header('Content-length', os.path.getsize(file))
