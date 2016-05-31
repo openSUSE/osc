@@ -1653,6 +1653,8 @@ class Package:
 
     def is_link_to_different_project(self):
         """Check if the package is a link to a different project."""
+        if self.name == "_project":
+            return False
         orgprj = self.get_local_origin_project()
         return self.prjname != orgprj
 
