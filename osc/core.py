@@ -3334,14 +3334,33 @@ def meta_get_project_list(apiurl, deleted=None):
     return sorted([ node.get('name') for node in root if node.get('name')])
 
 
-def show_project_meta(apiurl, prj):
-    url = makeurl(apiurl, ['source', prj, '_meta'])
-    f = http_GET(url)
+def show_project_meta(apiurl, prj, rev=None):
+    if rev:
+        query = {}
+        query['rev'] = rev
+        url = makeurl(apiurl, ['source', prj, '_project', '_meta'], query)
+        try:
+            f = http_GET(url)
+        except HTTPError as e:
+            error_help = "%d" % e.code
+            os_err = e.hdrs.get('X-Opensuse-Errorcode')
+            if os_err:
+                error_help = "%s (%d) project: %s" % (os_err, e.code, prj)
+            if e.code == 404 and os_err == 'unknown_package':
+                error_help = 'option -r|--revision is not supported by this OBS version'
+            e.osc_msg = 'BuildService API error: %s' % error_help
+            raise
+    else:
+        url = makeurl(apiurl, ['source', prj, '_meta'])
+        f = http_GET(url)
     return f.readlines()
 
+def show_project_conf(apiurl, prj, rev=None):
+    query = {}
+    if rev:
+        query['rev'] = rev
 
-def show_project_conf(apiurl, prj):
-    url = makeurl(apiurl, ['source', prj, '_config'])
+    url = makeurl(apiurl, ['source', prj, '_config'], query)
     f = http_GET(url)
     return f.readlines()
 
@@ -3575,7 +3594,7 @@ def meta_exists(metatype,
 
     return data
 
-def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_linking_repositories=False):
+def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_linking_repositories=False, msg=None):
     global metatypes
 
     if not apiurl:
@@ -3592,6 +3611,8 @@ def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_lin
         query = { 'force': '1' }
     if remove_linking_repositories:
         query['remove_linking_repositories'] = '1'
+    if msg:
+        query['comment'] = msg
 
     return makeurl(apiurl, [path], query)
 
@@ -3604,7 +3625,8 @@ def edit_meta(metatype,
               force=False,
               remove_linking_repositories=False,
               change_is_required=False,
-              apiurl=None):
+              apiurl=None,
+              msg=None):
 
     global metatypes
 
@@ -3631,7 +3653,7 @@ def edit_meta(metatype,
             print('  osc meta pkg %s %s -e' % (unquote(project), package))
             return
 
-    url = make_meta_url(metatype, path_args, apiurl, force, remove_linking_repositories)
+    url = make_meta_url(metatype, path_args, apiurl, force, remove_linking_repositories, msg)
     f = metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:

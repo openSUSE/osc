@@ -740,6 +740,10 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-F', '--file', metavar='FILE',
                         help='read metadata from FILE, instead of opening an editor. '
                         '\'-\' denotes standard input. ')
+    @cmdln.option('-r', '--revision', metavar='REV',
+                        help='checkout given revision instead of head revision. For prj and prjconf meta only')
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                        help='specify log message TEXT. For prj and prjconf meta only')
     @cmdln.option('-e', '--edit', action='store_true',
                         help='edit metadata')
     @cmdln.option('-c', '--create', action='store_true',
@@ -774,6 +778,8 @@ class Osc(cmdln.Cmdln):
         the --file switch. If the argument is '-', input is taken from stdin:
         osc meta prjconf home:user | sed ... | osc meta prjconf home:user -F -
 
+        For meta prj and prjconf updates optional commit messages can be applied with --message.
+
         When trying to edit a non-existing resource, it is created implicitly.
 
 
@@ -783,9 +789,10 @@ class Osc(cmdln.Cmdln):
             osc meta pkg PRJ PKG -e
 
         Usage:
+            osc meta <prj|prjconf> [-r|--revision REV] ARGS...
             osc meta <prj|pkg|prjconf|user|pattern> ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> -e|--edit ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> -F|--file ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern> [-m|--message TEXT] -e|--edit ARGS...
+            osc meta <prj|pkg|prjconf|user|pattern> [-m|--message TEXT] -F|--file ARGS...
             osc meta pattern --delete PRJ PATTERN
             osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create|--delete|--set [value_list]]
         ${cmd_option_list}
@@ -873,17 +880,20 @@ class Osc(cmdln.Cmdln):
                 if opts.edit or opts.file:
                     raise oscerr.WrongArgs('A pattern file argument is required.')
 
+        if cmd not in ['prj', 'prjconf'] and (opts.message or opts.revision):
+            raise oscerr.WrongOptions('options --revision and --message are only supported for the prj or prjconf subcommand')
+
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(apiurl, project)))
+                sys.stdout.write(''.join(show_project_meta(apiurl, project, opts.revision)))
             elif cmd == 'pkg':
                 sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
             elif cmd == 'attribute':
                 sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage,
                                          opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(apiurl, project)))
+                sys.stdout.write(''.join(show_project_conf(apiurl, project, opts.revision)))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
@@ -907,6 +917,7 @@ class Osc(cmdln.Cmdln):
                           remove_linking_repositories=opts.remove_linking_repositories,
                           path_args=quote_plus(project),
                           apiurl=apiurl,
+                          msg = opts.message,
                           template_args=({
                                   'name': project,
                                   'user': conf.get_apiurl_usr(apiurl)}))
@@ -923,6 +934,7 @@ class Osc(cmdln.Cmdln):
                           edit=True,
                           path_args=quote_plus(project),
                           apiurl=apiurl,
+                          msg = opts.message,
                           template_args=None)
             elif cmd == 'user':
                 edit_meta(metatype='user',
@@ -972,6 +984,7 @@ class Osc(cmdln.Cmdln):
                           force=opts.force,
                           remove_linking_repositories=opts.remove_linking_repositories,
                           apiurl=apiurl,
+                          msg = opts.message,
                           path_args=quote_plus(project))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg',
@@ -984,6 +997,7 @@ class Osc(cmdln.Cmdln):
                           data=f,
                           edit=opts.edit,
                           apiurl=apiurl,
+                          msg = opts.message,
                           path_args=quote_plus(project))
             elif cmd == 'user':
                 edit_meta(metatype='user',
