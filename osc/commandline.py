@@ -6293,6 +6293,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
+        # disabledrun and localrun exists as well, but are considered to be obsolete
 
         args = slash_split(args)
         project = package = singleservice = mode = None
