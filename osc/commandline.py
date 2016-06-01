@@ -6272,8 +6272,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             run         r  run defined services locally, it takes an optional parameter to run only a
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
-            localrun    lr run services locally and store files as local created
-            disabledrun dr run disabled or server side only services locally and store files as local created
+            runall      ra run all services independend of the used mode
             remoterun   rr trigger a re-run on the server side
             merge          commits all server side generated files and drops the _service definition
             wait           waits until the service finishes and returns with an error if it failed
@@ -6303,7 +6302,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         command = args[0]
 
-        if not (command in ( 'run', 'localrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'r', 'rr', 'merge', 'wait' )):
+        if not (command in ( 'runall', 'ra', 'run', 'localrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'r', 'rr', 'merge', 'wait' )):
             raise oscerr.WrongArgs('Wrong command given.')
 
         if command == "remoterun" or command == "rr":
@@ -6318,7 +6317,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(mergeservice(apiurl, project, package))
             return
 
-        if command in ('run', 'localrun', 'disabledrun', 'lr', 'dr', 'r'):
+        if command in ('runall', 'ra', 'run', 'localrun', 'disabledrun', 'lr', 'dr', 'r'):
             if not is_package_dir(os.curdir):
                 raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
@@ -6326,6 +6325,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 mode = "local"
             elif command == "disabledrun" or command == "dr":
                 mode = "disabled"
+            elif command == "runall" or command == "ra":
+                mode = "all"
 
         return p.run_source_services(mode, singleservice)
 
