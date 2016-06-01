@@ -4260,8 +4260,8 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
     if req_type:
         xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
     for i in exclude_target_projects:
-        xpath = xpath_join(xpath, '(not(action/target/@project=\'%(prj)s\' or ' \
-                                  'submit/target/@project=\'%(prj)s\'))' % {'prj': i}, op='and')
+        xpath = xpath_join(xpath, 'action/target/@project!=\'%(prj)s\'' % {'prj': i}, op='and')
+        xpath = xpath_join(xpath, 'submit/target/@project!=\'%(prj)s\'' % {'prj': i}, op='and')
 
     if conf.config['verbose'] > 1:
         print('[ %s ]' % xpath)
