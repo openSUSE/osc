@@ -3188,8 +3188,15 @@ def makeurl(baseurl, l, query=[]):
 def http_request(method, url, headers={}, data=None, file=None):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
-    if data is not None and file is not None:
-        raise ValueError('data and file are mutually exclusive')
+    def create_memoryview(obj):
+        if sys.version_info < (2, 7, 99):
+            # obj might be a mmap and python 2.7's mmap does not
+            # behave like a bytearray (a bytearray in turn can be used
+            # to create the memoryview). For now simply return a buffer
+            return buffer(obj)
+        return memoryview(obj)
+
+    filefd = None
 
     if conf.config['http_debug']:
         print('\n\n--', method, url, file=sys.stderr)
@@ -3215,25 +3222,46 @@ def http_request(method, url, headers={}, data=None, file=None):
     if method == 'PUT' or (method == 'POST' and (data or file)):
         req.add_header('Content-Type', 'application/octet-stream')
 
-    for i in headers.keys():
-        req.add_header(i, headers[i])
+    if isinstance(headers, type({})):
+        for i in headers.keys():
+            print(headers[i])
+            req.add_header(i, headers[i])
 
-    if file is not None and not req.has_header('Content-length'):
-        req.add_header('Content-length', os.path.getsize(file))
+    if file and not data:
+        size = os.path.getsize(file)
+        if size < 1024*512:
+            data = open(file, 'rb').read()
+        else:
+            import mmap
+            filefd = open(file, 'rb')
+            try:
+                if sys.platform[:3] != 'win':
+                    data = mmap.mmap(filefd.fileno(), os.path.getsize(file), mmap.MAP_SHARED, mmap.PROT_READ)
+                else:
+                    data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
+                data = create_memoryview(data)
+            except EnvironmentError as e:
+                if e.errno == 19:
+                    sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
+                             '\non a filesystem which does not support this.' % (e, file))
+                elif hasattr(e, 'winerror') and e.winerror == 5:
+                    # falling back to the default io
+                    data = open(file, 'rb').read()
+                else:
+                    raise
 
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
     try:
-        if file is not None:
-            data = open(file, 'rb')
-        elif isinstance(data, str):
+        if isinstance(data, str):
             data = bytes(data, "utf-8")
         fd = urlopen(req, data=data)
+
     finally:
         if hasattr(conf.cookiejar, 'save'):
             conf.cookiejar.save(ignore_discard=True)
-        if file is not None:
-            data.close()
+
+    if filefd: filefd.close()
 
     return fd
 
