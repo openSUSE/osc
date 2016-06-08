@@ -398,18 +398,19 @@ class Serviceinfo:
         # recreate files
         ret = 0
         for service in allservices:
-            if singleservice and service['name'] != singleservice:
-                continue
-            if service['mode'] == "buildtime":
-                continue
-            if service['mode'] == "serveronly" and callmode != "disabled":
-                continue
-            if service['mode'] == "disabled" and callmode != "disabled":
-                continue
-            if service['mode'] != "disabled" and callmode == "disabled":
-                continue
-            if service['mode'] != "trylocal" and service['mode'] != "localonly" and callmode == "trylocal":
-                continue
+            if callmode != "all":
+                if singleservice and service['name'] != singleservice:
+                    continue
+                if service['mode'] == "buildtime":
+                    continue
+                if service['mode'] == "serveronly" and callmode != "disabled":
+                    continue
+                if service['mode'] == "disabled" and callmode != "disabled":
+                    continue
+                if service['mode'] != "disabled" and callmode == "disabled":
+                    continue
+                if service['mode'] != "trylocal" and service['mode'] != "localonly" and callmode == "trylocal":
+                    continue
             temp_dir = None
             try:
                 temp_dir = tempfile.mkdtemp(dir=dir, suffix='.%s.service' % service['name'])
@@ -428,7 +429,7 @@ class Serviceinfo:
                     #        updating _services.
                     return r
 
-                if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal":
+                if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal" or callmode == "all":
                     for filename in os.listdir(temp_dir):
                         os.rename(os.path.join(temp_dir, filename), os.path.join(dir, filename))
                 else:

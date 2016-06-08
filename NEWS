@@ -1,5 +1,7 @@
 0.155
-  -
+  - osc service runall: runs all service local, independend of the mode
+                        This allows to create local files even when disabled or
+                        just created at buildtime
 
 0.154
   - switch to new obs_scm service when adding git URL's
