@@ -291,6 +291,8 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
     img_pkg = img_info.get('package')
     img_file = img_info.get('filename')
     img_hdrmd5 = img_info.get('hdrmd5')
+    if not img_hdrmd5:
+        img_hdrmd5 = img_file
     cache_path = '%s/%s/%s/%s' % (cache_dir, img_project, img_repository, img_arch)
     ifile_path = '%s/%s' % (cache_path, img_file)
     ifile_path_part = '%s.part' % ifile_path
