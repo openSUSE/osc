@@ -128,6 +128,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'http_full_debug': '0',
             'http_retries': '3',
             'verbose': '1',
+            'no_preinstallimage': '0',
             'traceback': '0',
             'post_mortem': '0',
             'use_keyring': '0',
@@ -188,7 +189,7 @@ config = DEFAULTS.copy()
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
-    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time']
+    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 

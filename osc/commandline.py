@@ -5810,6 +5810,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             help='perform the build on a remote server - user@server:~/remote/directory')
     @cmdln.option('--trust-all-projects', action='store_true',
                   help='trust packages from all projects')
+    @cmdln.option('--nopreinstallimage', '--no-preinstallimage', action='store_true',
+                  help='Do not use preinstall images for creating the build root.')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -5903,6 +5905,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
+        if opts.preload:
+            opts.nopreinstallimage = True
+        
         print('Building %s for %s/%s' % (args[2], args[0], args[1]))
         if not opts.host:
             return osc.build.main(self.get_api_url(), opts, args)
