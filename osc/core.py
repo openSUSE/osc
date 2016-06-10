@@ -5440,7 +5440,7 @@ def result_xml_to_dicts(xml):
         rmap['dirty'] = node.get('dirty')
         rmap['repostate'] = node.get('code')
         rmap['pkg'] = rmap['package'] = rmap['pac'] = ''
-        rmap['code'] = ''
+        rmap['code'] = node.get('code')
         rmap['details'] = ''
         details = None
         statusnode = node.find('status')
