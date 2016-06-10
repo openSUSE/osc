@@ -5482,13 +5482,13 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                     lines = res['details'].split(',')
                     res['status'] += ': ' + '\n     '.join(lines)
                 else:
-                    res['status'] += ': %s' % (res['details'], )
+                    res['status'] += ': %s' % res['details']
             if res['dirty']:
                 if verbose:
                     res['status'] = 'outdated (was: %s)' % res['status']
                 else:
                     res['status'] += '*'
-            elif res['code'] in ('succeeded') and res['repostate'] != "published":
+            elif res['code'] in ('succeeded', ) and res['repostate'] != "published":
                 if verbose:
                     res['status'] += '(unpublished)'
                 else:
