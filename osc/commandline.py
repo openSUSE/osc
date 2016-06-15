@@ -4279,20 +4279,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print_request_list(apiurl, project, package)
 
         elif project:
-            prj_dir = project
+            prj_dir = opts.output_dir if opts.output_dir else project
             if sys.platform[:3] == 'win':
                 prj_dir = prj_dir.replace(':', ';')
             if os.path.exists(prj_dir):
-                sys.exit('osc: project \'%s\' already exists' % project)
+                sys.exit('osc: project directory \'%s\' already exists' % prj_dir)
 
             # check if the project does exist (show_project_meta will throw an exception)
             show_project_meta(apiurl, project)
 
-            if opts.output_dir is not None:
-                init_dir=opts.output_dir
-            else:
-                init_dir=prj_dir
-            Project.init_project(apiurl, init_dir, project, conf.config['do_package_tracking'])
+            Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'])
             print(statfrmt('A', prj_dir))
 
             # all packages
@@ -4321,7 +4317,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      prj_dir = prj_dir, service_files = opts.source_service_files, \
                                      server_service_files = opts.server_side_source_service_files, \
                                      progress_obj=self.download_progress, size_limit=opts.limit_size, \
-                                     meta=opts.meta,outdir=outputdir)
+                                     meta=opts.meta)
                 except oscerr.LinkExpandError as e:
                     print('Link cannot be expanded:\n', e, file=sys.stderr)
                     print('Use "osc repairlink" for fixing merge conflicts:\n', file=sys.stderr)
