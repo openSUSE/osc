@@ -450,7 +450,7 @@ class Osc(cmdln.Cmdln):
     def do_addchannels(self, subcmd, opts, *args):
         """${cmd_name}: Add channels to project.
 
-        The command adds all channels which are defined to be used for a given source package. 
+        The command adds all channels which are defined to be used for a given source package.
         The source link target is used to lookup the channels. The command can be
         used for a certain package or for all in the specified project.
 
@@ -1717,7 +1717,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         apiurl = self.get_api_url()
-        
+
         i = 0
         actionsxml = ""
         supersede = []
@@ -1793,8 +1793,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc requestmaintainership PROJECT PACKAGE            # for current user
             osc requestmaintainership PROJECT PACKAGE USER       # request for specified user
             osc requestmaintainership PROJECT PACKAGE group:NAME # request for specified group
-           
-            osc requestbugownership ...                          # accepts same parameters but uses bugowner role 
+
+            osc requestbugownership ...                          # accepts same parameters but uses bugowner role
 
         ${cmd_option_list}
         """
@@ -2310,7 +2310,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if cmd == 'approvenew':
                 print("\n *** Approve them all ? [y/n] ***")
                 if sys.stdin.read(1) == "y":
-    
+
                     if not opts.message:
                         opts.message = edit_message()
                     for result in results:
@@ -2426,7 +2426,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if repl.lower() != 'y':
                         print('Aborted...', file=sys.stderr)
                         raise oscerr.UserAbort()
-                                            
+
                 if not opts.message:
                     tmpl = change_request_state_template(rq, state_map[cmd])
                     opts.message = edit_message(template=tmpl)
@@ -2514,12 +2514,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Obsolete command to edit metadata. Use 'meta' now.
 
         See the help output of 'meta'.
-
         """
 
-        print('This command is obsolete. Use \'osc meta <metatype> ...\'.', file=sys.stderr)
-        print('See \'osc help meta\'.', file=sys.stderr)
-        #self.do_help([None, 'meta'])
+        print("This command is obsolete. Use 'osc meta <metatype> ...'.", file=sys.stderr)
+        print("See 'osc help meta'.", file=sys.stderr)
         return 2
 
 
@@ -2892,7 +2890,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
-       
+
         args = slash_split(args)
         apiurl = self.get_api_url()
 
@@ -2950,7 +2948,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
-       
+
         # FIXME: additional parameters can be a certain repo list to create a partitial release
 
         args = slash_split(args)
@@ -3068,7 +3066,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc maintenancerequest [ SOURCEPROJECT [ SOURCEPACKAGES RELEASEPROJECT ] ]
             osc maintenancerequest .
 
-        The 2nd line when issued within a package directory provides a short cut to submit a single 
+        The 2nd line when issued within a package directory provides a short cut to submit a single
         package (the one in the current directory) from the project of this package to be submitted
         to the release project this package links to. This syntax is only valid when specified from
         a package subdirectory.
@@ -3228,7 +3226,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                    line+=" using sources from %s/%s"%(d.get('project'), d.get('package'))
                 print(line)
             return
-        
+
         apiopt = ''
         if conf.get_configParser().get('general', 'apiurl') != apiurl:
             apiopt = '-A %s ' % apiurl
@@ -3323,7 +3321,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('defaulting to %s/%s' % (def_p, args[0]), file=sys.stderr)
             # python has no args.unshift ???
             args = [ def_p, args[0] ]
-            
+
         if len(args) == 0 and is_package_dir('.'):
             args = (store_read_project('.'), store_read_package('.'))
 
@@ -3369,7 +3367,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            missingok=False,
                            maintenance=opts.maintenance,
                            newinstance=opts.new_package)
-          
+
         if exists:
             print('Using existing branch project: %s' % targetprj, file=sys.stderr)
 
@@ -3584,25 +3582,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_deletepac(self, subcmd, opts, *args):
-        print("""${cmd_name} is obsolete !
+        """${cmd_name}:
+
+        Obsolete command to delete package. Use 'delete' or 'rdelete' now.
+
+        See the help output of 'delete' and 'rdelete'.
+        """
+
+        print("""Command deletepac is obsolete !
 
                  Please use either
                    osc delete       for checked out packages or projects
                  or
-                   osc rdelete      for server side operations.""")
+                   osc rdelete      for server side operations.""", file=sys.stderr)
 
-        sys.exit(1)
+        return 2
 
     @cmdln.hide(1)
     @cmdln.option('-f', '--force', action='store_true',
                         help='deletes a project and its packages')
     def do_deleteprj(self, subcmd, opts, project):
-        """${cmd_name} is obsolete !
+        """${cmd_name}:
 
-                 Please use
-                   osc rdelete PROJECT
+        Obsolete command to delete project. Use 'rdelete' now.
+
+        See the help output of 'rdelete'.
         """
-        sys.exit(1)
+
+        print("This command is obsolete. Use 'osc rdelete <project>'.", file=sys.stderr)
+        print("See 'osc help rdelete'.", file=sys.stderr)
+        return 2
 
     @cmdln.alias('metafromspec')
     @cmdln.alias('updatepkgmetafromspec')
@@ -3669,7 +3678,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if (subcmd == 'ldiff' or subcmd == 'linkdiff'):
             opts.link = True
         args = parseargs(args)
-        
+
         pacs = None
         if not opts.link or not len(args) == 2:
             pacs = findpacs(args)
@@ -4200,7 +4209,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             while inside a project directory:
                osc co PACKAGE                    # check out PACKAGE from project
-            
+
             with the result of rpm -q --qf '%%{DISTURL}\\n' PACKAGE
                osc co obs://API/PROJECT/PLATFORM/REVISION-PACKAGE
 
@@ -4877,8 +4886,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):
-        print("Command results_meta is obsolete. Please use: osc results --xml")
-        sys.exit(1)
+        """${cmd_name}:
+
+        Obsolete command to show build results. Use 'results --xml' now.
+
+        See the help output of 'results'.
+        """
+
+        print("This command is obsolete. Use 'osc results --xml'.",
+              file=sys.stderr)
+        print("See 'osc help results'.", file=sys.stderr)
+        return 2
 
     @cmdln.hide(1)
     @cmdln.option('-l', '--last-build', action='store_true',
@@ -4890,10 +4908,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--xml', action='store_true',
                         help='generate output in XML (former results_meta)')
     def do_rresults(self, subcmd, opts, *args):
-        print("Command rresults is obsolete. Running 'osc results' instead")
-        self.do_results('results', opts, *args)
-        sys.exit(1)
+        """${cmd_name}:
 
+        Obsolete command to show build results. Use 'results' now.
+
+        See the help output of 'results'.
+        """
+
+        print("Command rresults is obsolete. Running 'osc results' instead",
+              file=sys.stderr)
+        print("See 'osc help results'.", file=sys.stderr)
+        return self.do_results('results', opts, *args)
 
     @cmdln.option('-f', '--force', action='store_true', default=False,
                         help="Don't ask and delete files")
@@ -5075,8 +5100,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_rprjresults(self, subcmd, opts, *args):
-        print("Command rprjresults is obsolete. Please use 'osc prjresults'")
-        sys.exit(1)
+        """${cmd_name}:
+
+        Obsolete command to show project-wide build results. Use 'prjresults' now.
+
+        See the help output of 'prjresults'.
+        """
+
+        print("Command rprjresults is obsolete. Please use 'osc prjresults'",
+              file=sys.stderr)
+        print("See 'osc help prjresults'.", file=sys.stderr)
+        return 2
 
     @cmdln.alias('bl')
     @cmdln.alias('blt')
@@ -5332,7 +5366,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 2:
             self.print_repos()
-        
+
         apiurl = self.get_api_url()
 
         if len(args) == 2: # 2
@@ -5610,7 +5644,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for repo in get_repos_of_project(apiurl, project):
                 if (disabled is None) or ((disabled is not None) and (repo.name not in disabled)):
                     data += [repo.name, repo.arch]
-        
+
             for row in build_table(2, data, width=2):
                 print(row)
 
@@ -5687,7 +5721,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
         descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') + glob.glob('PKGBUILD') + glob.glob('build.collax')
-        
+
         # FIXME:
         # * request repos from server and select by build type.
         if not arg_descr and len(descr) == 1:
@@ -5878,7 +5912,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         except:
             print("WARNING: package is not existing on server yet")
             opts.local_package = True
-        
+
         if opts.offline or opts.local_package or r == None:
             print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
         elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
@@ -5957,7 +5991,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     return ret
 
             return 0
-            
+
 
         cwd = os.getcwd()
         basename = os.path.basename(cwd)
@@ -6210,8 +6244,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.hide(1)
     def do_rlog(self, subcmd, opts, *args):
-        print("Command rlog is obsolete. Please use 'osc log'")
-        sys.exit(1)
+        """${cmd_name}:
+
+        Obsolete command to show commit logs. Use 'log' now.
+
+        See the help output of 'log'.
+        """
+
+        print("This command is obsolete. Use 'osc log'.", file=sys.stderr)
+        print("See 'osc help log'.", file=sys.stderr)
+        return 2
 
 
     @cmdln.option('-r', '--revision', metavar='rev',
@@ -7385,7 +7427,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc maintainer <options>
             osc maintainer PRJ <options>
             osc maintainer PRJ PKG <options>
-    
+
         The tool looks up the default responsible person for a certain project or package.
         When using with an OBS 2.4 (or later) server it is doing the lookup for
         a given binary according to the server side configuration of default owners.
