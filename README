@@ -7,6 +7,19 @@ Patches can be submitted via
  * or the official Git repository on Github:
    https://github.com/openSUSE/osc
 
+PRE-REQUISITES:
+
+Prior to installation, following pre-requistes are required to be installed.  
+  * libcurl-devel
+  * libcurl4
+  * python-pycurl
+  * python-urlgrabber
+  * python-m2crypto
+
+To install the requirements:  
+  $ zypper ar http://download.opensuse.org/distribution/13.2/repo/oss/suse/ python
+  $ zypper ref
+  $ zypper in libcurl-devel libcurl4 python-pycurl python-urlgrabber python-m2crypto
 
 INSTALLATION:
 
