@@ -4436,8 +4436,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     addGitSource(arg)
                 else:
                     addDownloadUrlService(arg)
-            else:
-                addFiles([arg])
+                continue
+            if os.path.isdir(arg):
+                resp = raw_input("%s is a directory, do you want to archive it for submission? (y/n)" % (arg))
+                if resp not in ('y', 'Y'):
+                    continue
+                archive = ("%s.obscpio" % arg)
+                run_external("find %s | cpio -o -H newc > %s" % (arg, archive), shell=True)
+                addFiles([archive])
+                continue
+
+            addFiles([arg])
 
 
     def do_mkpac(self, subcmd, opts, *args):
