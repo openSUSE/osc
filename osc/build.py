@@ -128,6 +128,8 @@ class Buildinfo:
             self.pacsuffix = 'arch'
         if self.buildtype == 'livebuild':
             self.pacsuffix = 'deb'
+        if self.buildtype == 'snapcaft':
+            self.pacsuffix = 'snap'
 
         self.buildarch = root.find('arch').text
         if root.find('hostarch') != None:
@@ -354,6 +356,11 @@ def get_built_files(pacdir, buildtype):
                                     '-name', '*.iso*'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'snapcraft':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-name', '*.snap'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -493,9 +500,9 @@ def main(apiurl, opts, argv):
         build_type = 'arch'
     if os.path.basename(build_descr) == 'build.collax':
         build_type = 'collax'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'yaml']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi or .livebuild.' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, .yaml or .livebuild.' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
