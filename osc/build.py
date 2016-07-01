@@ -128,8 +128,10 @@ class Buildinfo:
             self.pacsuffix = 'arch'
         if self.buildtype == 'livebuild':
             self.pacsuffix = 'deb'
-        if self.buildtype == 'snapcaft':
-            self.pacsuffix = 'snap'
+        if self.buildtype == 'snapcraft':
+            # atm ubuntu is used as base, but we need to be more clever when 
+            # snapcraft also supports rpm
+            self.pacsuffix = 'deb'
 
         self.buildarch = root.find('arch').text
         if root.find('hostarch') != None:
@@ -500,7 +502,9 @@ def main(apiurl, opts, argv):
         build_type = 'arch'
     if os.path.basename(build_descr) == 'build.collax':
         build_type = 'collax'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'yaml']:
+    if os.path.basename(build_descr) == 'snapcraft.yaml':
+        build_type = 'snapcraft'
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft']:
         raise oscerr.WrongArgs(
                 'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, .yaml or .livebuild.' \
                         % build_type)
