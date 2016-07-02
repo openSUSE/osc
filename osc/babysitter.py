@@ -78,7 +78,7 @@ def run(prg, argv=None):
         return 1
     except KeyboardInterrupt:
         print('interrupted!', file=sys.stderr)
-        return 1
+        return 130
     except oscerr.UserAbort:
         print('aborted.', file=sys.stderr)
         return 1
