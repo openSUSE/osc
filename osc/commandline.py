@@ -5787,7 +5787,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nochecks', '--no-checks', action='store_true',
                   help='Do not run build checks on the resulting packages.')
     @cmdln.option('--no-verify', '--noverify', action='store_true',
-                  help='Skip signature verification of packages used for build. (Global config in .oscrc: no_verify)')
+                  help='Skip signature verification (via pgp keys) of packages used for build. (Global config in .oscrc: no_verify)')
     @cmdln.option('--noservice', '--no-service', action='store_true',
                   help='Skip run of local source services as specified in _service file.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
