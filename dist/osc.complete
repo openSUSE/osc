@@ -91,7 +91,7 @@ if test -s ${PWD}/.osc/_files ; then
     lnkprj=$(command sed -rn '/<linkinfo/{s@.*[[:blank:]]project="([^"]+)".*@\1@p;}' < ${PWD}/.osc/_files)
     lnkpkg=$(command sed -rn '/<linkinfo/{s@.*[[:blank:]]package="([^"]+)".*@\1@p;}' < ${PWD}/.osc/_files)
 fi
-if test -s ${PWD}/.osc/_apiurl ; then
+if test -s ${PWD}/.osc/_apiurl -a -s ~/.oscrc ; then
     read apiurl < ${PWD}/.osc/_apiurl
     alias=$(sed -rn '\@^\['${apiurl}'@,\@=@{\@^aliases=@{s@[^=]+=([^,]+),.*@\1@p};}' < ~/.oscrc 2> /dev/null)
 fi
