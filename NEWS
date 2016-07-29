@@ -4,6 +4,9 @@
                         just created at buildtime
   - support snapcraft.yaml build descriptions
   - "osc add" of a directory offers to create an archive for uploading it
+  - support usage or preinstall images in local builds
+  - revision control options for "meta prj"
+  - bugfixes and documentation updates
 
 0.154
   - switch to new obs_scm service when adding git URL's
