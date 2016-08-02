@@ -2900,10 +2900,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments.')
 
         if len(args) == 0:
-            if is_project_dir(os.curdir):
+            if is_package_dir(os.curdir):
                source_project = store_read_project(os.curdir)
-            elif is_package_dir(os.curdir):
-               source_package = store_read_package(wd)
+               source_package = store_read_package(os.curdir)
+            elif is_project_dir(os.curdir):
+               source_project = store_read_project(os.curdir)
             else:
                raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
