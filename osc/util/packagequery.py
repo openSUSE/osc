@@ -14,8 +14,8 @@ class PackageQueries(dict):
     wanted architecture and if it has a greater version than the current value.
     """
 
-    # map debian arches to common obs arches
-    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64'], 'ppc64el': ['ppc64le']}
+    # map debian and rpm arches to common obs arches
+    architectureMap = {'i386': ['i586', 'i686'], 'amd64': ['x86_64'], 'ppc64el': ['ppc64le'], 'armv6hl': ['armv6l'], 'armv7hl': ['armv7l']}
 
     def __init__(self, wanted_architecture):
         self.wanted_architecture = wanted_architecture
