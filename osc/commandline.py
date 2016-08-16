@@ -1044,6 +1044,8 @@ class Osc(cmdln.Cmdln):
                        '(primary project where a package is developed)')
     @cmdln.option('--separate-requests', action='store_true',
                   help='Create multiple requests instead of a single one (when command is used for entire project)')
+    @cmdln.option('--seperate-requests', action='store_true',
+                  help='Deprecated (wrong spelling - see --separate-requests)')
     @cmdln.option('--cleanup', action='store_true',
                   help='remove package if submission gets accepted (default for home:<id>:branch projects)')
     @cmdln.option('--no-cleanup', action='store_true',
@@ -1079,6 +1081,10 @@ class Osc(cmdln.Cmdln):
 
         if opts.cleanup and opts.no_cleanup:
             raise oscerr.WrongOptions('\'--cleanup\' and \'--no-cleanup\' are mutually exclusive')
+        if opts.seperate_requests:
+            # compatibility option will be removed in the future
+            print('--seperate-requests is deprecated (use '
+                  '--separate-requests)', file=sys.stderr)
 
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
@@ -1180,7 +1186,7 @@ class Osc(cmdln.Cmdln):
                         sys.exit("Please fix this first")
 
                 # submitting this package
-                if opts.separate_requests:
+                if opts.separate_requests or opts.seperate_requests:
                     # create a single request
                     result = create_submit_request(apiurl, project, p)
                     if not result:
