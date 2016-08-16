@@ -122,6 +122,7 @@ def run(prg, argv=None):
             if '<summary>' in body:
                 msg = body.split('<summary>')[1]
                 msg = msg.split('</summary>')[0]
+                msg = msg.replace('&lt;', '<').replace('&gt;' , '>').replace('&amp;', '&')
                 print(msg, file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
             print('\nRequest: %s' % e.filename)
