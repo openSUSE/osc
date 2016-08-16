@@ -635,7 +635,7 @@ less|cat)
     fi
     ;;
 sr|submitpac|submitreq|submitrequest)
-    opts=(--help --yes --diff --no-update --no-cleanup --cleanup --seperate-requests
+    opts=(--help --yes --diff --no-update --no-cleanup --cleanup --separate-requests
 	  --nodevelproject --supersede --revision)
     if ((count == 1)) ; then
 	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"

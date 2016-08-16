@@ -1042,8 +1042,8 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
-    @cmdln.option('--seperate-requests', action='store_true',
-                  help='Create multiple request instead of a single one (when command is used for entire project)')
+    @cmdln.option('--separate-requests', action='store_true',
+                  help='Create multiple requests instead of a single one (when command is used for entire project)')
     @cmdln.option('--cleanup', action='store_true',
                   help='remove package if submission gets accepted (default for home:<id>:branch projects)')
     @cmdln.option('--no-cleanup', action='store_true',
@@ -1180,7 +1180,7 @@ class Osc(cmdln.Cmdln):
                         sys.exit("Please fix this first")
 
                 # submitting this package
-                if opts.seperate_requests:
+                if opts.separate_requests:
                     # create a single request
                     result = create_submit_request(apiurl, project, p)
                     if not result:
