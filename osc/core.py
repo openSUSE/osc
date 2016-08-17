@@ -5525,10 +5525,6 @@ def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
             elif result.get('code') in waiting_states:
                 waiting = True
                 break
-            elif (result.get('code') == 'succeeded'
-                  and result.get('repostate') != 'published'):
-                waiting = True
-                break
 
         if not wait or not waiting:
             break
