@@ -427,8 +427,6 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
             continue
         if path.endswith('.patch.rpm') or path.endswith('.delta.rpm'):
             continue
-        if path.find('-debuginfo-') > 0:
-            continue
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
