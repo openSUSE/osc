@@ -1,12 +1,21 @@
 language: python
 python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "3.5-dev"
+- '2.7'
+- '3.3'
+- '3.4'
+- 3.5-dev
 addons:
   apt:
     packages:
     - diffstat
 sudo: false
 script: cd tests; python suite.py
+deploy:
+  provider: pypi
+  user: suse
+  password:
+    secure: R4+YNPW2tsiY06hibGvONYn0//1z1QdcY8VmNbYpIRly4eTAbPE9uejKpyuflUkznpEkoqCdFzi5FNFhgat9N+AkIKyX9NTkf0oxaKKbdqBM7H1V8bqLYlAO479262spRyO0ee5fV5v6g81AFjncIV+pGjtQ0Vg/sjVcvGa61bs=
+  on:
+    tags: true
+    distributions: sdist bdist_wheel
+    repo: openSUSE/osc
