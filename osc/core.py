@@ -6756,12 +6756,23 @@ def addFiles(filenames, prj_obj = None):
         elif os.path.isdir(filename) and is_project_dir(prj_dir):
             raise oscerr.WrongArgs('osc: cannot add a directory to a project unless ' \
                                    '\'do_package_tracking\' is enabled in the configuration file')
-        elif os.path.isdir(filename):
-            print('skipping directory \'%s\'' % filename)
-            pacs.remove(filename)
+
     pacs, no_pacs = findpacs(pacs, fatal=False)
     for filename in no_pacs:
-        print('osc: warning: \'%s\' cannot be associated to a package' % filename)
+        filename = os.path.normpath(filename)
+        directory = os.path.join(filename, os.pardir)
+        if not is_package_dir(directory):
+            print('osc: warning: \'%s\' cannot be associated to a package' % filename)
+            continue
+        resp = raw_input("%s is a directory, do you want to archive it for submission? (y/n) " % (filename))
+        if resp not in ('y', 'Y'):
+            continue
+        archive = "%s.obscpio" % filename
+        # XXX: hmm we should use subprocess.Popen here (to avoid all the
+        # issues that come with shell=True...)
+        run_external("find %s | cpio -o -H newc > %s" % (filename, archive), shell=True)
+        pacs.extend(findpacs([archive]))
+
     for pac in pacs:
         if conf.config['do_package_tracking'] and not pac.todo:
             prj = prj_obj or Project(os.path.dirname(pac.absdir), False)
