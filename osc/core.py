@@ -3062,12 +3062,19 @@ def expand_proj_pack(args, idx=0, howmany=0):
     return args
 
 
-def findpacs(files, progress_obj=None):
+def findpacs(files, progress_obj=None, fatal=True):
     """collect Package objects belonging to the given files
     and make sure each Package is returned only once"""
     pacs = []
+    no_pacs = []
     for f in files:
-        p = filedir_to_pac(f, progress_obj)
+        try:
+            p = filedir_to_pac(f, progress_obj)
+        except oscerr.OscBaseError as e:
+            if fatal:
+                raise e
+            no_pacs.append(f)
+            continue
         known = None
         for i in pacs:
             if i.name == p.name:
@@ -3077,6 +3084,8 @@ def findpacs(files, progress_obj=None):
             i.merge(p)
         else:
             pacs.append(p)
+    if not fatal:
+        return pacs, no_pacs
     return pacs
 
 
@@ -6742,15 +6751,17 @@ def addFiles(filenames, prj_obj = None):
             prj_apiurl = store_read_apiurl(prj_dir, defaulturl=False)
             Package.init_package(prj_apiurl, prj_name, pac_dir, filename)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
-            raise oscerr.PackageExists(store_read_project(filename), store_read_package(filename),
-                                       'osc: warning: \'%s\' is already under version control' % filename)
+            print('osc: warning: \'%s\' is already under version control' % filename)
+            pacs.remove(filename)
         elif os.path.isdir(filename) and is_project_dir(prj_dir):
             raise oscerr.WrongArgs('osc: cannot add a directory to a project unless ' \
                                    '\'do_package_tracking\' is enabled in the configuration file')
         elif os.path.isdir(filename):
             print('skipping directory \'%s\'' % filename)
             pacs.remove(filename)
-    pacs = findpacs(pacs)
+    pacs, no_pacs = findpacs(pacs, fatal=False)
+    for filename in no_pacs:
+        print('osc: warning: \'%s\' cannot be associated to a package' % filename)
     for pac in pacs:
         if conf.config['do_package_tracking'] and not pac.todo:
             prj = prj_obj or Project(os.path.dirname(pac.absdir), False)
@@ -6770,7 +6781,11 @@ def addFiles(filenames, prj_obj = None):
             if filename in pac.excluded:
                 print('osc: warning: \'%s\' is excluded from a working copy' % filename, file=sys.stderr)
                 continue
-            pac.addfile(filename)
+            try:
+                pac.addfile(filename)
+            except oscerr.PackageFileConflict as e:
+                fname = os.path.join(getTransActPath(pac.dir), filename)
+                print('osc: warning: \'%s\' is already under version control' % fname)
 
 def getPrjPacPaths(path):
     """
