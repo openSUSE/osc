@@ -114,6 +114,8 @@ class Osc(cmdln.Cmdln):
                       help='disable usage of desktop keyring system')
         optparser.add_option('--no-gnome-keyring', action='store_true',
                       help='disable usage of GNOME Keyring')
+        optparser.add_option('--non-interactive', action='store_true',
+                      help='try to avoid asking questions from the user')
         optparser.add_option('-v', '--verbose', dest='verbose', action='count', default=0,
                       help='increase verbosity')
         optparser.add_option('-q', '--quiet',   dest='verbose', action='store_const', const=-1,
@@ -133,8 +135,13 @@ class Osc(cmdln.Cmdln):
                             override_post_mortem = self.options.post_mortem,
                             override_no_keyring = self.options.no_keyring,
                             override_no_gnome_keyring = self.options.no_gnome_keyring,
+                            override_non_interactive = self.options.non_interactive,
                             override_verbose = self.options.verbose)
         except oscerr.NoConfigfile as e:
+            if self.options.non_interactive:
+                print("OSC has not been configured.\nCannot prompt the user "
+                        "for the missing information in non-interactive mode.")
+                exit(1)
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
             import getpass
@@ -153,6 +160,11 @@ class Osc(cmdln.Cmdln):
             if try_again:
                 self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl as e:
+            if self.options.non_interactive:
+                print("OSC configuration is missing API URL information.\n"
+                        "Cannot prompt the user for the missing"
+                        " information in non-interactive mode.")
+                exit(1)
             print(e.msg, file=sys.stderr)
             import getpass
             user = raw_input('Username: ')

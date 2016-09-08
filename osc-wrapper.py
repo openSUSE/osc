@@ -35,6 +35,7 @@ except NameError:
 # remains fully buffered (see PyFile_SetBufSize (Objects/fileobject.c))).
 if not os.isatty(sys.stdout.fileno()):
     sys.stdout = os.fdopen(sys.stdout.fileno(), sys.stdout.mode, 1)
+    sys.argv.insert(1, "--non-interactive")
 
 osccli = commandline.Osc()
 

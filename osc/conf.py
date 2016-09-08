@@ -123,6 +123,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
 
             'buildlog_strip_time': '0',  # strips the build time from the build log
 
+            'non_interactive': '0',
             'debug': '0',
             'http_debug': '0',
             'http_full_debug': '0',
@@ -189,7 +190,7 @@ config = DEFAULTS.copy()
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
-    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage']
+    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage', 'non_interactive']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -404,7 +405,6 @@ def is_known_apiurl(url):
     """returns true if url is a known apiurl"""
     apiurl = urljoin(*parse_apisrv_url(None, url))
     return apiurl in config['api_host_options']
-
 
 def extract_known_apiurl(url):
     """
@@ -805,6 +805,7 @@ def get_config(override_conffile=None,
                override_post_mortem=None,
                override_no_keyring=None,
                override_no_gnome_keyring=None,
+               override_non_interactive=None,
                override_verbose=None):
     """do the actual work (see module documentation)"""
     global config
@@ -998,6 +999,8 @@ def get_config(override_conffile=None,
     # override values which we were called with
     if override_verbose:
         config['verbose'] = override_verbose + 1
+    if override_non_interactive:
+        config['non_interactive'] = override_non_interactive
 
     if override_debug:
         config['debug'] = override_debug
