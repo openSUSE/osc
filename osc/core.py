@@ -5536,7 +5536,12 @@ def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
             elif result.get('code') in waiting_states:
                 waiting = True
                 break
-
+            else:
+                pkg = result.find('status')
+                if pkg.get('code') in waiting_states:
+                    waiting = True
+                    break
+                
         if not wait or not waiting:
             break
         else:
