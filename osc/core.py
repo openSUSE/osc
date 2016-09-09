@@ -3767,7 +3767,9 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
         # old API servers (e.g. 2.3.5) do not know the 'nofilename' parameter, so retry without
         if e.code == 400 and nofilename:
             return get_project_sourceinfo(apiurl, project, False, *packages)
-        if e.code != 414:
+        # an uri too long error is sometimes handled as status 500
+        # (depending, e.g., on the apache2 configuration)
+        if e.code not in (414, 500):
             raise
         if len(packages) == 1:
             raise oscerr.APIError('package name too long: %s' % packages[0])
