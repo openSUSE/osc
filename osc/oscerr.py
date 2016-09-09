@@ -115,10 +115,10 @@ class PackageNotInstalled(OscBaseError):
     Exception raised when a package is not installed on local system
     """
     def __init__(self, pkg):
-        OscBaseError.__init__(self, pkg)
+        OscBaseError.__init__(self, (pkg,))
 
     def __str__(self):
-        return 'Package %s is required for this operation' % ''.join(self.args)
+        return 'Package %s is required for this operation' % self.args
 
 class SignalInterrupt(Exception):
     """Exception raised on SIGTERM and SIGHUP."""
