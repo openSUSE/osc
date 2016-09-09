@@ -4551,8 +4551,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
-        args = parseargs(args)
+        try:
+            self._commit(subcmd, opts, args)
+        except oscerr.ExtRuntimeError as e:
+            print("ERROR: service run failed", e, file=sys.stderr)
+            return 1
+        except oscerr.PackageNotInstalled as e:
+            print(e.args)
+            print("ERROR: please install %s" % e.args, end='')
+            print("or use the --noservice option")
+            return 1
 
+
+    def _commit(self, subcmd, opts, args):
+        args = parseargs(args)
         if opts.skip_validation:
             print("WARNING: deprecated option --skip-validation ignored.", file=sys.stderr)
 
@@ -4573,25 +4585,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         arg_list = args[:]
         for arg in arg_list:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
-                try:
-                    prj = Project(arg)
-                    if not msg and not opts.no_message:
-                        msg = edit_message()
+                prj = Project(arg)
+                if not msg and not opts.no_message:
+                    msg = edit_message()
 
-                    # check any of the packages is a link, if so, as for branching
-                    pacs = (Package(os.path.join(prj.dir, pac))
-                            for pac in prj.pacs_have if prj.get_state(pac) == ' ')
-                    can_branch = False
-                    if any(pac.is_link_to_different_project() for pac in pacs):
-                        repl = raw_input('Some of the packages are links to a different project!\n' \
-                                         'Create a local branch before commit? (y|N) ')
-                        if repl in('y', 'Y'):
-                            can_branch = True
+                # check any of the packages is a link, if so, as for branching
+                pacs = (Package(os.path.join(prj.dir, pac))
+                        for pac in prj.pacs_have if prj.get_state(pac) == ' ')
+                can_branch = False
+                if any(pac.is_link_to_different_project() for pac in pacs):
+                    repl = raw_input('Some of the packages are links to a different project!\n' \
+                                     'Create a local branch before commit? (y|N) ')
+                    if repl in('y', 'Y'):
+                        can_branch = True
 
-                    prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
-                except oscerr.ExtRuntimeError as e:
-                    print("ERROR: service run failed", e, file=sys.stderr)
-                    return 1
+                prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 args.remove(arg)
 
         pacs = findpacs(args)
