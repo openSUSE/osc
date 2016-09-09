@@ -5538,7 +5538,7 @@ def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
                 break
             else:
                 pkg = result.find('status')
-                if pkg.get('code') in waiting_states:
+                if pkg is not None and pkg.get('code') in waiting_states:
                     waiting = True
                     break
                 
