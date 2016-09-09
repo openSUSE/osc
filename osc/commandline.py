@@ -4557,7 +4557,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print("ERROR: service run failed", e, file=sys.stderr)
             return 1
         except oscerr.PackageNotInstalled as e:
-            print(e.args)
             print("ERROR: please install %s" % e.args, end='')
             print("or use the --noservice option")
             return 1
