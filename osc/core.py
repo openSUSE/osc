@@ -4321,6 +4321,8 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), 
         for i in res['package_id'].findall('package'):
             if not i.get('project') in projects:
                 projpkgs.setdefault(i.get('project'), []).append(i.get('name'))
+        if not projpkgs:
+            return []
     xpath = ''
     for prj, pacs in projpkgs.items():
         if not len(pacs):

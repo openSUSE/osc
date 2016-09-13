@@ -6897,9 +6897,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print("")
                 return
             except HTTPError as e:
-                if e.code == 400:
-                    # skip it ... try again with old style below
-                    pass
+                if e.code != 400:
+                    raise e
+                # skip it ... try again with old style below
 
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 'project' in what, 'package' in what,
