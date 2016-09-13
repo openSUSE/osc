@@ -6909,18 +6909,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # if list of packages is empty user is maintainer of the whole project
         request_todo = {}
 
+        dummy_elm = ET.Element('dummy')
         roles = {}
         if len(what.keys()) == 2:
-            for i in res.get('project_id', res.get('project', {})).findall('project'):
+            for i in res.get('project_id', res.get('project', dummy_elm)).findall('project'):
                 request_todo[i.get('name')] = []
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
-            for i in res.get('package_id', res.get('package', {})).findall('package'):
+            for i in res.get('package_id', res.get('package', dummy_elm)).findall('package'):
                 prj = i.get('project')
                 roles['/'.join([prj, i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
                 if not prj in request_todo or request_todo[prj] != []:
                     request_todo.setdefault(prj, []).append(i.get('name'))
         else:
-            for i in res.get('project_id', res.get('project', {})).findall('project'):
+            for i in res.get('project_id', res.get('project', dummy_elm)).findall('project'):
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
 
         if list_requests:
