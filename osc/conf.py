@@ -532,7 +532,7 @@ def _build_opener(apiurl):
         cafile = options.get('cafile', None)
         capath = options.get('capath', None)
         if not cafile and not capath:
-            for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs']:
+            for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs', '/etc/ssl/cert.pem']:
                 if os.path.isfile(i):
                     cafile = i
                     break
