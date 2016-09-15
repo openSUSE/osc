@@ -25,7 +25,7 @@ class build_osc(distutils.command.build.build, object):
         """
         """
         import gzip
-        man_path = os.path.join('build', 'osc.1.gz')
+        man_path = os.path.join(self.build_base, 'osc.1.gz')
         distutils.log.info('generating %s' % man_path)
         outfile = gzip.open(man_path, 'w')
         osccli = commandline.Osc(stdout=outfile)
@@ -39,6 +39,10 @@ class build_osc(distutils.command.build.build, object):
     def run(self):
         super(build_osc, self).run()
         self.build_man_page()
+        # tight coupling, see class install_data.
+        self.distribution.command_options['install_data'] = dict(
+            build_base = ('build_osc', self.build_base),
+        )
 
 
 # Support for documentation (sphinx)
@@ -61,7 +65,50 @@ class build_docs(distutils.command.build.Command):
         import sphinx
         sphinx.main(['runme', 
                     '-D', 'version=%s' % metadata.get_version(), 
-                    os.path.join('docs',), os.path.join('build', 'docs')])
+                    os.path.join('docs',), os.path.join(self.build_base, 'docs')])
+
+
+class install_data(distutils.command.install_data.install_data, object):
+    """
+    Complements class build_osc.
+
+    Works around a flaw in Distutils which defines data_files as
+    relative to setup.py.  In other words, no access to files
+    created by the build phase in general.  Looks like Distutils
+    really doesn't want people to do anything of substance in the
+    build phase.
+
+    Needs cooperation from the build command to stash the build_base
+    in command_options['install_data'] on the distribution object.
+    Documentation is sparse, distutils/command/register.py suggests
+    this is how you do it.
+    """
+    def initialize_options(self):
+        super(install_data, self).initialize_options()
+
+        self.build_base = None
+
+    def finalize_options(self):
+        super(install_data, self).finalize_options()
+
+        def fixpath(f):
+            if f.startswith('$build/'):
+                return f.replace('$build', self.build_base)
+            return f
+
+        data_files = []
+
+        for f in self.data_files:
+            # predicate copied from parent's run() method
+            if isinstance(f, str):
+                data_files.append(fixpath(f))
+            else:
+                sources = []
+                dest, origs = f
+                for f in origs:
+                    sources.append(fixpath(f))
+                data_files.append((dest, sources))
+        self.data_files = data_files
 
 
 addparams = {}
@@ -72,7 +119,7 @@ if HAVE_PY2EXE:
 
 data_files = []
 if sys.platform[:3] != 'win':
-    data_files.append((os.path.join('share', 'man', 'man1'), [os.path.join('build', 'osc.1.gz')]))
+    data_files.append((os.path.join('share', 'man', 'man1'), [os.path.join('$build', 'osc.1.gz')]))
 
 setup(name='osc',
       version = osc.core.__version__,
@@ -93,6 +140,7 @@ setup(name='osc',
       cmdclass = {
         'build': build_osc,
         'build_docs' : build_docs,
+        'install_data': install_data,
         },
       **addparams
      )
