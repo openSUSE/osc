@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from distutils.core import setup
+import distutils.core
 import distutils.command.build
 import distutils.command.install_data
 import os.path
@@ -42,7 +43,7 @@ class build_osc(distutils.command.build.build, object):
 
 
 # Support for documentation (sphinx)
-class build_docs(distutils.command.build.Command):
+class build_docs(distutils.core.Command):
     description = 'builds documentation using sphinx'
     user_options = []
 
