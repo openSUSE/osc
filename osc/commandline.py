@@ -8263,25 +8263,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
             return 1
 
-        # set user's email if no mailaddr exists
-        if 'mailaddr' not in os.environ:
+        if args and is_package_dir(args[0]):
+            apiurl = store_read_apiurl(args[0])
+        else:
+            apiurl = self.get_api_url()
 
-            if len(args) and is_package_dir(args[0]):
-                apiurl = store_read_apiurl(args[0])
-            else:
-                apiurl = self.get_api_url()
-
+        # set user's email if the mailaddr env variable is not set
+        if 'mailaddr' in os.environ:
+            pass
+        elif 'email' in conf.config['api_host_options'][apiurl]:
+            os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
+        else:
             user = conf.get_apiurl_usr(apiurl)
-
             data = get_user_data(apiurl, user, 'email')
             if data:
                 os.environ['mailaddr'] = data[0]
             else:
                 print('Try env mailaddr=...', file=sys.stderr)
-
-            # mailaddr can be overrided by config one
-            if 'email' in conf.config['api_host_options'][apiurl]:
-                os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
 
         if meego_style:
             if opts.message or opts.just_edit:
