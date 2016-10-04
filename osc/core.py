@@ -258,6 +258,7 @@ class Serviceinfo:
     def __init__(self):
         """creates an empty serviceinfo instance"""
         self.services = []
+        self.apiurl   = None
         self.project  = None
         self.package  = None
 
