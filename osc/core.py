@@ -297,6 +297,7 @@ class Serviceinfo:
             self.services.append(data)
 
     def getProjectGlobalServices(self, apiurl, project, package):
+        self.apiurl = apiurl
         # get all project wide services in one file, we don't store it yet
         u = makeurl(apiurl, ['source', project, package], query='cmd=getprojectservices')
         try:
@@ -392,6 +393,7 @@ class Serviceinfo:
 
         # set environment when using OBS 2.3 or later
         if self.project != None:
+            os.putenv("OBS_SERVICE_APIURL",  self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
             os.putenv("OBS_SERVICE_PACKAGE", self.package)
 
