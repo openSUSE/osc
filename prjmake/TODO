@@ -1,0 +1,4 @@
+Items not fully implemented:
+-config file support to set some of the option defaults in .oscrc
+-proper unit tests, currently contains only a skeleton for
+	future implementation

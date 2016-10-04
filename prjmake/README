@@ -1,0 +1,38 @@
+Summary:
+
+This is an osc plugin that allows the user to do OBS project level
+builds. It calculates the correct build order by using buildinfos from
+the OBS server.
+
+It supports building packages from several different projects, if the
+packages are checked out in the same directory, assuming all the projects
+contain the target repository.
+
+
+Usage:
+
+The simple use case is to osc checkout an OBS project, move to that directory
+and run 'osc prjmake REPOSITORY', this will build all the packages in the
+checked out project.
+
+Another way to use prjmake is to define a set of 'changed' packages with
+'osc prjmake REPOSITORY PACKAGE1 PACKAGE2 ...'. In this case, only the
+necessary rebuilds are done for other packages.
+
+
+Restrictions:
+
+It is possible to get wrong build orders if multiple Provides and Requires
+for different packages are changed locally, as the dependency resolution
+relies on the server for solving requirements where the requirement does not
+match a package name.
+
+
+Note:
+
+osc prjmake cannot handle circular dependencies the same way OBS server can, so
+it will just fail if it detects one.
+
+Packages should also be buildable without having to specify what specfile to
+use, since the plugin does not support specifying the specfiles from project
+level.
