@@ -683,18 +683,31 @@ class Project:
             store_write_apiurl(self.dir, apiurl)
             self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
-    def checkout_missing_pacs(self, expand_link=False):
+    def checkout_missing_pacs(self, expand_link=False, unexpand_link=False):
         for pac in self.pacs_missing:
 
             if conf.config['do_package_tracking'] and pac in self.pacs_unvers:
                 # pac is not under version control but a local file/dir exists
                 msg = 'can\'t add package \'%s\': Object already exists' % pac
                 raise oscerr.PackageExists(self.name, pac, msg)
-            else:
-                print('checking out new package %s' % pac)
-                checkout_package(self.apiurl, self.name, pac, \
-                                 pathname=getTransActPath(os.path.join(self.dir, pac)), \
-                                 prj_obj=self, prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
+
+            if not (expand_link or unexpand_link):
+                try:
+                    m = show_files_meta(self.apiurl, self.name, pac)
+                    li = Linkinfo()
+                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
+                    if not li.haserror():
+                        if li.project == self.name:
+                            print('Skipping local linked package %s' % pac)
+                            continue
+                except:
+                    pass
+
+            print('checking out new package %s' % pac)
+            checkout_package(self.apiurl, self.name, pac, \
+                             pathname=getTransActPath(os.path.join(self.dir, pac)), \
+                             prj_obj=self, prj_dir=self.dir,
+                             expand_link=expand_link or not unexpand_link, progress_obj=self.progress_obj)
 
     def status(self, pac):
         exists = os.path.exists(os.path.join(self.absdir, pac))
@@ -930,7 +943,7 @@ class Project:
                     else:
                         print('unexpected state.. package \'%s\'' % pac)
 
-                self.checkout_missing_pacs(expand_link=not unexpand_link)
+                self.checkout_missing_pacs(expand_link, unexpand_link)
             finally:
                 self.write_packages()
 
