@@ -5486,6 +5486,7 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     # api (unless we keep get_results around as well)...
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
     r = []
+    printed = False
     for results in get_package_results(apiurl, project, package, **kwargs):
         r = []
         for res in result_xml_to_dicts(results):
@@ -5513,7 +5514,11 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
             r.append(result_line_templ % res)
 
         if printJoin:
+            if printed:
+                # will print a newline if already a result was printed (improves readability)
+                print()
             print(printJoin.join(r))
+            printed = True
     return r
 
 
