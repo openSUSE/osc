@@ -394,6 +394,7 @@ class Serviceinfo:
 
         # set environment when using OBS 2.3 or later
         if self.project != None:
+            # These need to be kept in sync with bs_service
             os.putenv("OBS_SERVICE_APIURL",  self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
             os.putenv("OBS_SERVICE_PACKAGE", self.package)
