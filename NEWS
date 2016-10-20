@@ -1,5 +1,5 @@
 0.156
-  -
+  - highlight scheduled jobs with dispatch problems (due to constraints)
 
 0.155
   - osc service runall: runs all service local, independend of the mode

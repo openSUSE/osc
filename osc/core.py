@@ -5500,6 +5500,9 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                     res['status'] += ': ' + '\n     '.join(lines)
                 else:
                     res['status'] += ': %s' % res['details']
+            elif res['code'] in ('scheduled', ) and res['details']:
+                # highlight scheduled jobs with possible dispatch problems
+                res['status'] += '*'
             if res['dirty']:
                 if verbose:
                     res['status'] = 'outdated (was: %s)' % res['status']
