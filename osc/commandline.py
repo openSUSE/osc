@@ -6105,6 +6105,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Path to the buildroot')
     @cmdln.option('-o', '--offline', action='store_true',
                   help='Use cached data without contacting the api server')
+    @cmdln.option('--wipe', action='store_true',
+                  help='Delete the build root instead of chrooting into it')
+    @cmdln.option('-f', '--force', action='store_true',
+                  help='Do not ask confirmation for wipe')
     def do_chroot(self, subcmd, opts, *args):
         """${cmd_name}: opens a shell inside of the build root
 
@@ -6144,6 +6148,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
 
         suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper'])
+
+        # Wipe build root if --wipe was given
+        if opts.wipe:
+            sucmd = suwrapper.split()
+            cmd = [ conf.config['build-cmd'], '--root='+buildroot, '--wipe' ]
+            if sucmd[0] == 'su':
+                if sucmd[-1] == '-c':
+                    sucmd.pop()
+                cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
+            else:
+                cmd = sucmd + cmd
+
+            if opts.force:
+                sys.exit(run_external(cmd[0], *cmd[1:]))
+            else:
+                # Confirm delete
+                sys.stdout.write("Really wipe '"+buildroot+"'? [y/N]: ")
+                choice = raw_input().lower()
+                if choice == 'y':
+                    sys.exit(run_external(cmd[0], *cmd[1:]))
+                else:
+                    sys.stdout.write("Aborting\n")
+                    sys.exit(0)
+
+        # Normal chroot
         sucmd = suwrapper.split()[0]
         suargs = ' '.join(suwrapper.split()[1:])
         if suwrapper.startswith('su '):
