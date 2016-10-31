@@ -6164,12 +6164,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 sys.exit(run_external(cmd[0], *cmd[1:]))
             else:
                 # Confirm delete
-                sys.stdout.write("Really wipe '"+buildroot+"'? [y/N]: ")
+                print("Really wipe '%s'? [y/N]: " % buildroot)
                 choice = raw_input().lower()
                 if choice == 'y':
                     sys.exit(run_external(cmd[0], *cmd[1:]))
                 else:
-                    sys.stdout.write("Aborting\n")
+                    print('Aborting')
                     sys.exit(0)
 
         # Normal chroot
