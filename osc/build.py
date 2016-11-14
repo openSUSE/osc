@@ -606,7 +606,7 @@ def main(apiurl, opts, argv):
             except oscerr.NoWorkingCopy:
                 opts.local_package = True
         if opts.local_package:
-            pacname = os.path.splitext(build_descr)[0]
+            pacname = os.path.splitext(os.path.basename(build_descr))[0]
     apihost = urlsplit(apiurl)[1]
     if not build_root:
         build_root = config['build-root']

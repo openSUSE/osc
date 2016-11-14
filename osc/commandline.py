@@ -6139,7 +6139,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
             project = opts.alternative_project or store_read_project('.')
             if opts.local_package:
-                package = os.path.splitext(descr)[0]
+                package = os.path.splitext(os.path.basename(descr))[0]
             else:
                 package = store_read_package('.')
             apihost = urlsplit(self.get_api_url())[1]
