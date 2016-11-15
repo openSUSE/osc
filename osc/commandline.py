@@ -6693,7 +6693,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) == 2:
                 architecture = args[1]
         else:
-            raise oscerr.WrongArgs('Need either 1, 2 or 4 arguments')
+            raise oscerr.WrongArgs('Need either 1, 2, 3 or 4 arguments')
 
         repos = list(get_repos_of_project(apiurl, project))
         if not [i for i in repos if repository == i.name]:
