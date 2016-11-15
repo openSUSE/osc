@@ -6654,6 +6654,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc getbinaries REPOSITORY                                 # works in checked out project/package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out project/package
+           osc getbinaries PROJECT REPOSITORY ARCHITECTRUE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE FILE
         ${cmd_option_list}
@@ -6677,6 +6678,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             architecture = args[3]
             if len(args) == 5:
                 binary = args[4]
+        elif len(args) == 3:
+            project, repository, architecture = args
         elif len(args) >= 1 and len(args) <= 2:
             if is_package_dir(os.getcwd()):
                 project = store_read_project(os.curdir)
