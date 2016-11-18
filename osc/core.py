@@ -683,25 +683,25 @@ class Project:
             store_write_apiurl(self.dir, apiurl)
             self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
-    def checkout_missing_pacs(self, expand_link=False, unexpand_link=False):
+    def checkout_missing_pacs(self, sinfos, expand_link=False, unexpand_link=False):
         for pac in self.pacs_missing:
-
             if conf.config['do_package_tracking'] and pac in self.pacs_unvers:
                 # pac is not under version control but a local file/dir exists
                 msg = 'can\'t add package \'%s\': Object already exists' % pac
                 raise oscerr.PackageExists(self.name, pac, msg)
 
             if not (expand_link or unexpand_link):
-                try:
-                    m = show_files_meta(self.apiurl, self.name, pac)
-                    li = Linkinfo()
-                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
-                    if not li.haserror():
-                        if li.project == self.name:
-                            print('Skipping local linked package %s' % pac)
-                            continue
-                except:
-                    pass
+                sinfo = sinfos.get(pac)
+                if sinfo is None:
+                    # should never happen...
+                    continue
+                linked = sinfo.find('linked')
+                if linked is not None and linked.get('project') == self.name:
+                    # hmm what about a linkerror (sinfo.get('lsrcmd5') is None)?
+                    # Should we skip the package as well or should we it out?
+                    # let's skip it for now
+                    print('Skipping %s (link to package %s)' % (pac, linked.get('package')))
+                    continue
 
             print('checking out new package %s' % pac)
             checkout_package(self.apiurl, self.name, pac, \
@@ -870,6 +870,7 @@ class Project:
                 # packages which no longer exists upstream
                 upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
                 sinfo_pacs = [pac for pac in self.pacs_have if self.get_state(pac) in (' ', 'D') and not pac in self.pacs_broken]
+                sinfo_pacs.extend(self.pacs_missing)
                 sinfos = get_project_sourceinfo(self.apiurl, self.name, True, *sinfo_pacs)
 
                 for pac in upstream_del:
@@ -943,7 +944,7 @@ class Project:
                     else:
                         print('unexpected state.. package \'%s\'' % pac)
 
-                self.checkout_missing_pacs(expand_link, unexpand_link)
+                self.checkout_missing_pacs(sinfos, expand_link, unexpand_link)
             finally:
                 self.write_packages()
 
