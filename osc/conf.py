@@ -560,7 +560,7 @@ def _build_opener(apiurl):
     return opener
 
 
-def init_basicauth(config):
+def init_basicauth(config, config_mtime):
     """initialize urllib2 with the credentials for Basic Authentication"""
 
     def filterhdrs(meth, ishdr, *hdrs):
@@ -613,6 +613,9 @@ def init_basicauth(config):
     cookiejar = LWPCookieJar(cookie_file)
     try:
         cookiejar.load(ignore_discard=True)
+        if int(round(config_mtime)) > int(os.stat(cookie_file).st_mtime):
+            cookiejar.clear()
+            cookiejar.save()
     except IOError:
         try:
             fd = os.open(cookie_file, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
@@ -1026,7 +1029,7 @@ def get_config(override_conffile=None,
         raise e
 
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
-    init_basicauth(config)
+    init_basicauth(config, os.stat(conffile).st_mtime)
 
 
 # vim: sw=4 et
