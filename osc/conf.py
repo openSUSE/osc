@@ -42,6 +42,7 @@ import os
 import re
 import sys
 import ssl
+import warnings
 
 try:
     from http.cookiejar import LWPCookieJar, CookieJar
@@ -57,7 +58,7 @@ except ImportError:
     from httplib import HTTPConnection, HTTPResponse
     from StringIO import StringIO
     from urlparse import urlsplit
-    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
+    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler, AbstractBasicAuthHandler
     from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
 
 from . import OscConfigParser
@@ -479,38 +480,33 @@ def _build_opener(apiurl):
 
     # workaround for http://bugs.python.org/issue9639
     authhandler_class = HTTPBasicAuthHandler
-    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1) \
-        and not 'reset_retry_count' in dir(HTTPBasicAuthHandler):
-        print('warning: your urllib2 version seems to be broken. ' \
-            'Using a workaround for http://bugs.python.org/issue9639', file=sys.stderr)
-
+    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 9):
         class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
-            def http_error_401(self, *args):
-                response = HTTPBasicAuthHandler.http_error_401(self, *args)
-                self.retried = 0
-                return response
+            # The following two functions were backported from upstream 2.7.
+            def http_error_auth_reqed(self, authreq, host, req, headers):
+                authreq = headers.get(authreq, None)
 
-            def http_error_404(self, *args):
-                self.retried = 0
-                return None
+                if authreq:
+                    mo = AbstractBasicAuthHandler.rx.search(authreq)
+                    if mo:
+                        scheme, quote, realm = mo.groups()
+                        if quote not in ['"', "'"]:
+                            warnings.warn("Basic Auth Realm was unquoted",
+                                          UserWarning, 2)
+                        if scheme.lower() == 'basic':
+                            return self.retry_http_basic_auth(host, req, realm)
 
-        authhandler_class = OscHTTPBasicAuthHandler
-    elif sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 1):
-        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
-            def http_error_404(self, *args):
-                self.reset_retry_count()
-                return None
-
-        authhandler_class = OscHTTPBasicAuthHandler
-    elif sys.version_info >= (2, 6, 5) and sys.version_info < (2, 6, 6):
-        # workaround for broken urllib2 in python 2.6.5: wrong credentials
-        # lead to an infinite recursion
-        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
             def retry_http_basic_auth(self, host, req, realm):
-                # don't retry if auth failed
-                if req.get_header(self.auth_header, None) is not None:
+                user, pw = self.passwd.find_user_password(realm, host)
+                if pw is not None:
+                    raw = "%s:%s" % (user, pw)
+                    auth = 'Basic %s' % base64.b64encode(raw).strip()
+                    if req.get_header(self.auth_header, None) == auth:
+                        return None
+                    req.add_unredirected_header(self.auth_header, auth)
+                    return self.parent.open(req, timeout=req.timeout)
+                else:
                     return None
-                return HTTPBasicAuthHandler.retry_http_basic_auth(self, host, req, realm)
 
         authhandler_class = OscHTTPBasicAuthHandler
 
