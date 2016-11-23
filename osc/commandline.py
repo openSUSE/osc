@@ -4977,6 +4977,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified architecture(s)')
     @cmdln.option('-v', '--verbose', action='store_true', default=False,
                         help='more verbose output')
+    @cmdln.option('-m', '--multibuild', action='store_true', default=False,
+                        help='Show results for all packages in multibuild')
+    @cmdln.option('-M', '--multibuild-package', action='append', default=[],
+                        help='Only show results for the specified multibuild package')
     @cmdln.option('-w', '--watch', action='store_true', default=False,
                         help='watch the results until all finished building')
     @cmdln.option('', '--xml', action='store_true', default=False,
@@ -5035,6 +5039,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         kwargs = {'apiurl': apiurl, 'project': project, 'package': package,
                   'lastbuild': opts.last_build, 'repository': opts.repo,
                   'arch': opts.arch, 'wait': opts.watch}
+        if opts.multibuild_package:
+            opts.multibuild = True
+            kwargs['multibuild_packages'] = opts.multibuild_package
+        kwargs['multibuild'] = kwargs['locallink'] = opts.multibuild
         if opts.xml or opts.csv:
             for xml in get_package_results(**kwargs):
                 if opts.xml:
