@@ -5826,6 +5826,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='build a package which does not exist on the server')
     @cmdln.option('--linksources', action='store_true',
                   help='use hard links instead of a deep copied source')
+    @cmdln.option('--vm-memory', metavar='TYPE',
+                  help='use given MB for VM')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
     @cmdln.option('--vm-telnet', metavar='TELNET',

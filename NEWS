@@ -2,6 +2,7 @@
   - highlight scheduled jobs with dispatch problems (due to constraints)
   - allow to specify a log message in lock command
   - Add '--wipe' option to osc chroot for deleting buildroots
+  - Add '--vm-memory' option to osc build
 
 0.155
   - osc service runall: runs all service local, independend of the mode

@@ -491,6 +491,7 @@ def main(apiurl, opts, argv):
     build_root = None
     cache_dir  = None
     build_uid = ''
+    vm_memory = config['build-memory']
     vm_type = config['build-type']
     vm_telnet = None
 
@@ -571,6 +572,8 @@ def main(apiurl, opts, argv):
         else:
             print('Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"', file=sys.stderr)
             return 1
+    if opts.vm_memory:
+        vm_memory = opts.vm_memory
     if opts.vm_type:
         vm_type = opts.vm_type
     if opts.vm_telnet:
@@ -1110,8 +1113,8 @@ def main(apiurl, opts, argv):
         vm_options = [ '--vm-type=%s' % vm_type ]
         if vm_telnet:
             vm_options += [ '--vm-telnet=' + vm_telnet ]
-        if config['build-memory']:
-            vm_options += [ '--memory=' + config['build-memory'] ]
+        if vm_memory:
+            vm_options += [ '--memory=' + vm_memory ]
         if vm_type != 'lxc':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
@@ -1127,8 +1130,6 @@ def main(apiurl, opts, argv):
 
             build_root += '/.mount'
 
-        if config['build-memory']:
-            vm_options += [ '--memory=' + config['build-memory'] ]
         if config['build-vmdisk-rootsize']:
             vm_options += [ '--vmdisk-rootsize=' + config['build-vmdisk-rootsize'] ]
         if config['build-vmdisk-swapsize']:
