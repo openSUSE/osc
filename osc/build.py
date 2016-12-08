@@ -636,6 +636,18 @@ def main(apiurl, opts, argv):
     prefer_pkgs = {}
     build_descr_data = open(build_descr).read()
 
+    if re.search(r'^#\s*needssslcertforbuild\s*$', build_descr_data, re.MULTILINE):
+        try:
+            url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'], 'meta=1')
+            cert = ''.join(osc.core.http_GET(url).readlines())
+            with open(os.path.dirname(build_descr)+'/_projectcert.crt', 'w') as fh:
+                fh.write(cert)
+        except HTTPError as e:
+            if e.code == 404:
+                print('WARNING: spec file requests ssl cert but %s does not have one.'%prj)
+                print('Build may fail, use osc signkey to create a key')
+                pass
+
     # XXX: dirty hack but there's no api to provide custom defines
     if opts.without:
         s = ''
