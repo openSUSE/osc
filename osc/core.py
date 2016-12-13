@@ -5434,7 +5434,7 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False):
     query = {}
     if package:
         query['package'] = package
@@ -5442,6 +5442,10 @@ def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], 
         query['oldstate'] = oldstate
     if lastbuild:
         query['lastbuild'] = 1
+    if multibuild:
+        query['multibuild'] = 1
+    if locallink:
+        query['locallink'] = 1
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     for repo in repository:
         u = u + '&repository=%s' % repo
@@ -5461,32 +5465,29 @@ def result_xml_to_dicts(xml):
     # assumption: xml contains at most one status element (maybe we should
     # generalize this to arbitrary status element)
     root = ET.fromstring(xml)
-    r = []
     for node in root.findall('result'):
         rmap = {}
         rmap['project'] = rmap['prj'] = node.get('project')
         rmap['repository'] = rmap['repo'] = rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
-        rmap['dirty'] = node.get('dirty')
+        rmap['dirty'] = node.get('dirty') == 'true'
         rmap['repostate'] = node.get('code')
         rmap['pkg'] = rmap['package'] = rmap['pac'] = ''
         rmap['code'] = node.get('code')
         rmap['details'] = ''
-        details = None
-        statusnode = node.find('status')
-        if statusnode is not None:
-            # the way currently use this function, there should be
-            # always a status element
-            rmap['pkg'] = rmap['package'] = rmap['pac'] = statusnode.get('package')
-            rmap['code'] = statusnode.get('code', '')
+        # the way we currently use this function, there should be
+        # always a status element
+        snodes = node.findall('status')
+        is_multi = len(snodes) > 1
+        for statusnode in snodes:
+            smap = dict(rmap)
+            smap['pkg'] = smap['package'] = smap['pac'] = statusnode.get('package')
+            smap['code'] = statusnode.get('code', '')
             details = statusnode.find('details')
-        if details is not None:
-            rmap['details'] = details.text
-        rmap['dirty'] = rmap['dirty'] == 'true'
-
-        r.append(rmap)
-    return r
+            if details is not None:
+                smap['details'] = details.text
+            yield smap, is_multi
 
 
 def format_results(results, format):
@@ -5500,14 +5501,20 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     # get_package_results_human would be better, but this would break the existing
     # api (unless we keep get_results around as well)...
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
+    result_line_mb_templ = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
     r = []
     printed = False
+    multibuild_packages = kwargs.pop('multibuild_packages', [])
     for results in get_package_results(apiurl, project, package, **kwargs):
         r = []
-        for res in result_xml_to_dicts(results):
+        for res, is_multi in result_xml_to_dicts(results):
             if '_oldstate' in res:
                 oldstate = res['_oldstate']
                 continue
+            if multibuild_packages:
+                l = res['pkg'].rsplit(':', 1)
+                if len(l) != 2 or l[1] not in multibuild_packages:
+                    continue
             res['status'] = res['code']
             if verbose and res['details'] != '':
                 if res['code'] in ('unresolvable', 'expansion error'):
@@ -5529,7 +5536,10 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                 else:
                     res['status'] += '*'
 
-            r.append(result_line_templ % res)
+            if is_multi:
+                r.append(result_line_mb_templ % res)
+            else:
+                r.append(result_line_templ % res)
 
         if printJoin:
             if printed:
