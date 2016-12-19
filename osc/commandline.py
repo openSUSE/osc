@@ -6573,7 +6573,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to restart all packages of the entire project, use --all option.')
 
-        print(cmdbuild(apiurl, subcmd, project, package, opts.arch, opts.repo))
+        print(cmdbuild(apiurl, subcmd, project, package, arch, repo))
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
