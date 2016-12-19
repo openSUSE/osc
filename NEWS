@@ -3,6 +3,10 @@
   - allow to specify a log message in lock command
   - Add '--wipe' option to osc chroot for deleting buildroots
   - Add '--vm-memory' option to osc build
+  - add --multibuild to results command for showing all packages
+    of a multibuild config
+  - add --multibuild-package option to results command for showing
+    only one package of the multibuild config
 
 0.155
   - osc service runall: runs all service local, independend of the mode
