@@ -107,7 +107,8 @@ def run(prg, argv=None):
         print('Server returned an error:', e, file=sys.stderr)
         if hasattr(e, 'osc_msg'):
             print(e.osc_msg, file=sys.stderr)
-
+        elif e.code == 401:
+            print('If your password has changed, update it also here with command \'osc password\'', file=sys.stderr)
         try:
             body = e.read()
         except AttributeError:

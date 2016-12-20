@@ -8571,6 +8571,32 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.dry_run:
                     os.unlink(os.path.join(p.absdir, filename))
 
+    @cmdln.alias('passwd')
+    def do_password(self, subcmd, opts):
+        """${cmd_name}: Update your password.
+
+        Prompts for a new password. You can use the global -A option
+        to select which OBS instance's password gets updated.
+
+        ${cmd_option_list}
+
+        """
+
+        import getpass
+        apiurl=self.get_api_url()
+        print("Change password for: %s" % apiurl)
+        inp = getpass.getpass('Enter new password: ').strip()
+        inp2 = getpass.getpass('Confirm new password: ').strip()
+
+        if inp != inp2:
+            print('Failed to confirm new password.')
+            return 1
+
+        conf.config_set_option(apiurl, 'pass', inp, \
+            delete=False, update=True)
+
+        return 0
+
     def _load_plugins(self):
         plugin_dirs = [
             '/usr/lib/osc-plugins',
