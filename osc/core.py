@@ -45,7 +45,10 @@ except ImportError:
 
 from . import oscerr
 from . import conf
-from . import babysitter
+try:
+    from . import babysitter
+except ImportError:
+    pass
 
 try:
     # python 2.6 and python 2.7
@@ -3281,7 +3284,13 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
-    for retry in [ True, False ]:
+    baby = False
+    try:
+        baby = babysitter.run_baby_sitter
+    except NameError:
+        pass
+
+    for retry in [ baby, False ]:
         try:
             if isinstance(data, str):
                 data = bytes(data, "utf-8")
@@ -3290,7 +3299,7 @@ def http_request(method, url, headers={}, data=None, file=None):
             if e.code == 401:
                 if conf.use_kerberos_for_url(url):
                     e.osc_msg = "Please make sure you have a valid Kerberos ticket for '%s' (see 'klist' and 'kinit')." % apiurl
-                    if not retry or not babysitter.run_baby_sitter:
+                    if not retry:
                         raise e
                     tool=which('kinit')
                     if tool is None:
