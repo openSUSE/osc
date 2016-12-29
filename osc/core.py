@@ -5894,7 +5894,26 @@ def get_buildconfig(apiurl, prj, repository):
     f = http_GET(u)
     return f.read()
 
- 
+
+def get_worker_info(apiurl, worker):
+    u = makeurl(apiurl, ['worker', worker])
+    f = http_GET(u)
+
+    return f.read()
+
+
+def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=None):
+    query = {'cmd': 'checkconstraints'}
+    query['project'] = prj
+    query['package'] = package
+    query['repository'] = repository
+    query['arch'] = arch
+    u = makeurl(apiurl, ['worker'], query)
+    f = http_POST(u, data=constraintsfile)
+    root = ET.fromstring(''.join(f))
+    return [node.get('name') for node in root.findall('entry')]
+
+
 def get_source_rev(apiurl, project, package, revision=None):
     # API supports ?deleted=1&meta=1&rev=4
     # but not rev=current,rev=latest,rev=top, or anything like this.

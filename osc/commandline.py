@@ -5617,6 +5617,74 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print(''.join(get_buildconfig(apiurl, project, repository)))
 
 
+    def do_workerinfo(self, subcmd, opts, worker):
+        """${cmd_name}: gets the information to a worker from the server
+
+        Examples:
+            osc workerinfo <workername>
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        apiurl = self.get_api_url()
+        print(''.join(get_worker_info(apiurl, worker)))
+
+
+    @cmdln.option('', '--ignore-file', action='store_true',
+                  help='ignore _constraints file and only check project constraints')
+    def do_checkconstraints(self, subcmd, opts, *args):
+        """${cmd_name}: check the constraints and view compliant workers
+
+        Checks the constraints for compliant workers.
+
+        usage:
+            in a package working copy:
+                osc checkconstraints [OPTS] REPOSITORY ARCH CONSTRAINTSFILE
+                osc checkconstraints [OPTS] CONSTRAINTSFILE
+                osc checkconstraints [OPTS]
+
+        ${cmd_option_list}
+        """
+        repository = arch = constraintsfile = None
+        project = store_read_project('.')
+        package = store_read_package('.')
+        if len(args) == 1:
+            constraintsfile = args[0]
+        elif len(args) == 2 or len(args) == 3:
+            repository = args[0]
+            arch = args[1]
+            if len(args) == 3:
+                constraintsfile = args[2]
+
+        constraintsfile_data = None
+        if constraintsfile is not None:
+            constraintsfile_data = open(constraintsfile, 'r').read()
+        elif not opts.ignore_file:
+            if os.path.isfile("_constraints"):
+                constraintsfile_data = open("_constraints", 'r').read()
+            else:
+                print("No local _constraints file. Using just the project constraints")
+
+        apiurl = self.get_api_url()
+        r = []
+        if not arch and not repository:
+            result_line_templ = '%(name)-25s %(arch)-25s %(comp_workers)s'
+            for repo in get_repos_of_project(apiurl, project):
+                rmap = {}
+                rmap['name'] = repo.name
+                rmap['arch'] = repo.arch
+                workers = check_constraints(apiurl, project, repo.name, repo.arch, package, constraintsfile_data)
+                rmap['comp_workers'] = len(workers)
+                r.append(result_line_templ % rmap)
+            r.insert(0, 'Repository                Arch                      Worker')
+            r.insert(1, '----------                ----                      ------')
+        else:
+            r = check_constraints(apiurl, project, repository, arch, package, constraintsfile_data)
+            r.insert(0, 'Worker')
+            r.insert(1, '------')
+
+        print('\n'.join(r))
+
     @cmdln.alias('repos')
     @cmdln.alias('platforms')
     def do_repositories(self, subcmd, opts, *args):
