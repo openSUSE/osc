@@ -5049,7 +5049,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(xml, end='')
                 else:
                     # csv formatting
-                    results = result_xml_to_dicts(xml)
+                    results = [r for r, _ in result_xml_to_dicts(xml)]
                     print('\n'.join(format_results(results, opts.format)))
         else:
             kwargs['verbose'] = opts.verbose
