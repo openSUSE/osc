@@ -6658,6 +6658,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Delete all binaries of packages which have dependency errors')
     @cmdln.option('--all', action='store_true',
                         help='Delete all binaries regardless of the package status (previously default)')
+    @cmdln.alias("unpublish")
     def do_wipebinaries(self, subcmd, opts, *args):
         """${cmd_name}: Delete all binary packages of a certain project/package
 
@@ -6667,6 +6668,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc wipebinaries OPTS                       # works in checked out project dir
             osc wipebinaries OPTS PROJECT [PACKAGE]
+            osc unpublish OPTS                       # works in checked out project dir
+            osc unpublish OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
@@ -6711,7 +6714,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # make a new request for each code= parameter
         for code in codes:
-            print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
+            if subcmd == 'unpublish':
+                print(unpublish(apiurl, project, package, opts.arch, opts.repo, code))
+            else:
+                print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
 
 
     @cmdln.option('-q', '--quiet', action='store_true',

@@ -6256,6 +6256,9 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
 def restartbuild(apiurl, project, package=None, arch=None, repo=None):
     return cmdbuild(apiurl, 'restartbuild', project, package, arch, repo)
 
+def unpublish(apiurl, project, package=None, arch=None, repo=None, code=None):
+    return cmdbuild(apiurl, 'unpublish', project, package, arch, repo, code)
+
 def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
     return cmdbuild(apiurl, 'wipe', project, package, arch, repo, code)
 
