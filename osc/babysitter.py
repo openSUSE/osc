@@ -143,7 +143,7 @@ def run(prg, argv=None):
         print('Failed to reach a server:\n', e.reason, file=sys.stderr)
         return 1
     except URLGrabError as e:
-        print('Failed to grab %s: %s' % (e.url, e.exception), file=sys.stderr)
+        print('Failed to grab %s: %s' % (e.url, e.strerror), file=sys.stderr)
         return 1
     except IOError as e:
         # ignore broken pipe
