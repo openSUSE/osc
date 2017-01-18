@@ -4977,8 +4977,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified architecture(s)')
     @cmdln.option('-v', '--verbose', action='store_true', default=False,
                         help='more verbose output')
-    @cmdln.option('-m', '--multibuild', action='store_true', default=False,
-                        help='Show results for all packages in multibuild')
+    @cmdln.option('--no-multibuild', action='store_true', default=False,
+                        help='Disable results for all direct affect packages inside of the project')
     @cmdln.option('-M', '--multibuild-package', action='append', default=[],
                         help='Only show results for the specified multibuild package')
     @cmdln.option('-w', '--watch', action='store_true', default=False,
@@ -5040,9 +5040,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   'lastbuild': opts.last_build, 'repository': opts.repo,
                   'arch': opts.arch, 'wait': opts.watch}
         if opts.multibuild_package:
-            opts.multibuild = True
+            opts.no_multibuild = False
             kwargs['multibuild_packages'] = opts.multibuild_package
-        kwargs['multibuild'] = kwargs['locallink'] = opts.multibuild
+        if not opts.no_multibuild:
+            kwargs['multibuild'] = kwargs['locallink'] = True
         if opts.xml or opts.csv:
             for xml in get_package_results(**kwargs):
                 if opts.xml:
