@@ -4816,7 +4816,7 @@ def checkout_package(apiurl, project, package,
 
     # before we create directories and stuff, check if the package actually
     # exists
-    show_package_meta(apiurl, project, package, meta)
+    show_package_meta(apiurl, quote_plus(project), quote_plus(package), meta)
 
     isfrozen = False
     if expand_link:
