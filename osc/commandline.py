@@ -5742,6 +5742,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
+        import tempfile
         arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
             # some magic, works only sometimes, but people seem to like it :/
@@ -5786,15 +5787,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # only persist our own repos
                 Repo.tofile(repolistfile, repositories)
 
+        no_repo = False
         repo_names = sorted(set([r.name for r in repositories]))
         if not arg_repository and repositories:
             # XXX: we should avoid hardcoding repository names
             # Use a default value from config, but just even if it's available
             # unless try standard, or openSUSE_Factory, or openSUSE_Tumbleweed
+            no_repo = True
             arg_repository = repositories[-1].name
             for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory', 'openSUSE_Tumbleweed'):
                 if repository in repo_names:
                     arg_repository = repository
+                    no_repo = False
                     break
 
         if not arg_repository:
@@ -5818,22 +5822,37 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif not arg_descr:
             msg = None
             if len(descr) > 1:
-                # guess/prefer build descrs like the following:
-                # <pac>-<repo>.<ext> > <pac>.<ext>
-                # no guessing for arch's PKGBUILD files (the backend does not do any guessing, too)
+                if no_repo:
+                    raise oscerr.WrongArgs("Repository is missing. Cannot guess build description without repository")
+                apiurl = self.get_api_url()
+                project = store_read_project('.')
+                bc = get_buildconfig(apiurl, project, arg_repository)
+                with tempfile.NamedTemporaryFile() as f:
+                    f.write(bc)
+                    f.flush()
+                    recipe = return_external('/usr/lib/build/queryconfig', '--dist', f.name, 'type')
+                recipe = recipe.strip()
+                if recipe == 'arch':
+                    recipe = 'PKGBUILD'
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
-                extensions = ['spec', 'dsc', 'kiwi', 'livebuild']
-                cands = [i for i in descr for ext in extensions if i == '%s-%s.%s' % (pac, arg_repository, ext)]
+                if recipe == 'PKGBUILD':
+                    cands = [d for d in descr if d.startswith(recipe)]
+                else:
+                    cands = [d for d in descr if d.endswith('.' + recipe)]
+                if len(cands) > 1:
+                    repo_cands = [d for d in cands if d == '%s-%s.%s' % (pac, arg_repository, recipe)]
+                    if repo_cands:
+                        cands = repo_cands
+                    else:
+                        pac_cands = [d for d in cands if d == '%s.%s' % (pac, recipe)]
+                        if pac_cands:
+                            cands = pac_cands
                 if len(cands) == 1:
                     arg_descr = cands[0]
-                else:
-                    cands = [i for i in descr for ext in extensions if i == '%s.%s' % (pac, ext)]
-                    if len(cands) == 1:
-                        arg_descr = cands[0]
                 if not arg_descr:
-                    msg = 'Multiple build description files found: %s' % ', '.join(descr)
+                    msg = 'Multiple build description files found: %s' % ', '.join(cands)
             elif not ignore_descr:
                 msg = 'Missing argument: build description (spec, dsc, kiwi or livebuild file)'
                 try:
