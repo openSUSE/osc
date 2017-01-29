@@ -249,13 +249,36 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         self.appname = kwargs.pop('appname', 'generic')
         M2Crypto.httpslib.HTTPSConnection.__init__(self, *args, **kwargs)
 
-    def connect(self, *args):
-        self.sock = SSL.Connection(self.ssl_ctx)
+    def _connect(self, family):
+        self.sock = SSL.Connection(self.ssl_ctx, family=family)
         if self.session:
             self.sock.set_session(self.session)
         if hasattr(self.sock, 'set_tlsext_host_name'):
             self.sock.set_tlsext_host_name(self.host)
         self.sock.connect((self.host, self.port))
+        return True
+
+    def connect(self):
+        # based on M2Crypto.httpslib.HTTPSConnection.connect
+        last_exc = None
+        connected = False
+        for addrinfo in socket.getaddrinfo(self.host, self.port,
+                                           socket.AF_UNSPEC,
+                                           socket.SOCK_STREAM,
+                                           0, 0):
+            try:
+                connected = self._connect(addrinfo[0])
+                break
+            except socket.error as e:
+                last_exc = e
+            finally:
+                if not connected and self.sock is not None:
+                    self.sock.close()
+        if not connected:
+            if last_exc is None:
+                raise RuntimeError('getaddrinfo returned empty list')
+            raise last_exc
+        # ok we are connected, verify cert
         verify_certificate(self)
 
     def getHost(self):
