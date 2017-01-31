@@ -1078,6 +1078,20 @@ class Osc(cmdln.Cmdln):
 
         ${cmd_option_list}
         """
+        def _check_service(root):
+            serviceinfo = root.find('serviceinfo')
+            if serviceinfo is not None:
+                # code "running" is ok, because the api will choke when trying
+                # to create the sr (if it is still running)
+                if serviceinfo.get('code') not in ('running', 'succeeded'):
+                    print('A service run for package %s %s:'
+                          % (root.get('name'), serviceinfo.get('code')),
+                          file=sys.stderr)
+                    error = serviceinfo.find('error')
+                    if error is not None:
+                        print('\n'.join(error.text.split('\\n')))
+                    sys.exit('\nPlease fix this first')
+
 
         if opts.cleanup and opts.no_cleanup:
             raise oscerr.WrongOptions('\'--cleanup\' and \'--no-cleanup\' are mutually exclusive')
@@ -1176,14 +1190,8 @@ class Osc(cmdln.Cmdln):
                         print("Skipping package ", p,  " since it is a source link pointing inside the project.")
                         continue
 
-                serviceinfo = root.find('serviceinfo')
-                if serviceinfo != None:
-                    if serviceinfo.get('code') != "succeeded":
-                        print("Package ", p, " has a ", serviceinfo.get('code'), " source service")
-                        sys.exit("Please fix this first")
-                    if serviceinfo.get('error'):
-                        print("Package ", p, " contains a failed source service.")
-                        sys.exit("Please fix this first")
+                # check for failed source service
+                _check_service(root)
 
                 # submitting this package
                 if opts.separate_requests or opts.seperate_requests:
@@ -1269,18 +1277,11 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('request'))
 
-        # check for running source service
+        # check for failed source service
         u = makeurl(apiurl, ['source', src_project, src_package])
         f = http_GET(u)
         root = ET.parse(f).getroot()
-        serviceinfo = root.find('serviceinfo')
-        if serviceinfo != None:
-            if serviceinfo.get('code') != "succeeded":
-                print("Package ", src_package, " has a ", serviceinfo.get('code'), " source service")
-                sys.exit("Please fix this first")
-            if serviceinfo.get('error'):
-                print("Package ", src_package, " contains a failed source service.")
-                sys.exit("Please fix this first")
+        _check_service(root)
 
         if not opts.nodevelproject:
             devloc = None
