@@ -7310,6 +7310,32 @@ def run_external(filename, *args, **kwargs):
             raise
         raise oscerr.ExtRuntimeError(e.strerror, filename)
 
+def return_external(filename, *args, **kwargs):
+    """Executes the program filename via subprocess.check_output.
+
+    *args are additional arguments which are passed to the
+    program filename. **kwargs specify additional arguments for
+    the subprocess.check_output function.
+    if no args are specified the plain filename is passed
+    to subprocess.check_output (this can be used to execute a shell
+    command). Otherwise [filename] + list(args) is passed
+    to the subprocess.check_output function.
+
+    Returns the output of the command.
+
+    """
+    if args:
+        cmd = [filename] + list(args)
+    else:
+        cmd = filename
+
+    try:
+        return subprocess.check_output(cmd, **kwargs)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        raise oscerr.ExtRuntimeError(e.strerror, filename)
+
 # backward compatibility: local role filtering
 def filter_role(meta, user, role):
     """
