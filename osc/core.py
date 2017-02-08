@@ -4799,16 +4799,19 @@ def checkout_package(apiurl, project, package,
                 # if project roots were previously inconsistent
                 root_dots = "../../"
             if is_project_dir(root_dots):
+                oldproj = store_read_project(root_dots)
                 if conf.config['checkout_no_colon']:
-                    oldproj = store_read_project(root_dots)
                     n = len(oldproj.split(':'))
                 else:
                     n = 1
+                if root_dots == '.':
+                    root_dots = ''
                 root_dots = root_dots + "../" * n
 
     if root_dots != '.':
         if conf.config['verbose']:
-            print("found root of %s at %s" % (oldproj, root_dots))
+            print("%s is project dir of %s. Root found at %s" %
+                  (prj_dir, oldproj, os.path.abspath(root_dots)))
         prj_dir = root_dots + prj_dir
 
     if not pathname:
