@@ -3918,8 +3918,9 @@ def run_pager(message, tmp_suffix=''):
         tmpfile.write(message)
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
+        cmd = shlex.split(pager) + [tmpfile.name]
         try:
-            run_external(pager, tmpfile.name)
+            run_external(*cmd)
         finally:
             tmpfile.close()
 
