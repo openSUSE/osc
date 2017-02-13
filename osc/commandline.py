@@ -441,6 +441,7 @@ class Osc(cmdln.Cmdln):
                     opts.expand = True
                 if fname and print_not_found:
                     print('file \'%s\' does not exist' % fname)
+                    return 1
 
 
     @cmdln.option('-s', '--skip-disabled', action='store_true',
