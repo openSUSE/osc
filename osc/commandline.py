@@ -5139,6 +5139,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('buildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                    help='get log of the specified multibuild package')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log start or end from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5185,6 +5187,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 repository = args[0]
                 arch = args[1]
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         offset = 0
         if subcmd == "blt" or subcmd == "buildlogtail":
@@ -5233,6 +5238,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('remotebuildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                        help='show log file for specified multibuild package')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log starting or ending from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5264,6 +5271,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too many arguments.')
             else:
                 project, package, repository, arch = args
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         offset = 0
         if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
@@ -5493,6 +5503,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-d', '--debug', action='store_true',
                   help='verbose output of build dependencies')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                  help='Show the buildinfo of the specified multibuild package')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -5540,7 +5552,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
             project = store_read_project('.')
             package = store_read_package('.')
-            repository, arch, build_descr = self.parse_repoarchdescr(args, ignore_descr=True)
+            repository, arch, build_descr = self.parse_repoarchdescr(args, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
             package = args[1]
@@ -5568,6 +5580,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                 cpiodata)
             cpiodata.add(os.path.basename(build_descr), build_descr_data)
             build_descr_data = cpiodata.get()
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         print(''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
@@ -5739,7 +5754,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print(row)
 
 
-    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None):
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None, multibuild_package = None):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
@@ -5838,6 +5853,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
+                if multibuild_package:
+                    pac = multibuild_package
                 if recipe == 'PKGBUILD':
                     cands = [d for d in descr if d.startswith(recipe)]
                 else:
@@ -5894,6 +5911,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
                   help='Save built packages into this directory')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                  help='Build the specified multibuild package')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
     @cmdln.option('--root', metavar='ROOT',
@@ -6012,7 +6031,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
         # check for source services
         r = None
@@ -6290,6 +6309,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
+    @cmdln.option('-M', '--multibuild-package', metavar= 'MPAC',
+                        help='Show the buildhistory of the specified multibuild package')
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build history of a package
@@ -6324,6 +6345,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
+
         format = 'text'
         if opts.csv:
             format = 'csv'
@@ -6334,6 +6358,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                        help='get jobhistory for the specified multibuild package')
     @cmdln.alias('jobhist')
     def do_jobhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the job history of a project
@@ -6375,6 +6401,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[1]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
+
+        if opts.multibuild_package and package is not None:
+            package = package + ":" + opts.multibuild_package
 
         format = 'text'
         if opts.csv:
@@ -6538,6 +6567,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='trigger rebuilds for a specific repository')
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                  help='rebuild specified multibuild package')
     @cmdln.option('--all', action='store_true',
                         help='Rebuild all packages of entire project')
     @cmdln.alias('rebuildpac')
@@ -6594,7 +6625,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch or code):
             raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
 
-        print(rebuild(apiurl, project, package, repo, arch, code))
+        packages = []
+        if opts.multibuild_package:
+            for subpackage in opts.multibuild_package:
+                packages.append(package + ":" + subpackage)
+        else:
+            packages.append(package)
+
+        for package in packages:
+            print(rebuild(apiurl, project, package, repo, arch, code))
 
 
     def do_info(self, subcmd, opts, *args):
@@ -6616,6 +6655,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Restart builds for a specific architecture')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                        help='Restart builds for specified multibuild package')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Restart builds for a specific repository')
     @cmdln.option('--all', action='store_true',
@@ -6662,11 +6703,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to restart all packages of the entire project, use --all option.')
 
-        print(cmdbuild(apiurl, subcmd, project, package, arch, repo))
+        packages = []
+        if opts.multibuild_package:
+            for subpackage in opts.multibuild_package:
+                packages.append(package + ":" + subpackage)
+        else:
+            packages.append(package)
+
+        for package in packages:
+            print(cmdbuild(apiurl, subcmd, project, package, arch, repo))
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Delete all binary packages for a specific architecture')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                        help='Delete all binary packages for specified multibuild package')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Delete all binary packages for a specific repository')
     @cmdln.option('--build-disabled', action='store_true',
@@ -6733,18 +6784,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(codes) == 0:
             raise oscerr.WrongOptions('No option has been provided. If you want to delete all binaries, use --all option.')
 
-        # make a new request for each code= parameter
-        for code in codes:
-            if subcmd == 'unpublish':
-                print(unpublish(apiurl, project, package, opts.arch, opts.repo, code))
-            else:
-                print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
+        packages = []
+        if opts.multibuild_package:
+            for subpackage in opts.multibuild_package:
+                packages.append(package + ":" + subpackage)
+        else:
+            packages.append(package)
+
+        # make a new request for each code= parameter and for each package in packages
+        for package in packages:
+            for code in codes:
+                if subcmd == 'unpublish':
+                    print(unpublish(apiurl, project, package, opts.arch, opts.repo, code))
+                else:
+                    print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
 
 
     @cmdln.option('-q', '--quiet', action='store_true',
                   help='do not show downloading progress')
     @cmdln.option('-d', '--destdir', default='./binaries', metavar='DIR',
                   help='destination directory')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                  help='get binaries from specified multibuild package')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
     @cmdln.option('--debug', action="store_true",
@@ -6808,10 +6869,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if architecture is None:
             arches = [i.arch for i in repos if repository == i.name]
 
+
         if package is None:
             package = meta_get_packagelist(apiurl, project)
         else:
-            package = [package]
+            if opts.multibuild_package:
+                packages = []
+                for subpackage in opts.multibuild_package:
+                    packages.append(package + ":" + subpackage)
+                package = packages
+            else:
+                package = [package]
 
         # Set binary target directory and create if not existing
         target_dir = os.path.normpath(opts.destdir)
