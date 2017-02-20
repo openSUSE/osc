@@ -1334,7 +1334,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
         supersede_existing = False
         reqs = []
-        if not opts.supersede:
+        if not opts.supersede and not opts.yes:
             (supersede_existing, reqs) = check_existing_requests(apiurl,
                                                                  src_project,
                                                                  src_package,
