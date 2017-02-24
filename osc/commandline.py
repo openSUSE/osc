@@ -2946,7 +2946,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_releaserequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for releasing a maintenance update.
 
-        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide_draft/cha.obs.maintenance_setup.html
+        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
          for information on this topic.]
 
         This command is used by the maintence team to start the release process of a maintenance update.
@@ -2992,7 +2992,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_createincident(self, subcmd, opts, *args):
         """${cmd_name}: Create a maintenance incident
 
-        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide_draft/cha.obs.maintenance_setup.html
+        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
         This command is asking to open an empty maintence incident. This can usually only be done by a responsible
@@ -3064,7 +3064,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
-        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide_draft/cha.obs.maintenance_setup.html
+        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
         This command is asking the maintence team to start a maintence incident based on a
