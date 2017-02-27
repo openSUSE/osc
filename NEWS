@@ -1,6 +1,7 @@
 0.157
   - add unpublish command (requires OBS 2.8)
   - results: show multibuild results by default
+  - getbinaries: make .AppImage files executable
 
 0.156
   - highlight scheduled jobs with dispatch problems (due to constraints)

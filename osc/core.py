@@ -4512,6 +4512,8 @@ def get_binary_file(apiurl, prj, repo, arch,
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
     download(u, target_filename, progress_obj, target_mtime)
+    if target_filename.endswith('.AppImage'):
+        os.chmod(target_filename, 0o755)
 
 def dgst_from_string(str):
     # Python 2.5 depracates the md5 modules
