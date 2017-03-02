@@ -725,6 +725,8 @@ class Osc(cmdln.Cmdln):
             fd = urlopen(req, data=None)
             print(fd.read())
         else:
+            if args and args[0] in ['create', 'delete', 'trigger']:
+                raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
             # just list token
             for data in streamfile(url, http_GET):
                 sys.stdout.write(data)
