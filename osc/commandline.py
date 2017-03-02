@@ -7934,6 +7934,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='always work with unexpanded packages.')
     @cmdln.option('-M', '--meta', action='store_true',
                         help='list meta data files')
+    @cmdln.alias('blame')
     @cmdln.alias('less')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
@@ -7965,6 +7966,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         query = { }
+        if subcmd == 'blame':
+            query['view'] = "blame"
         if opts.meta:
             query['meta'] = 1
         if opts.revision:
