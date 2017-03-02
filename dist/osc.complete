@@ -60,7 +60,7 @@ oscopts=(--version --help --debugger --post-mortem --traceback --http-full-debug
 osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
     bsdevelproject bse bugowner build buildconfig buildhist buildhistory buildinfo
     buildlog buildlogtail cat changedevelreq changedevelrequest checkconstraints checkin checkout
-    chroot ci co commit config copypac cr createincident createrequest creq del
+    chroot ci co comment commit config copypac cr createincident createrequest creq del
     delete deletereq deleterequest dependson detachbranch develproject di diff
     distributions dists dr dropreq droprequest getbinaries getpac help importsrcpkg
     info init jobhist jobhistory lbl ldiff less linkdiff linkpac linktobranch list
@@ -78,6 +78,8 @@ oscreq=(list log show accept decline revoke reopen setincident supersede approve
     checkout clone)
 oscrev=(show list add accept decline reopen supersede)
 oscmy=(work pkg prj rq sr)
+osccmt=(list create delete)
+osccmtkind=(package project request)
 
 oscprj=""
 oscpkg=""
@@ -1093,6 +1095,16 @@ my)
 	builtin compgen -W "${opts[*]} ${oscmy[*]}" -- "${cmdline[2]}"
     elif ((count >= 3)) ; then
 	builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
+    fi
+    ;;
+comment)
+    opts=(--comment --parent)
+    if ((count == 1)) ; then
+        builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count == 2)) ; then
+        builtin compgen -W "${opts[*]} ${osccmt[*]}" -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+        builtin compgen -W "${opts[*]} ${osccmtkind[*]}" -- "${cmdline[3]}"
     fi
     ;;
 copypac|linkpac)
