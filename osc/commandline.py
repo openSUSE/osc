@@ -8740,6 +8740,73 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.dry_run:
                     os.unlink(os.path.join(p.absdir, filename))
 
+    @cmdln.option('-c', '--comment',
+            help='comment text', metavar='COMMENT')
+    @cmdln.option('-p', '--parent',
+            help='reply to comment with parent id', metavar='PARENT')
+    def do_comment(self, subcmd, opts, *args):
+        """${cmd_name}: List / create / delete comments
+
+        On create:
+            If -p is given a reply to the ID is created. Otherwise
+            a toplevel comment is created.
+            If -c is not given the default editor will be opened and
+            you can type your comment
+
+        usage:
+            osc comment list package PROJECT PACKAGE
+            osc comment list project PROJECT
+            osc comment list request REQUEST_ID
+
+            osc comment create [-p PARENT_ID] [-c COMMENT] package PROJECT PACKAGE
+            osc comment create [-p PARENT_ID] [-c COMMENT] project PROJECT
+            osc comment create [-p PARENT_ID] [-c COMMENT] request REQUEST_ID
+
+            osc comment delete ID
+
+        """
+
+        comment = None
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        if len(args) < 2:
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('comment'))
+
+        cmds = ['list', 'create', 'delete']
+        if args[0] not in cmds:
+            raise oscerr.WrongArgs('Unknown comment action %s. Choose one of %s.' \
+                                                % (args[0], ', '.join(cmds)))
+
+        comment_targets = ['package', 'project', 'request']
+        if args[0] != 'delete' and args[1] not in comment_targets:
+            raise oscerr.WrongArgs('Unknown comment target %s. Choose one of %s.' \
+                                                % (args[1], ', '.join(comment_targets)))
+
+        if args[1] == 'package' and len(args) != 4:
+            raise oscerr.WrongArgs('Please use PROJECT PACKAGE')
+        elif args[1] == 'project' and len(args) != 3:
+            raise oscerr.WrongArgs('Please use PROJECT')
+        elif args[1] == 'request' and len(args) != 3:
+            raise oscerr.WrongArgs('Please use REQUEST')
+        elif args[0] == 'delete' and len(args) != 2:
+            raise oscerr.WrongArgs('Please use COMMENT_ID')
+        if not opts.comment and args[0] == 'create':
+            comment = edit_text()
+        else:
+            comment = opts.comment
+
+        if args[0] == 'list':
+            print_comments(apiurl, args[1], *args[2:])
+        elif args[0] == 'create':
+            result = create_comment(apiurl, args[1], comment,
+                                    *args[2:], parent=opts.parent)
+            print(result)
+        elif args[0] == 'delete':
+            result = delete_comment(apiurl, args[1])
+            print(result)
+
     def _load_plugins(self):
         plugin_dirs = [
             '/usr/lib/osc-plugins',
