@@ -4189,10 +4189,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--meta', action='store_true',
                         help='checkout out meta data instead of sources' )
     @cmdln.option('-c', '--current-dir', action='store_true',
-                        help='place PACKAGE folder in the current directory' \
+                        help='place PACKAGE folder in the current directory ' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-o', '--output-dir', metavar='outdir',
-                        help='place package in the specified directory' \
+                        help='place package in the specified directory ' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='Run source services.' )
