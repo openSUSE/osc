@@ -7940,10 +7940,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Output the content of a file to standard output
 
         Examples:
+            osc cat file
             osc cat project package file
             osc cat project/package/file
             osc cat http://api.opensuse.org/build/.../_log
             osc cat http://api.opensuse.org/source/../_link
+
+            osc less file
+            osc less project package file
+
+            osc blame file
+            osc blame project package file
 
         ${cmd_usage}
         ${cmd_option_list}
@@ -7957,11 +7964,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.file = None
             return self.do_api('list', opts, *args)
 
-
-
         args = slash_split(args)
-        if len(args) != 3:
+        project = package = filename = None
+        if len(args) == 3:
+            project = args[0]
+            package = args[1]
+            filename = args[2]
+        elif len(args) == 1 and is_package_dir(os.getcwd()):
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+            filename = args[0]
+        else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
+
         rev, dummy = parseRevisionOption(opts.revision)
         apiurl = self.get_api_url()
 
@@ -7973,8 +7988,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.revision:
             query['rev'] = opts.revision
         if opts.expand:
-            query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision, meta=opts.meta)
-        u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
+            query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision, meta=opts.meta)
+        u = makeurl(apiurl, ['source', project, package, filename], query=query)
         try:
             if subcmd == 'less':
                 f = http_GET(u)
@@ -7985,8 +8000,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         except HTTPError as e:
             if e.code == 404 and not opts.expand and not opts.unexpand:
                 print('expanding link...', file=sys.stderr)
-                query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
-                u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
+                query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision)
+                u = makeurl(apiurl, ['source', project, package, filename], query=query)
                 if subcmd == "less":
                     f = http_GET(u)
                     run_pager(''.join(f.readlines()))

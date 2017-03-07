@@ -3,6 +3,7 @@
   - add blame command (requires OBS 2.9)
   - results: show multibuild results by default
   - getbinaries: make .AppImage files executable
+  - support operation in checked out package for cat/less/blame
 
 0.156
   - highlight scheduled jobs with dispatch problems (due to constraints)
