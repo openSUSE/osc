@@ -14,6 +14,7 @@
           rebuild, restartbuild/abortbuild, wipebinaries, getbinaries
   - add checkconstraints command
   - add workerinfo command
+  - fix local build of kiwi images using obsrepositories://
 
 0.156
   - highlight scheduled jobs with dispatch problems (due to constraints)
