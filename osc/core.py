@@ -5570,6 +5570,11 @@ def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
             if e.code == 502 or e.code == 504:
                 # re-try result request
                 continue
+            root = ET.fromstring(e.read())
+            if e.code == 400 and kwargs.get('multibuild') and re.search('multibuild', getattr(root.find('summary'), 'text', '')):
+                kwargs['multibuild'] = None
+                kwargs['locallink'] = None
+                continue
             raise
         root = ET.fromstring(xml)
         kwargs['oldstate'] = root.get('state')
