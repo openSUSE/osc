@@ -11,6 +11,7 @@ from M2Crypto import m2, SSL
 import M2Crypto.m2urllib2
 import socket
 import sys
+import inspect
 
 try:
     from urllib.parse import urlparse, splithost, splitport, splittype
@@ -250,7 +251,17 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         M2Crypto.httpslib.HTTPSConnection.__init__(self, *args, **kwargs)
 
     def _connect(self, family):
-        self.sock = SSL.Connection(self.ssl_ctx, family=family)
+        # workaround for old M2Crypto versions where the the
+        # SSL.Connection.__init__ constructor has no "family" parameter
+        kwargs = {}
+        argspec = inspect.getargspec(SSL.Connection.__init__)
+        if 'family' in argspec.args:
+            kwargs['family'] = family
+        elif family != socket.AF_INET:
+            # old SSL.Connection classes implicitly use socket.AF_INET
+            return False
+
+        self.sock = SSL.Connection(self.ssl_ctx, **kwargs)
         if self.session:
             self.sock.set_session(self.session)
         if hasattr(self.sock, 'set_tlsext_host_name'):
@@ -268,7 +279,8 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
                                            0, 0):
             try:
                 connected = self._connect(addrinfo[0])
-                break
+                if connected:
+                    break
             except socket.error as e:
                 last_exc = e
             finally:
@@ -276,7 +288,8 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
                     self.sock.close()
         if not connected:
             if last_exc is None:
-                raise RuntimeError('getaddrinfo returned empty list')
+                msg = 'getaddrinfo returned empty list or unsupported families'
+                raise RuntimeError(msg)
             raise last_exc
         # ok we are connected, verify cert
         verify_certificate(self)
