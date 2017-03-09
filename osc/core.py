@@ -2291,7 +2291,8 @@ rev: %s
             if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
                 service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
                 si.read(service)
-        si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
+        if mode != 'local':
+            si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
         r = si.execute(self.absdir, mode, singleservice, verbose)
         os.chdir(curdir)
         return r
