@@ -1,5 +1,5 @@
 0.158
-  -
+  - cat/less/blame command: default to expand to stay in sync with checkout
 
 0.157
   - add unpublish command (requires OBS 2.8)

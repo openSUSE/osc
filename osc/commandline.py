@@ -7929,7 +7929,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='print out the specified revision')
     @cmdln.option('-e', '--expand', action='store_true',
-                  help='force expansion of linked packages.')
+                  help='(default) force expansion of linked packages.')
     @cmdln.option('-u', '--unexpand', action='store_true',
                   help='always work with unexpanded packages.')
     @cmdln.option('-M', '--meta', action='store_true',
@@ -7987,30 +7987,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query['meta'] = 1
         if opts.revision:
             query['rev'] = opts.revision
-        if opts.expand:
+        if not opts.unexpand:
             query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision, meta=opts.meta)
+            query['expand'] = 1 # important for blame case to follow links in old revisions
         u = makeurl(apiurl, ['source', project, package, filename], query=query)
-        try:
-            if subcmd == 'less':
-                f = http_GET(u)
-                run_pager(''.join(f.readlines()))
-            else:
-                for data in streamfile(u):
-                    sys.stdout.write(data)
-        except HTTPError as e:
-            if e.code == 404 and not opts.expand and not opts.unexpand:
-                print('expanding link...', file=sys.stderr)
-                query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision)
-                u = makeurl(apiurl, ['source', project, package, filename], query=query)
-                if subcmd == "less":
-                    f = http_GET(u)
-                    run_pager(''.join(f.readlines()))
-                else:
-                    for data in streamfile(u):
-                        sys.stdout.write(data)
-            else:
-                e.osc_msg = 'If linked, try: cat -e'
-                raise e
+        if subcmd == 'less':
+            f = http_GET(u)
+            run_pager(''.join(f.readlines()))
+        else:
+            for data in streamfile(u):
+                sys.stdout.write(data)
 
 
     # helper function to download a file from a specific revision
