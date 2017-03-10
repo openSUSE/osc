@@ -308,7 +308,10 @@ class Serviceinfo:
             self.project = project
             self.package = package
         except HTTPError as e:
-            if e.code != 403 and e.code != 400:
+            if e.code == 404 and package != '_project':
+                self.getProjectGlobalServices(apiurl, project, '_project')
+                self.package = package
+            elif e.code != 403 and e.code != 400:
                 raise e
 
     def addVerifyFile(self, serviceinfo_node, filename):
