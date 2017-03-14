@@ -5085,9 +5085,11 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     try:
         f = http_POST(u)
     except HTTPError as e:
-        msg = ''.join(e.readlines())
-        msg = msg.split('<summary>')[1]
-        msg = msg.split('</summary>')[0]
+        root = ET.fromstring(e.read())
+        summary = root.find('summary')
+        if summary is not None and summary.text is not None:
+            raise oscerr.APIError(summary.text)
+        msg = 'unexpected response: %s' % ET.tostring(root, encoding=ET_ENCODING)
         raise oscerr.APIError(msg)
 
     r = None
