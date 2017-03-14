@@ -8831,6 +8831,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for plugin_dir in plugin_dirs:
             if not os.path.isdir(plugin_dir):
                 continue
+            sys.path.append(plugin_dir)
             for extfile in os.listdir(plugin_dir):
                 if not extfile.endswith('.py'):
                     continue
