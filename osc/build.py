@@ -501,11 +501,13 @@ def main(apiurl, opts, argv):
         build_type = 'arch'
     if os.path.basename(build_descr) == 'build.collax':
         build_type = 'collax'
+    if os.path.basename(build_descr) == 'appimage.yml':
+        build_type = 'appimage'
     if os.path.basename(build_descr) == 'snapcraft.yaml':
         build_type = 'snapcraft'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, .yaml or .livebuild.' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml or snapcraft.yaml' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)

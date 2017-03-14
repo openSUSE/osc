@@ -1,5 +1,6 @@
 0.158
   - cat/less/blame command: default to expand to stay in sync with checkout
+  - add support for highly experimental native appimage.yml support
 
 0.157
   - add unpublish command (requires OBS 2.8)
