@@ -4866,6 +4866,9 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     root = ET.fromstring(''.join(pkgmeta))
     root.set('name', new_name)
     root.set('project', new_prj)
+    # never take releasename, it needs to be explicit
+    for releasename in root.findall('releasename'):
+        root.remove(releasename)
     if not keep_maintainers:
         for person in root.findall('person'):
             root.remove(person)
