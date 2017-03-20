@@ -2288,7 +2288,7 @@ rev: %s
             # if the storefile doesn't exist we're resuming an aborted update:
             # the file was already deleted but we cannot know this
             # OR we're processing a _service: file (simply keep the file)
-            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) != 'M':
+            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) not in ('M', 'C'):
 #            if self.status(f.name) != 'M':
                 self.delete_localfile(f.name)
             self.delete_storefile(f.name)
@@ -2296,6 +2296,9 @@ rev: %s
             if f.name in self.to_be_deleted:
                 self.to_be_deleted.remove(f.name)
                 self.write_deletelist()
+            elif f.name in self.in_conflict:
+                self.in_conflict.remove(f.name)
+                self.write_conflictlist()
 
         for f in kept:
             state = self.status(f.name)
