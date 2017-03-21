@@ -3396,9 +3396,11 @@ def meta_get_project_list(apiurl, deleted=None):
     return sorted([ node.get('name') for node in root if node.get('name')])
 
 
-def show_project_meta(apiurl, prj, rev=None):
+def show_project_meta(apiurl, prj, rev=None, blame=None):
+    query = {}
+    if blame:
+        query['view'] = "blame"
     if rev:
-        query = {}
         query['rev'] = rev
         url = makeurl(apiurl, ['source', prj, '_project', '_meta'], query)
         try:
@@ -3413,16 +3415,23 @@ def show_project_meta(apiurl, prj, rev=None):
             e.osc_msg = 'BuildService API error: %s' % error_help
             raise
     else:
-        url = makeurl(apiurl, ['source', prj, '_meta'])
+        if blame:
+            url = makeurl(apiurl, ['source', prj, '_project', '_meta'], query)
+        else:
+            url = makeurl(apiurl, ['source', prj, '_meta'])
         f = http_GET(url)
     return f.readlines()
 
-def show_project_conf(apiurl, prj, rev=None):
+def show_project_conf(apiurl, prj, rev=None, blame=None):
     query = {}
+    url = None
     if rev:
         query['rev'] = rev
-
-    url = makeurl(apiurl, ['source', prj, '_config'], query)
+    if blame:
+        query['view'] = "blame"
+        url = makeurl(apiurl, ['source', prj, '_project', '_config'], query=query)
+    else:
+        url = makeurl(apiurl, ['source', prj, '_config'], query=query)
     f = http_GET(url)
     return f.readlines()
 
@@ -3437,9 +3446,12 @@ def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
         raise
 
 
-def show_package_meta(apiurl, prj, pac, meta=False):
+def show_package_meta(apiurl, prj, pac, meta=False, blame=None):
     query = {}
     if meta:
+        query['meta'] = 1
+    if blame:
+        query['view'] = "blame"
         query['meta'] = 1
 
     # The fake packages _project has no _meta file

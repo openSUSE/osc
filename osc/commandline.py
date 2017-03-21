@@ -738,6 +738,8 @@ class Osc(cmdln.Cmdln):
                         help='include defined attribute defaults')
     @cmdln.option('--attribute-project', action='store_true',
                         help='include project values, if missing in packages ')
+    @cmdln.option('--blame', action='store_true',
+                        help='show author and time of each line')
     @cmdln.option('-f', '--force', action='store_true',
                         help='force the save operation, allows one to ignores some errors like depending repositories. For prj meta only.')
     @cmdln.option('-F', '--file', metavar='FILE',
@@ -889,14 +891,14 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(apiurl, project, opts.revision)))
+                sys.stdout.write(''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame)))
             elif cmd == 'pkg':
-                sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
+                sys.stdout.write(''.join(show_package_meta(apiurl, project, package, blame=opts.blame)))
             elif cmd == 'attribute':
                 sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage,
                                          opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(apiurl, project, opts.revision)))
+                sys.stdout.write(''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
