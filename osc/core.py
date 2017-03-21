@@ -4390,16 +4390,19 @@ def get_request_log(apiurl, reqid):
     return data
 
 def check_existing_requests(apiurl, src_project, src_package, dst_project,
-                            dst_package):
+                            dst_package, opt_supersede=False):
     reqs = get_exact_request_list(apiurl, src_project, dst_project,
                                   src_package, dst_package,
                                   req_type='submit',
                                   req_state=['new', 'review', 'declined'])
     repl = ''
     if reqs:
-        print('There are already the following submit request: %s.' % \
-              ', '.join([i.reqid for i in reqs]))
-        repl = raw_input('Supersede the old requests? (y/n/c) ')
+        if opt_supersede:
+            repl = 'y'
+        else:
+            print('There are already the following submit request: %s.' % \
+                  ', '.join([i.reqid for i in reqs]))
+            repl = raw_input('Supersede the old requests? (y/n/c) ')
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
