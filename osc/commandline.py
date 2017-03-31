@@ -6508,6 +6508,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
             runall      ra run all services independend of the used mode
+            localrun    lr run all services except the ones with mode "buildtime", "disabled", or
+                           "serveronly" (deprecated)
+            disabledrun dr run all services with mode "disabled" or "serveronly" (deprecated)
             remoterun   rr trigger a re-run on the server side
             merge          commits all server side generated files and drops the _service definition
             wait           waits until the service finishes and returns with an error if it failed
