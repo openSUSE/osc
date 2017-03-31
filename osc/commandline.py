@@ -6497,6 +6497,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc service COMMAND (inside working copy)
             osc service run [SOURCE_SERVICE]
+            osc service runall
             osc service localrun
             osc service disabledrun
             osc service remoterun [PROJECT PACKAGE]
@@ -6507,7 +6508,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             run         r  run defined services locally, it takes an optional parameter to run only a
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
-            runall      ra run all services independend of the used mode
+            runall      ra run all services independent of the used mode
             localrun    lr run all services except the ones with mode "buildtime", "disabled", or
                            "serveronly" (deprecated)
             disabledrun dr run all services with mode "disabled" or "serveronly" (deprecated)
