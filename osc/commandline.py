@@ -6048,6 +6048,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print("WARNING: package is not existing on server yet")
             opts.local_package = True
 
+        if not opts.local_package:
+            try:
+                package = store_read_package(os.curdir)
+                prj = Project(os.pardir, getPackageList=False, wc_check=False)
+                if prj.status(package) == 'A':
+                    # a package with state 'A' most likely does not exist on
+                    # the server - hence, treat it as a local package
+                    opts.local_package = True
+            except oscerr.NoWorkingCopy:
+                pass
+
         if opts.offline or opts.local_package or r == None:
             print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
         elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
