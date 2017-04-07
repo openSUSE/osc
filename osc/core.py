@@ -7069,15 +7069,15 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
 
     print_request(request)
     try:
-        prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
+        prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editable_actions = request.get_actions('submit', 'maintenance_incident')
         # actions which have sources + buildresults
         src_actions = editable_actions + request.get_actions('maintenance_release')
         if editable_actions:
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
         elif src_actions:
             # no edit for maintenance release requests
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
         if source_buildstatus:
@@ -7116,6 +7116,9 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             elif repl == 'c':
                 print('Aborting', file=sys.stderr)
                 raise oscerr.UserAbort()
+            elif repl == 'm':
+                comment = edit_text()
+                create_comment(apiurl, 'request', comment, request.reqid)
             elif repl == 'b' and src_actions:
                 print_source_buildstatus(src_actions)
             elif repl == 'e' and editable_actions:
