@@ -4995,6 +4995,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV format')
     @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
                         help='format string for csv output')
+    @cmdln.option('--show-excluded', action='store_true',
+                        help='show repos that are excluded for this package')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package or project
 
@@ -5044,7 +5046,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         kwargs = {'apiurl': apiurl, 'project': project, 'package': package,
                   'lastbuild': opts.last_build, 'repository': opts.repo,
-                  'arch': opts.arch, 'wait': opts.watch}
+                  'arch': opts.arch, 'wait': opts.watch, 'showexcl': opts.show_excluded}
         if opts.multibuild_package:
             opts.no_multibuild = False
             kwargs['multibuild_packages'] = opts.multibuild_package

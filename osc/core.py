@@ -5543,9 +5543,12 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     r = []
     printed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])
+    show_excluded = kwargs.pop('showexcl', False)
     for results in get_package_results(apiurl, project, package, **kwargs):
         r = []
         for res, is_multi in result_xml_to_dicts(results):
+            if not show_excluded and res['code'] == 'excluded':
+                continue
             if '_oldstate' in res:
                 oldstate = res['_oldstate']
                 continue
