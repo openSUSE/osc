@@ -5509,6 +5509,15 @@ def result_xml_to_dicts(xml):
         # always a status element
         snodes = node.findall('status')
         is_multi = len(snodes) > 1
+        if len(snodes) < 1:
+            # the repository setup is broken
+            smap = dict(rmap)
+            smap['pkg'] = "_repository"
+            smap['code'] = rmap['repostate']
+            smap['details'] = node.get('details')
+            yield smap, is_multi
+            continue
+
         for statusnode in snodes:
             smap = dict(rmap)
             smap['pkg'] = smap['package'] = smap['pac'] = statusnode.get('package')
