@@ -1201,7 +1201,7 @@ class Osc(cmdln.Cmdln):
                 # submitting this package
                 if opts.separate_requests or opts.seperate_requests:
                     # create a single request
-                    result = create_submit_request(apiurl, project, p)
+                    result = create_submit_request(apiurl, project, p, src_update=src_update)
                     if not result:
                         sys.exit("submit request creation failed")
                     sr_ids.append(result)
