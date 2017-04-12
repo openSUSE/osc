@@ -7064,8 +7064,6 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
     def print_source_buildstatus(src_actions, newline=False):
         if newline:
             print()
-        if not src_actions:
-            print('unable to get source buildstatus: no source actions defined')
         for action in src_actions:
             print('%s/%s:' % (action.src_project, action.src_package))
             try:
@@ -7088,7 +7086,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
-        if source_buildstatus:
+        if source_buildstatus and src_actions:
             print_source_buildstatus(src_actions, newline=True)
         while True:
             if initial_cmd:
