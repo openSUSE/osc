@@ -2738,6 +2738,13 @@ class Request:
             return self.actions
         return [i for i in self.actions if i.type in types]
 
+    def get_creator(self):
+        """Return the creator of the request.
+
+        This method is deprecated (use "creator" attribute instead").
+        """
+        return self.creator
+
     def to_xml(self):
         """serialize object to XML"""
         root = ET.Element('request')
