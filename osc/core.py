@@ -2684,6 +2684,7 @@ class Request:
     def _init_attributes(self):
         """initialize attributes with default values"""
         self.reqid = None
+        self.creator = None
         self.title = ''
         self.description = ''
         self.priority = None
@@ -2696,9 +2697,10 @@ class Request:
     def read(self, root):
         """read in a request"""
         self._init_attributes()
-        if not root.get('id'):
+        if not root.get('id') or not root.get('creator'):
             raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.reqid = root.get('id')
+        self.creator = root.get('creator')
         if root.find('state') is None:
             raise oscerr.APIError('invalid request (state expected): %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.state = RequestState(root.find('state'))
@@ -2736,17 +2738,13 @@ class Request:
             return self.actions
         return [i for i in self.actions if i.type in types]
 
-    def get_creator(self):
-        """return the creator of the request"""
-        if len(self.statehistory):
-            return self.statehistory[0].who
-        return self.state.who
-
     def to_xml(self):
         """serialize object to XML"""
         root = ET.Element('request')
         if not self.reqid is None:
             root.set('id', self.reqid)
+        if self.creator is not None:
+            root.set('creator', self.creator)
         for action in self.actions:
             root.append(action.to_xml())
         if not self.state is None:
@@ -4182,7 +4180,7 @@ def change_request_state_template(req, newstate):
     tmpl_name = '%srequest_%s_template' % (action.type, newstate)
     tmpl = conf.config.get(tmpl_name, '')
     tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')
-    data = {'reqid': req.reqid, 'type': action.type, 'who': req.get_creator()}
+    data = {'reqid': req.reqid, 'type': action.type, 'who': req.creator}
     if req.actions[0].type == 'submit':
         data.update({'src_project': action.src_project,
             'src_package': action.src_package, 'src_rev': action.src_rev,

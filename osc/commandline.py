@@ -2503,7 +2503,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 if repl.lower() == 'y' or repl == '':
                                     (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
                                                                                 project, package)
-                                    msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.get_creator())
+                                    msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.creator)
                                     rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
                                                                 project, package, cgi.escape(msg))
                                     print(msg)
