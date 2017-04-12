@@ -2741,7 +2741,7 @@ class Request:
     def to_xml(self):
         """serialize object to XML"""
         root = ET.Element('request')
-        if not self.reqid is None:
+        if self.reqid is not None:
             root.set('id', self.reqid)
         if self.creator is not None:
             root.set('creator', self.creator)
