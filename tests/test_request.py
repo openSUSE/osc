@@ -384,7 +384,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.statehistory[0].when, '2010-12-11T00:00:00')
         self.assertEqual(r.statehistory[0].who, 'creator')
         self.assertEqual(r.statehistory[0].comment, '')
-        self.assertEqual(r.get_creator(), 'creator')
+        self.assertEqual(r.creator, 'creator')
         self.assertTrue(len(r.statehistory) == 1)
         self.assertTrue(len(r.reviews) == 1)
         self.assertEqual(xml, r.to_str())
@@ -392,7 +392,7 @@ class TestRequest(OscTestCase):
     def test_read_request3(self):
         """read in a request (with an "empty" comment+description)"""
         from xml.etree import cElementTree as ET
-        xml = """<request id="2">
+        xml = """<request creator="xyz" id="2">
   <action type="set_bugowner">
     <target project="foo" />
     <person name="buguser" />
@@ -415,8 +415,8 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.description, '')
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        self.assertEqual(r.get_creator(), 'xyz')
-        exp = """<request id="2">
+        self.assertEqual(r.creator, 'xyz')
+        exp = """<request creator="xyz" id="2">
   <action type="set_bugowner">
     <target project="foo" />
     <person name="buguser" />
@@ -466,7 +466,7 @@ class TestRequest(OscTestCase):
         r = osc.core.Request()
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
-        self.assertEqual(r.get_creator(), 'creator')
+        self.assertEqual(r.creator, 'creator')
         exp = """\
 Request: #123
 
@@ -496,7 +496,7 @@ History: 2010-12-12T00:00:00 creator      revoked
         """test the __str__ method"""
         from xml.etree import cElementTree as ET
         xml = """\
-<request id="98765">
+<request creator="creator" id="98765">
   <action type="change_devel">
     <source project="devprj" package="devpkg" />
     <target project="foo" package="bar" />
@@ -508,7 +508,7 @@ History: 2010-12-12T00:00:00 creator      revoked
 </request>"""
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
-        self.assertEqual(r.get_creator(), 'creator')
+        self.assertEqual(r.creator, 'creator')
         exp = """\
 Request: #98765
 
@@ -527,7 +527,7 @@ Comment: <no comment>"""
         """load old-style submitrequest"""
         from xml.etree import cElementTree as ET
         xml = """\
-<request id="1234" type="submit">
+<request creator="olduser" id="1234" type="submit">
   <submit>
     <source package="baz" project="foobar" />
     <target package="baz" project="foo" />
@@ -548,9 +548,9 @@ Comment: <no comment>"""
         self.assertEqual(r.state.when, '2010-12-30T02:11:22')
         self.assertEqual(r.state.who, 'olduser')
         self.assertEqual(r.state.comment, '')
-        self.assertEqual(r.get_creator(), 'olduser')
+        self.assertEqual(r.creator, 'olduser')
         exp = """\
-<request id="1234">
+<request creator="olduser" id="1234">
   <action type="submit">
     <source package="baz" project="foobar" />
     <target package="baz" project="foo" />

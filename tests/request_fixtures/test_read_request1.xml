@@ -1,4 +1,4 @@
-<request id="42">
+<request creator="creator" id="42">
   <action type="submit">
     <source package="bar" project="foo" rev="1" />
     <target package="bar" project="foobar" />
