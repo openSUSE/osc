@@ -1647,9 +1647,25 @@ class Package:
         store_write_string(self.absdir, '_files', meta + '\n')
 
     def get_files_meta(self, revision='latest', skip_service=True):
-        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta)
+        from time import sleep
+
+        retry_count = 3
+        while retry_count > 0:
+            fm = show_files_meta(self.apiurl, self.prjname, self.name,
+                                      revision=revision, meta=self.meta)
+            try:
+                root = ET.fromstring(fm)
+                break
+            except:
+                print 'corrupted or empty obs server response ,retrying ...'
+                sleep(1)
+                retry_count -= 1
+
+        if not retry_count:
+            # all the re-try failed, abort
+            raise oscerr.OscIOError(None, 'cannet fetch files meta xml from server')
+
         # look for "too large" files according to size limit and mark them
-        root = ET.fromstring(fm)
         for e in root.findall('entry'):
             size = e.get('size')
             if size and self.size_limit and int(size) > self.size_limit \
