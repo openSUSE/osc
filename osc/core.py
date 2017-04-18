@@ -2697,10 +2697,12 @@ class Request:
     def read(self, root):
         """read in a request"""
         self._init_attributes()
-        if not root.get('id') or not root.get('creator'):
+        if not root.get('id'):
             raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.reqid = root.get('id')
-        self.creator = root.get('creator')
+        if root.get('creator'):
+            # OBS 2.8 and later is delivering creator informations
+            self.creator = root.get('creator')
         if root.find('state') is None:
             raise oscerr.APIError('invalid request (state expected): %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.state = RequestState(root.find('state'))
