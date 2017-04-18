@@ -2165,7 +2165,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = None
             if len(args) > 0:
                 project = args[0]
-            elif not opts.mine and not opts.user:
+            elif not opts.mine and not opts.user and not opts.group:
                 try:
                     project = store_read_project(os.curdir)
                     package = store_read_package(os.curdir)
