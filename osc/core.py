@@ -4002,9 +4002,11 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
         (fd, filename) = tempfile.mkstemp(prefix='osc-editor', suffix=suffix)
         os.close(fd)
         mtime = os.stat(filename).st_mtime
+        ri_err = False
         while True:
-            file_changed = _edit_message_open_editor(filename, data, mtime)
-            msg = open(filename).read()
+            if not ri_err:
+                file_changed = _edit_message_open_editor(filename, data, mtime)
+                msg = open(filename).read()
             if delim:
                 msg = msg.split(delim)[0].rstrip()
             if msg and file_changed:
@@ -4019,6 +4021,11 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
                 elif ri in 'cC':
                     break
                 elif ri in 'eE':
+                    ri_err = False
+                    pass
+                else:
+                    print("%s is not a valid option." % ri)
+                    ri_err = True
                     pass
     finally:
         os.unlink(filename)
@@ -4419,6 +4426,9 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
         print('There are already the following submit request: %s.' % \
               ', '.join([i.reqid for i in reqs]))
         repl = raw_input('Supersede the old requests? (y/n/c) ')
+        while repl.lower() not in ['c', 'y', 'n']:
+            print('%s is not a valid option.' % repl)
+            repl = raw_input('Supersede the old requests? (y/n/c) ')
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
@@ -4437,6 +4447,9 @@ def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_p
         print('There are already the following maintenance incident request: %s.' % \
               ', '.join([i.reqid for i in reqs]))
         repl = raw_input('Supersede the old requests? (y/n/c) ')
+        while repl.lower() not in ['c', 'y', 'n']:
+            print('%s is not a valid option.' % repl)
+            repl = raw_input('Supersede the old requests? (y/n/c) ')
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
