@@ -802,6 +802,9 @@ def main(apiurl, opts, argv):
     if bi.release:
         buildargs.append('--release=%s' % bi.release)
 
+    if opts.build_opt:
+        buildargs += opts.build_opt
+
     # real arch of this machine
     # vs.
     # arch we are supposed to build for
