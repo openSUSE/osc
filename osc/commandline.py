@@ -1042,7 +1042,7 @@ class Osc(cmdln.Cmdln):
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
                   help='specify a certain source revision ID (the md5 sum) for the source package')
-    @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
+    @cmdln.option('-s', '--supersede', metavar='REQUEST_ID',
                   help='Superseding another request by this one')
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
@@ -1678,7 +1678,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
                   help='for "create", specify a certain source revision ID (the md5 sum)')
-    @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
+    @cmdln.option('-s', '--supersede', metavar='REQUEST_ID',
                   help='Superseding another request by this one')
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
@@ -3062,7 +3062,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify incident number to merge in')
     @cmdln.option('--incident-project', metavar='INCIDENT_PROJECT',
                         help='specify incident project to merge in')
-    @cmdln.option('-s', '--supersede', metavar='SUPERSEDE',
+    @cmdln.option('-s', '--supersede', metavar='REQUEST_ID',
                   help='Superseding another request by this one')
     @cmdln.alias("mr")
     def do_maintenancerequest(self, subcmd, opts, *args):
@@ -5949,7 +5949,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='build a package which does not exist on the server')
     @cmdln.option('--linksources', action='store_true',
                   help='use hard links instead of a deep copied source')
-    @cmdln.option('--vm-memory', metavar='TYPE',
+    @cmdln.option('--vm-memory', metavar='MEMORY',
                   help='use given MB for VM')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
