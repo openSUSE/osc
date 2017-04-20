@@ -7130,6 +7130,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise e
                 # skip it ... try again with old style below
 
+                # other errors are handled elsewhere
+                raise e
+
         res = get_user_projpkgs(apiurl, user, role_filter, exclude_projects,
                                 'project' in what, 'package' in what,
                                 opts.maintained, opts.verbose)
