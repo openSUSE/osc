@@ -110,7 +110,11 @@ class Fetcher:
         query = ['binary=%s' % quote_plus(i) for i in pkgs]
         query.append('view=cpio')
         try:
-            url = makeurl(apiurl, ['build', project, repo, arch, package], query=query)
+            if project.startswith('openSUSE.org'):
+                sys.stdout.write("Found upstream project ...\r")
+                url = makeurl('https://api.opensuse.org', ['build', project[13:], repo, arch, package], query=query)
+            else:
+                url = makeurl(apiurl, ['build', project, repo, arch, package], query=query)
             sys.stdout.write("preparing download ...\r")
             sys.stdout.flush()
             with tempfile.NamedTemporaryFile(prefix='osc_build_cpio') as tmparchive:
