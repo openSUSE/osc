@@ -9,6 +9,7 @@ from . import cmdln
 from . import conf
 from . import oscerr
 import sys
+import signal
 import time
 import imp
 import inspect
@@ -6272,6 +6273,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc chroot [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
         ${cmd_option_list}
         """
+
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
         if conf.config['build-type'] and conf.config['build-type'] != "lxc":
@@ -6325,13 +6327,38 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         sucmd = suwrapper.split()[0]
         suargs = ' '.join(suwrapper.split()[1:])
         if suwrapper.startswith('su '):
+            mntproc = [sucmd, '%s mount -n -tproc none %s/proc' % (suargs, buildroot)]
+            umntproc = [sucmd, '%s umount %s/proc' % (suargs, buildroot)]
             cmd = [sucmd, '%s chroot "%s" su - %s' % (suargs, buildroot, user)]
         else:
+            mntproc = [sucmd, 'mount', '-n', '-tproc' , 'none', '%s/proc' % buildroot]
+            umntproc = [sucmd, 'umount', '%s/proc' % buildroot]
             cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
             if suargs:
+                mntproc[1:1] = suargs.split()
+                umntproc[1:1] = suargs.split()
                 cmd[1:1] = suargs.split()
+
+        #signal handler for chroot procfs umount
+        def umount_proc(signum = None, frame = None, ret=1):
+            subprocess.call(umntproc)
+            sys.exit(ret)
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            signal.signal(sig, umount_proc)
+
+        print('mounting proc: %s' % ' '.join(mntproc))
+        mount_err = -1
+        mount_err = subprocess.call(mntproc)
+        if mount_err > 0:
+            print('There was an error mounting proc. Please check mountpoints in chroot')
         print('running: %s' % ' '.join(cmd))
-        os.execvp(sucmd, cmd)
+        retval = 0
+        try:
+            retval = subprocess.call(cmd)
+        finally:
+            if not mount_err or mount_err == 32:
+                print('unmounting %s/proc ...' % buildroot)
+                umount_proc(ret=retval)
 
 
     @cmdln.option('', '--csv', action='store_true',
