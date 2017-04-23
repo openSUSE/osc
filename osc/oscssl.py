@@ -11,6 +11,7 @@ from M2Crypto import m2, SSL
 import M2Crypto.m2urllib2
 import socket
 import sys
+import inspect
 
 try:
     from urllib.parse import urlparse, splithost, splitport, splittype
@@ -249,13 +250,48 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         self.appname = kwargs.pop('appname', 'generic')
         M2Crypto.httpslib.HTTPSConnection.__init__(self, *args, **kwargs)
 
-    def connect(self, *args):
-        self.sock = SSL.Connection(self.ssl_ctx)
+    def _connect(self, family):
+        # workaround for old M2Crypto versions where the the
+        # SSL.Connection.__init__ constructor has no "family" parameter
+        kwargs = {}
+        argspec = inspect.getargspec(SSL.Connection.__init__)
+        if 'family' in argspec.args:
+            kwargs['family'] = family
+        elif family != socket.AF_INET:
+            # old SSL.Connection classes implicitly use socket.AF_INET
+            return False
+
+        self.sock = SSL.Connection(self.ssl_ctx, **kwargs)
         if self.session:
             self.sock.set_session(self.session)
         if hasattr(self.sock, 'set_tlsext_host_name'):
             self.sock.set_tlsext_host_name(self.host)
         self.sock.connect((self.host, self.port))
+        return True
+
+    def connect(self):
+        # based on M2Crypto.httpslib.HTTPSConnection.connect
+        last_exc = None
+        connected = False
+        for addrinfo in socket.getaddrinfo(self.host, self.port,
+                                           socket.AF_UNSPEC,
+                                           socket.SOCK_STREAM,
+                                           0, 0):
+            try:
+                connected = self._connect(addrinfo[0])
+                if connected:
+                    break
+            except socket.error as e:
+                last_exc = e
+            finally:
+                if not connected and self.sock is not None:
+                    self.sock.close()
+        if not connected:
+            if last_exc is None:
+                msg = 'getaddrinfo returned empty list or unsupported families'
+                raise RuntimeError(msg)
+            raise last_exc
+        # ok we are connected, verify cert
         verify_certificate(self)
 
     def getHost(self):

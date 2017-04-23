@@ -1,5 +1,38 @@
+0.158
+  - cat/less/blame command: default to expand to stay in sync with checkout
+  - add support for highly experimental native appimage.yml support
+  - show package status when repository configuration is broken
+
+0.157.2
+  - add compat code for older apis that do not support multibuild
+  - fix ssl.connection instantiation in case of old M2Crypto
+  - highly experimental support for appimage
+  - fix local service run for non-existent (server-side) package
+
+0.157
+  - add unpublish command (requires OBS 2.8)
+  - add blame command (requires OBS 2.9)
+  - results: show multibuild results by default
+  - getbinaries: make .AppImage files executable
+  - support operation in checked out package for cat/less/blame
+  - add comment command
+  - improved build recipe selection
+  - added multibuild (-M) to commands:
+          buildlog, remotebuildlog, buildinfo, build, buildhistory, jobhistory,
+          rebuild, restartbuild/abortbuild, wipebinaries, getbinaries
+  - add checkconstraints command
+  - add workerinfo command
+  - fix local build of kiwi images using obsrepositories://
+
 0.156
-  -
+  - highlight scheduled jobs with dispatch problems (due to constraints)
+  - allow to specify a log message in lock command
+  - Add '--wipe' option to osc chroot for deleting buildroots
+  - Add '--vm-memory' option to osc build
+  - add --multibuild to results command for showing all packages
+    of a multibuild config
+  - add --multibuild-package option to results command for showing
+    only one package of the multibuild config
 
 0.155
   - osc service runall: runs all service local, independend of the mode

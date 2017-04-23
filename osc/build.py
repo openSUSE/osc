@@ -363,6 +363,11 @@ def get_built_files(pacdir, buildtype):
                                     '-name', '*.snap'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'appimage':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-name', '*.AppImage'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -491,6 +496,7 @@ def main(apiurl, opts, argv):
     build_root = None
     cache_dir  = None
     build_uid = ''
+    vm_memory = config['build-memory']
     vm_type = config['build-type']
     vm_telnet = None
 
@@ -500,11 +506,13 @@ def main(apiurl, opts, argv):
         build_type = 'arch'
     if os.path.basename(build_descr) == 'build.collax':
         build_type = 'collax'
+    if os.path.basename(build_descr) == 'appimage.yml':
+        build_type = 'appimage'
     if os.path.basename(build_descr) == 'snapcraft.yaml':
         build_type = 'snapcraft'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, .yaml or .livebuild.' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml or snapcraft.yaml' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
@@ -571,6 +579,8 @@ def main(apiurl, opts, argv):
         else:
             print('Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"', file=sys.stderr)
             return 1
+    if opts.vm_memory:
+        vm_memory = opts.vm_memory
     if opts.vm_type:
         vm_type = opts.vm_type
     if opts.vm_telnet:
@@ -606,7 +616,7 @@ def main(apiurl, opts, argv):
             except oscerr.NoWorkingCopy:
                 opts.local_package = True
         if opts.local_package:
-            pacname = os.path.splitext(build_descr)[0]
+            pacname = os.path.splitext(os.path.basename(build_descr))[0]
     apihost = urlsplit(apiurl)[1]
     if not build_root:
         build_root = config['build-root']
@@ -1006,7 +1016,7 @@ def main(apiurl, opts, argv):
                       buildargs.append('--kiwi-parameter')
                       buildargs.append('--add-repo')
                       buildargs.append('--kiwi-parameter')
-                      buildargs.append("repos/"+path)
+                      buildargs.append("dir://./repos/"+path)
                       buildargs.append('--kiwi-parameter')
                       buildargs.append('--add-repotype')
                       buildargs.append('--kiwi-parameter')
@@ -1024,7 +1034,7 @@ def main(apiurl, opts, argv):
                    buildargs.append('--kiwi-parameter')
                    buildargs.append('--add-repo')
                    buildargs.append('--kiwi-parameter')
-                   buildargs.append("repos/"+project+"/"+repo)
+                   buildargs.append("dir://./repos/"+project+"/"+repo)
                    buildargs.append('--kiwi-parameter')
                    buildargs.append('--add-repotype')
                    buildargs.append('--kiwi-parameter')
@@ -1110,8 +1120,8 @@ def main(apiurl, opts, argv):
         vm_options = [ '--vm-type=%s' % vm_type ]
         if vm_telnet:
             vm_options += [ '--vm-telnet=' + vm_telnet ]
-        if config['build-memory']:
-            vm_options += [ '--memory=' + config['build-memory'] ]
+        if vm_memory:
+            vm_options += [ '--memory=' + vm_memory ]
         if vm_type != 'lxc':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
@@ -1127,8 +1137,6 @@ def main(apiurl, opts, argv):
 
             build_root += '/.mount'
 
-        if config['build-memory']:
-            vm_options += [ '--memory=' + config['build-memory'] ]
         if config['build-vmdisk-rootsize']:
             vm_options += [ '--vmdisk-rootsize=' + config['build-vmdisk-rootsize'] ]
         if config['build-vmdisk-swapsize']:

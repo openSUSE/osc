@@ -1,4 +1,4 @@
-<request id="123">
+<request creator="creator" id="123">
   <action type="submit">
     <source package="abc" project="xyz" />
     <options>

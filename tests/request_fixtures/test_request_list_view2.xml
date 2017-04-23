@@ -1,4 +1,4 @@
-<request id="21">
+<request creator="foobar" id="21">
   <action type="set_bugowner">
     <target project="foo" />
     <person name="buguser" />

@@ -59,8 +59,8 @@ oscopts=(--version --help --debugger --post-mortem --traceback --http-full-debug
     --debug --apiurl -A --config -c --no-keyring --no-gnome-keyring --verbose --quiet)
 osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
     bsdevelproject bse bugowner build buildconfig buildhist buildhistory buildinfo
-    buildlog buildlogtail cat changedevelreq changedevelrequest checkin checkout
-    chroot ci co commit config copypac cr createincident createrequest creq del
+    buildlog buildlogtail cat changedevelreq changedevelrequest checkconstraints checkin checkout
+    chroot ci co comment commit config copypac cr createincident createrequest creq del
     delete deletereq deleterequest dependson detachbranch develproject di diff
     distributions dists dr dropreq droprequest getbinaries getpac help importsrcpkg
     info init jobhist jobhistory lbl ldiff less linkdiff linkpac linktobranch list
@@ -73,11 +73,13 @@ osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
     resolved results revert review rm rq rremove se search service setlinkrev
     signkey sm sr st status submitpac submitreq submitrequest tr triggerreason
     undelete unlock up update updatepacmetafromspec user vc whatdependson who whois
-    wipebinaries)
+    wipebinaries workerinfo)
 oscreq=(list log show accept decline revoke reopen setincident supersede approvenew
     checkout clone)
 oscrev=(show list add accept decline reopen supersede)
 oscmy=(work pkg prj rq sr)
+osccmt=(list create delete)
+osccmtkind=(package project request)
 
 oscprj=""
 oscpkg=""
@@ -1095,6 +1097,16 @@ my)
 	builtin compgen -W "${opts[*]}" -- "${cmdline[3]}"
     fi
     ;;
+comment)
+    opts=(--comment --parent)
+    if ((count == 1)) ; then
+        builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+    elif ((count == 2)) ; then
+        builtin compgen -W "${opts[*]} ${osccmt[*]}" -- "${cmdline[2]}"
+    elif ((count == 3)) ; then
+        builtin compgen -W "${opts[*]} ${osccmtkind[*]}" -- "${cmdline[3]}"
+    fi
+    ;;
 copypac|linkpac)
     opts=(--help --expand --to-apiurl --revision --keep-develproject --keep-link
 	  --keep-maintainers --client-side-copy)
@@ -1396,7 +1408,7 @@ maintainer)
     opts=(--help --role --delete --set-bugowner-request --set-bugowner --all --add
 	  --devel-project --verbose --nodevelproject --email --bugowner --bugowner-only)
     if ((count == 1)) ; then
-	builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
+        builtin compgen -W "${osccmds[*]}" -- "${cmdline[count]}"
     elif ((count >= 2)) ; then
 	for ((off=2; off<=count; off++)) ; do
 	    while test "${cmdline[off+remove]::1}" = "-" ; do
@@ -1812,6 +1824,30 @@ diff|linkdiff)
 	builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
     fi
     ;;
+workerinfo)
+    opts=(--help)
+    if ((count == 1)) ; then
+        builtin compgen -W "${osccmds[*]} ${oscopts[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+        if test "${cmdline[count]::1}" = "-" ; then
+            builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+        else
+            targets ${opts[*]} -- "${cmdline[count]}"
+        fi
+    fi
+    ;;
+checkconstraints)
+    opts=(--help --ignore-file)
+    if ((count == 1)) ; then
+        builtin compgen -W "${osccmds[*]} ${oscopts[*]}" -- "${cmdline[count]}"
+    elif ((count >= 2)) ; then
+        if test "${cmdline[count]::1}" = "-" ; then
+            builtin compgen -W "${opts[*]}" -- "${cmdline[count]}"
+        else
+            targets ${opts[*]} -- "${cmdline[count]}"
+        fi
+    fi
+    ;;
 *)
     opts=(--help)
     if ((count == 1)) ; then
@@ -1822,5 +1858,5 @@ diff|linkdiff)
 	else
 	    targets ${opts[*]} -- "${cmdline[count]}"
 	fi
-    fi 
+    fi
 esac

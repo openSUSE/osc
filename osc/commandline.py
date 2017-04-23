@@ -441,6 +441,7 @@ class Osc(cmdln.Cmdln):
                     opts.expand = True
                 if fname and print_not_found:
                     print('file \'%s\' does not exist' % fname)
+                    return 1
 
 
     @cmdln.option('-s', '--skip-disabled', action='store_true',
@@ -724,6 +725,8 @@ class Osc(cmdln.Cmdln):
             fd = urlopen(req, data=None)
             print(fd.read())
         else:
+            if args and args[0] in ['create', 'delete', 'trigger']:
+                raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
             # just list token
             for data in streamfile(url, http_GET):
                 sys.stdout.write(data)
@@ -735,6 +738,8 @@ class Osc(cmdln.Cmdln):
                         help='include defined attribute defaults')
     @cmdln.option('--attribute-project', action='store_true',
                         help='include project values, if missing in packages ')
+    @cmdln.option('--blame', action='store_true',
+                        help='show author and time of each line')
     @cmdln.option('-f', '--force', action='store_true',
                         help='force the save operation, allows one to ignores some errors like depending repositories. For prj meta only.')
     @cmdln.option('-F', '--file', metavar='FILE',
@@ -886,14 +891,14 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(apiurl, project, opts.revision)))
+                sys.stdout.write(''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame)))
             elif cmd == 'pkg':
-                sys.stdout.write(''.join(show_package_meta(apiurl, project, package)))
+                sys.stdout.write(''.join(show_package_meta(apiurl, project, package, blame=opts.blame)))
             elif cmd == 'attribute':
                 sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage,
                                          opts.attribute, opts.attribute_defaults, opts.attribute_project)))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(apiurl, project, opts.revision)))
+                sys.stdout.write(''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
@@ -1078,6 +1083,20 @@ class Osc(cmdln.Cmdln):
 
         ${cmd_option_list}
         """
+        def _check_service(root):
+            serviceinfo = root.find('serviceinfo')
+            if serviceinfo is not None:
+                # code "running" is ok, because the api will choke when trying
+                # to create the sr (if it is still running)
+                if serviceinfo.get('code') not in ('running', 'succeeded'):
+                    print('A service run for package %s %s:'
+                          % (root.get('name'), serviceinfo.get('code')),
+                          file=sys.stderr)
+                    error = serviceinfo.find('error')
+                    if error is not None:
+                        print('\n'.join(error.text.split('\\n')))
+                    sys.exit('\nPlease fix this first')
+
 
         if opts.cleanup and opts.no_cleanup:
             raise oscerr.WrongOptions('\'--cleanup\' and \'--no-cleanup\' are mutually exclusive')
@@ -1176,19 +1195,13 @@ class Osc(cmdln.Cmdln):
                         print("Skipping package ", p,  " since it is a source link pointing inside the project.")
                         continue
 
-                serviceinfo = root.find('serviceinfo')
-                if serviceinfo != None:
-                    if serviceinfo.get('code') != "succeeded":
-                        print("Package ", p, " has a ", serviceinfo.get('code'), " source service")
-                        sys.exit("Please fix this first")
-                    if serviceinfo.get('error'):
-                        print("Package ", p, " contains a failed source service.")
-                        sys.exit("Please fix this first")
+                # check for failed source service
+                _check_service(root)
 
                 # submitting this package
                 if opts.separate_requests or opts.seperate_requests:
                     # create a single request
-                    result = create_submit_request(apiurl, project, p)
+                    result = create_submit_request(apiurl, project, p, src_update=src_update)
                     if not result:
                         sys.exit("submit request creation failed")
                     sr_ids.append(result)
@@ -1269,18 +1282,11 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('request'))
 
-        # check for running source service
+        # check for failed source service
         u = makeurl(apiurl, ['source', src_project, src_package])
         f = http_GET(u)
         root = ET.parse(f).getroot()
-        serviceinfo = root.find('serviceinfo')
-        if serviceinfo != None:
-            if serviceinfo.get('code') != "succeeded":
-                print("Package ", src_package, " has a ", serviceinfo.get('code'), " source service")
-                sys.exit("Please fix this first")
-            if serviceinfo.get('error'):
-                print("Package ", src_package, " contains a failed source service.")
-                sys.exit("Please fix this first")
+        _check_service(root)
 
         if not opts.nodevelproject:
             devloc = None
@@ -1332,7 +1338,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
         supersede_existing = False
         reqs = []
-        if not opts.supersede:
+        if not opts.supersede and not opts.yes:
             (supersede_existing, reqs) = check_existing_requests(apiurl,
                                                                  src_project,
                                                                  src_package,
@@ -2159,7 +2165,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = None
             if len(args) > 0:
                 project = args[0]
-            elif not opts.mine and not opts.user:
+            elif not opts.mine and not opts.user and not opts.group:
                 try:
                     project = store_read_project(os.curdir)
                     package = store_read_package(os.curdir)
@@ -2497,7 +2503,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 if repl.lower() == 'y' or repl == '':
                                     (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
                                                                                 project, package)
-                                    msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.get_creator())
+                                    msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.creator)
                                     rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
                                                                 project, package, cgi.escape(msg))
                                     print(msg)
@@ -2944,7 +2950,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_releaserequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for releasing a maintenance update.
 
-        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide_draft/cha.obs.maintenance_setup.html
+        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
          for information on this topic.]
 
         This command is used by the maintence team to start the release process of a maintenance update.
@@ -2990,7 +2996,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_createincident(self, subcmd, opts, *args):
         """${cmd_name}: Create a maintenance incident
 
-        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide_draft/cha.obs.maintenance_setup.html
+        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
         This command is asking to open an empty maintence incident. This can usually only be done by a responsible
@@ -3062,7 +3068,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_maintenancerequest(self, subcmd, opts, *args):
         """${cmd_name}: Create a request for starting a maintenance incident.
 
-        [See http://doc.opensuse.org/products/draft/OBS/obs-reference-guide_draft/cha.obs.maintenance_setup.html
+        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
         This command is asking the maintence team to start a maintence incident based on a
@@ -3518,6 +3524,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             delete_project(apiurl, prj, opts.force, msg)
 
 
+    @cmdln.option('-m', '--message', metavar='TEXT',
+                  help='specify log message TEXT')
     def do_lock(self, subcmd, opts, project, package=None):
         """${cmd_name}: Locks a project or package.
 
@@ -3542,7 +3550,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         lock = ET.SubElement(root, 'lock')
         ET.SubElement(lock, 'enable')
         meta = ET.tostring(root)
-        edit_meta(kind, path_args=path_args, data=meta)
+        edit_meta(kind, path_args=path_args, data=meta, msg=opts.message)
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -4183,10 +4191,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--meta', action='store_true',
                         help='checkout out meta data instead of sources' )
     @cmdln.option('-c', '--current-dir', action='store_true',
-                        help='place PACKAGE folder in the current directory' \
+                        help='place PACKAGE folder in the current directory ' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-o', '--output-dir', metavar='outdir',
-                        help='place package in the specified directory' \
+                        help='place package in the specified directory ' \
                              'instead of a PROJECT/PACKAGE directory')
     @cmdln.option('-s', '--source-service-files', action='store_true',
                         help='Run source services.' )
@@ -4718,7 +4726,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # (a) update all packages
                     args += prj.pacs_have
                     # (b) fetch new packages
-                    prj.checkout_missing_pacs(expand_link = not opts.unexpand_link)
+                    prj.checkout_missing_pacs(opts.expand_link, opts.unexpand_link)
                     args.remove(arg)
                 print_request_list(prj.apiurl, prj.name)
 
@@ -4975,6 +4983,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified architecture(s)')
     @cmdln.option('-v', '--verbose', action='store_true', default=False,
                         help='more verbose output')
+    @cmdln.option('--no-multibuild', action='store_true', default=False,
+                        help='Disable results for all direct affect packages inside of the project')
+    @cmdln.option('-M', '--multibuild-package', action='append', default=[],
+                        help='Only show results for the specified multibuild package')
     @cmdln.option('-w', '--watch', action='store_true', default=False,
                         help='watch the results until all finished building')
     @cmdln.option('', '--xml', action='store_true', default=False,
@@ -4983,6 +4995,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV format')
     @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
                         help='format string for csv output')
+    @cmdln.option('--show-excluded', action='store_true',
+                        help='show repos that are excluded for this package')
     def do_results(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build results of a package or project
 
@@ -5032,14 +5046,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         kwargs = {'apiurl': apiurl, 'project': project, 'package': package,
                   'lastbuild': opts.last_build, 'repository': opts.repo,
-                  'arch': opts.arch, 'wait': opts.watch}
+                  'arch': opts.arch, 'wait': opts.watch, 'showexcl': opts.show_excluded}
+        if opts.multibuild_package:
+            opts.no_multibuild = False
+            kwargs['multibuild_packages'] = opts.multibuild_package
+        if not opts.no_multibuild:
+            kwargs['multibuild'] = kwargs['locallink'] = True
         if opts.xml or opts.csv:
             for xml in get_package_results(**kwargs):
                 if opts.xml:
                     print(xml, end='')
                 else:
                     # csv formatting
-                    results = result_xml_to_dicts(xml)
+                    results = [r for r, _ in result_xml_to_dicts(xml)]
                     print('\n'.join(format_results(results, opts.format)))
         else:
             kwargs['verbose'] = opts.verbose
@@ -5127,6 +5146,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('buildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                    help='get log of the specified multibuild package')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log start or end from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5173,6 +5194,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 repository = args[0]
                 arch = args[1]
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         offset = 0
         if subcmd == "blt" or subcmd == "buildlogtail":
@@ -5221,6 +5245,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('remotebuildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                        help='show log file for specified multibuild package')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log starting or ending from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5252,6 +5278,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too many arguments.')
             else:
                 project, package, repository, arch = args
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         offset = 0
         if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
@@ -5481,6 +5510,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-d', '--debug', action='store_true',
                   help='verbose output of build dependencies')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                  help='Show the buildinfo of the specified multibuild package')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -5528,7 +5559,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
             project = store_read_project('.')
             package = store_read_package('.')
-            repository, arch, build_descr = self.parse_repoarchdescr(args, ignore_descr=True)
+            repository, arch, build_descr = self.parse_repoarchdescr(args, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
             package = args[1]
@@ -5556,6 +5587,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                 cpiodata)
             cpiodata.add(os.path.basename(build_descr), build_descr_data)
             build_descr_data = cpiodata.get()
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         print(''.join(get_buildinfo(apiurl,
                                     project, package, repository, arch,
@@ -5606,6 +5640,74 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print(''.join(get_buildconfig(apiurl, project, repository)))
 
+
+    def do_workerinfo(self, subcmd, opts, worker):
+        """${cmd_name}: gets the information to a worker from the server
+
+        Examples:
+            osc workerinfo <workername>
+
+        ${cmd_usage}
+        ${cmd_option_list}
+        """
+        apiurl = self.get_api_url()
+        print(''.join(get_worker_info(apiurl, worker)))
+
+
+    @cmdln.option('', '--ignore-file', action='store_true',
+                  help='ignore _constraints file and only check project constraints')
+    def do_checkconstraints(self, subcmd, opts, *args):
+        """${cmd_name}: check the constraints and view compliant workers
+
+        Checks the constraints for compliant workers.
+
+        usage:
+            in a package working copy:
+                osc checkconstraints [OPTS] REPOSITORY ARCH CONSTRAINTSFILE
+                osc checkconstraints [OPTS] CONSTRAINTSFILE
+                osc checkconstraints [OPTS]
+
+        ${cmd_option_list}
+        """
+        repository = arch = constraintsfile = None
+        project = store_read_project('.')
+        package = store_read_package('.')
+        if len(args) == 1:
+            constraintsfile = args[0]
+        elif len(args) == 2 or len(args) == 3:
+            repository = args[0]
+            arch = args[1]
+            if len(args) == 3:
+                constraintsfile = args[2]
+
+        constraintsfile_data = None
+        if constraintsfile is not None:
+            constraintsfile_data = open(constraintsfile, 'r').read()
+        elif not opts.ignore_file:
+            if os.path.isfile("_constraints"):
+                constraintsfile_data = open("_constraints", 'r').read()
+            else:
+                print("No local _constraints file. Using just the project constraints")
+
+        apiurl = self.get_api_url()
+        r = []
+        if not arch and not repository:
+            result_line_templ = '%(name)-25s %(arch)-25s %(comp_workers)s'
+            for repo in get_repos_of_project(apiurl, project):
+                rmap = {}
+                rmap['name'] = repo.name
+                rmap['arch'] = repo.arch
+                workers = check_constraints(apiurl, project, repo.name, repo.arch, package, constraintsfile_data)
+                rmap['comp_workers'] = len(workers)
+                r.append(result_line_templ % rmap)
+            r.insert(0, 'Repository                Arch                      Worker')
+            r.insert(1, '----------                ----                      ------')
+        else:
+            r = check_constraints(apiurl, project, repository, arch, package, constraintsfile_data)
+            r.insert(0, 'Worker')
+            r.insert(1, '------')
+
+        print('\n'.join(r))
 
     @cmdln.alias('repos')
     @cmdln.alias('platforms')
@@ -5659,10 +5761,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print(row)
 
 
-    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None):
+    def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None, multibuild_package = None):
         """helper to parse the repo, arch and build description from args"""
         import osc.build
         import glob
+        import tempfile
         arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
             # some magic, works only sometimes, but people seem to like it :/
@@ -5707,15 +5810,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # only persist our own repos
                 Repo.tofile(repolistfile, repositories)
 
+        no_repo = False
         repo_names = sorted(set([r.name for r in repositories]))
         if not arg_repository and repositories:
             # XXX: we should avoid hardcoding repository names
             # Use a default value from config, but just even if it's available
             # unless try standard, or openSUSE_Factory, or openSUSE_Tumbleweed
+            no_repo = True
             arg_repository = repositories[-1].name
             for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory', 'openSUSE_Tumbleweed'):
                 if repository in repo_names:
                     arg_repository = repository
+                    no_repo = False
                     break
 
         if not arg_repository:
@@ -5739,22 +5845,39 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif not arg_descr:
             msg = None
             if len(descr) > 1:
-                # guess/prefer build descrs like the following:
-                # <pac>-<repo>.<ext> > <pac>.<ext>
-                # no guessing for arch's PKGBUILD files (the backend does not do any guessing, too)
+                if no_repo:
+                    raise oscerr.WrongArgs("Repository is missing. Cannot guess build description without repository")
+                apiurl = self.get_api_url()
+                project = store_read_project('.')
+                bc = get_buildconfig(apiurl, project, arg_repository)
+                with tempfile.NamedTemporaryFile() as f:
+                    f.write(bc)
+                    f.flush()
+                    recipe = return_external('/usr/lib/build/queryconfig', '--dist', f.name, 'type')
+                recipe = recipe.strip()
+                if recipe == 'arch':
+                    recipe = 'PKGBUILD'
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
-                extensions = ['spec', 'dsc', 'kiwi', 'livebuild']
-                cands = [i for i in descr for ext in extensions if i == '%s-%s.%s' % (pac, arg_repository, ext)]
+                if multibuild_package:
+                    pac = multibuild_package
+                if recipe == 'PKGBUILD':
+                    cands = [d for d in descr if d.startswith(recipe)]
+                else:
+                    cands = [d for d in descr if d.endswith('.' + recipe)]
+                if len(cands) > 1:
+                    repo_cands = [d for d in cands if d == '%s-%s.%s' % (pac, arg_repository, recipe)]
+                    if repo_cands:
+                        cands = repo_cands
+                    else:
+                        pac_cands = [d for d in cands if d == '%s.%s' % (pac, recipe)]
+                        if pac_cands:
+                            cands = pac_cands
                 if len(cands) == 1:
                     arg_descr = cands[0]
-                else:
-                    cands = [i for i in descr for ext in extensions if i == '%s.%s' % (pac, ext)]
-                    if len(cands) == 1:
-                        arg_descr = cands[0]
                 if not arg_descr:
-                    msg = 'Multiple build description files found: %s' % ', '.join(descr)
+                    msg = 'Multiple build description files found: %s' % ', '.join(cands)
             elif not ignore_descr:
                 msg = 'Missing argument: build description (spec, dsc, kiwi or livebuild file)'
                 try:
@@ -5795,6 +5918,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
                   help='Save built packages into this directory')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                  help='Build the specified multibuild package')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
     @cmdln.option('--root', metavar='ROOT',
@@ -5824,6 +5949,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='build a package which does not exist on the server')
     @cmdln.option('--linksources', action='store_true',
                   help='use hard links instead of a deep copied source')
+    @cmdln.option('--vm-memory', metavar='TYPE',
+                  help='use given MB for VM')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
     @cmdln.option('--vm-telnet', metavar='TELNET',
@@ -5911,7 +6038,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
         # check for source services
         r = None
@@ -5922,6 +6049,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         except:
             print("WARNING: package is not existing on server yet")
             opts.local_package = True
+
+        if not opts.local_package:
+            try:
+                package = store_read_package(os.curdir)
+                prj = Project(os.pardir, getPackageList=False, wc_check=False)
+                if prj.status(package) == 'A':
+                    # a package with state 'A' most likely does not exist on
+                    # the server - hence, treat it as a local package
+                    opts.local_package = True
+            except oscerr.NoWorkingCopy:
+                pass
 
         if opts.offline or opts.local_package or r == None:
             print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
@@ -6105,6 +6243,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Path to the buildroot')
     @cmdln.option('-o', '--offline', action='store_true',
                   help='Use cached data without contacting the api server')
+    @cmdln.option('--wipe', action='store_true',
+                  help='Delete the build root instead of chrooting into it')
+    @cmdln.option('-f', '--force', action='store_true',
+                  help='Do not ask confirmation for wipe')
     def do_chroot(self, subcmd, opts, *args):
         """${cmd_name}: opens a shell inside of the build root
 
@@ -6133,7 +6275,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
             project = opts.alternative_project or store_read_project('.')
             if opts.local_package:
-                package = os.path.splitext(descr)[0]
+                package = os.path.splitext(os.path.basename(descr))[0]
             else:
                 package = store_read_package('.')
             apihost = urlsplit(self.get_api_url())[1]
@@ -6144,6 +6286,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
 
         suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper'])
+
+        # Wipe build root if --wipe was given
+        if opts.wipe:
+            sucmd = suwrapper.split()
+            cmd = [ conf.config['build-cmd'], '--root='+buildroot, '--wipe' ]
+            if sucmd[0] == 'su':
+                if sucmd[-1] == '-c':
+                    sucmd.pop()
+                cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
+            else:
+                cmd = sucmd + cmd
+
+            if opts.force:
+                sys.exit(run_external(cmd[0], *cmd[1:]))
+            else:
+                # Confirm delete
+                print("Really wipe '%s'? [y/N]: " % buildroot)
+                choice = raw_input().lower()
+                if choice == 'y':
+                    sys.exit(run_external(cmd[0], *cmd[1:]))
+                else:
+                    print('Aborting')
+                    sys.exit(0)
+
+        # Normal chroot
         sucmd = suwrapper.split()[0]
         suargs = ' '.join(suwrapper.split()[1:])
         if suwrapper.startswith('su '):
@@ -6160,6 +6327,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
+    @cmdln.option('-M', '--multibuild-package', metavar= 'MPAC',
+                        help='Show the buildhistory of the specified multibuild package')
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build history of a package
@@ -6194,6 +6363,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
+
         format = 'text'
         if opts.csv:
             format = 'csv'
@@ -6204,6 +6376,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                        help='get jobhistory for the specified multibuild package')
     @cmdln.alias('jobhist')
     def do_jobhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the job history of a project
@@ -6245,6 +6419,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[1]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
+
+        if opts.multibuild_package and package is not None:
+            package = package + ":" + opts.multibuild_package
 
         format = 'text'
         if opts.csv:
@@ -6333,6 +6510,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc service COMMAND (inside working copy)
             osc service run [SOURCE_SERVICE]
+            osc service runall
             osc service localrun
             osc service disabledrun
             osc service remoterun [PROJECT PACKAGE]
@@ -6343,7 +6521,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             run         r  run defined services locally, it takes an optional parameter to run only a
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
-            runall      ra run all services independend of the used mode
+            runall      ra run all services independent of the used mode
+            localrun    lr run all services except the ones with mode "buildtime", "disabled", or
+                           "serveronly" (deprecated)
+            disabledrun dr run all services with mode "disabled" or "serveronly" (deprecated)
             remoterun   rr trigger a re-run on the server side
             merge          commits all server side generated files and drops the _service definition
             wait           waits until the service finishes and returns with an error if it failed
@@ -6408,6 +6589,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='trigger rebuilds for a specific repository')
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                  help='rebuild specified multibuild package')
     @cmdln.option('--all', action='store_true',
                         help='Rebuild all packages of entire project')
     @cmdln.alias('rebuildpac')
@@ -6464,7 +6647,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch or code):
             raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
 
-        print(rebuild(apiurl, project, package, repo, arch, code))
+        packages = []
+        if opts.multibuild_package:
+            for subpackage in opts.multibuild_package:
+                packages.append(package + ":" + subpackage)
+        else:
+            packages.append(package)
+
+        for package in packages:
+            print(rebuild(apiurl, project, package, repo, arch, code))
 
 
     def do_info(self, subcmd, opts, *args):
@@ -6486,6 +6677,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Restart builds for a specific architecture')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                        help='Restart builds for specified multibuild package')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Restart builds for a specific repository')
     @cmdln.option('--all', action='store_true',
@@ -6532,11 +6725,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to restart all packages of the entire project, use --all option.')
 
-        print(cmdbuild(apiurl, subcmd, project, package, opts.arch, opts.repo))
+        packages = []
+        if opts.multibuild_package:
+            for subpackage in opts.multibuild_package:
+                packages.append(package + ":" + subpackage)
+        else:
+            packages.append(package)
+
+        for package in packages:
+            print(cmdbuild(apiurl, subcmd, project, package, arch, repo))
 
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Delete all binary packages for a specific architecture')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                        help='Delete all binary packages for specified multibuild package')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Delete all binary packages for a specific repository')
     @cmdln.option('--build-disabled', action='store_true',
@@ -6549,6 +6752,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Delete all binaries of packages which have dependency errors')
     @cmdln.option('--all', action='store_true',
                         help='Delete all binaries regardless of the package status (previously default)')
+    @cmdln.alias("unpublish")
     def do_wipebinaries(self, subcmd, opts, *args):
         """${cmd_name}: Delete all binary packages of a certain project/package
 
@@ -6558,6 +6762,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc wipebinaries OPTS                       # works in checked out project dir
             osc wipebinaries OPTS PROJECT [PACKAGE]
+            osc unpublish OPTS                       # works in checked out project dir
+            osc unpublish OPTS PROJECT [PACKAGE]
         ${cmd_option_list}
         """
 
@@ -6600,15 +6806,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(codes) == 0:
             raise oscerr.WrongOptions('No option has been provided. If you want to delete all binaries, use --all option.')
 
-        # make a new request for each code= parameter
-        for code in codes:
-            print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
+        packages = []
+        if opts.multibuild_package:
+            for subpackage in opts.multibuild_package:
+                packages.append(package + ":" + subpackage)
+        else:
+            packages.append(package)
+
+        # make a new request for each code= parameter and for each package in packages
+        for package in packages:
+            for code in codes:
+                if subcmd == 'unpublish':
+                    print(unpublish(apiurl, project, package, opts.arch, opts.repo, code))
+                else:
+                    print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
 
 
     @cmdln.option('-q', '--quiet', action='store_true',
                   help='do not show downloading progress')
     @cmdln.option('-d', '--destdir', default='./binaries', metavar='DIR',
                   help='destination directory')
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                  help='get binaries from specified multibuild package')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
     @cmdln.option('--debug', action="store_true",
@@ -6623,6 +6842,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc getbinaries REPOSITORY                                 # works in checked out project/package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out project/package
+           osc getbinaries PROJECT REPOSITORY ARCHITECTRUE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE FILE
         ${cmd_option_list}
@@ -6646,6 +6866,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             architecture = args[3]
             if len(args) == 5:
                 binary = args[4]
+        elif len(args) == 3:
+            project, repository, architecture = args
         elif len(args) >= 1 and len(args) <= 2:
             if is_package_dir(os.getcwd()):
                 project = store_read_project(os.curdir)
@@ -6659,7 +6881,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) == 2:
                 architecture = args[1]
         else:
-            raise oscerr.WrongArgs('Need either 1, 2 or 4 arguments')
+            raise oscerr.WrongArgs('Need either 1, 2, 3 or 4 arguments')
 
         repos = list(get_repos_of_project(apiurl, project))
         if not [i for i in repos if repository == i.name]:
@@ -6669,10 +6891,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if architecture is None:
             arches = [i.arch for i in repos if repository == i.name]
 
+
         if package is None:
             package = meta_get_packagelist(apiurl, project)
         else:
-            package = [package]
+            if opts.multibuild_package:
+                packages = []
+                for subpackage in opts.multibuild_package:
+                    packages.append(package + ":" + subpackage)
+                package = packages
+            else:
+                package = [package]
 
         # Set binary target directory and create if not existing
         target_dir = os.path.normpath(opts.destdir)
@@ -7719,20 +7948,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='print out the specified revision')
     @cmdln.option('-e', '--expand', action='store_true',
-                  help='force expansion of linked packages.')
+                  help='(default) force expansion of linked packages.')
     @cmdln.option('-u', '--unexpand', action='store_true',
                   help='always work with unexpanded packages.')
     @cmdln.option('-M', '--meta', action='store_true',
                         help='list meta data files')
+    @cmdln.alias('blame')
     @cmdln.alias('less')
     def do_cat(self, subcmd, opts, *args):
         """${cmd_name}: Output the content of a file to standard output
 
         Examples:
+            osc cat file
             osc cat project package file
             osc cat project/package/file
             osc cat http://api.opensuse.org/build/.../_log
             osc cat http://api.opensuse.org/source/../_link
+
+            osc less file
+            osc less project package file
+
+            osc blame file
+            osc blame project package file
 
         ${cmd_usage}
         ${cmd_option_list}
@@ -7746,43 +7983,39 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.file = None
             return self.do_api('list', opts, *args)
 
-
-
         args = slash_split(args)
-        if len(args) != 3:
+        project = package = filename = None
+        if len(args) == 3:
+            project = args[0]
+            package = args[1]
+            filename = args[2]
+        elif len(args) == 1 and is_package_dir(os.getcwd()):
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+            filename = args[0]
+        else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
+
         rev, dummy = parseRevisionOption(opts.revision)
         apiurl = self.get_api_url()
 
         query = { }
+        if subcmd == 'blame':
+            query['view'] = "blame"
         if opts.meta:
             query['meta'] = 1
         if opts.revision:
             query['rev'] = opts.revision
-        if opts.expand:
-            query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision, meta=opts.meta)
-        u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
-        try:
-            if subcmd == 'less':
-                f = http_GET(u)
-                run_pager(''.join(f.readlines()))
-            else:
-                for data in streamfile(u):
-                    sys.stdout.write(data)
-        except HTTPError as e:
-            if e.code == 404 and not opts.expand and not opts.unexpand:
-                print('expanding link...', file=sys.stderr)
-                query['rev'] = show_upstream_srcmd5(apiurl, args[0], args[1], expand=True, revision=opts.revision)
-                u = makeurl(apiurl, ['source', args[0], args[1], args[2]], query=query)
-                if subcmd == "less":
-                    f = http_GET(u)
-                    run_pager(''.join(f.readlines()))
-                else:
-                    for data in streamfile(u):
-                        sys.stdout.write(data)
-            else:
-                e.osc_msg = 'If linked, try: cat -e'
-                raise e
+        if not opts.unexpand:
+            query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision, meta=opts.meta)
+            query['expand'] = 1 # important for blame case to follow links in old revisions
+        u = makeurl(apiurl, ['source', project, package, filename], query=query)
+        if subcmd == 'less':
+            f = http_GET(u)
+            run_pager(''.join(f.readlines()))
+        else:
+            for data in streamfile(u):
+                sys.stdout.write(data)
 
 
     # helper function to download a file from a specific revision
@@ -8263,25 +8496,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
             return 1
 
-        # set user's email if no mailaddr exists
-        if 'mailaddr' not in os.environ:
+        if args and is_package_dir(args[0]):
+            apiurl = store_read_apiurl(args[0])
+        else:
+            apiurl = self.get_api_url()
 
-            if len(args) and is_package_dir(args[0]):
-                apiurl = store_read_apiurl(args[0])
-            else:
-                apiurl = self.get_api_url()
-
+        # set user's email if the mailaddr env variable is not set
+        if 'mailaddr' in os.environ:
+            pass
+        elif 'email' in conf.config['api_host_options'][apiurl]:
+            os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
+        else:
             user = conf.get_apiurl_usr(apiurl)
-
             data = get_user_data(apiurl, user, 'email')
             if data:
                 os.environ['mailaddr'] = data[0]
             else:
                 print('Try env mailaddr=...', file=sys.stderr)
-
-            # mailaddr can be overrided by config one
-            if 'email' in conf.config['api_host_options'][apiurl]:
-                os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
 
         if meego_style:
             if opts.message or opts.just_edit:
@@ -8529,6 +8760,73 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not opts.dry_run:
                     os.unlink(os.path.join(p.absdir, filename))
 
+    @cmdln.option('-c', '--comment',
+            help='comment text', metavar='COMMENT')
+    @cmdln.option('-p', '--parent',
+            help='reply to comment with parent id', metavar='PARENT')
+    def do_comment(self, subcmd, opts, *args):
+        """${cmd_name}: List / create / delete comments
+
+        On create:
+            If -p is given a reply to the ID is created. Otherwise
+            a toplevel comment is created.
+            If -c is not given the default editor will be opened and
+            you can type your comment
+
+        usage:
+            osc comment list package PROJECT PACKAGE
+            osc comment list project PROJECT
+            osc comment list request REQUEST_ID
+
+            osc comment create [-p PARENT_ID] [-c COMMENT] package PROJECT PACKAGE
+            osc comment create [-p PARENT_ID] [-c COMMENT] project PROJECT
+            osc comment create [-p PARENT_ID] [-c COMMENT] request REQUEST_ID
+
+            osc comment delete ID
+
+        """
+
+        comment = None
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+
+        if len(args) < 2:
+            raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
+                  + self.get_cmd_help('comment'))
+
+        cmds = ['list', 'create', 'delete']
+        if args[0] not in cmds:
+            raise oscerr.WrongArgs('Unknown comment action %s. Choose one of %s.' \
+                                                % (args[0], ', '.join(cmds)))
+
+        comment_targets = ['package', 'project', 'request']
+        if args[0] != 'delete' and args[1] not in comment_targets:
+            raise oscerr.WrongArgs('Unknown comment target %s. Choose one of %s.' \
+                                                % (args[1], ', '.join(comment_targets)))
+
+        if args[1] == 'package' and len(args) != 4:
+            raise oscerr.WrongArgs('Please use PROJECT PACKAGE')
+        elif args[1] == 'project' and len(args) != 3:
+            raise oscerr.WrongArgs('Please use PROJECT')
+        elif args[1] == 'request' and len(args) != 3:
+            raise oscerr.WrongArgs('Please use REQUEST')
+        elif args[0] == 'delete' and len(args) != 2:
+            raise oscerr.WrongArgs('Please use COMMENT_ID')
+        if not opts.comment and args[0] == 'create':
+            comment = edit_text()
+        else:
+            comment = opts.comment
+
+        if args[0] == 'list':
+            print_comments(apiurl, args[1], *args[2:])
+        elif args[0] == 'create':
+            result = create_comment(apiurl, args[1], comment,
+                                    *args[2:], parent=opts.parent)
+            print(result)
+        elif args[0] == 'delete':
+            result = delete_comment(apiurl, args[1])
+            print(result)
+
     def _load_plugins(self):
         plugin_dirs = [
             '/usr/lib/osc-plugins',
@@ -8538,6 +8836,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for plugin_dir in plugin_dirs:
             if not os.path.isdir(plugin_dir):
                 continue
+            sys.path.append(plugin_dir)
             for extfile in os.listdir(plugin_dir):
                 if not extfile.endswith('.py'):
                     continue

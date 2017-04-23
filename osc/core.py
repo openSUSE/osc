@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 
-__version__ = '0.155git'
+__version__ = '0.157.2git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -258,6 +258,7 @@ class Serviceinfo:
     def __init__(self):
         """creates an empty serviceinfo instance"""
         self.services = []
+        self.apiurl   = None
         self.project  = None
         self.package  = None
 
@@ -297,6 +298,7 @@ class Serviceinfo:
             self.services.append(data)
 
     def getProjectGlobalServices(self, apiurl, project, package):
+        self.apiurl = apiurl
         # get all project wide services in one file, we don't store it yet
         u = makeurl(apiurl, ['source', project, package], query='cmd=getprojectservices')
         try:
@@ -306,7 +308,10 @@ class Serviceinfo:
             self.project = project
             self.package = package
         except HTTPError as e:
-            if e.code != 403 and e.code != 400:
+            if e.code == 404 and package != '_project':
+                self.getProjectGlobalServices(apiurl, project, '_project')
+                self.package = package
+            elif e.code != 403 and e.code != 400:
                 raise e
 
     def addVerifyFile(self, serviceinfo_node, filename):
@@ -392,6 +397,8 @@ class Serviceinfo:
 
         # set environment when using OBS 2.3 or later
         if self.project != None:
+            # These need to be kept in sync with bs_service
+            os.putenv("OBS_SERVICE_APIURL",  self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
             os.putenv("OBS_SERVICE_PACKAGE", self.package)
 
@@ -679,18 +686,31 @@ class Project:
             store_write_apiurl(self.dir, apiurl)
             self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
 
-    def checkout_missing_pacs(self, expand_link=False):
+    def checkout_missing_pacs(self, sinfos, expand_link=False, unexpand_link=False):
         for pac in self.pacs_missing:
-
             if conf.config['do_package_tracking'] and pac in self.pacs_unvers:
                 # pac is not under version control but a local file/dir exists
                 msg = 'can\'t add package \'%s\': Object already exists' % pac
                 raise oscerr.PackageExists(self.name, pac, msg)
-            else:
-                print('checking out new package %s' % pac)
-                checkout_package(self.apiurl, self.name, pac, \
-                                 pathname=getTransActPath(os.path.join(self.dir, pac)), \
-                                 prj_obj=self, prj_dir=self.dir, expand_link=expand_link, progress_obj=self.progress_obj)
+
+            if not (expand_link or unexpand_link):
+                sinfo = sinfos.get(pac)
+                if sinfo is None:
+                    # should never happen...
+                    continue
+                linked = sinfo.find('linked')
+                if linked is not None and linked.get('project') == self.name:
+                    # hmm what about a linkerror (sinfo.get('lsrcmd5') is None)?
+                    # Should we skip the package as well or should we it out?
+                    # let's skip it for now
+                    print('Skipping %s (link to package %s)' % (pac, linked.get('package')))
+                    continue
+
+            print('checking out new package %s' % pac)
+            checkout_package(self.apiurl, self.name, pac, \
+                             pathname=getTransActPath(os.path.join(self.dir, pac)), \
+                             prj_obj=self, prj_dir=self.dir,
+                             expand_link=expand_link or not unexpand_link, progress_obj=self.progress_obj)
 
     def status(self, pac):
         exists = os.path.exists(os.path.join(self.absdir, pac))
@@ -853,6 +873,7 @@ class Project:
                 # packages which no longer exists upstream
                 upstream_del = [ pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
                 sinfo_pacs = [pac for pac in self.pacs_have if self.get_state(pac) in (' ', 'D') and not pac in self.pacs_broken]
+                sinfo_pacs.extend(self.pacs_missing)
                 sinfos = get_project_sourceinfo(self.apiurl, self.name, True, *sinfo_pacs)
 
                 for pac in upstream_del:
@@ -926,7 +947,7 @@ class Project:
                     else:
                         print('unexpected state.. package \'%s\'' % pac)
 
-                self.checkout_missing_pacs(expand_link=not unexpand_link)
+                self.checkout_missing_pacs(sinfos, expand_link, unexpand_link)
             finally:
                 self.write_packages()
 
@@ -2267,7 +2288,7 @@ rev: %s
             # if the storefile doesn't exist we're resuming an aborted update:
             # the file was already deleted but we cannot know this
             # OR we're processing a _service: file (simply keep the file)
-            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) != 'M':
+            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) not in ('M', 'C'):
 #            if self.status(f.name) != 'M':
                 self.delete_localfile(f.name)
             self.delete_storefile(f.name)
@@ -2275,6 +2296,9 @@ rev: %s
             if f.name in self.to_be_deleted:
                 self.to_be_deleted.remove(f.name)
                 self.write_deletelist()
+            elif f.name in self.in_conflict:
+                self.in_conflict.remove(f.name)
+                self.write_conflictlist()
 
         for f in kept:
             state = self.status(f.name)
@@ -2660,6 +2684,7 @@ class Request:
     def _init_attributes(self):
         """initialize attributes with default values"""
         self.reqid = None
+        self.creator = None
         self.title = ''
         self.description = ''
         self.priority = None
@@ -2675,6 +2700,9 @@ class Request:
         if not root.get('id'):
             raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.reqid = root.get('id')
+        if root.get('creator'):
+            # OBS 2.8 and later is delivering creator informations
+            self.creator = root.get('creator')
         if root.find('state') is None:
             raise oscerr.APIError('invalid request (state expected): %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.state = RequestState(root.find('state'))
@@ -2713,16 +2741,19 @@ class Request:
         return [i for i in self.actions if i.type in types]
 
     def get_creator(self):
-        """return the creator of the request"""
-        if len(self.statehistory):
-            return self.statehistory[0].who
-        return self.state.who
+        """Return the creator of the request.
+
+        This method is deprecated (use "creator" attribute instead").
+        """
+        return self.creator
 
     def to_xml(self):
         """serialize object to XML"""
         root = ET.Element('request')
-        if not self.reqid is None:
+        if self.reqid is not None:
             root.set('id', self.reqid)
+        if self.creator is not None:
+            root.set('creator', self.creator)
         for action in self.actions:
             root.append(action.to_xml())
         if not self.state is None:
@@ -3372,9 +3403,11 @@ def meta_get_project_list(apiurl, deleted=None):
     return sorted([ node.get('name') for node in root if node.get('name')])
 
 
-def show_project_meta(apiurl, prj, rev=None):
+def show_project_meta(apiurl, prj, rev=None, blame=None):
+    query = {}
+    if blame:
+        query['view'] = "blame"
     if rev:
-        query = {}
         query['rev'] = rev
         url = makeurl(apiurl, ['source', prj, '_project', '_meta'], query)
         try:
@@ -3389,16 +3422,23 @@ def show_project_meta(apiurl, prj, rev=None):
             e.osc_msg = 'BuildService API error: %s' % error_help
             raise
     else:
-        url = makeurl(apiurl, ['source', prj, '_meta'])
+        if blame:
+            url = makeurl(apiurl, ['source', prj, '_project', '_meta'], query)
+        else:
+            url = makeurl(apiurl, ['source', prj, '_meta'])
         f = http_GET(url)
     return f.readlines()
 
-def show_project_conf(apiurl, prj, rev=None):
+def show_project_conf(apiurl, prj, rev=None, blame=None):
     query = {}
+    url = None
     if rev:
         query['rev'] = rev
-
-    url = makeurl(apiurl, ['source', prj, '_config'], query)
+    if blame:
+        query['view'] = "blame"
+        url = makeurl(apiurl, ['source', prj, '_project', '_config'], query=query)
+    else:
+        url = makeurl(apiurl, ['source', prj, '_config'], query=query)
     f = http_GET(url)
     return f.readlines()
 
@@ -3413,9 +3453,12 @@ def show_package_trigger_reason(apiurl, prj, pac, repo, arch):
         raise
 
 
-def show_package_meta(apiurl, prj, pac, meta=False):
+def show_package_meta(apiurl, prj, pac, meta=False, blame=None):
     query = {}
     if meta:
+        query['meta'] = 1
+    if blame:
+        query['view'] = "blame"
         query['meta'] = 1
 
     # The fake packages _project has no _meta file
@@ -3900,8 +3943,9 @@ def run_pager(message, tmp_suffix=''):
         tmpfile.write(message)
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
+        cmd = shlex.split(pager) + [tmpfile.name]
         try:
-            run_external(pager, tmpfile.name)
+            run_external(*cmd)
         finally:
             tmpfile.close()
 
@@ -4145,7 +4189,7 @@ def change_request_state_template(req, newstate):
     tmpl_name = '%srequest_%s_template' % (action.type, newstate)
     tmpl = conf.config.get(tmpl_name, '')
     tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')
-    data = {'reqid': req.reqid, 'type': action.type, 'who': req.get_creator()}
+    data = {'reqid': req.reqid, 'type': action.type, 'who': req.creator}
     if req.actions[0].type == 'submit':
         data.update({'src_project': action.src_project,
             'src_package': action.src_package, 'src_rev': action.src_rev,
@@ -4493,6 +4537,8 @@ def get_binary_file(apiurl, prj, repo, arch,
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
     download(u, target_filename, progress_obj, target_mtime)
+    if target_filename.endswith('.AppImage'):
+        os.chmod(target_filename, 0o755)
 
 def dgst_from_string(str):
     # Python 2.5 depracates the md5 modules
@@ -4781,16 +4827,19 @@ def checkout_package(apiurl, project, package,
                 # if project roots were previously inconsistent
                 root_dots = "../../"
             if is_project_dir(root_dots):
+                oldproj = store_read_project(root_dots)
                 if conf.config['checkout_no_colon']:
-                    oldproj = store_read_project(root_dots)
                     n = len(oldproj.split(':'))
                 else:
                     n = 1
+                if root_dots == '.':
+                    root_dots = ''
                 root_dots = root_dots + "../" * n
 
     if root_dots != '.':
         if conf.config['verbose']:
-            print("found root of %s at %s" % (oldproj, root_dots))
+            print("%s is project dir of %s. Root found at %s" %
+                  (prj_dir, oldproj, os.path.abspath(root_dots)))
         prj_dir = root_dots + prj_dir
 
     if not pathname:
@@ -4798,7 +4847,7 @@ def checkout_package(apiurl, project, package,
 
     # before we create directories and stuff, check if the package actually
     # exists
-    show_package_meta(apiurl, project, package, meta)
+    show_package_meta(apiurl, quote_plus(project), quote_plus(package), meta)
 
     isfrozen = False
     if expand_link:
@@ -4839,6 +4888,9 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     root = ET.fromstring(''.join(pkgmeta))
     root.set('name', new_name)
     root.set('project', new_prj)
+    # never take releasename, it needs to be explicit
+    for releasename in root.findall('releasename'):
+        root.remove(releasename)
     if not keep_maintainers:
         for person in root.findall('person'):
             root.remove(person)
@@ -5058,9 +5110,11 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     try:
         f = http_POST(u)
     except HTTPError as e:
-        msg = ''.join(e.readlines())
-        msg = msg.split('<summary>')[1]
-        msg = msg.split('</summary>')[0]
+        root = ET.fromstring(e.read())
+        summary = root.find('summary')
+        if summary is not None and summary.text is not None:
+            raise oscerr.APIError(summary.text)
+        msg = 'unexpected response: %s' % ET.tostring(root, encoding=ET_ENCODING)
         raise oscerr.APIError(msg)
 
     r = None
@@ -5416,7 +5470,7 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False):
     query = {}
     if package:
         query['package'] = package
@@ -5424,6 +5478,10 @@ def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], 
         query['oldstate'] = oldstate
     if lastbuild:
         query['lastbuild'] = 1
+    if multibuild:
+        query['multibuild'] = 1
+    if locallink:
+        query['locallink'] = 1
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     for repo in repository:
         u = u + '&repository=%s' % repo
@@ -5443,32 +5501,38 @@ def result_xml_to_dicts(xml):
     # assumption: xml contains at most one status element (maybe we should
     # generalize this to arbitrary status element)
     root = ET.fromstring(xml)
-    r = []
     for node in root.findall('result'):
         rmap = {}
         rmap['project'] = rmap['prj'] = node.get('project')
         rmap['repository'] = rmap['repo'] = rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
-        rmap['dirty'] = node.get('dirty')
+        rmap['dirty'] = node.get('dirty') == 'true'
         rmap['repostate'] = node.get('code')
         rmap['pkg'] = rmap['package'] = rmap['pac'] = ''
         rmap['code'] = node.get('code')
         rmap['details'] = ''
-        details = None
-        statusnode = node.find('status')
-        if statusnode is not None:
-            # the way currently use this function, there should be
-            # always a status element
-            rmap['pkg'] = rmap['package'] = rmap['pac'] = statusnode.get('package')
-            rmap['code'] = statusnode.get('code', '')
-            details = statusnode.find('details')
-        if details is not None:
-            rmap['details'] = details.text
-        rmap['dirty'] = rmap['dirty'] == 'true'
+        # the way we currently use this function, there should be
+        # always a status element
+        snodes = node.findall('status')
+        is_multi = len(snodes) > 1
+        if len(snodes) < 1:
+            # the repository setup is broken
+            smap = dict(rmap)
+            smap['pkg'] = "_repository"
+            smap['code'] = rmap['repostate']
+            smap['details'] = node.get('details')
+            yield smap, is_multi
+            continue
 
-        r.append(rmap)
-    return r
+        for statusnode in snodes:
+            smap = dict(rmap)
+            smap['pkg'] = smap['package'] = smap['pac'] = statusnode.get('package')
+            smap['code'] = statusnode.get('code', '')
+            details = statusnode.find('details')
+            if details is not None:
+                smap['details'] = details.text
+            yield smap, is_multi
 
 
 def format_results(results, format):
@@ -5482,13 +5546,23 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     # get_package_results_human would be better, but this would break the existing
     # api (unless we keep get_results around as well)...
     result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
+    result_line_mb_templ = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
     r = []
+    printed = False
+    multibuild_packages = kwargs.pop('multibuild_packages', [])
+    show_excluded = kwargs.pop('showexcl', False)
     for results in get_package_results(apiurl, project, package, **kwargs):
         r = []
-        for res in result_xml_to_dicts(results):
+        for res, is_multi in result_xml_to_dicts(results):
+            if not show_excluded and res['code'] == 'excluded':
+                continue
             if '_oldstate' in res:
                 oldstate = res['_oldstate']
                 continue
+            if multibuild_packages:
+                l = res['pkg'].rsplit(':', 1)
+                if len(l) != 2 or l[1] not in multibuild_packages:
+                    continue
             res['status'] = res['code']
             if verbose and res['details'] != '':
                 if res['code'] in ('unresolvable', 'expansion error'):
@@ -5496,6 +5570,9 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                     res['status'] += ': ' + '\n     '.join(lines)
                 else:
                     res['status'] += ': %s' % res['details']
+            elif res['code'] in ('scheduled', ) and res['details']:
+                # highlight scheduled jobs with possible dispatch problems
+                res['status'] += '*'
             if res['dirty']:
                 if verbose:
                     res['status'] = 'outdated (was: %s)' % res['status']
@@ -5507,10 +5584,17 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                 else:
                     res['status'] += '*'
 
-            r.append(result_line_templ % res)
+            if is_multi:
+                r.append(result_line_mb_templ % res)
+            else:
+                r.append(result_line_templ % res)
 
         if printJoin:
+            if printed:
+                # will print a newline if already a result was printed (improves readability)
+                print()
             print(printJoin.join(r))
+            printed = True
     return r
 
 
@@ -5527,6 +5611,11 @@ def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
             # check for simple timeout error and fetch again
             if e.code == 502 or e.code == 504:
                 # re-try result request
+                continue
+            root = ET.fromstring(e.read())
+            if e.code == 400 and kwargs.get('multibuild') and re.search('multibuild', getattr(root.find('summary'), 'text', '')):
+                kwargs['multibuild'] = None
+                kwargs['locallink'] = None
                 continue
             raise
         root = ET.fromstring(xml)
@@ -5858,7 +5947,26 @@ def get_buildconfig(apiurl, prj, repository):
     f = http_GET(u)
     return f.read()
 
- 
+
+def get_worker_info(apiurl, worker):
+    u = makeurl(apiurl, ['worker', worker])
+    f = http_GET(u)
+
+    return f.read()
+
+
+def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=None):
+    query = {'cmd': 'checkconstraints'}
+    query['project'] = prj
+    query['package'] = package
+    query['repository'] = repository
+    query['arch'] = arch
+    u = makeurl(apiurl, ['worker'], query)
+    f = http_POST(u, data=constraintsfile)
+    root = ET.fromstring(''.join(f))
+    return [node.get('name') for node in root.findall('entry')]
+
+
 def get_source_rev(apiurl, project, package, revision=None):
     # API supports ?deleted=1&meta=1&rev=4
     # but not rev=current,rev=latest,rev=top, or anything like this.
@@ -6200,6 +6308,9 @@ def abortbuild(apiurl, project, package=None, arch=None, repo=None):
 
 def restartbuild(apiurl, project, package=None, arch=None, repo=None):
     return cmdbuild(apiurl, 'restartbuild', project, package, arch, repo)
+
+def unpublish(apiurl, project, package=None, arch=None, repo=None, code=None):
+    return cmdbuild(apiurl, 'unpublish', project, package, arch, repo, code)
 
 def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
     return cmdbuild(apiurl, 'wipe', project, package, arch, repo, code)
@@ -6955,8 +7066,6 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
     def print_source_buildstatus(src_actions, newline=False):
         if newline:
             print()
-        if not src_actions:
-            print('unable to get source buildstatus: no source actions defined')
         for action in src_actions:
             print('%s/%s:' % (action.src_project, action.src_package))
             try:
@@ -6968,18 +7077,18 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
 
     print_request(request)
     try:
-        prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/(s)kip/(c)ancel > '
+        prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editable_actions = request.get_actions('submit', 'maintenance_incident')
         # actions which have sources + buildresults
         src_actions = editable_actions + request.get_actions('maintenance_release')
         if editable_actions:
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
         elif src_actions:
             # no edit for maintenance release requests
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
-        if source_buildstatus:
+        if source_buildstatus and src_actions:
             print_source_buildstatus(src_actions, newline=True)
         while True:
             if initial_cmd:
@@ -7015,6 +7124,9 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             elif repl == 'c':
                 print('Aborting', file=sys.stderr)
                 raise oscerr.UserAbort()
+            elif repl == 'm':
+                comment = edit_text()
+                create_comment(apiurl, 'request', comment, request.reqid)
             elif repl == 'b' and src_actions:
                 print_source_buildstatus(src_actions)
             elif repl == 'e' and editable_actions:
@@ -7252,6 +7364,32 @@ def run_external(filename, *args, **kwargs):
             raise
         raise oscerr.ExtRuntimeError(e.strerror, filename)
 
+def return_external(filename, *args, **kwargs):
+    """Executes the program filename via subprocess.check_output.
+
+    *args are additional arguments which are passed to the
+    program filename. **kwargs specify additional arguments for
+    the subprocess.check_output function.
+    if no args are specified the plain filename is passed
+    to subprocess.check_output (this can be used to execute a shell
+    command). Otherwise [filename] + list(args) is passed
+    to the subprocess.check_output function.
+
+    Returns the output of the command.
+
+    """
+    if args:
+        cmd = [filename] + list(args)
+    else:
+        cmd = filename
+
+    try:
+        return subprocess.check_output(cmd, **kwargs)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        raise oscerr.ExtRuntimeError(e.strerror, filename)
+
 # backward compatibility: local role filtering
 def filter_role(meta, user, role):
     """
@@ -7317,26 +7455,40 @@ def which(name):
     return None
 
 
-def get_comments(apiurl, kind, name):
-    url = makeurl(apiurl, ['comments', kind, name])
+def get_comments(apiurl, kind, *args):
+    url = makeurl(apiurl, ('comments', kind) + args)
     f = http_GET(url)
     return ET.parse(f).getroot()
 
 
-def print_comments(apiurl, kind, name):
+def print_comments(apiurl, kind, *args):
     def print_rec(comments, indent=''):
         for comment in comments:
             print(indent, end='')
-            print('On', comment.get('when'), comment.get('who'), 'wrote:')
+            print('(', comment.get('id'), ')', 'On', comment.get('when'), comment.get('who'), 'wrote:')
             text = indent + comment.text.replace('\r\n',' \n')
             print(('\n' + indent).join(text.split('\n')))
             print()
             print_rec([c for c in root if c.get('parent') == comment.get('id')], indent + '  ')
-
-    root = get_comments(apiurl, kind, name)
+    root = get_comments(apiurl, kind, *args)
     comments = [c for c in root if c.get('parent') is None]
     if comments:
         print('\nComments:')
         print_rec(comments)
+
+def create_comment(apiurl, kind, comment, *args, **kwargs):
+    query = {}
+    if kwargs.get('parent') is not None:
+        query = {'parent_id': kwargs['parent']}
+    u = makeurl(apiurl, ('comments', kind) + args, query=query)
+    f = http_POST(u, data=comment)
+    ret = ET.fromstring(f.read()).find('summary')
+    return ret.text
+
+def delete_comment(apiurl, cid):
+    u = makeurl(apiurl, ['comment', cid])
+    f = http_DELETE(u)
+    ret = ET.fromstring(f.read()).find('summary')
+    return ret.text
 
 # vim: sw=4 et
