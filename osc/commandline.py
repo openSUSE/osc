@@ -6800,8 +6800,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             codes.append('broken')
         if opts.unresolvable:
             codes.append('unresolvable')
-        if opts.all or opts.repo or opts.arch:
-            codes.append(None)
+        if len(codes) == 0:
+            # don't do a second wipe if a filter got specified
+            if opts.all or opts.repo or opts.arch:
+                codes.append(None)
 
         if len(codes) == 0:
             raise oscerr.WrongOptions('No option has been provided. If you want to delete all binaries, use --all option.')
