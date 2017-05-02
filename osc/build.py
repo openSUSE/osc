@@ -604,6 +604,9 @@ def main(apiurl, opts, argv):
             pac = '_repository'
         else:
             pac = store_read_package(os.curdir)
+    if opts.multibuild_package:
+        buildargs.append('--buildflavor=%s' % opts.multibuild_package)
+        pac = pac + ":" + opts.multibuild_package
     if opts.shell:
         buildargs.append("--shell")
 
