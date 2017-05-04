@@ -2684,7 +2684,7 @@ class Request:
     def _init_attributes(self):
         """initialize attributes with default values"""
         self.reqid = None
-        self.creator = None
+        self.creator = ''
         self.title = ''
         self.description = ''
         self.priority = None
