@@ -2752,7 +2752,7 @@ class Request:
         root = ET.Element('request')
         if self.reqid is not None:
             root.set('id', self.reqid)
-        if self.creator is not None:
+        if self.creator:
             root.set('creator', self.creator)
         for action in self.actions:
             root.append(action.to_xml())
