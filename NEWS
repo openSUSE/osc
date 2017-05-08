@@ -2,6 +2,13 @@
   - cat/less/blame command: default to expand to stay in sync with checkout
   - add support for highly experimental native appimage.yml support
   - show package status when repository configuration is broken
+  - add '--blame' option to osc meta command
+  - try to autodetect local package when running 'osc build'
+  - comment requests in interactive mode
+  - fix github issue #236 (--no-cleanup not working)
+  - fix wipebinaries to prevent wiping of complete repository
+  - add '--build-opt' to osc build command
+  - fix requests codebase to fit old obs versions
 
 0.157.2
   - add compat code for older apis that do not support multibuild
