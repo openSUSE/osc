@@ -3753,6 +3753,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--oldpkg', metavar='OLDPKG',
                   help='package to compare against'
                   ' (deprecated, use 3 argument form)')
+    @cmdln.option('--issues-only', action='store_true',
+                        help='show only issues in diff')
     @cmdln.option('-M', '--meta', action='store_true',
                         help='diff meta data')
     @cmdln.option('-r', '--revision', metavar='N[:M]',
@@ -3842,9 +3844,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             old_project, old_package, rev1,
                             new_project, new_package, rev2, not opts.plain, opts.missingok,
                             meta=opts.meta,
-                            expand=not opts.unexpand)
-
-        run_pager(rdiff)
+                            expand=not opts.unexpand,
+                            onlyissues=opts.issues_only)
+        if opts.issues_only:
+            print(rdiff)
+        else:
+            run_pager(rdiff)
 
     def _pdiff_raise_non_existing_package(self, project, package, msg = None):
         raise oscerr.PackageMissing(project, package, msg or '%s/%s does not exist.' % (project, package))
