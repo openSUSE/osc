@@ -129,7 +129,12 @@ class Fetcher:
                                               '(see .errors file)')
                     if package == '_repository':
                         n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename)
-                        pac = pkgs[n.rsplit('.', 1)[0]]
+                        if n.startswith('container:'):
+                            n = re.sub(r'\.tar\..z$', '.tar', hdr.filename)
+                            pac = pkgs[n.rsplit('.', 1)[0]]
+                            pac.canonname = hdr.filename
+                        else:
+                            pac = pkgs[n.rsplit('.', 1)[0]]
                     else:
                         # this is a kiwi product
                         pac = pkgs[hdr.filename]
@@ -206,14 +211,18 @@ class Fetcher:
 
     def move_package(self, tmpfile, destdir, pac_obj=None):
         import shutil
-        pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
-        if pkgq:
-            canonname = pkgq.canonname()
-        else:
-            if pac_obj is None:
-                print('Unsupported file type: ', tmpfile, file=sys.stderr)
-                sys.exit(1)
-            canonname = pac_obj.binary
+        canonname = None
+        if pac_obj and pac_obj.name.startswith('container:'):
+            canonname = pac_obj.canonname
+        if canonname is None:
+            pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
+            if pkgq:
+                canonname = pkgq.canonname()
+            else:
+                if pac_obj is None:
+                    print('Unsupported file type: ', tmpfile, file=sys.stderr)
+                    sys.exit(1)
+                canonname = pac_obj.binary
 
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:

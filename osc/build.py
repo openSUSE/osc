@@ -200,7 +200,8 @@ class Pac:
         for i in ['binary', 'package',
                   'epoch', 'version', 'release', 'hdrmd5',
                   'project', 'repository',
-                  'preinstall', 'vminstall', 'noinstall', 'installonly', 'runscripts',
+                  'preinstall', 'vminstall', 'runscripts',
+                  'noinstall', 'installonly', 'notmeta',
                  ]:
             self.mp[i] = node.get(i)
 
@@ -959,11 +960,15 @@ def main(apiurl, opts, argv):
     if build_type == 'kiwi' or build_type == 'docker':
         if os.path.exists('repos'):
             shutil.rmtree('repos')
+        if os.path.exists('containers'):
+            shutil.rmtree('containers')
         os.mkdir('repos')
         for i in bi.deps:
             if not i.extproject:
                 # remove
                 bi.deps.remove(i)
+                continue
+            if i.notmeta:
                 continue
             # project
             pdir = str(i.extproject).replace(':/', ':')
@@ -971,13 +976,23 @@ def main(apiurl, opts, argv):
             rdir = str(i.extrepository).replace(':/', ':')
             # arch
             adir = i.repoarch
-            # project/repo
-            prdir = "repos/"+pdir+"/"+rdir
-            # project/repo/arch
-            pradir = prdir+"/"+adir
             # source fullfilename
             sffn = i.fullfilename
             filename = sffn.split("/")[-1]
+            # project/repo
+            if i.name.startswith("container:"):
+                prdir = "containers/"+pdir+"/"+rdir
+                pradir = prdir
+                filename = filename[10:]
+                if build_type == 'kiwi':
+                    buildargs.append('--kiwi-parameter')
+                    buildargs.append('--set-container-derived-from')
+                    buildargs.append('--kiwi-parameter')
+                    buildargs.append("obs:/"+pdir+"/"+rdir+"/"+filename)
+            else:
+                prdir = "repos/"+pdir+"/"+rdir
+                # project/repo/arch
+                pradir = prdir+"/"+adir
             # target fullfilename
             tffn = pradir+"/"+filename
             if not os.path.exists(os.path.join(pradir)):
