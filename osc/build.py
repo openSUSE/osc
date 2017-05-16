@@ -341,6 +341,11 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'docker':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DOCKER'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     elif buildtype == 'dsc' or buildtype == 'collax':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
@@ -510,9 +515,11 @@ def main(apiurl, opts, argv):
         build_type = 'appimage'
     if os.path.basename(build_descr) == 'snapcraft.yaml':
         build_type = 'snapcraft'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage']:
+    if os.path.basename(build_descr) == 'Dockerfile':
+        build_type = 'docker'
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage', 'docker']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml or snapcraft.yaml' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml, snapcraft.yaml or Dockerfile' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
@@ -948,8 +955,8 @@ def main(apiurl, opts, argv):
         if old_pkg_dir != None:
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
-    # Make packages from buildinfo available as repos for kiwi
-    if build_type == 'kiwi':
+    # Make packages from buildinfo available as repos for kiwi/docker
+    if build_type == 'kiwi' or build_type == 'docker':
         if os.path.exists('repos'):
             shutil.rmtree('repos')
         os.mkdir('repos')
@@ -990,6 +997,8 @@ def main(apiurl, opts, argv):
                             os.link(path + "/" + filename, tffn)
                         else:
                             os.symlink(path + "/" + filename, tffn)
+
+    if build_type == 'kiwi':
         # Is a obsrepositories tag used?
         try:
             tree = ET.parse(build_descr)
@@ -1075,7 +1084,7 @@ def main(apiurl, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type == 'kiwi':
+    if build_type == 'kiwi' or build_type == 'docker':
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
     else:
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
@@ -1091,9 +1100,9 @@ def main(apiurl, opts, argv):
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
-    if build_type != 'kiwi' and bi.noinstall_list:
+    if build_type != 'kiwi' and build_type != 'docker' and bi.noinstall_list:
         rpmlist.append('noinstall: ' + ' '.join(bi.noinstall_list) + '\n')
-    if build_type != 'kiwi' and bi.installonly_list:
+    if build_type != 'kiwi' and build_type != 'docker' and bi.installonly_list:
         rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
