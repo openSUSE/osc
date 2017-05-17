@@ -17,7 +17,7 @@ except ImportError:
 
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
-from .core import makeurl, streamfile
+from .core import makeurl, streamfile, dgst
 from .util import packagequery, cpio
 from . import conf
 from . import oscerr
@@ -250,7 +250,10 @@ class Fetcher:
                 cached += 1
                 if i.hdrmd5:
                     from .util import packagequery
-                    hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
+                    if i.name.startswith('container:'):
+                        hdrmd5 = dgst(i.fullfilename)
+                    else:
+                        hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                     if not hdrmd5 or hdrmd5 != i.hdrmd5:
                         os.unlink(i.fullfilename)
                         cached -= 1

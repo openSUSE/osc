@@ -20,7 +20,7 @@ except ImportError:
 
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
-from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir
+from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
 from osc.core import get_binarylist, get_binary_file, run_external, raw_input
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
@@ -230,7 +230,9 @@ class Pac:
 
         self.mp['apiurl'] = apiurl
 
-        if pacsuffix == 'deb':
+        if self.mp['name'].startswith('container:'):
+            canonname = self.mp['name'] + '.tar.xz'
+        elif pacsuffix == 'deb':
             canonname = debquery.DebQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
         elif pacsuffix == 'arch':
             canonname = archquery.ArchQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
@@ -1089,7 +1091,10 @@ def main(apiurl, opts, argv):
     for i in bi.deps:
         if i.hdrmd5:
             from .util import packagequery
-            hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
+            if i.name.startswith('container:'):
+                hdrmd5 = dgst(i.fullfilename)
+            else:
+                hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
             if not hdrmd5:
                 print("Error: cannot get hdrmd5 for %s" % i.fullfilename)
                 sys.exit(1)
