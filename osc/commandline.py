@@ -5053,6 +5053,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.no_multibuild:
             kwargs['multibuild'] = kwargs['locallink'] = True
         if opts.xml or opts.csv:
+            # hmm should we filter excluded repos here as well?
+            # for now, ignore --show-excluded
+            del kwargs['showexcl']
             for xml in get_package_results(**kwargs):
                 if opts.xml:
                     print(xml, end='')
