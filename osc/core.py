@@ -6009,17 +6009,20 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', li
         srcmd5 = node.get('srcmd5')
         versrel = node.get('versrel')
         bcnt = int(node.get('bcnt'))
+        duration = node.get('duration')
         t = time.gmtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
+        if duration == None:
+           duration = ""
 
         if format == 'csv':
-            r.append('%s|%s|%s|%s.%d' % (t, srcmd5, rev, versrel, bcnt))
+            r.append('%s|%s|%s|%s.%d|%s' % (t, srcmd5, rev, versrel, bcnt, duration))
         else:
             bversrel='%s.%d' % (versrel, bcnt)
-            r.append('%s   %s    %s %s' % (t, srcmd5, bversrel.ljust(16)[:16], rev))
+            r.append('%s   %s    %s %s %s' % (t, srcmd5, bversrel.ljust(16)[:16], rev, duration.rjust(10)))
 
     if format == 'text':
-        r.insert(0, 'time                  srcmd5                              vers-rel.bcnt    rev')
+        r.insert(0, 'time                  srcmd5                              vers-rel.bcnt    rev   duration')
 
     return r
 

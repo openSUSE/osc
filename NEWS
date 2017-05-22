@@ -1,5 +1,6 @@
 0.159
-  -
+  - "osc buildhistory": show build duration
+  - native docker build support
 
 0.158
   - cat/less/blame command: default to expand to stay in sync with checkout
