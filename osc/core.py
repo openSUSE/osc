@@ -4022,11 +4022,9 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
                     break
                 elif ri in 'eE':
                     ri_err = False
-                    pass
                 else:
                     print("%s is not a valid option." % ri)
                     ri_err = True
-                    pass
     finally:
         os.unlink(filename)
     return msg
