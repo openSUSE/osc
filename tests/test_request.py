@@ -32,7 +32,7 @@ class TestRequest(OscTestCase):
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
         self.assertRaises(AttributeError, getattr, r.actions[0], 'doesnotexist')
-        exp = """<request>
+        exp = """<request creator="">
   <action type="submit">
     <source package="bar" project="foo" rev="42" />
     <target package="bar" project="foobar" />
@@ -57,7 +57,7 @@ class TestRequest(OscTestCase):
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
         self.assertRaises(AttributeError, getattr, r.actions[0], 'doesnotexist')
-        exp = """<request>
+        exp = """<request creator="">
   <action type="submit">
     <source package="bar" project="foo" />
     <target package="bar" project="foobar" />
@@ -82,7 +82,7 @@ class TestRequest(OscTestCase):
         self.assertTrue(len(r.reviews) == 0)
         self.assertTrue(r.actions[0].tgt_package is None)
         self.assertRaises(AttributeError, getattr, r.actions[0], 'doesnotexist')
-        exp = """<request>
+        exp = """<request creator="">
   <action type="submit">
     <source package="bar" project="foo" />
     <target project="foobar" />
@@ -111,7 +111,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.actions[0].person_role, 'reader')
         self.assertTrue(r.actions[0].group_name is None)
         self.assertTrue(r.actions[0].group_role is None)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="add_role">
     <target package="bar" project="foo" />
     <person name="user" role="reader" />
@@ -132,7 +132,7 @@ class TestRequest(OscTestCase):
         self.assertTrue(r.actions[0].person_role is None)
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="add_role">
     <target package="bar" project="foo" />
     <group name="group" role="reviewer" />
@@ -154,7 +154,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.actions[0].group_role, 'reviewer')
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="add_role">
     <target package="bar" project="foo" />
     <person name="user" role="reader" />
@@ -173,7 +173,7 @@ class TestRequest(OscTestCase):
         self.assertTrue(r.actions[0].tgt_package is None)
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="set_bugowner">
     <target project="foobar" />
     <person name="buguser" />
@@ -191,7 +191,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.actions[0].person_name, 'buguser')
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="set_bugowner">
     <target package="baz" project="foobar" />
     <person name="buguser" />
@@ -208,7 +208,7 @@ class TestRequest(OscTestCase):
         self.assertTrue(r.actions[0].tgt_package is None)
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="delete">
     <target project="foo" />
   </action>
@@ -224,7 +224,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.actions[0].tgt_package, 'deleteme')
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="delete">
     <target package="deleteme" project="foo" />
   </action>
@@ -242,7 +242,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.actions[0].tgt_package, 'devpkg')
         self.assertTrue(len(r.statehistory) == 0)
         self.assertTrue(len(r.reviews) == 0)
-        exp = """<request>
+        exp = """<request creator="">
   <action type="change_devel">
     <source package="bar" project="foo" />
     <target package="devpkg" project="devprj" />
