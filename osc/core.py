@@ -5491,7 +5491,7 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False, showexcl=False):
     query = {}
     if package:
         query['package'] = package
@@ -5503,6 +5503,8 @@ def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], 
         query['multibuild'] = 1
     if locallink:
         query['locallink'] = 1
+    if showexcl:
+        query['showexcl'] = 1
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     for repo in repository:
         u = u + '&repository=%s' % repo
