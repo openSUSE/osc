@@ -2365,7 +2365,8 @@ rev: %s
                     print('XML error in _service file on line %s, column %s' % (line, column))
                     sys.exit(1)
                 si.read(service)
-        si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
+        if mode != 'local':
+            si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
         r = si.execute(self.absdir, mode, singleservice, verbose)
         os.chdir(curdir)
         return r
