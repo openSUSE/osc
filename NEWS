@@ -1,6 +1,10 @@
 0.159
   - "osc buildhistory": show build duration
-  - native docker build support
+  - Support builds using native Docker build descriptions
+  - Support usage of pre-build containers for Docker and KIWI builds
+  - "osc build -M ..": fixed behaviour of falvoured builds
+  - added switch to show only issues in rdiff
+  - show build duration in build history
 
 0.158
   - cat/less/blame command: default to expand to stay in sync with checkout
