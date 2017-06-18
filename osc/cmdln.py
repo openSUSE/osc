@@ -45,8 +45,9 @@ import re
 import cmd
 import optparse
 import sys
+import time
 from pprint import pprint
-from datetime import date
+from datetime import datetime
 
 # this is python 2.x style
 def introspect_handler_2(handler):
@@ -619,9 +620,10 @@ class RawCmdln(cmd.Cmd):
         usage:
             ${name} man
         """
+        mandate = datetime.utcfromtimestamp(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))
         self.stdout.write(bytes(
             self.man_header % {
-                'date': date.today().strftime('%b %Y'),
+                'date': mandate.strftime('%b %Y'),
                 'version': self.get_version(),
                 'name': self.name,
                 'ucname': self.name.upper()
