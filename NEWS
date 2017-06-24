@@ -5,6 +5,7 @@
   - "osc build -M ..": fixed behaviour of falvoured builds
   - added switch to show only issues in rdiff
   - show build duration in build history
+  - allow to cat/less files from deleted packages (using -D option)
 
 0.158
   - cat/less/blame command: default to expand to stay in sync with checkout

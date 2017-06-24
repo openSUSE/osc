@@ -7964,6 +7964,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='(default) force expansion of linked packages.')
     @cmdln.option('-u', '--unexpand', action='store_true',
                   help='always work with unexpanded packages.')
+    @cmdln.option('-D', '--deleted', action='store_true',
+                        help='access file in a deleted package')
     @cmdln.option('-M', '--meta', action='store_true',
                         help='list meta data files')
     @cmdln.alias('blame')
@@ -8017,10 +8019,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query['view'] = "blame"
         if opts.meta:
             query['meta'] = 1
+        if opts.deleted:
+            query['deleted'] = 1
         if opts.revision:
             query['rev'] = opts.revision
         if not opts.unexpand:
-            query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision, meta=opts.meta)
+            query['rev'] = show_upstream_srcmd5(apiurl, project, package, expand=True, revision=opts.revision, meta=opts.meta, deleted=opts.deleted)
             query['expand'] = 1 # important for blame case to follow links in old revisions
         u = makeurl(apiurl, ['source', project, package, filename], query=query)
         if subcmd == 'less':

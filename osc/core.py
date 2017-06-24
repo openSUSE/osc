@@ -3743,7 +3743,7 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, meta=False):
+def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, meta=False, deleted=False):
     query = {}
     if revision:
         query['rev'] = revision
@@ -3755,6 +3755,8 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
         query['linkrev'] = 'base'
     if meta:
         query['meta'] = 1
+    if deleted:
+        query['deleted'] = 1
     if expand:
         query['expand'] = 1
     if linkrepair:
@@ -3762,8 +3764,8 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
     return f.read()
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False):
-    m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta)
+def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
+    m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
     et = ET.fromstring(''.join(m))
     if include_service_files:
         try:
