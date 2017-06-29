@@ -7493,6 +7493,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             project_dir = os.curdir
 
+        if not is_project_dir(project_dir):
+            raise oscerr.WrongArgs("'%s' is no project working copy" % project_dir)
+
         if conf.config['do_package_tracking']:
             project = Project(project_dir)
         else:
