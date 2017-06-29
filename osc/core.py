@@ -6794,9 +6794,9 @@ def createPackageDir(pathname, prj_obj=None):
     prj_dir, pac_dir = getPrjPacPaths(pathname)
     if is_project_dir(prj_dir):
         global store
-        if not os.path.exists(pac_dir+store):
+        if not os.path.exists(os.path.join(pathname, store)):
             prj = prj_obj or Project(prj_dir, False)
-            Package.init_package(prj.apiurl, prj.name, pac_dir, pac_dir)
+            Package.init_package(prj.apiurl, prj.name, pac_dir, pathname)
             prj.addPackage(pac_dir)
             print(statfrmt('A', os.path.normpath(pathname)))
         else:
