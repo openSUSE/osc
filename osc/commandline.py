@@ -1802,6 +1802,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc requestmaintainership                            # for current user in checked out package
             osc requestmaintainership USER                       # for specified user in checked out package
             osc requestmaintainership PROJECT                    # for current user if cwd is not a checked out package
+            osc requestmaintainership PROJECT group:NAME         # request for specified group
             osc requestmaintainership PROJECT PACKAGE            # for current user
             osc requestmaintainership PROJECT PACKAGE USER       # request for specified user
             osc requestmaintainership PROJECT PACKAGE group:NAME # request for specified group
@@ -1817,7 +1818,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) == 2:
             project = args[0]
             package = args[1]
-            user = conf.get_apiurl_usr(apiurl)
+            if package.startswith('group:'):
+                user = package
+                package = None
+            else:
+                user = conf.get_apiurl_usr(apiurl)
         elif len(args) == 3:
             project = args[0]
             package = args[1]
