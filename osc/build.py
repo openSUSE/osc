@@ -991,9 +991,7 @@ def main(apiurl, opts, argv):
                 filename = filename[10:]
                 if build_type == 'kiwi':
                     buildargs.append('--kiwi-parameter')
-                    buildargs.append('--set-container-derived-from')
-                    buildargs.append('--kiwi-parameter')
-                    buildargs.append("obs:/"+pdir+"/"+rdir+"/"+filename)
+                    buildargs.append('--set-container-derived-from=dir://./' + prdir + "/" + filename)
             else:
                 prdir = "repos/"+pdir+"/"+rdir
                 # project/repo/arch
