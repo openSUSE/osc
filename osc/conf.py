@@ -183,6 +183,12 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'vc-cmd': '/usr/lib/build/vc'
 }
 
+# some distros like Debian rename and move build to obs-build
+if not os.path.isfile('/usr/bin/build') and os.path.isfile('/usr/bin/obs-build'):
+    DEFAULTS['build-cmd'] = '/usr/bin/obs-build'
+if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-build/vc'):
+    DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
+
 # being global to this module, this dict can be accessed from outside
 # it will hold the parsed configuration
 config = DEFAULTS.copy()
