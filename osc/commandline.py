@@ -12,6 +12,7 @@ import sys
 import time
 import imp
 import inspect
+import os
 try:
     from urllib.parse import urlsplit
     from urllib.error import HTTPError
@@ -5867,7 +5868,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 with tempfile.NamedTemporaryFile() as f:
                     f.write(bc)
                     f.flush()
-                    recipe = return_external('/usr/lib/build/queryconfig', '--dist', f.name, 'type')
+                    # some distros like Debian rename and move build to obs-build
+                    if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
+                        queryconfig = '/usr/lib/obs-build/queryconfig'
+                    else:
+                        queryconfig = '/usr/lib/build/queryconfig'
+                    recipe = return_external(queryconfig, '--dist', f.name, 'type')
                 recipe = recipe.strip()
                 if recipe == 'arch':
                     recipe = 'PKGBUILD'
