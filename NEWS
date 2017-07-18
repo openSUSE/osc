@@ -6,6 +6,7 @@
   - added switch to show only issues in rdiff
   - show build duration in build history
   - allow to cat/less files from deleted packages (using -D option)
+  - Allow to override man-page date
 
 0.158
   - cat/less/blame command: default to expand to stay in sync with checkout
