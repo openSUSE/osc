@@ -520,7 +520,9 @@ def main(apiurl, opts, argv):
         build_type = 'snapcraft'
     if os.path.basename(build_descr) == 'Dockerfile':
         build_type = 'docker'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage', 'docker']:
+    if os.path.basename(build_descr) == 'fissile.yml':
+        build_type = 'fissile'
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage', 'docker', 'fissile']:
         raise oscerr.WrongArgs(
                 'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml, snapcraft.yaml or Dockerfile' \
                         % build_type)
@@ -961,8 +963,8 @@ def main(apiurl, opts, argv):
         if old_pkg_dir != None:
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
-    # Make packages from buildinfo available as repos for kiwi/docker
-    if build_type == 'kiwi' or build_type == 'docker':
+    # Make packages from buildinfo available as repos for kiwi/docker/fissile
+    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'fissile':
         if os.path.exists('repos'):
             shutil.rmtree('repos')
         if os.path.exists('containers'):
@@ -1105,7 +1107,7 @@ def main(apiurl, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type == 'kiwi' or build_type == 'docker':
+    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'fissile':
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
     else:
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
@@ -1121,10 +1123,11 @@ def main(apiurl, opts, argv):
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
-    if build_type != 'kiwi' and build_type != 'docker' and bi.noinstall_list:
-        rpmlist.append('noinstall: ' + ' '.join(bi.noinstall_list) + '\n')
-    if build_type != 'kiwi' and build_type != 'docker' and bi.installonly_list:
-        rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
+    if build_type != 'kiwi' and build_type != 'docker' and build_type != 'fissile':
+        if bi.noinstall_list:
+            rpmlist.append('noinstall: ' + ' '.join(bi.noinstall_list) + '\n')
+        if bi.installonly_list:
+            rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
     rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
