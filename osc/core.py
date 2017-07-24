@@ -1865,7 +1865,8 @@ class Package:
         elif n in self.to_be_added and exists:
             state = 'A'
         elif exists and exists_in_store and known_by_meta:
-            if dgst(localfile) != self.findfilebyname(n).md5:
+            filemeta = self.findfilebyname(n)
+            if os.path.getmtime(localfile) != filemeta.mtime and dgst(localfile) != filemeta.md5:
                 state = 'M'
             else:
                 state = ' '
