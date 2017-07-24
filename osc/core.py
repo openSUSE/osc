@@ -1846,9 +1846,10 @@ class Package:
         known_by_meta = False
         exists = False
         exists_in_store = False
+        localfile = os.path.join(self.absdir, n)
         if n in self.filenamelist:
             known_by_meta = True
-        if os.path.exists(os.path.join(self.absdir, n)):
+        if os.path.exists(localfile):
             exists = True
         if os.path.exists(os.path.join(self.storedir, n)):
             exists_in_store = True
@@ -1864,7 +1865,7 @@ class Package:
         elif n in self.to_be_added and exists:
             state = 'A'
         elif exists and exists_in_store and known_by_meta:
-            if dgst(os.path.join(self.absdir, n)) != self.findfilebyname(n).md5:
+            if dgst(localfile) != self.findfilebyname(n).md5:
                 state = 'M'
             else:
                 state = ' '
@@ -1882,7 +1883,7 @@ class Package:
                 'This might be caused by an old wc format. Please backup your current\n'
                 'wc and checkout the package again. Afterwards copy all files (except the\n'
                 '.osc/ dir) into the new package wc.' % n)
-        elif os.path.islink(os.path.join(self.absdir, n)):
+        elif os.path.islink(localfile):
             # dangling symlink, whose name is _not_ tracked: treat it
             # as unversioned
             state = '?'
