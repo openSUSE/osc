@@ -246,6 +246,13 @@ class Fetcher:
         all = len(buildinfo.deps)
         for i in buildinfo.deps:
             i.makeurls(self.cachedir, self.urllist)
+            # find container extension by looking in the cache
+            if i.name.startswith('container:') and i.fullfilename.endswith('.tar.xz'):
+                for ext in ['.tar.xz', '.tar.gz', '.tar']:
+                    if os.path.exists(i.fullfilename[:-7] + ext):
+                        i.canonname = i.canonname[:-7] + ext
+                        i.makeurls(self.cachedir, self.urllist)
+
             if os.path.exists(i.fullfilename):
                 cached += 1
                 if i.hdrmd5:
