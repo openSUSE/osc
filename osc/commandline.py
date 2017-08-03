@@ -8813,7 +8813,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for pdir in pacs:
             p = Package(pdir)
             pdir = getTransActPath(pdir)
-            for filename in (fname for st, fname in p.get_status() if st == '?'):
+            todo = [fname for st, fname in p.get_status() if st == '?']
+            for fname in p.excluded:
+                # there might be some rare cases, where an excluded file has
+                # not state '?'
+                if os.path.isfile(fname) and p.status(fname) == '?':
+                    todo.append(fname)
+            for filename in todo:
                 print('Removing: %s' % os.path.join(pdir, filename))
                 if not opts.dry_run:
                     os.unlink(os.path.join(p.absdir, filename))
