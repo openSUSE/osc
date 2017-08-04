@@ -4634,10 +4634,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for pac in pacs:
                 path = os.path.normpath(os.path.join(pac.dir, os.pardir))
                 if is_project_dir(path):
-                    pac_path = os.path.basename(os.path.normpath(pac.absdir))
-                    prj_paths.setdefault(path, []).append(pac_path)
+                    # use this path construction for computing "pac_name",
+                    # because it is possible that pac.name != pac_name (e.g.
+                    # for an external package wc)
+                    pac_name = os.path.basename(os.path.normpath(pac.absdir))
+                    prj_paths.setdefault(path, []).append(pac_name)
                     pac_objs.setdefault(path, []).append(pac)
-                    files[pac_path] = pac.todo
+                    files.setdefault(path, {})[pac_name] = pac.todo
                 else:
                     single_paths.append(pac.dir)
                     if not pac.todo:
@@ -4649,13 +4652,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     store_read_apiurl(pac, defaulturl=False)
                 path = os.path.normpath(os.path.join(pac, os.pardir))
                 if is_project_dir(path):
-                    pac_path = os.path.normpath(os.path.abspath(pac))
-                    pac_name = os.path.basename(pac_path)
+                    pac_name = os.path.basename(os.path.normpath(os.path.abspath(pac)))
                     prj_paths.setdefault(path, []).append(pac_name)
                     pac_objs.setdefault(path, [])
                     # wrt. the current implementation of Project.commit, this
                     # actually not needed
-                    files[pac_name] = []
+                    files.setdefault(path, {})[pac_name] = []
                 else:
                     # fail with an appropriate error message
                     store_read_apiurl(pac, defaulturl=False)
@@ -4672,7 +4674,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if repl in('y', 'Y'):
                         can_branch = True
 
-                prj.commit(packages, msg=msg, files=files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch, force=opts.force)
+                prj_files = files[prj_path]
+                prj.commit(packages, msg=msg, files=prj_files, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch, force=opts.force)
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
