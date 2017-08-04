@@ -1040,6 +1040,8 @@ class Project:
                 pass
         except OSError:
             pac_dir = os.path.join(self.dir, pac)
+        except (oscerr.NoWorkingCopy, oscerr.WorkingCopyOutdated, oscerr.PackageError):
+            pass
         #print statfrmt('Deleting', getTransActPath(os.path.join(self.dir, pac)))
         print(statfrmt('Deleting', getTransActPath(pac_dir)))
         delete_package(self.apiurl, self.name, pac)
