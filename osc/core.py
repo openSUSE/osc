@@ -3110,7 +3110,7 @@ def findpacs(files, progress_obj=None, fatal=True):
             continue
         known = None
         for i in pacs:
-            if i.name == p.name:
+            if i.name == p.name and i.prjname == p.prjname:
                 known = i
                 break
         if known:
