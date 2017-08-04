@@ -4621,9 +4621,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 args.remove(arg)
 
-        pacs = findpacs(args)
+        pacs, no_pacs = findpacs(args, fatal=False)
 
-        if conf.config['do_package_tracking'] and len(pacs) > 0:
+        if conf.config['do_package_tracking'] and (pacs or no_pacs):
             prj_paths = {}
             single_paths = []
             files = {}
@@ -4643,6 +4643,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not pac.todo:
                         pac.todo = pac.filenamelist + pac.filenamelist_unvers
                     pac.todo.sort()
+            for pac in no_pacs:
+                if os.path.exists(pac):
+                    # fail with an appropriate error message
+                    store_read_apiurl(pac, defaulturl=False)
+                path = os.path.normpath(os.path.join(pac, os.pardir))
+                if is_project_dir(path):
+                    pac_path = os.path.normpath(os.path.abspath(pac))
+                    pac_name = os.path.basename(pac_path)
+                    prj_paths.setdefault(path, []).append(pac_name)
+                    pac_objs.setdefault(path, [])
+                    # wrt. the current implementation of Project.commit, this
+                    # actually not needed
+                    files[pac_name] = []
+                else:
+                    # fail with an appropriate error message
+                    store_read_apiurl(pac, defaulturl=False)
             for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
                 if not msg and not opts.no_message:
@@ -4664,6 +4680,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
                 store_unlink_file(p.absdir, '_commit_msg')
+        elif no_pacs:
+            # fail with an appropriate error message
+            store_read_apiurl(no_pacs[0], defaulturl=False)
         else:
             for p in pacs:
                 if not p.todo:
