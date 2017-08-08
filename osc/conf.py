@@ -61,6 +61,11 @@ except ImportError:
     from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler, AbstractBasicAuthHandler
     from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
 
+try:
+    import urllib2_kerberos
+except:
+    pass
+
 from . import OscConfigParser
 from osc import oscerr
 from .oscsslexcp import NoSecureSSLError
@@ -153,6 +158,10 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
             # whether to keep passwords in plaintext.
             'plaintext_passwd': '1',
+            # Whether to prefer Kerberos based authentication.
+            'prefer_kerberos' : '0',
+            # The default Kerberos realm to use.
+            #'default_kerberos_realm': 'EXAMPLE.COM',
             # limit the age of requests shown with 'osc req list'.
             # this is a default only, can be overridden by 'osc req list -D NNN'
             # Use 0 for unlimted.
@@ -196,9 +205,10 @@ config = DEFAULTS.copy()
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
-    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage']
+    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage', 'prefer_kerberos']
 
-api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
+api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email',
+        'sslcertck', 'cafile', 'capath', 'trusted_prj', 'kerberos_realm']
 
 new_conf_template = """
 [general]
@@ -293,6 +303,12 @@ apiurl = %(apiurl)s
 # local files to ignore with status, addremove, ....
 #exclude_glob = %(exclude_glob)s
 
+# Prefer Kerberos based authentication over password login.
+#prefer_kerberos = %(prefer_kerberos)s
+
+# Define the Kerberos realm to use for Kerberose based authentication.
+#default_kerberos_realm = %(default_kerberos_realm)s
+
 # keep passwords in plaintext.
 # Set to 0 to obfuscate passwords. It's no real security, just
 # prevents most people from remembering your password if they watch
@@ -354,7 +370,8 @@ apiurl = %(apiurl)s
 
 [%(apiurl)s]
 user = %(user)s
-pass = %(pass)s
+%(auth_template)s
+
 # set aliases for this apiurl
 # aliases = foo, bar
 # email used in .changes, unless the one from osc meta prj <user> will be used
@@ -362,8 +379,6 @@ pass = %(pass)s
 # additional headers to pass to a request, e.g. for special authentication
 #http_headers = Host: foofoobar,
 #       User: mumblegack
-# Plain text password
-#pass =
 # Force using of keyring for this API
 #keyring = 1
 """
@@ -390,6 +405,12 @@ your credentials for this apiurl.
 
 cookiejar = None
 
+def copy_DEFAULTS():
+    c = DEFAULTS.copy()
+    # We never want to end up trying to use the default credentials.
+    c.pop('pass')
+    c.pop('user')
+    return c
 
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
@@ -412,6 +433,44 @@ def is_known_apiurl(url):
     apiurl = urljoin(*parse_apisrv_url(None, url))
     return apiurl in config['api_host_options']
 
+def use_kerberos_for_url(url):
+    """Returns true if osc is currently configured to use Kerberos authentication."""
+
+    if urllib2_kerberos in sys.modules:
+        return False
+
+    try:
+        options = config['api_host_options'][extract_known_apiurl(url)]
+        return options['user'] and not options.get('pass', None) and not options.get('passx', None)
+    except:
+        return False
+
+def kerberos_realm_for_url(url):
+    """Returns the Kerberos realm for the given apiurl."""
+
+    if urllib2_kerberos in sys.modules:
+        return None
+
+    try:
+        options = config['api_host_options'][extract_known_apiurl(url)]
+        return options.get('kerberos_realm', None) or config['default_kerberos_realm']
+    except:
+        return None
+
+def prefer_kerberos():
+    """Returns True if Kerberos authentication should be preferred."""
+
+    rv = config['prefer_kerberos']
+
+    if type(rv) is bool:
+        return rv
+    else:
+        return rv != '0'
+
+def default_kerberos_realm():
+    """Returns the default Kerberos realm to use."""
+
+    return config.get('default_kerberos_realm', None)
 
 def extract_known_apiurl(url):
     """
@@ -476,13 +535,15 @@ def _build_opener(apiurl):
     if apiurl == _build_opener.last_opener[0]:
         return _build_opener.last_opener[1]
 
+    handlers = []
+
     # respect no_proxy env variable
     if proxy_bypass(apiurl):
         # initialize with empty dict
-        proxyhandler = ProxyHandler({})
+        handlers.append(ProxyHandler({}))
     else:
         # read proxies from env
-        proxyhandler = ProxyHandler()
+        handlers.append(ProxyHandler())
 
     # workaround for http://bugs.python.org/issue9639
     authhandler_class = HTTPBasicAuthHandler
@@ -517,11 +578,15 @@ def _build_opener(apiurl):
         authhandler_class = OscHTTPBasicAuthHandler
 
     options = config['api_host_options'][apiurl]
-    # with None as first argument, it will always use this username/password
-    # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler = authhandler_class( \
-        HTTPPasswordMgrWithDefaultRealm())
-    authhandler.add_password(None, apiurl, options['user'], options['pass'])
+
+    if use_kerberos_for_url(apiurl):
+        r = options.get('kerberos_realm', None) or config['default_kerberos_realm']
+        handlers.insert(0, urllib2_kerberos.HTTPKerberosAuthHandler("%s@%s" % (options['user'], r)))
+    else:
+        # with None as first argument, it will always use this username/password
+        # combination for urls for which arg2 (apisrv) is a super-url
+        handlers.insert(0, authhandler_class(HTTPPasswordMgrWithDefaultRealm()))
+        handlers[0].add_password(None, apiurl, options['user'], options['pass'])
 
     if options['sslcertck']:
         try:
@@ -546,9 +611,9 @@ def _build_opener(apiurl):
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
             raise oscerr.OscIOError(None, 'No CA certificates found')
-        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
+        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), *handlers)
     else:
-        handlers = [HTTPCookieProcessor(cookiejar), authhandler, proxyhandler]
+        handlers = [HTTPCookieProcessor(cookiejar)] + handlers
         try:
             # disable ssl cert check in python >= 2.7.9
             ctx = ssl._create_unverified_context()
@@ -729,7 +794,7 @@ def write_initial_config(conffile, entries, custom_template=''):
     custom_template is an optional configuration template.
     """
     conf_template = custom_template or new_conf_template
-    config = DEFAULTS.copy()
+    config = copy_DEFAULTS()
     config.update(entries)
     # at this point use_keyring and gnome_keyring are str objects
     if config['use_keyring'] == '1' and GENERIC_KEYRING:
@@ -750,18 +815,26 @@ def write_initial_config(conffile, entries, custom_template=''):
         config['user'] = ''
         config['pass'] = ''
         config['passx'] = ''
-    if not config['plaintext_passwd']:
-        config['pass'] = ''
+
+    if config.get('pass', None):
+        if not config['plaintext_passwd']:
+            config['pass'] = ''
+            config['auth_template'] = "pass = %s" % config['pass']
+        else:
+            config['passx'] = passx_encode(config['pass'])
+            config['auth_template'] = "passx = %s" % config['passx']
     else:
-        config['passx'] = passx_encode(config['pass'])
+        config['auth_template'] = 'kerberos_realm = %s\n# No password when using Kerberos.' \
+                % config['kerberos_realm'] if config['kerberos_realm'] else config['default_kerberos_realm']
+
+    config.setdefault('default_kerberos_realm', '')
 
     sio = StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
     cp.readfp(sio)
     write_config(conffile, cp)
 
-
-def add_section(filename, url, user, passwd):
+def add_section(filename, url, user, passwd, krb_realm = None):
     """
     Add a section to config file for new api url.
     """
@@ -794,10 +867,14 @@ def add_section(filename, url, user, passwd):
         cp.set(url, 'user', user)
         if not config['plaintext_passwd']:
             cp.remove_option(url, 'pass')
-            cp.set(url, 'passx', passx_encode(passwd))
+            if passwd:
+                cp.set(url, 'passx', passx_encode(passwd))
         else:
             cp.remove_option(url, 'passx')
-            cp.set(url, 'pass', passwd)
+            if passwd:
+                cp.set(url, 'pass', passwd)
+    if not passwd:
+        cp.set(url, 'kerberos_realm', krb_realm if krb_realm else config['default_kerberos_realm'])
     write_config(filename, cp)
 
 
@@ -958,6 +1035,9 @@ def get_config(override_conffile=None,
         api_host_options[apiurl] = {'user': user,
                                     'pass': password,
                                     'http_headers': http_headers}
+
+        if cp.has_option(url, 'kerberos_realm'):
+            api_host_options[apiurl]['kerberos_realm'] = cp.get(url, 'kerberos_realm')
 
         optional = ('email', 'sslcertck', 'cafile', 'capath')
         for key in optional:

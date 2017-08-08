@@ -42,6 +42,8 @@ except ImportError:
 
 # the good things are stolen from Matt Mackall's mercurial
 
+# this is set True from osc-wrapper.py
+run_baby_sitter = False
 
 def catchterm(*args):
     raise oscerr.SignalInterrupt
@@ -118,7 +120,7 @@ def run(prg, argv=None):
             print(e.hdrs, file=sys.stderr)
             print(body, file=sys.stderr)
 
-        if e.code in [400, 403, 404, 500]:
+        if e.code in [400, 401, 403, 404, 500]:
             if '<summary>' in body:
                 msg = body.split('<summary>')[1]
                 msg = msg.split('</summary>')[0]

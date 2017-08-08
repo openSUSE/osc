@@ -38,5 +38,6 @@ if not os.isatty(sys.stdout.fileno()):
 
 osccli = commandline.Osc()
 
+babysitter.run_baby_sitter = True
 r = babysitter.run(osccli)
 sys.exit(r)

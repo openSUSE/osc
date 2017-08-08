@@ -122,6 +122,19 @@ class Osc(cmdln.Cmdln):
                       help='be quiet, not verbose')
         return optparser
 
+    def prompt_kerberos_usage(self):
+        prompt = "Use passwordless authentication? [%s] " % ("Y/n" if conf.prefer_kerberos() else "y/N")
+        return raw_input(prompt).strip().lower()
+
+    def use_kerberos(self):
+        if not conf.default_kerberos_realm():
+            return None
+        use = self.prompt_kerberos_usage()
+        return use == 'y' or (conf.prefer_kerberos() and len(use) == 0)
+
+    def prompt_kerberos_realm(self):
+        ans = raw_input("Kerberos realm: [%s] " % conf.default_kerberos_realm()).strip()
+        return ans if ans else conf.default_kerberos_realm()
 
     def postoptparse(self, try_again = True):
         """merge commandline options into the config"""
@@ -142,7 +155,10 @@ class Osc(cmdln.Cmdln):
             import getpass
             config = {}
             config['user'] = raw_input('Username: ')
-            config['pass'] = getpass.getpass()
+            if self.use_kerberos():
+                config['kerberos_realm'] = self.prompt_kerberos_realm()
+            else:
+                config['pass'] = getpass.getpass()
             if self.options.no_keyring:
                 config['use_keyring'] = '0'
             if self.options.no_gnome_keyring:
@@ -158,8 +174,13 @@ class Osc(cmdln.Cmdln):
             print(e.msg, file=sys.stderr)
             import getpass
             user = raw_input('Username: ')
-            passwd = getpass.getpass()
-            conf.add_section(e.file, e.url, user, passwd)
+            realm = None
+            if self.use_kerberos():
+                passwd = None
+                realm = self.prompt_kerberos_realm()
+            else:
+                passwd = getpass.getpass()
+            conf.add_section(e.file, e.url, user, passwd, realm)
             if try_again:
                 self.postoptparse(try_again = False)
 
@@ -4574,7 +4595,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             self._commit(subcmd, opts, args)
         except oscerr.ExtRuntimeError as e:
-            print("ERROR: service run failed", e, file=sys.stderr)
+            print("ERROR: service run failed: %s" % e, file=sys.stderr)
             return 1
         except oscerr.PackageNotInstalled as e:
             print("ERROR: please install %s " % e.args, end='')
