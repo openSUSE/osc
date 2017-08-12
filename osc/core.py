@@ -1843,6 +1843,7 @@ class Package:
 
         """
 
+        alwaysdigest = False
         known_by_meta = False
         exists = False
         exists_in_store = False
@@ -1866,7 +1867,7 @@ class Package:
             state = 'A'
         elif exists and exists_in_store and known_by_meta:
             filemeta = self.findfilebyname(n)
-            if os.path.getmtime(localfile) != filemeta.mtime and dgst(localfile) != filemeta.md5:
+            if (alwaysdigest or os.path.getmtime(localfile) != filemeta.mtime) and dgst(localfile) != filemeta.md5:
                 state = 'M'
             else:
                 state = ' '
