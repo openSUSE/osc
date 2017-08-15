@@ -5433,8 +5433,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           - rebuild count sync (In case that it is configured to sync release numbers)
 
         usage in package or project directory:
-            osc reason REPOSITORY ARCH
-            osc reason PROJECT PACKAGE REPOSITORY ARCH
+            osc triggerreason REPOSITORY ARCH
+            osc triggerreason PROJECT PACKAGE REPOSITORY ARCH
 
         ${cmd_option_list}
         """
