@@ -2029,6 +2029,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='exclude target project from request list')
     @cmdln.option('--involved-projects', action='store_true',
                         help='show all requests for project/packages where USER is involved')
+    @cmdln.option('--target-package-filter', metavar='TARGET_PACKAGE_FILTER',
+                        help='only list requests for the packages matching the package filter. A (python) regular expression is expected.')
     @cmdln.option('--source-buildstatus', action='store_true',
                         help='print the buildstatus of the source package (only works with "show" and the interactive review)')
     @cmdln.alias("rq")
@@ -2312,17 +2314,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             ## Workaround: fetch all, and filter on client side.
 
             ## FIXME: date filtering should become implemented on server side
+
+
+            if opts.target_package_filter:
+                filter_pattern = re.compile(opts.target_package_filter)
             for result in results:
-                if days == 0 or result.state.when > since or result.state.name == 'new':
-                    if (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
-                        ignore_reviews = subcmd != 'review'
-                        request_interactive_review(apiurl, result, group=opts.group,
-                                                   ignore_reviews=ignore_reviews,
-                                                   source_buildstatus=source_buildstatus)
+                filtered = False
+                for action in result.actions:
+                    if action.type == 'group' or not opts.target_package_filter:
+                        continue
+                    if not filter_pattern.match(action.tgt_package):
+                        filtered = True
+                        break
+                if not filtered:
+                    if days == 0 or result.state.when > since or result.state.name == 'new':
+                        if (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
+                            ignore_reviews = subcmd != 'review'
+                            request_interactive_review(apiurl, result, group=opts.group,
+                                                       ignore_reviews=ignore_reviews,
+                                                       source_buildstatus=source_buildstatus)
+                        else:
+                            print(result.list_view(), '\n')
                     else:
-                        print(result.list_view(), '\n')
-                else:
-                    skipped += 1
+                        skipped += 1
             if skipped:
                 print("There are %d requests older than %s days.\n" % (skipped, days))
 
