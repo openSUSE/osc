@@ -1843,7 +1843,6 @@ class Package:
 
         """
 
-        alwaysdigest = False
         known_by_meta = False
         exists = False
         exists_in_store = False
@@ -1867,10 +1866,12 @@ class Package:
             state = 'A'
         elif exists and exists_in_store and known_by_meta:
             filemeta = self.findfilebyname(n)
-            if (alwaysdigest or os.path.getmtime(localfile) != filemeta.mtime) and dgst(localfile) != filemeta.md5:
+            state = ' '
+            if conf.config['status_mtime_heuristic']:
+                if os.path.getmtime(localfile) != filemeta.mtime:
+                    state = 'M'
+            elif dgst(localfile) != filemeta.md5:
                 state = 'M'
-            else:
-                state = ' '
         elif n in self.to_be_added and not exists:
             state = '!'
         elif not exists and exists_in_store and known_by_meta and not n in self.to_be_deleted:

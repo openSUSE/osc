@@ -180,7 +180,10 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'maintained_update_project_attribute': 'OBS:UpdateProject',
             'show_download_progress': '0',
             # path to the vc script
-            'vc-cmd': '/usr/lib/build/vc'
+            'vc-cmd': '/usr/lib/build/vc',
+
+            # heuristic to speedup Package.status
+            'status_mtime_heuristic': '0'
 }
 
 # some distros like Debian rename and move build to obs-build
@@ -196,7 +199,8 @@ config = DEFAULTS.copy()
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
-    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage']
+    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
+    'status_mtime_heuristic']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
