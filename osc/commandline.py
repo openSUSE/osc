@@ -5416,6 +5416,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             data = f.read(BUFSIZE)
         f.close()
 
+    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
+                    help='get triggerreason of the specified multibuild package')
     @cmdln.alias('tr')
     def do_triggerreason(self, subcmd, opts, *args):
         """${cmd_name}: Show reason why a package got triggered to build
@@ -5460,6 +5462,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[3]
         else:
             raise oscerr.WrongArgs('Too many arguments.')
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         print(apiurl, project, package, repository, arch)
         xml = show_package_trigger_reason(apiurl, project, package, repository, arch)
