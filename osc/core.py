@@ -7104,6 +7104,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 print('unable to retrieve the buildstatus: %s' % e)
 
     print_request(request)
+    print_comments(apiurl, 'request', request.reqid)
     try:
         prompt = '(a)ccept/(d)ecline/(r)evoke/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editable_actions = request.get_actions('submit', 'maintenance_incident')
@@ -7146,6 +7147,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     tmpfile.flush()
                 run_editor(tmpfile.name)
                 print_request(request)
+                print_comments(apiurl, 'request', request.reqid)
             elif repl == 's':
                 print('skipping: #%s' % request.reqid, file=sys.stderr)
                 break
