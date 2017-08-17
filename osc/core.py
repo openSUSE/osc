@@ -6510,19 +6510,28 @@ def xpath_join(expr, new_expr, op='or', inner=False, nexpr_parentheses=False):
         new_expr = '(%s)' % new_expr
     return '%s %s %s' % (expr, op, new_expr)
 
-def search(apiurl, **kwargs):
+def search(apiurl, queries=None, **kwargs):
     """
     Perform a search request. The requests are constructed as follows:
     kwargs = {'kind1' => xpath1, 'kind2' => xpath2, ..., 'kindN' => xpathN}
     GET /search/kind1?match=xpath1
     ...
     GET /search/kindN?match=xpathN
+
+    queries is a dict of optional http query parameters, which are passed
+    to the makeurl call, of the form
+    {kindI1: dict_or_list, ..., kindIL: dict_or_list},
+    where kind_i1 to kind_iL are keys of kwargs.
     """
+    if queries is None:
+        queries = {}
     res = {}
     for urlpath, xpath in kwargs.items():
         path = [ 'search' ]
         path += urlpath.split('_') # FIXME: take underscores as path seperators. I see no other way atm to fix OBS api calls and not breaking osc api
-        u = makeurl(apiurl, path, ['match=%s' % quote_plus(xpath)])
+        query = queries.get(urlpath, {})
+        query['match'] = xpath
+        u = makeurl(apiurl, path, query)
         f = http_GET(u)
         res[urlpath] = ET.parse(f).getroot()
     return res
