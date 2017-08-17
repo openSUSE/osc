@@ -1868,7 +1868,7 @@ class Package:
             filemeta = self.findfilebyname(n)
             state = ' '
             if conf.config['status_mtime_heuristic']:
-                if os.path.getmtime(localfile) != filemeta.mtime:
+                if os.path.getmtime(localfile) != filemeta.mtime and dgst(localfile) != filemeta.md5:
                     state = 'M'
             elif dgst(localfile) != filemeta.md5:
                 state = 'M'
