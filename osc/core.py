@@ -4324,7 +4324,8 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
         requests.append(r)
     return requests
 
-def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=[]):
+def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=[],
+                     withfullhistory=False):
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -4356,7 +4357,10 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
 
     if conf.config['verbose'] > 1:
         print('[ %s ]' % xpath)
-    res = search(apiurl, request=xpath)
+    queries = {}
+    if withfullhistory:
+        queries['request'] = {'withfullhistory': '1'}
+    res = search(apiurl, queries=queries, request=xpath)
     collection = res['request']
     requests = []
     for root in collection.findall('request'):
