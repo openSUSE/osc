@@ -774,6 +774,7 @@ class Osc(cmdln.Cmdln):
         prjconf denotes the (build) configuration of a project.
         pkg denotes metadata of a buildservice package.
         user denotes the metadata of a user.
+        group denotes the metadata of a group.
         pattern denotes installation patterns defined for a project.
 
         To list patterns, use 'osc meta pattern PRJ'. An additional argument
@@ -797,9 +798,9 @@ class Osc(cmdln.Cmdln):
 
         Usage:
             osc meta <prj|prjconf> [-r|--revision REV] ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> [-m|--message TEXT] -e|--edit ARGS...
-            osc meta <prj|pkg|prjconf|user|pattern> [-m|--message TEXT] -F|--file ARGS...
+            osc meta <prj|pkg|prjconf|user|group|pattern> ARGS...
+            osc meta <prj|pkg|prjconf|user|group|pattern> [-m|--message TEXT] -e|--edit ARGS...
+            osc meta <prj|pkg|prjconf|user|group|pattern> [-m|--message TEXT] -F|--file ARGS...
             osc meta pattern --delete PRJ PATTERN
             osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create|--delete|--set [value_list]]
         ${cmd_option_list}
@@ -877,6 +878,8 @@ class Osc(cmdln.Cmdln):
             attributepath.append('_attribute')
         elif cmd == 'user':
             user = args[0]
+        elif cmd == 'group':
+            group = args[0]
         elif cmd == 'pattern':
             project = args[0]
             if len(args) > 1:
@@ -903,6 +906,10 @@ class Osc(cmdln.Cmdln):
                 sys.stdout.write(''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
+                if r:
+                    sys.stdout.write(''.join(r))
+            elif cmd == 'group':
+                r = get_group(apiurl, group)
                 if r:
                     sys.stdout.write(''.join(r))
             elif cmd == 'pattern':
@@ -949,6 +956,12 @@ class Osc(cmdln.Cmdln):
                           path_args=(quote_plus(user)),
                           apiurl=apiurl,
                           template_args=({'user': user}))
+            elif cmd == 'group':
+                edit_meta(metatype='group',
+                          edit=True,
+                          path_args=(quote_plus(group)),
+                          apiurl=apiurl,
+                          template_args=({'group': group}))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           edit=True,
@@ -1012,6 +1025,12 @@ class Osc(cmdln.Cmdln):
                           edit=opts.edit,
                           apiurl=apiurl,
                           path_args=(quote_plus(user)))
+            elif cmd == 'group':
+                edit_meta(metatype='group',
+                          data=f,
+                          edit=opts.edit,
+                          apiurl=apiurl,
+                          path_args=(quote_plus(group)))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           data=f,
