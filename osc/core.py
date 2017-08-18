@@ -179,6 +179,15 @@ new_user_template = """\
 </person>
 """
 
+new_group_template = """\
+<group>
+  <title>%(group)s</title>
+  <person>
+    <person userid=""/>
+  </person>
+</group>
+"""
+
 info_templ = """\
 Project name: %s
 Package name: %s
@@ -3652,6 +3661,10 @@ metatypes = { 'prj':     { 'path': 'source/%s/_meta',
                            'template': new_user_template,
                            'file_ext': '.xml'
                          },
+              'group':   { 'path': 'group/%s',
+                           'template': new_group_template,
+                           'file_ext': '.xml'
+                         },
               'pattern': { 'path': 'source/%s/_pattern/%s',
                            'template': new_pattern_template,
                            'file_ext': '.xml'
@@ -4482,7 +4495,6 @@ def get_user_meta(apiurl, user):
     except HTTPError:
         print('user \'%s\' not found' % user)
         return None
-
 
 def _get_xml_data(meta, *tags):
     data = []
