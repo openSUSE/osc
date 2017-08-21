@@ -4478,7 +4478,12 @@ def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_p
             raise oscerr.UserAbort()
     return repl == 'y', reqs
 
+# old function for compat reasons. Some plugins may call this function.
+# and we do not want to break the plugins.
 def get_group(apiurl, group):
+    return get_group_meta(apiurl, group)
+
+def get_group_meta(apiurl, group):
     u = makeurl(apiurl, ['group', quote_plus(group)])
     try:
         f = http_GET(u)
@@ -4516,7 +4521,7 @@ def get_user_data(apiurl, user, *tags):
     
 
 def get_group_data(apiurl, group, *tags):
-    meta = get_group(apiurl, group)
+    meta = get_group_meta(apiurl, group)
     return _get_xml_data(meta, *tags)
 
 
