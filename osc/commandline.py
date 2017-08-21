@@ -909,7 +909,7 @@ class Osc(cmdln.Cmdln):
                 if r:
                     sys.stdout.write(''.join(r))
             elif cmd == 'group':
-                r = get_group(apiurl, group)
+                r = get_group_meta(apiurl, group)
                 if r:
                     sys.stdout.write(''.join(r))
             elif cmd == 'pattern':
@@ -1659,7 +1659,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <group name="%s" role="%s" /> </action> """ % \
                 (project, package, group, role)
 
-        if get_group(apiurl, group) == None:
+        if get_group_meta(apiurl, group) == None:
             raise oscerr.WrongArgs('osc: an error occured.')
 
         return actionxml
@@ -1682,7 +1682,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             group = user.replace('group:', '')
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <group name="%s" /> </action> """ % \
                     (project, package, group)
-            if get_group(apiurl, group) == None:
+            if get_group_meta(apiurl, group) == None:
                 raise oscerr.WrongArgs('osc: an error occured.')
         else:
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <person name="%s" /> </action> """ % \
