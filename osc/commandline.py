@@ -2013,7 +2013,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-t', '--type', metavar='TYPE',
-                  help='limit to requests which contain a given action type (submit/delete/change_devel)')
+                  help='limit to requests which contain a given action type (submit/delete/change_devel/add_role/set_bugowner/maintenance_incident/maintenance_release)')
     @cmdln.option('-a', '--all', action='store_true',
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-f', '--force', action='store_true',
