@@ -4227,7 +4227,8 @@ def change_request_state_template(req, newstate):
         print('error: cannot interpolate \'%s\' in \'%s\'' % (e.args[0], tmpl_name), file=sys.stderr)
         return ''
 
-def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=()):
+def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=(),
+                    req_type=''):
     # this is so ugly...
     def build_by(xpath, val):
         if 'all' in states:
@@ -4256,6 +4257,9 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         xpath = build_by(xpath, '@by_project=\'%s\' and @by_package=\'%s\'' % (byproject, bypackage))
     elif byproject:
         xpath = build_by(xpath, '@by_project=\'%s\'' % byproject)
+
+    if req_type:
+        xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
 
     # XXX: we cannot use the '|' in the xpath expression because it is not supported
     #      in the backend

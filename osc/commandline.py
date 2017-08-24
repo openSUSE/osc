@@ -2283,7 +2283,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 if subcmd == 'review':
                     # FIXME: do the review list for the user and for all groups he belong to
-                    results = get_review_list(apiurl, project, package, who, opts.group, opts.project, opts.package, state_list)
+                    results = get_review_list(apiurl, project, package, who, opts.group, opts.project, opts.package, state_list,
+                                              opts.type)
                 else:
                     if opts.involved_projects:
                         who = who or conf.get_apiurl_usr(apiurl)
