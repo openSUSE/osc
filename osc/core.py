@@ -7548,4 +7548,9 @@ def delete_comment(apiurl, cid):
     ret = ET.fromstring(f.read()).find('summary')
     return ret.text
 
+def get_rpmlint_log(apiurl, proj, pkg, repo, arch):
+    u = makeurl(apiurl, ['build', proj, repo, arch, pkg, 'rpmlint.log'])
+    f = http_GET(u)
+    return f.read()
+
 # vim: sw=4 et

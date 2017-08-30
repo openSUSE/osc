@@ -5211,6 +5211,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print("See 'osc help prjresults'.", file=sys.stderr)
         return 2
 
+    @cmdln.alias('rpmlint')
+    @cmdln.alias('lint')
+    def do_rpmlintlog(self, subcmd, opts, *args):
+        """${cmd_name}: Shows the rpmlint logfile
+
+        Shows the rpmlint logfile to analyse if there are any problems
+        with the spec file and the built binaries.
+
+        usage:
+            osc rpmlintlog project package repository arch
+        """
+        apiurl = self.get_api_url()
+
+        if len(args) == 4:
+            project, package, repository, arch = args
+        else:
+            raise oscerr.WrongArgs('please provide project package repository arch.')
+
+        print(get_rpmlint_log(apiurl, project, package, repository, arch))
+
     @cmdln.alias('bl')
     @cmdln.alias('blt')
     @cmdln.alias('buildlogtail')
