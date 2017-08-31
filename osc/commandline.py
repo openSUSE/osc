@@ -5504,7 +5504,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         xml = show_package_trigger_reason(apiurl, project, package, repository, arch)
         root = ET.fromstring(xml)
         reason = root.find('explain').text
-        print(reason)
+        triggertime = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(root.find('time').text)))
+        print("%s (at %s)" % (reason, triggertime))
         if reason == "meta change":
             print("changed keys:")
             for package in root.findall('packagechange'):
