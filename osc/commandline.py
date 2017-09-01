@@ -5224,6 +5224,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc rpmlintlog project package repository arch
         """
         apiurl = self.get_api_url()
+        args = slash_split(args)
 
         if len(args) == 4:
             project, package, repository, arch = args
