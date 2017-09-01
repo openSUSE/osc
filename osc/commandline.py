@@ -1228,7 +1228,7 @@ class Osc(cmdln.Cmdln):
                     sr_ids.append(result)
                 else:
                     s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
-                        (project, p, t, p, options_block)
+                        (project, p, target_project, p, options_block)
                     actionxml += s
 
             if actionxml != "":
