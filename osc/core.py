@@ -7126,6 +7126,40 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             print('Try -f to force the state change', file=sys.stderr)
         return False
 
+    def safe_get_rpmlint_log(src_actions):
+        lintlogs = []
+        for action in src_actions:
+            print('Type %s:' % action.type)
+            disabled = show_package_disabled_repos(apiurl, action.src_project, action.src_package)
+            for repo in get_repos_of_project(apiurl, action.src_project):
+                if disabled is None or repo.name not in disabled:
+                    lintlog_entry = {
+                                      'proj': action.src_project,
+                                      'pkg': action.src_package,
+                                      'repo': repo.name,
+                                      'arch': repo.arch
+                                      }
+                    lintlogs.append(lintlog_entry)
+                    print('(%i) %s/%s/%s/%s' % ((len(lintlogs)-1), action.src_project, action.src_package, repo.name, repo.arch))
+        if not lintlogs:
+            print('No possible rpmlintlogs found')
+            return False
+        while True:
+            try:
+                lint_n = int(raw_input('Number of rpmlint log to examine (0 - %i): ' % (len(lintlogs)-1)))
+                lintlogs[lint_n]
+                break
+            except (ValueError, IndexError):
+                print('Invalid rpmlintlog index. Please choose between 0 and %i' % (len(lintlogs)-1))
+        try:
+            print(get_rpmlint_log(apiurl, **lintlogs[lint_n]))
+        except HTTPError as e:
+            if e.code == 404:
+                print('No rpmlintlog for %s %s' % (lintlogs[lint_n]['repo'],
+                      lintlogs[lint_n]['arch']))
+            else:
+                raise e
+
     def print_request(request):
         print(request)
 
@@ -7149,10 +7183,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
         # actions which have sources + buildresults
         src_actions = editable_actions + request.get_actions('maintenance_release')
         if editable_actions:
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/rpm(li)ntlog/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
         elif src_actions:
             # no edit for maintenance release requests
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/co(m)ment/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/rpm(li)ntlog/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
         if source_buildstatus and src_actions:
@@ -7197,6 +7231,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 create_comment(apiurl, 'request', comment, request.reqid)
             elif repl == 'b' and src_actions:
                 print_source_buildstatus(src_actions)
+            elif repl =='li' and src_actions:
+                safe_get_rpmlint_log(src_actions)
             elif repl == 'e' and editable_actions:
                 # this is only for editable actions
                 if not editprj:
