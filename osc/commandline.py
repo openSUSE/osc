@@ -4615,6 +4615,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print("or use the --noservice option")
             return 1
 
+    def _has_pending_requests(self, api, prj, pkg, force=False):
+        if force:
+            return False
+
+        rqlist = get_request_list(api, prj, pkg)
+        if rqlist:
+            print("The following requests are pending for {}/{}:".format(prj, pkg))
+            for rq in rqlist:
+                print("\t{}\t by {}".format(rq.reqid, rq.creator))
+            print("Please resolve them before commiting. Use --force to commit anyway.")
+            return True
+        else:
+            return False
 
     def _commit(self, subcmd, opts, args):
         args = parseargs(args)
@@ -4643,8 +4656,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     msg = edit_message()
 
                 # check any of the packages is a link, if so, as for branching
-                pacs = (Package(os.path.join(prj.dir, pac))
-                        for pac in prj.pacs_have if prj.get_state(pac) == ' ')
+                pacs = [Package(os.path.join(prj.dir, pac))
+                        for pac in prj.pacs_have if prj.get_state(pac) == ' ']
+
+                for p in pacs[:]:
+                    if self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force):
+                        pacs.remove(p)
+                if not pacs:
+                    continue
+
                 can_branch = False
                 if any(pac.is_link_to_different_project() for pac in pacs):
                     repl = raw_input('Some of the packages are links to a different project!\n' \
@@ -4697,6 +4717,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     store_read_apiurl(pac, defaulturl=False)
             for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
+                for p in packages[:]:
+                    if self._has_pending_requests(prj.apiurl, prj.name, p, force=opts.force):
+                        packages.remove(p)
+                if not packages:
+                    continue
                 if not msg and not opts.no_message:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
 
@@ -4713,10 +4738,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 store_unlink_file(prj.absdir, '_commit_msg')
             for pac in single_paths:
                 p = Package(pac)
-                if not msg and not opts.no_message:
-                    msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
-                store_unlink_file(p.absdir, '_commit_msg')
+                if self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force):
+                    continue
+                else:
+                    if not msg and not opts.no_message:
+                        msg = get_commit_msg(p.absdir, [p])
+                    p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
+                    store_unlink_file(p.absdir, '_commit_msg')
         elif no_pacs:
             # fail with an appropriate error message
             store_read_apiurl(no_pacs[0], defaulturl=False)
@@ -4725,10 +4753,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not p.todo:
                     p.todo = p.filenamelist + p.filenamelist_unvers
                 p.todo.sort()
-                if not msg and not opts.no_message:
-                    msg = get_commit_msg(p.absdir, [p])
-                p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
-                store_unlink_file(p.absdir, '_commit_msg')
+                if self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force):
+                    continue
+                else:
+                    if not msg and not opts.no_message:
+                        msg = get_commit_msg(p.absdir, [p])
+                    p.commit(msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, force=opts.force)
+                    store_unlink_file(p.absdir, '_commit_msg')
+
 
     @cmdln.option('-r', '--revision', metavar='REV',
                         help='update to specified revision (this option will be ignored '
