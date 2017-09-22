@@ -1,5 +1,11 @@
 0.160
-  - 
+  - support fissile build type
+  - Container support for the package cache
+  - Remove all untracked files during "osc clean"
+  - Support the commit of a deleted, but non-existent package
+  - triggerreason --multibuild-package option
+  - improved status display
+  - improved request listing filters
 
 0.159
   - "osc buildhistory": show build duration
