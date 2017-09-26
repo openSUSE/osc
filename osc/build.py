@@ -21,7 +21,7 @@ except ImportError:
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
-from osc.core import get_binarylist, get_binary_file, run_external, raw_input
+from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
 from . import oscerr
@@ -90,7 +90,7 @@ if hostarch == 'parisc':
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
-    def __init__(self, filename, apiurl, buildtype = 'spec', localpkgs = []):
+    def __init__(self, filename, apiurl, buildtype = 'spec', localpkgs = [], binarytype = 'rpm'):
         try:
             tree = ET.parse(filename)
         except:
@@ -117,12 +117,13 @@ class Buildinfo:
             raise URLError('invalid protocol for the apiurl: \'%s\'' % apiurl)
 
         self.buildtype = buildtype
+        self.binarytype = binarytype
         self.apiurl = apiurl
 
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        if self.buildtype == 'dsc' or self.buildtype == 'collax':
+        if self.buildtype == 'dsc' or self.buildtype == 'collax' or self.binarytype == 'deb':
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
@@ -811,7 +812,15 @@ def main(apiurl, opts, argv):
         else:
             raise
 
-    bi = Buildinfo(bi_filename, apiurl, build_type, list(prefer_pkgs.keys()))
+    # Set default binary type if cannot be detected
+    binary_type = 'rpm'
+    if os.path.exists('/usr/lib/build/queryconfig'):
+        binary_type = return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype').decode('utf-8').strip()
+    # If binary type is set to a useless value, reset to 'rpm'
+    if binary_type == 'UNDEFINED':
+        binary_type = 'rpm'
+
+    bi = Buildinfo(bi_filename, apiurl, build_type, list(prefer_pkgs.keys()), binary_type)
 
     if bi.debuginfo and not (opts.disable_debuginfo or '--debug' in buildargs):
         buildargs.append('--debug')
