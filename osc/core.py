@@ -1627,7 +1627,8 @@ class Package:
         else:
             # try merging
             # diff3 OPTIONS... MINE OLDER YOURS
-            merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
+            # TODO: get rid of shell=True (can be solved via stdout parameter)
+            merge_cmd = 'diff3 -m -E \'%s\' \'%s\' \'%s\' > \'%s\'' % (myfilename, storefilename, upfilename, filename)
             ret = run_external(merge_cmd, shell=True)
 
             #   "An exit status of 0 means `diff3' was successful, 1 means some
@@ -6664,7 +6665,9 @@ def unpack_srcrpm(srpm, dir, *files):
     curdir = os.getcwd()
     if os.path.isdir(dir):
         os.chdir(dir)
-    cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
+    # XXX: shell injection is possible via the files parameter, but the
+    #      current osc code does not use the files parameter.
+    cmd = 'rpm2cpio \'%s\' | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
     ret = run_external(cmd, shell=True)
     if ret != 0:
         print('error \'%s\' - cannot extract \'%s\'' % (ret, srpm), file=sys.stderr)
@@ -6956,7 +6959,7 @@ def addFiles(filenames, prj_obj = None):
         archive = "%s.obscpio" % filename
         # XXX: hmm we should use subprocess.Popen here (to avoid all the
         # issues that come with shell=True...)
-        run_external("find %s | cpio -o -H newc > %s" % (filename, archive), shell=True)
+        run_external("find '%s' | cpio -o -H newc > '%s'" % (filename, archive), shell=True)
         pacs.extend(findpacs([archive]))
 
     for pac in pacs:
