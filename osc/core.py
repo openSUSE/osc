@@ -5527,22 +5527,22 @@ def get_binarylist_published(apiurl, prj, repo, arch):
 
 
 def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False):
-    query = {}
+    query = []
     if package:
-        query['package'] = package
+        query.append('package=%s' % quote_plus(package))
     if oldstate:
-        query['oldstate'] = oldstate
+        query.append('oldstate=%s' % quote_plus(oldstate))
     if lastbuild:
-        query['lastbuild'] = 1
+        query.append('lastbuild=1')
     if multibuild:
-        query['multibuild'] = 1
+        query.append('multibuild=1')
     if locallink:
-        query['locallink'] = 1
-    u = makeurl(apiurl, ['build', prj, '_result'], query=query)
+        query.append('locallink=1')
     for repo in repository:
-        u = u + '&repository=%s' % repo
+        query.append('repository=%s' % quote_plus(repo))
     for a in arch:
-        u = u + '&arch=%s' % a
+        query.append('arch=%s' % quote_plus(a))
+    u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
 
