@@ -6666,10 +6666,18 @@ def unpack_srcrpm(srpm, dir, *files):
     curdir = os.getcwd()
     if os.path.isdir(dir):
         os.chdir(dir)
-    # XXX: shell injection is possible via the files parameter, but the
-    #      current osc code does not use the files parameter.
-    cmd = 'rpm2cpio \'%s\' | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
-    ret = run_external(cmd, shell=True)
+    rpm2cpio_proc = subprocess.Popen(['rpm2cpio', srpm],
+                                     stdout=subprocess.PIPE)
+    ret = -1
+    with open(os.devnull, 'w') as f:
+        cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
+                                     stdin=rpm2cpio_proc.stdout, stderr=f)
+        rpm2cpio_proc.stdout.close()
+        cpio_proc.communicate()
+        rpm2cpio_proc.wait()
+        ret = rpm2cpio_proc.returncode
+        if not ret:
+            ret = cpio_proc.returncode
     if ret != 0:
         print('error \'%s\' - cannot extract \'%s\'' % (ret, srpm), file=sys.stderr)
         sys.exit(1)
@@ -6958,9 +6966,12 @@ def addFiles(filenames, prj_obj = None):
         if resp not in ('y', 'Y'):
             continue
         archive = "%s.obscpio" % filename
-        # XXX: hmm we should use subprocess.Popen here (to avoid all the
-        # issues that come with shell=True...)
-        run_external("find '%s' | cpio -o -H newc > '%s'" % (filename, archive), shell=True)
+        find_proc = subprocess.Popen(['find', filename], stdout=subprocess.PIPE)
+        with open(archive, 'w') as f:
+            cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc'],
+                                         stdin=find_proc.stdout, stdout=f)
+            find_proc.stdout.close()
+            cpio_proc.communicate()
         pacs.extend(findpacs([archive]))
 
     for pac in pacs:
