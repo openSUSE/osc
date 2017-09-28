@@ -1627,9 +1627,10 @@ class Package:
         else:
             # try merging
             # diff3 OPTIONS... MINE OLDER YOURS
-            # TODO: get rid of shell=True (can be solved via stdout parameter)
-            merge_cmd = 'diff3 -m -E \'%s\' \'%s\' \'%s\' > \'%s\'' % (myfilename, storefilename, upfilename, filename)
-            ret = run_external(merge_cmd, shell=True)
+            ret = -1
+            with open(filename, 'w') as f:
+                ret = run_external('diff3', '-m', '-E', myfilename,
+                                   storefilename, upfilename, stdout=f)
 
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
