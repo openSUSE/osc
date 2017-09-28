@@ -5176,7 +5176,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
 
         if opts.xml:
-            print(''.join(show_prj_results_meta(apiurl, project)))
+            print(''.join(show_prj_results_meta(apiurl, project, opts.repo, opts.arch)))
             return
 
         print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \

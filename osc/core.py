@@ -5547,10 +5547,13 @@ def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], 
     return f.readlines()
 
 
-def show_prj_results_meta(apiurl, prj):
-    u = makeurl(apiurl, ['build', prj, '_result'])
-    f = http_GET(u)
-    return f.readlines()
+def show_prj_results_meta(apiurl, prj, repositories=None, arches=None):
+    # this function is only needed for backward/api compatibility
+    if repositories is None:
+        repositories = []
+    if arches is None:
+        arches = []
+    return show_results_meta(apiurl, prj, repository=repositories, arch=arches)
 
 
 def result_xml_to_dicts(xml):
