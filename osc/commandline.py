@@ -5096,10 +5096,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions("No project given")
 
         if package == None:
-            if opts.arch == []:
-                opts.arch = None
-            if opts.repo == []:
-                opts.repo = None
             opts.hide_legend = None
             opts.name_filter = None
             opts.status_filter = None
@@ -5150,9 +5146,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show only packages with buildstatus STATUS (see legend)')
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
                         help='show only packages whose names match EXPR')
-    @cmdln.option('-a', '--arch', metavar='ARCH',
+    @cmdln.option('-a', '--arch', metavar='ARCH', action='append',
                         help='show results only for specified architecture(s)')
-    @cmdln.option('-r', '--repo', metavar='REPO',
+    @cmdln.option('-r', '--repo', metavar='REPO', action='append',
                         help='show results only for specified repo(s)')
     @cmdln.option('-V', '--vertical', action='store_true',
                         help='list packages vertically instead horizontally')
