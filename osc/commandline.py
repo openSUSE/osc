@@ -4416,6 +4416,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           'C' Conflicted
           'D' Deleted
           'M' Modified
+          'R' Replaced (file was deleted and added again afterwards)
           '?' item is not under version control
           '!' item is missing (removed by non-osc command) or incomplete
           'S' item is skipped (item exceeds a file size limit or is _service:* file)
