@@ -1359,17 +1359,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
         supersede_existing = False
         reqs = []
-        if not opts.supersede and not opts.yes:
+        if not opts.supersede:
             (supersede_existing, reqs) = check_existing_requests(apiurl,
                                                                  src_project,
                                                                  src_package,
                                                                  dst_project,
-                                                                 dst_package)
+                                                                 dst_package,
+                                                                 not opts.yes)
             if not supersede_existing:
                (supersede_existing, reqs) = check_existing_maintenance_requests(apiurl,
                                                                  src_project,
                                                                  [src_package],
-                                                                 dst_project, None)
+                                                                 dst_project, None,
+                                                                 not opts.yes)
         if not opts.message:
             difflines = []
             doappend = False

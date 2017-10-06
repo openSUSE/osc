@@ -4445,11 +4445,13 @@ def get_request_log(apiurl, reqid):
     return data
 
 def check_existing_requests(apiurl, src_project, src_package, dst_project,
-                            dst_package):
+                            dst_package, ask=True):
     reqs = get_exact_request_list(apiurl, src_project, dst_project,
                                   src_package, dst_package,
                                   req_type='submit',
                                   req_state=['new', 'review', 'declined'])
+    if not ask:
+        return True, reqs
     repl = ''
     if reqs:
         print('There are already the following submit request: %s.' % \
@@ -4464,13 +4466,15 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
     return repl == 'y', reqs
 
 def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_project,
-                            release_project):
+                                        release_project, ask=True):
     reqs = []
     for src_package in src_packages:
        reqs += get_exact_request_list(apiurl, src_project, dst_project,
                                   src_package, None,
                                   req_type='maintenance_incident',
                                   req_state=['new', 'review', 'declined'])
+    if not ask:
+        return True, reqs
     repl = ''
     if reqs:
         print('There are already the following maintenance incident request: %s.' % \
