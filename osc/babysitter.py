@@ -75,23 +75,18 @@ def run(prg, argv=None):
             raise
     except oscerr.SignalInterrupt:
         print('killed!', file=sys.stderr)
-        return 1
     except KeyboardInterrupt:
         print('interrupted!', file=sys.stderr)
         return 130
     except oscerr.UserAbort:
         print('aborted.', file=sys.stderr)
-        return 1
     except oscerr.APIError as e:
         print('BuildService API error:', e.msg, file=sys.stderr)
-        return 1
     except oscerr.LinkExpandError as e:
         print('Link "%s/%s" cannot be expanded:\n' % (e.prj, e.pac), e.msg, file=sys.stderr)
         print('Use "osc repairlink" to fix merge conflicts.\n', file=sys.stderr)
-        return 1
     except oscerr.WorkingCopyWrongVersion as e:
         print(e, file=sys.stderr)
-        return 1
     except oscerr.NoWorkingCopy as e:
         print(e, file=sys.stderr)
         if os.path.isdir('.git'):
@@ -102,7 +97,6 @@ def run(prg, argv=None):
             print("Current directory looks like svn.", file=sys.stderr)
         if os.path.isdir('CVS'):
             print("Current directory looks like cvs.", file=sys.stderr)
-        return 1
     except HTTPError as e:
         print('Server returned an error:', e, file=sys.stderr)
         if hasattr(e, 'osc_msg'):
@@ -131,84 +125,63 @@ def run(prg, argv=None):
                 if h != 'Set-Cookie':
                     print("%s: %s" % (h, v))
 
-        return 1
     except BadStatusLine as e:
         print('Server returned an invalid response:', e, file=sys.stderr)
         print(e.line, file=sys.stderr)
-        return 1
     except HTTPException as e:
         print(e, file=sys.stderr)
-        return 1
     except URLError as e:
         print('Failed to reach a server:\n', e.reason, file=sys.stderr)
-        return 1
     except URLGrabError as e:
         print('Failed to grab %s: %s' % (e.url, e.strerror), file=sys.stderr)
-        return 1
     except IOError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:
             raise
-        return 1
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
         print(e, file=sys.stderr)
-        return 1
     except (oscerr.ConfigError, oscerr.NoConfigfile) as e:
         print(e.msg, file=sys.stderr)
-        return 1
     except oscerr.OscIOError as e:
         print(e.msg, file=sys.stderr)
         if getattr(prg.options, 'debug', None) or \
            getattr(prg.conf, 'config', {}).get('debug', None):
             print(e.e, file=sys.stderr)
-        return 1
     except (oscerr.WrongOptions, oscerr.WrongArgs) as e:
         print(e, file=sys.stderr)
         return 2
     except oscerr.ExtRuntimeError as e:
         print(e.file + ':', e.msg, file=sys.stderr)
-        return 1
     except oscerr.ServiceRuntimeError as e:
         print(e.msg, file=sys.stderr)
-        return 1
     except oscerr.WorkingCopyOutdated as e:
         print(e, file=sys.stderr)
-        return 1
     except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent) as e:
         print(e.msg, file=sys.stderr)
-        return 1
     except oscerr.PackageInternalError as e:
         print('a package internal error occured\n' \
             'please file a bug and attach your current package working copy ' \
             'and the following traceback to it:', file=sys.stderr)
         print(e.msg, file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
-        return 1
     except oscerr.PackageError as e:
         print(e.msg, file=sys.stderr)
-        return 1
     except PackageError as e:
         print('%s:' % e.fname, e.msg, file=sys.stderr)
-        return 1
     except RPMError as e:
         print(e, file=sys.stderr)
-        return 1
     except SSLError as e:
         print("SSL Error:", e, file=sys.stderr)
-        return 1
     except SSLVerificationError as e:
         print("Certificate Verification Error:", e, file=sys.stderr)
-        return 1
     except NoSecureSSLError as e:
         print(e, file=sys.stderr)
-        return 1
     except CpioError as e:
         print(e, file=sys.stderr)
-        return 1
     except oscerr.OscBaseError as e:
         print('*** Error:', e, file=sys.stderr)
-        return 1
+    return 1
 
 # vim: sw=4 et
