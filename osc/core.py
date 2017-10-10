@@ -6673,12 +6673,12 @@ def unpack_srcrpm(srpm, dir, *files):
     curdir = os.getcwd()
     if os.path.isdir(dir):
         os.chdir(dir)
-    rpm2cpio_proc = subprocess.Popen(['rpm2cpio', srpm],
-                                     stdout=subprocess.PIPE)
     ret = -1
-    with open(os.devnull, 'w') as f:
+    with open(srpm, 'r') as fsrpm, open(os.devnull, 'w') as devnull:
+        rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
+                                         stdout=subprocess.PIPE)
         cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
-                                     stdin=rpm2cpio_proc.stdout, stderr=f)
+                                     stdin=rpm2cpio_proc.stdout, stderr=devnull)
         rpm2cpio_proc.stdout.close()
         cpio_proc.communicate()
         rpm2cpio_proc.wait()
