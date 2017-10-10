@@ -6977,9 +6977,9 @@ def addFiles(filenames, prj_obj = None):
                 for p, dirnames, fnames in os.walk(filename, followlinks=False)
                 for elm in dirnames + fnames]
         with open(archive, 'w') as f:
-            cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc'],
+            cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc', '-0'],
                                          stdin=subprocess.PIPE, stdout=f)
-            cpio_proc.communicate('\n'.join(todo))
+            cpio_proc.communicate('\0'.join(todo))
         pacs.extend(findpacs([archive]))
 
     for pac in pacs:
