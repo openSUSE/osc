@@ -6973,12 +6973,13 @@ def addFiles(filenames, prj_obj = None):
         if resp not in ('y', 'Y'):
             continue
         archive = "%s.obscpio" % filename
-        find_proc = subprocess.Popen(['find', filename], stdout=subprocess.PIPE)
+        todo = [os.path.join(p, elm)
+                for p, dirnames, fnames in os.walk(filename, followlinks=False)
+                for elm in dirnames + fnames]
         with open(archive, 'w') as f:
             cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc'],
-                                         stdin=find_proc.stdout, stdout=f)
-            find_proc.stdout.close()
-            cpio_proc.communicate()
+                                         stdin=subprocess.PIPE, stdout=f)
+            cpio_proc.communicate('\n'.join(todo))
         pacs.extend(findpacs([archive]))
 
     for pac in pacs:
