@@ -7223,11 +7223,13 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             else:
                 repl = raw_input(prompt).strip()
             if repl == 'i' and src_actions:
+                req_summary = str(request) + '\n'
                 if not orequest is None and tmpfile:
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
+                    tmpfile.write(req_summary)
                     try:
                         diff = request_diff(apiurl, request.reqid)
                         tmpfile.write(diff)
@@ -7282,7 +7284,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
                         % (request.state.name, state)
                     msg_template = change_request_state_template(request, state)
-                footer += str(request)
+                if tmpfile is None:
+                    footer += str(request)
                 if tmpfile is not None:
                     tmpfile.seek(0)
                     # the read bytes probably have a moderate size so the str won't be too large
