@@ -4670,7 +4670,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if repl in('y', 'Y'):
                         can_branch = True
 
-                prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
+                prj.commit(pacs, msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 args.remove(arg)
 
         pacs, no_pacs = findpacs(args, fatal=False)
