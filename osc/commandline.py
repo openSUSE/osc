@@ -4659,9 +4659,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pacs = [Package(os.path.join(prj.dir, pac))
                         for pac in prj.pacs_have if prj.get_state(pac) == ' ']
 
-                for p in pacs[:]:
-                    if self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force):
-                        pacs.remove(p)
+                pacs = [p for p in pacs if not self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force)]
                 if not pacs:
                     continue
 
@@ -4717,9 +4715,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     store_read_apiurl(pac, defaulturl=False)
             for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
-                for p in packages[:]:
-                    if self._has_pending_requests(prj.apiurl, prj.name, p, force=opts.force):
-                        packages.remove(p)
+                packages = [p for p in packages if not self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force)]
                 if not packages:
                     continue
                 if not msg and not opts.no_message:
