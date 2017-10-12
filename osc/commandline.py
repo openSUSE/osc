@@ -4622,7 +4622,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if force:
             return False
 
-        rqlist = get_request_list(api, prj, pkg)
+        rqlist = get_request_list(api, prj, pkg, req_state=('new', 'review'), from_project=False)
         if rqlist:
             print("The following requests are pending for {}/{}:".format(prj, pkg))
             for rq in rqlist:
@@ -4662,9 +4662,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pacs = [Package(os.path.join(prj.dir, pac))
                         for pac in prj.pacs_have if prj.get_state(pac) == ' ']
 
-                for p in pacs[:]:
-                    if self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force):
-                        pacs.remove(p)
+                pacs = [p for p in pacs if not self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force)]
                 if not pacs:
                     continue
 
@@ -4675,7 +4673,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if repl in('y', 'Y'):
                         can_branch = True
 
-                prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
+                prj.commit(pacs, msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 args.remove(arg)
 
         pacs, no_pacs = findpacs(args, fatal=False)
@@ -4720,9 +4718,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     store_read_apiurl(pac, defaulturl=False)
             for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
-                for p in packages[:]:
-                    if self._has_pending_requests(prj.apiurl, prj.name, p, force=opts.force):
-                        packages.remove(p)
+                packages = [p for p in packages if not self._has_pending_requests(p.apiurl, p.prjname, p.name, force=opts.force)]
                 if not packages:
                     continue
                 if not msg and not opts.no_message:

@@ -4344,7 +4344,9 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
     return requests
 
 def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=[],
-                     withfullhistory=False):
+                     withfullhistory=False, from_project=None):
+    if from_project is None:
+        from_project = conf.config['include_request_from_project']
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -4363,7 +4365,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
         xpath_base = 'action/target/@%(kind)s=\'%(val)s\' or ' \
                      'submit/target/@%(kind)s=\'%(val)s\''
 
-        if conf.config['include_request_from_project']:
+        if from_project:
             xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\' or ' \
                                                 'submit/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
         xpath = xpath_join(xpath, xpath_base % {'kind': kind, 'val': val}, op='and', nexpr_parentheses=True)
