@@ -4619,7 +4619,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if force:
             return False
 
-        rqlist = get_request_list(api, prj, pkg)
+        rqlist = get_request_list(api, prj, pkg, req_state=('new', 'review'), from_project=False)
         if rqlist:
             print("The following requests are pending for {}/{}:".format(prj, pkg))
             for rq in rqlist:
