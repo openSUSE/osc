@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 
-__version__ = '0.159git'
+__version__ = '0.160git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -1627,8 +1627,10 @@ class Package:
         else:
             # try merging
             # diff3 OPTIONS... MINE OLDER YOURS
-            merge_cmd = 'diff3 -m -E %s %s %s > %s' % (myfilename, storefilename, upfilename, filename)
-            ret = run_external(merge_cmd, shell=True)
+            ret = -1
+            with open(filename, 'w') as f:
+                ret = run_external('diff3', '-m', '-E', myfilename,
+                                   storefilename, upfilename, stdout=f)
 
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
@@ -4443,11 +4445,13 @@ def get_request_log(apiurl, reqid):
     return data
 
 def check_existing_requests(apiurl, src_project, src_package, dst_project,
-                            dst_package):
+                            dst_package, ask=True):
     reqs = get_exact_request_list(apiurl, src_project, dst_project,
                                   src_package, dst_package,
                                   req_type='submit',
                                   req_state=['new', 'review', 'declined'])
+    if not ask:
+        return True, reqs
     repl = ''
     if reqs:
         print('There are already the following submit request: %s.' % \
@@ -4462,13 +4466,15 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
     return repl == 'y', reqs
 
 def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_project,
-                            release_project):
+                                        release_project, ask=True):
     reqs = []
     for src_package in src_packages:
        reqs += get_exact_request_list(apiurl, src_project, dst_project,
                                   src_package, None,
                                   req_type='maintenance_incident',
                                   req_state=['new', 'review', 'declined'])
+    if not ask:
+        return True, reqs
     repl = ''
     if reqs:
         print('There are already the following maintenance incident request: %s.' % \
@@ -5525,30 +5531,33 @@ def get_binarylist_published(apiurl, prj, repo, arch):
 
 
 def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False):
-    query = {}
+    query = []
     if package:
-        query['package'] = package
+        query.append('package=%s' % quote_plus(package))
     if oldstate:
-        query['oldstate'] = oldstate
+        query.append('oldstate=%s' % quote_plus(oldstate))
     if lastbuild:
-        query['lastbuild'] = 1
+        query.append('lastbuild=1')
     if multibuild:
-        query['multibuild'] = 1
+        query.append('multibuild=1')
     if locallink:
-        query['locallink'] = 1
-    u = makeurl(apiurl, ['build', prj, '_result'], query=query)
+        query.append('locallink=1')
     for repo in repository:
-        u = u + '&repository=%s' % repo
+        query.append('repository=%s' % quote_plus(repo))
     for a in arch:
-        u = u + '&arch=%s' % a
+        query.append('arch=%s' % quote_plus(a))
+    u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
 
 
-def show_prj_results_meta(apiurl, prj):
-    u = makeurl(apiurl, ['build', prj, '_result'])
-    f = http_GET(u)
-    return f.readlines()
+def show_prj_results_meta(apiurl, prj, repositories=None, arches=None):
+    # this function is only needed for backward/api compatibility
+    if repositories is None:
+        repositories = []
+    if arches is None:
+        arches = []
+    return show_results_meta(apiurl, prj, repository=repositories, arch=arches)
 
 
 def result_xml_to_dicts(xml):
@@ -6664,8 +6673,20 @@ def unpack_srcrpm(srpm, dir, *files):
     curdir = os.getcwd()
     if os.path.isdir(dir):
         os.chdir(dir)
-    cmd = 'rpm2cpio %s | cpio -i %s &> /dev/null' % (srpm, ' '.join(files))
-    ret = run_external(cmd, shell=True)
+    ret = -1
+    with open(srpm, 'r') as fsrpm, open(os.devnull, 'w') as devnull:
+        rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
+                                         stdout=subprocess.PIPE)
+        # XXX: shell injection is possible via the files parameter, but the
+        #      current osc code does not use the files parameter.
+        cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
+                                     stdin=rpm2cpio_proc.stdout, stderr=devnull)
+        rpm2cpio_proc.stdout.close()
+        cpio_proc.communicate()
+        rpm2cpio_proc.wait()
+        ret = rpm2cpio_proc.returncode
+        if not ret:
+            ret = cpio_proc.returncode
     if ret != 0:
         print('error \'%s\' - cannot extract \'%s\'' % (ret, srpm), file=sys.stderr)
         sys.exit(1)
@@ -6954,9 +6975,13 @@ def addFiles(filenames, prj_obj = None):
         if resp not in ('y', 'Y'):
             continue
         archive = "%s.obscpio" % filename
-        # XXX: hmm we should use subprocess.Popen here (to avoid all the
-        # issues that come with shell=True...)
-        run_external("find %s | cpio -o -H newc > %s" % (filename, archive), shell=True)
+        todo = [os.path.join(p, elm)
+                for p, dirnames, fnames in os.walk(filename, followlinks=False)
+                for elm in dirnames + fnames]
+        with open(archive, 'w') as f:
+            cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc', '-0'],
+                                         stdin=subprocess.PIPE, stdout=f)
+            cpio_proc.communicate('\0'.join(todo))
         pacs.extend(findpacs([archive]))
 
     for pac in pacs:
@@ -7126,6 +7151,40 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             print('Try -f to force the state change', file=sys.stderr)
         return False
 
+    def safe_get_rpmlint_log(src_actions):
+        lintlogs = []
+        for action in src_actions:
+            print('Type %s:' % action.type)
+            disabled = show_package_disabled_repos(apiurl, action.src_project, action.src_package)
+            for repo in get_repos_of_project(apiurl, action.src_project):
+                if disabled is None or repo.name not in disabled:
+                    lintlog_entry = {
+                                      'proj': action.src_project,
+                                      'pkg': action.src_package,
+                                      'repo': repo.name,
+                                      'arch': repo.arch
+                                      }
+                    lintlogs.append(lintlog_entry)
+                    print('(%i) %s/%s/%s/%s' % ((len(lintlogs)-1), action.src_project, action.src_package, repo.name, repo.arch))
+        if not lintlogs:
+            print('No possible rpmlintlogs found')
+            return False
+        while True:
+            try:
+                lint_n = int(raw_input('Number of rpmlint log to examine (0 - %i): ' % (len(lintlogs)-1)))
+                lintlogs[lint_n]
+                break
+            except (ValueError, IndexError):
+                print('Invalid rpmlintlog index. Please choose between 0 and %i' % (len(lintlogs)-1))
+        try:
+            print(get_rpmlint_log(apiurl, **lintlogs[lint_n]))
+        except HTTPError as e:
+            if e.code == 404:
+                print('No rpmlintlog for %s %s' % (lintlogs[lint_n]['repo'],
+                      lintlogs[lint_n]['arch']))
+            else:
+                raise e
+
     def print_request(request):
         print(request)
 
@@ -7149,10 +7208,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
         # actions which have sources + buildresults
         src_actions = editable_actions + request.get_actions('maintenance_release')
         if editable_actions:
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/rpm(li)ntlog/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
         elif src_actions:
             # no edit for maintenance release requests
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/c(l)one/co(m)ment/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/rpm(li)ntlog/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
         if source_buildstatus and src_actions:
@@ -7164,11 +7223,13 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             else:
                 repl = raw_input(prompt).strip()
             if repl == 'i' and src_actions:
+                req_summary = str(request) + '\n'
                 if not orequest is None and tmpfile:
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
+                    tmpfile.write(req_summary)
                     try:
                         diff = request_diff(apiurl, request.reqid)
                         tmpfile.write(diff)
@@ -7197,6 +7258,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 create_comment(apiurl, 'request', comment, request.reqid)
             elif repl == 'b' and src_actions:
                 print_source_buildstatus(src_actions)
+            elif repl =='li' and src_actions:
+                safe_get_rpmlint_log(src_actions)
             elif repl == 'e' and editable_actions:
                 # this is only for editable actions
                 if not editprj:
@@ -7221,7 +7284,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
                         % (request.state.name, state)
                     msg_template = change_request_state_template(request, state)
-                footer += str(request)
+                if tmpfile is None:
+                    footer += str(request)
                 if tmpfile is not None:
                     tmpfile.seek(0)
                     # the read bytes probably have a moderate size so the str won't be too large

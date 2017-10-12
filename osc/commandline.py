@@ -1359,17 +1359,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
         supersede_existing = False
         reqs = []
-        if not opts.supersede and not opts.yes:
+        if not opts.supersede:
             (supersede_existing, reqs) = check_existing_requests(apiurl,
                                                                  src_project,
                                                                  src_package,
                                                                  dst_project,
-                                                                 dst_package)
+                                                                 dst_package,
+                                                                 not opts.yes)
             if not supersede_existing:
                (supersede_existing, reqs) = check_existing_maintenance_requests(apiurl,
                                                                  src_project,
                                                                  [src_package],
-                                                                 dst_project, None)
+                                                                 dst_project, None,
+                                                                 not opts.yes)
         if not opts.message:
             difflines = []
             doappend = False
@@ -4416,6 +4418,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           'C' Conflicted
           'D' Deleted
           'M' Modified
+          'R' Replaced (file was deleted and added again afterwards)
           '?' item is not under version control
           '!' item is missing (removed by non-osc command) or incomplete
           'S' item is skipped (item exceeds a file size limit or is _service:* file)
@@ -5128,10 +5131,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions("No project given")
 
         if package == None:
-            if opts.arch == []:
-                opts.arch = None
-            if opts.repo == []:
-                opts.repo = None
             opts.hide_legend = None
             opts.name_filter = None
             opts.status_filter = None
@@ -5182,9 +5181,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='show only packages with buildstatus STATUS (see legend)')
     @cmdln.option('-n', '--name-filter', metavar='EXPR',
                         help='show only packages whose names match EXPR')
-    @cmdln.option('-a', '--arch', metavar='ARCH',
+    @cmdln.option('-a', '--arch', metavar='ARCH', action='append',
                         help='show results only for specified architecture(s)')
-    @cmdln.option('-r', '--repo', metavar='REPO',
+    @cmdln.option('-r', '--repo', metavar='REPO', action='append',
                         help='show results only for specified repo(s)')
     @cmdln.option('-V', '--vertical', action='store_true',
                         help='list packages vertically instead horizontally')
@@ -5212,7 +5211,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
 
         if opts.xml:
-            print(''.join(show_prj_results_meta(apiurl, project)))
+            print(''.join(show_prj_results_meta(apiurl, project, opts.repo, opts.arch)))
             return
 
         print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \
