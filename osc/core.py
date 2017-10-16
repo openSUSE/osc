@@ -4777,6 +4777,29 @@ def request_diff(apiurl, reqid):
     f = http_POST(u)
     return f.read()
 
+def get_request_issues(apiurl, reqid):
+    """
+    gets a request xml with the issues for the request inside and creates
+    a list 'issue_list' with a dict of the relevant information for the issues.
+    This only works with bugtrackers we can access, like buzilla.o.o
+    """
+    u = makeurl(apiurl, ['request', reqid], query={'cmd': 'diff', 'view': 'xml', 'withissues': '1'} )
+    f = http_POST(u)
+    request_tree = ET.parse(f).getroot()
+    issue_list = []
+    for elem in request_tree.iterfind('action/sourcediff/issues/issue'):
+        issue_id = elem.get('name')
+        encode_search = '@name=\'%s\'' % issue_id
+        u = makeurl(apiurl, ['search/issue'], query={'match': encode_search} )
+        f = http_GET(u)
+        collection = ET.parse(f).getroot()
+        for cissue in collection:
+            issue = {}
+            for issue_detail in cissue.iter():
+                issue[issue_detail.tag] = issue_detail.text.strip()
+            issue_list.append(issue)
+    return issue_list
+
 def submit_action_diff(apiurl, action):
     """diff a single submit action"""
     # backward compatiblity: only a recent api/backend supports the missingok parameter
@@ -7200,6 +7223,30 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     raise
                 print('unable to retrieve the buildstatus: %s' % e)
 
+    def get_formatted_issues(apiurl, reqid):
+        """get issue_list and return a printable string"""
+        issue_list = get_request_issues(apiurl, reqid)
+        issues = ""
+        issues_nodetails = ""
+        # the check_list is needed to make sure that every issue is just listed
+        # once. Sometimes the API returns the same issue twice or more. See:
+        # https://github.com/openSUSE/open-build-service/issues/4044
+        # Once this is fixed this can be changed.
+        check_list = []
+        for issue in issue_list:
+            if issue['label'] in check_list:
+                continue
+            if 'summary' in issue:
+                issues += ("## BUG# " + issue['label'] + ": "
+                          + issue.get('summary') + " : "
+                          + issue.get('state', 'unknown state') + '\n')
+            else:
+                issues_nodetails += issue['label'] + ' '
+            check_list.append(issue['label'])
+        if issues_nodetails:
+            issues += '## No details for the issue(s): ' + issues_nodetails + '\n'
+        return issues
+
     print_request(request)
     print_comments(apiurl, 'request', request.reqid)
     try:
@@ -7224,12 +7271,14 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 repl = raw_input(prompt).strip()
             if repl == 'i' and src_actions:
                 req_summary = str(request) + '\n'
+                issues = '\n\n' + get_formatted_issues(apiurl, request.reqid)
                 if not orequest is None and tmpfile:
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
                     tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
                     tmpfile.write(req_summary)
+                    tmpfile.write(issues)
                     try:
                         diff = request_diff(apiurl, request.reqid)
                         tmpfile.write(diff)
