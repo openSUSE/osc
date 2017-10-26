@@ -6697,19 +6697,21 @@ def unpack_srcrpm(srpm, dir, *files):
     if os.path.isdir(dir):
         os.chdir(dir)
     ret = -1
-    with open(srpm, 'r') as fsrpm, open(os.devnull, 'w') as devnull:
-        rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
-                                         stdout=subprocess.PIPE)
-        # XXX: shell injection is possible via the files parameter, but the
-        #      current osc code does not use the files parameter.
-        cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
-                                     stdin=rpm2cpio_proc.stdout, stderr=devnull)
-        rpm2cpio_proc.stdout.close()
-        cpio_proc.communicate()
-        rpm2cpio_proc.wait()
-        ret = rpm2cpio_proc.returncode
-        if not ret:
-            ret = cpio_proc.returncode
+    with open(srpm, 'r') as fsrpm:
+        with open(os.devnull, 'w') as devnull:
+            rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
+                                             stdout=subprocess.PIPE)
+            # XXX: shell injection is possible via the files parameter, but the
+            #      current osc code does not use the files parameter.
+            cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
+                                         stdin=rpm2cpio_proc.stdout,
+                                         stderr=devnull)
+            rpm2cpio_proc.stdout.close()
+            cpio_proc.communicate()
+            rpm2cpio_proc.wait()
+            ret = rpm2cpio_proc.returncode
+            if not ret:
+                ret = cpio_proc.returncode
     if ret != 0:
         print('error \'%s\' - cannot extract \'%s\'' % (ret, srpm), file=sys.stderr)
         sys.exit(1)
