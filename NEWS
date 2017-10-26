@@ -1,3 +1,6 @@
+0.162
+  -
+
 0.161
   - show lintlogs in interactive request review mode
   - fix potential shell injections
