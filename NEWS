@@ -1,5 +1,11 @@
 0.161
-  -
+  - show lintlogs in interactive request review mode
+  - fix potential shell injections
+  - allow multiple --repo and --arch options in prjresults
+  - cleanup babysitter.by
+  - supersede existing requests if --yes is passed to osc sr
+  - prepend request summary to diff in interactive mode
+  - show issues(bugs) in interactive diff mode
 
 0.160
   - support fissile build type
