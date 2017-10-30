@@ -5,7 +5,14 @@ from . import ar
 import os.path
 import re
 import tarfile
+import StringIO
 from . import packagequery
+
+HAVE_LZMA = True
+try:
+    import lzma
+except ImportError:
+    HAVE_LZMA = False
 
 class DebError(packagequery.PackageError):
     pass
@@ -30,10 +37,18 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         if debbin.read() != '2.0\n':
             raise DebError(self.__path, 'invalid debian binary format')
         control = arfile.get_file('control.tar.gz')
-        if control is None:
-            raise DebError(self.__path, 'missing control.tar.gz')
-        # XXX: python2.4 relies on a name
-        tar = tarfile.open(name = 'control.tar.gz', fileobj = control)
+        if control is not None:
+            # XXX: python2.4 relies on a name
+            tar = tarfile.open(name='control.tar.gz', fileobj=control)
+        else:
+            control = arfile.get_file('control.tar.xz')
+            if control is None:
+                raise DebError(self.__path, 'missing control.tar')
+            if not HAVE_LZMA:
+                raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
+            decompressed = lzma.decompress(control.read())
+            tar = tarfile.open(name="control.tar.xz",
+                               fileobj=StringIO.StringIO(decompressed))
         try:
             name = './control'
             # workaround for python2.4's tarfile module
@@ -41,7 +56,8 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                 name = 'control'
             control = tar.extractfile(name)
         except KeyError:
-            raise DebError(self.__path, 'missing \'control\' file in control.tar.gz')
+            raise DebError(self.__path,
+                           'missing \'control\' file in control.tar')
         self.__parse_control(control, all_tags, self_provides, *extra_tags)
         return self
 
