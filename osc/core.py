@@ -4621,8 +4621,8 @@ def dgst(file):
         buf = f.read(BUFSIZE)
         if not buf: break
         s.update(buf)
-    return s.hexdigest()
     f.close()
+    return s.hexdigest()
 
 
 def binary(s):
