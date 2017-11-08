@@ -7,12 +7,12 @@ from __future__ import print_function
 
 """Read osc configuration and store it in a dictionary
 
-This module reads and parses ~/.oscrc. The resulting configuration is stored
+This module reads and parses oscrc. The resulting configuration is stored
 for later usage in a dictionary named 'config'.
-The .oscrc is kept mode 0600, so that it is not publically readable.
+The oscrc is kept mode 0600, so that it is not publically readable.
 This gives no real security for storing passwords.
 If in doubt, use your favourite keyring.
-Password is stored on ~/.oscrc as bz2 compressed and base64 encoded, so that is fairly
+Password is stored on ~/.config/osc/oscrc as bz2 compressed and base64 encoded, so that is fairly
 large and not to be recognized or remembered easily by an occasional spectator.
 
 If information is missing, it asks the user questions.
@@ -638,7 +638,9 @@ def get_configParser(conffile=None, force_read=False):
     ConfigParser object is stored in a method attribute and this attribute
     is returned unless you pass force_read=True.
     """
-    conffile = conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
+    if not conffile:
+        conffile = identify_conf()
+
     conffile = os.path.expanduser(conffile)
     if 'conffile' not in get_configParser.__dict__:
         get_configParser.conffile = conffile
@@ -654,6 +656,8 @@ def write_config(fname, cp):
     if os.path.exists(fname) and not os.path.isfile(fname):
         # only write to a regular file
         return
+    if not os.path.exists(os.path.dirname(fname)):
+        os.makedirs(os.path.dirname(fname), mode=0o700)
     with open(fname + '.new', 'w') as f:
         cp.write(f, comments=True)
     try:
@@ -818,14 +822,17 @@ def get_config(override_conffile=None,
     """do the actual work (see module documentation)"""
     global config
 
-    conffile = override_conffile or os.environ.get('OSC_CONFIG', '~/.oscrc')
-    conffile = os.path.expanduser(conffile)
+    if not override_conffile:
+        conffile = identify_conf()
+    else:
+        conffile = override_conffile
 
+    conffile = os.path.expanduser(conffile)
     if not os.path.exists(conffile):
         raise oscerr.NoConfigfile(conffile, \
                                   account_not_configured_text % conffile)
 
-    # okay, we made sure that .oscrc exists
+    # okay, we made sure that oscrc exists
 
     # make sure it is not world readable, it may contain a password.
     os.chmod(conffile, 0o600)
@@ -997,7 +1004,7 @@ def get_config(override_conffile=None,
         scheme = config.get('scheme', 'https')
         config['apiurl'] = urljoin(scheme, apisrv)
     if 'apisrc' in config or 'scheme' in config:
-        print('Warning: Use of the \'scheme\' or \'apisrv\' in ~/.oscrc is deprecated!\n' \
+        print('Warning: Use of the \'scheme\' or \'apisrv\' in oscrc is deprecated!\n' \
                             'Warning: See README for migration details.', file=sys.stderr)
     if 'build_platform' in config:
         print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
@@ -1037,5 +1044,15 @@ def get_config(override_conffile=None,
     # finally, initialize urllib2 for to use the credentials for Basic Authentication
     init_basicauth(config, os.stat(conffile).st_mtime)
 
+def identify_conf():
+    # needed for compat reasons(users may have their oscrc still in ~
+    if 'OSC_CONFIG' in os.environ:
+        return os.environ.get('OSC_CONFIG')
+    if os.path.exists(os.path.expanduser('~/.oscrc')):
+        conffile = '~/.oscrc'
+    else:
+        conffile = os.environ.get('XDG_CONFIG_HOME', '~/.config') + '/osc/oscrc'
+
+    return conffile
 
 # vim: sw=4 et

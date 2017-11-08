@@ -5631,7 +5631,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         The arguments REPOSITORY and ARCH are optional. They can be taken from
         the first two columns of the 'osc repos' output. If not specified,
-        REPOSITORY defaults to the 'build_repositoy' config entry in your '.oscrc'
+        REPOSITORY defaults to the 'build_repositoy' config entry in your 'oscrc'
         and ARCH defaults to your host architecture.
 
         usage:
@@ -6014,7 +6014,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nochecks', '--no-checks', action='store_true',
                   help='Do not run build checks on the resulting packages.')
     @cmdln.option('--no-verify', '--noverify', action='store_true',
-                  help='Skip signature verification (via pgp keys) of packages used for build. (Global config in .oscrc: no_verify)')
+                  help='Skip signature verification (via pgp keys) of packages used for build. (Global config in oscrc: no_verify)')
     @cmdln.option('--noservice', '--no-service', action='store_true',
                   help='Skip run of local source services as specified in _service file.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -6099,8 +6099,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Debian dsc file.
 
         The command honours packagecachedir, build-root and build-uid
-        settings in .oscrc, if present. You may want to set su-wrapper = 'sudo'
-        in .oscrc, and configure sudo with option NOPASSWD for /usr/bin/build.
+        settings in oscrc, if present. You may want to set su-wrapper = 'sudo'
+        in oscrc, and configure sudo with option NOPASSWD for /usr/bin/build.
 
         If neither --clean nor --noinit is given, build will reuse an existing
         build-root again, removing unneeded packages and add missing ones. This
@@ -8073,7 +8073,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
         if len(usernames) < 1:
             if 'user' not in conf.config['api_host_options'][apiurl]:
-                raise oscerr.WrongArgs('your .oscrc does not have your user name.')
+                raise oscerr.WrongArgs('your oscrc does not have your user name.')
             usernames = (conf.config['api_host_options'][apiurl]['user'],)
         for name in usernames:
             user = get_user_data(apiurl, name, 'login', 'realname', 'email')
@@ -8593,7 +8593,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         be in the cwd or in path.
 
         The email address used in .changes file is read from BuildService
-        instance, or should be defined in ~/.oscrc
+        instance, or should be defined in oscrc
         [https://api.opensuse.org/]
         user = login
         pass = password
