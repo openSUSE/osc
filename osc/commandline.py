@@ -802,7 +802,7 @@ class Osc(cmdln.Cmdln):
             osc meta <prj|pkg|prjconf|user|group|pattern> [-m|--message TEXT] -e|--edit ARGS...
             osc meta <prj|pkg|prjconf|user|group|pattern> [-m|--message TEXT] -F|--file ARGS...
             osc meta pattern --delete PRJ PATTERN
-            osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create|--delete|--set [value_list]]
+            osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create [--set <value_list>]|--delete|--set <value_list>]
         ${cmd_option_list}
         """
 
