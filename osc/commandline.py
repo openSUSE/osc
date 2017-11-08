@@ -5846,13 +5846,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if subcmd == 'repos_only':
             for repo in get_repositories_of_project(apiurl, project):
-                if (disabled is None) or ((disabled is not None) and (repo not in disabled)):
+                if (disabled is None) or ((disabled is not None) and (repo not in [d['repo'] for d in disabled])):
                     print(repo)
         else:
             data = []
             for repo in get_repos_of_project(apiurl, project):
-                if (disabled is None) or ((disabled is not None) and (repo.name not in disabled)):
-                    data += [repo.name, repo.arch]
+                if disabled is not None:
+                    if ({'repo': repo.name, 'arch': repo.arch} in disabled
+                        or repo.name in [d['repo'] for d in disabled if d['arch'] is None]
+                        or repo.arch in [d['arch'] for d in disabled if d['repo'] is None]):
+                            continue
+                data += [repo.name, repo.arch]
 
             for row in build_table(2, data, width=2):
                 print(row)
