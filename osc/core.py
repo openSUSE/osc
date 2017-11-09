@@ -3554,7 +3554,12 @@ def show_package_disabled_repos(apiurl, prj, pac):
     try:
         root = ET.fromstring(''.join(m))
         elm = root.find('build')
-        r = [ node.get('repository') for node in elm.findall('disable')]
+        r = []
+        for node in elm.findall('disable'):
+            repo = node.get('repository')
+            arch = node.get('arch')
+            dis_r = {'repo': repo, 'arch': arch}
+            r.append(dis_r)
         return r
     except:
         return None
@@ -7182,7 +7187,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             print('Type %s:' % action.type)
             disabled = show_package_disabled_repos(apiurl, action.src_project, action.src_package)
             for repo in get_repos_of_project(apiurl, action.src_project):
-                if disabled is None or repo.name not in disabled:
+                if (disabled is None) or (repo.name not in [d['repo'] for d in disabled]):
                     lintlog_entry = {
                                       'proj': action.src_project,
                                       'pkg': action.src_package,
