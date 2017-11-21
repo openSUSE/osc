@@ -7567,6 +7567,16 @@ def return_external(filename, *args, **kwargs):
         cmd = filename
 
     try:
+        # backward compatibility for python 2.6
+        if 'check_output' not in dir(subprocess):
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+            output, errstr = process.communicate()
+            retcode = process.poll()
+            if retcode:
+                error = subprocess.CalledProcessError(retcode, cmd)
+                error.output = output
+                raise error
+            return output
         return subprocess.check_output(cmd, **kwargs)
     except OSError as e:
         if e.errno != errno.ENOENT:
