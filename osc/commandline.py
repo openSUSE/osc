@@ -6425,11 +6425,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         suargs = ' '.join(suwrapper.split()[1:])
         if suwrapper.startswith('su '):
             mntproc = [sucmd, '%s mount -n -tproc none %s/proc' % (suargs, buildroot)]
+            mntsys = [sucmd, '%s mount -n -tsysfs none %s/sys' % (suargs, buildroot)]
             umntproc = [sucmd, '%s umount %s/proc' % (suargs, buildroot)]
+            umntsys = [sucmd, '%s umount %s/sys' % (suargs, buildroot)]
             cmd = [sucmd, '%s chroot "%s" su - %s' % (suargs, buildroot, user)]
         else:
             mntproc = [sucmd, 'mount', '-n', '-tproc' , 'none', '%s/proc' % buildroot]
+            mntsys = [sucmd, 'mount', '-n', '-tsysfs' , 'none', '%s/sys' % buildroot]
             umntproc = [sucmd, 'umount', '%s/proc' % buildroot]
+            umntsys = [sucmd, 'umount', '%s/sys' % buildroot]
             cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
             if suargs:
                 mntproc[1:1] = suargs.split()
@@ -6437,25 +6441,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 cmd[1:1] = suargs.split()
 
         #signal handler for chroot procfs umount
-        def umount_proc(signum = None, frame = None, ret=1):
+        def umount_handle(signum = None, frame = None, ret=1):
             subprocess.call(umntproc)
+            subprocess.call(umntsys)
             sys.exit(ret)
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-            signal.signal(sig, umount_proc)
+            signal.signal(sig, umount_handle)
 
         print('mounting proc: %s' % ' '.join(mntproc))
+        print('mounting sys: %s' % ' '.join(mntsys))
         mount_err = -1
-        mount_err = subprocess.call(mntproc)
-        if mount_err > 0:
+        proc_mount_err = subprocess.call(mntproc)
+        sys_mount_err = subprocess.call(mntsys)
+        if proc_mount_err > 0:
             print('There was an error mounting proc. Please check mountpoints in chroot')
+        if sys_mount_err > 0:
+            print('There was an error mounting sys. Please check mountpoints in chroot')
         print('running: %s' % ' '.join(cmd))
         retval = 0
         try:
             retval = subprocess.call(cmd)
         finally:
-            if not mount_err or mount_err == 32:
-                print('unmounting %s/proc ...' % buildroot)
-                umount_proc(ret=retval)
+            if ((not proc_mount_err or proc_mount_err == 32) and
+                (not sys_mount_err or sys_mount_err == 32)):
+                print('unmounting %s/proc and %s/sys ...' % (buildroot, buildroot))
+                umount_handle(ret=retval)
 
 
     @cmdln.option('', '--csv', action='store_true',
