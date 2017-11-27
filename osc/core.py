@@ -22,6 +22,7 @@ import re
 import socket
 import errno
 import shlex
+import hashlib
 
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
@@ -1393,7 +1394,7 @@ class Package:
             todo.append(n.get('name'))
         return todo
 
-    def __send_commitlog(self, msg, local_filelist):
+    def __send_commitlog(self, msg, local_filelist, validate=False):
         """send the commitlog and the local filelist to the server"""
         query = {}
         if self.islink() and self.isexpanded():
@@ -1405,6 +1406,8 @@ class Package:
                 query['linkrev'] = self.get_pulled_srcmd5()
         if self.islinkrepair():
             query['repairlink'] = '1'
+        if validate:
+            query['withvalidate'] = '1'
         return self.commit_filelist(self.apiurl, self.prjname, self.name,
                                     local_filelist, msg, **query)
 
@@ -1444,6 +1447,7 @@ class Package:
         todo_send = {}
         todo_delete = []
         real_send = []
+        sha256sums = {}
         for filename in self.filenamelist + [i for i in self.to_be_added if not i in self.filenamelist]:
             if filename.startswith('_service:') or filename.startswith('_service_'):
                 continue
@@ -1454,6 +1458,7 @@ class Package:
             elif filename in self.todo:
                 if st in ('A', 'R', 'M'):
                     todo_send[filename] = dgst(os.path.join(self.absdir, filename))
+                    sha256sums[filename] = sha256_dgst(os.path.join(self.absdir, filename))
                     real_send.append(filename)
                     print(statfrmt('Sending', os.path.join(pathn, filename)))
                 elif st in (' ', '!', 'S'):
@@ -1486,7 +1491,21 @@ class Package:
 
         print('Transmitting file data', end=' ')
         filelist = self.__generate_commitlist(todo_send)
-        sfilelist = self.__send_commitlog(msg, filelist)
+        sfilelist = self.__send_commitlog(msg, filelist, validate=True)
+        if sfilelist.get('error') and sfilelist.findall('.//entry[@hash]'):
+            name2elem = dict([(e.get('name'), e) for e in filelist.findall('entry')])
+            for entry in sfilelist.findall('.//entry[@hash]'):
+                filename = entry.get('name')
+                fileelem = name2elem.get(filename)
+                if filename not in sha256sums:
+                    msg = 'There is no sha256 sum for file %s.\n' \
+                          'This could be due to an outdated working copy.\n' \
+                          'Please update your working copy with osc update and\n' \
+                          'commit again afterwards.'
+                    print(msg % filename)
+                    return 1
+                fileelem.set('hash', 'sha256:%s' % sha256sums[filename])
+            sfilelist = self.__send_commitlog(msg, filelist)
         send = self.commit_get_missing(sfilelist)
         real_send = [i for i in real_send if not i in send]
         # abort after 3 tries
@@ -4629,6 +4648,18 @@ def dgst(file):
     f.close()
     return s.hexdigest()
 
+def sha256_dgst(file):
+
+    global BUFSIZE
+
+    f = open(file, 'rb')
+    s = hashlib.sha256()
+    while True:
+        buf = f.read(BUFSIZE)
+        if not buf: break
+        s.update(buf)
+    f.close()
+    return s.hexdigest()
 
 def binary(s):
     """return true if a string is binary data using diff's heuristic"""
