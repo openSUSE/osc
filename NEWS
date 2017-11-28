@@ -1,5 +1,6 @@
 0.162
-  -
+  - Additional file content check with SHA256 when using OBS 2.9
+  - support deb format with control.tar.xz
 
 0.161.1
   - Fix python 2.6 SyntaxError (multiple context expressions)
