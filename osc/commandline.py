@@ -4737,6 +4737,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='update to specified revision (this option will be ignored '
                              'if you are going to update the complete project or more than '
                              'one package)')
+    @cmdln.option('', '--linkrev', metavar='REV',
+                        help='revision of the link target that is used during link expansion')
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is an expanded link, update to the raw _link file')
     @cmdln.option('-e', '--expand-link', action='store_true',
@@ -4774,11 +4776,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
 
-        if (opts.expand_link and opts.unexpand_link) \
-            or (opts.expand_link and opts.revision) \
-            or (opts.unexpand_link and opts.revision):
-            raise oscerr.WrongOptions('Sorry, the options --expand-link, --unexpand-link and '
-                     '--revision are mutually exclusive.')
+        if opts.expand_link and opts.unexpand_link:
+            raise oscerr.WrongOptions('Sorry, the options --expand-link and '
+                                      '--unexpand-link and are mutually '
+                                      'exclusive.')
 
         args = parseargs(args)
         arg_list = args[:]
@@ -4809,6 +4810,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not checkRevision(pacs[0].prjname, pacs[0].name, rev, pacs[0].apiurl):
                 print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
                 sys.exit(1)
+            if opts.expand_link or opts.unexpand_link:
+                meta = show_files_meta(pacs[0].apiurl, pacs[0].prjname,
+                                       pacs[0].name, revision=rev,
+                                       linkrev=opts.linkrev,
+                                       expand=opts.server_side_source_service_files)
+                directory = ET.fromstring(meta)
+                li_node = directory.find('linkinfo')
+                if li_node is None:
+                    print('Revision \'%s\' is no link' % rev, file=sys.stderr)
+                    sys.exit(1)
+                li = Linkinfo()
+                li.read(li_node)
+                if li.haserror() and opts.expand_link:
+                    raise oscerr.LinkExpandError(pacs[0].prjname, pacs[0].name,
+                                                 li.error)
+                rev = li.lsrcmd5
+                if opts.expand_link:
+                    rev = li.xsrcmd5
+                if rev is None:
+                    # 2 cases: a) unexpand and passed rev has linkerror
+                    #          b) expand and passed rev is already expanded
+                    rev = directory.get('srcmd5')
         else:
             rev = None
 
