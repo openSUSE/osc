@@ -1484,6 +1484,15 @@ class Package:
                         'error: file \'%s\' with state \'%s\' is not known by meta' \
                         % (filename, st))
                 todo_send[filename] = f.md5
+            if ((self.ispulled() or self.islinkrepair()) and st != 'A'
+                and filename not in sha256sums):
+                # Ignore files with state 'A': if we should consider it,
+                # it would have been in pac.todo, which implies that it is
+                # in sha256sums.
+                # The storefile is guaranteed to exist (since we have a
+                # pulled/linkrepair wc, the file cannot have state 'S')
+                storefile = os.path.join(self.storedir, filename)
+                sha256sums[filename] = sha256_dgst(storefile)
 
         if not force and not real_send and not todo_delete and not self.islinkrepair() and not self.ispulled():
             print('nothing to do for package %s' % self.name)
