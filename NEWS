@@ -1,5 +1,5 @@
-0.163
-  -
+0.162.1
+  - Send sha256 hashes for tracked files if the wc is pulled/linkrepair
 
 0.162
   - Additional file content check with SHA256 when using OBS 2.9
