@@ -5702,9 +5702,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             from .util import cpio
             print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
             cpiodata = cpio.CpioWrite()
-            prefer_pkgs, cpio = get_prefer_pkgs(opts.prefer_pkgs, arch,
-                                                os.path.splitext(build_descr)[1],
-                                                cpiodata)
+            prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch,
+                                          os.path.splitext(build_descr)[1],
+                                          cpiodata)
             cpiodata.add(os.path.basename(build_descr), build_descr_data)
             build_descr_data = cpiodata.get()
 
