@@ -288,6 +288,8 @@ class Serviceinfo:
 
         for service in services:
             name = service.get('name')
+            if name is None:
+                error("invalid service definition. Attribute name missing.", service)
             if len(name) < 3 or '/' in name:
                 error("invalid service name: %s" % name, service)
             mode = service.get('mode', '')
