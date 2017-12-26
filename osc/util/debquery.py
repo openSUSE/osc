@@ -90,6 +90,9 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         self.fields['pre_depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('pre_depends', '')) if i ]
         self.fields['conflicts'] = [ i.strip() for i in re.split(',\s*', self.fields.get('conflicts', '')) if i ]
         self.fields['breaks'] = [ i.strip() for i in re.split(',\s*', self.fields.get('breaks', '')) if i ]
+        self.fields['recommends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('recommends', '')) if i ]
+        self.fields['suggests'] = [ i.strip() for i in re.split(',\s*', self.fields.get('suggests', '')) if i ]
+        self.fields['enhances'] = [ i.strip() for i in re.split(',\s*', self.fields.get('enhances', '')) if i ]
         if self_provides:
             # add self provides entry
             self.fields['provides'].append('%s (= %s)' % (self.name(), '-'.join(versrel)))
@@ -136,6 +139,19 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     def obsoletes(self):
         return []
+
+    def recommends(self):
+        return self.fields['recommends']
+
+    def suggests(self):
+        return self.fields['suggests']
+
+    def supplements(self):
+        # a control file has no notion of "supplements"
+        return []
+
+    def enhances(self):
+        return self.fields['enhances']
 
     def gettag(self, num):
         return self.fields.get(num, None)

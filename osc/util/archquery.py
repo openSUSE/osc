@@ -95,6 +95,24 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def obsoletes(self):
         return self.fields['replaces'] if 'replaces' in self.fields else []
 
+    def recommends(self):
+        # a .PKGINFO has no notion of "recommends"
+        return []
+
+    def suggests(self):
+        # libsolv treats an optdepend as a "suggests", hence we do the same
+        if 'optdepend' not in self.fields:
+            return []
+        return [re.sub(':.*', '', entry) for entry in self.fields['optdepend']]
+
+    def supplements(self):
+        # a .PKGINFO has no notion of "recommends"
+        return []
+
+    def enhances(self):
+        # a .PKGINFO has no notion of "enhances"
+        return []
+
     def canonname(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
         return self.name() + '-' + pkgver + '-' + self.arch() + '.' + self.pkgsuffix

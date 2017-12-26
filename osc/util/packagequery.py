@@ -127,6 +127,18 @@ class PackageQueryResult:
     def obsoletes(self):
         raise NotImplementedError
 
+    def recommends(self):
+        raise NotImplementedError
+
+    def suggests(self):
+        raise NotImplementedError
+
+    def supplements(self):
+        raise NotImplementedError
+
+    def enhances(self):
+        raise NotImplementedError
+
     def gettag(self, tag):
         raise NotImplementedError
 

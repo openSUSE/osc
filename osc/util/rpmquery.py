@@ -58,11 +58,18 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     GREATER = 1 << 2
     EQUAL = 1 << 3
 
+    SENSE_STRONG = 1 << 27
+
     default_tags = (1000, 1001, 1002, 1003, 1004, 1022, 1005, 1020,
         1047, 1112, 1113, # provides
         1049, 1048, 1050, # requires
         1054, 1053, 1055, # conflicts
-        1090, 1114, 1115  # obsoletes
+        1090, 1114, 1115, # obsoletes
+        1156, 1158, 1157, # oldsuggests
+        5046, 5047, 5048, # recommends
+        5049, 5051, 5050, # suggests
+        5052, 5053, 5054, # supplements
+        5055, 5056, 5057  # enhances
     )
 
     def __init__(self, fh):
@@ -156,7 +163,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         else:
             raise RpmHeaderError(self.__path, 'unsupported tag type \'%d\' (tag: \'%s\'' % (entry.type, entry.tag))
 
-    def __reqprov(self, tag, flags, version):
+    def __reqprov(self, tag, flags, version, strong=None):
         pnames = self.header.gettag(tag)
         if not pnames:
 	    return []
@@ -167,6 +174,14 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             raise RpmError(self.__path, 'cannot get provides/requires, tags are missing')
         res = []
         for name, flags, ver in zip(pnames, pflags, pvers):
+            if strong is not None:
+                # compat code for the obsolete RPMTAG_OLDSUGGESTSNAME tag
+                # strong == 1 => return only "recommends"
+                # strong == 0 => return only "suggests"
+                if strong == 1:
+                    strong = self.SENSE_STRONG
+                if (flags & self.SENSE_STRONG) != strong:
+                    continue
             # RPMSENSE_SENSEMASK = 15 (see rpmlib.h) but ignore RPMSENSE_SERIAL (= 1 << 0) therefore use 14
             if flags & 14:
                 name += ' '
@@ -235,6 +250,24 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     def obsoletes(self):
         return self.__reqprov(1090, 1114, 1115)
+
+    def recommends(self):
+        recommends = self.__reqprov(5046, 5048, 5047)
+        if not recommends:
+            recommends = self.__reqprov(1156, 1158, 1157, 1)
+        return recommends
+
+    def suggests(self):
+        suggests = self.__reqprov(5049, 5051, 5050)
+        if not suggests:
+            suggests = self.__reqprov(1156, 1158, 1157, 0)
+        return suggests
+
+    def supplements(self):
+        return self.__reqprov(5052, 5054, 5053)
+
+    def enhances(self):
+        return self.__reqprov(5055, 5057, 5506)
 
     def is_src(self):
         # SOURCERPM = 1044

@@ -154,6 +154,18 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
     def obsoletes(self):
         return self.__parseEntryCollection('obsoletes')
 
+    def recommends(self):
+        return self.__parseEntryCollection('recommends')
+
+    def suggests(self):
+        return self.__parseEntryCollection('suggests')
+
+    def supplements(self):
+        return self.__parseEntryCollection('supplements')
+
+    def enhances(self):
+        return self.__parseEntryCollection('enhances')
+
     def canonname(self):
         return osc.util.rpmquery.RpmQuery.filename(self.name(), None,
             self.version(), self.release(), self.arch())
