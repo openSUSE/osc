@@ -473,6 +473,12 @@ def create_deps(pkgqs):
         d = p.obsoletes()
         if d:
             depfile.append('O:%s%s' % (id, ' '.join(d)))
+        d = p.recommends()
+        if d:
+            depfile.append('r:%s%s' % (id, ' '.join(d)))
+        d = p.supplements()
+        if d:
+            depfile.append('s:%s%s' % (id, ' '.join(d)))
         depfile.append('I:%s%s-%s 0-%s' % (id, p.name(), p.evr(), p.arch()))
     return depfile
 
