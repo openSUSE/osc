@@ -5976,7 +5976,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project('.')
                 bc = get_buildconfig(apiurl, project, arg_repository)
                 with tempfile.NamedTemporaryFile() as f:
-                    f.write(bc)
+                    f.write(bytes(bc, 'utf-8'))
                     f.flush()
                     # some distros like Debian rename and move build to obs-build
                     if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
@@ -5995,7 +5995,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if recipe == 'PKGBUILD':
                     cands = [d for d in descr if d.startswith(recipe)]
                 else:
-                    cands = [d for d in descr if d.endswith('.' + recipe)]
+                    print(recipe)
+                    cands = [d for d in descr if d.endswith('.' + recipe.decode('utf-8'))]
                 if len(cands) > 1:
                     repo_cands = [d for d in cands if d == '%s-%s.%s' % (pac, arg_repository, recipe)]
                     if repo_cands:

@@ -5,7 +5,10 @@ from . import ar
 import os.path
 import re
 import tarfile
-import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    import StringIO
 from . import packagequery
 
 HAVE_LZMA = True

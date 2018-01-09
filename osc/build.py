@@ -1143,7 +1143,7 @@ def main(apiurl, opts, argv):
         if bi.installonly_list:
             rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
-    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
+    rpmlist_file = NamedTemporaryFile(mode='w+t', prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
@@ -1223,6 +1223,7 @@ def main(apiurl, opts, argv):
         cmd = [ change_personality[bi.buildarch] ] + cmd
 
     try:
+        print(cmd)
         rc = run_external(cmd[0], *cmd[1:])
         if rc:
             print()

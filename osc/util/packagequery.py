@@ -55,8 +55,10 @@ class PackageQuery:
     # does not make much sense) (the same is true for the queryhdrmd5 method)
     @staticmethod
     def query(filename, all_tags=False, extra_rpmtags=(), extra_debtags=(), self_provides=True):
+        print(filename)
         f = open(filename, 'rb')
-        magic = f.read(7)
+        magic = f.read(7).decode('latin-1')
+        print(magic)
         f.seek(0)
         extra_tags = ()
         pkgquery = None

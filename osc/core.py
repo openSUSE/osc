@@ -1834,6 +1834,7 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = show_package_meta(self.apiurl, self.prjname, self.name)
+        print(meta)
         if meta != "":
             # is empty for _project for example
             meta = ''.join(meta)
@@ -3472,7 +3473,8 @@ def show_project_meta(apiurl, prj, rev=None, blame=None):
         else:
             url = makeurl(apiurl, ['source', prj, '_meta'])
         f = http_GET(url)
-    return f.readlines()
+    #return f.readlines()
+    return f.read().decode('utf-8')
 
 def show_project_conf(apiurl, prj, rev=None, blame=None):
     query = {}
@@ -3513,7 +3515,7 @@ def show_package_meta(apiurl, prj, pac, meta=False, blame=None):
     url = makeurl(apiurl, ['source', prj, pac, '_meta'], query)
     try:
         f = http_GET(url)
-        return f.readlines()
+        return f.read().decode('utf-8')
     except HTTPError as e:
         e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         raise
@@ -6070,13 +6072,13 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
         f = http_POST(u, data=specfile)
     else:
         f = http_GET(u)
-    return f.read()
+    return f.read().decode('utf-8')
 
 
 def get_buildconfig(apiurl, prj, repository):
     u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'])
     f = http_GET(u)
-    return f.read()
+    return f.read().decode('utf-8')
 
 
 def get_worker_info(apiurl, worker):

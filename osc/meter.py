@@ -45,8 +45,8 @@ class TextMeter(BaseMeter):
             width = getScreenWidth()
 
 
-        #self.unsized_templ = '\r%-60.60s    %5sB %s '
-        self.unsized_templ = '\r%%-%s.%ss    %%5sB %%s ' % (width *2/5, width*3/5)
+        self.unsized_templ = '\r%-60.60s    %5sB %s '
+        #self.unsized_templ = '\r%%-%s.%ss    %%5sB %%s ' % (width *2/5, width*3/5)
         #self.sized_templ = '\r%-45.45s %3i%% |%-15.15s| %5sB %8s '
         self.bar_length = width/5
         self.sized_templ = '\r%%-%s.%ss %%3i%%%% |%%-%s.%ss| %%5sB %%8s ' % (width*4/10, width*4/10, self.bar_length, self.bar_length)
@@ -66,6 +66,7 @@ class TextMeter(BaseMeter):
         else:
             text = self.basename
         if self.size is None:
+            print(text
             out = self.unsized_templ % \
                   (text, fread, fetime)
         else:
