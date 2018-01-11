@@ -7938,9 +7938,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             repl = raw_input('\nUse this container? (y/n) ')
                             if repl.lower() != 'y':
                                 searchresult = None
-                    else:
-                       print("Empty search result, you may want to search with other or all roles via -r ''")
-                       return
             elif opts.user:
                 searchresult = owner(apiurl, opts.user, "user", usefilter=filterroles, devel=None)
             elif opts.group:
