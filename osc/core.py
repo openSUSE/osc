@@ -241,6 +241,7 @@ buildstatus_symbols = {'succeeded':       '.',
 }
 
 
+
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
     try:
@@ -3339,6 +3340,7 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
+    global fd
     try:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
@@ -3350,8 +3352,24 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if filefd: filefd.close()
 
+    global orig_readl
+    orig_readl = fd.readlines
+    fd.readlines = modified_readlines
     return fd
 
+
+def modified_readlines(x=0):
+    fd.readlines=orig_readl
+    xlist = fd.readlines()
+    ret = list(map(lambda x: convert_list(x), xlist))
+    return ret
+
+def convert_list(s):
+    try:
+        return str(s,encoding='utf-8')
+    except:
+        return s
+    return
 
 def http_GET(*args, **kwargs):    return http_request('GET', *args, **kwargs)
 def http_POST(*args, **kwargs):   return http_request('POST', *args, **kwargs)
@@ -3473,8 +3491,8 @@ def show_project_meta(apiurl, prj, rev=None, blame=None):
         else:
             url = makeurl(apiurl, ['source', prj, '_meta'])
         f = http_GET(url)
-    #return f.readlines()
-    return f.read().decode('utf-8')
+    return f.readlines()
+
 
 def show_project_conf(apiurl, prj, rev=None, blame=None):
     query = {}
@@ -3515,7 +3533,7 @@ def show_package_meta(apiurl, prj, pac, meta=False, blame=None):
     url = makeurl(apiurl, ['source', prj, pac, '_meta'], query)
     try:
         f = http_GET(url)
-        return f.read().decode('utf-8')
+        return f.readlines()
     except HTTPError as e:
         e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         raise
@@ -3818,7 +3836,8 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    return f.read()
+    sys.stderr.write(f.read())
+    return f.read().decode('utf-8')
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
@@ -4029,7 +4048,8 @@ def _edit_message_open_editor(filename, data, orig_mtime):
         # prepare file for editors
         if editor[0] in ('vi', 'vim'):
             with tempfile.NamedTemporaryFile() as f:
-                f.write(data)
+                print(data)
+                f.write(data.encode('utf-8'))
                 f.flush()
                 editor.extend(['-c', ':r %s' % f.name, filename])
                 run_external(editor[0], *editor[1:])
@@ -4479,6 +4499,11 @@ def get_request_log(apiurl, reqid):
         data.append(s)
     return data
 
+def compare(a, b): return cmp(a[1:], b[1:])
+
+def cmp(a, b):
+    return (a > b) - (a < b)
+ 
 def check_existing_requests(apiurl, src_project, src_package, dst_project,
                             dst_package, ask=True):
     reqs = get_exact_request_list(apiurl, src_project, dst_project,
@@ -6072,13 +6097,13 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
         f = http_POST(u, data=specfile)
     else:
         f = http_GET(u)
-    return f.read().decode('utf-8')
+    return f.read()
 
 
 def get_buildconfig(apiurl, prj, repository):
     u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'])
     f = http_GET(u)
-    return f.read().decode('utf-8')
+    return f.read()
 
 
 def get_worker_info(apiurl, worker):
@@ -6096,7 +6121,7 @@ def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=No
     query['arch'] = arch
     u = makeurl(apiurl, ['worker'], query)
     f = http_POST(u, data=constraintsfile)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(''.join(f.readlines()))
     return [node.get('name') for node in root.findall('entry')]
 
 
@@ -6987,6 +7012,7 @@ def addDownloadUrlService(url):
 
     # for pretty output
     xmlindent(s)
+    print(s)
     f = open(service_file, 'wb')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
@@ -7169,8 +7195,9 @@ def get_commit_msg(wc_dir, pacs):
     # but first, produce status and diff to append to the template
     footer = []
     lines = []
+    from functools import cmp_to_key
     for p in pacs:
-        states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
+        states = sorted(p.get_status(False, ' ', '?'), key=cmp_to_key(compare))
         changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
         if changed:
             footer += changed
