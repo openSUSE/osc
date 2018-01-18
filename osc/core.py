@@ -1835,7 +1835,6 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = show_package_meta(self.apiurl, self.prjname, self.name)
-        print(meta)
         if meta != "":
             # is empty for _project for example
             meta = ''.join(meta)
@@ -3836,7 +3835,6 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    sys.stderr.write(f.read())
     return f.read().decode('utf-8')
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
@@ -4606,9 +4604,9 @@ def download(url, filename, progress_obj = None, mtime = None):
         (fd, tmpfile) = tempfile.mkstemp(dir=path, prefix = prefix, suffix = '.osctmp')
         os.fchmod(fd, 0o644)
         try:
-            o = os.fdopen(fd, 'wb')
+            o = os.fdopen(fd, 'w')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
-                o.write(bytes(buf, "utf-8"))
+                o.write(str(buf))
             o.close()
             os.rename(tmpfile, filename)
         except:
@@ -4806,7 +4804,11 @@ def server_diff(apiurl,
         for issuenode in node.findall('issue'):
             issue_list.append(issuenode.get('label'))
         return '\n'.join(issue_list)
-    return f.read()
+    ret = f.read()
+    if isinstance(ret, str):
+        return ret
+    else:
+        return ret.decode('utf-8')
 
 def server_diff_noex(apiurl,
                 old_project, old_package, old_revision,
@@ -6023,7 +6025,14 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 
     read = 0
     while True:
-        data = xread(bufsize)
+        if sys.version_info >= (3, 0):
+            tmp_dat = xread(bufsize)
+            if isinstance(tmp_dat, str):
+                data = tmp_dat
+            else:
+                data = tmp_dat.decode('utf-8')
+        else:
+            data = xread(bufsize)
         if not len(data):
             break
         read += len(data)
