@@ -24,6 +24,8 @@ import errno
 import shlex
 import hashlib
 
+from functools import cmp_to_key
+
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
     from urllib.error import HTTPError
@@ -240,7 +242,10 @@ buildstatus_symbols = {'succeeded':       '.',
                        'signing':         'S',
 }
 
+def compare(a, b): return cmp(a[1:], b[1:])
 
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
@@ -3492,7 +3497,6 @@ def show_project_meta(apiurl, prj, rev=None, blame=None):
         f = http_GET(url)
     return f.readlines()
 
-
 def show_project_conf(apiurl, prj, rev=None, blame=None):
     query = {}
     url = None
@@ -3835,7 +3839,10 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    return f.read().decode('utf-8')
+    if sys.version_info >= (3 0):
+        return f.read().decode('utf-8')
+    else
+        return f.read()
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
@@ -4046,8 +4053,10 @@ def _edit_message_open_editor(filename, data, orig_mtime):
         # prepare file for editors
         if editor[0] in ('vi', 'vim'):
             with tempfile.NamedTemporaryFile() as f:
-                print(data)
-                f.write(data.encode('utf-8'))
+                if isinstance(data, str):
+                    f.write(data.encode('utf-8'))
+                else:
+                    f.write(data)
                 f.flush()
                 editor.extend(['-c', ':r %s' % f.name, filename])
                 run_external(editor[0], *editor[1:])
@@ -4497,11 +4506,6 @@ def get_request_log(apiurl, reqid):
         data.append(s)
     return data
 
-def compare(a, b): return cmp(a[1:], b[1:])
-
-def cmp(a, b):
-    return (a > b) - (a < b)
- 
 def check_existing_requests(apiurl, src_project, src_package, dst_project,
                             dst_package, ask=True):
     reqs = get_exact_request_list(apiurl, src_project, dst_project,
@@ -7021,7 +7025,6 @@ def addDownloadUrlService(url):
 
     # for pretty output
     xmlindent(s)
-    print(s)
     f = open(service_file, 'wb')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
@@ -7204,7 +7207,6 @@ def get_commit_msg(wc_dir, pacs):
     # but first, produce status and diff to append to the template
     footer = []
     lines = []
-    from functools import cmp_to_key
     for p in pacs:
         states = sorted(p.get_status(False, ' ', '?'), key=cmp_to_key(compare))
         changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]

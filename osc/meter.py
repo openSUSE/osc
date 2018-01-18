@@ -66,7 +66,6 @@ class TextMeter(BaseMeter):
         else:
             text = self.basename
         if self.size is None:
-            print(text
             out = self.unsized_templ % \
                   (text, fread, fetime)
         else:

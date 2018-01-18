@@ -4066,8 +4066,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  close_fds=True)
-            p.stdin.write(rdiff.encode())
-            #p.stdin.write(rdiff)
+            if isinstance(rdiff, str):
+                p.stdin.write(rdiff)
+            else:
+                p.stdin.write(rdiff.encode())
             p.stdin.close()
             print("".join(x.decode() for x in p.stdout.readlines()))
         elif opts.unified:
@@ -5977,7 +5979,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project('.')
                 bc = get_buildconfig(apiurl, project, arg_repository)
                 with tempfile.NamedTemporaryFile() as f:
-                    f.write(bytes(bc, 'utf-8'))
+                    if sys.version_info >= (3, 0):
+                        f.write(bytes(bc, 'utf-8'))
+                    else:
+                        f.write(bc)
                     f.flush()
                     # some distros like Debian rename and move build to obs-build
                     if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
@@ -5997,7 +6002,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     cands = [d for d in descr if d.startswith(recipe)]
                 else:
                     print(recipe)
-                    cands = [d for d in descr if d.endswith('.' + recipe.decode('utf-8'))]
+                    if sys.version_info >= (3, 0):
+                        cands = [d for d in descr if d.endswith('.' + recipe.decode('utf-8'))]
+                    else:
+                        cands = [d for d in descr if d.endswith('.' + recipe)]
                 if len(cands) > 1:
                     repo_cands = [d for d in cands if d == '%s-%s.%s' % (pac, arg_repository, recipe)]
                     if repo_cands:

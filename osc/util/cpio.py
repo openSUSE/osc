@@ -161,7 +161,10 @@ class CpioRead:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
         data = self.__file.read(6)
-        self.format = data.decode('utf-8')
+        if isinstance(data, bytes):
+            self.format = data.decode('utf-8')
+        else:
+            self.format = data
         if not self.format in self.sfmt.values():
             raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
@@ -174,7 +177,9 @@ class CpioRead:
             data = struct.unpack(self.hdr_fmt, data)
             hdr = CpioHdr(*data)
             hdr.filename = self.__file.read(hdr.namesize - 1)
-            if hdr.filename.decode('utf-8') == 'TRAILER!!!':
+            if isinstance(hdr.filename, bytes):
+                hdr.filename = hdr.filename.decode('utf-8')
+            if hdr.filename == 'TRAILER!!!':
                 break
             pos += hdr.namesize
             if self._is_format('newascii'):

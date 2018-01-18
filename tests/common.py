@@ -105,7 +105,6 @@ class MyHTTPHandler(HTTPHandler):
         if 'exception' in kwargs:
             raise kwargs['exception']
         if 'text' not in kwargs and 'file' in kwargs:
-            #f = StringIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'r').read())
             f = open(os.path.join(self.__fixtures_dir, kwargs['file']), 'rb')
         elif 'text' in kwargs and 'file' not in kwargs:
             f = StringIO(kwargs['text'])

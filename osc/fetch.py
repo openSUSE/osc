@@ -128,8 +128,9 @@ class Fetcher:
                         raise oscerr.APIError('CPIO archive is incomplete '
                                               '(see .errors file)')
                     if package == '_repository':
-                        print(hdr.filename)
-                        n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename.decode('utf-8'))
+                        if isinstance(hdr.filename, bytes):
+                            hdr.filename = hdr.filename.decode('utf-8')
+                        n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename)
                         if n.startswith('container:'):
                             n = re.sub(r'\.tar\..z$', '.tar', hdr.filename)
                             pac = pkgs[n.rsplit('.', 1)[0]]
