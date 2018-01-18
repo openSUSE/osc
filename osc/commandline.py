@@ -4067,9 +4067,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  stdout=subprocess.PIPE,
                                  close_fds=True)
             if isinstance(rdiff, str):
-                p.stdin.write(rdiff)
-            else:
                 p.stdin.write(rdiff.encode())
+            else:
+                p.stdin.write(rdiff)
             p.stdin.close()
             print("".join(x.decode() for x in p.stdout.readlines()))
         elif opts.unified:

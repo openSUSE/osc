@@ -3839,9 +3839,9 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    if sys.version_info >= (3 0):
+    if sys.version_info >= (3, 0):
         return f.read().decode('utf-8')
-    else
+    else:
         return f.read()
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
