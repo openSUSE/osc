@@ -4843,7 +4843,8 @@ def get_request_issues(apiurl, reqid):
         for cissue in collection:
             issue = {}
             for issue_detail in cissue.iter():
-                issue[issue_detail.tag] = issue_detail.text.strip()
+                if issue_detail.text:
+                    issue[issue_detail.tag] = issue_detail.text.strip()
             issue_list.append(issue)
     return issue_list
 
