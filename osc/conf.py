@@ -201,6 +201,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
     'status_mtime_heuristic']
+integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
@@ -848,11 +849,14 @@ def get_config(override_conffile=None,
     config = dict(cp.items('general', raw=1))
     config['conffile'] = conffile
 
-    for i in boolean_opts:
-        try:
-            config[i] = cp.getboolean('general', i)
-        except ValueError as e:
-            raise oscerr.ConfigError('cannot parse \'%s\' setting: ' % i + str(e), conffile)
+    typed_opts = ((boolean_opts, cp.getboolean), (integer_opts, cp.getint))
+    for opts, meth in typed_opts:
+        for opt in opts:
+            try:
+                config[opt] = meth('general', opt)
+            except ValueError as e:
+                msg = 'cannot parse \'%s\' setting: %s' % (opt, str(e))
+                raise oscerr.ConfigError(msg, conffile)
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
     config['exclude_glob'] = config['exclude_glob'].split()
