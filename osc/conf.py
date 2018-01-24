@@ -118,7 +118,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-kernel': '',                 # optional for VM builds
             'build-initrd': '',                 # optional for VM builds
 
-            'build-jobs': _get_processors(),
+            'build-jobs': str(_get_processors()),
             'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
             'icecream': '0',
 
