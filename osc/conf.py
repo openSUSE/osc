@@ -547,10 +547,10 @@ def _build_opener(apiurl):
                     capath = i
                     break
         if not cafile and not capath:
-            raise oscerr.OscIOError(None, 'No CA certificates found')
+            raise oscerr.OscIOError(None, 'No CA certificates found. (You may want to install ca-certificates-mozilla package)')
         ctx = oscssl.mySSLContext()
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
-            raise oscerr.OscIOError(None, 'No CA certificates found')
+            raise oscerr.OscIOError(None, 'No CA certificates found. (You may want to install ca-certificates-mozilla package)')
         opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
     else:
         handlers = [HTTPCookieProcessor(cookiejar), authhandler, proxyhandler]
