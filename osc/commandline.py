@@ -6449,45 +6449,59 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if suwrapper.startswith('su '):
             mntproc = [sucmd, '%s mount -n -tproc none %s/proc' % (suargs, buildroot)]
             mntsys = [sucmd, '%s mount -n -tsysfs none %s/sys' % (suargs, buildroot)]
+            mntdevpts = [sucmd, '%s mount -n -tdevpts -omode=0620,gid=5 none %s/dev/pts' % (suargs, buildroot)]
             umntproc = [sucmd, '%s umount %s/proc' % (suargs, buildroot)]
             umntsys = [sucmd, '%s umount %s/sys' % (suargs, buildroot)]
+            umntdevpts = [sucmd, '%s umount %s/devpts' % (suargs, buildroot)]
             cmd = [sucmd, '%s chroot "%s" su - %s' % (suargs, buildroot, user)]
         else:
             mntproc = [sucmd, 'mount', '-n', '-tproc' , 'none', '%s/proc' % buildroot]
             mntsys = [sucmd, 'mount', '-n', '-tsysfs' , 'none', '%s/sys' % buildroot]
+            mntdevpts = [sucmd, 'mount', '-n', '-tdevpts' , '-omode=0620,gid=5', 'none', '%s/dev/pts' % buildroot]
             umntproc = [sucmd, 'umount', '%s/proc' % buildroot]
             umntsys = [sucmd, 'umount', '%s/sys' % buildroot]
+            umntdevpts = [sucmd, 'umount', '%s/dev/pts' % buildroot]
             cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
             if suargs:
                 mntproc[1:1] = suargs.split()
+                mntsys[1:1] = suargs.split()
+                mntdevpts[1:1] = suargs.split()
                 umntproc[1:1] = suargs.split()
+                umntsys[1:1] = suargs.split()
+                umntdevpts[1:1] = suargs.split()
                 cmd[1:1] = suargs.split()
 
         #signal handler for chroot procfs umount
         def umount_handle(signum = None, frame = None, ret=1):
             subprocess.call(umntproc)
             subprocess.call(umntsys)
+            subprocess.call(umntdevpts)
             sys.exit(ret)
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
             signal.signal(sig, umount_handle)
 
         print('mounting proc: %s' % ' '.join(mntproc))
         print('mounting sys: %s' % ' '.join(mntsys))
+        print('mounting devpts: %s' % ' '.join(mntdevpts))
         mount_err = -1
         proc_mount_err = subprocess.call(mntproc)
         sys_mount_err = subprocess.call(mntsys)
+        devpts_mount_err = subprocess.call(mntdevpts)
         if proc_mount_err > 0:
             print('There was an error mounting proc. Please check mountpoints in chroot')
         if sys_mount_err > 0:
             print('There was an error mounting sys. Please check mountpoints in chroot')
+        if devpts_mount_err > 0:
+            print('There was an error mounting devpts. Please check mountpoints in chroot')
         print('running: %s' % ' '.join(cmd))
         retval = 0
         try:
             retval = subprocess.call(cmd)
         finally:
             if ((not proc_mount_err or proc_mount_err == 32) and
-                (not sys_mount_err or sys_mount_err == 32)):
-                print('unmounting %s/proc and %s/sys ...' % (buildroot, buildroot))
+                (not sys_mount_err or sys_mount_err == 32) and
+                (not devpts_mount_err or devpts_mount_err == 32)):
+                print('unmounting %s/proc and %s/sys and %s/dev/pts ...' % (buildroot, buildroot, buildroot))
                 umount_handle(ret=retval)
 
 
