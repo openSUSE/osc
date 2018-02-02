@@ -15,56 +15,18 @@ except ImportError:
     from urllib import quote_plus
     from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
 
-from urlgrabber.grabber import URLGrabber, URLGrabError
-from urlgrabber.mirror import MirrorGroup
 from .core import makeurl, streamfile, dgst
+from .grabber import OscFileGrabber, OscMirrorGroup
 from .util import packagequery, cpio
 from . import conf
 from . import oscerr
 import tempfile
 import re
+
 try:
     from .meter import TextMeter
-except:
+except ImportError:
     TextMeter = None
-
-
-def join_url(self, base_url, rel_url):
-    """to override _join_url of MirrorGroup, because we want to
-    pass full URLs instead of base URL where relative_url is added later...
-    IOW, we make MirrorGroup ignore relative_url
-    """
-    return base_url
-
-
-class OscFileGrabber(URLGrabber):
-    def __init__(self, progress_obj=None):
-        # we cannot use super because we still have to support
-        # older urlgrabber versions where URLGrabber is an old-style class
-        URLGrabber.__init__(self)
-        self.progress_obj = progress_obj
-
-    def urlgrab(self, url, filename, text=None, **kwargs):
-        if url.startswith('file://'):
-            f = url.replace('file://', '', 1)
-            if os.path.isfile(f):
-                return f
-            else:
-                raise URLGrabError(2, 'Local file \'%s\' does not exist' % f)
-        with file(filename, 'wb') as f:
-            try:
-                for i in streamfile(url, progress_obj=self.progress_obj,
-                                    text=text):
-                    f.write(i)
-            except HTTPError as e:
-                exc = URLGrabError(14, str(e))
-                exc.url = url
-                exc.exception = e
-                exc.code = e.code
-                raise exc
-            except IOError as e:
-                raise URLGrabError(4, str(e))
-        return filename
 
 
 class Fetcher:
@@ -72,7 +34,7 @@ class Fetcher:
             http_debug=False, cookiejar=None, offline=False, enable_cpio=True):
         # set up progress bar callback
         if sys.stdout.isatty() and TextMeter:
-            self.progress_obj = TextMeter(fo=sys.stdout)
+            self.progress_obj = TextMeter()
         else:
             self.progress_obj = None
 
@@ -91,14 +53,6 @@ class Fetcher:
         if cookiejar:
             openers += (HTTPCookieProcessor(cookiejar), )
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
-
-    def failureReport(self, errobj):
-        """failure output for failovers from urlgrabber"""
-        if errobj.url.startswith('file://'):
-            return {}
-        print('%s/%s: attempting download from api, since not found at %s'
-              % (self.curpac.project, self.curpac, errobj.url.split('/')[2]))
-        return {}
 
     def __add_cpio(self, pac):
         prpap = '%s/%s/%s/%s' % (pac.project, pac.repository, pac.repoarch, pac.repopackage)
@@ -156,8 +110,8 @@ class Fetcher:
                         raise oscerr.APIError('failed to fetch file \'%s\': '
                                               'missing in CPIO archive' %
                                               pac.repofilename)
-        except URLGrabError as e:
-            if e.errno != 14 or e.code != 414:
+        except HTTPError as e:
+            if e.code != 414:
                 raise
             # query str was too large
             keys = list(pkgs.keys())
@@ -181,8 +135,7 @@ class Fetcher:
         # for use by the failure callback
         self.curpac = pac
 
-        MirrorGroup._join_url = join_url
-        mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport, (), {}))
+        mg = OscMirrorGroup(self.gr, pac.urllist)
 
         if self.http_debug:
             print('\nURLs to try for package \'%s\':' % pac, file=sys.stderr)
@@ -192,19 +145,22 @@ class Fetcher:
         try:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
-                mg.urlgrab(pac.filename, filename=tmpfile.name,
+                mg_stat = mg.urlgrab(pac.filename, filename=tmpfile.name,
                            text='%s(%s) %s' % (prefix, pac.project, pac.filename))
-                self.move_package(tmpfile.name, pac.localdir, pac)
-        except URLGrabError as e:
-            if self.enable_cpio and e.errno == 256:
-                self.__add_cpio(pac)
-                return
-            print()
-            print('Error:', e.strerror, file=sys.stderr)
-            print('Failed to retrieve %s from the following locations '
-                  '(in order):' % pac.filename, file=sys.stderr)
-            print('\n'.join(pac.urllist), file=sys.stderr)
-            sys.exit(1)
+                if mg_stat:
+                    self.move_package(tmpfile.name, pac.localdir, pac)
+
+            if not mg_stat:
+                if self.enable_cpio:
+                    print('%s/%s: attempting download from api, since not found'
+                          % (pac.project, pac.name))
+                    self.__add_cpio(pac)
+                    return
+                print()
+                print('Error: Failed to retrieve %s from the following locations '
+                      '(in order):' % pac.filename, file=sys.stderr)
+                print('\n'.join(pac.urllist), file=sys.stderr)
+                sys.exit(1)
         finally:
             if os.path.exists(tmpfile.name):
                 os.unlink(tmpfile.name)
@@ -285,12 +241,12 @@ class Fetcher:
                     continue
                 try:
                     # if there isn't a progress bar, there is no output at all
+                    prefix = ''
                     if not self.progress_obj:
                         print('%d/%d (%s) %s' % (done, needed, i.project, i.filename))
-                    self.fetch(i)
-                    if self.progress_obj:
-                        print("  %d/%d\r" % (done, needed), end=' ')
-                        sys.stdout.flush()
+                    else:
+                        prefix = '[%d/%d] ' % (done, needed)
+                    self.fetch(i, prefix=prefix)
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
@@ -308,10 +264,11 @@ class Fetcher:
             dest += '/_pubkey'
 
             url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
+            try_parent = False
             try:
                 if self.offline and not os.path.exists(dest):
                     # may need to try parent
-                    raise URLGrabError(2)
+                    try_parent = True
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
@@ -324,12 +281,14 @@ class Fetcher:
                 if os.path.exists(dest):
                     os.unlink(dest)
                 sys.exit(0)
-            except URLGrabError as e:
+            except HTTPError as e:
                 # Not found is okay, let's go to the next project
-                if e.errno == 14 and e.code != 404:
+                if e.code != 404:
                     print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
+                try_parent = True
 
+            if try_parent:
                 if self.http_debug:
                     print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
                     print("url: %s" % url, file=sys.stderr)
