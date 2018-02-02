@@ -18,6 +18,7 @@ except ImportError:
 from urlgrabber.grabber import URLGrabber, URLGrabError
 from urlgrabber.mirror import MirrorGroup
 from .core import makeurl, streamfile, dgst
+from .mirror import OscMirrorGroup
 from .util import packagequery, cpio
 from . import conf
 from . import oscerr
@@ -37,33 +38,42 @@ def join_url(self, base_url, rel_url):
     return base_url
 
 
-class OscFileGrabber(URLGrabber):
+class Error(Exception):
+    pass
+
+class grabError(Error):
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
+
+class OscFileGrabber():
     def __init__(self, progress_obj=None):
         # we cannot use super because we still have to support
         # older urlgrabber versions where URLGrabber is an old-style class
-        URLGrabber.__init__(self)
+        #URLGrabber.__init__(self)
         self.progress_obj = progress_obj
 
     def urlgrab(self, url, filename, text=None, **kwargs):
+        print('I am here ' + url + '|' + filename)
         if url.startswith('file://'):
             f = url.replace('file://', '', 1)
             if os.path.isfile(f):
                 return f
             else:
-                raise URLGrabError(2, 'Local file \'%s\' does not exist' % f)
+                raise grabError(2, 'Local file \'%s\' does not exist' % f)
         with file(filename, 'wb') as f:
             try:
                 for i in streamfile(url, progress_obj=self.progress_obj,
                                     text=text):
                     f.write(i)
             except HTTPError as e:
-                exc = URLGrabError(14, str(e))
+                exc = str(e)
                 exc.url = url
                 exc.exception = e
                 exc.code = e.code
                 raise exc
             except IOError as e:
-                raise URLGrabError(4, str(e))
+                raise grabError(4, str(e))
         return filename
 
 
@@ -181,8 +191,8 @@ class Fetcher:
         # for use by the failure callback
         self.curpac = pac
 
-        MirrorGroup._join_url = join_url
-        mg = MirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport, (), {}))
+        #MirrorGroup._join_url = join_url
+        mg = OscMirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport, (), {}))
 
         if self.http_debug:
             print('\nURLs to try for package \'%s\':' % pac, file=sys.stderr)
@@ -192,15 +202,16 @@ class Fetcher:
         try:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
+                print('Try to fetch ' + pac.filename + ' to ' + tmpfile.name)
                 mg.urlgrab(pac.filename, filename=tmpfile.name,
                            text='%s(%s) %s' % (prefix, pac.project, pac.filename))
                 self.move_package(tmpfile.name, pac.localdir, pac)
-        except URLGrabError as e:
-            if self.enable_cpio and e.errno == 256:
-                self.__add_cpio(pac)
-                return
+        except Exception as e:
+            #if self.enable_cpio and e.errno == 256:
+            #    self.__add_cpio(pac)
+            #    return
             print()
-            print('Error:', e.strerror, file=sys.stderr)
+            print('Error:', e, file=sys.stderr)
             print('Failed to retrieve %s from the following locations '
                   '(in order):' % pac.filename, file=sys.stderr)
             print('\n'.join(pac.urllist), file=sys.stderr)
