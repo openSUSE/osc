@@ -325,7 +325,7 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
         gr = OscFileGrabber(progress_obj=progress_obj)
         try:
             gr.urlgrab(url, filename=ifile_path_part, text='fetching image')
-        except URLGrabError as e:
+        except MGError as e:
             print("Failed to download! ecode:%i errno:%i" % (e.code, e.errno))
             return ('', '', [])
         # download ok, rename partial file to final file name

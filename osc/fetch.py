@@ -14,11 +14,8 @@ except ImportError:
     #python 2.x
     from urllib import quote_plus
     from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
-
-from urlgrabber.grabber import URLGrabber, URLGrabError
-from urlgrabber.mirror import MirrorGroup
 from .core import makeurl, streamfile, dgst
-from .mirror import OscMirrorGroup
+from .mirror import OscMirrorGroup, MGError
 from .util import packagequery, cpio
 from . import conf
 from . import oscerr
@@ -38,14 +35,6 @@ def join_url(self, base_url, rel_url):
     return base_url
 
 
-class Error(Exception):
-    pass
-
-class grabError(Error):
-    def __init__(self, expression, message):
-        self.expression = expression
-        self.message = message
-
 class OscFileGrabber():
     def __init__(self, progress_obj=None):
         # we cannot use super because we still have to support
@@ -54,7 +43,6 @@ class OscFileGrabber():
         self.progress_obj = progress_obj
 
     def urlgrab(self, url, filename, text=None, **kwargs):
-        print('I am here ' + url + '|' + filename)
         if url.startswith('file://'):
             f = url.replace('file://', '', 1)
             if os.path.isfile(f):
@@ -73,7 +61,7 @@ class OscFileGrabber():
                 exc.code = e.code
                 raise exc
             except IOError as e:
-                raise grabError(4, str(e))
+                raise MGError(4, str(e))
         return filename
 
 
@@ -166,7 +154,7 @@ class Fetcher:
                         raise oscerr.APIError('failed to fetch file \'%s\': '
                                               'missing in CPIO archive' %
                                               pac.repofilename)
-        except URLGrabError as e:
+        except MGError as e:
             if e.errno != 14 or e.code != 414:
                 raise
             # query str was too large
@@ -192,7 +180,7 @@ class Fetcher:
         self.curpac = pac
 
         #MirrorGroup._join_url = join_url
-        mg = OscMirrorGroup(self.gr, pac.urllist, failure_callback=(self.failureReport, (), {}))
+        mg = OscMirrorGroup(self.gr, pac.urllist)
 
         if self.http_debug:
             print('\nURLs to try for package \'%s\':' % pac, file=sys.stderr)
@@ -202,14 +190,13 @@ class Fetcher:
         try:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
-                print('Try to fetch ' + pac.filename + ' to ' + tmpfile.name)
                 mg.urlgrab(pac.filename, filename=tmpfile.name,
                            text='%s(%s) %s' % (prefix, pac.project, pac.filename))
                 self.move_package(tmpfile.name, pac.localdir, pac)
         except Exception as e:
-            #if self.enable_cpio and e.errno == 256:
-            #    self.__add_cpio(pac)
-            #    return
+            if self.enable_cpio and e.errno == 256:
+                self.__add_cpio(pac)
+                return
             print()
             print('Error:', e, file=sys.stderr)
             print('Failed to retrieve %s from the following locations '
@@ -322,7 +309,7 @@ class Fetcher:
             try:
                 if self.offline and not os.path.exists(dest):
                     # may need to try parent
-                    raise URLGrabError(2)
+                    raise MGError(2)
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
@@ -335,7 +322,7 @@ class Fetcher:
                 if os.path.exists(dest):
                     os.unlink(dest)
                 sys.exit(0)
-            except URLGrabError as e:
+            except MGError as e:
                 # Not found is okay, let's go to the next project
                 if e.errno == 14 and e.code != 404:
                     print("Invalid answer from server", e, file=sys.stderr)
