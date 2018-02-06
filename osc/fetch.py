@@ -37,9 +37,6 @@ def join_url(self, base_url, rel_url):
 
 class OscFileGrabber():
     def __init__(self, progress_obj=None):
-        # we cannot use super because we still have to support
-        # older urlgrabber versions where URLGrabber is an old-style class
-        #URLGrabber.__init__(self)
         self.progress_obj = progress_obj
 
     def urlgrab(self, url, filename, text=None, **kwargs):

@@ -1,6 +1,7 @@
 import sys
 import os.path
 from shutil import copyfile
+import progressbar as pb
 
 try:
     from urllib.request import urlopen, HTTPError, url2pathname
@@ -36,15 +37,19 @@ class OscMirrorGroup:
                 blockSize = 8192
                 file_size_dl = 0
                 count = 0
+                num_bars = totalSize / blockSize
+                widgets = [url + ': ', pb.Percentage(), pb.Bar(), ' ', pb.ETA()]
+                bar = pb.ProgressBar(widgets=widgets, maxval=40).start()
                 while True:
                     chunk = u.read(blockSize)
                     if not chunk: break
                     f.write(chunk)
+                    count += 1
                     file_size_dl += len(chunk)
-                    done = int(50 * file_size_dl / totalSize)
-                    sys.stdout.write('[%s%s] %s\r' % ('=' * done, ' ' * (50-done), url)) 
-                    sys.stdout.flush()
-                print('\n')
+                    done = int(40 * file_size_dl / totalSize)
+                    bar.update(done)
+                    #sys.stdout.write('[%s%s] %s\r' % ('=' * done, ' ' * (50-done), url))
+                    #sys.stdout.flush()
                 f.flush
                 f.close
                 break
