@@ -6170,6 +6170,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
+        project = None
+        try:
+            project = store_read_project(os.curdir)
+        except oscerr.NoWorkingCopy:
+            pass
+        if project == opts.alternative_project:
+            opts.alternative_project = None
+
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
         # check for source services
