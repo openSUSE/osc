@@ -6865,6 +6865,49 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(p.info())
 
 
+    @cmdln.option('-M', '--multibuild-package', action='append',
+                        help='specify a specific multibuild flavor')
+    def do_sendsysrq(self, subcmd, opts, *args):
+        """${cmd_name}: trigger a sysrq in a running build
+
+        This is only going to work when the build is running in a supported VM.
+        Also only a subset of sysrq are supported. Typical use case for debugging
+        are 9, t and w in this sequence.
+
+        usage:
+            osc restartbuild REPOSITORY ARCH SYSRQ
+            osc restartbuild PROJECT PACKAGE REPOSITORY ARCH SYSRQ
+        ${cmd_option_list}
+        """
+        args = slash_split(args)
+
+        project = package = repo = arch = sysrq = None
+        apiurl = self.get_api_url()
+
+        if len(args) < 4:
+            if is_package_dir(os.curdir):
+                project = store_read_project(os.curdir)
+                package = store_read_package(os.curdir)
+                apiurl = store_read_apiurl(os.curdir)
+                repo = args[0]
+                arch = args[1]
+                sysrq = args[2]
+            else:
+                raise oscerr.WrongArgs('Too few arguments.')
+        elif len(args) != 5:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+        else:
+            project = args[0]
+            package = args[1]
+            repo = args[2]
+            arch = args[3]
+            sysrq = args[4]
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
+
+        print(cmdbuild(apiurl, 'sendsysrq', project, package, arch, repo, None, sysrq))
+
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Restart builds for a specific architecture')
     @cmdln.option('-M', '--multibuild-package', action='append',

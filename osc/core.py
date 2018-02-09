@@ -6453,7 +6453,7 @@ def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None)
     return cmdbuild(apiurl, 'wipe', project, package, arch, repo, code)
 
 
-def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None):
+def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None, sysrq=None):
     query = { 'cmd': cmd }
     if package:
         query['package'] = package
@@ -6463,6 +6463,8 @@ def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None
         query['repository'] = repo
     if code:
         query['code'] = code
+    if sysrq:
+        query['sysrq'] = sysrq
 
     u = makeurl(apiurl, ['build', project], query)
     try:
@@ -6477,6 +6479,8 @@ def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None
             e.osc_msg += ' repository %s' % repo
         if code:
             e.osc_msg += ' code=%s' % code
+        if sysrq:
+            e.osc_msg += ' sysrq=%s' % code
         raise
 
     root = ET.parse(f).getroot()
