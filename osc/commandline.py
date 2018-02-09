@@ -6875,8 +6875,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         are 9, t and w in this sequence.
 
         usage:
-            osc restartbuild REPOSITORY ARCH SYSRQ
-            osc restartbuild PROJECT PACKAGE REPOSITORY ARCH SYSRQ
+            osc sendsysrq REPOSITORY ARCH SYSRQ
+            osc sendsysrq PROJECT PACKAGE REPOSITORY ARCH SYSRQ
         ${cmd_option_list}
         """
         args = slash_split(args)
