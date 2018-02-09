@@ -6903,10 +6903,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[3]
             sysrq = args[4]
 
+        packages = [package]
         if opts.multibuild_package:
-            package = package + ":" + opts.multibuild_package
-
-        print(cmdbuild(apiurl, 'sendsysrq', project, package, arch, repo, None, sysrq))
+            packages = ['%s:%s' % (package, flavor) for flavor in opts.multibuild_package]
+        for package in packages:
+            print(cmdbuild(apiurl, 'sendsysrq', project, package, arch, repo, None, sysrq))
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Restart builds for a specific architecture')
