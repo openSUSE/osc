@@ -1,7 +1,13 @@
+# Copyright (C) 2018 SUSE Linux.  All rights reserved.
+# This program is free software; it may be used, copied, modified
+# and distributed under the terms of the GNU General Public Licence,
+# either version 2, or (at your option) any later version.
+
 import sys
 import os.path
 from shutil import copyfile
 import progressbar as pb
+from .core import streamfile
 
 try:
     from urllib.request import urlopen, HTTPError, url2pathname
@@ -21,44 +27,27 @@ class OscMirrorGroup:
         max_m = len(self.mirrors)
         tries = 0
         for mirror in self.mirrors:
+            if mirror.startswith('file'):
+                path = mirror.replace('file:/', '')
+                if not os.path.exists(path):
+                    tries += 1
+                    continue
+                else:
+                    copyfile(path,filename)
+                    break
             try:
-                if mirror.startswith('file'):
-                    path = mirror.replace('file:/', '')
-                    if not os.path.exists(path):
-                        tries += 1
-                        continue
-                    else:
-                        copyfile(path,filename)
-                        break
                 u = urlopen(mirror)
-                h = u.info()
-                totalSize = int(h["Content-Length"])
-                f = open(filename, 'wb')
-                blockSize = 8192
-                file_size_dl = 0
-                count = 0
-                num_bars = totalSize / blockSize
-                widgets = [url + ': ', pb.Percentage(), pb.Bar(), ' ', pb.ETA()]
-                bar = pb.ProgressBar(widgets=widgets, maxval=40).start()
-                while True:
-                    chunk = u.read(blockSize)
-                    if not chunk: break
-                    f.write(chunk)
-                    count += 1
-                    file_size_dl += len(chunk)
-                    done = int(40 * file_size_dl / totalSize)
-                    bar.update(done)
-                    #sys.stdout.write('[%s%s] %s\r' % ('=' * done, ' ' * (50-done), url))
-                    #sys.stdout.flush()
-                f.flush
-                f.close
-                break
-            except HTTPError, e:
+            except HTTPError as e:
                 if e.code == 414:
                     raise MGError
                 tries += 1
                 continue
+            f = open(filename, 'wb')
+            for i in streamfile(mirror, progress_obj=pb):
+                f.write(i)
+            f.flush
+            f.close
+            break
 
         if max_m == tries:
-            print('No mirror left to check. We now need to use the api')
             raise MGError(256, 'No mirrors left')

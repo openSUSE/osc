@@ -166,8 +166,8 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            from .meter import TextMeter
-            self.download_progress = TextMeter(hide_finished=True)
+            import progressbar as pb
+            self.download_progress = pb
 
 
     def get_cmd_help(self, cmdname):
@@ -7636,8 +7636,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if '://' in srpm:
             print('trying to fetch', srpm)
-            import urlgrabber
-            urlgrabber.urlgrab(srpm)
+            from .mirror import OscMirrorGroup
+            OscMirrorGroup.urlgrab(srpm, filename=srpm)
             srpm = os.path.basename(srpm)
 
         srpm = os.path.abspath(srpm)

@@ -21,10 +21,12 @@ from . import conf
 from . import oscerr
 import tempfile
 import re
+
 try:
-    from .meter import TextMeter
-except:
-    TextMeter = None
+    import progressbar as pb
+    useProgressBar = True
+except ImportError:
+    useProgressBar = None
 
 
 def join_url(self, base_url, rel_url):
@@ -46,7 +48,7 @@ class OscFileGrabber():
                 return f
             else:
                 raise grabError(2, 'Local file \'%s\' does not exist' % f)
-        with file(filename, 'wb') as f:
+        with open(filename, 'wb') as f:
             try:
                 for i in streamfile(url, progress_obj=self.progress_obj,
                                     text=text):
@@ -66,8 +68,8 @@ class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
             http_debug=False, cookiejar=None, offline=False, enable_cpio=True):
         # set up progress bar callback
-        if sys.stdout.isatty() and TextMeter:
-            self.progress_obj = TextMeter(fo=sys.stdout)
+        if sys.stdout.isatty() and useProgressBar:
+            self.progress_obj = pb
         else:
             self.progress_obj = None
 
@@ -86,14 +88,6 @@ class Fetcher:
         if cookiejar:
             openers += (HTTPCookieProcessor(cookiejar), )
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
-
-    def failureReport(self, errobj):
-        """failure output for failovers from urlgrabber"""
-        if errobj.url.startswith('file://'):
-            return {}
-        print('%s/%s: attempting download from api, since not found at %s'
-              % (self.curpac.project, self.curpac, errobj.url.split('/')[2]))
-        return {}
 
     def __add_cpio(self, pac):
         prpap = '%s/%s/%s/%s' % (pac.project, pac.repository, pac.repoarch, pac.repopackage)
@@ -192,6 +186,8 @@ class Fetcher:
                 self.move_package(tmpfile.name, pac.localdir, pac)
         except Exception as e:
             if self.enable_cpio and e.errno == 256:
+                print('%s/%s: attempting download from api, since not found'
+                      % (self.curpac.project, pac))
                 self.__add_cpio(pac)
                 return
             print()

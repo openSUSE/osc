@@ -11,12 +11,12 @@ import pdb
 import sys
 import signal
 import traceback
-from urlgrabber.grabber import URLGrabError
 
 from osc import oscerr
 from .oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
+from .mirror import MGError
 
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError

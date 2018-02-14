@@ -34,7 +34,8 @@ except ImportError:
 from .conf import config, cookiejar
 
 try:
-    from .meter import TextMeter
+    import progressbar as pb
+    Textmeter = pb
 except:
     TextMeter = None
 
@@ -258,7 +259,7 @@ class Pac:
         self.urllist = []
 
         # build up local URL
-        # by using the urlgrabber with local urls, we basically build up a cache.
+        # by using the OscMirrorGroup with local urls, we basically build up a cache.
         # the cache has no validation, since the package servers don't support etags,
         # or if-modified-since, so the caching is simply name-based (on the assumption
         # that the filename is suitable as identifier)
@@ -319,7 +320,7 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
                 print(e, file=sys.stderr)
                 sys.exit(1)
         if sys.stdout.isatty() and TextMeter:
-            progress_obj = TextMeter(fo=sys.stdout)
+            progress_obj = TextMeter
         else:
             progress_obj = None
         gr = OscFileGrabber(progress_obj=progress_obj)
