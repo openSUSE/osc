@@ -7459,7 +7459,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc search \'search term\' <options>
             osc bse ...                         ('osc search --binary')
-            osc se 'perl(Foo::Bar)'             ('osc --package perl-Foo-Bar')
+            osc se 'perl(Foo::Bar)'             ('osc search --package perl-Foo-Bar')
         ${cmd_option_list}
         """
         def build_xpath(attr, what, substr = False):
