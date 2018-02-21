@@ -4614,8 +4614,8 @@ def get_binary_file(apiurl, prj, repo, arch,
                     progress_meter = False):
     progress_obj = None
     if progress_meter:
-        import progressbar as pb
-        progress_obj = pb
+        from .meter import TextMeter
+        progress_obj = TextMeter()
 
     target_filename = target_filename or filename
 
@@ -5992,14 +5992,8 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
             basename = os.path.basename(urlsplit(url)[2])
         else:
             basename = text
-        if cl is not None:
-            widgets = [basename + ': ', progress_obj.Percentage(), progress_obj.Bar(), ' ', progress_obj.ETA()]
-            bar = progress_obj.ProgressBar(widgets=widgets, maxval=cl)
-        else:
-            widgets = [basename + ': ', progress_obj.AnimatedMarker(), ' ' , progress_obj.Timer()]
-            bar = progress_obj.ProgressBar(widgets=widgets, maxval=progress_obj.UnknownLength)
-        print() #print pkt_act/pkt_todo
-        bar.start()
+        pb = progress_obj
+        pb.start(basename, cl)
 
     if bufsize == "line":
         bufsize = 8192
@@ -6014,11 +6008,11 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
             break
         read += len(data)
         if progress_obj:
-            bar.update(read)
+            pb.update(read)
         yield data
 
     if progress_obj:
-        bar.finish()
+        pb.end()
     f.close()
 
     if not cl is None and read != cl:

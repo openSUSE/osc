@@ -7636,8 +7636,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if '://' in srpm:
             print('trying to fetch', srpm)
-            from .mirror import OscMirrorGroup
-            OscMirrorGroup.urlgrab(srpm, filename=srpm)
+            from .grabber import OscFileGrabber
+            OscFileGrabber().urlgrab(srpm)
             srpm = os.path.basename(srpm)
 
         srpm = os.path.abspath(srpm)

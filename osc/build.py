@@ -34,8 +34,8 @@ except ImportError:
 from .conf import config, cookiejar
 
 try:
-    import progressbar as pb
-    Textmeter = pb
+    from .meter import TextMeter
+    Textmeter = TextMeter()
 except:
     TextMeter = None
 
