@@ -1,4 +1,5 @@
 0.163
+  - fix hanging connections for some user (boo#1068470)
   - add sendsysrq command (requires OBS 2.10)
 
 0.162.1
