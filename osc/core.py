@@ -1503,9 +1503,10 @@ class Package:
         print('Transmitting file data', end=' ')
         filelist = self.__generate_commitlist(todo_send)
         sfilelist = self.__send_commitlog(msg, filelist, validate=True)
-        if sfilelist.get('error') and sfilelist.findall('.//entry[@hash]'):
+        hash_entries = [e for e in sfilelist.findall('entry') if e.get('hash') is not None] 
+        if sfilelist.get('error') and hash_entries:
             name2elem = dict([(e.get('name'), e) for e in filelist.findall('entry')])
-            for entry in sfilelist.findall('.//entry[@hash]'):
+            for entry in hash_entries:
                 filename = entry.get('name')
                 fileelem = name2elem.get(filename)
                 if filename not in sha256sums:
