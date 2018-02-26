@@ -216,17 +216,12 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # So make sure the connection gets closed after the (only)
         # request.
         headers["Connection"] = "close"
-        # closing connection ourself to avoid hanging connnections: bsc#1068470
-        #headers["Connection"] = "close"
         try:
             h.request(req.get_method(), selector, req.data, headers)
             s = h.get_session()
             if s:
                 self.saved_session = s
             r = h.getresponse()
-
-            # close the connection ourselves
-            h.close()
         except socket.error as err: # XXX what error?
             err.filename = full_url
             raise M2Crypto.m2urllib2.URLError(err)
