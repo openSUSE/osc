@@ -24,6 +24,8 @@ import errno
 import shlex
 import hashlib
 
+from functools import cmp_to_key
+
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
     from urllib.error import HTTPError
@@ -240,6 +242,10 @@ buildstatus_symbols = {'succeeded':       '.',
                        'signing':         'S',
 }
 
+def compare(a, b): return cmp(a[1:], b[1:])
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
@@ -3341,6 +3347,7 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
+    global fd
     try:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
@@ -3352,8 +3359,24 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     if filefd: filefd.close()
 
+    global orig_readl
+    orig_readl = fd.readlines
+    fd.readlines = modified_readlines
     return fd
 
+
+def modified_readlines(x=0):
+    fd.readlines=orig_readl
+    xlist = fd.readlines()
+    ret = list(map(lambda x: convert_list(x), xlist))
+    return ret
+
+def convert_list(s):
+    try:
+        return str(s,encoding='utf-8')
+    except:
+        return s
+    return
 
 def http_GET(*args, **kwargs):    return http_request('GET', *args, **kwargs)
 def http_POST(*args, **kwargs):   return http_request('POST', *args, **kwargs)
@@ -3819,7 +3842,10 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     if linkrepair:
         query['emptylink'] = 1
     f = http_GET(makeurl(apiurl, ['source', prj, pac], query=query))
-    return f.read()
+    if sys.version_info >= (3, 0):
+        return f.read().decode('utf-8')
+    else:
+        return f.read()
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
@@ -4030,7 +4056,10 @@ def _edit_message_open_editor(filename, data, orig_mtime):
         # prepare file for editors
         if editor[0] in ('vi', 'vim'):
             with tempfile.NamedTemporaryFile() as f:
-                f.write(data)
+                if isinstance(data, str):
+                    f.write(data.encode('utf-8'))
+                else:
+                    f.write(data)
                 f.flush()
                 editor.extend(['-c', ':r %s' % f.name, filename])
                 run_external(editor[0], *editor[1:])
@@ -4582,9 +4611,9 @@ def download(url, filename, progress_obj = None, mtime = None):
         (fd, tmpfile) = tempfile.mkstemp(dir=path, prefix = prefix, suffix = '.osctmp')
         os.fchmod(fd, 0o644)
         try:
-            o = os.fdopen(fd, 'wb')
+            o = os.fdopen(fd, 'w')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
-                o.write(bytes(buf, "utf-8"))
+                o.write(str(buf))
             o.close()
             os.rename(tmpfile, filename)
         except:
@@ -4782,7 +4811,11 @@ def server_diff(apiurl,
         for issuenode in node.findall('issue'):
             issue_list.append(issuenode.get('label'))
         return '\n'.join(issue_list)
-    return f.read()
+    ret = f.read()
+    if isinstance(ret, str):
+        return ret
+    else:
+        return ret.decode('utf-8')
 
 def server_diff_noex(apiurl,
                 old_project, old_package, old_revision,
@@ -6000,7 +6033,14 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 
     read = 0
     while True:
-        data = xread(bufsize)
+        if sys.version_info >= (3, 0):
+            tmp_dat = xread(bufsize)
+            if isinstance(tmp_dat, str):
+                data = tmp_dat
+            else:
+                data = tmp_dat.decode('utf-8')
+        else:
+            data = xread(bufsize)
         if not len(data):
             break
         read += len(data)
@@ -6098,7 +6138,7 @@ def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=No
     query['arch'] = arch
     u = makeurl(apiurl, ['worker'], query)
     f = http_POST(u, data=constraintsfile)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(''.join(f.readlines()))
     return [node.get('name') for node in root.findall('entry')]
 
 
@@ -7176,7 +7216,7 @@ def get_commit_msg(wc_dir, pacs):
     footer = []
     lines = []
     for p in pacs:
-        states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
+        states = sorted(p.get_status(False, ' ', '?'), key=cmp_to_key(compare))
         changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
         if changed:
             footer += changed

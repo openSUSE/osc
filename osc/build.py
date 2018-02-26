@@ -1149,7 +1149,10 @@ def main(apiurl, opts, argv):
         if bi.installonly_list:
             rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
-    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
+    if sys.version_info >= (3, 0):
+      rpmlist_file = NamedTemporaryFile(mode='w+t', prefix='rpmlist.')
+    else:
+      rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()

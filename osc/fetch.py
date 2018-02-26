@@ -51,7 +51,7 @@ class OscFileGrabber(URLGrabber):
                 return f
             else:
                 raise URLGrabError(2, 'Local file \'%s\' does not exist' % f)
-        with file(filename, 'wb') as f:
+        with open(filename, 'wb') as f:
             try:
                 for i in streamfile(url, progress_obj=self.progress_obj,
                                     text=text):
@@ -128,6 +128,8 @@ class Fetcher:
                         raise oscerr.APIError('CPIO archive is incomplete '
                                               '(see .errors file)')
                     if package == '_repository':
+                        if isinstance(hdr.filename, bytes):
+                            hdr.filename = hdr.filename.decode('utf-8')
                         n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename)
                         if n.startswith('container:'):
                             n = re.sub(r'\.tar\..z$', '.tar', hdr.filename)
