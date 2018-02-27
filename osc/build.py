@@ -256,18 +256,8 @@ class Pac:
     def makeurls(self, cachedir, urllist):
 
         self.urllist = []
-
-        # build up local URL
-        # by using the urlgrabber with local urls, we basically build up a cache.
-        # the cache has no validation, since the package servers don't support etags,
-        # or if-modified-since, so the caching is simply name-based (on the assumption
-        # that the filename is suitable as identifier)
         self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
         self.fullfilename = os.path.join(self.localdir, self.canonname)
-        self.url_local = 'file://%s' % self.fullfilename
-
-        # first, add the local URL
-        self.urllist.append(self.url_local)
 
         # remote URLs
         for url in urllist:
@@ -319,14 +309,14 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
                 print(e, file=sys.stderr)
                 sys.exit(1)
         if sys.stdout.isatty() and TextMeter:
-            progress_obj = TextMeter(fo=sys.stdout)
+            progress_obj = TextMeter()
         else:
             progress_obj = None
         gr = OscFileGrabber(progress_obj=progress_obj)
         try:
             gr.urlgrab(url, filename=ifile_path_part, text='fetching image')
-        except URLGrabError as e:
-            print("Failed to download! ecode:%i errno:%i" % (e.code, e.errno))
+        except HTTPError as e:
+            print("Failed to download! ecode:%i reason:%i" % (e.code, e.reason))
             return ('', '', [])
         # download ok, rename partial file to final file name
         os.rename(ifile_path_part, ifile_path)
