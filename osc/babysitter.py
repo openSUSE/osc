@@ -11,12 +11,12 @@ import pdb
 import sys
 import signal
 import traceback
-from urlgrabber.grabber import URLGrabError
 
 from osc import oscerr
 from .oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
+from .grabber import MGError
 
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError
@@ -132,8 +132,8 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except URLError as e:
         print('Failed to reach a server:\n', e.reason, file=sys.stderr)
-    except URLGrabError as e:
-        print('Failed to grab %s: %s' % (e.url, e.strerror), file=sys.stderr)
+    except MGError as e:
+        print('Failed to grab %s: %s' % (e.errno, e.strerror), file=sys.stderr)
     except IOError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:
