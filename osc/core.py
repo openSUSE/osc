@@ -1839,8 +1839,8 @@ class Package:
         meta = show_package_meta(self.apiurl, self.prjname, self.name)
         if meta != "":
             # is empty for _project for example
-            meta = ''.join(meta)
-            store_write_string(self.absdir, '_meta', meta + '\n')
+            meta = b''.join(meta)
+            store_write_string(self.absdir, '_meta', meta + b'\n')
 
     def findfilebyname(self, n):
         for i in self.filelist:
@@ -3823,7 +3823,7 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
@@ -3836,7 +3836,7 @@ def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=Fal
 
 def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta, expand=include_service_files)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     if include_service_files:
         return et.get('srcmd5')
 
@@ -4584,7 +4584,10 @@ def download(url, filename, progress_obj = None, mtime = None):
         try:
             o = os.fdopen(fd, 'wb')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
-                o.write(bytes(buf, "utf-8"))
+                if isinstance(buf, str):
+                    o.write(bytes(buf, "utf-8"))
+                else:
+                    o.write(buf)
             o.close()
             os.rename(tmpfile, filename)
         except:
@@ -6402,6 +6405,8 @@ def store_write_string(dir, file, string, subdir=''):
     fname = os.path.join(dir, store, subdir, file)
     try:
         f = open(fname + '.new', 'w')
+        if not isinstance(string, str):
+            string = string.decode('utf-8')
         f.write(string)
         f.close()
         os.rename(fname + '.new', fname)
