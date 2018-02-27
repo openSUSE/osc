@@ -24,23 +24,15 @@ import re
 
 try:
     from .meter import TextMeter
-    useProgressBar = True
 except ImportError:
-    useProgressBar = None
+    TextMeter = None
 
-
-def join_url(self, base_url, rel_url):
-    """to override _join_url of MirrorGroup, because we want to
-    pass full URLs instead of base URL where relative_url is added later...
-    IOW, we make MirrorGroup ignore relative_url
-    """
-    return base_url
 
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
             http_debug=False, cookiejar=None, offline=False, enable_cpio=True):
         # set up progress bar callback
-        if sys.stdout.isatty() and useProgressBar:
+        if sys.stdout.isatty() and TextMeter:
             self.progress_obj = TextMeter()
         else:
             self.progress_obj = None
@@ -158,11 +150,11 @@ class Fetcher:
         except MGError as e:
             if self.enable_cpio and e.errno == 256:
                 print('%s/%s: attempting download from api, since not found'
-                      % (self.curpac.project, pac))
+                      % (pac.project, pac.name))
                 self.__add_cpio(pac)
                 return
             print()
-            print('Error:', e, file=sys.stderr)
+            print('Error:', e.strerror, file=sys.stderr)
             print('Failed to retrieve %s from the following locations '
                   '(in order):' % pac.filename, file=sys.stderr)
             print('\n'.join(pac.urllist), file=sys.stderr)
@@ -273,7 +265,17 @@ class Fetcher:
             try:
                 if self.offline and not os.path.exists(dest):
                     # may need to try parent
-                    raise MGError(2)
+                    if self.http_debug:
+                        print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
+                        print("url: %s" % url, file=sys.stderr)
+
+                    if os.path.exists(dest):
+                        os.unlink(dest)
+
+                    l = i.rsplit(':', 1)
+                    # try key from parent project
+                    if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
+                        prjs.append(l[0])
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
@@ -286,23 +288,11 @@ class Fetcher:
                 if os.path.exists(dest):
                     os.unlink(dest)
                 sys.exit(0)
-            except MGError as e:
+            except HTTPError as e:
                 # Not found is okay, let's go to the next project
-                if e.errno == 14 and e.code != 404:
+                if e.code != 404:
                     print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
-
-                if self.http_debug:
-                    print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
-                    print("url: %s" % url, file=sys.stderr)
-
-                if os.path.exists(dest):
-                    os.unlink(dest)
-
-                l = i.rsplit(':', 1)
-                # try key from parent project
-                if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
-                    prjs.append(l[0])
 
 
 def verify_pacs_old(pac_list):

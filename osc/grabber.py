@@ -10,63 +10,42 @@ from .core import streamfile
 
 try:
     from urllib.parse import unquote
-    from urllib.request import urlopen, HTTPError, url2pathname
+    from urllib.request import HTTPError
 except ImportError:
-    from urllib2 import urlopen, HTTPError, url2pathname
+    from urllib2 import HTTPError
     from urllib import unquote
 
+
 class MGError(IOError):
-    def __init__(self, *args):
-        IOError.__init__(self, *args)
+    pass
+
 
 class OscFileGrabber(object):
     def __init__(self, progress_obj=None):
         self.progress_obj = progress_obj
 
-    def urlgrab(self, url, filename=None, text=None, **kwargs):
-        if filename is None:
-            filename = os.path.basename(unquote(path))
-            if not filename:
-                # This is better than nothing.
-                filename = 'osc_urlgrab_download'
-        if url.startswith('file://'):
-            f = url.replace('file://', '', 1)
-            if os.path.isfile(f):
-                return f
-            else:
-                raise MGError(2, 'Local file \'%s\' does not exist' % f)
+    def urlgrab(self, url, filename, text=None):
         with open(filename, 'wb') as f:
             for i in streamfile(url, progress_obj=self.progress_obj,
                                 text=text):
                 f.write(i)
-            return filename
 
 
 class OscMirrorGroup(object):
     def __init__(self, grabber, mirrors):
-        self.grabber = grabber
-        self.mirrors = mirrors
+        self._grabber = grabber
+        self._mirrors = mirrors
 
-    def urlgrab(self, url, filename=None, **kwargs):
-        max_m = len(self.mirrors)
+    def urlgrab(self, url, filename=None, text=None):
         tries = 0
-        for mirror in self.mirrors:
-            if mirror.startswith('file'):
-                path = mirror.replace('file:/', '')
-                if not os.path.exists(path):
-                    tries += 1
-                    continue
-                else:
-                    copyfile(path,filename)
-                    break
+        for mirror in self._mirrors:
             try:
-                self.grabber.urlgrab(mirror, filename) 
+                self._grabber.urlgrab(mirror, filename, text)
             except HTTPError as e:
                 print('Error %s' % e.code)
                 if e.code == 414:
-                    raise MGError
+                    raise HTTPError(e)
                 tries += 1
-                continue
 
-        if max_m == tries:
+        if len(self._mirrors) == tries:
             raise MGError(256, 'No mirrors left')

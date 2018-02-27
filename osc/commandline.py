@@ -166,8 +166,8 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            import progressbar as pb
-            self.download_progress = pb
+            from .meter import TextMeter
+            self.download_progress = TextMeter()
 
 
     def get_cmd_help(self, cmdname):
