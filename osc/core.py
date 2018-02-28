@@ -3558,7 +3558,7 @@ def show_devel_project(apiurl, prj, pac):
 
 def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None):
     meta = show_package_meta(apiurl, prj, pac)
-    root = ET.fromstring(''.join(meta))
+    root = ET.fromstring(b''.join(meta))
     node = root.find('devel')
     if node is None:
         if devprj is None:
