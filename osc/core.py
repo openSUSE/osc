@@ -3890,12 +3890,12 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
 
 def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, meta=meta)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     return et.get('rev'), et.get('vrev')
 
 def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')

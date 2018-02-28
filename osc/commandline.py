@@ -4065,12 +4065,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  close_fds=True)
-            p.stdin.write(rdiff.encode())
+            p.stdin.write(rdiff)
             p.stdin.close()
             print("".join(x.decode() for x in p.stdout.readlines()))
         elif opts.unified:
             print()
-            print(rdiff)
+            print(rdiff.decode('utf-8'))
             #run_pager(rdiff)
 
     def _prdiff_output_matching_requests(self, opts, requests,
