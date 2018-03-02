@@ -28,6 +28,7 @@ from optparse import SUPPRESS_HELP
 
 from .core import *
 from .util import safewriter
+from functools import cmp_to_key
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -3787,6 +3788,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
+        print(diff)
         run_pager(diff)
 
 
@@ -4450,7 +4452,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # don't exclude packages with state ' ' because the packages
                 # might have modified etc. files
                 prj_excl = [st for st in excl_states if st != ' ']
-                for st, pac in sorted(prj.get_status(*prj_excl), lambda x, y: cmp(x[1], y[1])):
+                for st, pac in sorted(prj.get_status(*prj_excl), key=cmp_to_key(compare)):
                     p = prj.get_pacobj(pac)
                     if p is None:
                         # state is != ' '
@@ -4461,11 +4463,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     elif st == ' ' and opts.verbose or st != ' ':
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(prj.dir, pac))))
                     states = p.get_status(opts.show_excluded, *excl_states)
-                    for st, filename in sorted(states, lambda x, y: cmp(x[1], y[1])):
+                    for st, filename in sorted(states, key=cmp_to_key(compare)):
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
             else:
                 p = findpacs([arg])[0]
-                for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), lambda x, y: cmp(x[1], y[1])):
+                for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), key=cmp_to_key(compare)):
                     lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
         if lines:
             print('\n'.join(lines))
@@ -8255,7 +8257,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             run_pager(''.join(f.readlines()))
         else:
             for data in streamfile(u):
-                sys.stdout.write(data)
+                if isinstance(data, str):
+                    sys.stdout.write(data)
+                else:
+                    sys.stdout.write(data.decode('utf-8'))
 
 
     # helper function to download a file from a specific revision

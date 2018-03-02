@@ -46,6 +46,7 @@ except ImportError:
 
 from . import oscerr
 from . import conf
+from functools import cmp_to_key
 
 try:
     # python 2.6 and python 2.7
@@ -59,6 +60,11 @@ except:
     #as void function as it already gets unicode strings
     unicode = lambda x, *args: x
     ET_ENCODING = "unicode"
+
+def compare(a, b): return cmp(a[1:], b[1:])
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
@@ -3999,7 +4005,10 @@ def run_pager(message, tmp_suffix=''):
         print(message)
     else:
         tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
-        tmpfile.write(message)
+        if isinstance(message, str):
+            tmpfile.write(bytes(message, 'utf-8'))
+        else:
+            tmpfile.write(message)
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
         cmd = shlex.split(pager) + [tmpfile.name]
@@ -4026,6 +4035,8 @@ def _edit_message_open_editor(filename, data, orig_mtime):
     import tempfile
     editor = _editor_command()
     mtime = os.stat(filename).st_mtime
+    if isinstance(data, str):
+        data = bytes(data, 'utf-8')
     if mtime == orig_mtime:
         # prepare file for editors
         if editor[0] in ('vi', 'vim'):
@@ -7184,7 +7195,7 @@ def get_commit_msg(wc_dir, pacs):
     footer = []
     lines = []
     for p in pacs:
-        states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
+        states = sorted(p.get_status(False, ' ', '?'), key=cmp_to_key(compare))
         changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
         if changed:
             footer += changed
