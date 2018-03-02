@@ -5584,7 +5584,7 @@ class Repo:
 
 def get_repos_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
 
     for node in root.findall('repository'):
         for node2 in node.findall('arch'):
@@ -6044,7 +6044,10 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
 
     # to protect us against control characters
     import string
-    all_bytes = string.maketrans('', '')
+    if sys.version_info >= (3, 0):
+        all_bytes = bytes.maketrans(b'', b'')
+    else:
+        all_bytes = string.maketrans(b'', b'')
     remove_bytes = all_bytes[:8] + all_bytes[14:32] # accept tabs and newlines
 
     query = {'nostream' : '1', 'start' : '%s' % offset}
@@ -6058,7 +6061,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
             offset += len(data)
             if strip_time:
                 data = buildlog_strip_time(data)
-            sys.stdout.write(data.translate(all_bytes, remove_bytes))
+            sys.stdout.write(data.translate(all_bytes, remove_bytes).decode('utf-8'))
         if start_offset == offset:
             break
 

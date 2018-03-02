@@ -5713,11 +5713,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        print(''.join(get_buildinfo(apiurl,
+        print(get_buildinfo(apiurl,
                                     project, package, repository, arch,
                                     specfile=build_descr_data,
                                     debug=opts.debug,
-                                    addlist=opts.extra_pkgs)))
+                                    addlist=opts.extra_pkgs).decode('utf-8'))
 
 
     def do_buildconfig(self, subcmd, opts, *args):
@@ -5989,6 +5989,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 recipe = recipe.strip()
                 if recipe == 'arch':
                     recipe = 'PKGBUILD'
+                if not isinstance(recipe, str):
+                    recipe = recipe.decode('utf8')
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
