@@ -5542,7 +5542,7 @@ def get_platforms_of_project(apiurl, prj):
 
 def get_repositories_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
 
     r = [ node.get('name') for node in root.findall('repository')]
     return r

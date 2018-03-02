@@ -5760,7 +5760,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        print(''.join(get_buildconfig(apiurl, project, repository)))
+        print(get_buildconfig(apiurl, project, repository).decode('utf-8'))
 
 
     def do_workerinfo(self, subcmd, opts, worker):
