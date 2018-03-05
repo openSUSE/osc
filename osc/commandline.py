@@ -897,22 +897,22 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame)))
+                sys.stdout.write(b''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame)).decode('utf-8'))
             elif cmd == 'pkg':
-                sys.stdout.write(''.join(show_package_meta(apiurl, project, package, blame=opts.blame)))
+                sys.stdout.write(b''.join(show_package_meta(apiurl, project, package, blame=opts.blame)).decode('utf-8'))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage,
-                                         opts.attribute, opts.attribute_defaults, opts.attribute_project)))
+                sys.stdout.write(b''.join(show_attribute_meta(apiurl, project, package, subpackage,
+                                         opts.attribute, opts.attribute_defaults, opts.attribute_project)).decode('utf-8'))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)))
+                sys.stdout.write(b''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)).decode('utf-8'))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
-                    sys.stdout.write(''.join(r))
+                    sys.stdout.write(b''.join(r).decode('utf-8'))
             elif cmd == 'group':
                 r = get_group_meta(apiurl, group)
                 if r:
-                    sys.stdout.write(''.join(r))
+                    sys.stdout.write(b''.join(r).decode('utf-8'))
             elif cmd == 'pattern':
                 if pattern:
                     r = show_pattern_meta(apiurl, project, pattern)
@@ -3585,7 +3585,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             kind = 'pkg'
             path_args = (project, package)
         meta = meta_exists(kind, path_args, create_new=False, apiurl=apiurl)
-        root = ET.fromstring(''.join(meta))
+        root = ET.fromstring(b''.join(meta))
         if root.find('lock') is not None:
             print('Already locked', file=sys.stderr)
             sys.exit(1)
@@ -4217,7 +4217,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        root = ET.fromstring(''.join(show_configuration(apiurl)))
+        root = ET.fromstring(b''.join(show_configuration(apiurl)))
         elm = root.find('download_url')
         if elm is None or not elm.text:
             raise oscerr.APIError('download_url configuration element expected')
@@ -8075,7 +8075,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
-                metaroot = ET.fromstring(''.join(m))
+                metaroot = ET.fromstring(b''.join(m))
                 if not opts.nodevelproject:
                     while metaroot.findall('devel'):
                         d = metaroot.find('devel')
@@ -8084,18 +8084,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if opts.verbose:
                             print("Following to the development space: %s/%s" % (prj, pac))
                         m = show_package_meta(apiurl, prj, pac)
-                        metaroot = ET.fromstring(''.join(m))
+                        metaroot = ET.fromstring(b''.join(m))
                     if not metaroot.findall('person') and not metaroot.findall('group'):
                         if opts.verbose:
                             print("No dedicated persons in package defined, showing the project persons.")
                         pac = None
                         m = show_project_meta(apiurl, prj)
-                        metaroot = ET.fromstring(''.join(m))
+                        metaroot = ET.fromstring(b''.join(m))
             else:
                 # fallback to project lookup for old servers
                 if prj and not searchresult:
                     m = show_project_meta(apiurl, prj)
-                    metaroot = ET.fromstring(''.join(m))
+                    metaroot = ET.fromstring(b''.join(m))
 
             # extract the maintainers
             projects = []

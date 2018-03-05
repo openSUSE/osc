@@ -3637,8 +3637,12 @@ class metafile:
         self.url = url
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
-        f = os.fdopen(fd, 'w')
-        f.write(''.join(input))
+        if isinstance(input, str):
+            f = os.fdopen(fd, 'w')
+            f.write(''.join(input))
+        else:
+            f = os.fdopen(fd, 'wb')
+            f.write(b''.join(input))
         f.close()
         self.hash_orig = dgst(self.filename)
 
@@ -3789,7 +3793,15 @@ def edit_meta(metatype,
     if metatype == 'pkg':
         # check if the package is a link to a different project
         project, package = path_args
-        orgprj = ET.fromstring(''.join(data)).get('project')
+        if sys.version_info >= (3, 0):
+            if isinstance(data, bytes):
+                data = data.decode('utf-8')
+                orgprj = ET.fromstring(''.join(data)).get('project')
+            else:
+                orgprj = ET.fromstring(b''.join(data)).get('project')
+        else:
+            orgprj = ET.fromstring(''.join(data)).get('project')
+
         if orgprj is not None and unquote(project) != orgprj:
             print('The package is linked from a different project.')
             print('If you want to edit the meta of the package create first a branch.')
@@ -4544,7 +4556,7 @@ def get_group_meta(apiurl, group):
     u = makeurl(apiurl, ['group', quote_plus(group)])
     try:
         f = http_GET(u)
-        return ''.join(f.readlines())
+        return f.readlines()
     except HTTPError:
         print('group \'%s\' not found' % group)
         return None
@@ -4553,7 +4565,8 @@ def get_user_meta(apiurl, user):
     u = makeurl(apiurl, ['person', quote_plus(user)])
     try:
         f = http_GET(u)
-        return ''.join(f.readlines())
+        return f.readlines()
+        #return ''.join(f.readlines())
     except HTTPError:
         print('user \'%s\' not found' % user)
         return None
@@ -5796,7 +5809,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     r = []
 
     f = show_prj_results_meta(apiurl, prj)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
 
     pacs = []
     # sequence of (repo,arch) tuples
@@ -6285,7 +6298,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
                 requestid = "rq" + requestid
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
-                '\n' + comment
+                '\n' + comment.decode('utf-8')
             r.append(s)
 
     if format not in ['csv', 'xml']:
