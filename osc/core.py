@@ -6799,7 +6799,11 @@ def is_rpm(f):
     except:
         return False
 
-    if h == '\xed\xab\xee\xdb':
+    if isinstance(h, str):
+        isrpmstr = '\xed\xab\xee\xdb'
+    else:
+        isrpmstr = b'\xed\xab\xee\xdb'
+    if h == isrpmstr:
         return True
     else:
         return False
@@ -6815,7 +6819,8 @@ def is_srcrpm(f):
     except:
         return False
 
-    if h[7] == '\x01':
+    issrcrpm = bytes(bytearray([h[7]])).decode('utf-8')
+    if issrcrpm == '\x01':
         return True
     else:
         return False
