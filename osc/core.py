@@ -5768,7 +5768,7 @@ def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
     while True:
         waiting = False
         try:
-            xml = ''.join(show_results_meta(apiurl, project, package, *args, **kwargs))
+            xml = b''.join(show_results_meta(apiurl, project, package, *args, **kwargs))
         except HTTPError as e:
             # check for simple timeout error and fetch again
             if e.code == 502 or e.code == 504:
@@ -7295,7 +7295,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             except (ValueError, IndexError):
                 print('Invalid rpmlintlog index. Please choose between 0 and %i' % (len(lintlogs)-1))
         try:
-            print(get_rpmlint_log(apiurl, **lintlogs[lint_n]))
+            print(get_rpmlint_log(apiurl, **lintlogs[lint_n]).decode('utf-8'))
         except HTTPError as e:
             if e.code == 404:
                 print('No rpmlintlog for %s %s' % (lintlogs[lint_n]['repo'],
@@ -7371,12 +7371,12 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
-                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
+                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff', mode='w')
                     tmpfile.write(req_summary)
                     tmpfile.write(issues)
                     try:
                         diff = request_diff(apiurl, request.reqid)
-                        tmpfile.write(diff)
+                        tmpfile.write(diff.decode('utf-8'))
                     except HTTPError as e:
                         if e.code != 400:
                             raise
