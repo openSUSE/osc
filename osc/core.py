@@ -5031,7 +5031,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     only maintainer (unless keep_maintainers is set). Additionally remove the
     develproject entry (<devel />) unless keep_develproject is true.
     """
-    root = ET.fromstring(''.join(pkgmeta))
+    root = ET.fromstring(b''.join(pkgmeta))
     root.set('name', new_name)
     root.set('project', new_prj)
     # never take releasename, it needs to be explicit
@@ -5516,7 +5516,7 @@ def get_distibutions(apiurl, discon=False):
     else:
         result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
         f = http_GET(makeurl(apiurl, ['distributions']))
-        root = ET.fromstring(''.join(f))
+        root = ET.fromstring(b''.join(f))
 
         for node in root.findall('distribution'):
             rmap = {}
@@ -6118,7 +6118,7 @@ def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=No
     query['arch'] = arch
     u = makeurl(apiurl, ['worker'], query)
     f = http_POST(u, data=constraintsfile)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
     return [node.get('name') for node in root.findall('entry')]
 
 

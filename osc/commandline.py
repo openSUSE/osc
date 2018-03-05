@@ -2923,7 +2923,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print(r)
+        print(r.decode('utf-8'))
 
 
     @cmdln.option('-r', '--repo', metavar='REPO',
