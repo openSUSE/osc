@@ -4574,7 +4574,7 @@ def get_user_meta(apiurl, user):
 def _get_xml_data(meta, *tags):
     data = []
     if meta != None:
-        root = ET.fromstring(meta)
+        root = ET.fromstring(b''.join(meta))
         for tag in tags:
             elm = root.find(tag)
             if elm is None or elm.text is None:
@@ -6120,7 +6120,7 @@ def get_worker_info(apiurl, worker):
     u = makeurl(apiurl, ['worker', worker])
     f = http_GET(u)
 
-    return f.read()
+    return f.read().decode('utf-8')
 
 
 def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=None):
