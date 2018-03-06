@@ -23,9 +23,9 @@ import stat
 #XXX: python 2.7 contains io.StringIO, which needs unicode instead of str
 #therefor try to import old stuff before new one here
 try:
-    from StringIO import StringIO
+    from StringIO import StringIO as MyIO
 except ImportError:
-    from io import StringIO
+    from io import BytesIO as MyIO
 
 # workaround for python24
 if not hasattr(os, 'SEEK_SET'):
@@ -57,10 +57,10 @@ class ArHdr:
     def __str__(self):
         return '%16s %d' % (self.file, self.size)
 
-class ArFile(StringIO):
+class ArFile(MyIO):
     """Represents a file which resides in the archive"""
     def __init__(self, fn, uid, gid, mode, buf):
-        StringIO.__init__(self, buf)
+        MyIO.__init__(self, buf)
         self.name = fn
         self.uid = uid
         self.gid = gid
@@ -180,7 +180,7 @@ class Ar:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
         data = self.__file.read(7)
-        if data != '!<arch>':
+        if data != b'!<arch>':
             raise ArError(self.filename, 'no ar archive')
         pos = 8
         while (len(data) != 0):
@@ -189,7 +189,7 @@ class Ar:
             if not data:
                 break
             pos += self.hdr_len
-            m = self.hdr_pat.search(data)
+            m = self.hdr_pat.search(data.decode('utf-8'))
             if not m:
                 raise ArError(self.filename, 'unexpected hdr entry')
             args = m.groups() + (pos, )

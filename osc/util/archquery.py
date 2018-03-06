@@ -17,7 +17,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         self.fields = {}
         #self.magic = None
         #self.pkgsuffix = 'pkg.tar.gz'
-        self.pkgsuffix = 'arch'
+        self.pkgsuffix = b'arch'
 
     def read(self, all_tags=True, self_provides=True, *extra_tags):
         # all_tags and *extra_tags are currently ignored
@@ -28,11 +28,11 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         fn = open('/dev/null', 'wb')
         pipe = subprocess.Popen(['tar', '-O', '-xf', self.__path, '.PKGINFO'], stdout=subprocess.PIPE, stderr=fn).stdout
         for line in pipe.readlines():
-            line = line.rstrip().split(' = ', 2)
+            line = line.rstrip().split(b' = ', 2)
             if len(line) == 2:
                 if not line[0] in self.fields:
-                    self.fields[line[0]] = []
-                self.fields[line[0]].append(line[1])
+                    self.fields[line[0].decode('utf-8')] = []
+                self.fields[line[0].decode('utf-8')].append(line[1])
         if self_provides:
             prv = '%s = %s' % (self.name(), self.fields['pkgver'][0])
             self.fields.setdefault('provides', []).append(prv)
@@ -115,7 +115,8 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     def canonname(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
-        return self.name() + '-' + pkgver + '-' + self.arch() + '.' + self.pkgsuffix
+        canonname = self.name() + b'-' + pkgver + b'-' + self.arch() + b'.' + self.pkgsuffix
+        return canonname.decode('utf-8')
 
     def gettag(self, tag):
         # implement me, if needed

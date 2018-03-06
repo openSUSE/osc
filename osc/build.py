@@ -764,13 +764,14 @@ def main(apiurl, opts, argv):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
             print('Getting buildinfo from server and store to %s' % bi_filename)
-            bi_text = ''.join(get_buildinfo(apiurl,
-                                            prj,
-                                            pac,
-                                            repo,
-                                            arch,
-                                            specfile=build_descr_data,
-                                            addlist=extra_pkgs))
+
+            bi_text = get_buildinfo(apiurl,
+                                    prj,
+                                    pac,
+                                    repo,
+                                    arch,
+                                    specfile=build_descr_data,
+                                    addlist=extra_pkgs).decode('utf-8')
             if not bi_file:
                 bi_file = open(bi_filename, 'w')
             # maybe we should check for errors before saving the file
@@ -780,7 +781,7 @@ def main(apiurl, opts, argv):
             bc = get_buildconfig(apiurl, prj, repo)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
-            bc_file.write(bc)
+            bc_file.write(bc.decode('utf-8'))
             bc_file.flush()
     except HTTPError as e:
         if e.code == 404:
@@ -1139,7 +1140,7 @@ def main(apiurl, opts, argv):
         if bi.installonly_list:
             rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
-    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
+    rpmlist_file = NamedTemporaryFile(mode='w+t', prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
