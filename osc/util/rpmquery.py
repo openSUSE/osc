@@ -6,6 +6,9 @@ import re
 import struct
 from . import packagequery
 
+def cmp(a, b):
+    return (a > b) - (a < b)
+
 class RpmError(packagequery.PackageError):
     pass
 

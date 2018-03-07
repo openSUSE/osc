@@ -7854,7 +7854,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          data=opts.data,
                          file=opts.file,
                          headers=opts.headers)
-        out = r.read()
+        out = r.read().decode('utf-8')
 
         if opts.edit:
             text = edit_text(out)
@@ -7862,7 +7862,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          url,
                          data=text,
                          headers=opts.headers)
-            out = r.read()
+            out = r.read().decode('utf-8')
 
         sys.stdout.write(out)
 

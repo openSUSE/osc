@@ -264,18 +264,9 @@ class Fetcher:
             url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
             try:
                 if self.offline and not os.path.exists(dest):
-                    # may need to try parent
-                    if self.http_debug:
-                        print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
-                        print("url: %s" % url, file=sys.stderr)
-
-                    if os.path.exists(dest):
-                        os.unlink(dest)
-
-                    l = i.rsplit(':', 1)
                     # try key from parent project
-                    if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
-                        prjs.append(l[0])
+                    # do nothing atm
+                    # FIXME: needs to raise a HTTP Error
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
@@ -293,6 +284,18 @@ class Fetcher:
                 if e.code != 404:
                     print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
+
+                if self.http_debug:
+                        print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
+                        print("url: %s" % url, file=sys.stderr)
+
+                if os.path.exists(dest):
+                    os.unlink(dest)
+
+                l = i.rsplit(':', 1)
+                # try key from parent project
+                if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
+                    prjs.append(l[0])
 
 
 def verify_pacs_old(pac_list):
