@@ -113,11 +113,11 @@ def run(prg, argv=None):
             print(body, file=sys.stderr)
 
         if e.code in [400, 403, 404, 500]:
-            if '<summary>' in body:
-                msg = body.split('<summary>')[1]
-                msg = msg.split('</summary>')[0]
-                msg = msg.replace('&lt;', '<').replace('&gt;' , '>').replace('&amp;', '&')
-                print(msg, file=sys.stderr)
+            if b'<summary>' in body:
+                msg = body.split(b'<summary>')[1]
+                msg = msg.split(b'</summary>')[0]
+                msg = msg.replace(b'&lt;', b'<').replace(b'&gt;' , b'>').replace(b'&amp;', b'&')
+                print(msg.decode('utf-8'), file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
             print('\nRequest: %s' % e.filename)
             print('Headers:')
