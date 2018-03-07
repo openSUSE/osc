@@ -1246,7 +1246,7 @@ def main(apiurl, opts, argv):
 
         if opts.keep_pkgs:
             for i in b_built.splitlines() + s_built.splitlines():
-                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
+                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i.decode('utf-8'))))
 
     if bi_file:
         bi_file.close()
