@@ -265,8 +265,7 @@ class Fetcher:
             try:
                 if self.offline and not os.path.exists(dest):
                     # try key from parent project
-                    # do nothing atm
-                    # FIXME: needs to raise a HTTP Error
+                    raise HTTPError(url, 404, None, None, None)
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
