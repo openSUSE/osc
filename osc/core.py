@@ -7371,7 +7371,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
-                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff', mode='w')
+                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff', mode='r+')
                     tmpfile.write(req_summary)
                     tmpfile.write(issues)
                     try:
