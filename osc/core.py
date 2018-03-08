@@ -3555,7 +3555,7 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
 
 def show_devel_project(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
-    node = ET.fromstring(''.join(m)).find('devel')
+    node = ET.fromstring(b''.join(m)).find('devel')
     if node is None:
         return None, None
     else:
