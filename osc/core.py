@@ -3641,7 +3641,7 @@ class metafile:
         self.url = url
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
-        if isinstance(input, str):
+        if isinstance(input[0], str) or isinstance(input, str):
             f = os.fdopen(fd, 'w')
             f.write(''.join(input))
         else:
@@ -3679,8 +3679,8 @@ class metafile:
                     # examine the error - we can't raise an exception because we might want
                     # to try again
                     data = e.read()
-                    if '<summary>' in data:
-                        print(data.split('<summary>')[1].split('</summary>')[0], file=sys.stderr)
+                    if b'<summary>' in data:
+                        print(data.split(b'<summary>')[1].split(b'</summary>')[0], file=sys.stderr)
                     ri = raw_input('Try again? ([y/N]): ')
                     if ri not in ['y', 'Y']:
                         break
