@@ -8725,7 +8725,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             import glob, re
             try:
                 fn_changelog = glob.glob('*.changes')[0]
-                fp = file(fn_changelog)
+                fp = open(fn_changelog)
                 titleline = fp.readline()
                 fp.close()
                 if re.match('^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
