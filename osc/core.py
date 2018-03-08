@@ -46,7 +46,11 @@ except ImportError:
 
 from . import oscerr
 from . import conf
-from functools import cmp_to_key
+
+try:
+    from functools import cmp_to_key
+except ImportError:
+    from .util.helper import cmp_to_key
 
 try:
     # python 2.6 and python 2.7

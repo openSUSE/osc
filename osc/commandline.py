@@ -28,7 +28,11 @@ from optparse import SUPPRESS_HELP
 
 from .core import *
 from .util import safewriter
-from functools import cmp_to_key
+
+try:
+    from functools import cmp_to_key
+except ImportError:
+    from .util.helper import cmp_to_key
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
