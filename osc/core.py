@@ -3802,9 +3802,9 @@ def edit_meta(metatype,
                 data = data.decode('utf-8')
                 orgprj = ET.fromstring(''.join(data)).get('project')
             elif isinstance(data, list):
-                orgprj = ET.fromstring(''.join(data)).get('project')
+                orgprj = ET.fromstring(b''.join(data)).get('project')
             else:
-                orgprj = ET.fromstring(b''.join(data)).get(b'project')
+                orgprj = ET.fromstring(''.join(data)).get('project')
         else:
             orgprj = ET.fromstring(''.join(data)).get('project')
 
