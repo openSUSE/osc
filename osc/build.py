@@ -1240,9 +1240,9 @@ def main(apiurl, opts, argv):
         (s_built, b_built) = get_built_files(pacdir, bi.buildtype)
 
         print()
-        if s_built: print(s_built)
+        if s_built: print(s_built.decode('utf-8'))
         print()
-        print(b_built)
+        print(b_built.decode('utf-8'))
 
         if opts.keep_pkgs:
             for i in b_built.splitlines() + s_built.splitlines():
