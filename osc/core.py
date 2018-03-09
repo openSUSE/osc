@@ -6278,7 +6278,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
         try:
             comment = node.find('comment').text.encode(locale.getpreferredencoding(), 'replace')
         except:
-            comment = '<no message>'
+            comment = b'<no message>'
         try:
             requestid = node.find('requestid').text.encode(locale.getpreferredencoding(), 'replace')
         except:
@@ -6301,7 +6301,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('</logentry>')
         else:
             if requestid:
-                requestid = "rq" + requestid
+                requestid = b"rq" + requestid
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
                 '\n' + comment.decode('utf-8')
