@@ -8516,7 +8516,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(p.apiurl, ['source', p.prjname, p.name], query=query)
         f = http_GET(u)
         meta = f.readlines()
-        root_new = ET.fromstring(''.join(meta))
+        root_new = ET.fromstring(b''.join(meta))
         linkinfo_new = root_new.find('linkinfo')
         if linkinfo_new == None:
             raise oscerr.APIError('link is not a really a link?')

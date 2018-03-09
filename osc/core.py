@@ -3802,7 +3802,7 @@ def edit_meta(metatype,
                 data = data.decode('utf-8')
                 orgprj = ET.fromstring(''.join(data)).get('project')
             else:
-                orgprj = ET.fromstring(b''.join(data)).get('project')
+                orgprj = ET.fromstring(b''.join(data)).get(b'project')
         else:
             orgprj = ET.fromstring(''.join(data)).get('project')
 
@@ -3897,7 +3897,7 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
             raise
         if len(packages) == 1:
             raise oscerr.APIError('package name too long: %s' % packages[0])
-        n = len(packages) / 2
+        n = int(len(packages) / 2)
         pkgs = packages[:n]
         res = get_project_sourceinfo(apiurl, project, nofilename, *pkgs)
         pkgs = packages[n:]
