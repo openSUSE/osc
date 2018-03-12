@@ -244,12 +244,8 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             r._decref_socketios = lambda: None
             r.ssl = h.sock.ssl
             r._timeout = -1.0
-            r.recv_into = lambda b: SSL.Connection.recv_into(r, b)
-            #fp = socket.SocketIO(r, 'rb')
-            # FIXME: dirty hack to get it working with transfer-encoding
-            # chunked responses. This is a bug in M2Crypto and needs to
-            # be fixed there
-            fp = r
+            r.recv_into = lambda b: r.readinto(b)
+            fp = socket.SocketIO(r, 'rb')
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
