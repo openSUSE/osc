@@ -528,7 +528,7 @@ def _build_opener(apiurl):
         HTTPPasswordMgrWithDefaultRealm())
     authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
-    options['sslcertck'] = False
+    #options['sslcertck'] = False
     if options['sslcertck']:
         try:
             from . import oscssl

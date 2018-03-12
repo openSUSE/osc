@@ -5,9 +5,8 @@
 
 from __future__ import print_function
 
-import M2Crypto.httpslib
 from M2Crypto.SSL.Checker import SSLVerificationError
-from M2Crypto import m2, SSL
+from M2Crypto import m2, SSL, httpslib
 import M2Crypto.m2urllib2
 import socket
 import sys
@@ -186,22 +185,28 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
     # "do_open()" and "https_open()" so that we just need to override
     # the small "https_open()" method...)
     def https_open(self, req):
-        host = req.get_host()
+        # https://docs.python.org/3.3/library/urllib.request.html#urllib.request.Request.get_host
+        try:     # up to python-3.2
+            host = req.get_host()
+        except AttributeError:  # from python-3.3
+            host = req.host
         if not host:
-            raise M2Crypto.m2urllib2.URLError('no host given: ' + req.get_full_url())
+            raise URLError('no host given')
 
         # Our change: Check to see if we're using a proxy.
         # Then create an appropriate ssl-aware connection.
         full_url = req.get_full_url()
         target_host = urlparse(full_url)[1]
 
-        if (target_host != host):
-            h = myProxyHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
-            # M2Crypto.ProxyHTTPSConnection.putrequest expects a fullurl
-            selector = full_url
+        if target_host != host:
+            request_uri = urldefrag(full_url)[0]
+            h = httpslib.ProxyHTTPSConnection(host=host, ssl_context=self.ctx)
         else:
-            h = myHTTPSConnection(host = host, appname = self.appname, ssl_context = self.ctx)
-            selector = req.get_selector()
+            try:     # up to python-3.2
+                request_uri = req.get_selector()
+            except AttributeError:  # from python-3.3
+                request_uri = req.selector
+            h = httpslib.HTTPSConnection(host=host, ssl_context=self.ctx)
         # End our change
         h.set_debuglevel(self._debuglevel)
         if self.saved_session:
@@ -217,14 +222,13 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # request.
         headers["Connection"] = "close"
         try:
-            h.request(req.get_method(), selector, req.data, headers)
+            h.request(req.get_method(), request_uri, req.data, headers)
             s = h.get_session()
             if s:
                 self.saved_session = s
             r = h.getresponse()
-        except socket.error as err: # XXX what error?
-            err.filename = full_url
-            raise M2Crypto.m2urllib2.URLError(err)
+        except socket.error as err:  # XXX what error?
+            raise URLError(err)
 
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
@@ -233,12 +237,15 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # for Windows.  That adapter calls recv(), so delegate recv()
         # to read().  This weird wrapping allows the returned object to
         # have readline() and readlines() methods.
-
-        # XXX It might be better to extract the read buffering code
-        # out of socket._fileobject() and into a base class.
-
         r.recv = r.read
-        fp = socket._fileobject(r)
+        if (sys.version_info < (3, 0)):
+            fp = socket._fileobject(r, close=True)
+        else:
+            r._decref_socketios = lambda: None
+            r.ssl = h.sock.ssl
+            r._timeout = -1.0
+            r.recv_into = lambda b: SSL.Connection.recv_into(r, b)
+            fp = socket.SocketIO(r, 'rb')
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
