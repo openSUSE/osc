@@ -7076,7 +7076,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # Set binary target directory and create if not existing
         target_dir = os.path.normpath(opts.destdir)
         if not os.path.isdir(target_dir):
-            print('Creating %s' % target_dir)
+            print('Creating directory "%s"' % target_dir)
             os.makedirs(target_dir, 0o755)
 
         for arch in arches:
