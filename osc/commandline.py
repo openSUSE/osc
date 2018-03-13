@@ -1355,7 +1355,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rdiff = 'old: %s/%s\nnew: %s/%s rev %s\n' % (dst_project, dst_package, src_project, src_package, rev)
                 rdiff += server_diff(apiurl,
                                     dst_project, dst_package, None,
-                                    src_project, src_package, rev, True)
+                                    src_project, src_package, rev, True).decode('utf-8')
             except:
                 rdiff = ''
 
