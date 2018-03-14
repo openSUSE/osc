@@ -5588,8 +5588,8 @@ def get_binarylist(apiurl, prj, repo, arch, package=None, verbose=False):
         for node in tree.findall('binary'):
             f = File(node.get('filename'),
                      None,
-                     int(node.get('size')),
-                     int(node.get('mtime')))
+                     int(node.get('size') or 0) or None,
+                     int(node.get('mtime') or 0) or None)
             l.append(f)
         return l
 
