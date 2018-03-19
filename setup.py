@@ -28,7 +28,7 @@ class build_osc(distutils.command.build.build, object):
         import gzip
         man_path = os.path.join(self.build_base, 'osc.1.gz')
         distutils.log.info('generating %s' % man_path)
-        outfile = gzip.open(man_path, 'w')
+        outfile = gzip.open(man_path, 'wt')
         osccli = commandline.Osc(stdout=outfile)
         # FIXME: we cannot call the main method because osc expects an ~/.oscrc
         # file (this would break builds in environments like the obs)
