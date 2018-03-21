@@ -52,6 +52,8 @@ try:
 except ImportError:
     from .util.helper import cmp_to_key
 
+from .util.helper import decode_list
+
 try:
     # python 2.6 and python 2.7
     unicode
@@ -3797,12 +3799,15 @@ def edit_meta(metatype,
     if metatype == 'pkg':
         # check if the package is a link to a different project
         project, package = path_args
+        # data can be a bytes object, a list with strings, a list with bytes, just a string.
+        # So we need the following even if it is ugly.
         if sys.version_info >= (3, 0):
             if isinstance(data, bytes):
                 data = data.decode('utf-8')
                 orgprj = ET.fromstring(''.join(data)).get('project')
             elif isinstance(data, list):
-                orgprj = ET.fromstring(b''.join(data)).get('project')
+                decode_data = decode_list(data)
+                orgprj = ET.fromstring(''.join(decode_data)).get('project')
             else:
                 orgprj = ET.fromstring(''.join(data)).get('project')
         else:

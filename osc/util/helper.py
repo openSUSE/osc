@@ -34,3 +34,16 @@ def cmp_to_key(mycmp):
             raise TypeError('hash not implemented')
 
     return K
+
+
+def decode_list(ilist):
+    """ Decodes the elements of a list if needed
+    """
+
+    dlist = []
+    for elem in ilist:
+        if not isinstance(elem, str):
+            dlist.append(elem.decode('utf-8'))
+        else:
+            dlist.append(elem)
+    return dlist
