@@ -3791,8 +3791,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     diff += ''.join(i)
             else:
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
-        print(diff)
+                                    pac.prjname, pac.name, rev2, not opts.plain, opts.missingok).decode('utf-8')
         run_pager(diff)
 
 
