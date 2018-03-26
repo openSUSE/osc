@@ -244,13 +244,17 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             r._decref_socketios = lambda: None
             r.ssl = h.sock.ssl
             r._timeout = -1.0
-            r.recv_into = lambda b: r.readinto(b)
+            if r.getheader('Transfer-Encoding') == 'chunked':
+                r.recv_into = r.readinto
+            else:
+                r.recv_into = lambda b: SSL.Connection.recv_into(r, b)
             fp = socket.SocketIO(r, 'rb')
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
         resp.msg = r.reason
         return resp
+
 
 class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
     def __init__(self, *args, **kwargs):
