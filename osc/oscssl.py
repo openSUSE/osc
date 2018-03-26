@@ -244,10 +244,11 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             r._decref_socketios = lambda: None
             r.ssl = h.sock.ssl
             r._timeout = -1.0
-            if r.getheader('Transfer-Encoding') == 'chunked':
-                r.recv_into = r.readinto
-            else:
-                r.recv_into = lambda b: SSL.Connection.recv_into(r, b)
+            # hack to bypass python3 bug with 0 buffer size and
+            # http/client.py readinto method for response class
+            if r.length is not None and r.length == 0:
+                r.readinto = lambda b: 0
+            r.recv_into = r.readinto
             fp = socket.SocketIO(r, 'rb')
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
