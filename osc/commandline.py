@@ -437,7 +437,8 @@ class Osc(cmdln.Cmdln):
                         break
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
-                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
+                    root = ET.fromstring(m)
+                    li.read(root.find('linkinfo'))
                     if li.haserror():
                         raise oscerr.LinkExpandError(project, package, li.error)
                     project, package, rev = li.project, li.package, li.rev
