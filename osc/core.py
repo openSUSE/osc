@@ -6059,8 +6059,12 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 
 def buildlog_strip_time(data):
     """Strips the leading build time from the log"""
-    time_regex = re.compile(b'^\[[^\]]*\] ', re.M)
-    return time_regex.sub(b'', data)
+    if isinstance(data, str):
+        time_regex = re.compile('^\[[^\]]*\] ', re.M)
+        return time_regex.sub('', data)
+    else:
+        time_regex = re.compile(b'^\[[^\]]*\] ', re.M)
+        return time_regex.sub(b'', data)
 
 
 def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False):
