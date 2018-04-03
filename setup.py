@@ -89,7 +89,7 @@ class install_data(distutils.command.install_data.install_data, object):
 
 addparams = {}
 if HAVE_PY2EXE:
-    addparams['console'] = [{'script': 'osc-wrapper.py', 'dest_base': 'osc', 'icon_resources': [(1, 'osc.ico')]}]
+    addparams['console'] = [{'script': 'osc-py3-wrapper.py', 'dest_base': 'osc', 'icon_resources': [(1, 'osc.ico')]}]
     addparams['zipfile'] = 'shared.lib'
     addparams['options'] = {'py2exe': {'optimize': 0, 'compressed': True, 'packages': ['xml.etree', 'StringIO', 'gzip']}}
 
@@ -109,7 +109,7 @@ setup(name='osc',
       url = 'http://en.opensuse.org/openSUSE:OSC',
       download_url = 'https://github.com/openSUSE/osc',
       packages = ['osc', 'osc.util'],
-      scripts = ['osc_hotshot.py', 'osc-wrapper.py'],
+      scripts = ['osc_hotshot.py', 'osc-py3-wrapper.py'],
       data_files = data_files,
 
       # Override certain command classes with our own ones
