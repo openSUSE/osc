@@ -95,7 +95,7 @@ if HAVE_PY2EXE:
 
 data_files = []
 if sys.platform[:3] != 'win':
-    data_files.append((os.path.join('share', 'man', 'man1'), ['osc.1.gz']))
+    data_files.append((os.path.join('share', 'man', 'man1'), ['osc-py3.1.gz']))
 
 setup(name='osc',
       version = osc.core.__version__,
