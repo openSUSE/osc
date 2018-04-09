@@ -4069,7 +4069,7 @@ def _edit_message_open_editor(filename, data, orig_mtime):
                 editor.extend(['-c', ':r %s' % f.name, filename])
                 run_external(editor[0], *editor[1:])
         else:
-            with open(filename, 'w') as f:
+            with open(filename, 'wb') as f:
                 f.write(data)
             orig_mtime = os.stat(filename).st_mtime
             run_editor(filename)
