@@ -3709,12 +3709,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              'the revision (rev1) on the server. '
                              'If rev1 and rev2 are specified it will compare rev1 against rev2 '
                              '(NOTE: changes in your working copy are ignored in this case)')
+    @cmdln.option('-M', '--meta', action='store_true',
+                        help='operate on meta files')
     @cmdln.option('-p', '--plain', action='store_true',
                         help='output the diff in plain (not unified) diff format')
     @cmdln.option('-l', '--link', action='store_true',
                         help='(osc linkdiff): compare against the base revision of the link')
     @cmdln.option('--missingok', action='store_true',
                         help='do not fail if the source or target project/package does not exist on the server')
+    @cmdln.option('-u', '--unexpand', action='store_true',
+                        help='Local changes only, ignore changes in linked package sources')
     def do_diff(self, subcmd, opts, *args):
         """${cmd_name}: Generates a diff
 
@@ -3789,7 +3793,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     diff += ''.join(i)
             else:
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2, not opts.plain, opts.missingok)
+                                    pac.prjname, pac.name, rev2,
+                                    not opts.plain, opts.missingok, opts.meta, not opts.unexpand)
         run_pager(diff)
 
 
