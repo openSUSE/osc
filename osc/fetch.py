@@ -244,7 +244,6 @@ class Fetcher:
                     self.fetch(i)
                     if self.progress_obj:
                         print("  %d/%d\r" % (done, needed), end=' ')
-                        sys.stdout.flush()
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
