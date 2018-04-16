@@ -30,6 +30,7 @@ try:
     from urllib.request import pathname2url, install_opener, urlopen
     from urllib.request import Request as URLRequest
     from io import StringIO
+    from http.client import IncompleteRead
 except ImportError:
     #python 2.x
     from urlparse import urlsplit, urlunsplit, urlparse
@@ -37,6 +38,7 @@ except ImportError:
     from urllib2 import HTTPError, install_opener, urlopen
     from urllib2 import Request as URLRequest
     from cStringIO import StringIO
+    from httplib import IncompleteRead
 
 
 try:
@@ -5962,6 +5964,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
+
 def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None, text=None):
     """
     performs http_meth on url and read bufsize bytes from the response
@@ -6025,6 +6028,11 @@ def buildlog_strip_time(data):
 def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False):
     """prints out the buildlog on stdout"""
 
+    def print_data(data, strip_time=False):
+        if strip_time:
+            data = buildlog_strip_time(data)
+        sys.stdout.write(data.translate(all_bytes, remove_bytes))
+
     # to protect us against control characters
     import string
     all_bytes = string.maketrans('', '')
@@ -6033,15 +6041,24 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     query = {'nostream' : '1', 'start' : '%s' % offset}
     if last:
         query['last'] = 1
+    retry_count = 0
     while True:
         query['start'] = offset
         start_offset = offset
         u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
-        for data in streamfile(u, bufsize="line"):
-            offset += len(data)
-            if strip_time:
-                data = buildlog_strip_time(data)
-            sys.stdout.write(data.translate(all_bytes, remove_bytes))
+        try:
+            for data in streamfile(u, bufsize="line"):
+                offset += len(data)
+                print_data(data, strip_time)
+        except IncompleteRead as e:
+            if retry_count >= 3:
+                raise e
+            retry_count += 1
+            data = e.partial
+            if len(data):
+                offset += len(data)
+                print_data(data, strip_time)
+            continue
         if start_offset == offset:
             break
 
