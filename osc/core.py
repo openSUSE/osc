@@ -24,12 +24,14 @@ import errno
 import shlex
 import hashlib
 
+
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
     from urllib.error import HTTPError
     from urllib.request import pathname2url, install_opener, urlopen
     from urllib.request import Request as URLRequest
     from io import StringIO
+    from http.client import IncompleteRead
 except ImportError:
     #python 2.x
     from urlparse import urlsplit, urlunsplit, urlparse
@@ -37,6 +39,7 @@ except ImportError:
     from urllib2 import HTTPError, install_opener, urlopen
     from urllib2 import Request as URLRequest
     from cStringIO import StringIO
+    from httplib import IncompleteRead
 
 
 try:
@@ -6000,7 +6003,15 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None, text=None):
+class StreamStatus(object):
+    def __init__(self):
+        self.broken = False
+        self.retry_count = 0
+    def set_broken(self, value):
+        self.broken = value
+
+
+def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None, text=None, sstatus=None):
     """
     performs http_meth on url and read bufsize bytes from the response
     until EOF is reached. After each read bufsize bytes are yielded to the
@@ -6041,7 +6052,16 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 
     read = 0
     while True:
-        data = xread(bufsize)
+        try:
+            data = xread(bufsize)
+        except IncompleteRead as e:
+            if sstatus:
+                sstatus.set_broken(True)
+                sstatus.retry_count += 1
+                data = e.partial
+            else:
+                print('Stream was interrupted. Please restart stream')
+                break
         if not len(data):
             break
         read += len(data)
@@ -6081,15 +6101,19 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     query = {'nostream' : '1', 'start' : '%s' % offset}
     if last:
         query['last'] = 1
+    sstatus = StreamStatus()
     while True:
+        sstatus.set_broken(False)
         query['start'] = offset
         start_offset = offset
         u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
-        for data in streamfile(u, bufsize="line"):
+        for data in streamfile(u, bufsize="line", sstatus=sstatus):
             offset += len(data)
             if strip_time:
                 data = buildlog_strip_time(data)
             sys.stdout.write(data.translate(all_bytes, remove_bytes).decode('utf-8'))
+        if sstatus.broken is True and sstatus.retry_count < 3:
+            continue
         if start_offset == offset:
             break
 
