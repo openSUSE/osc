@@ -2204,16 +2204,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = None
             if len(args) > 0:
                 project = args[0]
+            elif opts.project:
+                project = opts.project
+                if opts.package:
+                    package = opts.package
             elif not opts.mine and not opts.user and not opts.group:
                 try:
                     project = store_read_project(os.curdir)
                     package = store_read_package(os.curdir)
                 except oscerr.NoWorkingCopy:
                     pass
-            elif opts.project:
-                project = opts.project
-                if opts.package:
-                    package = opts.package
 
             if len(args) > 1:
                 package = args[1]
