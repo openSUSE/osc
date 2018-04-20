@@ -344,7 +344,7 @@ class Serviceinfo:
     def addVerifyFile(self, serviceinfo_node, filename):
         import hashlib
 
-        f = open(filename, 'r')
+        f = open(filename, 'rb')
         digest = hashlib.sha256(f.read()).hexdigest()
         f.close()
 
@@ -7072,7 +7072,7 @@ def addDownloadUrlService(url):
 
     # for pretty output
     xmlindent(s)
-    f = open(service_file, 'wb')
+    f = open(service_file, 'w')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
@@ -7094,7 +7094,7 @@ def addDownloadUrlService(url):
 
     # for pretty output
     xmlindent(s)
-    f = open(service_file, 'wb')
+    f = open(service_file, 'w')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
 
