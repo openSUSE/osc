@@ -3436,7 +3436,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         devloc = None
         if not exists and (srcprj != args[0] or srcpkg != args[1]):
             try:
-                root = ET.fromstring(''.join(show_attribute_meta(apiurl, args[0], None, None,
+                root = ET.fromstring(b''.join(show_attribute_meta(apiurl, args[0], None, None,
                     conf.config['maintained_update_project_attribute'], False, False)))
                 # this might raise an AttributeError
                 uproject = root.find('attribute').find('value').text
