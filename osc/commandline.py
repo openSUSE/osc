@@ -8261,7 +8261,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(apiurl, ['source', project, package, filename], query=query)
         if subcmd == 'less':
             f = http_GET(u)
-            run_pager(''.join(f.readlines()))
+            run_pager(b''.join(f.readlines()))
         else:
             for data in streamfile(u):
                 if isinstance(data, str):
