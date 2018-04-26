@@ -7375,7 +7375,11 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 print('Aborting', file=sys.stderr)
                 raise oscerr.UserAbort()
             elif repl == 'm':
-                comment = edit_text()
+                if tmpfile is not None:
+                    tmpfile.seek(0)
+                    comment = edit_message(footer=tmpfile.read())
+                else:
+                    comment = edit_text()
                 create_comment(apiurl, 'request', comment, request.reqid)
             elif repl == 'b' and src_actions:
                 print_source_buildstatus(src_actions)
