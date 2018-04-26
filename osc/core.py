@@ -5743,7 +5743,7 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
             if verbose and res['details'] != '':
                 if res['code'] in ('unresolvable', 'expansion error'):
                     lines = res['details'].split(',')
-                    res['status'] += ': ' + '\n     '.join(lines)
+                    res['status'] += ': \n      ' + '\n     '.join(lines)
                 else:
                     res['status'] += ': %s' % res['details']
             elif res['code'] in ('scheduled', ) and res['details']:
