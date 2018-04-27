@@ -462,6 +462,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
         apiurl = self.get_api_url()
         localdir = os.getcwd()
         project = package = None
@@ -469,7 +470,7 @@ class Osc(cmdln.Cmdln):
             if is_package_dir(localdir):
                 project = store_read_project(localdir)
                 package = store_read_package(localdir)
-        else:
+        elif len(args) == 2:
             project = args[0]
             package = args[1]
 
@@ -502,6 +503,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
         apiurl = self.get_api_url()
         localdir = os.getcwd()
         channel = None
@@ -544,6 +546,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
         apiurl = self.get_api_url()
         localdir = os.getcwd()
         channel = None
@@ -588,6 +591,7 @@ class Osc(cmdln.Cmdln):
         ${cmd_option_list}
         """
 
+        args = slash_split(args)
         apiurl = self.get_api_url()
         project_dir = localdir = os.getcwd()
         patchinfo = 'patchinfo'
