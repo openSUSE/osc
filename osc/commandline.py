@@ -449,6 +449,41 @@ class Osc(cmdln.Cmdln):
                     return 1
 
 
+    @cmdln.option('--extend-package-names', default=False, action="store_true",
+                  help='Extend packages names with project name as suffix')
+    def do_addcontainers(self, subcmd, opts, *args):
+        """${cmd_name}: Add maintained containers for a give package
+
+        The command adds all containers which are marked as maitained and contain
+        an rpm out of the specified source package.
+
+        Examples:
+            osc addcontainers [PROJECT PACKAGE]
+        ${cmd_option_list}
+        """
+
+        apiurl = self.get_api_url()
+        localdir = os.getcwd()
+        project = package = None
+        if not args:
+            if is_package_dir(localdir):
+                project = store_read_project(localdir)
+                package = store_read_package(localdir)
+        else:
+            project = args[0]
+            package = args[1]
+
+        if project == None or package == None:
+            raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
+
+        query = {'cmd': 'addcontainers'}
+        if opts.extend_package_names:
+            query['extend_package_names'] = '1'
+
+        print("Add containers...")
+        url = makeurl(apiurl, ['source', project, package], query=query)
+        f = http_POST(url)
+
     @cmdln.option('-s', '--skip-disabled', action='store_true',
                         help='Skip disabled channels. Otherwise the source gets added, but not the repositories.')
     @cmdln.option('-e', '--enable-all', action='store_true',
