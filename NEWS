@@ -1,6 +1,7 @@
 0.163
   - add sendsysrq command (requires OBS 2.10)
   - add addcontainers command (requires OBS 2.10)
+  - enable statistics for local builds
   - add new options to diff command:
     --unexpand for local diffs only (bsc#1089025)
     --meta for diffing meta files

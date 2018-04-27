@@ -532,6 +532,7 @@ def main(apiurl, opts, argv):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
 
     buildargs = []
+    buildargs.append('--statistics')
     if not opts.userootforbuild:
         buildargs.append('--norootforbuild')
     if opts.clean:
