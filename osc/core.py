@@ -1614,7 +1614,7 @@ class Package:
     def write_conflictlist(self):
         self.__write_storelist('_in_conflict', self.in_conflict)
 
-    def updatefile(self, n, revision, mtime=None):
+    def updatefile(self, n, revision, mtime=None, deleted=False):
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
         origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
@@ -1626,7 +1626,7 @@ class Package:
             origfile = None
 
         get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=storefilename,
-                revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
+                revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta, deleted=deleted)
 
         shutil.copyfile(storefilename, filename)
         if mtime:
@@ -1692,8 +1692,8 @@ class Package:
         meta = self.get_files_meta(revision=revision)
         store_write_string(self.absdir, '_files', meta + '\n')
 
-    def get_files_meta(self, revision='latest', skip_service=True):
-        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta)
+    def get_files_meta(self, revision='latest', skip_service=True, get_deleted=False):
+        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta, deleted=get_deleted)
         # look for "too large" files according to size limit and mark them
         root = ET.fromstring(fm)
         for e in root.findall('entry'):
@@ -2248,7 +2248,7 @@ rev: %s
                 return True
         return sinfo.get('srcmd5') != self.srcmd5
 
-    def update(self, rev = None, service_files = False, size_limit = None):
+    def update(self, rev = None, service_files = False, size_limit = None, get_deleted = False):
         import tempfile
         rfiles = []
         # size_limit is only temporary for this update
@@ -2306,24 +2306,24 @@ rev: %s
                             deleted.remove(f)
             if not service_files:
                 services = []
-            self.__update(kept, added, deleted, services, ET.tostring(root, encoding=ET_ENCODING), root.get('rev'))
+            self.__update(kept, added, deleted, services, ET.tostring(root, encoding=ET_ENCODING), root.get('rev'), get_deleted=get_deleted)
             os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
-        fm = self.get_files_meta(revision=rev)
+        fm = self.get_files_meta(revision=rev, get_deleted=get_deleted)
         root = ET.fromstring(fm)
         rfiles = self.__get_files(root)
         store_write_string(self.absdir, '_files', fm + '\n', subdir='_in_update')
         kept, added, deleted, services = self.__get_rev_changes(rfiles)
         if not service_files:
             services = []
-        self.__update(kept, added, deleted, services, fm, root.get('rev'))
+        self.__update(kept, added, deleted, services, fm, root.get('rev'), get_deleted=get_deleted)
         os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
         if os.path.isdir(os.path.join(self.storedir, '_in_update')):
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         self.size_limit = old_size_limit
 
-    def __update(self, kept, added, deleted, services, fm, rev):
+    def __update(self, kept, added, deleted, services, fm, rev, get_deleted=False):
         pathn = getTransActPath(self.dir)
         # check for conflicts with existing files
         for f in added:
@@ -2332,7 +2332,7 @@ rev: %s
                     'failed to add file \'%s\' file/dir with the same name already exists' % f.name)
         # ok, the update can't fail due to existing files
         for f in added:
-            self.updatefile(f.name, rev, f.mtime)
+            self.updatefile(f.name, rev, f.mtime, deleted=get_deleted)
             print(statfrmt('A', os.path.join(pathn, f.name)))
         for f in deleted:
             # if the storefile doesn't exist we're resuming an aborted update:
@@ -2394,7 +2394,7 @@ rev: %s
                 progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
             print(statfrmt('A', os.path.join(pathn, f.name)))
         store_write_string(self.absdir, '_files', fm + '\n')
-        if not self.meta:
+        if not self.meta and not get_deleted:
             self.update_local_pacmeta()
         self.update_datastructs()
 
@@ -3836,8 +3836,8 @@ def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=Fal
     return et.get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False):
-    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta, expand=include_service_files)
+def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False, get_deleted=False):
+    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta, expand=include_service_files, deleted=get_deleted)
     et = ET.fromstring(''.join(m))
     if include_service_files:
         return et.get('srcmd5')
@@ -4599,13 +4599,15 @@ def download(url, filename, progress_obj = None, mtime = None):
     if mtime:
         utime(filename, (-1, mtime))
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=False):
+def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=False, deleted=False):
     targetfilename = targetfilename or filename
     query = {}
     if meta:
         query['rev'] = 1
     if revision:
         query['rev'] = revision
+    if deleted:
+        query['deleted'] = 1
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), 'replace'))], query=query)
     download(u, targetfilename, progress_obj, mtime)
 
@@ -4920,7 +4922,7 @@ def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_trac
 
 
 def checkout_package(apiurl, project, package,
-                     revision=None, pathname=None, prj_obj=None,
+                     revision=None, pathname=None, prj_obj=None, get_deleted=False,
                      expand_link=False, prj_dir=None, server_service_files = None, service_files=None, progress_obj=None, size_limit=None, meta=False, outdir=None):
     try:
         # the project we're in might be deleted.
@@ -4981,7 +4983,8 @@ def checkout_package(apiurl, project, package,
 
     # before we create directories and stuff, check if the package actually
     # exists
-    show_package_meta(apiurl, quote_plus(project), quote_plus(package), meta)
+    if not get_deleted:
+        show_package_meta(apiurl, quote_plus(project), quote_plus(package), meta)
 
     isfrozen = False
     if expand_link:
@@ -4989,9 +4992,9 @@ def checkout_package(apiurl, project, package,
         # if it is a link we use the xsrcmd5 as the revision to be
         # checked out
         try:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, include_service_files=server_service_files)
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, include_service_files=server_service_files, get_deleted=get_deleted)
         except:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base', include_service_files=server_service_files)
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base', include_service_files=server_service_files, get_deleted=get_deleted)
             if x:
                 isfrozen = True
         if x:
@@ -5007,7 +5010,7 @@ def checkout_package(apiurl, project, package,
             prj_obj = Project(prj_dir)
         prj_obj.set_state(p.name, ' ')
         prj_obj.write_packages()
-    p.update(revision, server_service_files, size_limit)
+    p.update(revision, server_service_files, size_limit, get_deleted=get_deleted)
     if service_files:
         print('Running all source services local')
         p.run_source_services()

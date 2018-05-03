@@ -4241,6 +4241,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-e', '--expand-link', action='store_true',
                         help='if a package is a link, check out the expanded '
                              'sources (no-op, since this became the default)')
+    @cmdln.option('-D', '--deleted', action='store_true',
+                        help='checkout a already deleted package. No meta information '
+                       'gets checked out. Just the plain files')
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is a link, check out the _link file ' \
                              'instead of the expanded sources')
@@ -4333,6 +4336,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
+        if opts.deleted and package is None:
+            print('-D | --delete can only issued on a package for \'%s\'' % project, file=sys.stderr)
+
         if filename:
             # Note: same logic as with 'osc cat' (not 'osc ls', which never merges!)
             if expand_link:
@@ -4346,7 +4352,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              prj_dir=project_dir, service_files = opts.source_service_files, \
                              server_service_files=opts.server_side_source_service_files, \
                              progress_obj=self.download_progress, size_limit=opts.limit_size, \
-                             meta=opts.meta, outdir=opts.output_dir)
+                             meta=opts.meta, outdir=opts.output_dir, get_deleted = opts.deleted)
             print_request_list(apiurl, project, package)
 
         elif project:
