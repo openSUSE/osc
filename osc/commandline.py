@@ -139,14 +139,35 @@ class Osc(cmdln.Cmdln):
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
+
             import getpass
+
             config = {}
             config['user'] = raw_input('Username: ')
+            keyring_choice = str(raw_input('Enable Keyring? (Default: No): '))
+
+            if keyring_choice in ['yes', 'y', 'Yes', 'Y']:
+                try:
+                    import keyring
+                    self.options.no_keyring = False
+                except:
+                    try:
+                        import gnomekeyring
+                        self.options.no_gnome_keyring = False
+                    except: 
+                        print("No keyring available!")
+            #else:
+            #    print("Are you sure you don't want to enable keyring?")
+
             config['pass'] = getpass.getpass()
             if self.options.no_keyring:
                 config['use_keyring'] = '0'
+            else:
+                config['use_keyring'] = '1'
             if self.options.no_gnome_keyring:
                 config['gnome_keyring'] = '0'
+            else:
+                config['gnome_keyring'] = '1'
             if self.options.apiurl:
                 config['apiurl'] = self.options.apiurl
 
