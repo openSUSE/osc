@@ -328,7 +328,7 @@ apiurl = %(apiurl)s
 #traceback = 1
 
 # use KDE/Gnome/MacOS/Windows keyring for credentials if available
-#use_keyring = 1
+use_keyring = %(use_keyring)s
 
 # check for unversioned/removed files before commit
 #check_filelist = 1

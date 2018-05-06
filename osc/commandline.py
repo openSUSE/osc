@@ -144,30 +144,27 @@ class Osc(cmdln.Cmdln):
 
             config = {}
             config['user'] = raw_input('Username: ')
-            keyring_choice = str(raw_input('Enable Keyring? (Default: No): '))
 
-            if keyring_choice in ['yes', 'y', 'Yes', 'Y']:
-                try:
-                    import keyring
-                    self.options.no_keyring = False
-                except:
-                    try:
-                        import gnomekeyring
-                        self.options.no_gnome_keyring = False
-                    except: 
-                        print("No keyring available!")
-            #else:
-            #    print("Are you sure you don't want to enable keyring?")
+            # Check if the keyrings available on the system or not using conf.GENERIC_KEYRING and conf.GNOME_KEYRING 
+            # If yes, Ask the user to enable the keyring or not
+            # Set the 'use_keyring' or 'use_gnome_keyring' variable to 1 if user choose Yes else pass to use Defaults value
+            if conf.GENERIC_KEYRING or conf.GNOME_KEYRING:
+                keyring_choice = str(raw_input("Keyring utility is found on your system. Would you like to Enable keyring? (Default: No): "))
+                if keyring_choice.lower() in ['y', 'yes']:
+                    # Set the use_keyring variable
+                    if conf.GENERIC_KEYRING:
+                        config['use_keyring'] = '1'
+                    elif conf.GNOME_KEYRING:
+                        config['gnome_keyring'] = '1'
+            else:
+                print("\nWarning: No keyring available! Password will be saved in plain text.")
+                print(" To use keyring, please install python-keyring or gnome-keyring on your system and try again.\n")
 
             config['pass'] = getpass.getpass()
             if self.options.no_keyring:
                 config['use_keyring'] = '0'
-            else:
-                config['use_keyring'] = '1'
             if self.options.no_gnome_keyring:
                 config['gnome_keyring'] = '0'
-            else:
-                config['gnome_keyring'] = '1'
             if self.options.apiurl:
                 config['apiurl'] = self.options.apiurl
 
