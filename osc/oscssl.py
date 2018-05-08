@@ -173,7 +173,6 @@ class mySSLContext(SSL.Context):
 
 class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
     handler_order = 499
-    saved_session = None
 
     def __init__(self, *args, **kwargs):
         self.appname = kwargs.pop('appname', 'generic')
@@ -209,8 +208,6 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             h = httpslib.HTTPSConnection(host=host, ssl_context=self.ctx)
         # End our change
         h.set_debuglevel(self._debuglevel)
-        if self.saved_session:
-            h.set_session(self.saved_session)
 
         headers = dict(req.headers)
         headers.update(req.unredirected_hdrs)
@@ -222,10 +219,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # request.
         headers["Connection"] = "close"
         try:
-            h.request(req.get_method(), request_uri, req.data, headers)
-            s = h.get_session()
-            if s:
-                self.saved_session = s
+            h.request(req.get_method(), selector, req.data, headers)
             r = h.getresponse()
         except socket.error as err:  # XXX what error?
             raise URLError(err)
