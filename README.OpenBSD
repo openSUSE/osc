@@ -1,0 +1,5 @@
+ln -s /usr/local/bin/python2.7 /usr/local/bin/python
+pkg_add -rv py-curl py-urlgrabber py-M2Crypto
+python setup.py build
+doas python setup.py install
+doas ln -s /usr/local/bin/osc-wrapper.py /usr/local/bin/osc
