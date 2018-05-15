@@ -892,10 +892,18 @@ def get_config(override_conffile=None,
             try:
                 # Read from keyring lib if available
                 user = cp.get(url, 'user', raw=True)
-                password = str(keyring.get_password(host, user))
-            except:
+                password = keyring.get_password(host, user)
+            except Exception as e:
+                print('get_password failed for \'%s@%s\': %s' % (user, host, e), file=sys.stderr)
                 # Fallback to file based auth.
-                pass
+            else:
+                if password is None:
+                    # password missing for this user on this host, offer user/password query
+                    raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
+                                                     conffile, apiurl)
+                else:
+                    # isn't the password always a str already?
+                    password = str(password)
         elif config['gnome_keyring'] and GNOME_KEYRING:
             # Read from gnome keyring if available
             try:

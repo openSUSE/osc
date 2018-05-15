@@ -139,10 +139,9 @@ class Osc(cmdln.Cmdln):
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
-            import getpass
             config = {}
-            config['user'] = raw_input('Username: ')
-            config['pass'] = getpass.getpass()
+            _, host, _ = conf.parse_apisrv_url(None, self.options.apiurl)
+            config['user'], config['pass'] = self.query_user_and_password(host)
             if self.options.no_keyring:
                 config['use_keyring'] = '0'
             if self.options.no_gnome_keyring:
@@ -156,9 +155,7 @@ class Osc(cmdln.Cmdln):
                 self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
-            import getpass
-            user = raw_input('Username: ')
-            passwd = getpass.getpass()
+            user, passwd = self.query_user_and_password(e.url)
             conf.add_section(e.file, e.url, user, passwd)
             if try_again:
                 self.postoptparse(try_again = False)
@@ -168,6 +165,19 @@ class Osc(cmdln.Cmdln):
         if conf.config.get('show_download_progress', False):
             from .meter import TextMeter
             self.download_progress = TextMeter(hide_finished=True)
+
+
+    def query_user_and_password(self, url):
+        import getpass
+        user = raw_input('Username for %s [^C to exit]: ' % url)
+        # empty user/password have a special meaning,
+        # we cannot do these checks here :-(
+        #if not user:
+        #    sys.exit('No user. Exiting...')
+        passwd = getpass.getpass()
+        #if not passwd:
+        #    sys.exit('No password. Exiting...')
+        return user, passwd
 
 
     def get_cmd_help(self, cmdname):
