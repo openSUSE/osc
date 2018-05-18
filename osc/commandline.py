@@ -170,13 +170,7 @@ class Osc(cmdln.Cmdln):
     def query_user_and_password(self, url):
         import getpass
         user = raw_input('Username for %s [^C to exit]: ' % url)
-        # empty user/password have a special meaning,
-        # we cannot do these checks here :-(
-        #if not user:
-        #    sys.exit('No user. Exiting...')
         passwd = getpass.getpass()
-        #if not passwd:
-        #    sys.exit('No password. Exiting...')
         return user, passwd
 
 
