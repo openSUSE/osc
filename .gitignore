@@ -2,4 +2,5 @@
 *.swp
 tags
 build
+osc*.egg-info
 *junit-xml-results
