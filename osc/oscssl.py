@@ -254,13 +254,18 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
         elif family != socket.AF_INET:
             # old SSL.Connection classes implicitly use socket.AF_INET
             return False
-
+        
+        if not isinstance(self.host, bytes):
+            host = self.host.encode()
+        else:
+            host = self.host
+        
         self.sock = SSL.Connection(self.ssl_ctx, **kwargs)
         if self.session:
             self.sock.set_session(self.session)
         if hasattr(self.sock, 'set_tlsext_host_name'):
-            self.sock.set_tlsext_host_name(self.host)
-        self.sock.connect((self.host, self.port))
+            self.sock.set_tlsext_host_name(host)
+        self.sock.connect((host, self.port))
         return True
 
     def connect(self):
