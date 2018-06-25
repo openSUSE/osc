@@ -596,7 +596,7 @@ def main(apiurl, opts, argv):
     if opts.build_uid:
         build_uid = opts.build_uid
     if build_uid:
-        buildidre = re.compile('^[0-9]{1,5}:[0-9]{1,5}$')
+        buildidre = re.compile('^[0-9]+:[0-9]+$')
         if build_uid == 'caller':
             buildargs.append('--uid=%s:%s' % (os.getuid(), os.getgid()))
         elif buildidre.match(build_uid):
