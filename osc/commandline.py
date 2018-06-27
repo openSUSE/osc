@@ -4335,11 +4335,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('checkout'))
 
-        # XXX: this too openSUSE-setup specific...
-        # FIXME: this should go into ~jw/patches/osc/osc.proj_pack_20101201.diff
-        #        to be available to all subcommands via @cmdline.prep(proj_pack)
+        # A DISTURL can be found in build results to be able to relocate the source used to build
+        # obs://$OBS_INSTANCE/$PROJECT/$REPOSITORY/$XSRCMD5-$PACKAGE(:$FLAVOR)
         # obs://build.opensuse.org/openSUSE:11.3/standard/fc6c25e795a89503e99d59da5dc94a79-screen
-        m = re.match(r"obs://([^/]+)/(\S+)/([^/]+)/([A-Fa-f\d]+)\-(\S+)", args[0])
+        m = re.match(r"obs://([^/]+)/(\S+)/([^/]+)/([A-Fa-f\d]+)\-([^:]*)(:\S+)?", args[0])
         if m and len(args) == 1:
             apiurl   = "https://" + m.group(1)
             project = project_dir = m.group(2)
