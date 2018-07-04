@@ -2,11 +2,13 @@
 
 from distutils.core import setup
 import distutils.core
-import distutils.command.build
-import distutils.command.install_data
+from distutils.command import build, install_data
 import os.path
 import osc.core
 import sys
+
+import setuptools
+
 from osc import commandline
 from osc import babysitter
 # optional support for py2exe
@@ -17,7 +19,7 @@ except:
     HAVE_PY2EXE = False
 
 
-class build_osc(distutils.command.build.build, object):
+class build_osc(build.build, object):
     """
     Custom build command which generates man page.
     """
@@ -60,15 +62,15 @@ class build_docs(distutils.core.Command):
         src_dir = (self.distribution.package_dir or {'': ''})['']
         src_dir = os.path.join(os.getcwd(),  src_dir)
         import sphinx
-        sphinx.main(['runme', 
-                    '-D', 'version=%s' % metadata.get_version(), 
+        sphinx.main(['runme',
+                    '-D', 'version=%s' % metadata.get_version(),
                     os.path.join('docs',), os.path.join(self.built_docs, 'docs')])
 
 
 # take a potential build-base option into account (for instance, if osc is
 # build and installed like this:
 # python setup.py build --build-base=<dir> ... install ...)
-class install_data(distutils.command.install_data.install_data, object):
+class install_data(install_data.install_data, object):
     def initialize_options(self):
         super(install_data, self).initialize_options()
         self.built_data = None
@@ -97,7 +99,7 @@ data_files = []
 if sys.platform[:3] != 'win':
     data_files.append((os.path.join('share', 'man', 'man1'), ['osc-py3.1.gz']))
 
-setup(name='osc',
+setuptools.setup(name='osc',
       version = osc.core.__version__,
       description = 'openSUSE commander',
       long_description = 'Command-line client for the openSUSE Build Service, which allows to access repositories in the openSUSE Build Service in similar way as Subversion repositories.',
