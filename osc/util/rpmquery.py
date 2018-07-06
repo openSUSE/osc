@@ -166,7 +166,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def __reqprov(self, tag, flags, version, strong=None):
         pnames = self.header.gettag(tag)
         if not pnames:
-	    return []
+            return []
         pnames = pnames.data
         pflags = self.header.gettag(flags).data
         pvers = self.header.gettag(version).data
