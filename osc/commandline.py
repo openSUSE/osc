@@ -4286,6 +4286,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-e', '--expand-link', action='store_true',
                         help='if a package is a link, check out the expanded '
                              'sources (no-op, since this became the default)')
+    @cmdln.option('-D', '--deleted', action='store_true',
+                        help='checkout an already deleted package. No meta information ')
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is a link, check out the _link file ' \
                              'instead of the expanded sources')
@@ -4369,6 +4371,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project_dir = os.curdir
                 package = args[0]
 
+        if opts.deleted and package:
+            if not opts.output_dir:
+                raise oscerr.WrongOptions('-o | --output-dir is needed to get deleted sources')
+        elif opts.deleted and not package:
+            raise oscerr.WrongOptions('-D | --deleted can only be used with a package')
+
         rev, dummy = parseRevisionOption(opts.revision)
         if rev == None:
             rev = "latest"
@@ -4384,14 +4392,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             get_source_file(apiurl, project, package, filename, revision=rev, progress_obj=self.download_progress)
 
         elif package:
-            if opts.current_dir:
-                project_dir = None
-            checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
-                             prj_dir=project_dir, service_files = opts.source_service_files, \
-                             server_service_files=opts.server_side_source_service_files, \
-                             progress_obj=self.download_progress, size_limit=opts.limit_size, \
-                             meta=opts.meta, outdir=opts.output_dir)
-            print_request_list(apiurl, project, package)
+            if opts.deleted:
+                checkout_deleted_package(apiurl, project, package, opts.output_dir)
+            else:
+                if opts.current_dir:
+                    project_dir = None
+                checkout_package(apiurl, project, package, rev, expand_link=expand_link, \
+                                 prj_dir=project_dir, service_files = opts.source_service_files, \
+                                 server_service_files=opts.server_side_source_service_files, \
+                                 progress_obj=self.download_progress, size_limit=opts.limit_size, \
+                                 meta=opts.meta, outdir=opts.output_dir)
+                print_request_list(apiurl, project, package)
 
         elif project:
             prj_dir = opts.output_dir if opts.output_dir else project
