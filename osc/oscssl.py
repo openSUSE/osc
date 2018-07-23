@@ -219,7 +219,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # request.
         headers["Connection"] = "close"
         try:
-            h.request(req.get_method(), selector, req.data, headers)
+            h.request(req.get_method(), request_uri, req.data, headers)
             r = h.getresponse()
         except socket.error as err:  # XXX what error?
             raise URLError(err)
