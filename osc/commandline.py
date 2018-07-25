@@ -8787,18 +8787,40 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             apiurl = self.get_api_url()
 
-        # set user's email if the mailaddr env variable is not set
-        if 'mailaddr' in os.environ:
+        # set user's full name and email if the realname and mailaddr env variables are not set
+
+        vc_id_missing = { 'realname': False, 'email': False }
+
+        if 'VC_REALNAME' in os.environ:
+            pass
+        elif 'realname' in conf.config['api_host_options'][apiurl]:
+            os.environ['VC_REALNAME'] = conf.config['api_host_options'][apiurl]['realname']
+        else:
+            vc_id_missing['realname'] = True
+
+        if 'VC_MAILADDR' in os.environ or 'mailaddr' in os.environ:
             pass
         elif 'email' in conf.config['api_host_options'][apiurl]:
+            os.environ['VC_MAILADDR'] = conf.config['api_host_options'][apiurl]['email']
             os.environ['mailaddr'] = conf.config['api_host_options'][apiurl]['email']
         else:
+            vc_id_missing['email'] = True
+
+        if True in list(vc_id_missing.values()):
             user = conf.get_apiurl_usr(apiurl)
-            data = get_user_data(apiurl, user, 'email')
+            data = get_user_data(apiurl, user, 'realname', 'email')
             if data:
-                os.environ['mailaddr'] = data[0]
-            else:
-                print('Try env mailaddr=...', file=sys.stderr)
+                if vc_id_missing['realname'] and (data[0] != "-"):
+                    os.environ['VC_REALNAME'] = data[0]
+                else:
+                    print('Try env VC_REALNAME=...', file=sys.stderr)
+
+                if vc_id_missing['email'] and (data[1] != "-"):
+                    os.environ['VC_MAILADDR'] = data[1]
+                    os.environ['mailaddr'] = data[1]
+                else:
+                    print('Try env VC_MAILADDR=...', file=sys.stderr)
+
 
         if meego_style:
             if opts.message or opts.just_edit:

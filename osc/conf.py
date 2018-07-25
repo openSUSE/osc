@@ -203,7 +203,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'status_mtime_heuristic']
 integer_opts = ['build-jobs']
 
-api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
+api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
 
 new_conf_template = """
 [general]
@@ -362,6 +362,8 @@ user = %(user)s
 pass = %(pass)s
 # set aliases for this apiurl
 # aliases = foo, bar
+# real name used in .changes, unless the one from osc meta prj <user> will be used
+# realname =
 # email used in .changes, unless the one from osc meta prj <user> will be used
 # email =
 # additional headers to pass to a request, e.g. for special authentication
