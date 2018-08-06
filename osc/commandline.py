@@ -860,7 +860,7 @@ class Osc(cmdln.Cmdln):
             osc meta <prj|pkg|prjconf|user|group|pattern> [-m|--message TEXT] -e|--edit ARGS...
             osc meta <prj|pkg|prjconf|user|group|pattern> [-m|--message TEXT] -F|--file ARGS...
             osc meta pattern --delete PRJ PATTERN
-            osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create [--set <value_list>]|--delete|--set <value_list>]
+            osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create [--set <value_list>]|--delete|--set <value_list>|--edit]
         ${cmd_option_list}
         """
 
@@ -1028,7 +1028,9 @@ class Osc(cmdln.Cmdln):
                           template_args=None)
 
         # create attribute entry
-        if (opts.create or opts.set) and cmd == 'attribute':
+        if (opts.create or opts.set) and opts.edit:
+            raise oscerr.WrongOptions('--create or --set and --edit are mutually exclusive')
+        elif (opts.create or opts.set) and cmd == 'attribute':
             if not opts.attribute:
                 raise oscerr.WrongOptions('no attribute given to create')
             values = ''
@@ -1039,6 +1041,26 @@ class Osc(cmdln.Cmdln):
             aname = opts.attribute.split(":")
             if len(aname) != 2:
                 raise oscerr.WrongOptions('Given attribute is not in "NAMESPACE:NAME" style')
+            d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
+            url = makeurl(apiurl, attributepath)
+            for data in streamfile(url, http_POST, data=d):
+                sys.stdout.write(decode_it(data))
+        elif opts.edit and cmd == 'attribute':
+            if not opts.attribute:
+                raise oscerr.WrongOptions('no attribute given')
+            aname = opts.attribute.split(":")
+            if len(aname) != 2:
+                raise oscerr.WrongOptions('Given attribute is not in "NAMESPACE:NAME" style')
+            old_value = b''.join(show_attribute_meta(apiurl, project, package, subpackage, opts.attribute, opts.attribute_defaults, opts.attribute_project))
+            root = ET.fromstring(old_value)
+            attribs = root.find('attribute')
+            text = '<value></value>'
+            if attribs:
+                text = ''
+                for ovalue in attribs.getiterator():
+                    if ovalue.tag == 'value':
+                        text += '<value>%s</value>' % ovalue.text
+            values = edit_message(template=text)
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
             url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
