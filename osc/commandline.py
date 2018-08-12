@@ -726,7 +726,7 @@ class Osc(cmdln.Cmdln):
                         help='Create a new token')
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Create a new token')
-    @cmdln.option('-t', '--trigger', metavar='TOKENID',
+    @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     def do_token(self, subcmd, opts, *args):
         """${cmd_name}: Show and manage authentication token
@@ -738,7 +738,7 @@ class Osc(cmdln.Cmdln):
             osc token
             osc token --create [<PROJECT> <PACKAGE>]
             osc token --delete <TOKENID>
-            osc token --trigger <TOKENID>
+            osc token --trigger <TOKENSTRING>
         ${cmd_option_list}
         """
 
