@@ -350,6 +350,11 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'podman':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DOCKER'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     elif buildtype == 'fissile':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'FISSILE'),
                                     '-type', 'f'],
@@ -534,7 +539,7 @@ def main(apiurl, opts, argv):
         build_type = 'docker'
     if os.path.basename(build_descr) == 'fissile.yml':
         build_type = 'fissile'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage', 'docker', 'fissile']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile']:
         raise oscerr.WrongArgs(
                 'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml, snapcraft.yaml or Dockerfile' \
                         % build_type)
@@ -985,7 +990,7 @@ def main(apiurl, opts, argv):
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile
-    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'fissile':
+    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman' or build_type == 'fissile':
         if os.path.exists('repos'):
             shutil.rmtree('repos')
         if os.path.exists('containers'):
@@ -1128,7 +1133,7 @@ def main(apiurl, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'fissile':
+    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman'or build_type == 'fissile':
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
     else:
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
@@ -1144,7 +1149,7 @@ def main(apiurl, opts, argv):
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
     rpmlist.append('runscripts: ' + ' '.join(bi.runscripts_list) + '\n')
-    if build_type != 'kiwi' and build_type != 'docker' and build_type != 'fissile':
+    if build_type != 'kiwi' and build_type != 'docker' and build_type != 'podman' and build_type != 'fissile':
         if bi.noinstall_list:
             rpmlist.append('noinstall: ' + ' '.join(bi.noinstall_list) + '\n')
         if bi.installonly_list:
