@@ -976,7 +976,7 @@ def get_config(override_conffile=None,
                                     'pass': password,
                                     'http_headers': http_headers}
 
-        optional = ('email', 'sslcertck', 'cafile', 'capath')
+        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath')
         for key in optional:
             if cp.has_option(url, key):
                 if key == 'sslcertck':
