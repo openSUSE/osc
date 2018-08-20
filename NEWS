@@ -6,6 +6,9 @@
     --unexpand for local diffs only (bsc#1089025)
     --meta for diffing meta files
   - add support for podman/buildag engine (docker variation)
+  - support realname in .changes files
+  - fix DISTURL checkout for package containers using a multibuild flavor
+  - Disable ssl session resumption
 
 0.162.1
   - Send sha256 hashes for tracked files if the wc is pulled/linkrepair
