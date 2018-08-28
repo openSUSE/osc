@@ -3646,7 +3646,7 @@ class metafile:
         self.url = url
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
-        if isinstance(input[0], str) or isinstance(input, str):
+        if not input or isinstance(input[0], str) or isinstance(input, str):
             f = os.fdopen(fd, 'w')
             f.write(''.join(input))
         else:
