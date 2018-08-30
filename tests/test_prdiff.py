@@ -17,8 +17,8 @@ def rdiff_url(pkg, oldprj, newprj):
         (newprj, pkg, pkg, oldprj.replace(':', '%3A'))
 
 def request_url(prj):
-    return API_URL + 'search/request?match=%%28state%%2F%%40name%%3D%%27new%%27+or+state%%2F%%40name%%3D%%27review%%27%%29+and+%%28action%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+submit%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+action%%2Fsource%%2F%%40project%%3D%%27%s%%27+or+submit%%2Fsource%%2F%%40project%%3D%%27%s%%27%%29' % \
-        tuple([prj.replace(':', '%3A')] * 4)
+    return API_URL + 'search/request?match=%%28state%%2F%%40name%%3D%%27new%%27+or+state%%2F%%40name%%3D%%27review%%27%%29+and+%%28action%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+action%%2Fsource%%2F%%40project%%3D%%27%s%%27%%29' % \
+        tuple([prj.replace(':', '%3A')] * 2)
 
 def GET_PROJECT_PACKAGES(*projects):
     def decorator(test_method):
