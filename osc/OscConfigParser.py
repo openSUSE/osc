@@ -87,7 +87,6 @@ class ConfigLineOrder:
         for line in self._lines:
             if line.type == 'section':
                 yield line.name
-        raise StopIteration()
 
 class Line:
     """Base class for all line objects"""
@@ -160,7 +159,6 @@ class SectionLine(Line):
     def __iter__(self):
         for line in self._lines:
             yield line.name
-        raise StopIteration()
 
 
 class CommentLine(Line):
