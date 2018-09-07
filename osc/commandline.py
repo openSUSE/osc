@@ -2886,7 +2886,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-k', '--keep-maintainers', action='store_true',
                         help='keep original maintainers. Default is remove all and replace with the one calling the script.')
     @cmdln.option('-K', '--keep-link', action='store_true',
-                        help='keep the source link in target, this also expands the source')
+                        help='If the target package is a link, the link is kept, but may be updated. If the source package is a link, its expanded version is considered.')
     @cmdln.option('-d', '--keep-develproject', action='store_true',
                         help='keep develproject tag in the package metadata')
     @cmdln.option('-r', '--revision', metavar='rev',
