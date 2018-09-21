@@ -6511,17 +6511,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             mntproc = [sucmd, 'mount', '-n', '-tproc' , 'none', '%s/proc' % buildroot]
             mntsys = [sucmd, 'mount', '-n', '-tsysfs' , 'none', '%s/sys' % buildroot]
+            mntdevshm = [sucmd, 'mount', '-n', '-ttmpfs' , 'none', '%s/dev/shm' % buildroot]
             mntdevpts = [sucmd, 'mount', '-n', '-tdevpts' , '-omode=0620,gid=5', 'none', '%s/dev/pts' % buildroot]
             umntproc = [sucmd, 'umount', '%s/proc' % buildroot]
             umntsys = [sucmd, 'umount', '%s/sys' % buildroot]
+            umntdevshm = [sucmd, 'umount', '%s/dev/shm' % buildroot]
             umntdevpts = [sucmd, 'umount', '%s/dev/pts' % buildroot]
             cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
             if suargs:
                 mntproc[1:1] = suargs.split()
                 mntsys[1:1] = suargs.split()
+                mntdevshm[1:1] = suargs.split()
                 mntdevpts[1:1] = suargs.split()
                 umntproc[1:1] = suargs.split()
                 umntsys[1:1] = suargs.split()
+                umntdevshm[1:1] = suargs.split()
                 umntdevpts[1:1] = suargs.split()
                 cmd[1:1] = suargs.split()
 
@@ -6529,6 +6533,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         def umount_handle(signum = None, frame = None, ret=1):
             subprocess.call(umntproc)
             subprocess.call(umntsys)
+            subprocess.call(umntdevshm)
             subprocess.call(umntdevpts)
             sys.exit(ret)
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
@@ -6536,10 +6541,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print('mounting proc: %s' % ' '.join(mntproc))
         print('mounting sys: %s' % ' '.join(mntsys))
+        print('mounting devshm: %s' % ' '.join(mntdevshm))
         print('mounting devpts: %s' % ' '.join(mntdevpts))
         mount_err = -1
         proc_mount_err = subprocess.call(mntproc)
         sys_mount_err = subprocess.call(mntsys)
+        devshm_mount_err = subprocess.call(mntdevshm)
         devpts_mount_err = subprocess.call(mntdevpts)
         if proc_mount_err > 0:
             print('There was an error mounting proc. Please check mountpoints in chroot')
