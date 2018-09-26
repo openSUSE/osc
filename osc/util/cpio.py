@@ -212,12 +212,12 @@ class CpioWrite:
     def __init__(self):
         self.cpio = ''
 
-    def add(self, name=None, content=None, perms=0x1a4, type=0x8000):
-        namesize = len(name) + 1
+    def add(self, name=None, content=None, perms=0x1a4, my_type=0x8000):
+        namesize = len(name.encode('utf-8')) + 1
         if namesize % 2:
             name += '\0'
         filesize = len(content)
-        mode = perms | type
+        mode = perms | my_type
 
         c = []
         c.append('070701') # magic
@@ -237,8 +237,10 @@ class CpioWrite:
 
         c.append(name + '\0')
         c.append('\0' * (len(''.join(c)) % 4))
-
-        c.append(content)
+        if isinstance(content, str):
+            c.append(content)
+        else:
+            c.append(content.decode('utf-8'))
 
         c = ''.join(c)
         if len(c) % 4:

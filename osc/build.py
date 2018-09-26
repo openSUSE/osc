@@ -658,7 +658,7 @@ def main(apiurl, opts, argv):
         extra_pkgs += xp
 
     prefer_pkgs = {}
-    build_descr_data = open(build_descr).read()
+    build_descr_data = open(build_descr, 'rb').read()
 
     # XXX: dirty hack but there's no api to provide custom defines
     if opts.without:
