@@ -5834,6 +5834,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Checks the constraints for compliant workers.
 
         usage:
+            remote request:
+                osc checkconstraints [OPTS] PROJECT PACKAGE REPOSITORY ARCH
+
             in a package working copy:
                 osc checkconstraints [OPTS] REPOSITORY ARCH CONSTRAINTSFILE
                 osc checkconstraints [OPTS] CONSTRAINTSFILE
@@ -5842,8 +5845,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         repository = arch = constraintsfile = None
-        project = store_read_project('.')
-        package = store_read_package('.')
+        args = slash_split(args)
+
+        if len(args) == 4:
+            project = args[0]
+            package = args[1]
+            repository = args[2]
+            arch = args[3]
+            opts.ignore_file = True
+        else:
+            project = store_read_project('.')
+            package = store_read_package('.')
+
         if len(args) == 1:
             constraintsfile = args[0]
         elif len(args) == 2 or len(args) == 3:
