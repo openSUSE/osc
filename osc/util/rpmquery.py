@@ -117,7 +117,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         data = self.__file.read(self.LEAD_SIZE)
         leadmgc, = struct.unpack('!I', data[:4])
         if leadmgc != self.LEAD_MAGIC:
-            raise RpmError(self.__path, 'invalid lead magic \'%s\'' % leadmgc)
+            raise RpmError(self.__path, 'not a rpm (invalid lead magic \'%s\')' % leadmgc)
         sigtype, = struct.unpack('!h', data[78:80])
         if sigtype != self.HEADERSIG_TYPE:
             raise RpmError(self.__path, 'invalid header signature \'%s\'' % sigtype)
