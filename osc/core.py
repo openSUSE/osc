@@ -2607,6 +2607,7 @@ class RequestState(AbstractState):
         self.name = state_node.get('name')
         self.who = state_node.get('who')
         self.when = state_node.get('when')
+        self.approver = state_node.get('approver')
         if state_node.find('description') is None:
             # OBS 2.6 has it always, before it did not exist
             self.description = state_node.get('description')
@@ -2616,7 +2617,7 @@ class RequestState(AbstractState):
             self.comment = state_node.find('comment').text.strip()
 
     def get_node_attrs(self):
-        return ('name', 'who', 'when')
+        return ('name', 'who', 'when', 'approver')
 
     def get_comment(self):
         return self.comment
@@ -2964,7 +2965,10 @@ class Request:
     def list_view(self):
         """return "list view" format"""
         import textwrap
-        lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, self.state.name, self.state.who, self.state.when)]
+        status = self.state.name
+        if self.state.name == 'review' and self.state.approver:
+            status += "(approved)"
+        lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, status, self.state.who, self.state.when)]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
             lines.append(tmpl % self.format_action(action))
@@ -2988,6 +2992,8 @@ class Request:
             lines.append('    *** This request will get automatically accepted after '+self.accept_at+' ! ***\n')
         if self.priority in [ 'critical', 'important' ] and self.state.name in [ 'new', 'review' ]:
             lines.append('    *** This request has classified as '+self.priority+' ! ***\n')
+        if self.state.approver and self.state.name == 'review':
+            lines.append('    *** This request got approved by '+self.state.approver+'. It will get automatically accepted after last review got accepted! ***\n')
             
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
