@@ -389,7 +389,10 @@ class Osc(cmdln.Cmdln):
 
                 if opts.verbose:
                     for f in result[1]:
-                        print("%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name))
+                        if f.size is None and f.mtime is None:
+                            print("%9s %12s %-40s" % ('unknown', 'unknown', f.name))
+                        else:
+                            print("%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name))
                 else:
                     for f in result[1]:
                         print(indent+f)
@@ -7150,7 +7153,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # Set binary target directory and create if not existing
         target_dir = os.path.normpath(opts.destdir)
         if not os.path.isdir(target_dir):
-            print('Creating %s' % target_dir)
+            print('Creating directory "%s"' % target_dir)
             os.makedirs(target_dir, 0o755)
 
         for arch in arches:

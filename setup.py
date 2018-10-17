@@ -111,7 +111,7 @@ setuptools.setup(name='osc',
       url = 'http://en.opensuse.org/openSUSE:OSC',
       download_url = 'https://github.com/openSUSE/osc',
       packages = ['osc', 'osc.util'],
-      scripts = ['osc-py3-wrapper.py'],
+      scripts = ['osc-wrapper.py'],
       data_files = data_files,
 
       # Override certain command classes with our own ones
