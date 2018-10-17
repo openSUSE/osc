@@ -6894,7 +6894,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
                        create_new=False)
 
     if data and get_user_meta(apiurl, user) != None:
-        root = ET.fromstring(''.join(data))
+        root = ET.fromstring(b''.join(data))
         found = False
         for person in root.getiterator('person'):
             if person.get('userid') == user and person.get('role') == role:
