@@ -4028,7 +4028,7 @@ def run_pager(message, tmp_suffix=''):
         return
 
     if not sys.stdout.isatty():
-        print(message)
+        print(message.decode('utf-8'))
     else:
         tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
         if isinstance(message, str):
