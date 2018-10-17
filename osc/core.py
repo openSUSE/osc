@@ -6070,7 +6070,12 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        sys.stdout.write(data.translate(all_bytes, remove_bytes).decode('utf-8'))
+        try:
+            out_data = data.translate(all_bytes, remove_bytes).decode('utf-8')
+        except:
+            out_data = data.translate(all_bytes, remove_bytes).decode('ISO-8859-1')
+        finally:
+            sys.stdout.write(out_data)
 
     # to protect us against control characters
     import string
