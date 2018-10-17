@@ -6038,16 +6038,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 
     read = 0
     while True:
-        try:
-            data = xread(bufsize)
-        except IncompleteRead as e:
-            if sstatus:
-                sstatus.set_broken(True)
-                sstatus.retry_count += 1
-                data = e.partial
-            else:
-                print('Stream was interrupted. Please restart stream')
-                break
+        data = xread(bufsize)
         if not len(data):
             break
         read += len(data)
@@ -6079,7 +6070,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        sys.stdout.write(data.translate(all_bytes, remove_bytes))
+        sys.stdout.write(data.translate(all_bytes, remove_bytes).decode('utf-8'))
 
     # to protect us against control characters
     import string
@@ -6094,7 +6085,6 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
         query['last'] = 1
     retry_count = 0
     while True:
-        sstatus.set_broken(False)
         query['start'] = offset
         start_offset = offset
         u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
