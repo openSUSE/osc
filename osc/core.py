@@ -256,6 +256,14 @@ buildstatus_symbols = {'succeeded':       '.',
 }
 
 
+def decode_it(obj):
+    try:
+        import chardet
+        return obj.decode(chardet.detect(obj)['encoding'])
+    except:
+        import locale
+        return obj.decode(locale.getlocale()[1])
+
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
     try:
@@ -6070,12 +6078,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        try:
-            out_data = data.translate(all_bytes, remove_bytes).decode('utf-8')
-        except:
-            out_data = data.translate(all_bytes, remove_bytes).decode('ISO-8859-1')
-        finally:
-            sys.stdout.write(out_data)
+        sys.stdout.write(decode_it(data.translate(all_bytes, remove_bytes)))
 
     # to protect us against control characters
     import string
