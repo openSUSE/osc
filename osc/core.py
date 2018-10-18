@@ -7757,4 +7757,24 @@ def get_rpmlint_log(apiurl, proj, pkg, repo, arch):
     f = http_GET(u)
     return f.read()
 
+def checkout_deleted_package(apiurl, proj, pkg, dst):
+    pl = meta_get_filelist(apiurl, proj, pkg, deleted=True)
+    query = {}
+    query['deleted'] = 1
+
+    if os.path.isdir(dst):
+        print('Restoring in existing directory %s' % dst)
+    else:
+        print('Creating %s' % dst)
+        os.makedirs(dst)
+
+    for filename in pl:
+        print('Restoring %s to %s' % (filename, dst))
+        full_file_path = os.path.join(dst, filename)
+        u = makeurl(apiurl, ['source', proj, pkg, filename], query=query)
+        with open(full_file_path, 'wb') as f:
+            for data in streamfile(u):
+                f.write(data)
+    print('done.')
+
 # vim: sw=4 et
