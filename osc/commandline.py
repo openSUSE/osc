@@ -2130,6 +2130,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         the actual submit process. That would normally be a server-side copy of
         the source package to the target package.
 
+        "approve" marks a requests in "review" state as approved. This request will get accepted
+        automatically when the last review got accepted.
+
         "checkout" will checkout the request's source package ("submit" requests only).
 
         "priorize" change the prioritity of a request to either "critical", "important", "moderate" or "low"
@@ -2153,6 +2156,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request [show] [-d] [-b] ID
 
             osc request accept [-m TEXT] ID
+            osc request approve [-m TEXT] ID
+            osc request cancelapprove [-m TEXT] ID
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request reopen [-m TEXT] ID
@@ -2199,7 +2204,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if args[0] == 'help':
             return self.do_help(['help', 'request'])
 
-        cmds = ['list', 'ls', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co', 'priorize']
+        cmds = ['list', 'ls', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approve', 'cancelapproval',
+                'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co', 'priorize']
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0], ', '.join(cmds)))
@@ -2259,13 +2265,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd == 'priorize':
             reqid = args[0]
             priority = args[1]
-        elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout', 'co']:
+        elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout',
+                     'co', 'approve', 'cancelapproval']:
             reqid = args[0]
 
         # clone all packages from a given request
         if cmd in ['clone']:
             # should we force a message?
             print('Cloned packages are available in project: %s' % clone_request(apiurl, reqid, opts.message))
+
+        # approve request
+        elif cmd == 'approve' or cmd == 'cancelapproval':
+            query = { 'cmd': cmd }
+            url = makeurl(apiurl, ['request', reqid], query)
+            r = http_POST(url, data=opts.message)
+            print(ET.parse(r).getroot().get('code'))
 
         # change incidents
         elif cmd == 'setincident':
