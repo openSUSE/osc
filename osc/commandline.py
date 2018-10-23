@@ -5707,6 +5707,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-d', '--debug', action='store_true',
                   help='verbose output of build dependencies')
+    @cmdln.option('--alternative-project', metavar='PROJECT',
+                  help='specify the build target project')
     @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
                   help='Show the buildinfo of the specified multibuild package')
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
@@ -5754,9 +5756,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) <= 3:
             if not is_package_dir('.'):
                 raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
-            project = store_read_project('.')
+            if opts.alternative_project:
+                project = opts.alternative_project
+            else:
+                project = store_read_project('.')
             package = store_read_package('.')
-            repository, arch, build_descr = self.parse_repoarchdescr(args, ignore_descr=True, multibuild_package=opts.multibuild_package)
+            repository, arch, build_descr = self.parse_repoarchdescr(args, alternative_project=opts.alternative_project, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
             package = args[1]
