@@ -4042,7 +4042,10 @@ def run_pager(message, tmp_suffix=''):
         return
 
     if not sys.stdout.isatty():
-        print(message.decode('utf-8'))
+        if isinstance(message, str):
+            print(message)
+        else:
+            print(decode_it(message))
     else:
         tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
         if isinstance(message, str):
@@ -4846,7 +4849,7 @@ def server_diff_noex(apiurl,
         msg = None
         body = None
         try:
-            body = e.read()
+            body = e.read().decode('utf-8')
             if not 'bad link' in body:
                 return '# diff failed: ' + body
         except:
