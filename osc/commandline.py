@@ -719,7 +719,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-c', '--create', action='store_true',
                         help='Create a new token')
     @cmdln.option('-d', '--delete', metavar='TOKENID',
-                        help='Create a new token')
+                        help='Delete a token')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     def do_token(self, subcmd, opts, *args):
