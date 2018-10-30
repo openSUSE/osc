@@ -257,12 +257,15 @@ buildstatus_symbols = {'succeeded':       '.',
 
 
 def decode_it(obj):
-    try:
-        import chardet
-        return obj.decode(chardet.detect(obj)['encoding'])
-    except:
-        import locale
-        return obj.decode(locale.getlocale()[1])
+    if isinstance(obj, str):
+        return obj
+    else:
+        try:
+            import chardet
+            return obj.decode(chardet.detect(obj)['encoding'])
+        except:
+            import locale
+            return obj.decode(locale.getlocale()[1])
 
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):

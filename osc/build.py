@@ -21,7 +21,7 @@ except ImportError:
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
-from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input
+from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input, decode_it
 from osc.util import rpmquery, debquery, archquery
 import osc.conf
 from . import oscerr
@@ -671,18 +671,18 @@ def main(apiurl, opts, argv):
     if opts.without:
         s = ''
         for i in opts.without:
-            s += "%%define _without_%s 1\n" % i
-        build_descr_data = s + build_descr_data
+            s += b"%%define _without_%s 1\n" % i
+        build_descr_data = s + decode_it(build_descr_data)
     if opts._with:
         s = ''
         for i in opts._with:
             s += "%%define _with_%s 1\n" % i
-        build_descr_data = s + build_descr_data
+        build_descr_data = s + decode_it(build_descr_data)
     if opts.define:
         s = ''
         for i in opts.define:
-            s += "%%define %s\n" % i
-        build_descr_data = s + build_descr_data
+            s += b"%%define %s\n" % i
+        build_descr_data = s + decode_it(build_descr_data)
 
     cpiodata = None
     servicefile = os.path.join(os.path.dirname(build_descr), "_service")
