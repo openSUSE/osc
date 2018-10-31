@@ -2995,6 +2995,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Release only to specified repository')
     @cmdln.option('--set-release', metavar='RELEASETAG',
                   help='rename binaries during release using this release tag')
+    @cmdln.option('--no-delay', action='store_true',
+                  help="Don't put the release job in a queue to be run later, but immediately run it. Thus the next call to osc prjresult will reflect it. Otherwise there is no way to know if it is finished or didn't start yet.")
     def do_release(self, subcmd, opts, *args):
         """${cmd_name}: Release sources and binaries
 
@@ -3038,6 +3040,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query["repository"] = opts.repo
         if opts.set_release:
             query["setrelease"] = opts.set_release
+        if opts.no_delay:
+            query["nodelay"] = "1"
         baseurl = ['source', source_project]
         if source_package:
             baseurl.append(source_package)
