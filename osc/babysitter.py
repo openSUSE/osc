@@ -11,7 +11,6 @@ import pdb
 import sys
 import signal
 import traceback
-from urlgrabber.grabber import URLGrabError
 
 from osc import oscerr
 from .oscsslexcp import NoSecureSSLError
@@ -132,8 +131,6 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except URLError as e:
         print('Failed to reach a server:\n', e.reason, file=sys.stderr)
-    except URLGrabError as e:
-        print('Failed to grab %s: %s' % (e.url, e.strerror), file=sys.stderr)
     except IOError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:

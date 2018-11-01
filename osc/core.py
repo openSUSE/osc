@@ -5992,8 +5992,11 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         cl = int(cl)
 
     if progress_obj:
-        basename = os.path.basename(urlsplit(url)[2])
-        progress_obj.start(basename=basename, text=text, size=cl)
+        if not text:
+            basename = os.path.basename(urlsplit(url)[2])
+        else:
+            basename = text
+        progress_obj.start(basename, cl)
 
     if bufsize == "line":
         bufsize = 8192
@@ -6012,7 +6015,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
         yield data
 
     if progress_obj:
-        progress_obj.end(read)
+        progress_obj.end()
     f.close()
 
     if not cl is None and read != cl:
