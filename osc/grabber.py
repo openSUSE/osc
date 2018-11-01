@@ -43,7 +43,6 @@ class OscMirrorGroup(object):
                 self._grabber.urlgrab(mirror, filename, text)
                 return True
             except HTTPError as e:
-                print('Error %s' % e.code)
                 tries += 1
 
         return False
