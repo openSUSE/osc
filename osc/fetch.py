@@ -14,8 +14,9 @@ except ImportError:
     #python 2.x
     from urllib import quote_plus
     from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
+
 from .core import makeurl, streamfile, dgst
-from .grabber import OscFileGrabber, OscMirrorGroup, MGError
+from .grabber import OscFileGrabber, OscMirrorGroup
 from .util import packagequery, cpio
 from . import conf
 from . import oscerr
@@ -118,7 +119,6 @@ class Fetcher:
                 raise oscerr.APIError('unable to fetch cpio archive: '
                                       'server always returns code 414')
             n = int(len(pkgs) / 2)
-
             new_pkgs = dict([(k, pkgs[k]) for k in keys[:n]])
             self.__download_cpio_archive(apiurl, project, repo, arch,
                                          package, **new_pkgs)
@@ -145,21 +145,22 @@ class Fetcher:
         try:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
-                mg.urlgrab(pac.filename, filename=tmpfile.name,
+                mg_stat = mg.urlgrab(pac.filename, filename=tmpfile.name,
                            text='%s(%s) %s' % (prefix, pac.project, pac.filename))
-                self.move_package(tmpfile.name, pac.localdir, pac)
-        except MGError as e:
-            if self.enable_cpio and e.errno == 256:
-                print('%s/%s: attempting download from api, since not found'
-                      % (pac.project, pac.name))
-                self.__add_cpio(pac)
-                return
-            print()
-            print('Error:', e.strerror, file=sys.stderr)
-            print('Failed to retrieve %s from the following locations '
-                  '(in order):' % pac.filename, file=sys.stderr)
-            print('\n'.join(pac.urllist), file=sys.stderr)
-            sys.exit(1)
+                if mg_stat:
+                    self.move_package(tmpfile.name, pac.localdir, pac)
+
+            if not mg_stat:
+                if self.enable_cpio:
+                    print('%s/%s: attempting download from api, since not found'
+                          % (pac.project, pac.name))
+                    self.__add_cpio(pac)
+                    return
+                print()
+                print('Error: Failed to retrieve %s from the following locations '
+                      '(in order):' % pac.filename, file=sys.stderr)
+                print('\n'.join(pac.urllist), file=sys.stderr)
+                sys.exit(1)
         finally:
             if os.path.exists(tmpfile.name):
                 os.unlink(tmpfile.name)
@@ -240,11 +241,12 @@ class Fetcher:
                     continue
                 try:
                     # if there isn't a progress bar, there is no output at all
+                    prefix = ''
                     if not self.progress_obj:
                         print('%d/%d (%s) %s' % (done, needed, i.project, i.filename))
-                    self.fetch(i)
-                    if self.progress_obj:
-                        print("  %d/%d\r" % (done, needed), end=' ')
+                    else:
+                        prefix = '[%d/%d] ' % (done, needed)
+                    self.fetch(i, prefix=prefix)
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
@@ -262,10 +264,11 @@ class Fetcher:
             dest += '/_pubkey'
 
             url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
+            try_parent = False
             try:
                 if self.offline and not os.path.exists(dest):
-                    # try key from parent project
-                    raise HTTPError(url, 404, None, None, None)
+                    # may need to try parent
+                    try_parent = True
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
@@ -283,10 +286,12 @@ class Fetcher:
                 if e.code != 404:
                     print("Invalid answer from server", e, file=sys.stderr)
                     sys.exit(1)
+                try_parent = True
 
+            if try_parent:
                 if self.http_debug:
-                        print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
-                        print("url: %s" % url, file=sys.stderr)
+                    print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
+                    print("url: %s" % url, file=sys.stderr)
 
                 if os.path.exists(dest):
                     os.unlink(dest)

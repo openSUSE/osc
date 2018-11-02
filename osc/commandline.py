@@ -7794,6 +7794,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sys.exit(1)
 
         if '://' in srpm:
+            if srpm.endswith('/'):
+                print('%s is not a valid link. It must not end with /' % srpm)
+                sys.exit(1)
             print('trying to fetch', srpm)
             from .grabber import OscFileGrabber
             OscFileGrabber().urlgrab(srpm)
