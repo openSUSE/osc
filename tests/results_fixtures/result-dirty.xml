@@ -1,0 +1,14 @@
+<resultlist state="c57e2ee592dbbf26ebf19cc4f1bc1e83">
+  <result project="testproject" repository="openSUSE_Leap_42.3" arch="x86_64" code="published" state="published">
+    <status package="python-MarkupSafe" code="disabled" />
+  </result>
+  <result project="testproject" repository="openSUSE_Leap_15.0" arch="x86_64" code="broken" state="broken" details="repository 'inheritedproject/openSUSE_Leap_15.0' is unavailable">
+    <status package="python-MarkupSafe" code="disabled" />
+  </result>
+  <result project="testproject" repository="SLE_12_SP4" arch="x86_64" code="publishing" state="publishing">
+    <status package="python-MarkupSafe" code="disabled" />
+  </result>
+  <result project="testproject" repository="SLE_12_SP3" arch="x86_64" code="blocked" state="blocked" details="suspendproject" dirty="true">
+    <status package="python-MarkupSafe" code="disabled" />
+  </result>
+</resultlist>
