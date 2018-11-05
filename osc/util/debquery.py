@@ -10,6 +10,7 @@ try:
 except ImportError:
     import StringIO
 from . import packagequery
+from osc.util.helper import decode_it
 
 HAVE_LZMA = True
 try:
@@ -73,7 +74,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                 val += b'\n' + data.strip()
                 data = control.readline().rstrip()
             field = field.replace(b'-', b'_').lower()
-            field = field.decode('utf-8')
+            field = decode_it(field)
             if field in self.default_tags + extra_tags or all_tags:
                 # a hyphen is not allowed in dict keys
                 self.fields[field] = val

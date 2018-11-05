@@ -21,8 +21,9 @@ except ImportError:
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
-from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input, decode_it
+from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from osc.util import rpmquery, debquery, archquery
+from osc.util.helper import decode_it
 import osc.conf
 from . import oscerr
 import subprocess
@@ -772,13 +773,13 @@ def main(apiurl, opts, argv):
         else:
             print('Getting buildinfo from server and store to %s' % bi_filename)
 
-            bi_text = get_buildinfo(apiurl,
+            bi_text = decode_it(get_buildinfo(apiurl,
                                     prj,
                                     pac,
                                     repo,
                                     arch,
                                     specfile=build_descr_data,
-                                    addlist=extra_pkgs).decode('utf-8')
+                                    addlist=extra_pkgs))
             if not bi_file:
                 bi_file = open(bi_filename, 'w')
             # maybe we should check for errors before saving the file
@@ -788,7 +789,7 @@ def main(apiurl, opts, argv):
             bc = get_buildconfig(apiurl, prj, repo)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
-            bc_file.write(bc.decode('utf-8'))
+            bc_file.write(decode_it(bc))
             bc_file.flush()
     except HTTPError as e:
         if e.code == 404:
@@ -819,7 +820,7 @@ def main(apiurl, opts, argv):
     # Set default binary type if cannot be detected
     binary_type = 'rpm'
     if os.path.exists('/usr/lib/build/queryconfig'):
-        binary_type = return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype').decode('utf-8').strip()
+        binary_type = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype')).strip()
     # If binary type is set to a useless value, reset to 'rpm'
     if binary_type == 'UNDEFINED':
         binary_type = 'rpm'
@@ -1247,13 +1248,13 @@ def main(apiurl, opts, argv):
         (s_built, b_built) = get_built_files(pacdir, bi.buildtype)
 
         print()
-        if s_built: print(s_built.decode('utf-8'))
+        if s_built: print(decode_it(s_built))
         print()
-        print(b_built.decode('utf-8'))
+        print(decode_it(b_built))
 
         if opts.keep_pkgs:
             for i in b_built.splitlines() + s_built.splitlines():
-                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i.decode('utf-8'))))
+                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(decode_it(i))))
 
     if bi_file:
         bi_file.close()

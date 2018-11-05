@@ -55,7 +55,7 @@ try:
 except ImportError:
     from .util.helper import cmp_to_key
 
-from .util.helper import decode_list
+from osc.util.helper import decode_list, decode_it
 
 try:
     # python 2.6 and python 2.7
@@ -255,17 +255,6 @@ buildstatus_symbols = {'succeeded':       '.',
                        'signing':         'S',
 }
 
-
-def decode_it(obj):
-    if isinstance(obj, str):
-        return obj
-    else:
-        try:
-            import chardet
-            return obj.decode(chardet.detect(obj)['encoding'])
-        except:
-            import locale
-            return obj.decode(locale.getlocale()[1])
 
 # os.path.samefile is available only under Unix
 def os_path_samefile(path1, path2):
@@ -2146,7 +2135,7 @@ rev: %s
 
         if not force:
             print('*' * 36, 'old', '*' * 36)
-            print(m.decode('utf-8'))
+            print(decode_it(m))
             print('*' * 36, 'new', '*' * 36)
             print(ET.tostring(root, encoding=ET_ENCODING))
             print('*' * 72)
@@ -3823,7 +3812,7 @@ def edit_meta(metatype,
         # So we need the following even if it is ugly.
         if sys.version_info >= (3, 0):
             if isinstance(data, bytes):
-                data = data.decode('utf-8')
+                data = decode_it(data)
                 orgprj = ET.fromstring(''.join(data)).get('project')
             elif isinstance(data, list):
                 decode_data = decode_list(data)
@@ -4852,7 +4841,7 @@ def server_diff_noex(apiurl,
         msg = None
         body = None
         try:
-            body = e.read().decode('utf-8')
+            body = decode_it(e.read())
             if not 'bad link' in body:
                 return '# diff failed: ' + body
         except:
@@ -6166,7 +6155,7 @@ def get_worker_info(apiurl, worker):
     u = makeurl(apiurl, ['worker', worker])
     f = http_GET(u)
 
-    return f.read().decode('utf-8')
+    return decode_it(f.read())
 
 
 def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=None):
@@ -6341,10 +6330,10 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('</logentry>')
         else:
             if requestid:
-                requestid = (b"rq" + requestid).decode('utf-8')
+                requestid = decode_it((b"rq" + requestid))
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
-                '\n' + comment.decode('utf-8')
+                '\n' + decode_it(comment)
             r.append(s)
 
     if format not in ['csv', 'xml']:
@@ -6479,7 +6468,7 @@ def store_write_string(dir, file, string, subdir=''):
     try:
         f = open(fname + '.new', 'w')
         if not isinstance(string, str):
-            string = string.decode('utf-8')
+            string = decode_it(string)
         f.write(string)
         f.close()
         os.rename(fname + '.new', fname)
@@ -7341,7 +7330,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             except (ValueError, IndexError):
                 print('Invalid rpmlintlog index. Please choose between 0 and %i' % (len(lintlogs)-1))
         try:
-            print(get_rpmlint_log(apiurl, **lintlogs[lint_n]).decode('utf-8'))
+            print(decode_it(get_rpmlint_log(apiurl, **lintlogs[lint_n])))
         except HTTPError as e:
             if e.code == 404:
                 print('No rpmlintlog for %s %s' % (lintlogs[lint_n]['repo'],
@@ -7422,7 +7411,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     tmpfile.write(issues)
                     try:
                         diff = request_diff(apiurl, request.reqid)
-                        tmpfile.write(diff.decode('utf-8'))
+                        tmpfile.write(decode_it(diff))
                     except HTTPError as e:
                         if e.code != 400:
                             raise

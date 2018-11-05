@@ -759,7 +759,7 @@ class Osc(cmdln.Cmdln):
                 buf = f.read(16384)
                 if not buf:
                     break
-                sys.stdout.write(buf.decode('utf-8'))
+                sys.stdout.write(decode_it(buf))
 
         elif opts.delete:
             print("Delete token")
@@ -779,7 +779,7 @@ class Osc(cmdln.Cmdln):
                 raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
             # just list token
             for data in streamfile(url, http_GET):
-                sys.stdout.write(data.decode('utf-8'))
+                sys.stdout.write(decode_it(data))
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -944,22 +944,22 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(b''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame)).decode('utf-8'))
+                sys.stdout.write(decode_it(b''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame))))
             elif cmd == 'pkg':
-                sys.stdout.write(b''.join(show_package_meta(apiurl, project, package, blame=opts.blame)).decode('utf-8'))
+                sys.stdout.write(decode_it(b''.join(show_package_meta(apiurl, project, package, blame=opts.blame))))
             elif cmd == 'attribute':
-                sys.stdout.write(b''.join(show_attribute_meta(apiurl, project, package, subpackage,
-                                         opts.attribute, opts.attribute_defaults, opts.attribute_project)).decode('utf-8'))
+                sys.stdout.write(decode_it(b''.join(show_attribute_meta(apiurl, project, package, subpackage,
+                                         opts.attribute, opts.attribute_defaults, opts.attribute_project))))
             elif cmd == 'prjconf':
-                sys.stdout.write(b''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)).decode('utf-8'))
+                sys.stdout.write(decode_it(b''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame))))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
-                    sys.stdout.write(b''.join(r).decode('utf-8'))
+                    sys.stdout.write(decode_it(b''.join(r)))
             elif cmd == 'group':
                 r = get_group_meta(apiurl, group)
                 if r:
-                    sys.stdout.write(b''.join(r).decode('utf-8'))
+                    sys.stdout.write(decode_it(b''.join(r)))
             elif cmd == 'pattern':
                 if pattern:
                     r = show_pattern_meta(apiurl, project, pattern)
@@ -1396,9 +1396,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.diff or not opts.message:
             try:
                 rdiff = 'old: %s/%s\nnew: %s/%s rev %s\n' % (dst_project, dst_package, src_project, src_package, rev)
-                rdiff += server_diff(apiurl,
+                rdiff += decode_it(server_diff(apiurl,
                                     dst_project, dst_package, None,
-                                    src_project, src_package, rev, True).decode('utf-8')
+                                    src_project, src_package, rev, True))
             except:
                 rdiff = ''
 
@@ -2484,7 +2484,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             action.tgt_project, action.tgt_package)
                         diff += submit_action_diff(apiurl, action)
                         diff += '\n\n'
-                run_pager(diff.decode('utf-8'), tmp_suffix='')
+                run_pager(decode_it(diff), tmp_suffix='')
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
@@ -2984,7 +2984,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print(r.decode('utf-8'))
+        print(decode_it(r))
 
 
     @cmdln.option('-r', '--repo', metavar='REPO',
@@ -3851,9 +3851,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for i in pac.get_diff(rev1):
                     diff += ''.join(i)
             else:
-                diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
+                diff += decode_it(server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2,
-                                    not opts.plain, opts.missingok, opts.meta, not opts.unexpand).decode('utf-8')
+                                    not opts.plain, opts.missingok, opts.meta, not opts.unexpand))
         run_pager(diff)
 
 
@@ -4134,10 +4134,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  close_fds=True)
             p.stdin.write(rdiff)
             p.stdin.close()
-            print("".join(x.decode() for x in p.stdout.readlines()))
+            print("".join(decode_it(x) for x in p.stdout.readlines()))
         elif opts.unified:
             print()
-            print(rdiff.decode('utf-8'))
+            print(decode_it(rdiff))
             #run_pager(rdiff)
 
     def _prdiff_output_matching_requests(self, opts, requests,
@@ -5330,7 +5330,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('please provide project package repository arch.')
 
-        print(get_rpmlint_log(apiurl, project, package, repository, arch).decode('utf-8'))
+        print(decode_it(get_rpmlint_log(apiurl, project, package, repository, arch)))
 
     @cmdln.alias('bl')
     @cmdln.alias('blt')
@@ -5788,11 +5788,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        print(get_buildinfo(apiurl,
+        print(decode_it(get_buildinfo(apiurl,
                                     project, package, repository, arch,
                                     specfile=build_descr_data,
                                     debug=opts.debug,
-                                    addlist=opts.extra_pkgs).decode('utf-8'))
+                                    addlist=opts.extra_pkgs)))
 
 
     def do_buildconfig(self, subcmd, opts, *args):
@@ -5835,7 +5835,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        print(get_buildconfig(apiurl, project, repository).decode('utf-8'))
+        print(decode_it(get_buildconfig(apiurl, project, repository)))
 
 
     def do_workerinfo(self, subcmd, opts, worker):
@@ -6077,8 +6077,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 recipe = recipe.strip()
                 if recipe == 'arch':
                     recipe = 'PKGBUILD'
-                if not isinstance(recipe, str):
-                    recipe = recipe.decode('utf8')
+                recipe = decode_it(recipe)
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
@@ -7945,7 +7944,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          data=opts.data,
                          file=opts.file,
                          headers=opts.headers)
-        out = r.read().decode('utf-8')
+        out = decode_it(r.read())
 
         if opts.edit:
             text = edit_text(out)
@@ -7953,7 +7952,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          url,
                          data=text,
                          headers=opts.headers)
-            out = r.read().decode('utf-8')
+            out = decode_it(r.read())
 
         sys.stdout.write(out)
 
@@ -8354,7 +8353,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if isinstance(data, str):
                     sys.stdout.write(data)
                 else:
-                    sys.stdout.write(data.decode('utf-8'))
+                    sys.stdout.write(decode_it(data))
 
 
     # helper function to download a file from a specific revision
@@ -8776,7 +8775,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             buf = f.read(16384)
             if not buf:
                 break
-            sys.stdout.write(buf.decode('utf-8'))
+            sys.stdout.write(decode_it(buf))
 
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (do not open an editor)')

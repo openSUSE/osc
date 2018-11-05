@@ -27,6 +27,8 @@ try:
 except ImportError:
     from io import BytesIO as MyIO
 
+from osc.util.helper import decode_it
+
 # workaround for python24
 if not hasattr(os, 'SEEK_SET'):
     os.SEEK_SET = 0
@@ -189,7 +191,7 @@ class Ar:
             if not data:
                 break
             pos += self.hdr_len
-            m = self.hdr_pat.search(data.decode('utf-8'))
+            m = self.hdr_pat.search(decode_it(data))
             if not m:
                 raise ArError(self.filename, 'unexpected hdr entry')
             args = m.groups() + (pos, )

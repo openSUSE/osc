@@ -16,6 +16,7 @@ from osc import oscerr
 from .oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
+from osc.util.helper import decode_it
 
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError
@@ -116,7 +117,7 @@ def run(prg, argv=None):
                 msg = body.split(b'<summary>')[1]
                 msg = msg.split(b'</summary>')[0]
                 msg = msg.replace(b'&lt;', b'<').replace(b'&gt;' , b'>').replace(b'&amp;', b'&')
-                print(msg.decode('utf-8'), file=sys.stderr)
+                print(decode_it(msg), file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
             print('\nRequest: %s' % e.filename)
             print('Headers:')

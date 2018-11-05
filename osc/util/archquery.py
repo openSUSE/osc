@@ -6,6 +6,7 @@ import re
 import tarfile
 from . import packagequery
 import subprocess
+from osc.util.helper import decode_it
 
 class ArchError(packagequery.PackageError):
     pass
@@ -31,8 +32,8 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             line = line.rstrip().split(b' = ', 2)
             if len(line) == 2:
                 if not line[0] in self.fields:
-                    self.fields[line[0].decode('utf-8')] = []
-                self.fields[line[0].decode('utf-8')].append(line[1])
+                    self.fields[decode_it(line[0])] = []
+                self.fields[decode_it(line[0])].append(line[1])
         if self_provides:
             prv = '%s = %s' % (self.name(), self.fields['pkgver'][0])
             self.fields.setdefault('provides', []).append(prv)
@@ -116,7 +117,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def canonname(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
         canonname = self.name() + b'-' + pkgver + b'-' + self.arch() + b'.' + self.pkgsuffix
-        return canonname.decode('utf-8')
+        return decode_it(canonname)
 
     def gettag(self, tag):
         # implement me, if needed

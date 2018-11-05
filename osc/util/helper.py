@@ -43,7 +43,23 @@ def decode_list(ilist):
     dlist = []
     for elem in ilist:
         if not isinstance(elem, str):
-            dlist.append(elem.decode('utf-8'))
+            dlist.append(decode_it(elem))
         else:
             dlist.append(elem)
     return dlist
+
+
+def decode_it(obj):
+    """ Decodes the given object if obj is not a string
+        based on the chardet module if possible
+    """
+
+    if isinstance(obj, str):
+        return obj
+    else:
+        try:
+            import chardet
+            return obj.decode(chardet.detect(obj)['encoding'])
+        except:
+            import locale
+            return obj.decode(locale.getlocale()[1])
