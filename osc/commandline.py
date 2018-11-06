@@ -5229,7 +5229,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             del kwargs['showexcl']
             for xml in get_package_results(**kwargs):
                 if opts.xml:
-                    print(xml, end='')
+                    print(decode_it(xml), end='')
                 else:
                     # csv formatting
                     results = [r for r, _ in result_xml_to_dicts(xml)]
