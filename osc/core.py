@@ -5735,7 +5735,7 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     return r
 
 
-def get_package_results(apiurl, project, package, wait=False, *args, **kwargs):
+def get_package_results(apiurl, project, package=None, wait=False, *args, **kwargs):
     """generator that returns a the package results as an xml structure"""
     xml = ''
     waiting_states = ('blocked', 'scheduled', 'dispatching', 'building',

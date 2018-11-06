@@ -5156,7 +5156,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Disable results for all direct affect packages inside of the project')
     @cmdln.option('-M', '--multibuild-package', action='append', default=[],
                         help='Only show results for the specified multibuild package')
-    @cmdln.option('-w', '--watch', action='store_true', default=False,
+    @cmdln.option('-w', '--watch', action='store_true',
                         help='watch the results until all finished building')
     @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
@@ -5239,6 +5239,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     #          as well when adding a new option!
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
+    @cmdln.option('-w', '--watch', action='store_true',
+                        help='watch the results until all finished building, only supported with --xml')
     @cmdln.option('-c', '--csv', action='store_true',
                         help='csv output')
     @cmdln.option('', '--xml', action='store_true', default=False,
@@ -5277,8 +5279,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
 
         if opts.xml:
-            print(''.join(show_prj_results_meta(apiurl, project, opts.repo, opts.arch)))
+            kwargs = {}
+            if opts.repo:
+                kwargs['repository'] = opts.repo
+            if opts.arch:
+                kwargs['arch'] = opts.arch
+            kwargs['wait'] = opts.watch
+            for results in get_package_results(apiurl, project, **kwargs):
+                print(results)
             return
+
+        if opts.watch:
+            print('Please implement support for osc prjresults --watch without --xml.')
+            return 2
 
         print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \
                                         csv=opts.csv, status_filter=opts.status_filter, \
