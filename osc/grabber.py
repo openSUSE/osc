@@ -11,10 +11,12 @@ try:
     from urllib.request import HTTPError
     from urllib.parse import urlparse
     from urllib.parse import unquote
+    from urllib.error import URLError
 except ImportError:
     from urllib2 import HTTPError
     from urlparse import urlparse
     from urllib import unquote
+    from urllib2 import URLError
 
 
 class OscFileGrabber(object):
@@ -37,12 +39,12 @@ class OscMirrorGroup(object):
         self._mirrors = mirrors
 
     def urlgrab(self, url, filename=None, text=None):
-        tries = 0
         for mirror in self._mirrors:
             try:
                 self._grabber.urlgrab(mirror, filename, text)
                 return True
-            except HTTPError as e:
-                tries += 1
+            except (HTTPError, URLError) as e:
+                # try next mirror
+                pass
 
         return False
