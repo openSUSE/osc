@@ -5292,7 +5292,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 kwargs['arch'] = opts.arch
             kwargs['wait'] = opts.watch
             for results in get_package_results(apiurl, project, **kwargs):
-                print(results)
+                print(decode_it(results))
             return
 
         if opts.watch:
