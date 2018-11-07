@@ -1,0 +1,6 @@
+ python-MarkupSafe
+    SLE_12_SP3 x86_64 (outdated)
+    SLE_12_SP4 x86_64 (publishing)
+    openSUSE_Leap_15.0 x86_64 (broken)
+    openSUSE_Leap_42.3 x86_64 (published)
+

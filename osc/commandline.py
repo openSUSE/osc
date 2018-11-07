@@ -5240,7 +5240,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
     @cmdln.option('-w', '--watch', action='store_true',
-                        help='watch the results until all finished building, only supported with --xml')
+                        help='watch the results until all finished building')
     @cmdln.option('-c', '--csv', action='store_true',
                         help='csv output')
     @cmdln.option('', '--xml', action='store_true', default=False,
@@ -5278,26 +5278,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             wd = os.curdir
             project = store_read_project(wd)
 
-        if opts.xml:
-            kwargs = {}
-            if opts.repo:
-                kwargs['repository'] = opts.repo
-            if opts.arch:
-                kwargs['arch'] = opts.arch
-            kwargs['wait'] = opts.watch
-            for results in get_package_results(apiurl, project, **kwargs):
+        kwargs = {}
+        if opts.repo:
+            kwargs['repository'] = opts.repo
+        if opts.arch:
+            kwargs['arch'] = opts.arch
+        kwargs['wait'] = opts.watch
+
+        for results in get_package_results(apiurl, project, **kwargs):
+            if opts.xml:
                 print(results)
-            return
-
-        if opts.watch:
-            print('Please implement support for osc prjresults --watch without --xml.')
-            return 2
-
-        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \
+            else:
+                print('\n'.join(format_prj_results(results, hide_legend=opts.hide_legend, \
                                         csv=opts.csv, status_filter=opts.status_filter, \
                                         name_filter=opts.name_filter, repo=opts.repo, \
                                         arch=opts.arch, vertical=opts.vertical, \
-                                        show_excluded=opts.show_excluded)))
+                                        show_excluded=opts.show_excluded))+'\n')
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
