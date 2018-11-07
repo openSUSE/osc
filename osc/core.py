@@ -5778,12 +5778,16 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
 
 
 def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
-    #print '----------------------------------------'
+    """ this function is only needed for backward/api compatibility; use get_package_results() and format_prj_results() instead"""
+    xml_string = show_prj_results_meta(apiurl, prj)
+    return format_prj_results(xml_string, hide_legend, csv, status_filter, name_filter, arch, repo, vertical, show_excluded)
+
+def format_prj_results(xml_string, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
     global buildstatus_symbols
 
     r = []
 
-    f = show_prj_results_meta(apiurl, prj)
+    f = xml_string
     root = ET.fromstring(''.join(f))
 
     pacs = []
