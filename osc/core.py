@@ -5776,6 +5776,23 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
             yield xml 
     yield xml
 
+def is_package_results_success(xmlstring):
+    ok = ('succeeded', 'disabled', 'excluded', 'published', 'unpublished')
+
+    root = ET.fromstring(xmlstring)
+    for result in root.findall('result'):
+        if result.get('dirty') is not None:
+            return False
+        if result.get('code') not in ok:
+            return False
+        if result.get('state') not in ok:
+            return False
+        packages = result.find('status')
+        for p in packages:
+            if p.get('code') not in ok:
+                return False
+    return True
+
 
 def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
     """ this function is only needed for backward/api compatibility; use get_package_results() and format_prj_results() instead"""

@@ -5261,6 +5261,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_prjresults(self, subcmd, opts, *args):
         """${cmd_name}: Shows project-wide build results
 
+        Exit value will be 3 if the repositories / architectures are not
+        finshed and successful.
+
         Usage:
             osc prjresults (inside working copy)
             osc prjresults PROJECT
@@ -5285,7 +5288,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             kwargs['arch'] = opts.arch
         kwargs['wait'] = opts.watch
 
+        last = None
         for results in get_package_results(apiurl, project, **kwargs):
+            last = results
             if opts.xml:
                 print(results)
             else:
@@ -5294,6 +5299,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         name_filter=opts.name_filter, repo=opts.repo, \
                                         arch=opts.arch, vertical=opts.vertical, \
                                         show_excluded=opts.show_excluded))+'\n')
+        if last and is_package_results_success(last):
+            return
+        return 3
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')

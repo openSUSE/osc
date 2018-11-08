@@ -1,0 +1,16 @@
+<resultlist state="f1cfebfd13354bcb8e792cb85f6218d8">
+  <result project="testproject" repository="openSUSE_Leap_42.3" arch="x86_64" code="published" state="published">
+   <status package="python-MarkupSafe" code="disabled" />
+  </result>
+  <result project="testproject" repository="openSUSE_Leap_15.0" arch="x86_64" code="excluded" state="succeeded">
+    <status package="python-MarkupSafe" code="disabled" />
+  </result>
+  <result project="testproject" repository="SLE_12_SP4" arch="x86_64" code="disabled" state="disabled">
+    <status package="python-MarkupSafe" code="disabled" />
+  </result>
+  <result project="testproject" repository="SLE_12_SP3" arch="x86_64" code="blocked" state="blocked">
+    <status package="python-MarkupSafe" code="blocked">
+      <details>python-setuptools</details>
+    </status>
+  </result>
+</resultlist>
