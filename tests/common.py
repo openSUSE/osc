@@ -20,6 +20,8 @@ except ImportError:
     from urllib.request import HTTPHandler, addinfourl, build_opener
     from urllib.parse import urlparse, parse_qs
 
+from io import BytesIO
+
 def urlcompare(url, *args):
     """compare all components of url except query string - it is converted to
     dict, therefor different ordering does not makes url's different, as well
@@ -105,9 +107,9 @@ class MyHTTPHandler(HTTPHandler):
         if 'exception' in kwargs:
             raise kwargs['exception']
         if 'text' not in kwargs and 'file' in kwargs:
-            f = StringIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'r').read())
+            f = BytesIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'rb').read())
         elif 'text' in kwargs and 'file' not in kwargs:
-            f = StringIO(kwargs['text'])
+            f = BytesIO(bytes(kwargs['text'], 'utf-8'))
         else:
             raise RuntimeError('either specify text or file')
         resp = addinfourl(f, {}, url)
