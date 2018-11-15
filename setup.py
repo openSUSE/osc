@@ -28,7 +28,7 @@ class build_osc(build.build, object):
         """
         """
         import gzip
-        man_path = os.path.join(self.build_base, 'osc-py3.1.gz')
+        man_path = os.path.join(self.build_base, 'osc.1.gz')
         distutils.log.info('generating %s' % man_path)
         outfile = gzip.open(man_path, 'wt')
         osccli = commandline.Osc(stdout=outfile)
