@@ -1104,7 +1104,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
-                  help='specify a certain source revision ID (the md5 sum) for the source package')
+                  help='specify a certain source revision ID (the md5 sum) for the source package. Currently this only works with the revision of the expanded sources, that can be found via osc buildhist.')
     @cmdln.option('-s', '--supersede', metavar='REQUEST_ID',
                   help='Superseding another request by this one')
     @cmdln.option('--nodevelproject', action='store_true',
