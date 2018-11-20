@@ -273,7 +273,6 @@ class Fetcher:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
                 if i not in buildinfo.prjkeys and try_parent == False:
-                    print('add %s to prjkeys' % i)
                     buildinfo.keys.append(dest)
                     buildinfo.prjkeys.append(i)
             except KeyboardInterrupt:
