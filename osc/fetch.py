@@ -272,7 +272,7 @@ class Fetcher:
                 elif not self.offline:
                     OscFileGrabber().urlgrab(url, dest)
                 # not that many keys usually
-                if i not in buildinfo.prjkeys:
+                if i not in buildinfo.prjkeys and not try_parent:
                     buildinfo.keys.append(dest)
                     buildinfo.prjkeys.append(i)
             except KeyboardInterrupt:
