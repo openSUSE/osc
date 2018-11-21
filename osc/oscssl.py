@@ -190,7 +190,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         except AttributeError:  # from python-3.3
             host = req.host
         if not host:
-            raise URLError('no host given')
+            raise M2Crypto.m2urllib2.URLError('no host given')
 
         # Our change: Check to see if we're using a proxy.
         # Then create an appropriate ssl-aware connection.
@@ -222,7 +222,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
             h.request(req.get_method(), request_uri, req.data, headers)
             r = h.getresponse()
         except socket.error as err:  # XXX what error?
-            raise URLError(err)
+            raise M2Crypto.m2urllib2.URLError(err)
 
         # Pick apart the HTTPResponse object to get the addinfourl
         # object initialized properly.
