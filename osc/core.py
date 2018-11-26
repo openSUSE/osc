@@ -5686,7 +5686,7 @@ def result_xml_to_dicts(xml):
         rmap['repository'] = rmap['repo'] = rmap['rep'] = node.get('repository')
         rmap['arch'] = node.get('arch')
         rmap['state'] = node.get('state')
-        rmap['dirty'] = node.get('dirty') == 'true'
+        rmap['dirty'] = node.get('dirty') == 'true' or node.get('code') == 'blocked'
         rmap['repostate'] = node.get('code')
         rmap['pkg'] = rmap['package'] = rmap['pac'] = ''
         rmap['code'] = node.get('code')
