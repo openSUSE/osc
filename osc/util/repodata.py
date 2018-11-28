@@ -21,7 +21,9 @@ def namespace(name):
 OPERATOR_BY_FLAGS = {
     "EQ" : "=",
     "LE" : "<=",
-    "GE" : ">="
+    "GE" : ">=",
+    "LT" : "<",
+    "GT" : ">"
 }
 
 def primaryPath(directory):
