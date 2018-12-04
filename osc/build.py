@@ -672,7 +672,7 @@ def main(apiurl, opts, argv):
     if opts.without:
         s = ''
         for i in opts.without:
-            s += b"%%define _without_%s 1\n" % i
+            s += "%%define _without_%s 1\n" % i
         build_descr_data = s + decode_it(build_descr_data)
     if opts._with:
         s = ''
@@ -682,7 +682,7 @@ def main(apiurl, opts, argv):
     if opts.define:
         s = ''
         for i in opts.define:
-            s += b"%%define %s\n" % i
+            s += "%%define %s\n" % i
         build_descr_data = s + decode_it(build_descr_data)
 
     cpiodata = None
