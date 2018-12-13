@@ -21,6 +21,8 @@ import stat
 import struct
 import sys
 
+from osc.util.helper import decode_it
+
 # workaround for python24
 if not hasattr(os, 'SEEK_SET'):
     os.SEEK_SET = 0
@@ -161,7 +163,7 @@ class CpioRead:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
         data = self.__file.read(6)
-        self.format = data
+        self.format = decode_it(data)
         if not self.format in self.sfmt.values():
             raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
@@ -173,7 +175,7 @@ class CpioRead:
             pos += self.hdr_len
             data = struct.unpack(self.hdr_fmt, data)
             hdr = CpioHdr(*data)
-            hdr.filename = self.__file.read(hdr.namesize - 1)
+            hdr.filename = decode_it(self.__file.read(hdr.namesize - 1))
             if hdr.filename == 'TRAILER!!!':
                 break
             pos += hdr.namesize
@@ -212,12 +214,12 @@ class CpioWrite:
     def __init__(self):
         self.cpio = ''
 
-    def add(self, name=None, content=None, perms=0x1a4, type=0x8000):
-        namesize = len(name) + 1
+    def add(self, name=None, content=None, perms=0x1a4, my_type=0x8000):
+        namesize = len(name.encode('utf-8')) + 1
         if namesize % 2:
             name += '\0'
         filesize = len(content)
-        mode = perms | type
+        mode = perms | my_type
 
         c = []
         c.append('070701') # magic
@@ -237,8 +239,10 @@ class CpioWrite:
 
         c.append(name + '\0')
         c.append('\0' * (len(''.join(c)) % 4))
-
-        c.append(content)
+        if isinstance(content, str):
+            c.append(content)
+        else:
+            c.append(decode_it(content))
 
         c = ''.join(c)
         if len(c) % 4:
