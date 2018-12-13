@@ -2971,7 +2971,7 @@ class Request:
             lines.append('    *** This request will get automatically accepted after '+self.accept_at+' ! ***\n')
         if self.priority in [ 'critical', 'important' ] and self.state.name in [ 'new', 'review' ]:
             lines.append('    *** This request has classified as '+self.priority+' ! ***\n')
-        if self.state.approver and self.state.name == 'review':
+        if self.state and self.state.approver and self.state.name == 'review':
             lines.append('    *** This request got approved by '+self.state.approver+'. It will get automatically accepted after last review got accepted! ***\n')
             
         for action in self.actions:
