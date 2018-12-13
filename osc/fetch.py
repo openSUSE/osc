@@ -23,20 +23,16 @@ from . import oscerr
 import tempfile
 import re
 
-try:
-    from .meter import TextMeter
-except ImportError:
-    TextMeter = None
-
+from osc.util.helper import decode_it
+from .meter import create_text_meter
 
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
             http_debug=False, cookiejar=None, offline=False, enable_cpio=True):
         # set up progress bar callback
-        if sys.stdout.isatty() and TextMeter:
-            self.progress_obj = TextMeter()
-        else:
-            self.progress_obj = None
+        self.progress_obj = None
+        if sys.stdout.isatty():
+            self.progress_obj = create_text_meter(use_pb_fallback=False)
 
         self.cachedir = cachedir
         self.urllist = urllist
@@ -82,16 +78,16 @@ class Fetcher:
                         raise oscerr.APIError('CPIO archive is incomplete '
                                               '(see .errors file)')
                     if package == '_repository':
-                        n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename)
-                        if n.startswith('container:'):
-                            n = re.sub(r'\.tar\..z$', '.tar', hdr.filename)
-                            pac = pkgs[n.rsplit('.', 1)[0]]
+                        n = re.sub(b'\.pkg\.tar\..z$', b'.arch', hdr.filename)
+                        if n.startswith(b'container:'):
+                            n = re.sub(b'\.tar\..z$', b'.tar', hdr.filename)
+                            pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
                             pac.canonname = hdr.filename
                         else:
-                            pac = pkgs[n.rsplit('.', 1)[0]]
+                            pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
                     else:
                         # this is a kiwi product
-                        pac = pkgs[hdr.filename]
+                        pac = pkgs[decode_it(hdr.filename)]
 
                     # Extract a single file from the cpio archive
                     try:
@@ -118,7 +114,7 @@ class Fetcher:
             if len(keys) == 1:
                 raise oscerr.APIError('unable to fetch cpio archive: '
                                       'server always returns code 414')
-            n = len(pkgs) / 2
+            n = int(len(pkgs) / 2)
             new_pkgs = dict([(k, pkgs[k]) for k in keys[:n]])
             self.__download_cpio_archive(apiurl, project, repo, arch,
                                          package, **new_pkgs)
