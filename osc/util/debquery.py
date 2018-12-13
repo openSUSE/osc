@@ -5,8 +5,12 @@ from . import ar
 import os.path
 import re
 import tarfile
-import StringIO
+try:
+    from io import StringIO
+except ImportError:
+    import StringIO
 from . import packagequery
+from osc.util.helper import decode_it
 
 HAVE_LZMA = True
 try:
@@ -34,7 +38,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         debbin = arfile.get_file('debian-binary')
         if debbin is None:
             raise DebError(self.__path, 'no debian binary')
-        if debbin.read() != '2.0\n':
+        if debbin.read() != b'2.0\n':
             raise DebError(self.__path, 'invalid debian binary format')
         control = arfile.get_file('control.tar.gz')
         if control is not None:
@@ -64,38 +68,39 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def __parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
         while data:
-            field, val = re.split(':\s*', data.strip(), 1)
+            field, val = re.split(b':\s*', data.strip(), 1)
             data = control.readline()
-            while data and re.match('\s+', data):
-                val += '\n' + data.strip()
+            while data and re.match(b'\s+', data):
+                val += b'\n' + data.strip()
                 data = control.readline().rstrip()
-            field = field.replace('-', '_').lower()
+            field = field.replace(b'-', b'_').lower()
+            field = decode_it(field)
             if field in self.default_tags + extra_tags or all_tags:
                 # a hyphen is not allowed in dict keys
                 self.fields[field] = val
-        versrel = self.fields['version'].rsplit('-', 1)
+        versrel = self.fields['version'].rsplit(b'-', 1)
         if len(versrel) == 2:
             self.fields['version'] = versrel[0]
             self.fields['release'] = versrel[1]
         else:
             self.fields['release'] = None
-        verep = self.fields['version'].split(':', 1)
+        verep = self.fields['version'].split(b':', 1)
         if len(verep) == 2:
             self.fields['epoch'] = verep[0]
             self.fields['version'] = verep[1]
         else:
             self.fields['epoch'] = '0'
-        self.fields['provides'] = [ i.strip() for i in re.split(',\s*', self.fields.get('provides', '')) if i ]
-        self.fields['depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('depends', '')) if i ]
-        self.fields['pre_depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('pre_depends', '')) if i ]
-        self.fields['conflicts'] = [ i.strip() for i in re.split(',\s*', self.fields.get('conflicts', '')) if i ]
-        self.fields['breaks'] = [ i.strip() for i in re.split(',\s*', self.fields.get('breaks', '')) if i ]
-        self.fields['recommends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('recommends', '')) if i ]
-        self.fields['suggests'] = [ i.strip() for i in re.split(',\s*', self.fields.get('suggests', '')) if i ]
-        self.fields['enhances'] = [ i.strip() for i in re.split(',\s*', self.fields.get('enhances', '')) if i ]
+        self.fields['provides'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('provides', b'')) if i ]
+        self.fields['depends'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('depends', b'')) if i ]
+        self.fields['pre_depends'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('pre_depends', b'')) if i ]
+        self.fields['conflicts'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('conflicts', b'')) if i ]
+        self.fields['breaks'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('breaks', b'')) if i ]
+        self.fields['recommends'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('recommends', b'')) if i ]
+        self.fields['suggests'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('suggests', b'')) if i ]
+        self.fields['enhances'] = [ i.strip() for i in re.split(b',\s*', self.fields.get('enhances', b'')) if i ]
         if self_provides:
             # add self provides entry
-            self.fields['provides'].append('%s (= %s)' % (self.name(), '-'.join(versrel)))
+            self.fields['provides'].append('%s (= %s)' % (self.name(), b'-'.join(versrel)))
 
     def vercmp(self, debq):
         res = cmp(int(self.epoch()), int(debq.epoch()))
