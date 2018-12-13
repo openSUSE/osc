@@ -955,11 +955,11 @@ class Osc(cmdln.Cmdln):
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
-                    sys.stdout.write(decode_it(b''.join(r)))
+                    sys.stdout.write(decode_it(r))
             elif cmd == 'group':
                 r = get_group_meta(apiurl, group)
                 if r:
-                    sys.stdout.write(decode_it(b''.join(r)))
+                    sys.stdout.write(decode_it(r))
             elif cmd == 'pattern':
                 if pattern:
                     r = show_pattern_meta(apiurl, project, pattern)

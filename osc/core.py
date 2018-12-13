@@ -4573,7 +4573,7 @@ def get_group_meta(apiurl, group):
     u = makeurl(apiurl, ['group', quote_plus(group)])
     try:
         f = http_GET(u)
-        return f.readlines()
+        return b''.join(f.readlines())
     except HTTPError:
         print('group \'%s\' not found' % group)
         return None
@@ -4582,8 +4582,7 @@ def get_user_meta(apiurl, user):
     u = makeurl(apiurl, ['person', quote_plus(user)])
     try:
         f = http_GET(u)
-        return f.readlines()
-        #return ''.join(f.readlines())
+        return b''.join(f.readlines())
     except HTTPError:
         print('user \'%s\' not found' % user)
         return None
@@ -4591,7 +4590,7 @@ def get_user_meta(apiurl, user):
 def _get_xml_data(meta, *tags):
     data = []
     if meta != None:
-        root = ET.fromstring(b''.join(meta))
+        root = ET.fromstring(meta)
         for tag in tags:
             elm = root.find(tag)
             if elm is None or elm.text is None:
