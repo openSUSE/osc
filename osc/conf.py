@@ -203,7 +203,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'status_mtime_heuristic']
 integer_opts = ['build-jobs']
 
-api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
+api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj', 'tls_ciphers']
 
 new_conf_template = """
 [general]
@@ -551,6 +551,7 @@ def _build_opener(apiurl):
         if not cafile and not capath:
             raise oscerr.OscIOError(None, 'No CA certificates found. (You may want to install ca-certificates-mozilla package)')
         ctx = oscssl.mySSLContext()
+        ctx.set_cipher_list(options.get('tls_ciphers', 'DEFAULT'))
         if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
             raise oscerr.OscIOError(None, 'No CA certificates found. (You may want to install ca-certificates-mozilla package)')
         opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
@@ -976,7 +977,7 @@ def get_config(override_conffile=None,
                                     'pass': password,
                                     'http_headers': http_headers}
 
-        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath')
+        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath', 'tls_ciphers')
         for key in optional:
             if cp.has_option(url, key):
                 if key == 'sslcertck':
@@ -996,6 +997,9 @@ def get_config(override_conffile=None,
             api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
         else:
             api_host_options[apiurl]['trusted_prj'] = []
+
+        if cp.has_option(url, 'tls_ciphers'):
+            api_host_options[apiurl]['tls_ciphers'] = cp.get(url, 'tls_ciphers')
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options

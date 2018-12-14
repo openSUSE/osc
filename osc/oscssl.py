@@ -24,6 +24,20 @@ except ImportError:
     from httplib import HTTPSConnection
 
 from .core import raw_input
+from . import conf
+
+def make_safe_file_name(fname):
+    import os.path
+    # remove all directory separators
+    fname = fname.replace(os.path.sep, '')
+    if os.path.altsep:
+        fname = fname.replace(os.path.altsep, '')
+
+    # we don't want any hidden files
+    if fname[0] == '.':
+        fname = '_' + fname
+
+    return fname
 
 class TrustedCertStore:
     _tmptrusted = {}
@@ -38,7 +52,8 @@ class TrustedCertStore:
             self.host += "_%d" % port
         import os
         self.dir = os.path.expanduser('~/.config/%s/trusted-certs' % app)
-        self.file = self.dir + '/%s.pem' % self.host
+
+        self.file = self.dir + '/' + make_safe_file_name('%s.pem' % self.host)
 
     def is_known(self):
         if self.host in self._tmptrusted:
@@ -163,7 +178,6 @@ class mySSLContext(SSL.Context):
     def __init__(self):
         SSL.Context.__init__(self, 'sslv23')
         self.set_options(m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3)
-        self.set_cipher_list("ECDHE-RSA-AES128-SHA256:AES128-GCM-SHA256:RC4:HIGH:!MD5:!aNULL:!EDH")
         self.set_session_cache_mode(m2.SSL_SESS_CACHE_CLIENT)
         self.verrs = None
         #self.set_info_callback() # debug
