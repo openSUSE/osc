@@ -247,7 +247,7 @@ buildstatus_symbols = {'succeeded':       '.',
 def os_path_samefile(path1, path2):
     try:
         return os.path.samefile(path1, path2)
-    except:
+    except AttributeError:
         return os.path.realpath(path1) == os.path.realpath(path2)
 
 class File:
