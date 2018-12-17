@@ -358,6 +358,7 @@ def verify_certificate(connection):
                 print("WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!", file=sys.stderr)
                 print("IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!", file=sys.stderr)
                 print("offending certificate is at '%s'" % tc.file, file=sys.stderr)
+                connection.close()
                 raise SSLVerificationError("remote host identification has changed")
 
         # if http_debug is set we redirect sys.stdout to an StringIO
@@ -369,6 +370,7 @@ def verify_certificate(connection):
         print(file=out)
 
         if not verrs.could_ignore():
+            connection.close()
             raise SSLVerificationError("Certificate validation error cannot be ignored")
 
         if not verrs.chain_ok:
