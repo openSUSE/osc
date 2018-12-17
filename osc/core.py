@@ -3253,14 +3253,6 @@ def statfrmt(statusletter, filename):
     return '%s    %s' % (statusletter, filename)
 
 
-def pathjoin(a, *p):
-    """Join two or more pathname components, inserting '/' as needed. Cut leading ./"""
-    path = os.path.join(a, *p)
-    if path.startswith('./'):
-        path = path[2:]
-    return path
-
-
 def makeurl(baseurl, l, query=[]):
     """Given a list of path compoments, construct a complete URL.
 
