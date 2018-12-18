@@ -6753,11 +6753,10 @@ def delete_storedir(store_dir):
     if tail == '.osc':
         delete_dir(store_dir)
 
-def unpack_srcrpm(srpm, dir, *files):
+def unpack_srcrpm(srpm, dir):
     """
     This method unpacks the passed srpm into the
-    passed dir. If arguments are passed to the \'files\' tuple
-    only this files will be unpacked.
+    passed dir.
     """
     if not is_srcrpm(srpm):
         print('error - \'%s\' is not a source rpm.' % srpm, file=sys.stderr)
@@ -6770,9 +6769,7 @@ def unpack_srcrpm(srpm, dir, *files):
         with open(os.devnull, 'w') as devnull:
             rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
                                              stdout=subprocess.PIPE)
-            # XXX: shell injection is possible via the files parameter, but the
-            #      current osc code does not use the files parameter.
-            cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
+            cpio_proc = subprocess.Popen(['cpio', '-i'],
                                          stdin=rpm2cpio_proc.stdout,
                                          stderr=devnull)
             rpm2cpio_proc.stdout.close()
