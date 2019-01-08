@@ -3,10 +3,14 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-import progressbar as pb
+try:
+    import progressbar as pb
+    have_pb_module = True
+except ImportError:
+    have_pb_module = False
 
 
-class TextMeter(object):
+class PBTextMeter(object):
 
     def start(self, basename, size=None):
         if size is None:
@@ -24,4 +28,18 @@ class TextMeter(object):
     def end(self):
         self.bar.finish()
 
+class NoPBTextMeter(object):
+    def start(self, *args, **kwargs):
+        print('Please install the progressbar module...')
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def end(self, *args, **kwargs):
+        pass
+
+if have_pb_module:
+    TextMeter = PBTextMeter
+else:
+    TextMeter = NoPBTextMeter
 # vim: sw=4 et
