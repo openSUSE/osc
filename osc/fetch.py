@@ -23,10 +23,7 @@ from . import oscerr
 import tempfile
 import re
 
-try:
-    from .meter import TextMeter
-except ImportError:
-    TextMeter = None
+from .meter import TextMeter
 
 
 class Fetcher:
