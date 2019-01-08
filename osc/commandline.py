@@ -7266,15 +7266,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print('no binaries found: Either the package %s ' \
                                         'does not exist or no binaries have been built.' % pac, file=sys.stderr)
                     continue
-                progress_obj = None
-                if not opts.quiet:
-                    try:
-                        from .meter import TextMeter
-                        progress_obj = TextMeter()
-                    except ImportError as e:
-                        print('progressbar not installed. Please install it. ' \
-                                            'Will continue without progressbar')
-                        progress_obj = None
+
                 for i in binaries:
                     if binary != None and binary != i.name:
                         continue
@@ -7298,7 +7290,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     package = pac,
                                     target_filename = fname,
                                     target_mtime = i.mtime,
-                                    progress_meter = progress_obj)
+                                    progress_meter = opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
