@@ -4655,17 +4655,13 @@ def get_binary_file(apiurl, prj, repo, arch,
                     package = None,
                     target_filename = None,
                     target_mtime = None,
-                    progress_meter = False):
-    progress_obj = None
-    if progress_meter:
-        from .meter import TextMeter
-        progress_obj = TextMeter()
+                    progress_meter = None):
 
     target_filename = target_filename or filename
 
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
-    download(u, target_filename, progress_obj, target_mtime)
+    download(u, target_filename, progress_meter, target_mtime)
     if target_filename.endswith('.AppImage'):
         os.chmod(target_filename, 0o755)
 
