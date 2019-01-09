@@ -1,5 +1,15 @@
 0.164
   - add support for approved requests (requires OBS 2.10)
+  - fix various multibuild problems
+  - improved and fixed various help texts
+  - check constraints without local checkout
+  - check out deleted sources (osc co -D)
+  - replace urlgrabber module with own module
+  - use progressbar module instead of urlgrabber to draw
+    progress bars
+  - show buildinfo for alternative projects (--alternative-project)
+  - run release job immediately (osc release --no-delay)
+  - build results on project level can now be watched (osc prjresults --watch)
 
 0.163
   - add sendsysrq command (requires OBS 2.10)
