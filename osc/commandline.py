@@ -6292,7 +6292,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--build-opt', metavar='OPT', action='append',
                   help='pass option OPT to the build command')
     @cmdln.option('--userootforbuild', action='store_true',
-                  help='Run build as root. The default is to build as '
+                  help='Run build or shell as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
                   'in the spec file will invalidate this option.')
     @cmdln.option('--build-uid', metavar='uid:gid|"caller"',
@@ -6328,14 +6328,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='only fetch packages from the api')
     @cmdln.option('--oldpackages', metavar='DIR',
             help='take previous build from DIR (special values: _self, _link)')
+    @cmdln.option('--wipe', action='store_true',
+                  help=SUPPRESS_HELP)
     @cmdln.option('--shell', action='store_true',
                   help=SUPPRESS_HELP)
+    @cmdln.option('--shell-cmd', metavar='COMMAND',
+                  help='run specified command instead of bash')
     @cmdln.option('--host', metavar='HOST',
             help='perform the build on a remote server - user@server:~/remote/directory')
     @cmdln.option('--trust-all-projects', action='store_true',
                   help='trust packages from all projects')
     @cmdln.option('--nopreinstallimage', '--no-preinstallimage', action='store_true',
                   help='Do not use preinstall images for creating the build root.')
+    @cmdln.alias('chroot')
+    @cmdln.alias('shell')
+    @cmdln.alias('wipe')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -6362,12 +6369,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
         usage:
+            osc build [OPTS]                      # will try to guess a build environement
             osc build [OPTS] REPOSITORY ARCH BUILD_DESCR
             osc build [OPTS] REPOSITORY ARCH
             osc build [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
             osc build [OPTS] ARCH (REPOSITORY = build_repository (config option), BUILD_DESCR is detected automatically)
             osc build [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
             osc build [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
+
+        For debugging purposes you can run after a build the following to jump inside of of
+        the build environemnt:
+
+            osc shell [OPTS] REPOSITORY ARCH
+
+        OPTS may be
+
+            osc shell --shell-cmd=COMMAND REPOSITORY ARCH
+
+        To clean up the build environment run
+
+            osc wipe [OPTS]
+            osc wipe [OPTS] REPOSITORY ARCH
 
         # Note:
         # Configuration can be overridden by envvars, e.g.
@@ -6387,6 +6409,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.debuginfo and opts.disable_debuginfo:
             raise oscerr.WrongOptions('osc: --debuginfo and --disable-debuginfo are mutual exclusive')
+
+        if subcmd == 'chroot' or subcmd == 'shell':
+            opts.shell = True
+
+        if subcmd == 'wipe':
+            opts.wipe = True
 
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
@@ -6583,148 +6611,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return ret
 
         return build_ret
-
-
-    @cmdln.option('--local-package', action='store_true',
-                  help='package doesn\'t exist on the server')
-    @cmdln.option('--alternative-project', metavar='PROJECT',
-                  help='specify the used build target project')
-    @cmdln.option('--noinit', '--no-init', action='store_true',
-                  help='do not guess/verify specified repository')
-    @cmdln.option('-r', '--login-as-root', action='store_true',
-                  help='login as root instead of abuild')
-    @cmdln.option('--root', metavar='ROOT',
-                  help='Path to the buildroot')
-    @cmdln.option('-o', '--offline', action='store_true',
-                  help='Use cached data without contacting the api server')
-    @cmdln.option('--wipe', action='store_true',
-                  help='Delete the build root instead of chrooting into it')
-    @cmdln.option('-f', '--force', action='store_true',
-                  help='Do not ask confirmation for wipe')
-    def do_chroot(self, subcmd, opts, *args):
-        """${cmd_name}: opens a shell inside of the build root
-
-        chroot into the build root for the given repository, arch and build description
-        (NOTE: this command does not work if a VM is used)
-
-        usage:
-            osc chroot [OPTS] REPOSITORY ARCH BUILD_DESCR
-            osc chroot [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
-            osc chroot [OPTS] ARCH (REPOSITORY = build_repository (config option), BUILD_DESCR is detected automatically)
-            osc chroot [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
-            osc chroot [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
-        ${cmd_option_list}
-        """
-
-        if len(args) > 3:
-            raise oscerr.WrongArgs('Too many arguments')
-        if conf.config['build-type'] and conf.config['build-type'] != "lxc":
-            print('Not implemented for VMs', file=sys.stderr)
-            sys.exit(1)
-
-        user = 'abuild'
-        if opts.login_as_root:
-            user = 'root'
-        buildroot = opts.root
-        if buildroot is None:
-            repository, arch, descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project)
-            project = opts.alternative_project or store_read_project('.')
-            if opts.local_package:
-                package = os.path.splitext(os.path.basename(descr))[0]
-            else:
-                package = store_read_package('.')
-            apihost = urlsplit(self.get_api_url())[1]
-            if buildroot is None:
-                buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
-                    % {'repo': repository, 'arch': arch, 'project': project, 'package': package, 'apihost': apihost}
-        if not os.path.isdir(buildroot):
-            raise oscerr.OscIOError(None, '\'%s\' is not a directory' % buildroot)
-
-        suwrapper = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper'])
-
-        # Wipe build root if --wipe was given
-        if opts.wipe:
-            sucmd = suwrapper.split()
-            cmd = [ conf.config['build-cmd'], '--root='+buildroot, '--wipe' ]
-            if sucmd[0] == 'su':
-                if sucmd[-1] == '-c':
-                    sucmd.pop()
-                cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
-            else:
-                cmd = sucmd + cmd
-
-            if opts.force:
-                sys.exit(run_external(cmd[0], *cmd[1:]))
-            else:
-                # Confirm delete
-                print("Really wipe '%s'? [y/N]: " % buildroot)
-                choice = raw_input().lower()
-                if choice == 'y':
-                    sys.exit(run_external(cmd[0], *cmd[1:]))
-                else:
-                    print('Aborting')
-                    sys.exit(0)
-
-        # Normal chroot
-        sucmd = suwrapper.split()[0]
-        suargs = ' '.join(suwrapper.split()[1:])
-        if suwrapper.startswith('su '):
-            mntproc = [sucmd, '%s mount -n -tproc none %s/proc' % (suargs, buildroot)]
-            mntsys = [sucmd, '%s mount -n -tsysfs none %s/sys' % (suargs, buildroot)]
-            mntdevpts = [sucmd, '%s mount -n -tdevpts -omode=0620,gid=5 none %s/dev/pts' % (suargs, buildroot)]
-            umntproc = [sucmd, '%s umount %s/proc' % (suargs, buildroot)]
-            umntsys = [sucmd, '%s umount %s/sys' % (suargs, buildroot)]
-            umntdevpts = [sucmd, '%s umount %s/devpts' % (suargs, buildroot)]
-            cmd = [sucmd, '%s chroot "%s" su - %s' % (suargs, buildroot, user)]
-        else:
-            mntproc = [sucmd, 'mount', '-n', '-tproc' , 'none', '%s/proc' % buildroot]
-            mntsys = [sucmd, 'mount', '-n', '-tsysfs' , 'none', '%s/sys' % buildroot]
-            mntdevpts = [sucmd, 'mount', '-n', '-tdevpts' , '-omode=0620,gid=5', 'none', '%s/dev/pts' % buildroot]
-            umntproc = [sucmd, 'umount', '%s/proc' % buildroot]
-            umntsys = [sucmd, 'umount', '%s/sys' % buildroot]
-            umntdevpts = [sucmd, 'umount', '%s/dev/pts' % buildroot]
-            cmd = [sucmd, 'chroot', buildroot, 'su', '-', user]
-            if suargs:
-                mntproc[1:1] = suargs.split()
-                mntsys[1:1] = suargs.split()
-                mntdevpts[1:1] = suargs.split()
-                umntproc[1:1] = suargs.split()
-                umntsys[1:1] = suargs.split()
-                umntdevpts[1:1] = suargs.split()
-                cmd[1:1] = suargs.split()
-
-        #signal handler for chroot procfs umount
-        def umount_handle(signum = None, frame = None, ret=1):
-            subprocess.call(umntproc)
-            subprocess.call(umntsys)
-            subprocess.call(umntdevpts)
-            sys.exit(ret)
-        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-            signal.signal(sig, umount_handle)
-
-        print('mounting proc: %s' % ' '.join(mntproc))
-        print('mounting sys: %s' % ' '.join(mntsys))
-        print('mounting devpts: %s' % ' '.join(mntdevpts))
-        mount_err = -1
-        proc_mount_err = subprocess.call(mntproc)
-        sys_mount_err = subprocess.call(mntsys)
-        devpts_mount_err = subprocess.call(mntdevpts)
-        if proc_mount_err > 0:
-            print('There was an error mounting proc. Please check mountpoints in chroot')
-        if sys_mount_err > 0:
-            print('There was an error mounting sys. Please check mountpoints in chroot')
-        if devpts_mount_err > 0:
-            print('There was an error mounting devpts. Please check mountpoints in chroot')
-        print('running: %s' % ' '.join(cmd))
-        retval = 0
-        try:
-            retval = subprocess.call(cmd)
-        finally:
-            if ((not proc_mount_err or proc_mount_err == 32) and
-                (not sys_mount_err or sys_mount_err == 32) and
-                (not devpts_mount_err or devpts_mount_err == 32)):
-                print('unmounting %s/proc and %s/sys and %s/dev/pts ...' % (buildroot, buildroot, buildroot))
-                umount_handle(ret=retval)
 
 
     @cmdln.option('', '--csv', action='store_true',

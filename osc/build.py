@@ -649,6 +649,8 @@ def main(apiurl, opts, argv):
         pac = pac + ":" + opts.multibuild_package
     if opts.shell:
         buildargs.append("--shell")
+    if opts.wipe:
+        buildargs.append("--wipe")
 
     orig_build_root = config['build-root']
     # make it possible to override configuration of the rc file
