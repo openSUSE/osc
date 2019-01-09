@@ -22,15 +22,15 @@ try:
     from M2Crypto.SSL.Checker import SSLVerificationError
     from M2Crypto.SSL import SSLError as SSLError
 except:
-    SSLError = None
-    SSLVerificationError = None
+    SSLError = Exception
+    SSLVerificationError = Exception
 
 try:
     # import as RPMError because the class "error" is too generic
     from rpm import error as RPMError
 except:
     # if rpm-python isn't installed (we might be on a debian system):
-    RPMError = None
+    RPMError = Exception
 
 try:
     from http.client import HTTPException, BadStatusLine
