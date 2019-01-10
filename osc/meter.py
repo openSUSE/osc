@@ -28,18 +28,9 @@ class PBTextMeter(object):
     def end(self):
         self.bar.finish()
 
-class NoPBTextMeter(object):
-    def start(self, *args, **kwargs):
-        print('Please install the progressbar module...')
-
-    def update(self, *args, **kwargs):
-        pass
-
-    def end(self, *args, **kwargs):
-        pass
 
 if have_pb_module:
     TextMeter = PBTextMeter
 else:
-    TextMeter = NoPBTextMeter
+    TextMeter = None
 # vim: sw=4 et
