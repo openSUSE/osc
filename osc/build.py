@@ -33,10 +33,7 @@ except ImportError:
 
 from .conf import config, cookiejar
 
-try:
-    from .meter import TextMeter
-except:
-    TextMeter = None
+from .meter import TextMeter
 
 change_personality = {
             'i686':  'linux32',
