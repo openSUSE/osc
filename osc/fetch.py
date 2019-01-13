@@ -25,6 +25,8 @@ import re
 
 from .meter import TextMeter
 
+if not TextMeter:
+    print('Please install the progressbar module')
 
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
