@@ -117,7 +117,7 @@ class Fetcher:
             if len(keys) == 1:
                 raise oscerr.APIError('unable to fetch cpio archive: '
                                       'server always returns code 414')
-            n = len(pkgs) / 2
+            n = int(len(pkgs) / 2)
             new_pkgs = dict([(k, pkgs[k]) for k in keys[:n]])
             self.__download_cpio_archive(apiurl, project, repo, arch,
                                          package, **new_pkgs)
