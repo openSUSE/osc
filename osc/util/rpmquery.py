@@ -373,16 +373,15 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def filename(name, epoch, version, release, arch):
         return '%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
-def unpack_string(data):
+def unpack_string(data, encoding=None):
     """unpack a '\\0' terminated string from data"""
-    val = ''
-    for c in data:
-        c = struct.unpack('!c', bytes(bytearray([c])))[0].decode('utf-8')
-        if c == '\0':
-            break
-        else:
-            val += c
-    return val
+    idx = data.find(b'\0')
+    if idx == -1:
+        raise ValueError('illegal string: not \\0 terminated')
+    data = data[:idx]
+    if encoding is not None:
+        data = data.decode(encoding)
+    return data
 
 if __name__ == '__main__':
     import sys
