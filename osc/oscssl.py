@@ -83,13 +83,35 @@ def verify_cb(ctx, ok, store):
         ctx.verrs = ValidationErrors()
 
     try:
-        if not ok:
-            ctx.verrs.record(store.get_current_cert(), store.get_error(), store.get_error_depth())
-        return 1
+        if ok:
+            return 1
+
+        nonfatal_errors = [
+                m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY,
+                m2.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN,
+                m2.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,
+                m2.X509_V_ERR_CERT_UNTRUSTED,
+                m2.X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE,
+
+                m2.X509_V_ERR_CERT_NOT_YET_VALID,
+                m2.X509_V_ERR_CERT_HAS_EXPIRED,
+                m2.X509_V_OK,
+                ]
+
+        error = store.get_error()
+        depth = store.get_error_depth()
+        if error in nonfatal_errors or depth != 0:
+            ctx.verrs.record(store.get_current_cert(), error, depth)
+            return 1  # don't fail validation for the moment
+        else:
+            import M2Crypto.Err
+            reason = M2Crypto.Err.get_x509_verify_error(error)
+            print("error: %s" % reason, file=sys.stderr)
 
     except Exception as e:
         print(e, file=sys.stderr)
-        return 0
+
+    return 0
 
 class FailCert:
     def __init__(self, cert):
@@ -135,31 +157,6 @@ class ValidationErrors:
                 except:
                     pass
                 print("Reason:", reason, file=out)
-
-    # check if the encountered errors could be ignored
-    def could_ignore(self):
-        if not 0 in self.failures:
-            return True
-
-        nonfatal_errors = [
-                m2.X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY,
-                m2.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN,
-                m2.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,
-                m2.X509_V_ERR_CERT_UNTRUSTED,
-                m2.X509_V_ERR_UNABLE_TO_VERIFY_LEAF_SIGNATURE,
-
-                m2.X509_V_ERR_CERT_NOT_YET_VALID,
-                m2.X509_V_ERR_CERT_HAS_EXPIRED,
-                m2.X509_V_OK,
-                ]
-
-        canignore = True
-        for err in self.failures[0].errs:
-            if not err in nonfatal_errors:
-                canignore = False
-                break
-
-        return canignore
 
 class mySSLContext(SSL.Context):
 
