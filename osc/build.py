@@ -33,7 +33,7 @@ except ImportError:
 
 from .conf import config, cookiejar
 
-from .meter import TextMeter
+from .meter import create_text_meter
 
 change_personality = {
             'i686':  'linux32',
@@ -305,10 +305,9 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
                 print('packagecachedir is not writable for you?', file=sys.stderr)
                 print(e, file=sys.stderr)
                 sys.exit(1)
-        if sys.stdout.isatty() and TextMeter:
-            progress_obj = TextMeter()
-        else:
-            progress_obj = None
+        progress_obj = None
+        if sys.stdout.isatty():
+            progress_obj = create_text_meter(use_pb_fallback=False)
         gr = OscFileGrabber(progress_obj=progress_obj)
         try:
             gr.urlgrab(url, filename=ifile_path_part, text='fetching image')

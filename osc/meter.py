@@ -29,8 +29,30 @@ class PBTextMeter(object):
         self.bar.finish()
 
 
+class NoPBTextMeter(object):
+    _complained = False
+
+    def start(self, basename, size=None):
+        if not self._complained:
+            print('Please install the progressbar module')
+            NoPBTextMeter._complained = True
+        print('Processing: %s' % basename)
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def end(self, *args, **kwargs):
+        pass
+
+
+def create_text_meter(*args, **kwargs):
+    use_pb_fallback = kwargs.pop('use_pb_fallback', True)
+    if have_pb_module or use_pb_fallback:
+        return TextMeter(*args, **kwargs)
+    return None
+
 if have_pb_module:
     TextMeter = PBTextMeter
 else:
-    TextMeter = None
+    TextMeter = NoPBTextMeter
 # vim: sw=4 et
