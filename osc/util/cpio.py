@@ -254,3 +254,16 @@ class CpioWrite:
         self.add('TRAILER!!!', '')
         self.add_padding()
         return ''.join(self.cpio)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('usage: %s /path/to/file.cpio' % sys.argv[0])
+        sys.exit(1)
+    # a potential user might want to pass a bytes instead of a str
+    # to make sure that the CpioError's file attribute is always a
+    # bytes
+    cpio = CpioRead(sys.argv[1])
+    cpio.read()
+    for hdr in cpio:
+        print(hdr)
