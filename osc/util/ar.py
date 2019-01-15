@@ -165,20 +165,9 @@ class Ar:
                       self.__file.read(hdr.size))
 
     def read(self):
-        """reads in the archive. It tries to use mmap due to performance reasons (in case of large files)"""
+        """reads in the archive."""
         if not self.__file:
-            import mmap
             self.__file = open(self.filename, 'rb')
-            try:
-                if sys.platform[:3] != 'win':
-                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name), prot=mmap.PROT_READ)
-                else:
-                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name))
-            except EnvironmentError as e:
-                if e.errno == 19 or ( hasattr(e, 'winerror') and e.winerror == 5 ):
-                    print('cannot use mmap to read the file, falling back to the default io', file=sys.stderr)
-                else:
-                    raise e
         else:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
