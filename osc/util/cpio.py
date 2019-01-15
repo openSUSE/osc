@@ -124,11 +124,10 @@ class CpioRead:
         if not stat.S_ISREG(stat.S_IFMT(hdr.mode)):
             msg = '\'%s\' is no regular file - only regular files are supported atm' % hdr.filename
             raise NotImplementedError(msg)
-        fn = os.path.join(dest, fn)
-        f = open(fn, 'wb')
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
-        f.write(self.__file.read(hdr.filesize))
-        f.close()
+        fn = os.path.join(dest, fn)
+        with open(fn, 'wb') as f:
+            f.write(self.__file.read(hdr.filesize))
         os.chmod(fn, hdr.mode)
         uid = hdr.uid
         if uid != os.geteuid() or os.geteuid() != 1:
