@@ -211,7 +211,6 @@ class Ar:
             if h.file == '/':
                 continue
             yield self._get_file(h)
-        raise StopIteration()
 
 
 if __name__ == '__main__':
