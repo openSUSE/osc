@@ -101,7 +101,7 @@ class Ar:
 
     def __init__(self, fn = None, fh = None):
         if fn == None and fh == None:
-            raise ArError('either \'fn\' or \'fh\' must be != None')
+            raise ValueError('either \'fn\' or \'fh\' must be != None')
         if fh != None:
             self.__file = fh
             self.__closefile = False
