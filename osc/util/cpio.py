@@ -42,7 +42,7 @@ class CpioHdr:
     """
     def __init__(self, mgc, ino, mode, uid, gid, nlink, mtime, filesize,
                  dev_maj, dev_min, rdev_maj, rdev_min, namesize, checksum,
-                 off = -1, filename = ''):
+                 off=-1, filename=b''):
         """
         All passed parameters are hexadecimal strings (not NUL terminated) except
         off and filename. They will be converted into normal ints.
@@ -82,7 +82,7 @@ class CpioRead:
 
     # supported formats - use name -> mgc mapping to increase readabilty
     sfmt = {
-             'newascii': '070701',
+             'newascii': b'070701',
            }
 
     # header format
@@ -164,7 +164,7 @@ class CpioRead:
             data = struct.unpack(self.hdr_fmt, data)
             hdr = CpioHdr(*data)
             hdr.filename = self.__file.read(hdr.namesize - 1)
-            if hdr.filename == 'TRAILER!!!':
+            if hdr.filename == b'TRAILER!!!':
                 break
             pos += hdr.namesize
             if self._is_format('newascii'):
