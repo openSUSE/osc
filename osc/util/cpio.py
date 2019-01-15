@@ -200,50 +200,49 @@ class CpioWrite:
     """cpio archive small files in memory, using new style portable header format"""
 
     def __init__(self):
-        self.cpio = ''
+        self.cpio = bytearray()
 
     def add(self, name=None, content=None, perms=0x1a4, type=0x8000):
         namesize = len(name) + 1
         if namesize % 2:
-            name += '\0'
+            name += b'\0'
         filesize = len(content)
         mode = perms | type
 
-        c = []
-        c.append('070701') # magic
-        c.append('%08X' % 0) # inode
-        c.append('%08X' % mode) # mode
-        c.append('%08X' % 0) # uid
-        c.append('%08X' % 0) # gid
-        c.append('%08X' % 0) # nlink
-        c.append('%08X' % 0) # mtime
-        c.append('%08X' % filesize)
-        c.append('%08X' % 0) # major
-        c.append('%08X' % 0) # minor
-        c.append('%08X' % 0) # rmajor
-        c.append('%08X' % 0) # rminor
-        c.append('%08X' % namesize)
-        c.append('%08X' % 0) # checksum
+        c = bytearray()
+        c.extend(b'070701') # magic
+        c.extend(b'%08X' % 0) # inode
+        c.extend(b'%08X' % mode) # mode
+        c.extend(b'%08X' % 0) # uid
+        c.extend(b'%08X' % 0) # gid
+        c.extend(b'%08X' % 0) # nlink
+        c.extend(b'%08X' % 0) # mtime
+        c.extend(b'%08X' % filesize)
+        c.extend(b'%08X' % 0) # major
+        c.extend(b'%08X' % 0) # minor
+        c.extend(b'%08X' % 0) # rmajor
+        c.extend(b'%08X' % 0) # rminor
+        c.extend(b'%08X' % namesize)
+        c.extend(b'%08X' % 0) # checksum
 
-        c.append(name + '\0')
-        c.append('\0' * (len(''.join(c)) % 4))
+        c.extend(name + b'\0')
+        c.extend(b'\0' * (len(c) % 4))
 
-        c.append(content)
+        c.extend(content)
 
-        c = ''.join(c)
         if len(c) % 4:
-            c += '\0' * (4 - len(c) % 4)
+            c.extend(b'\0' * (4 - len(c) % 4))
 
-        self.cpio += c
+        self.cpio.extend(c)
 
     def add_padding(self):
         if len(self.cpio) % 512:
-            self.cpio += '\0' * (512 - len(self.cpio) % 512)
+            self.cpio.extend(b'\0' * (512 - len(self.cpio) % 512))
 
     def get(self):
-        self.add('TRAILER!!!', '')
+        self.add(b'TRAILER!!!', b'')
         self.add_padding()
-        return ''.join(self.cpio)
+        return bytes(self.cpio)
 
 
 if __name__ == '__main__':
