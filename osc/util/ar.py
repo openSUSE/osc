@@ -48,6 +48,9 @@ class ArHdr:
         self.date = date.strip()
         self.uid = uid.strip()
         self.gid = gid.strip()
+        if not mode.strip():
+            # provide a dummy mode for the ext_fn hdr
+            mode = '0'
         self.mode = stat.S_IMODE(int(mode, 8))
         self.size = int(size)
         self.fmag = fmag
