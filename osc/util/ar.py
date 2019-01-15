@@ -212,3 +212,16 @@ class Ar:
                 continue
             yield self._get_file(h)
         raise StopIteration()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('usage: %s <arfile>' % sys.argv[0])
+        sys.exit(1)
+    # a potential user might want to pass a bytes instead of a str
+    # to make sure that the ArError's file attribute is always a
+    # bytes
+    ar = Ar(fn=sys.argv[1])
+    ar.read()
+    for hdr in ar.hdrs:
+        print(hdr)
