@@ -20,12 +20,8 @@ import re
 import sys
 import stat
 
-#XXX: python 2.7 contains io.StringIO, which needs unicode instead of str
-#therefor try to import old stuff before new one here
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from io import BytesIO
+
 
 # workaround for python24
 if not hasattr(os, 'SEEK_SET'):
@@ -60,10 +56,10 @@ class ArHdr:
     def __str__(self):
         return '%16s %d' % (self.file, self.size)
 
-class ArFile(StringIO):
+class ArFile(BytesIO):
     """Represents a file which resides in the archive"""
     def __init__(self, fn, uid, gid, mode, buf):
-        StringIO.__init__(self, buf)
+        BytesIO.__init__(self, buf)
         self.name = fn
         self.uid = uid
         self.gid = gid
@@ -100,7 +96,8 @@ class Ar:
     Readonly access.
     """
     hdr_len = 60
-    hdr_pat = re.compile('^(.{16})(.{12})(.{6})(.{6})(.{8})(.{10})(.{2})', re.DOTALL)
+    hdr_pat = re.compile(b'^(.{16})(.{12})(.{6})(.{6})(.{8})(.{10})(.{2})',
+                         re.DOTALL)
 
     def __init__(self, fn = None, fh = None):
         if fn == None and fh == None:
@@ -126,7 +123,7 @@ class Ar:
 
     def _appendHdr(self, hdr):
         # GNU uses an internal '//' file to store very long filenames
-        if hdr.file.startswith('//'):
+        if hdr.file.startswith(b'//'):
             self.ext_fnhdr = hdr
         else:
             self.hdrs.append(hdr)
@@ -140,11 +137,11 @@ class Ar:
         Another special file is the '/' which contains the symbol lookup table.
         """
         for h in self.hdrs:
-            if h.file == '/':
+            if h.file == b'/':
                 continue
             # remove slashes which are appended by ar
-            h.file = h.file.rstrip('/')
-            if not h.file.startswith('/'):
+            h.file = h.file.rstrip(b'/')
+            if not h.file.startswith(b'/'):
                 continue
             # handle long filename
             off = int(h.file[1:len(h.file)])
@@ -153,11 +150,11 @@ class Ar:
             # XXX: is it safe to read all the data in one chunk? I assume the '//' data section
             #      won't be too large
             data = self.__file.read(self.ext_fnhdr.size)
-            end = data.find('/')
+            end = data.find(b'/')
             if end != -1:
                 h.file = data[0:end]
             else:
-                raise ArError('//', 'invalid data section - trailing slash (off: %d)' % start)
+                raise ArError(b'//', 'invalid data section - trailing slash (off: %d)' % start)
 
     def _get_file(self, hdr):
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
@@ -172,7 +169,7 @@ class Ar:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
         data = self.__file.read(7)
-        if data != '!<arch>':
+        if data != b'!<arch>':
             raise ArError(self.filename, 'no ar archive')
         pos = 8
         while (len(data) != 0):
@@ -200,7 +197,7 @@ class Ar:
 
     def __iter__(self):
         for h in self.hdrs:
-            if h.file == '/':
+            if h.file == b'/':
                 continue
             yield self._get_file(h)
 
