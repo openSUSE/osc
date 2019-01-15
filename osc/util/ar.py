@@ -74,9 +74,8 @@ class ArFile(BytesIO):
         if not dir:
             dir = os.getcwd()
         fn = os.path.join(dir, self.name)
-        f = open(fn, 'wb')
-        f.write(self.getvalue())
-        f.close()
+        with open(fn, 'wb') as f:
+            f.write(self.getvalue())
         os.chmod(fn, self.mode)
         uid = self.uid
         if uid != os.geteuid() or os.geteuid() != 0:
