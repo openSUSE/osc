@@ -1,5 +1,9 @@
-0.165
-  -
+0.164.1
+  - rewrite cpio handling to support python3
+  - rewrite ar module to support python3
+  - enable fetch module to support python3
+  - rework progressbar hanlding (if module is not present)
+  - improve os_path_samefile in core.py
 
 0.164
   - add support for approved requests (requires OBS 2.10)
