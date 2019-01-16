@@ -23,19 +23,15 @@ from . import oscerr
 import tempfile
 import re
 
-from .meter import TextMeter
-
-if not TextMeter:
-    print('Please install the progressbar module')
+from .meter import create_text_meter
 
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
             http_debug=False, cookiejar=None, offline=False, enable_cpio=True):
         # set up progress bar callback
-        if sys.stdout.isatty() and TextMeter:
-            self.progress_obj = TextMeter()
-        else:
-            self.progress_obj = None
+        self.progress_obj = None
+        if sys.stdout.isatty():
+            self.progress_obj = create_text_meter(use_pb_fallback=False)
 
         self.cachedir = cachedir
         self.urllist = urllist
