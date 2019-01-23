@@ -17,8 +17,11 @@ class PBTextMeter(object):
             widgets = [basename + ': ', pb.AnimatedMarker(), ' ', pb.Timer()]
             self.bar = pb.ProgressBar(widgets=widgets, maxval=pb.UnknownLength)
         else:
-            widgets = [basename + ': ', pb.Percentage(), pb.Bar(), ' ',
-                       pb.ETA()]
+            widgets = [basename + ': ', pb.Bar(), ' ', pb.ETA()]
+            if size:
+                # if size is 0, using pb.Percentage will result in
+                # a ZeroDivisionException
+                widgets.insert(1, pb.Percentage())
             self.bar = pb.ProgressBar(widgets=widgets, maxval=size)
         self.bar.start()
 
