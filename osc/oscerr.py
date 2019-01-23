@@ -82,7 +82,7 @@ class WorkingCopyOutdated(OscBaseError):
     def __str__(self):
         return ('Working copy \'%s\' is out of date (rev %s vs rev %s).\n'
                'Looks as if you need to update it first.' \
-                    % (self[0], self[1], self[2]))
+                    % (self.args[0], self.args[1], self.args[2]))
 
 class PackageError(OscBaseError):
     """Base class for all Package related exceptions"""
