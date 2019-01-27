@@ -30,9 +30,8 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         for line in pipe.readlines():
             line = line.rstrip().split(b' = ', 2)
             if len(line) == 2:
-                if not line[0] in self.fields:
-                    self.fields[line[0].decode('ascii')] = []
-                self.fields[line[0].decode('ascii')].append(line[1])
+                field, value = line[0].decode('ascii'), line[1]
+                self.fields.setdefault(field, []).append(value)
         if self_provides:
             prv = b'%s = %s' % (self.name(), self.fields['pkgver'][0])
             self.fields.setdefault('provides', []).append(prv)
