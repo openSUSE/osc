@@ -42,7 +42,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         if res != 0:
             return res
         res = ArchQuery.rpmvercmp(self.version(), archq.version())
-        if res != None:
+        if res != 0:
             return res
         res = ArchQuery.rpmvercmp(self.release(), archq.release())
         return res
