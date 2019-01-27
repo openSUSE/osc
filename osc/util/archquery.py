@@ -38,7 +38,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         return self
 
     def vercmp(self, archq):
-        res = cmp(int(self.epoch()), int(archq.epoch()))
+        res = packagequery.cmp(int(self.epoch()), int(archq.epoch()))
         if res != 0:
             return res
         res = ArchQuery.rpmvercmp(self.version(), archq.version())
@@ -53,14 +53,14 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def version(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
         if pkgver != None:
-            pkgver = re.sub(r'[0-9]+:', '', pkgver, 1)
-            pkgver = re.sub(r'-[^-]*$', '', pkgver)
+            pkgver = re.sub(br'[0-9]+:', b'', pkgver, 1)
+            pkgver = re.sub(br'-[^-]*$', b'', pkgver)
         return pkgver
 
     def release(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
         if pkgver != None:
-            m = re.search(r'-([^-])*$', pkgver)
+            m = re.search(br'-([^-])*$', pkgver)
             if m:
                 return m.group(1)
         return None
@@ -68,7 +68,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def epoch(self):
         pkgver = self.fields.get('pkgver', [b''])[0]
         if pkgver:
-            m = re.match(r'([0-9])+:', pkgver)
+            m = re.match(br'([0-9])+:', pkgver)
             if m:
                 return m.group(1)
         return b'0'
@@ -102,7 +102,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         # libsolv treats an optdepend as a "suggests", hence we do the same
         if 'optdepend' not in self.fields:
             return []
-        return [re.sub(':.*', '', entry) for entry in self.fields['optdepend']]
+        return [re.sub(b':.*', b'', entry) for entry in self.fields['optdepend']]
 
     def supplements(self):
         # a .PKGINFO has no notion of "recommends"
@@ -144,17 +144,17 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         res = 0
         while res == 0:
             # remove all leading non alphanumeric chars
-            ver1 = re.sub('^[^a-zA-Z0-9]*', '', ver1)
-            ver2 = re.sub('^[^a-zA-Z0-9]*', '', ver2)
+            ver1 = re.sub(b'^[^a-zA-Z0-9]*', b'', ver1)
+            ver2 = re.sub(b'^[^a-zA-Z0-9]*', b'', ver2)
             if not (len(ver1) and len(ver2)):
                 break
             # check if we have a digits segment
-            mo1 = re.match('(\d+)', ver1)
-            mo2 = re.match('(\d+)', ver2)
+            mo1 = re.match(b'(\d+)', ver1)
+            mo2 = re.match(b'(\d+)', ver2)
             numeric = True
             if mo1 is None:
-                mo1 = re.match('([a-zA-Z]+)', ver1)
-                mo2 = re.match('([a-zA-Z]+)', ver2)
+                mo1 = re.match(b'([a-zA-Z]+)', ver1)
+                mo2 = re.match(b'([a-zA-Z]+)', ver2)
                 numeric = False
             # check for different types: alpha and numeric
             if mo2 is None:
@@ -167,30 +167,30 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             ver2 = ver2[mo2.end(1):]
             if numeric:
                 # remove leading zeros
-                seg1 = re.sub('^0+', '', seg1)
-                seg2 = re.sub('^0+', '', seg2)
+                seg1 = re.sub(b'^0+', b'', seg1)
+                seg2 = re.sub(b'^0+', b'', seg2)
                 # longer digit segment wins - if both have the same length
                 # a simple ascii compare decides
-                res = len(seg1) - len(seg2) or cmp(seg1, seg2)
+                res = len(seg1) - len(seg2) or packagequery.cmp(seg1, seg2)
             else:
-                res = cmp(seg1, seg2)
+                res = packagequery.cmp(seg1, seg2)
         if res > 0:
             return 1
         elif res < 0:
             return -1
-        return cmp(ver1, ver2)
+        return packagequery.cmp(ver1, ver2)
 
     @staticmethod
     def filename(name, epoch, version, release, arch):
         if epoch:
             if release:
-                return '%s-%s:%s-%s-%s.arch' % (name, epoch, version, release, arch)
+                return b'%s-%s:%s-%s-%s.arch' % (name, epoch, version, release, arch)
             else:
-                return '%s-%s:%s-%s.arch' % (name, epoch, version, arch)
+                return b'%s-%s:%s-%s.arch' % (name, epoch, version, arch)
         if release:
-            return '%s-%s-%s-%s.arch' % (name, version, release, arch)
+            return b'%s-%s-%s-%s.arch' % (name, version, release, arch)
         else:
-            return '%s-%s-%s.arch' % (name, version, arch)
+            return b'%s-%s-%s.arch' % (name, version, arch)
 
 
 if __name__ == '__main__':
@@ -204,6 +204,6 @@ if __name__ == '__main__':
     print(archq.canonname())
     print(archq.description())
     print('##########')
-    print('\n'.join(archq.provides()))
+    print(b'\n'.join(archq.provides()))
     print('##########')
-    print('\n'.join(archq.requires()))
+    print(b'\n'.join(archq.requires()))
