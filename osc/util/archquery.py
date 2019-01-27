@@ -209,11 +209,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
 if __name__ == '__main__':
     import sys
-    try:
-        archq = ArchQuery.query(sys.argv[1])
-    except ArchError as e:
-        print(e.msg)
-        sys.exit(2)
+    archq = ArchQuery.query(sys.argv[1])
     print(archq.name(), archq.version(), archq.release(), archq.arch())
     try:
         print(archq.canonname())
