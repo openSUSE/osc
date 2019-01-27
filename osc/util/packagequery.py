@@ -159,6 +159,11 @@ class PackageQueryResult:
             evr = epoch + ":" + evr 
         return evr 
 
+
+def cmp(a, b):
+    return (a > b) - (a < b)
+
+
 if __name__ == '__main__':
     import sys
     try:
