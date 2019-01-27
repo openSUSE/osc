@@ -137,6 +137,10 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         """
         if ver1 == ver2:
             return 0
+        elif ver1 is None:
+            return -1
+        elif ver2 is None:
+            return 1
         res = 0
         while res == 0:
             # remove all leading non alphanumeric chars
