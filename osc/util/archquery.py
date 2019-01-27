@@ -65,12 +65,18 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                 return m.group(1)
         return None
 
-    def epoch(self):
+    def _epoch(self):
         pkgver = self.fields.get('pkgver', [b''])[0]
         if pkgver:
             m = re.match(br'([0-9])+:', pkgver)
             if m:
                 return m.group(1)
+        return b''
+
+    def epoch(self):
+        epoch = self._epoch()
+        if epoch:
+            return epoch
         return b'0'
 
     def arch(self):
@@ -113,9 +119,17 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         return []
 
     def canonname(self):
-        pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
-        canonname = self.name() + b'-' + pkgver + b'-' + self.arch() + b'.' + self.pkgsuffix
-        return canonname
+        name = self.name()
+        if name is None:
+            raise ArchError(self.path(), 'package has no name')
+        version = self.version()
+        if version is None:
+            raise ArchError(self.path(), 'package has no version')
+        arch = self.arch()
+        if arch is None:
+            raise ArchError(self.path(), 'package has no arch')
+        return ArchQuery.filename(name, self._epoch(), version, self.release(),
+                                  arch)
 
     def gettag(self, tag):
         # implement me, if needed
@@ -201,7 +215,10 @@ if __name__ == '__main__':
         print(e.msg)
         sys.exit(2)
     print(archq.name(), archq.version(), archq.release(), archq.arch())
-    print(archq.canonname())
+    try:
+        print(archq.canonname())
+    except ArchError as e:
+        print(e.msg)
     print(archq.description())
     print('##########')
     print(b'\n'.join(archq.provides()))
