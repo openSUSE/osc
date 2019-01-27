@@ -66,12 +66,12 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         return None
 
     def epoch(self):
-        pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
-        if pkgver != None:
+        pkgver = self.fields.get('pkgver', [b''])[0]
+        if pkgver:
             m = re.match(r'([0-9])+:', pkgver)
             if m:
                 return m.group(1)
-        return None
+        return b'0'
 
     def arch(self):
         return self.fields['arch'][0] if 'arch' in self.fields else None
