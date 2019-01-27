@@ -116,7 +116,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         if res != 0:
             return res
         res = DebQuery.debvercmp(self.version(), debq.version())
-        if res != None:
+        if res != 0:
             return res
         res = DebQuery.debvercmp(self.release(), debq.release())
         return res
