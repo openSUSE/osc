@@ -85,17 +85,21 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             self.fields['version'] = verep[1]
         else:
             self.fields['epoch'] = '0'
-        self.fields['provides'] = [ i.strip() for i in re.split(',\s*', self.fields.get('provides', '')) if i ]
-        self.fields['depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('depends', '')) if i ]
-        self.fields['pre_depends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('pre_depends', '')) if i ]
-        self.fields['conflicts'] = [ i.strip() for i in re.split(',\s*', self.fields.get('conflicts', '')) if i ]
-        self.fields['breaks'] = [ i.strip() for i in re.split(',\s*', self.fields.get('breaks', '')) if i ]
-        self.fields['recommends'] = [ i.strip() for i in re.split(',\s*', self.fields.get('recommends', '')) if i ]
-        self.fields['suggests'] = [ i.strip() for i in re.split(',\s*', self.fields.get('suggests', '')) if i ]
-        self.fields['enhances'] = [ i.strip() for i in re.split(',\s*', self.fields.get('enhances', '')) if i ]
+        self.fields['provides'] = self._split_field_value('provides')
+        self.fields['depends'] = self._split_field_value('depends')
+        self.fields['pre_depends'] = self._split_field_value('pre_depends')
+        self.fields['conflicts'] = self._split_field_value('conflicts')
+        self.fields['breaks'] = self._split_field_value('breaks')
+        self.fields['recommends'] = self._split_field_value('recommends')
+        self.fields['suggests'] = self._split_field_value('suggests')
+        self.fields['enhances'] = self._split_field_value('enhances')
         if self_provides:
             # add self provides entry
             self.fields['provides'].append('%s (= %s)' % (self.name(), '-'.join(versrel)))
+
+    def _split_field_value(self, field, delimeter=b',\s*'):
+        return [i.strip()
+                for i in re.split(delimeter, self.fields.get(field, b'')) if i]
 
     def vercmp(self, debq):
         res = cmp(int(self.epoch()), int(debq.epoch()))
