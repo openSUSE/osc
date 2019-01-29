@@ -415,6 +415,8 @@ class Serviceinfo:
             os.putenv("OBS_SERVICE_APIURL",  self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
             os.putenv("OBS_SERVICE_PACKAGE", self.package)
+            # also export vc env vars (some services (like obs_scm) use them)
+            vc_export_env(self.apiurl)
 
         # recreate files
         ret = 0
@@ -7788,7 +7790,7 @@ def checkout_deleted_package(apiurl, proj, pkg, dst):
 
 def vc_export_env(apiurl, quiet=False):
         # try to set the env variables for the user's realname and email
-        # (the variables are used by the "vc" script)
+        # (the variables are used by the "vc" script or some source service)
         tag2envs = {'realname': ['VC_REALNAME'],
                     'email': ['VC_MAILADDR', 'mailaddr']}
         tag2val = {}
