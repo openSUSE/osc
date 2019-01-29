@@ -7840,4 +7840,37 @@ def checkout_deleted_package(apiurl, proj, pkg, dst):
                 f.write(data)
     print('done.')
 
+def vc_export_env(apiurl, quiet=False):
+        # try to set the env variables for the user's realname and email
+        # (the variables are used by the "vc" script)
+        tag2envs = {'realname': ['VC_REALNAME'],
+                    'email': ['VC_MAILADDR', 'mailaddr']}
+        tag2val = {}
+        missing_tags = []
+
+        for (tag, envs) in tag2envs.items():
+            env_present = [env for env in envs if env in os.environ]
+            config_present = tag in conf.config['api_host_options'][apiurl]
+            if not env_present and not config_present:
+                missing_tags.append(tag)
+            elif config_present:
+                tag2val[tag] = conf.config['api_host_options'][apiurl][tag]
+
+        if missing_tags:
+            user = conf.get_apiurl_usr(apiurl)
+            data = get_user_data(apiurl, user, *missing_tags)
+            if data is not None:
+                for tag in missing_tags:
+                    val = data.pop(0)
+                    if val != '-':
+                        tag2val[tag] = val
+                    elif not quiet:
+                        msg = 'Try env %s=...' % tag2envs[tag][0]
+                        print(msg, file=sys.stderr)
+
+        for (tag, val) in tag2val.items():
+            for env in tag2envs[tag]:
+                os.environ[env] = val
+
+
 # vim: sw=4 et
