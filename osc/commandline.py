@@ -1946,6 +1946,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify message TEXT')
     @cmdln.option('-r', '--repository', metavar='REPOSITORY',
                   help='specify repository')
+    @cmdln.option('--all', action='store_true',
+                        help='deletes entire project with packages inside')
     @cmdln.option('--accept-in-hours', metavar='HOURS',
                   help='specify time when request shall get accepted automatically. Only works with write permissions in target.')
     @cmdln.alias("dr")
@@ -1957,8 +1959,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc deletereq [-m TEXT]                     # works in checked out project/package
-            osc deletereq [-m TEXT] PROJECT [PACKAGE]
-            osc deletereq [-m TEXT] PROJECT [--repository REPOSITORY]
+            osc deletereq [-m TEXT] PROJECT PACKAGE
+            osc deletereq [-m TEXT] PROJECT [--all|--repository REPOSITORY]
         ${cmd_option_list}
         """
         import cgi
@@ -1983,6 +1985,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = store_read_package(os.curdir)
         else:
             raise oscerr.WrongArgs('Please specify at least a project.')
+
+        if (not opts.all) and package == None:
+            raise oscerr.WrongOptions('No package name has been provided. Use --all option, if you want to request to delete the entire project.')
 
         if opts.repository:
             repository = opts.repository
