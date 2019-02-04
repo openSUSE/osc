@@ -419,6 +419,12 @@ class Serviceinfo:
             data = { 'name' : singleservice, 'command' : [ singleservice ], 'mode' : '' }
             allservices = [data]
 
+        if not allservices:
+            # short-circuit to avoid a potential http request in vc_export_env
+            # (if there are no services to execute this http request is
+            # useless)
+            return 0
+
         # services can detect that they run via osc this way
         os.putenv("OSC_VERSION", get_osc_version())
 
