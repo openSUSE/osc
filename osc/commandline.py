@@ -1986,7 +1986,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Please specify at least a project.')
 
-        if (not opts.all) and package == None:
+        if not opts.all and package is None:
             raise oscerr.WrongOptions('No package name has been provided. Use --all option, if you want to request to delete the entire project.')
 
         if opts.repository:
