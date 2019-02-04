@@ -1,5 +1,5 @@
 0.165
-  -
+  - deleterequest for entire projects needs the --all option as additional protection
 
 0.164.1
   - rewrite cpio handling to support python3
