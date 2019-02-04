@@ -5215,8 +5215,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.vertical = None
             opts.show_non_building = None
             opts.show_excluded = None
-            self.do_prjresults('prjresults', opts, *args)
-            return
+            return self.do_prjresults('prjresults', opts, *args)
 
         if opts.xml and opts.csv:
             raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
@@ -6348,7 +6347,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.preload:
             opts.nopreinstallimage = True
-        
+
         print('Building %s for %s/%s' % (args[2], args[0], args[1]))
         if not opts.host:
             return osc.build.main(self.get_api_url(), opts, args)
