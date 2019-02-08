@@ -20,14 +20,8 @@ import re
 import sys
 import stat
 
-#XXX: python 2.7 contains io.StringIO, which needs unicode instead of str
-#therefor try to import old stuff before new one here
-try:
-    from StringIO import StringIO as MyIO
-except ImportError:
-    from io import BytesIO as MyIO
+from io import BytesIO
 
-from osc.util.helper import decode_it
 
 # workaround for python24
 if not hasattr(os, 'SEEK_SET'):
@@ -50,6 +44,9 @@ class ArHdr:
         self.date = date.strip()
         self.uid = uid.strip()
         self.gid = gid.strip()
+        if not mode.strip():
+            # provide a dummy mode for the ext_fn hdr
+            mode = '0'
         self.mode = stat.S_IMODE(int(mode, 8))
         self.size = int(size)
         self.fmag = fmag
@@ -59,10 +56,10 @@ class ArHdr:
     def __str__(self):
         return '%16s %d' % (self.file, self.size)
 
-class ArFile(MyIO):
+class ArFile(BytesIO):
     """Represents a file which resides in the archive"""
     def __init__(self, fn, uid, gid, mode, buf):
-        MyIO.__init__(self, buf)
+        BytesIO.__init__(self, buf)
         self.name = fn
         self.uid = uid
         self.gid = gid
@@ -77,9 +74,8 @@ class ArFile(MyIO):
         if not dir:
             dir = os.getcwd()
         fn = os.path.join(dir, self.name)
-        f = open(fn, 'wb')
-        f.write(self.getvalue())
-        f.close()
+        with open(fn, 'wb') as f:
+            f.write(self.getvalue())
         os.chmod(fn, self.mode)
         uid = self.uid
         if uid != os.geteuid() or os.geteuid() != 0:
@@ -99,11 +95,12 @@ class Ar:
     Readonly access.
     """
     hdr_len = 60
-    hdr_pat = re.compile('^(.{16})(.{12})(.{6})(.{6})(.{8})(.{10})(.{2})', re.DOTALL)
+    hdr_pat = re.compile(b'^(.{16})(.{12})(.{6})(.{6})(.{8})(.{10})(.{2})',
+                         re.DOTALL)
 
     def __init__(self, fn = None, fh = None):
         if fn == None and fh == None:
-            raise ArError('either \'fn\' or \'fh\' must be != None')
+            raise ValueError('either \'fn\' or \'fh\' must be != None')
         if fh != None:
             self.__file = fh
             self.__closefile = False
@@ -125,7 +122,7 @@ class Ar:
 
     def _appendHdr(self, hdr):
         # GNU uses an internal '//' file to store very long filenames
-        if hdr.file.startswith('//'):
+        if hdr.file.startswith(b'//'):
             self.ext_fnhdr = hdr
         else:
             self.hdrs.append(hdr)
@@ -139,11 +136,11 @@ class Ar:
         Another special file is the '/' which contains the symbol lookup table.
         """
         for h in self.hdrs:
-            if h.file == '/':
+            if h.file == b'/':
                 continue
             # remove slashes which are appended by ar
-            h.file = h.file.rstrip('/')
-            if not h.file.startswith('/'):
+            h.file = h.file.rstrip(b'/')
+            if not h.file.startswith(b'/'):
                 continue
             # handle long filename
             off = int(h.file[1:len(h.file)])
@@ -152,11 +149,11 @@ class Ar:
             # XXX: is it safe to read all the data in one chunk? I assume the '//' data section
             #      won't be too large
             data = self.__file.read(self.ext_fnhdr.size)
-            end = data.find('/')
+            end = data.find(b'/')
             if end != -1:
                 h.file = data[0:end]
             else:
-                raise ArError('//', 'invalid data section - trailing slash (off: %d)' % start)
+                raise ArError(b'//', 'invalid data section - trailing slash (off: %d)' % start)
 
     def _get_file(self, hdr):
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
@@ -164,20 +161,9 @@ class Ar:
                       self.__file.read(hdr.size))
 
     def read(self):
-        """reads in the archive. It tries to use mmap due to performance reasons (in case of large files)"""
+        """reads in the archive."""
         if not self.__file:
-            import mmap
             self.__file = open(self.filename, 'rb')
-            try:
-                if sys.platform[:3] != 'win':
-                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name), prot=mmap.PROT_READ)
-                else:
-                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name))
-            except EnvironmentError as e:
-                if e.errno == 19 or ( hasattr(e, 'winerror') and e.winerror == 5 ):
-                    print('cannot use mmap to read the file, falling back to the default io', file=sys.stderr)
-                else:
-                    raise e
         else:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
@@ -191,7 +177,7 @@ class Ar:
             if not data:
                 break
             pos += self.hdr_len
-            m = self.hdr_pat.search(decode_it(data))
+            m = self.hdr_pat.search(data)
             if not m:
                 raise ArError(self.filename, 'unexpected hdr entry')
             args = m.groups() + (pos, )
@@ -210,7 +196,19 @@ class Ar:
 
     def __iter__(self):
         for h in self.hdrs:
-            if h.file == '/':
+            if h.file == b'/':
                 continue
             yield self._get_file(h)
-        raise StopIteration()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('usage: %s <arfile>' % sys.argv[0])
+        sys.exit(1)
+    # a potential user might want to pass a bytes instead of a str
+    # to make sure that the ArError's file attribute is always a
+    # bytes
+    ar = Ar(fn=sys.argv[1])
+    ar.read()
+    for hdr in ar.hdrs:
+        print(hdr)
