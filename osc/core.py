@@ -4658,8 +4658,8 @@ def get_binary_file(apiurl, prj, repo, arch,
                     progress_meter = False):
     progress_obj = None
     if progress_meter:
-        from .meter import TextMeter
-        progress_obj = TextMeter()
+        from .meter import create_text_meter
+        progress_obj = create_text_meter()
 
     target_filename = target_filename or filename
 
