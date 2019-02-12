@@ -669,17 +669,17 @@ def main(apiurl, opts, argv):
         s = ''
         for i in opts.without:
             s += "%%define _without_%s 1\n" % i
-        build_descr_data = s + decode_it(build_descr_data)
+        build_descr_data = s.encode() + build_descr_data
     if opts._with:
         s = ''
         for i in opts._with:
             s += "%%define _with_%s 1\n" % i
-        build_descr_data = s + decode_it(build_descr_data)
+        build_descr_data = s.encode() + build_descr_data
     if opts.define:
         s = ''
         for i in opts.define:
             s += "%%define %s\n" % i
-        build_descr_data = s + decode_it(build_descr_data)
+        build_descr_data = s.encode + build_descr_data
 
     cpiodata = None
     servicefile = os.path.join(os.path.dirname(build_descr), "_service")
@@ -709,12 +709,12 @@ def main(apiurl, opts, argv):
         prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type, cpiodata)
 
     if cpiodata:
-        cpiodata.add(os.path.basename(build_descr), build_descr_data)
+        cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
         # buildenv must come last for compatibility reasons...
         if buildenvfile:
-            cpiodata.add("buildenv", open(buildenvfile).read())
+            cpiodata.add(b"buildenv", open(buildenvfile, 'rb').read())
         if servicefile:
-            cpiodata.add("_service", open(servicefile).read())
+            cpiodata.add(b"_service", open(servicefile, 'rb').read())
         build_descr_data = cpiodata.get()
 
     # special handling for overlay and rsync-src/dest
