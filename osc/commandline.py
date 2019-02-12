@@ -728,6 +728,8 @@ class Osc(cmdln.Cmdln):
                         help='Create a new token')
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Delete a token')
+    @cmdln.option('-o', '--operation', metavar='OPERATION',
+                        help='Default is "runservice", but "release" or "rebuild" can also be used')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     def do_token(self, subcmd, opts, *args):
@@ -738,9 +740,9 @@ class Osc(cmdln.Cmdln):
 
         Usage:
             osc token
-            osc token --create [<PROJECT> <PACKAGE>]
+            osc token --create [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
             osc token --delete <TOKENID>
-            osc token --trigger <TOKENSTRING>
+            osc token --trigger <TOKENSTRING> [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
         ${cmd_option_list}
         """
 
@@ -752,6 +754,8 @@ class Osc(cmdln.Cmdln):
         if opts.create:
             print("Create a new token")
             url += "?cmd=create"
+            if opts.operation:
+                url += "&operation=" + opts.operation
             if len(args) > 1:
                 url += "&project=" + args[0]
                 url += "&package=" + args[1]
@@ -769,7 +773,11 @@ class Osc(cmdln.Cmdln):
             http_DELETE(url)
         elif opts.trigger:
             print("Trigger token")
-            url = apiurl + "/trigger/runservice"
+            operation = opts.operation or "runservice"
+            url = apiurl + "/trigger/" + operation
+            if len(args) > 1:
+                url += "?project=" + args[0]
+                url += "&package=" + args[1]
             req = URLRequest(url)
             req.get_method = lambda: "POST"
             req.add_header('Content-Type', 'application/octet-stream')
