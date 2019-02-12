@@ -1,5 +1,9 @@
-0.165
+0.164.2
   - deleterequest for entire projects needs the --all option as additional protection
+  - rewrite packagequery to support python3
+  - rewrite oscerr module to support python3
+  - rewrite archqeury and debquery to support python3
+  - Export vc env vars when running a source service
 
 0.164.1
   - rewrite cpio handling to support python3
