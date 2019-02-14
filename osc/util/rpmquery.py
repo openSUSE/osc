@@ -5,6 +5,7 @@ import os
 import re
 import struct
 from . import packagequery
+from osc.util.helper import decode_it
 
 def cmp(a, b):
     return (a > b) - (a < b)
@@ -291,7 +292,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             arch = 'src'
         else:
             arch = self.arch()
-        return RpmQuery.filename(self.name(), None, self.version(), self.release(), arch)
+        return RpmQuery.filename(decode_it(self.name()), None, decode_it(self.version()), decode_it(self.release()), decode_it(arch))
 
     @staticmethod
     def query(filename):
