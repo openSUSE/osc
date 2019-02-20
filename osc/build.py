@@ -441,11 +441,11 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
-    prefer_pkgs = dict((name, packageQuery.path())
+    prefer_pkgs = dict((decode_it(name), packageQuery.path())
                        for name, packageQuery in packageQueries.items())
 
     depfile = create_deps(packageQueries.values())
-    cpio.add('deps', '\n'.join(depfile))
+    cpio.add(b'deps', b'\n'.join(depfile))
     return prefer_pkgs
 
 
@@ -456,22 +456,22 @@ def create_deps(pkgqs):
     """
     depfile = []
     for p in pkgqs:
-        id = '%s.%s-0/0/0: ' % (p.name(), p.arch())
-        depfile.append('P:%s%s' % (id, ' '.join(p.provides())))
-        depfile.append('R:%s%s' % (id, ' '.join(p.requires())))
+        id = b'%s.%s-0/0/0: ' % (p.name(), p.arch())
+        depfile.append(b'P:%s%s' % (id, b' '.join(p.provides())))
+        depfile.append(b'R:%s%s' % (id, b' '.join(p.requires())))
         d = p.conflicts()
         if d:
-            depfile.append('C:%s%s' % (id, ' '.join(d)))
+            depfile.append(b'C:%s%s' % (id, b' '.join(d)))
         d = p.obsoletes()
         if d:
-            depfile.append('O:%s%s' % (id, ' '.join(d)))
+            depfile.append(b'O:%s%s' % (id, b' '.join(d)))
         d = p.recommends()
         if d:
-            depfile.append('r:%s%s' % (id, ' '.join(d)))
+            depfile.append(b'r:%s%s' % (id, b' '.join(d)))
         d = p.supplements()
         if d:
-            depfile.append('s:%s%s' % (id, ' '.join(d)))
-        depfile.append('I:%s%s-%s 0-%s' % (id, p.name(), p.evr(), p.arch()))
+            depfile.append(b's:%s%s' % (id, b' '.join(d)))
+        depfile.append(b'I:%s%s-%s 0-%s' % (id, p.name(), p.evr().encode(), p.arch()))
     return depfile
 
 

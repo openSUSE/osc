@@ -5798,7 +5798,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         build_descr_data = None
         if not build_descr is None:
-            build_descr_data = open(build_descr, 'r').read()
+            build_descr_data = open(build_descr, 'rb').read()
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
@@ -5809,7 +5809,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch,
                                           os.path.splitext(build_descr)[1],
                                           cpiodata)
-            cpiodata.add(os.path.basename(build_descr), build_descr_data)
+            cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
             build_descr_data = cpiodata.get()
 
         if opts.multibuild_package:

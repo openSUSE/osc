@@ -177,13 +177,13 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
         return None
 
     def vercmp(self, other):
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(str(self.epoch()), str(other.epoch()))
+        res = osc.util.rpmquery.RpmQuery.rpmvercmp(str(self.epoch()).encode(), str(other.epoch()).encode())
         if res != 0:
             return res
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.version(), other.version())
+        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.version().encode(), other.version().encode())
         if res != 0:
             return res
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.release(), other.release())
+        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.release().encode(), other.release().encode())
         return res
 
     def version(self):

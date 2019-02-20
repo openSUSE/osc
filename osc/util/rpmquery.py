@@ -188,14 +188,14 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                     continue
             # RPMSENSE_SENSEMASK = 15 (see rpmlib.h) but ignore RPMSENSE_SERIAL (= 1 << 0) therefore use 14
             if flags & 14:
-                name += ' '
+                name += b' '
                 if flags & self.GREATER:
-                    name += '>'
+                    name += b'>'
                 elif flags & self.LESS:
-                    name += '<'
+                    name += b'<'
                 if flags & self.EQUAL:
-                    name += '='
-                name += ' %s' % ver
+                    name += b'='
+                name += b' %s' % ver
             res.append(name)
         return res
 
@@ -322,6 +322,8 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         if ver1 == ver2:
             return 0
         res = 0
+        ver1 = decode_it(ver1)
+        ver2 = decode_it(ver2)
         while res == 0:
             # remove all leading non alphanumeric or tilde chars
             ver1 = re.sub('^[^a-zA-Z0-9~]*', '', ver1)
