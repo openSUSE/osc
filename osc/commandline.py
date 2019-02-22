@@ -6299,14 +6299,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
         # check for source services
-        r = None
-        try:
-            if not opts.offline and not opts.noservice:
-                p = Package('.')
-                r = p.run_source_services(verbose=True)
-        except:
-            print("WARNING: package is not existing on server yet")
-            opts.local_package = True
+        if not opts.offline and not opts.noservice:
+            p = Package('.')
+            r = p.run_source_services(verbose=True)
+            if r:
+                print('Source service run failed!', file=sys.stderr)
+                sys.exit(1)
+        else:
+            msg = ('WARNING: source services from package or project will not'
+                   'be executed. This may not be the same build as on server!')
+            print(msg)
 
         if not opts.local_package:
             try:
@@ -6318,15 +6320,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     opts.local_package = True
             except oscerr.NoWorkingCopy:
                 pass
-
-        if opts.offline or opts.local_package or r == None:
-            print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
-        elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
-            if r != 0:
-                print('Source service run failed!', file=sys.stderr)
-                sys.exit(1)
-                # that is currently unreadable on cli, we should not have a backtrace on standard errors:
-                #raise oscerr.ServiceRuntimeError('Service run failed: \'%s\'', r)
 
         if conf.config['no_verify']:
             opts.no_verify = True
