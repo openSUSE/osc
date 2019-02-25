@@ -174,6 +174,11 @@ class Fetcher:
                     print('Unsupported file type: ', tmpfile, file=sys.stderr)
                     sys.exit(1)
                 canonname = pac_obj.binary
+                if canonname is None:
+                    print('Oops! You just downloaded a MirrorBrain metalink, not a real file.', file=sys.stderr)
+                    print('Maybe our server didn\'t redirect well or osc doesn\'t support it', file=sys.stderr)
+                    print('Re-try with \'--download-api-only\' may help.', file=sys.stderr)
+                    sys.exit(1)
 
         fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
