@@ -7510,7 +7510,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # old style, only for OBS 2.1 and before. Should not be used, since it is slow and incomplete
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
-            for r in sorted(requests):
+            for r in sorted(requests, key=lambda x: x.reqid):
                 print(r.list_view(), '\n')
             if not len(requests):
                 print(" -> try also 'osc my sr' to see more.")

@@ -6105,7 +6105,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
         start_offset = offset
         u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
         try:
-            for data in streamfile(u, bufsize="line"):
+            for data in streamfile(u):
                 offset += len(data)
                 print_data(data, strip_time)
         except IncompleteRead as e:
