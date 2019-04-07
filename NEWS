@@ -1,5 +1,32 @@
+0.165
+  -
+
+0.164.2
+  - deleterequest for entire projects needs the --all option as additional protection
+  - rewrite packagequery to support python3
+  - rewrite oscerr module to support python3
+  - rewrite archqeury and debquery to support python3
+  - Export vc env vars when running a source service
+
+0.164.1
+  - rewrite cpio handling to support python3
+  - rewrite ar module to support python3
+  - enable fetch module to support python3
+  - rework progressbar hanlding (if module is not present)
+  - improve os_path_samefile in core.py
+
 0.164
   - add support for approved requests (requires OBS 2.10)
+  - fix various multibuild problems
+  - improved and fixed various help texts
+  - check constraints without local checkout
+  - check out deleted sources (osc co -D)
+  - replace urlgrabber module with own module
+  - use progressbar module instead of urlgrabber to draw
+    progress bars
+  - show buildinfo for alternative projects (--alternative-project)
+  - run release job immediately (osc release --no-delay)
+  - build results on project level can now be watched (osc prjresults --watch)
 
 0.163
   - add sendsysrq command (requires OBS 2.10)

@@ -3,18 +3,25 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-import progressbar as pb
+try:
+    import progressbar as pb
+    have_pb_module = True
+except ImportError:
+    have_pb_module = False
 
 
-class TextMeter(object):
+class PBTextMeter(object):
 
     def start(self, basename, size=None):
         if size is None:
             widgets = [basename + ': ', pb.AnimatedMarker(), ' ', pb.Timer()]
             self.bar = pb.ProgressBar(widgets=widgets, maxval=pb.UnknownLength)
         else:
-            widgets = [basename + ': ', pb.Percentage(), pb.Bar(), ' ',
-                       pb.ETA()]
+            widgets = [basename + ': ', pb.Bar(), ' ', pb.ETA()]
+            if size:
+                # if size is 0, using pb.Percentage will result in
+                # a ZeroDivisionException
+                widgets.insert(1, pb.Percentage())
             self.bar = pb.ProgressBar(widgets=widgets, maxval=size)
         self.bar.start()
 
@@ -24,4 +31,31 @@ class TextMeter(object):
     def end(self):
         self.bar.finish()
 
+
+class NoPBTextMeter(object):
+    _complained = False
+
+    def start(self, basename, size=None):
+        if not self._complained:
+            print('Please install the progressbar module')
+            NoPBTextMeter._complained = True
+        print('Processing: %s' % basename)
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def end(self, *args, **kwargs):
+        pass
+
+
+def create_text_meter(*args, **kwargs):
+    use_pb_fallback = kwargs.pop('use_pb_fallback', True)
+    if have_pb_module or use_pb_fallback:
+        return TextMeter(*args, **kwargs)
+    return None
+
+if have_pb_module:
+    TextMeter = PBTextMeter
+else:
+    TextMeter = NoPBTextMeter
 # vim: sw=4 et

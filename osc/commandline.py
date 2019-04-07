@@ -166,8 +166,8 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            from .meter import TextMeter
-            self.download_progress = TextMeter()
+            from .meter import create_text_meter
+            self.download_progress = create_text_meter()
 
 
     def get_cmd_help(self, cmdname):
@@ -1939,6 +1939,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify message TEXT')
     @cmdln.option('-r', '--repository', metavar='REPOSITORY',
                   help='specify repository')
+    @cmdln.option('--all', action='store_true',
+                        help='deletes entire project with packages inside')
     @cmdln.option('--accept-in-hours', metavar='HOURS',
                   help='specify time when request shall get accepted automatically. Only works with write permissions in target.')
     @cmdln.alias("dr")
@@ -1950,8 +1952,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc deletereq [-m TEXT]                     # works in checked out project/package
-            osc deletereq [-m TEXT] PROJECT [PACKAGE]
-            osc deletereq [-m TEXT] PROJECT [--repository REPOSITORY]
+            osc deletereq [-m TEXT] PROJECT PACKAGE
+            osc deletereq [-m TEXT] PROJECT [--all|--repository REPOSITORY]
         ${cmd_option_list}
         """
         import cgi
@@ -1976,6 +1978,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = store_read_package(os.curdir)
         else:
             raise oscerr.WrongArgs('Please specify at least a project.')
+
+        if not opts.all and package is None:
+            raise oscerr.WrongOptions('No package name has been provided. Use --all option, if you want to request to delete the entire project.')
 
         if opts.repository:
             repository = opts.repository
@@ -5203,8 +5208,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.vertical = None
             opts.show_non_building = None
             opts.show_excluded = None
-            self.do_prjresults('prjresults', opts, *args)
-            return
+            return self.do_prjresults('prjresults', opts, *args)
 
         if opts.xml and opts.csv:
             raise oscerr.WrongOptions("--xml and --csv are mutual exclusive")
@@ -6011,7 +6015,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if (arg == osc.build.hostarch or arg in all_archs) and arg_arch is None:
                         # it seems to be an architecture in general
                         arg_arch = arg
-                        if not (arg in osc.build.can_also_build.get(osc.build.hostarch) or arg == osc.build.hostarch):
+                        if not (arg == osc.build.hostarch or arg in osc.build.can_also_build.get(osc.build.hostarch, [])):
                             print("WARNING: native compile is not possible, an emulator must be configured!")
                     elif not arg_repository:
                         arg_repository = arg
@@ -6287,14 +6291,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
         # check for source services
-        r = None
-        try:
-            if not opts.offline and not opts.noservice:
-                p = Package('.')
-                r = p.run_source_services(verbose=True)
-        except:
-            print("WARNING: package is not existing on server yet")
-            opts.local_package = True
+        if not opts.offline and not opts.noservice:
+            p = Package('.')
+            r = p.run_source_services(verbose=True)
+            if r:
+                print('Source service run failed!', file=sys.stderr)
+                sys.exit(1)
+        else:
+            msg = ('WARNING: source services from package or project will not'
+                   'be executed. This may not be the same build as on server!')
+            print(msg)
 
         if not opts.local_package:
             try:
@@ -6306,15 +6312,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     opts.local_package = True
             except oscerr.NoWorkingCopy:
                 pass
-
-        if opts.offline or opts.local_package or r == None:
-            print("WARNING: source service from package or project will not be executed. This may not be the same build as on server!")
-        elif (conf.config['local_service_run'] and not opts.noservice) and not opts.noinit:
-            if r != 0:
-                print('Source service run failed!', file=sys.stderr)
-                sys.exit(1)
-                # that is currently unreadable on cli, we should not have a backtrace on standard errors:
-                #raise oscerr.ServiceRuntimeError('Service run failed: \'%s\'', r)
 
         if conf.config['no_verify']:
             opts.no_verify = True
@@ -6335,7 +6332,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.preload:
             opts.nopreinstallimage = True
-        
+
         print('Building %s for %s/%s' % (args[2], args[0], args[1]))
         if not opts.host:
             return osc.build.main(self.get_api_url(), opts, args)
@@ -8850,37 +8847,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             apiurl = self.get_api_url()
 
-        # try to set the env variables for the user's realname and email
-        # (the variables are used by the "vc" script)
-        tag2envs = {'realname': ['VC_REALNAME'],
-                    'email': ['VC_MAILADDR', 'mailaddr']}
-        tag2val = {}
-        missing_tags = []
-
-        for (tag, envs) in tag2envs.items():
-            env_present = [env for env in envs if env in os.environ]
-            config_present = tag in conf.config['api_host_options'][apiurl]
-            if not env_present and not config_present:
-                missing_tags.append(tag)
-            elif config_present:
-                tag2val[tag] = conf.config['api_host_options'][apiurl][tag]
-
-        if missing_tags:
-            user = conf.get_apiurl_usr(apiurl)
-            data = get_user_data(apiurl, user, *missing_tags)
-            if data is not None:
-                for tag in missing_tags:
-                    val = data.pop(0)
-                    if val != '-':
-                        tag2val[tag] = val
-                    else:
-                        msg = 'Try env %s=...' % tag2envs[tag][0]
-                        print(msg, file=sys.stderr)
-
-        for (tag, val) in tag2val.items():
-            for env in tag2envs[tag]:
-                os.environ[env] = val
-
         if meego_style:
             if opts.message or opts.just_edit:
                 print('Warning: to edit MeeGo style changelog, opts will be ignored.', file=sys.stderr)
@@ -8899,6 +8865,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             cmd_list.extend(args)
 
+        vc_export_env(apiurl)
         vc = Popen(cmd_list)
         vc.wait()
         sys.exit(vc.returncode)

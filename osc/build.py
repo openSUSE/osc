@@ -33,10 +33,7 @@ except ImportError:
 
 from .conf import config, cookiejar
 
-try:
-    from .meter import TextMeter
-except:
-    TextMeter = None
+from .meter import create_text_meter
 
 change_personality = {
             'i686':  'linux32',
@@ -308,10 +305,9 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
                 print('packagecachedir is not writable for you?', file=sys.stderr)
                 print(e, file=sys.stderr)
                 sys.exit(1)
-        if sys.stdout.isatty() and TextMeter:
-            progress_obj = TextMeter()
-        else:
-            progress_obj = None
+        progress_obj = None
+        if sys.stdout.isatty():
+            progress_obj = create_text_meter(use_pb_fallback=False)
         gr = OscFileGrabber(progress_obj=progress_obj)
         try:
             gr.urlgrab(url, filename=ifile_path_part, text='fetching image')
@@ -502,6 +498,22 @@ def check_trusted_projects(apiurl, projects):
         config['api_host_options'][apiurl]['trusted_prj'] = trusted
         conf.config_set_option(apiurl, 'trusted_prj', ' '.join(trusted))
 
+def get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo):
+    bi = Buildinfo(bi_filename, apiurl, 'kiwi')
+    # If the project does not have a path defined we need to get the config
+    # via the repositories in the kiwi file. Unfortunately the buildinfo
+    # does not include a hint if this is the case, so we rely on a heuristic
+    # here: if the path list contains our own repo, it probably does not
+    # come from the kiwi file and thus a path is defined in the config.
+    # It is unlikely that our own repo is included in the kiwi file, as it
+    # contains no packages.
+    myprp = prj + '/' + repo
+    if myprp in bi.pathes:
+        return None
+    kiwipath = bi.pathes
+    kiwipath.insert(0, myprp)
+    return kiwipath
+                
 def main(apiurl, opts, argv):
 
     repo = argv[0]
@@ -783,8 +795,11 @@ def main(apiurl, opts, argv):
             # maybe we should check for errors before saving the file
             bi_file.write(bi_text)
             bi_file.flush()
+            kiwipath = None
+            if build_type == 'kiwi':
+                kiwipath = get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo)
             print('Getting buildconfig from server and store to %s' % bc_filename)
-            bc = get_buildconfig(apiurl, prj, repo)
+            bc = get_buildconfig(apiurl, prj, repo, kiwipath)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
             bc_file.write(bc)

@@ -42,7 +42,7 @@ class CpioHdr:
     """
     def __init__(self, mgc, ino, mode, uid, gid, nlink, mtime, filesize,
                  dev_maj, dev_min, rdev_maj, rdev_min, namesize, checksum,
-                 off = -1, filename = ''):
+                 off=-1, filename=b''):
         """
         All passed parameters are hexadecimal strings (not NUL terminated) except
         off and filename. They will be converted into normal ints.
@@ -82,7 +82,7 @@ class CpioRead:
 
     # supported formats - use name -> mgc mapping to increase readabilty
     sfmt = {
-             'newascii': '070701',
+             'newascii': b'070701',
            }
 
     # header format
@@ -124,11 +124,10 @@ class CpioRead:
         if not stat.S_ISREG(stat.S_IFMT(hdr.mode)):
             msg = '\'%s\' is no regular file - only regular files are supported atm' % hdr.filename
             raise NotImplementedError(msg)
-        fn = os.path.join(dest, fn)
-        f = open(fn, 'wb')
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
-        f.write(self.__file.read(hdr.filesize))
-        f.close()
+        fn = os.path.join(dest, fn)
+        with open(fn, 'wb') as f:
+            f.write(self.__file.read(hdr.filesize))
         os.chmod(fn, hdr.mode)
         uid = hdr.uid
         if uid != os.geteuid() or os.geteuid() != 1:
@@ -147,16 +146,6 @@ class CpioRead:
     def read(self):
         if not self.__file:
             self.__file = open(self.filename, 'rb')
-            try:
-                if sys.platform[:3] != 'win':
-                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name), prot = mmap.PROT_READ)
-                else:
-                    self.__file = mmap.mmap(self.__file.fileno(), os.path.getsize(self.__file.name))
-            except EnvironmentError as e:
-                if e.errno == 19 or ( hasattr(e, 'winerror') and e.winerror == 5 ):
-                    print('cannot use mmap to read the file, failing back to default', file=sys.stderr)
-                else:
-                    raise e
         else:
             self.__file.seek(0, os.SEEK_SET)
         self._init_datastructs()
@@ -174,7 +163,7 @@ class CpioRead:
             data = struct.unpack(self.hdr_fmt, data)
             hdr = CpioHdr(*data)
             hdr.filename = self.__file.read(hdr.namesize - 1)
-            if hdr.filename == 'TRAILER!!!':
+            if hdr.filename == b'TRAILER!!!':
                 break
             pos += hdr.namesize
             if self._is_format('newascii'):
@@ -210,47 +199,59 @@ class CpioWrite:
     """cpio archive small files in memory, using new style portable header format"""
 
     def __init__(self):
-        self.cpio = ''
+        self.cpio = bytearray()
 
     def add(self, name=None, content=None, perms=0x1a4, type=0x8000):
         namesize = len(name) + 1
         if namesize % 2:
-            name += '\0'
+            name += b'\0'
         filesize = len(content)
         mode = perms | type
 
-        c = []
-        c.append('070701') # magic
-        c.append('%08X' % 0) # inode
-        c.append('%08X' % mode) # mode
-        c.append('%08X' % 0) # uid
-        c.append('%08X' % 0) # gid
-        c.append('%08X' % 0) # nlink
-        c.append('%08X' % 0) # mtime
-        c.append('%08X' % filesize)
-        c.append('%08X' % 0) # major
-        c.append('%08X' % 0) # minor
-        c.append('%08X' % 0) # rmajor
-        c.append('%08X' % 0) # rminor
-        c.append('%08X' % namesize)
-        c.append('%08X' % 0) # checksum
+        c = bytearray()
+        c.extend(b'070701') # magic
+        c.extend(b'%08X' % 0) # inode
+        c.extend(b'%08X' % mode) # mode
+        c.extend(b'%08X' % 0) # uid
+        c.extend(b'%08X' % 0) # gid
+        c.extend(b'%08X' % 0) # nlink
+        c.extend(b'%08X' % 0) # mtime
+        c.extend(b'%08X' % filesize)
+        c.extend(b'%08X' % 0) # major
+        c.extend(b'%08X' % 0) # minor
+        c.extend(b'%08X' % 0) # rmajor
+        c.extend(b'%08X' % 0) # rminor
+        c.extend(b'%08X' % namesize)
+        c.extend(b'%08X' % 0) # checksum
 
-        c.append(name + '\0')
-        c.append('\0' * (len(''.join(c)) % 4))
+        c.extend(name + b'\0')
+        c.extend(b'\0' * (len(c) % 4))
 
-        c.append(content)
+        c.extend(content)
 
-        c = ''.join(c)
         if len(c) % 4:
-            c += '\0' * (4 - len(c) % 4)
+            c.extend(b'\0' * (4 - len(c) % 4))
 
-        self.cpio += c
+        self.cpio.extend(c)
 
     def add_padding(self):
         if len(self.cpio) % 512:
-            self.cpio += '\0' * (512 - len(self.cpio) % 512)
+            self.cpio.extend(b'\0' * (512 - len(self.cpio) % 512))
 
     def get(self):
-        self.add('TRAILER!!!', '')
+        self.add(b'TRAILER!!!', b'')
         self.add_padding()
-        return ''.join(self.cpio)
+        return bytes(self.cpio)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('usage: %s /path/to/file.cpio' % sys.argv[0])
+        sys.exit(1)
+    # a potential user might want to pass a bytes instead of a str
+    # to make sure that the CpioError's file attribute is always a
+    # bytes
+    cpio = CpioRead(sys.argv[1])
+    cpio.read()
+    for hdr in cpio:
+        print(hdr)

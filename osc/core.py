@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 
-__version__ = '0.164.git'
+__version__ = '0.165.git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -247,7 +247,7 @@ buildstatus_symbols = {'succeeded':       '.',
 def os_path_samefile(path1, path2):
     try:
         return os.path.samefile(path1, path2)
-    except:
+    except AttributeError:
         return os.path.realpath(path1) == os.path.realpath(path2)
 
 class File:
@@ -406,6 +406,12 @@ class Serviceinfo:
             data = { 'name' : singleservice, 'command' : [ singleservice ], 'mode' : '' }
             allservices = [data]
 
+        if not allservices:
+            # short-circuit to avoid a potential http request in vc_export_env
+            # (if there are no services to execute this http request is
+            # useless)
+            return 0
+
         # services can detect that they run via osc this way
         os.putenv("OSC_VERSION", get_osc_version())
 
@@ -415,6 +421,8 @@ class Serviceinfo:
             os.putenv("OBS_SERVICE_APIURL",  self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
             os.putenv("OBS_SERVICE_PACKAGE", self.package)
+            # also export vc env vars (some services (like obs_scm) use them)
+            vc_export_env(self.apiurl)
 
         # recreate files
         ret = 0
@@ -2971,7 +2979,7 @@ class Request:
             lines.append('    *** This request will get automatically accepted after '+self.accept_at+' ! ***\n')
         if self.priority in [ 'critical', 'important' ] and self.state.name in [ 'new', 'review' ]:
             lines.append('    *** This request has classified as '+self.priority+' ! ***\n')
-        if self.state.approver and self.state.name == 'review':
+        if self.state and self.state.approver and self.state.name == 'review':
             lines.append('    *** This request got approved by '+self.state.approver+'. It will get automatically accepted after last review got accepted! ***\n')
             
         for action in self.actions:
@@ -4617,8 +4625,8 @@ def get_binary_file(apiurl, prj, repo, arch,
                     progress_meter = False):
     progress_obj = None
     if progress_meter:
-        from .meter import TextMeter
-        progress_obj = TextMeter()
+        from .meter import create_text_meter
+        progress_obj = create_text_meter()
 
     target_filename = target_filename or filename
 
@@ -6097,8 +6105,12 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
     return f.read()
 
 
-def get_buildconfig(apiurl, prj, repository):
-    u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'])
+def get_buildconfig(apiurl, prj, repository, path=None):
+    query = []
+    if path:
+        for prp in path:
+            query.append('path=%s' % quote_plus(prp))
+    u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'], query=query)
     f = http_GET(u)
     return f.read()
 
@@ -7785,5 +7797,38 @@ def checkout_deleted_package(apiurl, proj, pkg, dst):
             for data in streamfile(u):
                 f.write(data)
     print('done.')
+
+def vc_export_env(apiurl, quiet=False):
+        # try to set the env variables for the user's realname and email
+        # (the variables are used by the "vc" script or some source service)
+        tag2envs = {'realname': ['VC_REALNAME'],
+                    'email': ['VC_MAILADDR', 'mailaddr']}
+        tag2val = {}
+        missing_tags = []
+
+        for (tag, envs) in tag2envs.items():
+            env_present = [env for env in envs if env in os.environ]
+            config_present = tag in conf.config['api_host_options'][apiurl]
+            if not env_present and not config_present:
+                missing_tags.append(tag)
+            elif config_present:
+                tag2val[tag] = conf.config['api_host_options'][apiurl][tag]
+
+        if missing_tags:
+            user = conf.get_apiurl_usr(apiurl)
+            data = get_user_data(apiurl, user, *missing_tags)
+            if data is not None:
+                for tag in missing_tags:
+                    val = data.pop(0)
+                    if val != '-':
+                        tag2val[tag] = val
+                    elif not quiet:
+                        msg = 'Try env %s=...' % tag2envs[tag][0]
+                        print(msg, file=sys.stderr)
+
+        for (tag, val) in tag2val.items():
+            for env in tag2envs[tag]:
+                os.environ[env] = val
+
 
 # vim: sw=4 et
