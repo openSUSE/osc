@@ -24,6 +24,7 @@ import errno
 import shlex
 import hashlib
 
+
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
     from urllib.error import HTTPError
@@ -50,6 +51,13 @@ from . import oscerr
 from . import conf
 
 try:
+    from functools import cmp_to_key
+except ImportError:
+    from .util.helper import cmp_to_key
+
+from osc.util.helper import decode_list, decode_it
+
+try:
     # python 2.6 and python 2.7
     unicode
     ET_ENCODING = "utf-8"
@@ -61,6 +69,11 @@ except:
     #as void function as it already gets unicode strings
     unicode = lambda x, *args: x
     ET_ENCODING = "unicode"
+
+def compare(a, b): return cmp(a[1:], b[1:])
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
@@ -331,7 +344,7 @@ class Serviceinfo:
     def addVerifyFile(self, serviceinfo_node, filename):
         import hashlib
 
-        f = open(filename, 'r')
+        f = open(filename, 'rb')
         digest = hashlib.sha256(f.read()).hexdigest()
         f.close()
 
@@ -1849,8 +1862,8 @@ class Package:
         meta = show_package_meta(self.apiurl, self.prjname, self.name)
         if meta != "":
             # is empty for _project for example
-            meta = ''.join(meta)
-            store_write_string(self.absdir, '_meta', meta + '\n')
+            meta = b''.join(meta)
+            store_write_string(self.absdir, '_meta', meta + b'\n')
 
     def findfilebyname(self, n):
         for i in self.filelist:
@@ -2115,7 +2128,7 @@ rev: %s
             argument force supress the confirm question
         """
 
-        m = ''.join(show_package_meta(self.apiurl, self.prjname, self.name))
+        m = b''.join(show_package_meta(self.apiurl, self.prjname, self.name))
 
         root = ET.fromstring(m)
         root.find('title').text = self.summary
@@ -2130,7 +2143,7 @@ rev: %s
 
         if not force:
             print('*' * 36, 'old', '*' * 36)
-            print(m)
+            print(decode_it(m))
             print('*' * 36, 'new', '*' * 36)
             print(ET.tostring(root, encoding=ET_ENCODING))
             print('*' * 72)
@@ -3565,7 +3578,7 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
 
 def show_devel_project(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
-    node = ET.fromstring(''.join(m)).find('devel')
+    node = ET.fromstring(b''.join(m)).find('devel')
     if node is None:
         return None, None
     else:
@@ -3574,7 +3587,7 @@ def show_devel_project(apiurl, prj, pac):
 
 def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None):
     meta = show_package_meta(apiurl, prj, pac)
-    root = ET.fromstring(''.join(meta))
+    root = ET.fromstring(b''.join(meta))
     node = root.find('devel')
     if node is None:
         if devprj is None:
@@ -3647,8 +3660,12 @@ class metafile:
         self.url = url
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
-        f = os.fdopen(fd, 'w')
-        f.write(''.join(input))
+        if not input or isinstance(input[0], str) or isinstance(input, str):
+            f = os.fdopen(fd, 'w')
+            f.write(''.join(input))
+        else:
+            f = os.fdopen(fd, 'wb')
+            f.write(b''.join(input))
         f.close()
         self.hash_orig = dgst(self.filename)
 
@@ -3681,8 +3698,8 @@ class metafile:
                     # examine the error - we can't raise an exception because we might want
                     # to try again
                     data = e.read()
-                    if '<summary>' in data:
-                        print(data.split('<summary>')[1].split('</summary>')[0], file=sys.stderr)
+                    if b'<summary>' in data:
+                        print(data.split(b'<summary>')[1].split(b'</summary>')[0], file=sys.stderr)
                     ri = raw_input('Try again? ([y/N]): ')
                     if ri not in ['y', 'Y']:
                         break
@@ -3799,7 +3816,20 @@ def edit_meta(metatype,
     if metatype == 'pkg':
         # check if the package is a link to a different project
         project, package = path_args
-        orgprj = ET.fromstring(''.join(data)).get('project')
+        # data can be a bytes object, a list with strings, a list with bytes, just a string.
+        # So we need the following even if it is ugly.
+        if sys.version_info >= (3, 0):
+            if isinstance(data, bytes):
+                data = decode_it(data)
+                orgprj = ET.fromstring(''.join(data)).get('project')
+            elif isinstance(data, list):
+                decode_data = decode_list(data)
+                orgprj = ET.fromstring(''.join(decode_data)).get('project')
+            else:
+                orgprj = ET.fromstring(''.join(data)).get('project')
+        else:
+            orgprj = ET.fromstring(''.join(data)).get('project')
+
         if orgprj is not None and unquote(project) != orgprj:
             print('The package is linked from a different project.')
             print('If you want to edit the meta of the package create first a branch.')
@@ -3839,7 +3869,7 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
 
 def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
@@ -3852,7 +3882,7 @@ def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=Fal
 
 def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta, expand=include_service_files)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     if include_service_files:
         return et.get('srcmd5')
 
@@ -3891,7 +3921,7 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
             raise
         if len(packages) == 1:
             raise oscerr.APIError('package name too long: %s' % packages[0])
-        n = len(packages) / 2
+        n = int(len(packages) / 2)
         pkgs = packages[:n]
         res = get_project_sourceinfo(apiurl, project, nofilename, *pkgs)
         pkgs = packages[n:]
@@ -3906,12 +3936,12 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
 
 def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, meta=meta)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     return et.get('rev'), et.get('vrev')
 
 def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
-    et = ET.fromstring(''.join(m))
+    et = ET.fromstring(m)
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
@@ -4012,10 +4042,16 @@ def run_pager(message, tmp_suffix=''):
         return
 
     if not sys.stdout.isatty():
-        print(message)
+        if isinstance(message, str):
+            print(message)
+        else:
+            print(decode_it(message))
     else:
         tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
-        tmpfile.write(message)
+        if isinstance(message, str):
+            tmpfile.write(bytes(message, 'utf-8'))
+        else:
+            tmpfile.write(message)
         tmpfile.flush()
         pager = os.getenv('PAGER', default=get_default_pager())
         cmd = shlex.split(pager) + [tmpfile.name]
@@ -4042,6 +4078,8 @@ def _edit_message_open_editor(filename, data, orig_mtime):
     import tempfile
     editor = _editor_command()
     mtime = os.stat(filename).st_mtime
+    if isinstance(data, str):
+        data = bytes(data, 'utf-8')
     if mtime == orig_mtime:
         # prepare file for editors
         if editor[0] in ('vi', 'vim'):
@@ -4051,7 +4089,7 @@ def _edit_message_open_editor(filename, data, orig_mtime):
                 editor.extend(['-c', ':r %s' % f.name, filename])
                 run_external(editor[0], *editor[1:])
         else:
-            with open(filename, 'w') as f:
+            with open(filename, 'wb') as f:
                 f.write(data)
             orig_mtime = os.stat(filename).st_mtime
             run_editor(filename)
@@ -4543,7 +4581,7 @@ def get_group_meta(apiurl, group):
     u = makeurl(apiurl, ['group', quote_plus(group)])
     try:
         f = http_GET(u)
-        return ''.join(f.readlines())
+        return b''.join(f.readlines())
     except HTTPError:
         print('group \'%s\' not found' % group)
         return None
@@ -4552,7 +4590,7 @@ def get_user_meta(apiurl, user):
     u = makeurl(apiurl, ['person', quote_plus(user)])
     try:
         f = http_GET(u)
-        return ''.join(f.readlines())
+        return b''.join(f.readlines())
     except HTTPError:
         print('user \'%s\' not found' % user)
         return None
@@ -4594,7 +4632,10 @@ def download(url, filename, progress_obj = None, mtime = None):
         try:
             o = os.fdopen(fd, 'wb')
             for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
-                o.write(bytes(buf, "utf-8"))
+                if isinstance(buf, str):
+                    o.write(bytes(buf, "utf-8"))
+                else:
+                    o.write(buf)
             o.close()
             os.rename(tmpfile, filename)
         except:
@@ -4807,7 +4848,7 @@ def server_diff_noex(apiurl,
         msg = None
         body = None
         try:
-            body = e.read()
+            body = decode_it(e.read())
             if not 'bad link' in body:
                 return '# diff failed: ' + body
         except:
@@ -5027,7 +5068,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     only maintainer (unless keep_maintainers is set). Additionally remove the
     develproject entry (<devel />) unless keep_develproject is true.
     """
-    root = ET.fromstring(''.join(pkgmeta))
+    root = ET.fromstring(b''.join(pkgmeta))
     root.set('name', new_name)
     root.set('project', new_prj)
     # never take releasename, it needs to be explicit
@@ -5512,7 +5553,7 @@ def get_distibutions(apiurl, discon=False):
     else:
         result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
         f = http_GET(makeurl(apiurl, ['distributions']))
-        root = ET.fromstring(''.join(f))
+        root = ET.fromstring(b''.join(f))
 
         for node in root.findall('distribution'):
             rmap = {}
@@ -5538,7 +5579,7 @@ def get_platforms_of_project(apiurl, prj):
 
 def get_repositories_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
 
     r = [ node.get('name') for node in root.findall('repository')]
     return r
@@ -5580,7 +5621,7 @@ class Repo:
 
 def get_repos_of_project(apiurl, prj):
     f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
 
     for node in root.findall('repository'):
         for node2 in node.findall('arch'):
@@ -5751,7 +5792,7 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
     while True:
         waiting = False
         try:
-            xml = ''.join(show_results_meta(apiurl, project, package, *args, **kwargs))
+            xml = b''.join(show_results_meta(apiurl, project, package, *args, **kwargs))
         except HTTPError as e:
             # check for simple timeout error and fetch again
             if e.code == 502 or e.code == 504:
@@ -5792,7 +5833,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     r = []
 
     f = show_prj_results_meta(apiurl, prj)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
 
     pacs = []
     # sequence of (repo,arch) tuples
@@ -5972,7 +6013,6 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-
 def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=None, text=None):
     """
     performs http_meth on url and read bufsize bytes from the response
@@ -6032,8 +6072,12 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 
 def buildlog_strip_time(data):
     """Strips the leading build time from the log"""
-    time_regex = re.compile('^\[[^\]]*\] ', re.M)
-    return time_regex.sub('', data)
+    if isinstance(data, str):
+        time_regex = re.compile('^\[[^\]]*\] ', re.M)
+        return time_regex.sub('', data)
+    else:
+        time_regex = re.compile(b'^\[[^\]]*\] ', re.M)
+        return time_regex.sub(b'', data)
 
 
 def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False):
@@ -6042,11 +6086,14 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        sys.stdout.write(data.translate(all_bytes, remove_bytes))
+        sys.stdout.write(decode_it(data.translate(all_bytes, remove_bytes)))
 
     # to protect us against control characters
     import string
-    all_bytes = string.maketrans('', '')
+    if sys.version_info >= (3, 0):
+        all_bytes = bytes.maketrans(b'', b'')
+    else:
+        all_bytes = string.maketrans(b'', b'')
     remove_bytes = all_bytes[:8] + all_bytes[14:32] # accept tabs and newlines
 
     query = {'nostream' : '1', 'start' : '%s' % offset}
@@ -6058,7 +6105,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
         start_offset = offset
         u = makeurl(apiurl, ['build', prj, repository, arch, package, '_log'], query=query)
         try:
-            for data in streamfile(u, bufsize="line"):
+            for data in streamfile(u):
                 offset += len(data)
                 print_data(data, strip_time)
         except IncompleteRead as e:
@@ -6119,7 +6166,7 @@ def get_worker_info(apiurl, worker):
     u = makeurl(apiurl, ['worker', worker])
     f = http_GET(u)
 
-    return f.read()
+    return decode_it(f.read())
 
 
 def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=None):
@@ -6130,7 +6177,7 @@ def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=No
     query['arch'] = arch
     u = makeurl(apiurl, ['worker'], query)
     f = http_POST(u, data=constraintsfile)
-    root = ET.fromstring(''.join(f))
+    root = ET.fromstring(b''.join(f))
     return [node.get('name') for node in root.findall('entry')]
 
 
@@ -6271,7 +6318,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
         try:
             comment = node.find('comment').text.encode(locale.getpreferredencoding(), 'replace')
         except:
-            comment = '<no message>'
+            comment = b'<no message>'
         try:
             requestid = node.find('requestid').text.encode(locale.getpreferredencoding(), 'replace')
         except:
@@ -6294,10 +6341,10 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('</logentry>')
         else:
             if requestid:
-                requestid = "rq" + requestid
+                requestid = decode_it((b"rq" + requestid))
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
-                '\n' + comment
+                '\n' + decode_it(comment)
             r.append(s)
 
     if format not in ['csv', 'xml']:
@@ -6431,6 +6478,8 @@ def store_write_string(dir, file, string, subdir=''):
     fname = os.path.join(dir, store, subdir, file)
     try:
         f = open(fname + '.new', 'w')
+        if not isinstance(string, str):
+            string = decode_it(string)
         f.write(string)
         f.close()
         os.rename(fname + '.new', fname)
@@ -6809,7 +6858,11 @@ def is_rpm(f):
     except:
         return False
 
-    if h == '\xed\xab\xee\xdb':
+    if isinstance(h, str):
+        isrpmstr = '\xed\xab\xee\xdb'
+    else:
+        isrpmstr = b'\xed\xab\xee\xdb'
+    if h == isrpmstr:
         return True
     else:
         return False
@@ -6825,7 +6878,8 @@ def is_srcrpm(f):
     except:
         return False
 
-    if h[7] == '\x01':
+    issrcrpm = bytes(bytearray([h[7]])).decode('utf-8')
+    if issrcrpm == '\x01':
         return True
     else:
         return False
@@ -6847,7 +6901,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
                        create_new=False)
 
     if data and get_user_meta(apiurl, user) != None:
-        root = ET.fromstring(''.join(data))
+        root = ET.fromstring(b''.join(data))
         found = False
         for person in root.getiterator('person'):
             if person.get('userid') == user and person.get('role') == role:
@@ -7025,7 +7079,7 @@ def addDownloadUrlService(url):
 
     # for pretty output
     xmlindent(s)
-    f = open(service_file, 'wb')
+    f = open(service_file, 'w')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
@@ -7047,7 +7101,7 @@ def addDownloadUrlService(url):
 
     # for pretty output
     xmlindent(s)
-    f = open(service_file, 'wb')
+    f = open(service_file, 'w')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
 
@@ -7208,7 +7262,7 @@ def get_commit_msg(wc_dir, pacs):
     footer = []
     lines = []
     for p in pacs:
-        states = sorted(p.get_status(False, ' ', '?'), lambda x, y: cmp(x[1], y[1]))
+        states = sorted(p.get_status(False, ' ', '?'), key=cmp_to_key(compare))
         changed = [statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))) for st, filename in states]
         if changed:
             footer += changed
@@ -7287,7 +7341,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             except (ValueError, IndexError):
                 print('Invalid rpmlintlog index. Please choose between 0 and %i' % (len(lintlogs)-1))
         try:
-            print(get_rpmlint_log(apiurl, **lintlogs[lint_n]))
+            print(decode_it(get_rpmlint_log(apiurl, **lintlogs[lint_n])))
         except HTTPError as e:
             if e.code == 404:
                 print('No rpmlintlog for %s %s' % (lintlogs[lint_n]['repo'],
@@ -7363,12 +7417,12 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
-                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff')
+                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff', mode='r+')
                     tmpfile.write(req_summary)
                     tmpfile.write(issues)
                     try:
                         diff = request_diff(apiurl, request.reqid)
-                        tmpfile.write(diff)
+                        tmpfile.write(decode_it(diff))
                     except HTTPError as e:
                         if e.code != 400:
                             raise

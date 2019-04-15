@@ -29,6 +29,11 @@ from optparse import SUPPRESS_HELP
 from .core import *
 from .util import safewriter
 
+try:
+    from functools import cmp_to_key
+except ImportError:
+    from .util.helper import cmp_to_key
+
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
 %(name)s \- openSUSE build service command-line tool.
@@ -435,7 +440,8 @@ class Osc(cmdln.Cmdln):
                         break
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
-                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
+                    root = ET.fromstring(m)
+                    li.read(root.find('linkinfo'))
                     if li.haserror():
                         raise oscerr.LinkExpandError(project, package, li.error)
                     project, package, rev = li.project, li.package, li.rev
@@ -753,7 +759,7 @@ class Osc(cmdln.Cmdln):
                 buf = f.read(16384)
                 if not buf:
                     break
-                sys.stdout.write(buf)
+                sys.stdout.write(decode_it(buf))
 
         elif opts.delete:
             print("Delete token")
@@ -773,7 +779,7 @@ class Osc(cmdln.Cmdln):
                 raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
             # just list token
             for data in streamfile(url, http_GET):
-                sys.stdout.write(data)
+                sys.stdout.write(decode_it(data))
 
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
@@ -938,22 +944,22 @@ class Osc(cmdln.Cmdln):
         # show
         if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
             if cmd == 'prj':
-                sys.stdout.write(''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame)))
+                sys.stdout.write(decode_it(b''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame))))
             elif cmd == 'pkg':
-                sys.stdout.write(''.join(show_package_meta(apiurl, project, package, blame=opts.blame)))
+                sys.stdout.write(decode_it(b''.join(show_package_meta(apiurl, project, package, blame=opts.blame))))
             elif cmd == 'attribute':
-                sys.stdout.write(''.join(show_attribute_meta(apiurl, project, package, subpackage,
-                                         opts.attribute, opts.attribute_defaults, opts.attribute_project)))
+                sys.stdout.write(decode_it(b''.join(show_attribute_meta(apiurl, project, package, subpackage,
+                                         opts.attribute, opts.attribute_defaults, opts.attribute_project))))
             elif cmd == 'prjconf':
-                sys.stdout.write(''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame)))
+                sys.stdout.write(decode_it(b''.join(show_project_conf(apiurl, project, rev=opts.revision, blame=opts.blame))))
             elif cmd == 'user':
                 r = get_user_meta(apiurl, user)
                 if r:
-                    sys.stdout.write(''.join(r))
+                    sys.stdout.write(decode_it(r))
             elif cmd == 'group':
                 r = get_group_meta(apiurl, group)
                 if r:
-                    sys.stdout.write(''.join(r))
+                    sys.stdout.write(decode_it(r))
             elif cmd == 'pattern':
                 if pattern:
                     r = show_pattern_meta(apiurl, project, pattern)
@@ -1390,9 +1396,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.diff or not opts.message:
             try:
                 rdiff = 'old: %s/%s\nnew: %s/%s rev %s\n' % (dst_project, dst_package, src_project, src_package, rev)
-                rdiff += server_diff(apiurl,
+                rdiff += decode_it(server_diff(apiurl,
                                     dst_project, dst_package, None,
-                                    src_project, src_package, rev, True)
+                                    src_project, src_package, rev, True))
             except:
                 rdiff = ''
 
@@ -2483,7 +2489,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             action.tgt_project, action.tgt_package)
                         diff += submit_action_diff(apiurl, action)
                         diff += '\n\n'
-                run_pager(diff, tmp_suffix='')
+                run_pager(decode_it(diff), tmp_suffix='')
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
@@ -2983,7 +2989,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print(r)
+        print(decode_it(r))
 
 
     @cmdln.option('-r', '--repo', metavar='REPO',
@@ -3495,7 +3501,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         devloc = None
         if not exists and (srcprj != args[0] or srcpkg != args[1]):
             try:
-                root = ET.fromstring(''.join(show_attribute_meta(apiurl, args[0], None, None,
+                root = ET.fromstring(b''.join(show_attribute_meta(apiurl, args[0], None, None,
                     conf.config['maintained_update_project_attribute'], False, False)))
                 # this might raise an AttributeError
                 uproject = root.find('attribute').find('value').text
@@ -3649,7 +3655,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             kind = 'pkg'
             path_args = (project, package)
         meta = meta_exists(kind, path_args, create_new=False, apiurl=apiurl)
-        root = ET.fromstring(''.join(meta))
+        root = ET.fromstring(b''.join(meta))
         if root.find('lock') is not None:
             print('Already locked', file=sys.stderr)
             sys.exit(1)
@@ -3854,9 +3860,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for i in pac.get_diff(rev1):
                     diff += ''.join(i)
             else:
-                diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
+                diff += decode_it(server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                     pac.prjname, pac.name, rev2,
-                                    not opts.plain, opts.missingok, opts.meta, not opts.unexpand)
+                                    not opts.plain, opts.missingok, opts.meta, not opts.unexpand))
         run_pager(diff)
 
 
@@ -4135,12 +4141,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  close_fds=True)
-            p.stdin.write(rdiff.encode())
+            p.stdin.write(rdiff)
             p.stdin.close()
-            print("".join(x.decode() for x in p.stdout.readlines()))
+            print("".join(decode_it(x) for x in p.stdout.readlines()))
         elif opts.unified:
             print()
-            print(rdiff)
+            print(decode_it(rdiff))
             #run_pager(rdiff)
 
     def _prdiff_output_matching_requests(self, opts, requests,
@@ -4285,7 +4291,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        root = ET.fromstring(''.join(show_configuration(apiurl)))
+        root = ET.fromstring(b''.join(show_configuration(apiurl)))
         elm = root.find('download_url')
         if elm is None or not elm.text:
             raise oscerr.APIError('download_url configuration element expected')
@@ -4530,7 +4536,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # don't exclude packages with state ' ' because the packages
                 # might have modified etc. files
                 prj_excl = [st for st in excl_states if st != ' ']
-                for st, pac in sorted(prj.get_status(*prj_excl), lambda x, y: cmp(x[1], y[1])):
+                for st, pac in sorted(prj.get_status(*prj_excl), key=cmp_to_key(compare)):
                     p = prj.get_pacobj(pac)
                     if p is None:
                         # state is != ' '
@@ -4541,11 +4547,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     elif st == ' ' and opts.verbose or st != ' ':
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(prj.dir, pac))))
                     states = p.get_status(opts.show_excluded, *excl_states)
-                    for st, filename in sorted(states, lambda x, y: cmp(x[1], y[1])):
+                    for st, filename in sorted(states, key=cmp_to_key(compare)):
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
             else:
                 p = findpacs([arg])[0]
-                for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), lambda x, y: cmp(x[1], y[1])):
+                for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), key=cmp_to_key(compare)):
                     lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
         if lines:
             print('\n'.join(lines))
@@ -5227,7 +5233,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             del kwargs['showexcl']
             for xml in get_package_results(**kwargs):
                 if opts.xml:
-                    print(xml, end='')
+                    print(decode_it(xml), end='')
                 else:
                     # csv formatting
                     results = [r for r, _ in result_xml_to_dicts(xml)]
@@ -5290,7 +5296,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 kwargs['arch'] = opts.arch
             kwargs['wait'] = opts.watch
             for results in get_package_results(apiurl, project, **kwargs):
-                print(results)
+                print(decode_it(results))
             return
 
         if opts.watch:
@@ -5345,7 +5351,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('please provide project package repository arch.')
 
-        print(get_rpmlint_log(apiurl, project, package, repository, arch))
+        print(decode_it(get_rpmlint_log(apiurl, project, package, repository, arch)))
 
     @cmdln.alias('bl')
     @cmdln.alias('blt')
@@ -5791,7 +5797,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         build_descr_data = None
         if not build_descr is None:
-            build_descr_data = open(build_descr, 'r').read()
+            build_descr_data = open(build_descr, 'rb').read()
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
@@ -5802,13 +5808,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch,
                                           os.path.splitext(build_descr)[1],
                                           cpiodata)
-            cpiodata.add(os.path.basename(build_descr), build_descr_data)
+            cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
             build_descr_data = cpiodata.get()
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        print(''.join(get_buildinfo(apiurl,
+        print(decode_it(get_buildinfo(apiurl,
                                     project, package, repository, arch,
                                     specfile=build_descr_data,
                                     debug=opts.debug,
@@ -5855,7 +5861,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
-        print(''.join(get_buildconfig(apiurl, project, repository)))
+        print(decode_it(get_buildconfig(apiurl, project, repository)))
 
 
     def do_workerinfo(self, subcmd, opts, worker):
@@ -6097,6 +6103,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 recipe = recipe.strip()
                 if recipe == 'arch':
                     recipe = 'PKGBUILD'
+                recipe = decode_it(recipe)
                 pac = os.path.basename(os.getcwd())
                 if is_package_dir(os.getcwd()):
                     pac = store_read_package(os.getcwd())
@@ -7280,7 +7287,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     package = pac,
                                     target_filename = fname,
                                     target_mtime = i.mtime,
-                                    progress_meter = not opts.quiet)
+                                    progress_meter = opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
@@ -7366,7 +7373,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             what = {'project': ''}
         elif type in args_sr:
             requests = get_request_collection(apiurl, 'creator', req_who=user)
-            for r in sorted(requests):
+            for r in sorted(requests, key=lambda x: x.reqid):
                 print(r.list_view(), '\n')
             return
         elif not type in args_pkg:
@@ -7495,7 +7502,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if list_requests:
             # old style, only for OBS 2.1 and before. Should not be used, since it is slow and incomplete
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
-            for r in sorted(requests):
+            for r in sorted(requests, key=lambda x: x.reqid):
                 print(r.list_view(), '\n')
             if not len(requests):
                 print(" -> try also 'osc my sr' to see more.")
@@ -7734,8 +7741,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
             # construct a sorted, flat list
             # Sort by first column, follwed by second column if we have two columns, else sort by first.
-            results.sort(lambda x, y: ( cmp(x[0], y[0]) or
-                                       (len(x)>1 and len(y)>1 and cmp(x[1], y[1])) ))
+            # results.sort(lambda x, y: ( cmp(x[0], y[0]) or
+            #                           (len(x)>1 and len(y)>1 and cmp(x[1], y[1])) ))
+            results.sort(key=cmp_to_key(compare))
             new = []
             for i in results:
                 new.extend(i)
@@ -7955,7 +7963,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          data=opts.data,
                          file=opts.file,
                          headers=opts.headers)
-        out = r.read()
+        out = decode_it(r.read())
 
         if opts.edit:
             text = edit_text(out)
@@ -7963,7 +7971,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          url,
                          data=text,
                          headers=opts.headers)
-            out = r.read()
+            out = decode_it(r.read())
 
         sys.stdout.write(out)
 
@@ -8177,7 +8185,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
-                metaroot = ET.fromstring(''.join(m))
+                metaroot = ET.fromstring(b''.join(m))
                 if not opts.nodevelproject:
                     while metaroot.findall('devel'):
                         d = metaroot.find('devel')
@@ -8186,18 +8194,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if opts.verbose:
                             print("Following to the development space: %s/%s" % (prj, pac))
                         m = show_package_meta(apiurl, prj, pac)
-                        metaroot = ET.fromstring(''.join(m))
+                        metaroot = ET.fromstring(b''.join(m))
                     if not metaroot.findall('person') and not metaroot.findall('group'):
                         if opts.verbose:
                             print("No dedicated persons in package defined, showing the project persons.")
                         pac = None
                         m = show_project_meta(apiurl, prj)
-                        metaroot = ET.fromstring(''.join(m))
+                        metaroot = ET.fromstring(b''.join(m))
             else:
                 # fallback to project lookup for old servers
                 if prj and not searchresult:
                     m = show_project_meta(apiurl, prj)
-                    metaroot = ET.fromstring(''.join(m))
+                    metaroot = ET.fromstring(b''.join(m))
 
             # extract the maintainers
             projects = []
@@ -8358,10 +8366,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(apiurl, ['source', project, package, filename], query=query)
         if subcmd == 'less':
             f = http_GET(u)
-            run_pager(''.join(f.readlines()))
+            run_pager(b''.join(f.readlines()))
         else:
             for data in streamfile(u):
-                sys.stdout.write(data)
+                if isinstance(data, str):
+                    sys.stdout.write(data)
+                else:
+                    sys.stdout.write(decode_it(data))
 
 
     # helper function to download a file from a specific revision
@@ -8457,7 +8468,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
         meta = f.readlines()
-        root_new = ET.fromstring(''.join(meta))
+        root_new = ET.fromstring(b''.join(meta))
         dir_new = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_new['srcmd5'] = root_new.get('srcmd5')
         dir_new['entries'] = [[n.get('name'), n.get('md5')] for n in root_new.findall('entry')]
@@ -8501,7 +8512,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         os.mkdir(destdir)
 
         Package.init_package(apiurl, target_prj, target_package, destdir)
-        store_write_string(destdir, '_files', ''.join(meta) + '\n')
+        store_write_string(destdir, '_files', b''.join(meta) + b'\n')
         store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)
 
@@ -8610,7 +8621,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(p.apiurl, ['source', p.prjname, p.name], query=query)
         f = http_GET(u)
         meta = f.readlines()
-        root_new = ET.fromstring(''.join(meta))
+        root_new = ET.fromstring(b''.join(meta))
         linkinfo_new = root_new.find('linkinfo')
         if linkinfo_new == None:
             raise oscerr.APIError('link is not a really a link?')
@@ -8783,7 +8794,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             buf = f.read(16384)
             if not buf:
                 break
-            sys.stdout.write(buf)
+            sys.stdout.write(decode_it(buf))
 
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (do not open an editor)')
@@ -8823,7 +8834,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             import glob, re
             try:
                 fn_changelog = glob.glob('*.changes')[0]
-                fp = file(fn_changelog)
+                fp = open(fn_changelog)
                 titleline = fp.readline()
                 fp.close()
                 if re.match('^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
