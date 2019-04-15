@@ -13,6 +13,7 @@ import sys
 import signal
 import traceback
 
+from osc import commandline
 from osc import oscerr
 from .oscssl import CertVerificationError
 from osc.util.cpio import CpioError
@@ -183,5 +184,30 @@ def run(prg, argv=None):
     except oscerr.OscBaseError as e:
         print('*** Error:', e, file=sys.stderr)
     return 1
+
+
+def main():
+    # avoid buffering output on pipes (bnc#930137) Basically,
+    # a "print('foo')" call is translated to a corresponding
+    # fwrite call that writes to the stdout stream (cf.
+    # string_print (Objects/stringobject.c) and builtin_print
+    # (Python/bltinmodule.c)); If no pipe is used, stdout is
+    # a tty/refers to a terminal => the stream is line buffered
+    # (see _IO_file_doallocate (libio/filedoalloc.c)). If a pipe
+    # is used, stdout does not refer to a terminal anymore => the
+    # stream is fully buffered by default (see
+    # _IO_file_doallocate). The following fdopen call makes
+    # stdout line buffered again (at least on systems that
+    # support setvbuf - if setvbuf is not supported, the stream
+    # remains fully buffered (see PyFile_SetBufSize
+    # (Objects/fileobject.c))).
+    if not os.isatty(sys.stdout.fileno()):
+        sys.stdout = os.fdopen(sys.stdout.fileno(), sys.stdout.mode, 1)
+        sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
+
+    if not os.isatty(sys.stderr.fileno()):
+        sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
+
+    sys.exit(run(commandline.Osc()))
 
 # vim: sw=4 et

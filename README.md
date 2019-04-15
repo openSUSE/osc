@@ -21,8 +21,6 @@ To install from git, do
 
     ./setup.py build
     ./setup.py install
-    # create a symlink `osc` in your path pointing to osc-wrapper.py.
-    ln -s osc-wrapper.py /usr/local/bin/osc
 
 Alternatively, you can directly use `./osc-wrapper.py` from the source directory,
 which is easier if you develop on osc.
