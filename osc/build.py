@@ -23,6 +23,7 @@ from osc.fetch import *
 from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
 from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from osc.util import rpmquery, debquery, archquery
+from osc.util.helper import decode_it
 import osc.conf
 from . import oscerr
 import subprocess
@@ -440,11 +441,11 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
-    prefer_pkgs = dict((name, packageQuery.path())
+    prefer_pkgs = dict((decode_it(name), packageQuery.path())
                        for name, packageQuery in packageQueries.items())
 
     depfile = create_deps(packageQueries.values())
-    cpio.add('deps', '\n'.join(depfile))
+    cpio.add(b'deps', b'\n'.join(depfile))
     return prefer_pkgs
 
 
@@ -455,22 +456,22 @@ def create_deps(pkgqs):
     """
     depfile = []
     for p in pkgqs:
-        id = '%s.%s-0/0/0: ' % (p.name(), p.arch())
-        depfile.append('P:%s%s' % (id, ' '.join(p.provides())))
-        depfile.append('R:%s%s' % (id, ' '.join(p.requires())))
+        id = b'%s.%s-0/0/0: ' % (p.name(), p.arch())
+        depfile.append(b'P:%s%s' % (id, b' '.join(p.provides())))
+        depfile.append(b'R:%s%s' % (id, b' '.join(p.requires())))
         d = p.conflicts()
         if d:
-            depfile.append('C:%s%s' % (id, ' '.join(d)))
+            depfile.append(b'C:%s%s' % (id, b' '.join(d)))
         d = p.obsoletes()
         if d:
-            depfile.append('O:%s%s' % (id, ' '.join(d)))
+            depfile.append(b'O:%s%s' % (id, b' '.join(d)))
         d = p.recommends()
         if d:
-            depfile.append('r:%s%s' % (id, ' '.join(d)))
+            depfile.append(b'r:%s%s' % (id, b' '.join(d)))
         d = p.supplements()
         if d:
-            depfile.append('s:%s%s' % (id, ' '.join(d)))
-        depfile.append('I:%s%s-%s 0-%s' % (id, p.name(), p.evr(), p.arch()))
+            depfile.append(b's:%s%s' % (id, b' '.join(d)))
+        depfile.append(b'I:%s%s-%s 0-%s' % (id, p.name(), p.evr().encode(), p.arch()))
     return depfile
 
 
@@ -513,7 +514,7 @@ def get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo):
     kiwipath = bi.pathes
     kiwipath.insert(0, myprp)
     return kiwipath
-                
+
 def main(apiurl, opts, argv):
 
     repo = argv[0]
@@ -677,24 +678,24 @@ def main(apiurl, opts, argv):
         extra_pkgs += xp
 
     prefer_pkgs = {}
-    build_descr_data = open(build_descr).read()
+    build_descr_data = open(build_descr, 'rb').read()
 
     # XXX: dirty hack but there's no api to provide custom defines
     if opts.without:
         s = ''
         for i in opts.without:
             s += "%%define _without_%s 1\n" % i
-        build_descr_data = s + build_descr_data
+        build_descr_data = s.encode() + build_descr_data
     if opts._with:
         s = ''
         for i in opts._with:
             s += "%%define _with_%s 1\n" % i
-        build_descr_data = s + build_descr_data
+        build_descr_data = s.encode() + build_descr_data
     if opts.define:
         s = ''
         for i in opts.define:
             s += "%%define %s\n" % i
-        build_descr_data = s + build_descr_data
+        build_descr_data = s.encode + build_descr_data
 
     cpiodata = None
     servicefile = os.path.join(os.path.dirname(build_descr), "_service")
@@ -724,12 +725,12 @@ def main(apiurl, opts, argv):
         prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type, cpiodata)
 
     if cpiodata:
-        cpiodata.add(os.path.basename(build_descr), build_descr_data)
+        cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
         # buildenv must come last for compatibility reasons...
         if buildenvfile:
-            cpiodata.add("buildenv", open(buildenvfile).read())
+            cpiodata.add(b"buildenv", open(buildenvfile, 'rb').read())
         if servicefile:
-            cpiodata.add("_service", open(servicefile).read())
+            cpiodata.add(b"_service", open(servicefile, 'rb').read())
         build_descr_data = cpiodata.get()
 
     # special handling for overlay and rsync-src/dest
@@ -783,13 +784,14 @@ def main(apiurl, opts, argv):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
             print('Getting buildinfo from server and store to %s' % bi_filename)
-            bi_text = ''.join(get_buildinfo(apiurl,
-                                            prj,
-                                            pac,
-                                            repo,
-                                            arch,
-                                            specfile=build_descr_data,
-                                            addlist=extra_pkgs))
+
+            bi_text = decode_it(get_buildinfo(apiurl,
+                                    prj,
+                                    pac,
+                                    repo,
+                                    arch,
+                                    specfile=build_descr_data,
+                                    addlist=extra_pkgs))
             if not bi_file:
                 bi_file = open(bi_filename, 'w')
             # maybe we should check for errors before saving the file
@@ -802,7 +804,7 @@ def main(apiurl, opts, argv):
             bc = get_buildconfig(apiurl, prj, repo, kiwipath)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
-            bc_file.write(bc)
+            bc_file.write(decode_it(bc))
             bc_file.flush()
     except HTTPError as e:
         if e.code == 404:
@@ -833,7 +835,7 @@ def main(apiurl, opts, argv):
     # Set default binary type if cannot be detected
     binary_type = 'rpm'
     if os.path.exists('/usr/lib/build/queryconfig'):
-        binary_type = return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype').decode('utf-8').strip()
+        binary_type = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype')).strip()
     # If binary type is set to a useless value, reset to 'rpm'
     if binary_type == 'UNDEFINED':
         binary_type = 'rpm'
@@ -1161,7 +1163,7 @@ def main(apiurl, opts, argv):
         if bi.installonly_list:
             rpmlist.append('installonly: ' + ' '.join(bi.installonly_list) + '\n')
 
-    rpmlist_file = NamedTemporaryFile(prefix='rpmlist.')
+    rpmlist_file = NamedTemporaryFile(mode='w+t', prefix='rpmlist.')
     rpmlist_filename = rpmlist_file.name
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
@@ -1261,13 +1263,13 @@ def main(apiurl, opts, argv):
         (s_built, b_built) = get_built_files(pacdir, bi.buildtype)
 
         print()
-        if s_built: print(s_built)
+        if s_built: print(decode_it(s_built))
         print()
-        print(b_built)
+        print(decode_it(b_built))
 
         if opts.keep_pkgs:
             for i in b_built.splitlines() + s_built.splitlines():
-                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(i)))
+                shutil.copy2(i, os.path.join(opts.keep_pkgs, os.path.basename(decode_it(i))))
 
     if bi_file:
         bi_file.close()
