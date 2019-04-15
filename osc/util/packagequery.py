@@ -1,5 +1,6 @@
 
 from __future__ import print_function
+from osc.util.helper import decode_it
 
 class PackageError(Exception):
     """base class for all package related errors"""
@@ -30,11 +31,11 @@ class PackageQueries(dict):
         self.__setitem__(query.name(), query)
 
     def __setitem__(self, name, query):
-        if name != query.name():
+        if decode_it(name) != decode_it(query.name()):
             raise ValueError("key '%s' does not match "
                              "package query name '%s'" % (name, query.name()))
 
-        architecture = query.arch()
+        architecture = decode_it(query.arch())
 
         if (architecture in [self.wanted_architecture, 'noarch', 'all', 'any']
             or self.wanted_architecture in self.architectureMap.get(architecture,
@@ -149,10 +150,10 @@ class PackageQueryResult:
         raise NotImplementedError
 
     def evr(self):
-        evr = self.version()
+        evr = decode_it(self.version())
 
         if self.release():
-            evr += "-" + self.release()
+            evr += "-" + decode_it(self.release())
 
         epoch = self.epoch()
         if epoch is not None and epoch != 0:
