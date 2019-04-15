@@ -23,6 +23,7 @@ from . import oscerr
 import tempfile
 import re
 
+from osc.util.helper import decode_it
 from .meter import create_text_meter
 
 class Fetcher:
@@ -77,16 +78,16 @@ class Fetcher:
                         raise oscerr.APIError('CPIO archive is incomplete '
                                               '(see .errors file)')
                     if package == '_repository':
-                        n = re.sub(r'\.pkg\.tar\..z$', '.arch', hdr.filename)
-                        if n.startswith('container:'):
-                            n = re.sub(r'\.tar\..z$', '.tar', hdr.filename)
-                            pac = pkgs[n.rsplit('.', 1)[0]]
+                        n = re.sub(rb'\.pkg\.tar\..z$', b'.arch', hdr.filename)
+                        if n.startswith(b'container:'):
+                            n = re.sub(rb'\.tar\..z$', b'.tar', hdr.filename)
+                            pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
                             pac.canonname = hdr.filename
                         else:
-                            pac = pkgs[n.rsplit('.', 1)[0]]
+                            pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
                     else:
                         # this is a kiwi product
-                        pac = pkgs[hdr.filename]
+                        pac = pkgs[decode_it(hdr.filename)]
 
                     # Extract a single file from the cpio archive
                     try:
