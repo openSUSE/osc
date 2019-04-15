@@ -229,9 +229,9 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     @staticmethod
     def filename(name, epoch, version, release, arch):
         if release:
-            return b'%s_%s-%s_%s.deb' % (name, version, release, arch)
+            return '%s_%s-%s_%s.deb' % (name, version, release, arch)
         else:
-            return b'%s_%s_%s.deb' % (name, version, arch)
+            return '%s_%s_%s.deb' % (name, version, arch)
 
 if __name__ == '__main__':
     import sys
