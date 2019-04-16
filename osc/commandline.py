@@ -34,6 +34,8 @@ try:
 except ImportError:
     from .util.helper import cmp_to_key
 
+from operator import itemgetter
+
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
 %(name)s \- openSUSE build service command-line tool.
@@ -7741,11 +7743,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 continue
             # construct a sorted, flat list
             # Sort by first column, follwed by second column if we have two columns, else sort by first.
-            # results.sort(lambda x, y: ( cmp(x[0], y[0]) or
-            #                           (len(x)>1 and len(y)>1 and cmp(x[1], y[1])) ))
-            results.sort(key=cmp_to_key(compare))
+            if len(results[0]) > 1:
+                sorted_results = sorted(results, key=itemgetter(0,1))
+            else:
+                sorted_results = sorted(results, key=itemgetter(0))
             new = []
-            for i in results:
+            for i in sorted_results:
                 new.extend(i)
             results = new
             headline = []
