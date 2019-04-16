@@ -1032,7 +1032,7 @@ class Osc(cmdln.Cmdln):
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
             url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
-                sys.stdout.write(data)
+                sys.stdout.write(decode_it(data))
 
         # upload file
         if opts.file:
