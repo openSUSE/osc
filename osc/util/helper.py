@@ -61,5 +61,9 @@ def decode_it(obj):
             import chardet
             return obj.decode(chardet.detect(obj)['encoding'])
         except:
-            import locale
-            return obj.decode(locale.getlocale()[1])
+            try:
+                import locale
+                return obj.decode(locale.getlocale()[1])
+            except:
+                return obj.decode('latin-1')
+            
