@@ -7058,7 +7058,7 @@ def addGitSource(url):
 
     # for pretty output
     xmlindent(s)
-    f = open(service_file, 'wb')
+    f = open(service_file, 'w')
     f.write(ET.tostring(s, encoding=ET_ENCODING))
     f.close()
     if addfile:
