@@ -5077,6 +5077,8 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
     if not keep_maintainers:
         for person in root.findall('person'):
             root.remove(person)
+        for group in root.findall('group'):
+            root.remove(group)
     if not keep_develproject:
         for dp in root.findall('devel'):
             root.remove(dp)
