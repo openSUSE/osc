@@ -1,5 +1,5 @@
-0.166.0
-  -
+0.165.1
+  - fix oscssl "urldefrag is not defined error"
 
 0.165.0
   - full python3 compatibility
