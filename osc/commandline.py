@@ -3058,7 +3058,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             buf = f.read(16384)
             if not buf:
                 break
-            sys.stdout.write(buf)
+            sys.stdout.write(decode_it(buf))
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
