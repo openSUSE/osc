@@ -13,12 +13,12 @@ import sys
 import inspect
 
 try:
-    from urllib.parse import urlparse, splithost, splitport, splittype
+    from urllib.parse import urlparse, splithost, splitport, splittype, urldefrag
     from urllib.request import addinfourl
     from http.client import HTTPSConnection
 except ImportError:
     #python 2.x
-    from urlparse import urlparse
+    from urlparse import urlparse, urldefrag
     from urllib import addinfourl, splithost, splitport, splittype
     from httplib import HTTPSConnection
 
