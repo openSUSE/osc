@@ -562,7 +562,9 @@ def _build_opener(apiurl):
             handlers.append(HTTPSHandler(context=ctx))
         except AttributeError:
             pass
-        print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
+        scheme, host, path = parse_apisrv_url(config.get('scheme', 'https'), apiurl)
+        if scheme != 'http':
+            print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
         opener = build_opener(*handlers)
     opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
     _build_opener.last_opener = (apiurl, opener)
