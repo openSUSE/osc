@@ -6330,7 +6330,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
 
         if format == 'csv':
             s = '%s|%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version,
-                comment.replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'), requestid)
+                decode_it(comment).replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'), requestid)
             r.append(s)
         elif format == 'xml':
             r.append('<logentry')
@@ -6339,7 +6339,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('<date>%s</date>' % t)
             r.append('<requestid>%s</requestid>' % requestid)
             r.append('<msg>%s</msg>' %
-                comment.replace('&', '&amp;').replace('<', '&gt;').replace('>', '&lt;'))
+                decode_it(comment).replace('&', '&amp;').replace('<', '&gt;').replace('>', '&lt;'))
             r.append('</logentry>')
         else:
             if requestid:
