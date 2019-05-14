@@ -7144,10 +7144,11 @@ def addFiles(filenames, prj_obj = None):
         todo = [os.path.join(p, elm)
                 for p, dirnames, fnames in os.walk(filename, followlinks=False)
                 for elm in dirnames + fnames]
+        enc_todo = [b'%s' % elem.encode() for elem in todo]
         with open(archive, 'w') as f:
             cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc', '-0'],
                                          stdin=subprocess.PIPE, stdout=f)
-            cpio_proc.communicate('\0'.join(todo))
+            cpio_proc.communicate(b'\0'.join(enc_todo))
         pacs.extend(findpacs([archive]))
 
     for pac in pacs:
