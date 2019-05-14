@@ -6234,6 +6234,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='trust packages from all projects')
     @cmdln.option('--nopreinstallimage', '--no-preinstallimage', action='store_true',
                   help='Do not use preinstall images for creating the build root.')
+    @cmdln.alias('localbuild')
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
@@ -6267,6 +6268,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc build [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
             osc build [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
 
+        localbuild allows to build a source with being part of any existing project:
+            osc localbuild [OPTS] PROJECT REPOSITORY ARCH BUILD_DESCR
+            osc localbuild [OPTS] PROJECT REPOSITORY ARCH
+            osc localbuild [OPTS] PROJECT REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
+
         # Note:
         # Configuration can be overridden by envvars, e.g.
         # OSC_SU_WRAPPER overrides the setting of su-wrapper.
@@ -6285,6 +6291,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.debuginfo and opts.disable_debuginfo:
             raise oscerr.WrongOptions('osc: --debuginfo and --disable-debuginfo are mutual exclusive')
+
+        if subcmd == 'localbuild':
+            opts.noservice = True
+            opts.alternative_project = args[0]
+            args = args[1:]
+            if len(args) < 1:
+                raise oscerr.WrongArgs('locabuild needs at least a project and repository name')
 
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')

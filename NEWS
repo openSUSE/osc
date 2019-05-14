@@ -1,3 +1,6 @@
+0.166.0
+  - new localbuild command: convinience mapper for building just a local source
+
 0.165.1
   - fix oscssl "urldefrag is not defined error"
 
