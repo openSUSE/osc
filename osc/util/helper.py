@@ -66,4 +66,23 @@ def decode_it(obj):
                 return obj.decode(locale.getlocale()[1])
             except:
                 return obj.decode('latin-1')
-            
+
+def compat_diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
+               fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n'):
+
+    import difflib
+
+    def decode(s):
+        return s.decode('ascii', 'surrogateescape')
+
+    a = list(map(decode, a))
+    b = list(map(decode, b))
+    fromfile = decode(fromfile)
+    tofile = decode(tofile)
+    fromfiledate = decode(fromfiledate)
+    tofiledate = decode(tofiledate)
+    lineterm = decode(lineterm)
+
+    lines = dfunc(a, b, fromfile, tofile, fromfiledate, tofiledate, n, lineterm)
+    for line in lines:
+        yield line.encode('ascii', 'surrogateescape')

@@ -4763,12 +4763,24 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
         return ['Binary file \'%s\' has changed.\n' % origfilename]
 
     f1 = f2 = None
+    mode = 'rt'
+    py3 = compat_mode = None
+    if sys.version_info >= (3, 0):
+        py3 = True
+        mode = 'rb'
+        if sys.version_info < (3, 5):
+            compat_mode = True
+            from osc.util.helper import compat_diff_bytes
+            diff_module = compat_diff_bytes
+        else:
+            diff_module = difflib.diff_bytes
+
     try:
-        f1 = open(file1, 'rt')
+        f1 = open(file1, mode)
         s1 = f1.readlines()
         f1.close()
 
-        f2 = open(file2, 'rt')
+        f2 = open(file2, mode)
         s2 = f2.readlines()
         f2.close()
     finally:
@@ -4777,23 +4789,38 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
         if f2:
             f2.close()
 
-    d = difflib.unified_diff(s1, s2,
-        fromfile = '%s\t(revision %s)' % (origfilename, rev), \
-        tofile = '%s\t(working copy)' % origfilename)
+    if py3:
+        # This is ugly, but needs to be done to support Python 3.3 and 3.4
+        # Python 3.3 and Python 3.4 does not appear to support % byte operator
+        # so it needs to be byte concated
+        if compat_mode:
+            from_file = b'' + origfilename.encode() + b'\t(revision ' + str(rev).encode() + b')'
+            to_file = b'' + origfilename.encode() + b'\t(working copy)'
+        else:
+            from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
+            to_file = b'%s\t(working copy)' % origfilename.encode()
+        d = diff_module(difflib.unified_diff, s1, s2,
+            fromfile = from_file, \
+            tofile = to_file)
+    else:
+        d = difflib.unified_diff(s1, s2,
+            fromfile = '%s\t(revision %s)' % (origfilename, rev), \
+            tofile = '%s\t(working copy)' % origfilename)
     d = list(d)
     # python2.7's difflib slightly changed the format
     # adapt old format to the new format
+
     if len(d) > 1:
-        d[0] = d[0].replace(' \n', '\n')
-        d[1] = d[1].replace(' \n', '\n')
+        d[0] = d[0].replace(b' \n', b'\n')
+        d[1] = d[1].replace(b' \n', b'\n')
 
     # if file doesn't end with newline, we need to append one in the diff result
     for i, line in enumerate(d):
-        if not line.endswith('\n'):
-            d[i] += '\n\\ No newline at end of file'
+        if not line.endswith(b'\n'):
+            d[i] += b'\n\\ No newline at end of file'
             if i+1 != len(d):
-                d[i] += '\n'
-    return d
+                d[i] += b'\n'
+    return decode_list(d)
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
