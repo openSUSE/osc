@@ -7289,7 +7289,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     package = pac,
                                     target_filename = fname,
                                     target_mtime = i.mtime,
-                                    progress_meter = opts.quiet)
+                                    progress_meter = not opts.quiet)
 
 
     @cmdln.option('-b', '--bugowner', action='store_true',
