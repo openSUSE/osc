@@ -1,5 +1,10 @@
 0.165.1
   - fix oscssl "urldefrag is not defined error"
+  - osc release command now python3 compatible
+  - add more decode logic in get_commitlog
+  - osc add <dir> in compressed mode now works with python3
+  - osc getbinaries now prints the output instead of
+    using the quiet mode as a default
 
 0.165.0
   - full python3 compatibility
