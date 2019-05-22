@@ -1102,7 +1102,7 @@ class Osc(cmdln.Cmdln):
                 attributepath.append(opts.attribute)
                 u = makeurl(apiurl, attributepath)
                 for data in streamfile(u, http_DELETE):
-                    sys.stdout.write(data)
+                    sys.stdout.write(decode_it(data))
             else:
                 raise oscerr.WrongOptions('The --delete switch is only for pattern metadata or attributes.')
 
