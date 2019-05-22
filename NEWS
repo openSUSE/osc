@@ -1,3 +1,6 @@
+0.165.2
+  -
+
 0.165.1
   - fix oscssl "urldefrag is not defined error"
   - osc release command now python3 compatible
