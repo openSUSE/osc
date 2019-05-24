@@ -2148,7 +2148,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         "checkout" will checkout the request's source package ("submit" requests only).
 
-        "priorize" change the prioritity of a request to either "critical", "important", "moderate" or "low"
+        "prioritize" change the priority of a request to either "critical", "important", "moderate" or "low"
 
 
         The 'review' command has the following sub commands:
@@ -2177,7 +2177,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request setincident [-m TEXT] ID INCIDENT
             osc request supersede [-m TEXT] ID SUPERSEDING_ID
             osc request approvenew [-m TEXT] PROJECT
-            osc request priorize [-m TEXT] ID PRIORITY
+            osc request prioritize [-m TEXT] ID PRIORITY
 
             osc request checkout/co ID
             osc request clone [-m TEXT] ID
@@ -2218,7 +2218,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return self.do_help(['help', 'request'])
 
         cmds = ['list', 'ls', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approve', 'cancelapproval',
-                'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co', 'priorize']
+                'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co', 'priorize', 'prioritize']
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0], ', '.join(cmds)))
@@ -2236,7 +2236,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if cmd in ['list']:
             min_args, max_args = 0, 2
-        elif cmd in ['supersede', 'setincident', 'priorize']:
+        elif cmd in ['supersede', 'setincident', 'prioritize', 'priorize']:
             min_args, max_args = 2, 2
         else:
             min_args, max_args = 1, 1
@@ -2275,7 +2275,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd == 'setincident':
             reqid = args[0]
             incident = args[1]
-        elif cmd == 'priorize':
+        elif cmd in ['prioritize', 'priorize']:
             reqid = args[0]
             priority = args[1]
         elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout',
@@ -2302,7 +2302,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(ET.parse(r).getroot().get('code'))
 
         # change priority
-        elif cmd == 'priorize':
+        elif cmd in ['prioritize', 'priorize']:
             query = { 'cmd': 'setpriority', 'priority': priority }
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
