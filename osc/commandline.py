@@ -6092,16 +6092,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.WrongArgs("Repository is missing. Cannot guess build description without repository")
                 apiurl = self.get_api_url()
                 project = store_read_project('.')
-                bc = get_buildconfig(apiurl, project, arg_repository)
-                with tempfile.NamedTemporaryFile() as f:
-                    f.write(bc)
-                    f.flush()
-                    # some distros like Debian rename and move build to obs-build
-                    if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
-                        queryconfig = '/usr/lib/obs-build/queryconfig'
+                # some distros like Debian rename and move build to obs-build
+                if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
+                    queryconfig = '/usr/lib/obs-build/queryconfig'
+                else:
+                    queryconfig = '/usr/lib/build/queryconfig'
+                if noinit:
+                    bc_filename = '_buildconfig-%s-%s' % (arg_repository, arg_arch)
+                    if is_package_dir('.'):
+                        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
                     else:
-                        queryconfig = '/usr/lib/build/queryconfig'
-                    recipe = return_external(queryconfig, '--dist', f.name, 'type')
+                        bc_filename = os.path.abspath(bc_filename)
+                    if not os.path.isfile(bc_filename):
+                        raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
+                    recipe = return_external(queryconfig, '--dist', bc_filename, 'type')
+                else:
+                    bc = get_buildconfig(apiurl, project, arg_repository)
+                    with tempfile.NamedTemporaryFile() as f:
+                        f.write(bc)
+                        f.flush()
+                        recipe = return_external(queryconfig, '--dist', f.name, 'type')
                 recipe = recipe.strip()
                 if recipe == 'arch':
                     recipe = 'PKGBUILD'
