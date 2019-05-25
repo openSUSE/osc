@@ -695,7 +695,7 @@ def main(apiurl, opts, argv):
         s = ''
         for i in opts.define:
             s += "%%define %s\n" % i
-        build_descr_data = s.encode + build_descr_data
+        build_descr_data = s.encode() + build_descr_data
 
     cpiodata = None
     servicefile = os.path.join(os.path.dirname(build_descr), "_service")
