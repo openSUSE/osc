@@ -4538,12 +4538,17 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
         return True, reqs
     repl = ''
     if reqs:
-        print('There are already the following submit request: %s.' % \
-              ', '.join([i.reqid for i in reqs]))
-        repl = raw_input('Supersede the old requests? (y/n/c) ')
+        open_request_string = "The following submit request is already open:"
+        supersede_request_string = "Supersede the old request?"
+        if len(reqs) > 1:
+            open_request_string = "The following submit requests are already open:"
+            supersede_request_string = "Supersede the old requests?"
+        print('%s %s.' % \
+              (open_request_string, ', '.join([i.reqid for i in reqs])))
+        repl = raw_input('%s (y/n/c) ' % supersede_request_string)
         while repl.lower() not in ['c', 'y', 'n']:
             print('%s is not a valid option.' % repl)
-            repl = raw_input('Supersede the old requests? (y/n/c) ')
+            repl = raw_input('%s (y/n/c) ' % supersede_request_string)
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
@@ -4561,12 +4566,17 @@ def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_p
         return True, reqs
     repl = ''
     if reqs:
-        print('There are already the following maintenance incident request: %s.' % \
-              ', '.join([i.reqid for i in reqs]))
-        repl = raw_input('Supersede the old requests? (y/n/c) ')
+        open_request_string = "The following maintenance incident request is already open:"
+        supersede_request_string = "Supersede the old request?"
+        if len(reqs) > 1:
+            open_request_string = "The following maintenance incident requests are already open:"
+            supersede_request_string = "Supersede the old requests?"
+        print('%s %s.' % \
+              (open_request_string, ', '.join([i.reqid for i in reqs])))
+        repl = raw_input('%s (y/n/c) ' % supersede_request_string)
         while repl.lower() not in ['c', 'y', 'n']:
             print('%s is not a valid option.' % repl)
-            repl = raw_input('Supersede the old requests? (y/n/c) ')
+            repl = raw_input('%s (y/n/c) ' % supersede_request_string)
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
