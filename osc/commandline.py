@@ -775,7 +775,7 @@ class Osc(cmdln.Cmdln):
             req.add_header('Content-Type', 'application/octet-stream')
             req.add_header('Authorization', "Token "+opts.trigger)
             fd = urlopen(req, data=None)
-            print(fd.read())
+            print(decode_it(fd.read()))
         else:
             if args and args[0] in ['create', 'delete', 'trigger']:
                 raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
