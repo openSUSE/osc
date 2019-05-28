@@ -3697,9 +3697,9 @@ class metafile:
                     print('BuildService API error:', error_help, file=sys.stderr)
                     # examine the error - we can't raise an exception because we might want
                     # to try again
-                    data = e.read()
-                    if b'<summary>' in data:
-                        print(data.split(b'<summary>')[1].split(b'</summary>')[0], file=sys.stderr)
+                    data = decode_it(e.read())
+                    if '<summary>' in data:
+                        print(data.split('<summary>')[1].split('</summary>')[0], file=sys.stderr)
                     ri = raw_input('Try again? ([y/N]): ')
                     if ri not in ['y', 'Y']:
                         break
