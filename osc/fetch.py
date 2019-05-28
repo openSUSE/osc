@@ -176,7 +176,7 @@ class Fetcher:
                     sys.exit(1)
                 canonname = pac_obj.binary
 
-        fullfilename = os.path.join(destdir, canonname)
+        fullfilename = os.path.join(destdir, decode_it(canonname))
         if pac_obj is not None:
             pac_obj.canonname = canonname
             pac_obj.fullfilename = fullfilename
