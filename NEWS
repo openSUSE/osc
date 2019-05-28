@@ -1,5 +1,5 @@
-0.165.2
-  -
+0.166
+  - support different token operations (runservice, release and rebuild) (requires OBS 2.10)
 
 0.165.1
   - fix oscssl "urldefrag is not defined error"
