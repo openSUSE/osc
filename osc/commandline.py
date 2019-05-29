@@ -462,8 +462,8 @@ class Osc(cmdln.Cmdln):
     def do_addcontainers(self, subcmd, opts, *args):
         """${cmd_name}: Add maintained containers for a give package
 
-        The command adds all containers which are marked as maitained and contain
-        an rpm out of the specified source package.
+        The command adds all containers which are marked as maintained and contain
+        an rpm originating from the specified source package.
 
         Examples:
             osc addcontainers [PROJECT PACKAGE]
@@ -1151,7 +1151,7 @@ class Osc(cmdln.Cmdln):
         [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration for information
         on this topic.]
 
-        See the "request" command for showing and modifing existing requests.
+        See the "request" command for showing and modifying existing requests.
 
         usage:
             osc submitreq [OPTIONS]
@@ -1672,7 +1672,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 (project, package, user, role)
 
         if get_user_meta(apiurl, user) == None:
-            raise oscerr.WrongArgs('osc: an error occured.')
+            raise oscerr.WrongArgs('osc: an error occurred.')
 
         return actionxml
 
@@ -1743,7 +1743,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <group name="%s" /> </action> """ % \
                     (project, package, group)
             if get_group_meta(apiurl, group) == None:
-                raise oscerr.WrongArgs('osc: an error occured.')
+                raise oscerr.WrongArgs('osc: an error occurred.')
         else:
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <person name="%s" /> </action> """ % \
                     (project, package, user)
@@ -2031,7 +2031,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration
         for information on this topic.]
 
-        See the "request" command for showing and modifing existing requests.
+        See the "request" command for showing and modifying existing requests.
 
         osc changedevelrequest PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
         """
@@ -2106,7 +2106,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-i', '--interactive', action='store_true',
                         help='interactive review of request')
     @cmdln.option('--or-revoke', action='store_true',
-                        help='For automatisation scripts: accepts (if using with accept argument) a request when it is in new or review state. Or revoke it when it got declined. Otherwise just do nothing.')
+                        help='For automation scripts: accepts (if using with accept argument) a request when it is in new or review state. Or revoke it when it got declined. Otherwise just do nothing.')
     @cmdln.option('--non-interactive', action='store_true',
                         help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
@@ -2156,7 +2156,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         "checkout" will checkout the request's source package ("submit" requests only).
 
-        "priorize" change the prioritity of a request to either "critical", "important", "moderate" or "low"
+        "prioritize" change the priority of a request to either "critical", "important", "moderate" or "low"
 
 
         The 'review' command has the following sub commands:
@@ -2185,7 +2185,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc request setincident [-m TEXT] ID INCIDENT
             osc request supersede [-m TEXT] ID SUPERSEDING_ID
             osc request approvenew [-m TEXT] PROJECT
-            osc request priorize [-m TEXT] ID PRIORITY
+            osc request prioritize [-m TEXT] ID PRIORITY
 
             osc request checkout/co ID
             osc request clone [-m TEXT] ID
@@ -2226,7 +2226,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return self.do_help(['help', 'request'])
 
         cmds = ['list', 'ls', 'log', 'show', 'decline', 'reopen', 'clone', 'accept', 'approve', 'cancelapproval',
-                'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co', 'priorize']
+                'approvenew', 'wipe', 'setincident', 'supersede', 'revoke', 'checkout', 'co', 'priorize', 'prioritize']
         if subcmd != 'review' and args[0] not in cmds:
             raise oscerr.WrongArgs('Unknown request action %s. Choose one of %s.' \
                                                % (args[0], ', '.join(cmds)))
@@ -2244,7 +2244,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if cmd in ['list']:
             min_args, max_args = 0, 2
-        elif cmd in ['supersede', 'setincident', 'priorize']:
+        elif cmd in ['supersede', 'setincident', 'prioritize', 'priorize']:
             min_args, max_args = 2, 2
         else:
             min_args, max_args = 1, 1
@@ -2283,7 +2283,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif cmd == 'setincident':
             reqid = args[0]
             incident = args[1]
-        elif cmd == 'priorize':
+        elif cmd in ['prioritize', 'priorize']:
             reqid = args[0]
             priority = args[1]
         elif cmd in ['log', 'add', 'show', 'decline', 'reopen', 'clone', 'accept', 'wipe', 'revoke', 'checkout',
@@ -2310,7 +2310,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(ET.parse(r).getroot().get('code'))
 
         # change priority
-        elif cmd == 'priorize':
+        elif cmd in ['prioritize', 'priorize']:
             query = { 'cmd': 'setpriority', 'priority': priority }
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
@@ -2632,7 +2632,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         change_request_state(apiurl, req.reqid, 'superseded',
                                                              'superseded by %s' % rid, rid)
 
-    # editmeta and its aliases are all depracated
+    # editmeta and its aliases are all deprecated
     @cmdln.alias("editprj")
     @cmdln.alias("createprj")
     @cmdln.alias("editpac")
@@ -3077,7 +3077,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
          for information on this topic.]
 
-        This command is used by the maintence team to start the release process of a maintenance update.
+        This command is used by the maintenance team to start the release process of a maintenance update.
         This includes usually testing based on the defined reviewers of the update project.
 
         usage:
@@ -3123,7 +3123,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
-        This command is asking to open an empty maintence incident. This can usually only be done by a responsible
+        This command is asking to open an empty maintenance incident. This can usually only be done by a responsible
         maintenance team.
         Please see the "mbranch" command on how to full such a project content and
         the "patchinfo" command how add the required maintenance update information.
@@ -3195,7 +3195,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
-        This command is asking the maintence team to start a maintence incident based on a
+        This command is asking the maintenance team to start a maintenance incident based on a
         created maintenance update. Please see the "mbranch" command on how to create such a project and
         the "patchinfo" command how add the required maintenance update information.
 
@@ -3841,9 +3841,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             baserev = linkinfo.get('baserev')
             opts.revision = baserev
             if pacs:
-                print("diff working copy against last commited version\n")
+                print("diff working copy against last committed version\n")
             else:
-                print("diff commited package against linked revision %s\n" % baserev)
+                print("diff committed package against linked revision %s\n" % baserev)
                 run_pager(server_diff(self.get_api_url(), linkinfo.get('project'), linkinfo.get('package'), baserev,
                   args[0], args[1], linkinfo.get('lsrcmd5'), not opts.plain, opts.missingok))
                 return
@@ -4197,7 +4197,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_prdiff(self, subcmd, opts, *args):
         """${cmd_name}: Server-side diff of two projects
 
-        Compares two projects and either summarises or outputs the
+        Compares two projects and either summarizes or outputs the
         differences in full.  In the second form, a project is compared
         with one of its branches inside a home:$USER project (the branch
         is treated as NEWPRJ).  The home branch is optional if the current
@@ -5613,7 +5613,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Trigger reasons might be:
           - new build (never build yet or rebuild manually forced)
-          - source change (eg. on updating sources)
+          - source change (e.g. on updating sources)
           - meta change (packages which are used for building have changed)
           - rebuild count sync (In case that it is configured to sync release numbers)
 
@@ -5764,7 +5764,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         The arguments REPOSITORY and ARCH are optional. They can be taken from
         the first two columns of the 'osc repos' output. If not specified,
-        REPOSITORY defaults to the 'build_repositoy' config entry in your 'oscrc'
+        REPOSITORY defaults to the 'build_repository' config entry in your 'oscrc'
         and ARCH defaults to your host architecture.
 
         usage:
@@ -6262,7 +6262,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output. BUILD_DESCR is either a RPM spec file, or a
         Debian dsc file.
 
-        The command honours packagecachedir, build-root and build-uid
+        The command honors packagecachedir, build-root and build-uid
         settings in oscrc, if present. You may want to set su-wrapper = 'sudo'
         in oscrc, and configure sudo with option NOPASSWD for /usr/bin/build.
 
@@ -7208,7 +7208,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc getbinaries REPOSITORY                                 # works in checked out project/package (check out all archs in subdirs)
            osc getbinaries REPOSITORY ARCHITECTURE                    # works in checked out project/package
-           osc getbinaries PROJECT REPOSITORY ARCHITECTRUE
+           osc getbinaries PROJECT REPOSITORY ARCHITECTURE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE FILE
         ${cmd_option_list}
@@ -8762,10 +8762,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         to sign the public key with your own existing key.
 
         If a project has no key, the key from upper level project will
-        be used (eg. when dropping "KDE:KDE4:Community" key, the one from
+        be used (e.g. when dropping "KDE:KDE4:Community" key, the one from
         "KDE:KDE4" will be used).
 
-        WARNING: THE OLD KEY WILL NOT BE RESTORABLE WHEN USING DELETE OR CREATE
+        WARNING: THE OLD KEY CANNOT BE RESTORED AFTER USING DELETE OR CREATE
 
         ${cmd_usage}
         ${cmd_option_list}
