@@ -3660,12 +3660,19 @@ class metafile:
         self.url = url
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
-        if not input or isinstance(input[0], str) or isinstance(input, str):
-            f = os.fdopen(fd, 'w')
-            f.write(''.join(input))
+
+        open_mode = 'w'
+        input_as_str = None
+
+        if not isinstance(input, list):
+            input = [input]
+        if isinstance(input[0], str):
+            input_as_str = ''.join(input)
         else:
-            f = os.fdopen(fd, 'wb')
-            f.write(b''.join(input))
+            open_mode = 'wb'
+            input_as_str = b''.join(input)
+        f = os.fdopen(fd, open_mode)
+        f.write(input_as_str)
         f.close()
         self.hash_orig = dgst(self.filename)
 
