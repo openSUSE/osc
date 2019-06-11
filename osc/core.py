@@ -6977,7 +6977,7 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
         group=user.replace('group:', '')
         user=None
     if data:
-        root = ET.fromstring(''.join(data))
+        root = ET.fromstring(b''.join(data))
         for group_element in root.getiterator('group'):
             if  group_element.get('role') == "bugowner":
                 root.remove(group_element)
