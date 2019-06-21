@@ -5591,9 +5591,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         logfile = os.path.join(buildroot, '.build.log')
         if not os.path.isfile(logfile):
             raise oscerr.OscIOError(None, 'logfile \'%s\' does not exist' % logfile)
-        f = open(logfile, 'r')
+        f = open(logfile, 'rb')
         f.seek(offset)
         data = f.read(BUFSIZE)
+        data = decode_it(data)
         while len(data):
             if opts.strip_time or conf.config['buildlog_strip_time']:
                 data = buildlog_strip_time(data)
