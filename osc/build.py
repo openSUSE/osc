@@ -376,7 +376,7 @@ def get_built_files(pacdir, buildtype):
         s_built = ''
     elif buildtype == 'simpleimage':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'SIMPLEIMAGE'),
-                                    '-type', '-f'],
+                                    '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
     else:
