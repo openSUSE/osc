@@ -374,6 +374,11 @@ def get_built_files(pacdir, buildtype):
                                     '-name', '*.AppImage'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'simpleimage':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'SIMPLEIMAGE'),
+                                    '-type', '-f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -538,13 +543,15 @@ def main(apiurl, opts, argv):
         build_type = 'appimage'
     if os.path.basename(build_descr) == 'snapcraft.yaml':
         build_type = 'snapcraft'
+    if os.path.basename(build_descr) == 'simpleimage':
+        build_type = 'simpleimage'
     if os.path.basename(build_descr) == 'Dockerfile':
         build_type = 'docker'
     if os.path.basename(build_descr) == 'fissile.yml':
         build_type = 'fissile'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'simpleimage', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, appimage.yml, snapcraft.yaml or Dockerfile' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, snapcraft.yaml or Dockerfile' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
