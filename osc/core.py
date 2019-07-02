@@ -3666,7 +3666,7 @@ class metafile:
 
         if not isinstance(input, list):
             input = [input]
-        if isinstance(input[0], str):
+        if input and isinstance(input[0], str):
             input_as_str = ''.join(input)
         else:
             open_mode = 'wb'
