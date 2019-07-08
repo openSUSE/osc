@@ -1,5 +1,14 @@
-0.166
+0.165.2
   - support different token operations (runservice, release and rebuild) (requires OBS 2.10)
+  - fix osc token decode error
+  - offline build mode is now really offline and does not try to download the buildconfig
+  - osc build -define now works with python3
+  - some spelling fixes
+  - properly parse the error message on osc meta -e
+  - osc maintainer -s now works with python3
+  - simplified and fixed osc meta -e 
+  - osc lbl now works with non utf8 encoding
+  - add simpleimage as local build type 
 
 0.165.1
   - fix oscssl "urldefrag is not defined error"
