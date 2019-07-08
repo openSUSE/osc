@@ -1,3 +1,6 @@
+0.165.3
+  -
+
 0.165.2
   - support different token operations (runservice, release and rebuild) (requires OBS 2.10)
   - fix osc token decode error
