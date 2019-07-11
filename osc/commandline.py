@@ -393,6 +393,10 @@ class Osc(cmdln.Cmdln):
                     for f in result[1]:
                         if f.size is None and f.mtime is None:
                             print("%9s %12s %-40s" % ('unknown', 'unknown', f.name))
+                        elif f.size is None and f.mtime is not None:
+                            print("%9s %s %-40s" % ('unknown', shorttime(f.mtime), f.name))
+                        elif f.size is not None and f.mtime is None:
+                            print("%9d %12s %-40s" % (f.size, 'unknown', f.name))
                         else:
                             print("%9d %s %-40s" % (f.size, shorttime(f.mtime), f.name))
                 else:
