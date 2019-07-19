@@ -7993,7 +7993,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          data=opts.data,
                          file=opts.file,
                          headers=opts.headers)
-        out = decode_it(r.read())
+        out = r.read()
 
         if opts.edit:
             text = edit_text(out)
@@ -8001,9 +8001,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          url,
                          data=text,
                          headers=opts.headers)
-            out = decode_it(r.read())
+            out = r.read()
 
-        sys.stdout.write(out)
+        if isinstance(out, str):
+            sys.stdout.write(out)
+        else:
+            sys.stdout.buffer.write(out)
 
 
     @cmdln.option('-b', '--bugowner-only', action='store_true',
