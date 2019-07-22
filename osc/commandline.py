@@ -3182,6 +3182,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='specify message TEXT')
     @cmdln.option('--release-project', metavar='RELEASEPROJECT',
                         help='Specify the release project')
+    @cmdln.option('--enforce-branching', action='store_true',
+                  help='submit from a fresh branched project')
     @cmdln.option('--no-cleanup', action='store_true',
                   help='do not remove source project on accept')
     @cmdln.option('--cleanup', action='store_true',
@@ -3283,7 +3285,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                  target_project,
                                                                  None) # unspecified release project
 
-        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message)
+        r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message, opts.enforce_branching)
         print(r.reqid)
 
         if supersede_existing:

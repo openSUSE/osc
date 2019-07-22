@@ -1,4 +1,5 @@
-0.165.3
+0.166.0
+  - allow optional fork when creating a maintenance request
   -
 
 0.165.2
