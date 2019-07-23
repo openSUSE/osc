@@ -2426,7 +2426,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for action in result.actions:
                     if action.type == 'group' or not opts.target_package_filter:
                         continue
-                    if not filter_pattern.match(action.tgt_package):
+                    if action.tgt_package is not None and not filter_pattern.match(action.tgt_package):
                         filtered = True
                         break
                 if not filtered:
