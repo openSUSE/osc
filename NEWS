@@ -1,3 +1,6 @@
+0.166
+  -
+
 0.165.3
   - switch to difflib.diff_bytes and sys.stdout.buffer.write for diffing.
     This will fix all decoding issues with osc diff, osc ci and osc rq -d
