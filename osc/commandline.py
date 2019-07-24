@@ -1292,12 +1292,18 @@ class Osc(cmdln.Cmdln):
                     s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
                         (project, p, target_project, p, options_block)
                     actionxml += s
-
             if actionxml != "":
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
                       (actionxml, cgi.escape(opts.message or ""))
-                u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
-                f = http_POST(u, data=xml)
+                try:
+                    u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
+                    f = http_POST(u, data=xml)
+                except HTTPError as e:
+                    if e.code == 400:
+                        body = e.read()
+                        if b'missing_action' in body:
+                            print('At least one of the packages in this SR does not have a change.\nYou can use osc prdiff <yourprj> <targetprj> to check the packages.')
+                            sys.exit() 
 
                 root = ET.parse(f).getroot()
                 sr_ids.append(root.get('id'))
