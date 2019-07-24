@@ -1,5 +1,7 @@
 0.165.3
-  -
+  - fix osc ls -lb handling empty size and mtime
+  - removed decoding on osc api command.
+  - fixed broken TLS certificate handling (boo#1142518, CVE-2019-3685)
 
 0.165.2
   - support different token operations (runservice, release and rebuild) (requires OBS 2.10)
