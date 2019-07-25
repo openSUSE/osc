@@ -3049,11 +3049,13 @@ class Request:
     def __cmp__(self, other):
         return cmp(int(self.reqid), int(other.reqid))
 
-    def create(self, apiurl, addrevision=False):
+    def create(self, apiurl, addrevision=False, enforce_branching=False):
         """create a new request"""
         query = {'cmd'    : 'create' }
         if addrevision:
             query['addrevision'] = "1"
+        if enforce_branching:
+            query['enforce_branching'] = "1"
         u = makeurl(apiurl, ['request'], query=query)
         f = http_POST(u, data=self.to_str())
         root = ET.fromstring(f.read())
@@ -4179,7 +4181,7 @@ def create_release_request(apiurl, src_project, message=''):
     return r
 
 # create a maintenance incident per request
-def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message=''):
+def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False):
     import cgi
     r = Request()
     if src_packages:
@@ -4189,7 +4191,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
     r.description = cgi.escape(unicode(message, 'utf8'))
-    r.create(apiurl, addrevision=True)
+    r.create(apiurl, addrevision=True, enforce_branching=enforce_branching)
     return r
 
 def create_submit_request(apiurl,

@@ -1,5 +1,5 @@
-0.166
-  -
+0.166.0
+  - allow optional fork when creating a maintenance request
 
 0.165.3
   - switch to difflib.diff_bytes and sys.stdout.buffer.write for diffing.
