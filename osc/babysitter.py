@@ -30,7 +30,8 @@ try:
     from rpm import error as RPMError
 except:
     # if rpm-python isn't installed (we might be on a debian system):
-    RPMError = None
+    class RPMError(Exception):
+        pass
 
 try:
     from http.client import HTTPException, BadStatusLine
