@@ -1,5 +1,6 @@
 import osc.core
 import osc.oscerr
+from osc.util.helper import decode_list
 import os
 import re
 from common import GET, OscTestCase
@@ -298,7 +299,7 @@ Binary file 'binary' has changed.
     def __check_diff(self, p, exp, revision=None):
         got = ''
         for i in p.get_diff(revision):
-            got += ''.join(i)
+            got += ''.join(decode_list(i))
 
         # When a hunk header refers to a single line in the "from"
         # file and/or the "to" file, e.g.

@@ -1409,16 +1409,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rdiff = None
         if opts.diff or not opts.message:
             try:
-                rdiff = 'old: %s/%s\nnew: %s/%s rev %s\n' % (dst_project, dst_package, src_project, src_package, rev)
-                rdiff += decode_it(server_diff(apiurl,
-                                    dst_project, dst_package, None,
-                                    src_project, src_package, rev, True))
+                rdiff = b'old: %s/%s\nnew: %s/%s rev %s\n' % (dst_project.encode(), dst_package.encode(), src_project.encode(), src_package.encode(), str(rev).encode())
+                rdiff += server_diff(apiurl,
+                                dst_project, dst_package, None,
+                                src_project, src_package, rev, True)
             except:
-                rdiff = ''
+                rdiff = b''
 
         if opts.diff:
             run_pager(rdiff)
             return
+        if rdiff is not None:
+            rdiff = decode_it(rdiff)
+
         supersede_existing = False
         reqs = []
         if not opts.supersede:
@@ -1514,13 +1517,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         sys.exit("Please fix this first")
                     t = linkinfo.get('project')
                     if t:
-                        rdiff = ''
+                        rdiff = b''
                         try:
                             rdiff = server_diff(apiurl, t, p, opts.revision, project, p, None, True)
                         except:
-                            rdiff = ''
+                            rdiff = b''
 
-                        if rdiff != '':
+                        if rdiff != b'':
                             targetprojects.append(t)
                             pac.append(p)
                         else:
@@ -2499,10 +2502,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not r.get_actions('submit') and not r.get_actions('maintenance_incident') and not r.get_actions('maintenance_release'):
                         raise oscerr.WrongOptions('\'--diff\' not possible (request has no supported actions)')
                     for action in sr_actions:
-                        diff += 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
-                            action.tgt_project, action.tgt_package)
+                        diff += b'old: %s/%s\nnew: %s/%s\n' % (action.src_project.encode(), action.src_package.encode(),
+                            action.tgt_project.encode(), action.tgt_package.encode())
                         diff += submit_action_diff(apiurl, action)
-                        diff += '\n\n'
+                        diff += b'\n\n'
                 run_pager(decode_it(diff), tmp_suffix='')
 
         # checkout
@@ -3870,15 +3873,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 return
         else:
             rev1, rev2 = parseRevisionOption(opts.revision)
-        diff = ''
+        diff = b''
         for pac in pacs:
             if not rev2:
                 for i in pac.get_diff(rev1):
-                    diff += ''.join(i)
+                    diff += b''.join(i)
             else:
-                diff += decode_it(server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
-                                    pac.prjname, pac.name, rev2,
-                                    not opts.plain, opts.missingok, opts.meta, not opts.unexpand))
+                diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
+                                pac.prjname, pac.name, rev2,
+                                not opts.plain, opts.missingok, opts.meta, not opts.unexpand)
         run_pager(diff)
 
 
@@ -4162,7 +4165,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print("".join(decode_it(x) for x in p.stdout.readlines()))
         elif opts.unified:
             print()
-            print(decode_it(rdiff))
+            if isinstance(rdiff, str):
+                print(rdiff)
+            else:
+                try:
+                    sys.stdout.buffer.write(rdiff)
+                except AttributeError as e:
+                    print(decode_it(rdiff))
             #run_pager(rdiff)
 
     def _prdiff_output_matching_requests(self, opts, requests,

@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 
-__version__ = '0.165.3.git'
+__version__ = '0.166.git'
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
@@ -1963,26 +1963,30 @@ class Package:
 
     def get_diff(self, revision=None, ignoreUnversioned=False):
         import tempfile
-        diff_hdr = 'Index: %s\n'
-        diff_hdr += '===================================================================\n'
+        diff_hdr = b'Index: %s\n'
+        diff_hdr += b'===================================================================\n'
         kept = []
         added = []
         deleted = []
         def diff_add_delete(fname, add, revision):
             diff = []
-            diff.append(diff_hdr % fname)
+            diff.append(diff_hdr % fname.encode())
             tmpfile = None
             origname = fname
             if add:
-                diff.append('--- %s\t(revision 0)\n' % fname)
+                diff.append(b'--- %s\t(revision 0)\n' % fname.encode())
                 rev = 'revision 0'
                 if revision and not fname in self.to_be_added:
                     rev = 'working copy'
-                diff.append('+++ %s\t(%s)\n' % (fname, rev))
+                diff.append(b'+++ %s\t(%s)\n' % (fname.encode(), rev.encode()))
                 fname = os.path.join(self.absdir, fname)
             else:
-                diff.append('--- %s\t(revision %s)\n' % (fname, revision or self.rev))
-                diff.append('+++ %s\t(working copy)\n' % fname)
+                if revision:
+                    b_revision = str(revision).encode()
+                else:
+                    b_revision = self.rev.encode()
+                diff.append(b'--- %s\t(revision %s)\n' % (fname.encode(), b_revision))
+                diff.append(b'+++ %s\t(working copy)\n' % fname.encode())
                 fname = os.path.join(self.storedir, fname)
                
             try:
@@ -1991,22 +1995,22 @@ class Package:
                     get_source_file(self.apiurl, self.prjname, self.name, origname, tmpfile, revision)
                     fname = tmpfile
                 if binary_file(fname):
-                    what = 'added'
+                    what = b'added'
                     if not add:
-                        what = 'deleted'
+                        what = b'deleted'
                     diff = diff[:1]
-                    diff.append('Binary file \'%s\' %s.\n' % (origname, what))
+                    diff.append(b'Binary file \'%s\' %s.\n' % (origname.encode(), what))
                     return diff
-                tmpl = '+%s'
-                ltmpl = '@@ -0,0 +1,%d @@\n'
+                tmpl = b'+%s'
+                ltmpl = b'@@ -0,0 +1,%d @@\n'
                 if not add:
-                    tmpl = '-%s'
-                    ltmpl = '@@ -1,%d +0,0 @@\n'
-                lines = [tmpl % i for i in open(fname, 'r').readlines()]
+                    tmpl = b'-%s'
+                    ltmpl = b'@@ -1,%d +0,0 @@\n'
+                lines = [tmpl % i for i in open(fname, 'rb').readlines()]
                 if len(lines):
                     diff.append(ltmpl % len(lines))
-                    if not lines[-1].endswith('\n'):
-                        lines.append('\n\\ No newline at end of file\n')
+                    if not lines[-1].endswith(b'\n'):
+                        lines.append(b'\n\\ No newline at end of file\n')
                 diff.extend(lines)
             finally:
                 if tmpfile is not None:
@@ -2051,7 +2055,7 @@ class Package:
                 continue
             elif revision and self.findfilebyname(f.name).md5 == f.md5 and state != 'M':
                 continue
-            yield [diff_hdr % f.name]
+            yield [diff_hdr % f.name.encode()]
             if revision is None:
                 yield get_source_file_diff(self.absdir, f.name, self.rev)
             else:
@@ -4055,7 +4059,7 @@ def run_pager(message, tmp_suffix=''):
         if isinstance(message, str):
             print(message)
         else:
-            print(decode_it(message))
+            sys.stdout.buffer.write(message)
     else:
         tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
         if isinstance(message, str):
@@ -4780,15 +4784,15 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     file1 = os.path.join(olddir, oldfilename)   # old/stored original
     file2 = os.path.join(dir, filename)         # working copy
     if binary_file(file1) or binary_file(file2):
-        return ['Binary file \'%s\' has changed.\n' % origfilename]
+        return [b'Binary file \'%s\' has changed.\n' % origfilename.encode()]
 
     f1 = f2 = None
     try:
-        f1 = open(file1, 'rt')
+        f1 = open(file1, 'rb')
         s1 = f1.readlines()
         f1.close()
 
-        f2 = open(file2, 'rt')
+        f2 = open(file2, 'rb')
         s2 = f2.readlines()
         f2.close()
     finally:
@@ -4796,23 +4800,31 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
             f1.close()
         if f2:
             f2.close()
+    
+    from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
+    to_file = b'%s\t(working copy)' % origfilename.encode()
 
-    d = difflib.unified_diff(s1, s2,
-        fromfile = '%s\t(revision %s)' % (origfilename, rev), \
-        tofile = '%s\t(working copy)' % origfilename)
+    if sys.version_info < (3,0):
+        d = difflib.unified_diff(s1, s2,
+            fromfile = from_file, \
+        tofile = to_file)
+    else:
+        d = difflib.diff_bytes(difflib.unified_diff, s1, s2, \
+            fromfile = from_file, \
+            tofile = to_file)
     d = list(d)
     # python2.7's difflib slightly changed the format
     # adapt old format to the new format
     if len(d) > 1:
-        d[0] = d[0].replace(' \n', '\n')
-        d[1] = d[1].replace(' \n', '\n')
+        d[0] = d[0].replace(b' \n', b'\n')
+        d[1] = d[1].replace(b' \n', b'\n')
 
     # if file doesn't end with newline, we need to append one in the diff result
     for i, line in enumerate(d):
-        if not line.endswith('\n'):
-            d[i] += '\n\\ No newline at end of file'
+        if not line.endswith(b'\n'):
+            d[i] += b'\n\\ No newline at end of file'
             if i+1 != len(d):
-                d[i] += '\n'
+                d[i] += b'\n'
     return d
 
 def server_diff(apiurl,
@@ -4868,14 +4880,14 @@ def server_diff_noex(apiurl,
         msg = None
         body = None
         try:
-            body = decode_it(e.read())
-            if not 'bad link' in body:
-                return '# diff failed: ' + body
+            body = e.read()
+            if not b'bad link' in body:
+                return b'# diff failed: ' + body
         except:
-            return '# diff failed with unknown error'
+            return b'# diff failed with unknown error'
 
         if expand:
-            rdiff =  "## diff on expanded link not possible, showing unexpanded version\n"
+            rdiff = b"## diff on expanded link not possible, showing unexpanded version\n"
             try:
                 rdiff += server_diff_noex(apiurl,
                     old_project, old_package, old_revision,
@@ -4886,7 +4898,7 @@ def server_diff_noex(apiurl,
                 summary = ''
                 if not elm is None:
                     summary = elm.text
-                return 'error: diffing failed: %s' % summary
+                return b'error: diffing failed: %s' % summary.encode()
             return rdiff
 
 
@@ -4935,10 +4947,10 @@ def submit_action_diff(apiurl, action):
                 if e.code != 404:
                     raise e
                 root = ET.fromstring(e.read())
-                return 'error: \'%s\' does not exist' % root.find('summary').text
+                return b'error: \'%s\' does not exist' % root.find('summary').text.encode()
         elif e.code == 404:
             root = ET.fromstring(e.read())
-            return 'error: \'%s\' does not exist' % root.find('summary').text
+            return b'error: \'%s\' does not exist' % root.find('summary').text.encode()
         raise e
 
 def make_dir(apiurl, project, package, pathname=None, prj_dir=None, package_tracking=True, pkg_path=None):
@@ -7249,13 +7261,11 @@ def get_commit_message_template(pac):
         if pac.status(filename) == 'M':
             diff += get_source_file_diff(pac.absdir, filename, pac.rev)
         elif pac.status(filename) == 'A':
-            f = open(os.path.join(pac.absdir, filename), 'r')
-            for line in f:
-                diff += '+' + line
-            f.close()
+            with open(os.path.join(pac.absdir, filename), 'rb') as f:
+                diff.extend((b'+' + line for line in f))
 
     if diff:
-        template = parse_diff_for_commit_message(''.join(diff))
+        template = parse_diff_for_commit_message(''.join(decode_list(diff)))
 
     return template
 
@@ -7290,7 +7300,7 @@ def get_commit_msg(wc_dir, pacs):
         if changed:
             footer += changed
             footer.append('\nDiff for working copy: %s' % p.dir)
-            footer.extend([''.join(i) for i in p.get_diff(ignoreUnversioned=True)])
+            footer.extend([''.join(decode_list(i)) for i in p.get_diff(ignoreUnversioned=True)])
             lines.extend(get_commit_message_template(p))
     if template is None:
         if lines and lines[0] == '':
@@ -7440,21 +7450,21 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
-                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff', mode='r+')
-                    tmpfile.write(req_summary)
-                    tmpfile.write(issues)
+                    tmpfile = tempfile.NamedTemporaryFile(suffix='.diff', mode='rb+')
+                    tmpfile.write(req_summary.encode())
+                    tmpfile.write(issues.encode())
                     try:
                         diff = request_diff(apiurl, request.reqid)
-                        tmpfile.write(decode_it(diff))
+                        tmpfile.write(diff)
                     except HTTPError as e:
                         if e.code != 400:
                             raise
                         # backward compatible diff for old apis
                         for action in src_actions:
-                            diff = 'old: %s/%s\nnew: %s/%s\n' % (action.src_project, action.src_package,
-                                action.tgt_project, action.tgt_package)
+                            diff = b'old: %s/%s\nnew: %s/%s\n' % (action.src_project.encode(), action.src_package.encode(),
+                                action.tgt_project.encode(), action.tgt_package.encode())
                             diff += submit_action_diff(apiurl, action)
-                            diff += '\n\n'
+                            diff += b'\n\n'
                             tmpfile.write(diff)
                     tmpfile.flush()
                 run_editor(tmpfile.name)
