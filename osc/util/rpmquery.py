@@ -287,12 +287,12 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     def canonname(self):
         if self.is_nosrc():
-            arch = 'nosrc'
+            arch = b'nosrc'
         elif self.is_src():
-            arch = 'src'
+            arch = b'src'
         else:
             arch = self.arch()
-        return RpmQuery.filename(decode_it(self.name()), None, decode_it(self.version()), decode_it(self.release()), decode_it(arch))
+        return RpmQuery.filename(self.name(), None, self.version(), self.release(), arch)
 
     @staticmethod
     def query(filename):
@@ -374,7 +374,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     @staticmethod
     def filename(name, epoch, version, release, arch):
-        return '%s-%s-%s.%s.rpm' % (name, version, release, arch)
+        return b'%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
 def unpack_string(data, encoding=None):
     """unpack a '\\0' terminated string from data"""

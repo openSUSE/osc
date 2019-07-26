@@ -169,8 +169,12 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
         return self.__parseEntryCollection('enhances')
 
     def canonname(self):
-        return osc.util.rpmquery.RpmQuery.filename(self.name(), None,
-            self.version(), self.release(), self.arch())
+        if self.release() is None:
+            release = None
+        else:
+            release = self.release().encode()
+        return osc.util.rpmquery.RpmQuery.filename(self.name().encode(), None,
+            self.version().encode(), release, self.arch().encode())
 
     def gettag(self, tag):
         # implement me, if needed
