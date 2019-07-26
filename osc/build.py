@@ -229,18 +229,28 @@ class Pac:
 
         self.mp['apiurl'] = apiurl
 
+        if self.mp['epoch'] is None:
+            epoch = None
+        else:
+            epoch = self.mp['epoch'].encode()
+
+        if self.mp['release'] is None:
+            release = None
+        else:
+            release = self.mp['release'].encode()
+
         if self.mp['name'].startswith('container:'):
             canonname = self.mp['name'] + '.tar.xz'
         elif pacsuffix == 'deb':
-            canonname = debquery.DebQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            canonname = debquery.DebQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release, self.mp['arch'].encode())
         elif pacsuffix == 'arch':
-            canonname = archquery.ArchQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            canonname = archquery.ArchQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release, self.mp['arch'].encode())
         else:
-            canonname = rpmquery.RpmQuery.filename(self.mp['name'], self.mp['epoch'], self.mp['version'], self.mp['release'], self.mp['arch'])
+            canonname = rpmquery.RpmQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release, self.mp['arch'].encode())
 
-        self.mp['canonname'] = canonname
+        self.mp['canonname'] = decode_it(canonname)
         # maybe we should rename filename key to binary
-        self.mp['filename'] = node.get('binary') or canonname
+        self.mp['filename'] = node.get('binary') or decode_it(canonname)
         if self.mp['repopackage'] == '_repository':
             self.mp['repofilename'] = self.mp['name']
         else:
