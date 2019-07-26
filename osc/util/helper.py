@@ -54,7 +54,7 @@ def decode_it(obj):
         based on the chardet module if possible
     """
 
-    if isinstance(obj, str):
+    if obj is None or isinstance(obj, str):
         return obj
     else:
         try:
