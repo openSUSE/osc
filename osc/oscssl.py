@@ -199,13 +199,13 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
 
         if target_host != host:
             request_uri = urldefrag(full_url)[0]
-            h = myProxyHTTPSConnection(host=host, ssl_context=self.ctx)
+            h = myProxyHTTPSConnection(host=host, appname=self.appname, ssl_context=self.ctx)
         else:
             try:     # up to python-3.2
                 request_uri = req.get_selector()
             except AttributeError:  # from python-3.3
                 request_uri = req.selector
-            h = myHTTPSConnection(host=host, ssl_context=self.ctx)
+            h = myHTTPSConnection(host=host, appname=self.appname, ssl_context=self.ctx)
         # End our change
         h.set_debuglevel(self._debuglevel)
 
