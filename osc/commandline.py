@@ -206,6 +206,20 @@ class Osc(cmdln.Cmdln):
         help_msg = cmdln.Cmdln._help_preprocess(self, help, cmdname)
         return help_msg % conf.config
 
+    def _help_preprocess_cmd_name(self, help, cmdname=None):
+        if cmdname is None:
+            return help
+        return cmdln.Cmdln._help_preprocess_cmd_name(self, help, cmdname)
+
+    def _help_preprocess_cmd_option_list(self, help, cmdname=None):
+        if cmdname is None:
+            return help
+        return cmdln.Cmdln._help_preprocess_cmd_option_list(self, help, cmdname)
+
+    def _help_preprocess_cmd_usage(self, help, cmdname=None):
+        if cmdname is None:
+            return help
+        return cmdln.Cmdln._help_preprocess_cmd_usage(self, help, cmdname)
 
     def do_init(self, subcmd, opts, project, package=None):
         """${cmd_name}: Initialize a directory as working copy
