@@ -1,5 +1,9 @@
-0.166.0
+0.165.4
   - allow optional fork when creating a maintenance request
+  - fix RPMError fallback
+  - fix local caching for all package formats
+  - fix appname for trusted cert store
+  - osc -h does not break anymore when using plugins
 
 0.165.3
   - switch to difflib.diff_bytes and sys.stdout.buffer.write for diffing.
