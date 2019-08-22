@@ -6603,32 +6603,22 @@ def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None
     return root.get('code')
 
 
-def parseRevisionOption(string):
+def parseRevisionOption(string, allow_md5=True):
     """
     returns a tuple which contains the revisions
     """
 
+    revisions = [None, None]
     if string:
-        if ':' in string:
-            splitted_rev = string.split(':')
-            try:
-                for i in splitted_rev:
-                    int(i)
-                return splitted_rev
-            except ValueError:
+        parts = string.split(':')
+        for i, revision in enumerate(parts[0:2], 0):
+            if revision.isdigit() or (allow_md5 and revision.isalnum() and len(revision) == 32):
+                revisions[i] = revision
+            elif revision != '' and revision != 'latest':
                 print('your revision \'%s\' will be ignored' % string, file=sys.stderr)
                 return None, None
-        else:
-            if string.isdigit():
-                return string, None
-            elif string.isalnum() and len(string) == 32:
-                # could be an md5sum
-                return string, None
-            else:
-                print('your revision \'%s\' will be ignored' % string, file=sys.stderr)
-                return None, None
-    else:
-        return None, None
+
+    return tuple(revisions)
 
 def checkRevision(prj, pac, revision, apiurl=None, meta=False):
     """
