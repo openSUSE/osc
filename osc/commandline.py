@@ -146,27 +146,16 @@ class Osc(cmdln.Cmdln):
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
-            import getpass
-            config = {}
-            config['user'] = raw_input('Username: ')
-            config['pass'] = getpass.getpass()
-            if self.options.no_keyring:
-                config['use_keyring'] = '0'
-            if self.options.no_gnome_keyring:
-                config['gnome_keyring'] = '0'
+            apiurl = conf.DEFAULTS['apiurl']
             if self.options.apiurl:
-                config['apiurl'] = self.options.apiurl
-
-            conf.write_initial_config(e.file, config)
+                apiurl = self.options.apiurl
+            conf.interactive_config_setup(e.file, apiurl)
             print('done', file=sys.stderr)
             if try_again:
                 self.postoptparse(try_again = False)
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
-            import getpass
-            user = raw_input('Username: ')
-            passwd = getpass.getpass()
-            conf.add_section(e.file, e.url, user, passwd)
+            conf.interactive_config_setup(e.file, e.url, initial=False)
             if try_again:
                 self.postoptparse(try_again = False)
 

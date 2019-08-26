@@ -43,6 +43,7 @@ import re
 import sys
 import ssl
 import warnings
+import getpass
 
 try:
     from http.cookiejar import LWPCookieJar, CookieJar
@@ -1060,5 +1061,17 @@ def identify_conf():
         conffile = os.environ.get('XDG_CONFIG_HOME', '~/.config') + '/osc/oscrc'
 
     return conffile
+
+def interactive_config_setup(conffile, apiurl, initial=True):
+    user = raw_input('Username: ')
+    passwd = getpass.getpass()
+    if initial:
+        config = {'user': user, 'pass': passwd}
+        if apiurl:
+            config['apiurl'] = apiurl
+        write_initial_config(conffile, config)
+    else:
+        add_section(conffile, apiurl, user, passwd)
+
 
 # vim: sw=4 et
