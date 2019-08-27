@@ -152,8 +152,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'checkout_rooted': '0',
             # local files to ignore with status, addremove, ....
             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
-            # whether to keep passwords in plaintext.
-            'plaintext_passwd': '1',
+            # whether to keep passwords in plaintext (deprecated (see creds manager)).
+            'plaintext_passwd': '0',
             # limit the age of requests shown with 'osc req list'.
             # this is a default only, can be overridden by 'osc req list -D NNN'
             # Use 0 for unlimted.
@@ -298,12 +298,6 @@ apiurl = %(apiurl)s
 
 # local files to ignore with status, addremove, ....
 #exclude_glob = %(exclude_glob)s
-
-# keep passwords in plaintext.
-# Set to 0 to obfuscate passwords. It's no real security, just
-# prevents most people from remembering your password if they watch
-# you editing this file.
-#plaintext_passwd = %(plaintext_passwd)s
 
 # limit the age of requests shown with 'osc req list'.
 # this is a default only, can be overridden by 'osc req list -D NNN'
@@ -762,10 +756,6 @@ def write_initial_config(conffile, entries, custom_template=''):
         config['user'] = ''
         config['pass'] = ''
         config['passx'] = ''
-    if not config['plaintext_passwd']:
-        config['pass'] = ''
-    else:
-        config['passx'] = passx_encode(config['pass'])
 
     sio = StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
@@ -804,12 +794,7 @@ def add_section(filename, url, user, passwd):
         cp.remove_option(url, 'passx')
     else:
         cp.set(url, 'user', user)
-        if not config['plaintext_passwd']:
-            cp.remove_option(url, 'pass')
-            cp.set(url, 'passx', passx_encode(passwd))
-        else:
-            cp.remove_option(url, 'passx')
-            cp.set(url, 'pass', passwd)
+        cp.set(url, 'pass', passwd)
     write_config(filename, cp)
 
 
@@ -944,20 +929,6 @@ def get_config(override_conffile=None,
             if user is None or user == '':
                 raise oscerr.ConfigError('user is blank for %s, please delete or complete the "user=" entry in %s.' % (apiurl, config['conffile']), config['conffile'])
 
-            if config['plaintext_passwd'] and passwordx or not config['plaintext_passwd'] and password:
-                if config['plaintext_passwd']:
-                    if password != passwordx:
-                        print('%s: rewriting from encoded pass to plain pass' % url, file=sys.stderr)
-                    add_section(conffile, url, user, passwordx)
-                    password = passwordx
-                else:
-                    if password != passwordx:
-                        print('%s: rewriting from plain pass to encoded pass' % url, file=sys.stderr)
-                    add_section(conffile, url, user, password)
-
-            if not config['plaintext_passwd']:
-                password = passwordx
-
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
             http_headers = http_header_regexp.findall(http_headers)
@@ -1016,6 +987,8 @@ def get_config(override_conffile=None,
     if 'build_platform' in config:
         print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
         config['build_repository'] = config['build_platform']
+    if config['plaintext_passwd']:
+        print('The \'plaintext_passwd\' option is deprecated and will be ignored', file=sys.stderr)
 
     config['verbose'] = int(config['verbose'])
     # override values which we were called with
