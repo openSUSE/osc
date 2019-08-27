@@ -79,12 +79,7 @@ except:
         import gobject
         gobject.set_application_name('osc')
         import gnomekeyring
-        if os.environ['GNOME_DESKTOP_SESSION_ID']:
-            # otherwise gnome keyring bindings spit out errors, when you have
-            # it installed, but you are not under gnome
-            # (even though hundreds of gnome-keyring daemons got started in parallel)
-            # another option would be to support kwallet here
-            GNOME_KEYRING = gnomekeyring.is_available()
+        GNOME_KEYRING = gnomekeyring.is_available()
     except:
         pass
 
