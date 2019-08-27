@@ -64,7 +64,9 @@ except ImportError:
 
 from . import OscConfigParser
 from osc import oscerr
+from osc.util.helper import raw_input
 from .oscsslexcp import NoSecureSSLError
+from osc import credentials
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False
@@ -98,9 +100,9 @@ def _get_processors():
         return 1
 
 DEFAULTS = {'apiurl': 'https://api.opensuse.org',
-            'user': 'your_username',
-            'pass': 'your_password',
-            'passx': '',
+            'user': None,
+            'pass': None,
+            'passx': None,
             'packagecachedir': '/var/tmp/osbuild-packagecache',
             'su-wrapper': 'sudo',
 
@@ -322,9 +324,6 @@ apiurl = %(apiurl)s
 # print call traces in case of errors
 #traceback = 1
 
-# use KDE/Gnome/MacOS/Windows keyring for credentials if available
-#use_keyring = 1
-
 # check for unversioned/removed files before commit
 #check_filelist = 1
 
@@ -353,8 +352,6 @@ apiurl = %(apiurl)s
 #review_inherit_group = 1
 
 [%(apiurl)s]
-user = %(user)s
-pass = %(pass)s
 # set aliases for this apiurl
 # aliases = foo, bar
 # real name used in .changes, unless the one from osc meta prj <user> will be used
@@ -366,8 +363,6 @@ pass = %(pass)s
 #       User: mumblegack
 # Plain text password
 #pass =
-# Force using of keyring for this API
-#keyring = 1
 """
 
 
@@ -728,7 +723,7 @@ def passx_encode(passwd):
     """encode plain text password to obfuscated form"""
     return base64.b64encode(bz2.compress(passwd.encode('ascii'))).decode("ascii")
 
-def write_initial_config(conffile, entries, custom_template=''):
+def write_initial_config(conffile, entries, custom_template='', creds_mgr_descriptor=None):
     """
     write osc's intial configuration file. entries is a dict which contains values
     for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
@@ -737,33 +732,19 @@ def write_initial_config(conffile, entries, custom_template=''):
     conf_template = custom_template or new_conf_template
     config = DEFAULTS.copy()
     config.update(entries)
-    # at this point use_keyring and gnome_keyring are str objects
-    if config['use_keyring'] == '1' and GENERIC_KEYRING:
-        protocol, host, path = \
-            parse_apisrv_url(None, config['apiurl'])
-        keyring.set_password(host, config['user'], config['pass'])
-        config['pass'] = ''
-        config['passx'] = ''
-    elif config['gnome_keyring'] == '1' and GNOME_KEYRING:
-        protocol, host, path = \
-            parse_apisrv_url(None, config['apiurl'])
-        gnomekeyring.set_network_password_sync(
-            user=config['user'],
-            password=config['pass'],
-            protocol=protocol,
-            server=host,
-            object=path)
-        config['user'] = ''
-        config['pass'] = ''
-        config['passx'] = ''
-
     sio = StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser(DEFAULTS)
     cp.readfp(sio)
+    cp.set(config['apiurl'], 'user', config['user'])
+    if creds_mgr_descriptor:
+        creds_mgr = creds_mgr_descriptor.create(cp)
+    else:
+        creds_mgr = _get_credentials_manager(config['apiurl'], cp)
+    creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
     write_config(conffile, cp)
 
 
-def add_section(filename, url, user, passwd):
+def add_section(filename, url, user, passwd, creds_mgr_descriptor=None):
     """
     Add a section to config file for new api url.
     """
@@ -774,29 +755,26 @@ def add_section(filename, url, user, passwd):
     except OscConfigParser.configparser.DuplicateSectionError:
         # Section might have existed, but was empty
         pass
-    if config['use_keyring'] and GENERIC_KEYRING:
-        protocol, host, path = parse_apisrv_url(None, url)
-        keyring.set_password(host, user, passwd)
-        cp.set(url, 'keyring', '1')
-        cp.set(url, 'user', user)
-        cp.remove_option(url, 'pass')
-        cp.remove_option(url, 'passx')
-    elif config['gnome_keyring'] and GNOME_KEYRING:
-        protocol, host, path = parse_apisrv_url(None, url)
-        gnomekeyring.set_network_password_sync(
-            user=user,
-            password=passwd,
-            protocol=protocol,
-            server=host,
-            object=path)
-        cp.set(url, 'keyring', '1')
-        cp.remove_option(url, 'pass')
-        cp.remove_option(url, 'passx')
+    cp.set(url, 'user', user)
+    if creds_mgr_descriptor:
+        creds_mgr = creds_mgr_descriptor.create(cp)
     else:
-        cp.set(url, 'user', user)
-        cp.set(url, 'pass', passwd)
+        creds_mgr = _get_credentials_manager(url, cp)
+    creds_mgr.set_password(url, user, passwd)
     write_config(filename, cp)
 
+
+def _get_credentials_manager(url, cp):
+    if cp.has_option(url, credentials.AbstractCredentialsManager.config_entry):
+        return credentials.create_credentials_manager(url, cp)
+    if config['use_keyring'] and GENERIC_KEYRING:
+        return credentials.get_keyring_credentials_manager(cp)
+    elif config['gnome_keyring'] and GNOME_KEYRING:
+        protocol, host, path = parse_apisrv_url(None, url)
+        return credentials.GnomeKeyringCredentialsManager(cp, None)
+    elif cp.get(url, 'passx') is not None:
+        return credentials.ObfuscatedConfigFileCredentialsManager(cp, None)
+    return credentials.PlaintextConfigFileCredentialsManager(cp, None)
 
 def get_config(override_conffile=None,
                override_apiurl=None,
@@ -874,60 +852,19 @@ def get_config(override_conffile=None,
         # backward compatiblity
         scheme, host, path = parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host, path)
-        user = None
-        password = None
-        if config['use_keyring'] and GENERIC_KEYRING:
-            try:
-                # Read from keyring lib if available
-                user = cp.get(url, 'user', raw=True)
-                password = str(keyring.get_password(host, user))
-            except:
-                # Fallback to file based auth.
-                pass
-        elif config['gnome_keyring'] and GNOME_KEYRING:
-            # Read from gnome keyring if available
-            try:
-                gk_data = gnomekeyring.find_network_password_sync(protocol=scheme, server=host, object=path)
-                if not 'user' in gk_data[0]:
-                    raise oscerr.ConfigError('no user found in keyring', conffile)
-                user = gk_data[0]['user']
-                if 'password' in gk_data[0]:
-                    password = str(gk_data[0]['password'])
-                else:
-                    # this is most likely an error
-                    print('warning: no password found in keyring', file=sys.stderr)
-            except gnomekeyring.NoMatchError:
-                # Fallback to file based auth.
-                pass
-
-        if not user is None and len(user) == 0:
-            user = None
-            print('Warning: blank user in the keyring for the ' \
-                'apiurl %s.\nPlease fix your keyring entry.', file=sys.stderr)
-
-        if user is not None and password is None:
-            err = ('no password defined for "%s".\nPlease fix your keyring '
-                   'entry or gnome-keyring setup.\nAssuming an empty password.'
-                   % url)
-            print(err, file=sys.stderr)
-            password = ''
-
-        # Read credentials from config
+        user = cp.get(url, 'user', raw=True)
+        creds_mgr = _get_credentials_manager(url, cp)
+        # currently, this is only needed for the deprecated gnomekeyring - actually, we
+        # we should use the apiurl instead of url (that's what the old code did), but
+        # this makes things more complex (also, it is very unlikely that url and
+        # apiurl differ)
+        if user is None and hasattr(creds_mgr, 'get_user'):
+            user = creds_mgr.get_user(url)
         if user is None:
-            #FIXME: this could actually be the ideal spot to take defaults
-            #from the general section.
-            user = cp.get(url, 'user', raw=True)        # need to set raw to prevent '%' expansion
-            password = cp.get(url, 'pass', raw=True)    # especially on password!
-            try:
-                passwordx = passx_decode(cp.get(url, 'passx', raw=True))  # especially on password!
-            except:
-                passwordx = ''
-
-            if password == None or password == 'your_password':
-                password = ''
-
-            if user is None or user == '':
-                raise oscerr.ConfigError('user is blank for %s, please delete or complete the "user=" entry in %s.' % (apiurl, config['conffile']), config['conffile'])
+            raise oscerr.ConfigError('No user found in section %s' % url, conffile)
+        password = creds_mgr.get_password(url, user)
+        if password is None:
+            raise oscerr.ConfigError('No password found in section %s' % url, conffile)
 
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
@@ -1038,13 +975,25 @@ def identify_conf():
 def interactive_config_setup(conffile, apiurl, initial=True):
     user = raw_input('Username: ')
     passwd = getpass.getpass()
+    if not credentials.has_keyring_support():
+        print('To use keyrings please install python-keyring.')
+    creds_mgr_descriptors = credentials.get_credentials_manager_descriptors()
+    for i, creds_mgr_descr in enumerate(creds_mgr_descriptors, 1):
+        print('%d) %s (%s)' % (i, creds_mgr_descr.name(), creds_mgr_descr.description()))#
+    i = raw_input('Select credentials manager: ')
+    if not i.isdigit():
+        sys.exit('Invalid selection')
+    i = int(i) - 1
+    if i < 0 or i >= len(creds_mgr_descriptors):
+        sys.exit('Invalid selection')
+    creds_mgr_descr = creds_mgr_descriptors[i]
     if initial:
         config = {'user': user, 'pass': passwd}
         if apiurl:
             config['apiurl'] = apiurl
-        write_initial_config(conffile, config)
+        write_initial_config(conffile, config, creds_mgr_descriptor=creds_mgr_descr)
     else:
-        add_section(conffile, apiurl, user, passwd)
+        add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr)
 
 
 # vim: sw=4 et
