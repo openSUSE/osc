@@ -55,7 +55,7 @@ try:
 except ImportError:
     from .util.helper import cmp_to_key
 
-from osc.util.helper import decode_list, decode_it
+from osc.util.helper import decode_list, decode_it, raw_input
 
 try:
     # python 2.6 and python 2.7
@@ -7682,21 +7682,6 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
         res = search(apiurl, **what)
         filter_role(res, user, role)
     return res
-
-def raw_input(*args):
-    try:
-        import builtins
-        func = builtins.input
-    except ImportError:
-        #python 2.7
-        import __builtin__
-        func = __builtin__.raw_input
-
-    try:
-        return func(*args)
-    except EOFError:
-        # interpret ctrl-d as user abort
-        raise oscerr.UserAbort()
 
 def run_external(filename, *args, **kwargs):
     """Executes the program filename via subprocess.call.
