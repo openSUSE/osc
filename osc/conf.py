@@ -776,6 +776,15 @@ def _get_credentials_manager(url, cp):
         return credentials.ObfuscatedConfigFileCredentialsManager(cp, None)
     return credentials.PlaintextConfigFileCredentialsManager(cp, None)
 
+
+class APIHostOptionsEntry(dict):
+    def __getitem__(self, key, *args, **kwargs):
+        value = super(self.__class__, self).__getitem__(key, *args, **kwargs)
+        if key == 'pass' and callable(value):
+            value = value()
+        return value
+
+
 def get_config(override_conffile=None,
                override_apiurl=None,
                override_debug=None,
@@ -881,9 +890,10 @@ def get_config(override_conffile=None,
                     raise oscerr.ConfigError(msg, conffile)
                 aliases[key] = url
 
-        api_host_options[apiurl] = {'user': user,
-                                    'pass': password,
-                                    'http_headers': http_headers}
+        entry = {'user': user,
+                 'pass': password,
+                 'http_headers': http_headers}
+        api_host_options[apiurl] = APIHostOptionsEntry(entry)
 
         optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath')
         for key in optional:

@@ -1,6 +1,7 @@
 import importlib
 import bz2
 import base64
+import getpass
 try:
     from urllib.parse import urlsplit
 except ImportError:
@@ -111,6 +112,44 @@ class ObfuscatedConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
 
     def create(self, cp):
         return ObfuscatedConfigFileCredentialsManager(cp, None)
+
+
+class TransientCredentialsManager(AbstractCredentialsManager):
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+        self._password = None
+
+    def _process_options(self, options):
+        if options is not None:
+            raise RuntimeError('options must be None')
+
+    def get_password(self, url, user, defer=True):
+        if defer:
+            return self
+        return self()
+
+    def set_password(self, url, user, password):
+        self._password = password
+        self._cp.set(url, self.config_entry, self._qualified_name())
+
+    def delete_password(self, url, user):
+        self._password = None
+
+    def __call__(self):
+        if self._password is None:
+            self._password = getpass.getpass('Password: ')
+        return self._password
+
+
+class TransientDescriptor(AbstractCredentialsManagerDescriptor):
+    def name(self):
+        return 'Transient password store'
+
+    def description(self):
+        return 'Do not store the password and always ask for the password'
+
+    def create(self, cp):
+        return TransientCredentialsManager(cp, None)
 
 
 class KeyringCredentialsManager(AbstractCredentialsManager):
@@ -232,6 +271,7 @@ def get_credentials_manager_descriptors():
         descriptors.append(GnomeKeyringCredentialsDescriptor())
     descriptors.append(PlaintextConfigFileDescriptor())
     descriptors.append(ObfuscatedConfigFileDescriptor())
+    descriptors.append(TransientDescriptor())
     return descriptors
 
 
