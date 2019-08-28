@@ -710,14 +710,6 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
         return (opt, cp.get(section, opt, raw=True))
     return (opt, None)
 
-def passx_decode(passx):
-    """decode the obfuscated password back to plain text password"""
-    return bz2.decompress(base64.b64decode(passx.encode("ascii"))).decode("ascii")
-
-def passx_encode(passwd):
-    """encode plain text password to obfuscated form"""
-    return base64.b64encode(bz2.compress(passwd.encode('ascii'))).decode("ascii")
-
 def write_initial_config(conffile, entries, custom_template='', creds_mgr_descriptor=None):
     """
     write osc's intial configuration file. entries is a dict which contains values
