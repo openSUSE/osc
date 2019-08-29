@@ -8987,6 +8987,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc config section option (get current value)
             osc config section option value (set to value)
             osc config section option --delete (delete option/reset to the default)
+            osc config section --change-password (changes the password in section "section")
             (section is either an apiurl or an alias or 'general')
             osc config --dump (dump the complete configuration)
 
