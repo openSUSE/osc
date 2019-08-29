@@ -158,6 +158,12 @@ class Osc(cmdln.Cmdln):
             conf.interactive_config_setup(e.file, e.url, initial=False)
             if try_again:
                 self.postoptparse(try_again = False)
+        except oscerr.ConfigMissingCredentialsError as e:
+            print(e.msg)
+            print('Please enter new credentials.')
+            conf.interactive_config_setup(e.file, e.url, initial=False)
+            if try_again:
+                self.postoptparse(try_again = False)
 
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
@@ -8964,6 +8970,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='indicates that the config value should be read from stdin')
     @cmdln.option('-p', '--prompt', action='store_true',
                         help='prompt for a value')
+    @cmdln.option('--change-password', action='store_true',
+                        help='Change password')
+    @cmdln.option('--select-password-store', action='store_true',
+                        help='Change the password store')
     @cmdln.option('--no-echo', action='store_true',
                         help='prompt for a value but do not echo entered characters')
     @cmdln.option('--dump', action='store_true',
@@ -8983,6 +8993,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_usage}
         ${cmd_option_list}
         """
+        prompt_value = 'Value: '
+        if opts.change_password:
+            opts.no_echo = True
+            opts.prompt = True
+            opts.select_password_store = True
+            prompt_value = 'Password: '
+            if len(args) != 1:
+                raise oscerr.WrongArgs('--change-password only needs the apiurl')
+            args = [args[0], 'pass']
         if len(args) < 2 and not (opts.dump or opts.dump_full):
             raise oscerr.WrongArgs('Too few arguments')
         elif opts.dump or opts.dump_full:
@@ -9016,24 +9035,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.no_echo or opts.prompt:
             if opts.no_echo:
                 import getpass
-                inp = getpass.getpass('Value: ').strip()
+                inp = getpass.getpass(prompt_value).strip()
             else:
-                inp = raw_input('Value: ').strip()
+                inp = raw_input(prompt_value).strip()
             if not inp:
                 raise oscerr.WrongArgs('error: no value was entered')
             val = [inp]
-        opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=True)
+        creds_mgr_descr = None
+        if opt == 'pass' and opts.select_password_store:
+            creds_mgr_descr = conf.select_credentials_manager_descr()
+        orig_opt = opt
+        opt, newval = conf.config_set_option(section, opt, ' '.join(val), delete=opts.delete, update=True, creds_mgr_descr=creds_mgr_descr)
         if newval is None and opts.delete:
             print('\'%s\': \'%s\' got removed' % (section, opt))
         elif newval is None:
             print('\'%s\': \'%s\' is not set' % (section, opt))
         else:
-            if opts.no_echo:
+            if orig_opt == 'pass':
+                print('Password has been changed.')
+            elif opts.no_echo:
                 # supress value
                 print('\'%s\': set \'%s\'' % (section, opt))
-            elif opt == 'pass' and not conf.config['plaintext_passwd'] and newval == 'your_password':
-                opt, newval = conf.config_set_option(section, 'passx')
-                print('\'%s\': \'pass\' was rewritten to \'passx\': \'%s\'' % (section, newval))
             else:
                 print('\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval))
 

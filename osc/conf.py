@@ -657,7 +657,7 @@ def write_config(fname, cp):
         raise
 
 
-def config_set_option(section, opt, val=None, delete=False, update=True, **kwargs):
+def config_set_option(section, opt, val=None, delete=False, update=True, creds_mgr_descr=None, **kwargs):
     """
     Sets a config option. If val is not specified the current/default value is
     returned. If val is specified, opt is set to val and the new value is returned.
@@ -693,11 +693,41 @@ def config_set_option(section, opt, val=None, delete=False, update=True, **kwarg
         raise oscerr.ConfigError('unknown config option \'%s\'' % opt, config['conffile'])
     run = False
     if val:
-        cp.set(section, opt, val)
-        write_config(config['conffile'], cp)
+        if opt == 'pass':
+            user = cp.get(section, 'user')
+            creds_mgr = _get_credentials_manager(section, cp)
+            if user is None and hasattr(creds_mgr, 'get_user'):
+                user = creds_mgr.get_user(section)
+            old_pw = creds_mgr.get_password(section, user, defer=False)
+            try:
+                creds_mgr.delete_password(section, user)
+                if creds_mgr_descr:
+                    creds_mgr_new = creds_mgr_descr.create(cp)
+                else:
+                    creds_mgr_new = creds_mgr
+                creds_mgr_new.set_password(section, user, val)
+                write_config(config['conffile'], cp)
+                opt = credentials.AbstractCredentialsManager.config_entry
+                old_pw = None
+            finally:
+                if old_pw is not None:
+                    creds_mgr.set_password(section, user, old_pw)
+                    # not nice, but needed if the Credentials Manager will change
+                    # something in cp
+                    write_config(config['conffile'], cp)
+        else:
+            cp.set(section, opt, val)
+            write_config(config['conffile'], cp)
         run = True
-    elif delete and cp.has_option(section, opt):
-        cp.remove_option(section, opt)
+    elif delete and (cp.has_option(section, opt) or opt == 'pass'):
+        if opt == 'pass':
+            user = cp.get(section, 'user')
+            creds_mgr = _get_credentials_manager(section, cp)
+            if user is None and hasattr(creds_mgr, 'get_user'):
+                user = creds_mgr.get_user(section)
+            creds_mgr.delete_password(section, user)
+        else:
+            cp.remove_option(section, opt)
         write_config(config['conffile'], cp)
         run = True
     if run and update:
@@ -857,10 +887,10 @@ def get_config(override_conffile=None,
         if user is None and hasattr(creds_mgr, 'get_user'):
             user = creds_mgr.get_user(url)
         if user is None:
-            raise oscerr.ConfigError('No user found in section %s' % url, conffile)
+            raise oscerr.ConfigMissingCredentialsError('No user found in section %s' % url, conffile, url)
         password = creds_mgr.get_password(url, user)
         if password is None:
-            raise oscerr.ConfigError('No password found in section %s' % url, conffile)
+            raise oscerr.ConfigMissingCredentialsError('No password found in section %s' % url, conffile, url)
 
         if cp.has_option(url, 'http_headers'):
             http_headers = cp.get(url, 'http_headers')
@@ -972,6 +1002,16 @@ def identify_conf():
 def interactive_config_setup(conffile, apiurl, initial=True):
     user = raw_input('Username: ')
     passwd = getpass.getpass()
+    creds_mgr_descr = select_credentials_manager_descr()
+    if initial:
+        config = {'user': user, 'pass': passwd}
+        if apiurl:
+            config['apiurl'] = apiurl
+        write_initial_config(conffile, config, creds_mgr_descriptor=creds_mgr_descr)
+    else:
+        add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr)
+
+def select_credentials_manager_descr():
     if not credentials.has_keyring_support():
         print('To use keyrings please install python-keyring.')
     creds_mgr_descriptors = credentials.get_credentials_manager_descriptors()
@@ -983,14 +1023,6 @@ def interactive_config_setup(conffile, apiurl, initial=True):
     i = int(i) - 1
     if i < 0 or i >= len(creds_mgr_descriptors):
         sys.exit('Invalid selection')
-    creds_mgr_descr = creds_mgr_descriptors[i]
-    if initial:
-        config = {'user': user, 'pass': passwd}
-        if apiurl:
-            config['apiurl'] = apiurl
-        write_initial_config(conffile, config, creds_mgr_descriptor=creds_mgr_descr)
-    else:
-        add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr)
-
+    return creds_mgr_descriptors[i]
 
 # vim: sw=4 et
