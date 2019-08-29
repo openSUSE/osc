@@ -22,7 +22,6 @@ import test_project_status
 import test_request
 import test_setlinkrev
 import test_prdiff
-import test_conf
 import test_results
 import test_helpers
 
@@ -41,7 +40,6 @@ suite.addTests(test_project_status.suite())
 suite.addTests(test_request.suite())
 suite.addTests(test_setlinkrev.suite())
 suite.addTests(test_prdiff.suite())
-suite.addTests(test_conf.suite())
 suite.addTests(test_results.suite())
 suite.addTests(test_helpers.suite())
 

@@ -66,4 +66,19 @@ def decode_it(obj):
                 return obj.decode(locale.getlocale()[1])
             except:
                 return obj.decode('latin-1')
-            
+
+
+def raw_input(*args):
+    try:
+        import builtins
+        func = builtins.input
+    except ImportError:
+        #python 2.7
+        import __builtin__
+        func = __builtin__.raw_input
+
+    try:
+        return func(*args)
+    except EOFError:
+        # interpret ctrl-d as user abort
+        raise oscerr.UserAbort()

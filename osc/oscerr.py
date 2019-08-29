@@ -28,6 +28,11 @@ class ConfigMissingApiurl(ConfigError):
         ConfigError.__init__(self, msg, fname)
         self.url = url
 
+class ConfigMissingCredentialsError(ConfigError):
+    def __init__(self, msg, fname, url):
+        ConfigError.__init__(self, msg, fname)
+        self.url = url
+
 class APIError(OscBaseError):
     """Exception raised when there is an error in the output from the API"""
     def __init__(self, msg):
