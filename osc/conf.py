@@ -694,10 +694,8 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     run = False
     if val:
         if opt == 'pass':
-            user = cp.get(section, 'user')
             creds_mgr = _get_credentials_manager(section, cp)
-            if user is None and hasattr(creds_mgr, 'get_user'):
-                user = creds_mgr.get_user(section)
+            user = _extract_user_compat(cp, section, creds_mgr)
             old_pw = creds_mgr.get_password(section, user, defer=False)
             try:
                 creds_mgr.delete_password(section, user)
@@ -721,10 +719,8 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
         run = True
     elif delete and (cp.has_option(section, opt) or opt == 'pass'):
         if opt == 'pass':
-            user = cp.get(section, 'user')
             creds_mgr = _get_credentials_manager(section, cp)
-            if user is None and hasattr(creds_mgr, 'get_user'):
-                user = creds_mgr.get_user(section)
+            user = _extract_user_compar(cp, section, creds_mgr)
             creds_mgr.delete_password(section, user)
         else:
             cp.remove_option(section, opt)
@@ -739,6 +735,16 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     if cp.has_option(section, opt):
         return (opt, cp.get(section, opt, raw=True))
     return (opt, None)
+
+def _extract_user_compat(cp, section, creds_mgr):
+    """
+    This extracts the user either from the ConfigParser or
+    the creds_mgr. Only needed for deprecated Gnome Keyring
+    """
+    user = cp.get(section, 'user')
+    if user is None and hasattr(creds_mgr, 'get_user'):
+        user = creds_mgr.get_user(section)
+    return user
 
 def write_initial_config(conffile, entries, custom_template='', creds_mgr_descriptor=None):
     """
@@ -878,14 +884,11 @@ def get_config(override_conffile=None,
         # backward compatiblity
         scheme, host, path = parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host, path)
-        user = cp.get(url, 'user', raw=True)
         creds_mgr = _get_credentials_manager(url, cp)
-        # currently, this is only needed for the deprecated gnomekeyring - actually, we
-        # we should use the apiurl instead of url (that's what the old code did), but
-        # this makes things more complex (also, it is very unlikely that url and
-        # apiurl differ)
-        if user is None and hasattr(creds_mgr, 'get_user'):
-            user = creds_mgr.get_user(url)
+        # if the deprecated gnomekeyring is used we should use the apiurl instead of url
+        # (that's what the old code did), but this makes things more complex
+        # (also, it is very unlikely that url and apiurl differ)
+        user = _extract_user_compat(cp, url, creds_mgr)
         if user is None:
             raise oscerr.ConfigMissingCredentialsError('No user found in section %s' % url, conffile, url)
         password = creds_mgr.get_password(url, user)
