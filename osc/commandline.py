@@ -5465,23 +5465,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last)
 
 
-    def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments'):
+    def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments', project=None):
         wd = os.curdir
         doprint = False
         if is_package_dir(wd):
-            msg = "package"
+            msg = 'Valid arguments for this package are:'
             doprint = True
         elif is_project_dir(wd):
-            msg = "project"
+            msg = 'Valid arguments for this project are:'
             doprint = True
 
+        args = []
+        if project is not None:
+            args.append(project)
+            msg = 'Valid arguments are:'
+            doprint=True
+
         if doprint:
-            print('Valid arguments for this %s are:' % msg)
+            print(msg)
             print()
             if repos_only:
-                self.do_repositories("repos_only", None)
+                self.do_repositories("repos_only", None, *args)
             else:
-                self.do_repositories(None, None)
+                self.do_repositories(None, None, *args)
         raise exc_class(exc_msg)
 
     @cmdln.alias('rbl')
@@ -7280,7 +7286,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         repos = list(get_repos_of_project(apiurl, project))
         if not [i for i in repos if repository == i.name]:
-            self.print_repos(exc_msg='Invalid repository \'%s\'' % repository)
+            self.print_repos(exc_msg='Invalid repository \'%s\'' % repository, project=project)
 
         arches = [architecture]
         if architecture is None:
