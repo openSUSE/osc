@@ -1245,73 +1245,64 @@ class Osc(cmdln.Cmdln):
             project = store_read_project(os.curdir)
 
             sr_ids = []
-            # for single request
-            actionxml = ""
-            options_block = "<options>"
-            if src_update:
-                options_block += """<sourceupdate>%s</sourceupdate>""" % (src_update)
-            if opts.update_link:
-                options_block  + """<updatelink>true</updatelink></options> """
-            options_block += "</options>"
 
-            # loop via all packages for checking their state
-            for p in meta_get_packagelist(apiurl, project):
-                # get _link info from server, that knows about the local state ...
-                u = makeurl(apiurl, ['source', project, p])
-                f = http_GET(u)
-                root = ET.parse(f).getroot()
-                target_project = None
-                if len(args) == 1:
-                    target_project = args[0]
-                linkinfo = root.find('linkinfo')
-                if linkinfo == None:
-                    if len(args) < 1:
-                        print("Package ", p, " is not a source link and no target specified.")
-                        sys.exit("This is currently not supported.")
-                else:
-                    if linkinfo.get('error'):
-                        print("Package ", p, " is a broken source link.")
-                        sys.exit("Please fix this first")
-                    t = linkinfo.get('project')
-                    if t:
-                        if target_project == None:
-                            target_project = t
-                        if len(root.findall('entry')) > 1: # This is not really correct, but should work mostly
-                                                           # Real fix is to ask the api if sources are modificated
-                                                           # but there is no such call yet.
-                            print("Submitting package ", p)
-                        else:
-                            print("  Skipping not modified package ", p)
-                            continue
+            target_project = None
+            if len(args) == 1:
+                target_project = args[0]
+            if opts.separate_requests or opts.seperate_requests:
+                for p in meta_get_packagelist(apiurl, project):
+                    # get _link info from server, that knows about the local state ...
+                    u = makeurl(apiurl, ['source', project, p])
+                    f = http_GET(u)
+                    root = ET.parse(f).getroot()
+                    _check_service(root)
+                    linkinfo = root.find('linkinfo')
+                    if linkinfo == None:
+                        if len(args) < 1:
+                            print("Package ", p, " is not a source link and no target specified.")
+                            sys.exit("This is currently not supported.")
                     else:
-                        print("Skipping package ", p,  " since it is a source link pointing inside the project.")
-                        continue
-
-                # check for failed source service
-                _check_service(root)
-
-                # submitting this package
-                if opts.separate_requests or opts.seperate_requests:
-                    # create a single request
-                    result = create_submit_request(apiurl, project, p, src_update=src_update)
+                        if linkinfo.get('error'):
+                            print("Package ", p, " is a broken source link.")
+                            sys.exit("Please fix this first")
+                        t = linkinfo.get('project')
+                        if t is None:
+                            print("Skipping package ", p,  " since it is a source link pointing inside the project.")
+                            continue 
+                    print("Submitting package ", p)
+                    try:
+                        result = create_submit_request(apiurl, project, p, target_project, src_update=src_update)
+                    except HTTPError as e:
+                        if e.hdrs.get('X-Opensuse-Errorcode') == 'missing_action':
+                            print("Package ", p, " no changes. Skipping...")
+                            continue
+                        raise
                     if not result:
                         sys.exit("submit request creation failed")
                     sr_ids.append(result)
-                else:
-                    s = """<action type="submit"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> %s </action>"""  % \
-                        (project, p, target_project, p, options_block)
-                    actionxml += s
-
-            if actionxml != "":
+            else:
+                actionxml = ""
+                options_block = "<options>"
+                if src_update:
+                    options_block += """<sourceupdate>%s</sourceupdate>""" % (src_update)
+                if opts.update_link:
+                    options_block  + """<updatelink>true</updatelink></options> """
+                options_block += "</options>"
+                target_prj_block = ""
+                if target_project is not None:
+                    target_prj_block = """<target project="%s"/>""" % target_project
+                s = """<action type="submit"> <source project="%s" /> %s %s </action>"""  % \
+                        (project, target_prj_block, options_block)
+                actionxml += s
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
-                      (actionxml, cgi.escape(opts.message or ""))
+                        (actionxml, cgi.escape(opts.message or ""))
                 u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
                 f = http_POST(u, data=xml)
 
                 root = ET.parse(f).getroot()
                 sr_ids.append(root.get('id'))
 
-            print("Request created: ", end=' ')
+            print("Request(s) created: ", end=' ')
             for i in sr_ids:
                 print(i, end=' ')
 
