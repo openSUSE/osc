@@ -7479,7 +7479,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             elif repl == 'm':
                 if tmpfile is not None:
                     tmpfile.seek(0)
-                    comment = edit_message(footer=tmpfile.read())
+                    comment = edit_message(footer=decode_it(tmpfile.read()))
                 else:
                     comment = edit_text()
                 create_comment(apiurl, 'request', comment, request.reqid)
