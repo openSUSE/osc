@@ -2492,7 +2492,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print('Buildstatus for \'%s/%s\':' % (action.src_project, action.src_package))
                     print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
             if opts.diff:
-                diff = ''
+                diff = b''
                 try:
                     # works since OBS 2.1
                     diff = request_diff(apiurl, reqid)
