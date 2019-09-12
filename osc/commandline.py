@@ -5619,7 +5619,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         while len(data):
             if opts.strip_time or conf.config['buildlog_strip_time']:
                 data = buildlog_strip_time(data)
-            sys.stdout.write(data)
+            sys.stdout.write(decode_it(data))
             data = f.read(BUFSIZE)
         f.close()
 
