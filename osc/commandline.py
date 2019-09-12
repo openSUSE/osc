@@ -9249,6 +9249,238 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             result = delete_comment(apiurl, args[1])
             print(result)
 
+    @cmdln.option('-g', '--group',
+            help='group', metavar='GROUP')
+    @cmdln.option('-s', '--staging', action='append', default=[],
+            help='staging project', metavar='STAGING')
+    @cmdln.option('-r', '--requests', action='append', default=[],
+            help='request(s)', metavar='REQUESTS')
+    @cmdln.option('-v', '--verbose', action='store_true',
+                        help='print extra information')
+    @cmdln.alias('ps')
+    def do_projectstaging(self, subcmd, opts, cmd=None, *args):
+        """${cmd_name}: Handle staging
+
+        Create, Add, Delete staging projects
+        Add requests to staging
+
+        This can be issued within a project directory or with the
+        project as the first argument.
+
+        If you operate on a staging project or with requests the
+        staging project has to be given with -s and the request has
+        to be given with -r
+
+        You can add multiple requests / stagings:
+        For example:
+        "-s myprj:Staging:A -s myprj:Staging:B"
+        "-r 1234 -r 12345"
+
+        osc ps
+
+        For example:
+        linux:~/myproject/> osc ps create
+        or
+        osc ps create myproject
+
+        subcommands:
+            create    Create a staging workflow for the project
+            add       Add a staging project to a staging workflow
+                      using -s <staging project>
+            list      List all staging project associated to this
+                      workflow
+            show      Show information to one specific staging project
+                      using -s <staging project>
+            delete
+                      Delete complete staging workflow from project
+            accept
+                      Accept the staging given with -s. All requests in
+                      the staging project will be accepted
+
+
+        osc ps request
+
+        subcommands:
+            add       Add requests given with -r to a staging given with -s
+            delete    Delete requests given with -r from a staging given with -s
+            list      List all requests in a staging given with -s
+
+
+
+        Example Workflow:
+        osc ps create myprj -g group_for_review
+        osc ps add myprj -s myprj:Staging:A
+        osc ps request add myprj -s myprj:Staging:A -r 1234, 4567
+        osc ps request delete myprj -s myprj:Staging:A -r 1234
+        osc ps request list -s myprj:Staging:A
+        osc ps accept myprj -s myprj:Staging:A
+        osc ps show myprj -s myprj:Staging:A
+
+
+        """
+
+        args = slash_split(args)
+
+        subcmdlist = ['create', 'add', 'delete', 'show', 'request', 'rq', 'list', 'accept']
+        rqcmdlist = ['add', 'delete', 'list']
+
+        if cmd not in subcmdlist:
+            raise oscerr.WrongArgs('Unknown operation. Choose one of %s.' \
+                                               % ', '.join(subcmdlist))
+
+        staging_list = opts.staging
+
+        is_subcmd = None
+        rqcmd = None
+        if cmd in ['rq', 'request']:
+            if not args or args[0] not in rqcmdlist:
+                raise oscerr.WrongArgs('Unknown operation. Choose one of %s.' \
+                                                    % ', '.join(rqcmdlist))
+            if args[0] in ['delete', 'add'] and not opts.requests:
+                raise oscerr.WrongArgs('You need to specify at least one request-id with -r')
+            rqcmd = args[0]
+            is_subcmd = True
+            del args[0]
+
+        if not staging_list and (cmd in ['add', 'show', 'accept'] or rqcmd in ['list', 'add']):
+            raise oscerr.WrongArgs('You need to specify at least one Staging Project you want to create with -s')
+
+        apiurl = self.get_api_url()
+        ps = ProjectStaging(apiurl)
+
+        if not args:
+            cwd = os.getcwd()
+            if is_project_dir(cwd) or is_package_dir(cwd):
+                project = store_read_project(cwd)
+            else:
+                raise oscerr.WrongArgs('Not a project working directory or no project given!')
+        else:
+            project = args[0]
+
+        if cmd == 'create':
+            if not opts.group:
+                raise oscerr.WrongArgs('Please specify a group for the staging with -g <groupname>')
+            ret = ps.create(project, opts.group)
+            root = ET.fromstring(ret.read())
+            summary = root.find('summary')
+            if summary.text == 'Ok':
+                print('Staging workflow for %s created!' % project)
+            create_sub = raw_input('Do you want to automatically create staging projects? [Y|n]: ') or 'y'
+            if create_sub in ['y', 'Y']:
+                staging_list = []
+                for i in ['A', 'B']:
+                    staging_list.append(project + ":Staging:" + i)
+                ps.add(project, staging_list)
+        elif cmd == 'add':
+            ret = ps.add(project, staging_list)
+            root = ET.fromstring(ret.read())
+            summary = root.find('summary')
+            if summary.text == 'Ok':
+                for stage in staging_list:
+                    print('Staging %s added to %s' % (stage, project))
+        elif cmd == 'delete':
+            res = ps.list(project)
+            root = ET.parse(res).getroot()
+            staging_list = []
+            for stage in root.findall('staging_project'):
+                staging_list.append(stage.get('name'))
+            ret = ps.delete(project)
+            if ret:
+                print('Staging workflow for %s deleted!' % project)
+            if staging_list:
+                print('Staging projects:')
+                for stage in staging_list:
+                    print(stage)
+                delete_subs = raw_input('Do you want to delete all staging projects for this workflow? [Y|n]: ') or 'y'
+                if delete_subs in ['y', 'Y']:
+                    delete_msg = 'Deleted by staging workflow'
+                    for stage in staging_list:
+                        delete_project(apiurl, stage, msg=delete_msg)
+        elif cmd == 'show':
+            for st in staging_list:
+                print('\nStaging %s' % st)
+                print('-' * 50)
+                res = ps.show(project, st)
+                root = ET.parse(res).getroot()
+                for child in root:
+                    tag = child.tag
+                    count = int(child.get('count'))
+                    print('%s: %s' % (tag, count))
+                    if count > 0 and tag != 'history':
+                        for cchild in child:
+                            rq_id = cchild.get('id')
+                            creator = cchild.get('creator')
+                            state = cchild.get('state')
+                            pkg = cchild.get('package')
+                            print('\t\t%s\t\t%s\t\t%s\t\t%s' % (rq_id, creator, state, pkg))
+        elif cmd == 'list':
+            res = ps.list(project)
+            if res:
+                root = ET.parse(res).getroot()
+                for stage in root.findall('staging_project'):
+                    print(stage.get('name'))
+            else:
+                print('No staging workflow found for %s' % project)
+                print('Please create one with \'osc ps create\'!')
+        elif cmd == 'accept':
+            for st in staging_list:
+                ret = ps.accept(project, st)
+                root = ET.fromstring(ret.read())
+                summary = root.find('summary')
+                if summary.text == 'Ok':
+                    for stage in staging_list:
+                        print('Staging %s accepted' % st)
+
+        elif cmd in ['rq', 'request']:
+            if rqcmd == 'add':
+                rqlist = opts.requests
+                ret = ps.add_request(project, staging_list[0], rqlist)
+                root = ET.fromstring(ret.read())
+                summary = root.find('summary')
+                if summary.text == 'Ok':
+                    for rq in rqlist:
+                        print('Request %s added to %s' % (rq, staging_list[0]))
+            elif rqcmd == 'list':
+                for st in staging_list:
+                    print('Requests in %s' % st)
+                    ret = ps.list_requests(project, st)
+                    root = ET.fromstring(ret.read())
+                    for rq in root.findall('request'):
+                        rq_id = rq.get('id')
+                        creator = rq.get('creator')
+                        state = rq.get('state')
+                        pkg = rq.get('package')
+                        print('%s\t\t%s\t\t%s\t\t%s' % (rq_id, creator, state, pkg))
+            elif rqcmd == 'delete':
+                rqlist = opts.requests
+                if not staging_list:
+                    rq_for_stage = []
+                    res = ps.list(project)
+                    if res:
+                        root = ET.parse(res).getroot()
+                        for rq in rqlist:
+                            for stage in root.findall('staging_project'):
+                                res = ps.show(project, stage.get('name'))
+                                root = ET.parse(res).getroot()
+                                for child in root:
+                                    for cchild in child:
+                                        if rq == cchild.get('id'):
+                                            rq_for_stage.append(rq)
+                                            rq_stage = stage.get('name')
+                                            break
+                            ret = ps.delete_requests(project, rq_stage, rq_for_stage)
+                            root = ET.fromstring(ret.read())
+                            summary = root.find('summary')
+                            if summary.text == 'Ok':
+                                print('Request %s deleted from %s' % (rq_for_stage[0], rq_stage))
+                else:        
+                    ret = ps.delete_requests(project, staging_list[0], rqlist)
+                    root = ET.fromstring(ret.read())
+                    summary = root.find('summary')
+                    if summary.text == 'Ok':
+                        for rq in rqlist:
+                            print('Request %s deleted from %s' % (rq, staging_list[0]))
+
     def _load_plugins(self):
         plugin_dirs = [
             '/usr/lib/osc-plugins',
