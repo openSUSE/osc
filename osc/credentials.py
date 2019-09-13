@@ -2,6 +2,9 @@ import importlib
 import bz2
 import base64
 import getpass
+import os
+import re
+from fs.tempfs import TempFS
 try:
     from urllib.parse import urlsplit
 except ImportError:
@@ -152,6 +155,89 @@ class TransientDescriptor(AbstractCredentialsManagerDescriptor):
         return TransientCredentialsManager(cp, None)
 
 
+class TmpFSCredentialsManager(AbstractCredentialsManager):
+    def __init__(self, cp, options):
+        super(self.__class__, self).__init__(cp, options)
+
+    def _process_options(self, options):
+        if options is None:
+            self._tmpfs_location = self._identify_tmpfs()
+            if self._tmpfs_location is None:
+                raise RuntimeError('System does not support "/run/user/<id>" \
+                                   as tmpfs')
+        else:
+            self._tmpfs_location = options
+
+    def get_password(self, url, user):
+        if self._tmpfs_location is None:
+            return None
+        pwstore = self._get_pw_store_on_fs(url)
+        if pwstore is None:
+            return None
+        with open(pwstore, 'r') as pw_file:
+            for line in pw_file:
+                attr, value = line.split('=')
+                if attr == 'user' and value.strip() != user:
+                    return None
+                if attr == 'pass':
+                    return value
+
+    def set_password(self, url, user, password):
+        if self._tmpfs_location is None:
+            return None
+        TMPFS = TempFS(identifier='osc', temp_dir=self._tmpfs_location,
+                       auto_clean=False)
+        netloc = self._urlsplit(url)
+        pwstore_file = TMPFS.open(netloc, 'w')
+        user_pass = 'user=%s\npass=%s' % (user, password)
+        pwstore_file.write(user_pass)
+        pwstore_file.close()
+        TMPFS.close()
+        self._cp.set(url, self.config_entry, self._qualified_name())
+
+    def delete_password(self, url, user):
+        if self._tmpfs_location is None:
+            return None
+        pwstore = self._get_pw_store_on_fs(url)
+        if pwstore is None:
+            return None
+        os.remove(pwstore)
+        os.rmdir(self._tmpfs_location + '/' + self._urlsplit(url))
+
+    def _get_pw_store_on_fs(self, url):
+        regex = re.compile('^.*osc$')
+        pwstore = None
+        for name in os.listdir(self._tmpfs_location):
+            if regex.match(name):
+                pwstore = name
+        if pwstore is None:
+            return None
+        netloc = self._urlsplit(url)
+        pwstore = self._tmpfs_location + '/' + pwstore + '/' + netloc
+        return pwstore
+
+    def _identify_tmpfs(self):
+        tmpfs_path = '/run/user/' + str(os.getuid())
+        if os.path.isdir(tmpfs_path):
+            return tmpfs_path
+        return None
+
+    def _urlsplit(self, url):
+        splitted_url = urlsplit(url)
+        return splitted_url.netloc
+
+
+class TmpFSDescriptor(AbstractCredentialsManagerDescriptor):
+    def name(self):
+        return 'TmpFS password store'
+
+    def description(self):
+        return 'Store the password in a defined tmpFS storage'
+
+    def create(self, cp):
+        return TmpFSCredentialsManager(cp, None)
+
+
 class KeyringCredentialsManager(AbstractCredentialsManager):
     def __init__(self, cp, options, appname='osc'):
         super(self.__class__, self).__init__(cp, options)
@@ -272,6 +358,7 @@ def get_credentials_manager_descriptors():
     descriptors.append(PlaintextConfigFileDescriptor())
     descriptors.append(ObfuscatedConfigFileDescriptor())
     descriptors.append(TransientDescriptor())
+    descriptors.append(TmpFSDescriptor())
     return descriptors
 
 
