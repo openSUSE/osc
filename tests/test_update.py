@@ -222,7 +222,7 @@ class TestUpdate(OscTestCase):
         self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
 
     @GET('http://localhost/source/osctest/metamode?meta=1&rev=latest', file='testUpdateMetaMode_filesremote')
-    @GET('http://localhost/source/osctest/metamode/_meta?rev=1', file='testUpdateMetaMode__meta')
+    @GET('http://localhost/source/osctest/metamode/_meta?meta=1&rev=1', file='testUpdateMetaMode__meta')
     def testUpdateMetaMode(self):
         """update package with metamode enabled"""
         self._change_to_pkg('metamode')
