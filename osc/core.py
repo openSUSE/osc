@@ -4676,7 +4676,7 @@ def get_source_file(apiurl, prj, package, filename, targetfilename=None, revisio
     targetfilename = targetfilename or filename
     query = {}
     if meta:
-        query['rev'] = 1
+        query['meta'] = 1
     if revision:
         query['rev'] = revision
     u = makeurl(apiurl, ['source', prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), 'replace'))], query=query)
