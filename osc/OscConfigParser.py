@@ -355,4 +355,10 @@ class OscConfigParser(configparser.SafeConfigParser):
                 ret.append(str(line))
         return '\n'.join(ret)
 
+    def _validate_value_types(self, section="", option="", value=""):
+        if not isinstance(section, str):
+            raise TypeError("section names must be strings")
+        if not isinstance(option, str):
+            raise TypeError("option keys must be strings")
+
 # vim: sw=4 et
