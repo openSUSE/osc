@@ -1331,6 +1331,10 @@ class Osc(cmdln.Cmdln):
             p = findpacs(os.curdir)[0]
             src_project = p.prjname
             src_package = p.name
+            if self.options.apiurl and self.options.apiurl != p.apiurl:
+                print('The apiurl for the working copy of this package is %s' % p.apiurl)
+                print('You cannot use this command with the -A %s option.' % self.options.apiurl)
+                sys.exit(1)
             apiurl = p.apiurl
             if len(args) == 0 and p.islink():
                 dst_project = p.linkinfo.project
@@ -2506,7 +2510,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             action.tgt_project.encode(), action.tgt_package.encode())
                         diff += submit_action_diff(apiurl, action)
                         diff += b'\n\n'
-                run_pager(decode_it(diff), tmp_suffix='')
+                run_pager(diff, tmp_suffix='')
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
