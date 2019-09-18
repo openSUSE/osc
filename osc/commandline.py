@@ -2510,7 +2510,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             action.tgt_project.encode(), action.tgt_package.encode())
                         diff += submit_action_diff(apiurl, action)
                         diff += b'\n\n'
-                run_pager(decode_it(diff), tmp_suffix='')
+                run_pager(diff, tmp_suffix='')
 
         # checkout
         elif cmd == 'checkout' or cmd == 'co':
