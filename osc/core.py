@@ -2860,7 +2860,7 @@ class Request:
 
         now = datetime.datetime.utcnow()
         now = now + datetime.timedelta(hours=hours)
-        self.accept_at = now.isoformat()
+        self.accept_at = now.isoformat() + '+00:00'
 
     @staticmethod
     def format_review(review, show_srcupdate=False):
