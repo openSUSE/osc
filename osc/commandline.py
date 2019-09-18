@@ -8426,7 +8426,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if isinstance(data, str):
                     sys.stdout.write(data)
                 else:
-                    sys.stdout.write(decode_it(data))
+                    sys.stdout.buffer.write(data)
 
 
     # helper function to download a file from a specific revision
