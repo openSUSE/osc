@@ -3553,7 +3553,7 @@ def show_package_meta(apiurl, prj, pac, meta=False, blame=None):
         f = http_GET(url)
         return f.readlines()
     except HTTPError as e:
-        e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
+        e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (unquote(prj), pac)
         raise
 
 
