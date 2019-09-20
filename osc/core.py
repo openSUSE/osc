@@ -1683,8 +1683,8 @@ class Package:
             # diff3 OPTIONS... MINE OLDER YOURS
             ret = -1
             with open(filename, 'w') as f:
-                ret = run_external('diff3', '-m', '-E', myfilename,
-                                   storefilename, upfilename, stdout=f)
+                args = ('-m', '-E', myfilename, storefilename, upfilename)
+                ret = run_external('diff3', *args, stdout=f)
 
             #   "An exit status of 0 means `diff3' was successful, 1 means some
             #   conflicts were found, and 2 means trouble."
@@ -1703,6 +1703,7 @@ class Package:
                 self.write_conflictlist()
                 return 'C'
             else:
+                merge_cmd = 'diff3 ' + ' '.join(args)
                 raise oscerr.ExtRuntimeError('diff3 failed with exit code: %s' % ret, merge_cmd)
 
     def update_local_filesmeta(self, revision=None):
