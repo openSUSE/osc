@@ -8920,10 +8920,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 cmd_list.append("-m")
                 cmd_list.append(opts.message)
             if opts.file:
-                if not os.path.isfile(opts.file):
+                if len(args) > 1:
+                    raise oscerr.WrongOptions('--file and file_with_comment are mutually exclusive')
+                elif not os.path.isfile(opts.file):
                     raise oscerr.WrongOptions('\'%s\': is no file' % opts.file)
-                cmd_list.append("-m")
-                cmd_list.append(open(opts.file).read().strip())
+                args = list(args)
+                if not args:
+                    cmd_list.append('')
+                cmd_list.append(opts.file)
 
             if opts.just_edit:
                 cmd_list.append("-e")
