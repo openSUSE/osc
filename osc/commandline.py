@@ -4335,6 +4335,44 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(url_tmpl % (project.replace(':', ':/'), repo, project))
 
 
+    def do_browse(self, subcmd, opts, *args):
+        """${cmd_name}: opens browser
+
+        usage:
+           osc browse [PROJECT [PACKAGE]]
+
+        ${cmd_option_list}
+        """
+
+        apiurl = self.get_api_url()
+
+        package = None
+        if len(args) == 1:
+            project = args[0]
+        elif len(args) == 2:
+            project = args[0]
+            package = args[1]
+        elif len(args) == 0:
+            project = store_read_project('.')
+            if is_package_dir('.'):
+                package = store_read_package('.')
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments')
+
+        root = ET.fromstring(b''.join(show_configuration(apiurl)))
+        node = root.find('obs_url')
+        if node is None or not node.text:
+            raise oscerr.APIError('obs_url configuration element expected')
+        obs_url = node.text
+
+        if package is None:
+            url = "{}/project/show/{}".format(obs_url, project)
+        else:
+            url = "{}/package/show/{}/{}".format(obs_url, project, package)
+
+        run_external('xdg-open', url)
+
+
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='checkout the specified revision. '
                              'NOTE: if you checkout the complete project '
