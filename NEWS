@@ -1,5 +1,18 @@
-0.166
-  -
+0.166.0
+  - New password handling backend. Supported password stores:
+      * Plaintext password
+      * Obfuscated password
+      * python-keyring (kwallet, secret store)
+      * gnome-keyring
+      * no store at all (ask for the password every time
+  - Refactor initial setup of osc (to select password store)
+  - fix decoding on osc lbl (boo#1137477)
+  - fix breakage of submitting complete branches back as an
+    submit request that contain packages without a change.
+  - fix error with plugins and osc -h
+  - various decoding improvements
+  - Transfer the name of the input file to vc instead of the content
+    (obs-build/vc will do the rest and open the file).
 
 0.165.4
   - allow optional fork when creating a maintenance request
