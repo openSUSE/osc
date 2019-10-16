@@ -3336,6 +3336,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             home:USERNAME:branches:ATTRIBUTE:PACKAGE
         if nothing else specified.
 
+        If osc maintained or sm is issued only the relevant instances of a
+        package will be shown. No branch will be created. This is similar
+        to osc mbranch --dryrun.
+
         usage:
             osc sm [SOURCEPACKAGE] [-a ATTRIBUTE]
             osc mbranch [ SOURCEPACKAGE [ TARGETPROJECT ] ]
