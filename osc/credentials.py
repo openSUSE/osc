@@ -38,6 +38,10 @@ class AbstractCredentialsManager(object):
         self._cp = cp
         self._process_options(options)
 
+    @classmethod
+    def create(cls, cp, options):
+        return cls(cp, options)
+
     def get_password(self, url, user, defer=True):
         # If defer is True a callable can be returned
         # and the password is retrieved if the callable
@@ -166,6 +170,12 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
         keyring_backend = keyring.core.load_keyring(self._backend_cls_name)
         keyring.set_keyring(keyring_backend)
 
+    @classmethod
+    def create(cls, cp, options):
+        if not has_keyring_support():
+            return None
+        return super(cls, cls).create(cp, options)
+
     def get_password(self, url, user, defer=True):
         self._load_backend()
         return keyring.get_password(self._appname, user)
@@ -197,6 +207,12 @@ class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
 
 
 class GnomeKeyringCredentialsManager(AbstractCredentialsManager):
+    @classmethod
+    def create(cls, cp, options):
+        if gnomekeyring is None:
+            return None
+        return super(cls, cls).create(cp, options)
+
     def get_password(self, url, user, defer=True):
         gk_data = self._keyring_data(url, user)
         if gk_data is None:
@@ -288,7 +304,7 @@ def create_credentials_manager(url, cp):
         creds_mgr_cls = config_entry
         options = None
     mod, cls = creds_mgr_cls.rsplit('.', 1)
-    return getattr(importlib.import_module(mod), cls)(cp, options)
+    return getattr(importlib.import_module(mod), cls).create(cp, options)
 
 
 def qualified_name(obj):
