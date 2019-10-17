@@ -6055,7 +6055,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for subarch in osc.build.can_also_build.get(mainarch):
                     all_archs.append(subarch)
             for arg in args:
-                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or arg.endswith('.livebuild') or arg == 'PKGBUILD' or arg == 'build.collax' or arg == 'Dockerfile' or arg == 'fissile.yml':
+                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or arg.endswith('.livebuild') or arg == 'PKGBUILD' or arg == 'build.collax' or arg == 'Dockerfile' or arg == 'fissile.yml' or arg == 'appimage.yml':
                     arg_descr = arg
                 else:
                     if (arg == osc.build.hostarch or arg in all_archs) and arg_arch is None:
@@ -6117,7 +6117,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
         descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') \
-                + glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + glob.glob('fissile.yml')
+                + glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + glob.glob('fissile.yml') \
+                + glob.glob('appimage.yml')
 
         # FIXME:
         # * request repos from server and select by build type.
@@ -6176,7 +6177,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not arg_descr:
                     msg = 'Multiple build description files found: %s' % ', '.join(cands)
             elif not ignore_descr:
-                msg = 'Missing argument: build description (spec, dsc, kiwi or livebuild file)'
+                msg = 'Missing argument: build description (for example a spec, dsc or kiwi file)'
                 try:
                     p = Package('.')
                     if p.islink() and not p.isexpanded():
