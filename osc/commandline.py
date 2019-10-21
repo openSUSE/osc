@@ -5819,9 +5819,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
             if opts.alternative_project:
                 project = opts.alternative_project
+                package = '_repository'
             else:
                 project = store_read_project('.')
-            package = store_read_package('.')
+                package = store_read_package('.')
             repository, arch, build_descr = self.parse_repoarchdescr(args, alternative_project=opts.alternative_project, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
