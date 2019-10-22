@@ -2122,6 +2122,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
                         help='exclude target project from request list')
+    @cmdln.option('--incoming', action='store_true',
+                        help='Show only requests where the project is target')
     @cmdln.option('--involved-projects', action='store_true',
                         help='show all requests for project/packages where USER is involved')
     @cmdln.option('--target-package-filter', metavar='TARGET_PACKAGE_FILTER',
@@ -2232,6 +2234,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.state == '' and subcmd != 'review':
             opts.state = 'declined,new,review'
+
+        if opts.incoming:
+            conf.config['include_request_from_project'] = False
 
         if args[0] == 'help':
             return self.do_help(['help', 'request'])
