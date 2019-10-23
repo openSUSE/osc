@@ -4773,6 +4773,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             self._commit(subcmd, opts, args)
         except oscerr.ExtRuntimeError as e:
+            pattern = re.compile("No such file")
+            if "No such file" in e.msg:
+                editor = os.getenv('EDITOR', default=get_default_editor())
+                print("Editor %s not found" % editor)
+                return 1
             print("ERROR: service run failed", e, file=sys.stderr)
             return 1
         except oscerr.PackageNotInstalled as e:
