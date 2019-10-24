@@ -789,7 +789,12 @@ def add_section(filename, url, user, passwd, creds_mgr_descriptor=None):
 
 def _get_credentials_manager(url, cp):
     if cp.has_option(url, credentials.AbstractCredentialsManager.config_entry):
-        return credentials.create_credentials_manager(url, cp)
+        creds_mgr = credentials.create_credentials_manager(url, cp)
+        if creds_mgr is None:
+            msg = 'Unable to instantiate creds mgr (section: %s)' % url
+            conffile = get_configParser.conffile
+            raise oscerr.ConfigMissingCredentialsError(msg, conffile, url)
+        return creds_mgr
     if config['use_keyring'] and GENERIC_KEYRING:
         return credentials.get_keyring_credentials_manager(cp)
     elif config['gnome_keyring'] and GNOME_KEYRING:
