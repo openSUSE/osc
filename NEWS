@@ -13,6 +13,10 @@
   - various decoding improvements
   - Transfer the name of the input file to vc instead of the content
     (obs-build/vc will do the rest and open the file).
+  - support appimage builds
+  - new command browse. (opens a browser opening the project or package)
+  - new option --incoming for osc rq and osc review to only show only
+    incoming reqeusts for a project.
 
 0.165.4
   - allow optional fork when creating a maintenance request
