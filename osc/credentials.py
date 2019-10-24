@@ -1,4 +1,3 @@
-import importlib
 import bz2
 import base64
 import getpass
@@ -14,6 +13,10 @@ try:
     import gnomekeyring
 except ImportError:
     gnomekeyring = None
+try:
+    import importlib
+except ImportError:
+    importlib = None
 
 
 class AbstractCredentialsManagerDescriptor(object):
@@ -304,7 +307,7 @@ def create_credentials_manager(url, cp):
         creds_mgr_cls = config_entry
         options = None
     mod, cls = creds_mgr_cls.rsplit('.', 1)
-    return getattr(importlib.import_module(mod), cls).create(cp, options)
+    return getattr(import_module(mod, cls), cls).create(cp, options)
 
 
 def qualified_name(obj):
@@ -313,3 +316,9 @@ def qualified_name(obj):
 
 def has_keyring_support():
     return keyring is not None
+
+
+def import_module(mod, cls):
+    if importlib is None:
+        return __import__(mod, fromlist=[cls])
+    return importlib.import_module(mod)
