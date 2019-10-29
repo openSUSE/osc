@@ -1,3 +1,9 @@
+0.166.1
+  - emergency fix for credentials handling:
+      * in case of an old passx entry in oscrc
+	osc did not work at all. Now we check in
+	the compat code if we have an passx entry.
+
 0.166.0
   - New password handling backend. Supported password stores:
       * Plaintext password
