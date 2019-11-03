@@ -163,10 +163,6 @@ class TransientDescriptor(AbstractCredentialsManagerDescriptor):
 
 
 class KeyringCredentialsManager(AbstractCredentialsManager):
-    def __init__(self, cp, options, appname='osc'):
-        super(self.__class__, self).__init__(cp, options)
-        self._appname = appname
-
     def _process_options(self, options):
         if options is None:
             raise RuntimeError('options may not be None')
@@ -184,17 +180,17 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
 
     def get_password(self, url, user, defer=True):
         self._load_backend()
-        return keyring.get_password(self._appname, user)
+        return keyring.get_password(urlsplit(url)[1], user)
 
     def set_password(self, url, user, password):
         self._load_backend()
-        keyring.set_password(self._appname, user, password)
+        keyring.set_password(urlsplit(url)[1], user, password)
         config_value = self._qualified_name() + ':' + self._backend_cls_name
         self._cp.set(url, self.config_entry, config_value)
 
     def delete_password(self, url, user):
         self._load_backend()
-        keyring.delete_password(self._appname, user)
+        keyring.delete_password(urlsplit(url)[1], user)
 
 
 class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
