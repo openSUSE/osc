@@ -65,8 +65,6 @@ class AbstractCredentialsManager(object):
 
 class PlaintextConfigFileCredentialsManager(AbstractCredentialsManager):
     def get_password(self, url, user, defer=True):
-        if self._cp.has_option(url, 'passx', proper=True):
-            return self._cp.get(url, 'passx', raw=True)
         return self._cp.get(url, 'pass', raw=True)
 
     def set_password(self, url, user, password):
@@ -95,7 +93,10 @@ class PlaintextConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
 class ObfuscatedConfigFileCredentialsManager(
         PlaintextConfigFileCredentialsManager):
     def get_password(self, url, user, defer=True):
-        passwd = super(self.__class__, self).get_password(url, user)
+        if self._cp.has_option(url, 'passx', proper=True):
+            passwd = self._cp.get(url, 'passx', raw=True)
+        else:
+            passwd = super(self.__class__, self).get_password(url, user)
         return self.decode_password(passwd)
 
     def set_password(self, url, user, password):
