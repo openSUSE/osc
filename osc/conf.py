@@ -158,7 +158,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             # check for unversioned/removed files before commit
             'check_filelist': '1',
             # check for pending requests after executing an action (e.g. checkout, update, commit)
-            'check_for_request_on_action': '0',
+            'check_for_request_on_action': '1',
             # what to do with the source package if the submitrequest has been accepted
             'submitrequest_on_accept_action': '',
             'request_show_interactive': '0',
@@ -323,7 +323,7 @@ apiurl = %(apiurl)s
 #check_filelist = 1
 
 # check for pending requests after executing an action (e.g. checkout, update, commit)
-#check_for_request_on_action = 0
+#check_for_request_on_action = 1
 
 # what to do with the source package if the submitrequest has been accepted. If
 # nothing is specified the API default is used
