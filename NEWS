@@ -1,3 +1,16 @@
+0.166.2
+  - Don't enforce password reuse (boo#1156501)
+  - Config option check_for_requests_on_action is now
+    activated by default.
+    Use check_for_request_on_action = 0 in oscrc to
+    disable it
+  - osc vc --file=foo bar.changes now writes the content
+    from foo into bar.changes instead of creating a new file
+    (boo#1155953)
+  - fix output for missing pubkey when using http_debug=1 on
+    osc build
+  - fix crash of osc linkpac when there is already a _link
+
 0.166.1
   - emergency fix for credentials handling:
       * in case of an old passx entry in oscrc
