@@ -5237,7 +5237,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
                                path_args=(quote_plus(dst_project), quote_plus(dst_package)),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
-        root = ET.fromstring(''.join(dst_meta))
+        root = ET.fromstring(b''.join(dst_meta))
         if root.get('project') != dst_project:
             # The source comes from a different project via a project link, we need to create this instance
             meta_change = True
