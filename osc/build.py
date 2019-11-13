@@ -1208,7 +1208,7 @@ def main(apiurl, opts, argv):
                        buildargs.append('--kiwi-parameter')
                        buildargs.append('--add-repopriority='+xml.get('priority'))
 
-    if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc":
+    if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc" or vm_type == "nspawn":
         print('Skipping verification of package signatures due to secure VM build')
     elif bi.pacsuffix == 'rpm':
         if opts.no_verify:
@@ -1291,7 +1291,7 @@ def main(apiurl, opts, argv):
             vm_options += [ '--vm-telnet=' + vm_telnet ]
         if vm_memory:
             vm_options += [ '--memory=' + vm_memory ]
-        if vm_type != 'lxc':
+        if vm_type != 'lxc' and vm_type != 'nspawn':
             vm_options += [ '--vm-disk=' + my_build_device ]
             vm_options += [ '--vm-swap=' + my_build_swap ]
             vm_options += [ '--logfile=%s/.build.log' % build_root ]
