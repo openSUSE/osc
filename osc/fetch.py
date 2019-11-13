@@ -286,7 +286,7 @@ class Fetcher:
 
             if try_parent:
                 if self.http_debug:
-                    print("can't fetch key for %s: %s" % (i, e.strerror), file=sys.stderr)
+                    print("can't fetch key for %s" % (i), file=sys.stderr)
                     print("url: %s" % url, file=sys.stderr)
 
                 if os.path.exists(dest):
