@@ -8980,8 +8980,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.WrongOptions('\'%s\': is no file' % opts.file)
                 args = list(args)
                 if not args:
-                    cmd_list.append('')
-                cmd_list.append(opts.file)
+                    args.append('')
+                args.append(opts.file)
 
             if opts.just_edit:
                 cmd_list.append("-e")
