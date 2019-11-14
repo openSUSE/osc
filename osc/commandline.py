@@ -5544,6 +5544,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('remotebuildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
+    @cmdln.option('--lastsucceeded', action='store_true',
+                        help='Show the last succeeded log file')
     @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
                         help='show log file for specified multibuild package')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
@@ -5599,7 +5601,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last)
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
 
     def _find_last_repo_arch(self, repo=None, fatal=True):
         import glob

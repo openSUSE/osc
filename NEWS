@@ -1,4 +1,5 @@
 0.167
+  - Added --lastsucceeded option for logfile display (requires OBS 2.11)
   - osc shell/chroot/wipe is now handled via build script (working for chroot and KVM only atm)
   - osc build --vm-type=qemu support for cross architecture builds
 
