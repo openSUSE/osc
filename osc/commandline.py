@@ -1241,7 +1241,7 @@ class Osc(cmdln.Cmdln):
         if len(args) < 2 and is_project_dir(os.getcwd()):
             if opts.diff:
                 raise oscerr.WrongOptions('\'--diff\' is not supported in a project working copy')
-            import cgi
+            import html
             project = store_read_project(os.curdir)
 
             sr_ids = []
@@ -1295,7 +1295,7 @@ class Osc(cmdln.Cmdln):
                         (project, target_prj_block, options_block)
                 actionxml += s
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
-                        (actionxml, cgi.escape(opts.message or ""))
+                        (actionxml, html.escape(opts.message or "", False))
                 u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
                 f = http_POST(u, data=xml)
 
@@ -1864,9 +1864,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             opts.message = edit_message()
 
-        import cgi
+        import html
         xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
-              (actionsxml, cgi.escape(opts.message or ""))
+              (actionsxml, html.escape(opts.message or "", False))
         u = makeurl(apiurl, ['request'], query='cmd=create')
         f = http_POST(u, data=xml)
 
@@ -1903,7 +1903,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
-        import cgi
+        import html
         args = slash_split(args)
         apiurl = self.get_api_url()
 
@@ -1958,7 +1958,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             r.add_action('add_role', tgt_project=project, tgt_package=package,
               person_name=user, person_role=role)
-        r.description = cgi.escape(opts.message or '')
+        r.description = html.escape(opts.message or '', False)
         r.create(apiurl)
         print(r.reqid)
 
@@ -1983,7 +1983,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc deletereq [-m TEXT] PROJECT [--all|--repository REPOSITORY]
         ${cmd_option_list}
         """
-        import cgi
+        import html
 
         args = slash_split(args)
 
@@ -2025,7 +2025,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         r = Request()
         r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
-        r.description = cgi.escape(opts.message)
+        r.description = html.escape(opts.message, False)
         if opts.accept_in_hours:
           r.accept_at_in_hours(int(opts.accept_in_hours))
         r.create(self.get_api_url())
@@ -2046,7 +2046,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         osc changedevelrequest PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
         """
-        import cgi
+        import html
 
         if len(args) == 0 and is_package_dir('.') and find_default_project():
             wd = os.curdir
@@ -2075,7 +2075,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r = Request()
         r.add_action('change_devel', src_project=devel_project, src_package=devel_package,
             tgt_project=project, tgt_package=package)
-        r.description = cgi.escape(opts.message)
+        r.description = html.escape(opts.message, False)
         r.create(self.get_api_url())
         print(r.reqid)
 
@@ -2601,7 +2601,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 # check for devel instances after accepted requests
                 if cmd in ['accept']:
-                    import cgi
+                    import html
                     sr_actions = rq.get_actions('submit')
                     for action in sr_actions:
                         u = makeurl(apiurl, ['/search/package'], {
@@ -2641,7 +2641,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                                 project, package)
                                     msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.creator)
                                     rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
-                                                                project, package, cgi.escape(msg))
+                                                                project, package, html.escape(msg, False))
                                     print(msg)
                                     print("New request #", rid)
                                     for req in reqs:
@@ -8270,9 +8270,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     message = edit_message()
 
-                import cgi
+                import html
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
-                      (requestactionsxml, cgi.escape(message or ""))
+                      (requestactionsxml, html.escape(message or "", False))
                 u = makeurl(apiurl, ['request'], query='cmd=create')
                 f = http_POST(u, data=xml)
 
