@@ -7973,7 +7973,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        'name': pac,
                                        'user': user}), apiurl=apiurl)
                 if data:
-                    data = ET.fromstring(''.join(data))
+                    data = ET.fromstring(parse_meta_to_string(data))
                     data.find('title').text = ''.join(title)
                     data.find('description').text = ''.join(descr)
                     data.find('url').text = url
