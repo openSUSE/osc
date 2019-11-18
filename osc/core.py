@@ -4022,11 +4022,8 @@ def get_default_editor():
     if system == 'Windows':
         return 'notepad'
     if system == 'Linux':
-        try:
-            # Python 2.6
-            dist = platform.linux_distribution()[0]
-        except AttributeError:
-            dist = platform.dist()[0]
+        import distro
+        dist = distro.id()
         if dist == 'debian':
             return 'editor'
         elif dist == 'fedora':
@@ -4040,11 +4037,8 @@ def get_default_pager():
     if system == 'Windows':
         return 'less'
     if system == 'Linux':
-        try:
-            # Python 2.6
-            dist = platform.linux_distribution()[0]
-        except AttributeError:
-            dist = platform.dist()[0]
+        import distro
+        dist = distro.id()
         if dist == 'debian':
             return 'pager'
         return 'less'
