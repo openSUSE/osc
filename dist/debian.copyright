@@ -1,0 +1,17 @@
+This package was debianized by J.H.M. Dassen (Ray) <jdassen@debian.org> on
+Fri, 12 May 2006 14:12:04 +0200.
+
+It was downloaded from www.opensuse.org
+
+Upstream Author: Peter Poeml <poeml@suse.de>
+
+Copyright Holder: Copyright (c) 2006 SUSE LINUX Products GmbH, Nuernberg, Germany.
+
+License:
+
+# Copyright (c) 2006 SUSE LINUX Products GmbH, Nuernberg, Germany.
+# This file and all modifications and additions to the pristine
+# package are under the same license as the package itself.
+
+osc itself is GPL, for the full text of the GPL see /usr/share/common-licenses/GPL
+

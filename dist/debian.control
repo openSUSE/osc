@@ -1,0 +1,15 @@
+Source: osc
+Priority: extra
+Maintainer: Adrian Schroeter <adrian@suse.de>, Rene Engelhard <rengelhard@suse.de>
+Build-Depends: debhelper (>= 4.0.0), python-dev
+Standards-Version: 3.7.1
+Section: devel
+
+Package: osc
+Section: devel
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.5) | python-celementtree, python-m2crypto, python-rpm, build | obs-build
+Recommends: python-progressbar
+Suggests: python-keyring, sudo
+Description: Open Build Service Commander
+  Commandline client for the Open Build Service.

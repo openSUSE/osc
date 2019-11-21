@@ -1,0 +1,3 @@
+usr/lib/osc/complete
+etc/profile.d/osc.csh
+etc/bash_completion.d/osc.sh
