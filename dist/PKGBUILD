@@ -1,0 +1,19 @@
+pkgname=osc
+pkgver=0.166.2
+pkgrel=0
+pkgdesc="Open Build Service client"
+arch=('i686' 'x86_64')
+url="https://www.github.com/openSUSE/osc"
+license=('GPL-2.0+' 'GPL-2.0')
+groups=('base-devel')
+depends=('python2' 'python2-m2crypto' 'urlgrabber')
+source=(osc-${pkgver}.tar.gz)
+md5sums=('SKIP')
+
+package() {
+  msg "Installing osc ..."
+  cd "${srcdir}"/osc-${pkgver}
+  python2 setup.py build
+  python2 setup.py install --prefix=/usr --root=${pkgdir}
+  ln -s osc-wrapper.py ${pkgdir}/usr/bin/osc
+}

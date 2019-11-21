@@ -1,0 +1,33 @@
+app: osc
+
+build:
+  packages:
+    - linuxdeployqt
+
+ingredients:
+  packages:
+    - build
+    - osc
+    - python-yaml
+    - obs-service-obs_scm
+    - obs-service-tar_scm
+    - obs-service-set_version
+    - obs-service-recompress
+    - openSUSE-release
+    - openSUSE-release-ftp
+    - rsync
+    
+script:
+  - mkdir -p $BUILD_APPDIR/usr/share/pixmaps
+  - cp /usr/share/pixmaps/appimage.png $BUILD_APPDIR/usr/share/pixmaps
+  - mkdir -p $BUILD_APPDIR/usr/share/applications
+  - echo "[Desktop Entry]"        >  $BUILD_APPDIR/usr/share/applications/osc.desktop
+  - echo "Name=osc"               >> $BUILD_APPDIR/usr/share/applications/osc.desktop
+  - echo "Exec=osc"               >> $BUILD_APPDIR/usr/share/applications/osc.desktop
+  - echo "Icon=appimage"          >> $BUILD_APPDIR/usr/share/applications/osc.desktop
+  - echo "Categories=Development" >> $BUILD_APPDIR/usr/share/applications/osc.desktop
+  - echo "Type=Application"       >> $BUILD_APPDIR/usr/share/applications/osc.desktop
+#  - sed -i -e 's,^#!/usr/bin/python,#!/usr/bin/env python,' $BUILD_APPDIR/usr/bin/osc
+  - linuxdeployqt $BUILD_APPDIR/usr/share/applications/*.desktop -bundle-non-qt-libs -verbose=2
+
+
