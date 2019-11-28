@@ -46,15 +46,6 @@ change_personality = {
             'sparcv8': 'linux32',
         }
 
-# FIXME: qemu_can_build should not be needed anymore since OBS 2.3
-qemu_can_build = [ 'armv4l', 'armv5el', 'armv5l', 'armv6l', 'armv7l', 'armv6el', 'armv6hl', 'armv7el', 'armv7hl', 'armv8el',
-                   'sh4', 'mips', 'mipsel',
-                   'ppc', 'ppc64',
-                   's390', 's390x',
-                   'sparc64v', 'sparcv9v', 'sparcv9', 'sparcv8', 'sparc',
-                   'hppa',
-        ]
-
 can_also_build = {
              'aarch64': ['aarch64'], # only needed due to used heuristics in build parameter evaluation
              'armv6l': [                                         'armv4l', 'armv5l', 'armv6l', 'armv5el', 'armv6el'                       ],
@@ -879,13 +870,9 @@ def main(apiurl, opts, argv):
         if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
             print('Error: hostarch \'%s\' is required.' % (bi.hostarch), file=sys.stderr)
             return 1
-    elif hostarch != bi.buildarch:
+    elif hostarch != bi.buildarch and vm_type != "emulator" and vm_type != "qemu":
         if not bi.buildarch in can_also_build.get(hostarch, []):
-            # OBSOLETE: qemu_can_build should not be needed anymore since OBS 2.3
-            if vm_type != "emulator" and not bi.buildarch in qemu_can_build:
-                print('Error: hostarch \'%s\' cannot build \'%s\'.' % (hostarch, bi.buildarch), file=sys.stderr)
-                return 1
-            print('WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU.' % (hostarch, bi.buildarch), file=sys.stderr)
+            print('WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU user emulation.' % (hostarch, bi.buildarch), file=sys.stderr)
 
     rpmlist_prefers = []
     if prefer_pkgs:
