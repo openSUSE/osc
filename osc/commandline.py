@@ -6384,12 +6384,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         OPTS may be
 
-            osc shell --shell-cmd=COMMAND REPOSITORY ARCH
+            --noinit             # for faster run
+            --shell-cmd=COMMAND
 
         To clean up the build environment run
 
             osc wipe [OPTS]
             osc wipe [OPTS] REPOSITORY ARCH
+
+        You may set the used VM type in oscrc already, but you can also overwrite it for example
+        with
+
+            --vm-type=chroot     # for faster, but uncleaner and unsecure build
+            --vm-type=kvm        # for clean and secure build
+            --vm-type=qemu       # for slow cross architecture build using system emulator
 
         # Note:
         # Configuration can be overridden by envvars, e.g.
