@@ -1,3 +1,7 @@
+0.167
+  - osc shell/chroot/wipe is now handled via build script (working for chroot and KVM only atm)
+  - osc build --vm-type=qemu support for cross architecture builds
+
 0.166.2
   - Don't enforce password reuse (boo#1156501)
   - Config option check_for_requests_on_action is now
