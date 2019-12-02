@@ -6477,6 +6477,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
+        if opts.shell or opts.wipe:
+            opts.noservice = True
+
         if opts.preload:
             opts.nopreinstallimage = True
 
