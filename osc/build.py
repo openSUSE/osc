@@ -563,8 +563,6 @@ def main(apiurl, opts, argv):
         buildargs.append('--norootforbuild')
     if opts.clean:
         buildargs.append('--clean')
-    if opts.noinit:
-        buildargs.append('--noinit')
     if opts.nochecks:
         buildargs.append('--no-checks')
     if not opts.no_changelog:
@@ -638,8 +636,6 @@ def main(apiurl, opts, argv):
     if opts.multibuild_package:
         buildargs.append('--buildflavor=%s' % opts.multibuild_package)
         pac = pac + ":" + opts.multibuild_package
-    if opts.shell:
-        buildargs.append("--shell")
     if opts.wipe:
         buildargs.append("--wipe")
 
@@ -674,6 +670,15 @@ def main(apiurl, opts, argv):
                          'project': prj, 'package': pacname, 'apihost': apihost}
         except:
             pass
+
+    if opts.shell:
+        buildargs.append("--shell")
+        if os.path.exists(build_root) and not opts.clean:
+            opts.noinit = True
+            opts.offline = True
+
+    if opts.noinit:
+        buildargs.append('--noinit')
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
