@@ -866,13 +866,14 @@ def main(apiurl, opts, argv):
     # real arch of this machine
     # vs.
     # arch we are supposed to build for
-    if bi.hostarch != None:
-        if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
-            print('Error: hostarch \'%s\' is required.' % (bi.hostarch), file=sys.stderr)
-            return 1
-    elif hostarch != bi.buildarch and vm_type != "emulator" and vm_type != "qemu":
-        if not bi.buildarch in can_also_build.get(hostarch, []):
-            print('WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU user emulation.' % (hostarch, bi.buildarch), file=sys.stderr)
+    if vm_type != "emulator" and vm_type != "qemu":
+        if bi.hostarch != None:
+            if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
+                print('Error: hostarch \'%s\' is required.' % (bi.hostarch), file=sys.stderr)
+                return 1
+        elif hostarch != bi.buildarch:
+            if not bi.buildarch in can_also_build.get(hostarch, []):
+                print('WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU user emulation.' % (hostarch, bi.buildarch), file=sys.stderr)
 
     rpmlist_prefers = []
     if prefer_pkgs:
