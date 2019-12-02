@@ -6291,7 +6291,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='define macro X with value Y')
     @cmdln.option('--build-opt', metavar='OPT', action='append',
                   help='pass option OPT to the build command')
-    @cmdln.option('--userootforbuild', action='store_true',
+    @cmdln.option('--userootforbuild', '--login-as-root', action='store_true',
                   help='Run build or shell as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
                   'in the spec file will invalidate this option.')
