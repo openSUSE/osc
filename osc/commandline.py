@@ -8729,7 +8729,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--delete', action='store_true', default=False,
                   help='delete the gpg signing key in this project')
     @cmdln.option('--notraverse', action='store_true', default=False,
-                  help='don\' traverse projects upwards to find key')
+                  help='don\'t traverse projects upwards to find key')
     @cmdln.option('--sslcert', action='store_true', default=False,
                   help='fetch SSL certificate instead of GPG key')
     def do_signkey(self, subcmd, opts, *args):
