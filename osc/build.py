@@ -676,7 +676,7 @@ def main(apiurl, opts, argv):
 
     if opts.shell:
         buildargs.append("--shell")
-        if os.path.exists(build_root) and not opts.clean:
+        if os.path.exists(build_root) and not opts.clean and not opts.extra_pkgs:
             opts.noinit = True
             opts.offline = True
 
