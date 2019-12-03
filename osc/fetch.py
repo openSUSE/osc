@@ -51,7 +51,9 @@ class Fetcher:
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
     def __add_cpio(self, pac):
-        prpap = '%s/%s/%s/%s' % (pac.project, pac.repository, pac.repoarch, pac.repopackage)
+        # we don't know the server side configuration of "local" arch, so we need to guess
+        arch = pac.repoarch.replace('local', 'x86_64')
+        prpap = '%s/%s/%s/%s' % (pac.project, pac.repository, arch, pac.repopackage)
         self.cpio.setdefault(prpap, {})[pac.repofilename] = pac
 
     def __download_cpio_archive(self, apiurl, project, repo, arch, package, **pkgs):
