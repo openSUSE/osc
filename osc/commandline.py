@@ -6305,7 +6305,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--linksources', action='store_true',
                   help='use hard links instead of a deep copied source')
     @cmdln.option('--vm-memory', metavar='MEMORY',
-                  help='use given MB for VM')
+                  help='amount of memory for VM defined in MB')
+    @cmdln.option('--vm-disk-size', metavar='DISKSIZE',
+                  help='size for newly created disk image in MB')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
     @cmdln.option('--vm-telnet', metavar='TELNET',

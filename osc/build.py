@@ -531,6 +531,7 @@ def main(apiurl, opts, argv):
     cache_dir  = None
     build_uid = ''
     vm_memory = config['build-memory']
+    vm_disk_size = config['build-vmdisk-rootsize']
     vm_type = config['build-type']
     vm_telnet = None
 
@@ -620,6 +621,8 @@ def main(apiurl, opts, argv):
             return 1
     if opts.vm_memory:
         vm_memory = opts.vm_memory
+    if opts.vm_disk_size:
+        vm_disk_size = opts.vm_disk_size
     if opts.vm_type:
         vm_type = opts.vm_type
     if opts.vm_telnet:
@@ -1225,9 +1228,9 @@ def main(apiurl, opts, argv):
                     vm_options += [ '--vm-initrd=' + config['build-initrd'] ]
 
             build_root += '/.mount'
+        if vm_disk_size:
+            vm_options += [ '--vmdisk-rootsize=' + vm_disk_size ]
 
-        if config['build-vmdisk-rootsize']:
-            vm_options += [ '--vmdisk-rootsize=' + config['build-vmdisk-rootsize'] ]
         if config['build-vmdisk-swapsize']:
             vm_options += [ '--vmdisk-swapsize=' + config['build-vmdisk-swapsize'] ]
         if config['build-vmdisk-filesystem']:
