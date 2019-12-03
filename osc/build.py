@@ -797,8 +797,18 @@ def main(apiurl, opts, argv):
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
-            print('Getting buildinfo from server and store to %s' % bi_filename)
+            print('Getting buildconfig from server and store to %s' % bc_filename)
+            bc = get_buildconfig(apiurl, prj, repo)
+            if not bc_file:
+                bc_file = open(bc_filename, 'w')
+            bc_file.write(decode_it(bc))
+            bc_file.flush()
+            if os.path.exists('/usr/lib/build/queryconfig') and not opts.nodebugpackages:
+                debug_pkgs = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
+                if len(debug_pkgs) > 0:
+                    extra_pkgs += debug_pkgs.strip().split(" ")
 
+            print('Getting buildinfo from server and store to %s' % bi_filename)
             bi_text = decode_it(get_buildinfo(apiurl,
                                     prj,
                                     pac,
@@ -814,12 +824,10 @@ def main(apiurl, opts, argv):
             kiwipath = None
             if build_type == 'kiwi':
                 kiwipath = get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo)
-            print('Getting buildconfig from server and store to %s' % bc_filename)
-            bc = get_buildconfig(apiurl, prj, repo, kiwipath)
-            if not bc_file:
-                bc_file = open(bc_filename, 'w')
-            bc_file.write(decode_it(bc))
-            bc_file.flush()
+                bc = get_buildconfig(apiurl, prj, repo, kiwipath)
+                bc_file.seek(0)
+                bc_file.write(decode_it(bc))
+                bc_file.flush()
     except HTTPError as e:
         if e.code == 404:
             # check what caused the 404
