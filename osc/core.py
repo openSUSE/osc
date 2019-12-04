@@ -23,7 +23,13 @@ import socket
 import errno
 import shlex
 import hashlib
+import platform
 
+
+try:
+    import distro
+except ImportError:
+    distro = None
 
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
@@ -4016,17 +4022,20 @@ def read_meta_from_spec(specfile, *args):
 
     return spec_data
 
+def _get_linux_distro():
+    if distro is not None:
+        return distro.id()
+    elif sys.version_info >= (3, 8):
+        return None
+    # compatibility for Python 2.6 to 3.7
+    return platform.linux_distribution()[0]
+
 def get_default_editor():
-    import platform
     system = platform.system()
     if system == 'Windows':
         return 'notepad'
     if system == 'Linux':
-        try:
-            # Python 2.6
-            dist = platform.linux_distribution()[0]
-        except AttributeError:
-            dist = platform.dist()[0]
+        dist = _get_linux_distro()
         if dist == 'debian':
             return 'editor'
         elif dist == 'fedora':
@@ -4035,16 +4044,11 @@ def get_default_editor():
     return 'vi'
 
 def get_default_pager():
-    import platform
     system = platform.system()
     if system == 'Windows':
         return 'less'
     if system == 'Linux':
-        try:
-            # Python 2.6
-            dist = platform.linux_distribution()[0]
-        except AttributeError:
-            dist = platform.dist()[0]
+        dist = _get_linux_distro()
         if dist == 'debian':
             return 'pager'
         return 'less'
