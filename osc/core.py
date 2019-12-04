@@ -6118,7 +6118,7 @@ def buildlog_strip_time(data):
         return time_regex.sub(b'', data)
 
 
-def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False):
+def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False, lastsucceeded=False):
     """prints out the buildlog on stdout"""
 
     def print_data(data, strip_time=False):
@@ -6137,6 +6137,8 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     query = {'nostream' : '1', 'start' : '%s' % offset}
     if last:
         query['last'] = 1
+    if lastsucceeded:
+        query['lastsucceeded'] = 1
     retry_count = 0
     while True:
         query['start'] = offset
