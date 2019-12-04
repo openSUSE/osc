@@ -705,7 +705,7 @@ def main(apiurl, opts, argv):
 
     # check for source services
     if not opts.offline and not opts.noservice:
-        p = Package('.')
+        p = osc.core.Package(os.curdir)
         r = p.run_source_services(verbose=True)
         if r:
             raise oscerr.ServiceRuntimeError('Source service run failed!')
@@ -1274,6 +1274,9 @@ def main(apiurl, opts, argv):
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
         cmd = [ change_personality[bi.buildarch] ] + cmd
+
+    # record our settings for later builds
+    osc.core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
 
     try:
         rc = run_external(cmd[0], *cmd[1:])

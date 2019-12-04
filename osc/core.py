@@ -1140,7 +1140,7 @@ class Package:
     REQ_STOREFILES = ('_project', '_package', '_apiurl', '_files', '_osclib_version')
     OPT_STOREFILES = ('_to_be_added', '_to_be_deleted', '_in_conflict', '_in_update',
         '_in_commit', '_meta', '_meta_mode', '_frozenlink', '_pulled', '_linkrepair',
-        '_size_limit', '_commit_msg')
+        '_size_limit', '_commit_msg', '_last_buildroot')
 
     def __init__(self, workingdir, progress_obj=None, size_limit=None, wc_check=True):
         global store
@@ -6508,6 +6508,17 @@ def store_read_apiurl(dir, defaulturl=True):
         apiurl = conf.config['apiurl']
     return apiurl
 
+def store_read_last_buildroot(dir):
+    global store
+
+    fname = os.path.join(dir, store, '_last_buildroot')
+    if os.path.exists(fname):
+        lines = open(fname).read().splitlines()
+        if len(lines) == 3:
+            return lines
+
+    return
+
 def store_write_string(dir, file, string, subdir=''):
     global store
 
@@ -6531,6 +6542,9 @@ def store_write_project(dir, project):
 
 def store_write_apiurl(dir, apiurl):
     store_write_string(dir, '_apiurl', apiurl + '\n')
+
+def store_write_last_buildroot(dir, repo, arch, vm_type):
+    store_write_string(dir, '_last_buildroot', repo + '\n' + arch + '\n' + vm_type + '\n')
 
 def store_unlink_file(dir, file):
     global store

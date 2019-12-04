@@ -6115,7 +6115,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         # it seems to be an architecture in general
                         arg_arch = arg
                         if not (arg == osc.build.hostarch or arg in osc.build.can_also_build.get(osc.build.hostarch, [])):
-                            print("WARNING: native compile is not possible, an emulator must be configured!")
+                            if not (vm_type == 'qemu' or vm_type == 'emulator'):
+                               print("WARNING: native compile is not possible, a emulator via binfmt misc handler must be configured!")
                     elif not arg_repository:
                         arg_repository = arg
                     else:
@@ -6438,6 +6439,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             pass
         if project == opts.alternative_project:
             opts.alternative_project = None
+
+        if len(args) == 0:
+            # build env not specified, just read from last build attempt
+            lastbuildroot = store_read_last_buildroot(os.curdir)
+            if lastbuildroot:
+               args = [ lastbuildroot[0], lastbuildroot[1] ]
+               if not opts.vm_type:
+                  opts.vm_type = lastbuildroot[2]
 
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
