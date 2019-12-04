@@ -7,6 +7,7 @@
     * --vm-disk-size=  switch supported (has only an effect on clean builds)
     * repository, architecture and vm_type from last build is automatically
       reused if not specified otherwise.
+    * support building for kiwi products using obsrepositories:/
 
 0.166.2
   - Don't enforce password reuse (boo#1156501)

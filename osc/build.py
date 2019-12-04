@@ -1094,11 +1094,26 @@ def main(apiurl, opts, argv):
             print(open(build_descr).read(), file=sys.stderr)
             sys.exit(1)
         root = tree.getroot()
+
         # product
         for xml in root.findall('instsource'):
-            if xml.find('instrepo').find('source').get('path') == 'obsrepositories:/':
-                print("obsrepositories:/ for product builds is not yet supported in osc!")
-                sys.exit(1)
+            found_obsrepositories = 0
+            for node in xml.findall('instrepo'):
+                if node and node.find('source').get('path') == 'obsrepositories:/':
+                   found_obsrepositories = found_obsrepositories + 1
+                   for path in bi.pathes:
+                       new_node = ET.SubElement(xml, 'instrepo')
+                       new_node.set('name', node.get('name') + "_" + str(found_obsrepositories))
+                       new_node.set('priority', node.get('priority'))
+                       new_node.set('local', 'true')
+                       new_source_node = ET.SubElement(new_node, 'source')
+                       new_source_node.set('path', "obs://" + path)
+                   xml.remove(node)
+
+            if found_obsrepositories > 0:
+               build_descr = '_service:' + build_descr.rsplit('/', 1)[-1]
+               tree.write(open(build_descr, 'wb'))
+
         # appliance
         expand_obsrepos=None
         for xml in root.findall('repository'):
