@@ -6441,18 +6441,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
-        # check for source services
-        if not opts.offline and not opts.noservice:
-            p = Package('.')
-            r = p.run_source_services(verbose=True)
-            if r:
-                print('Source service run failed!', file=sys.stderr)
-                sys.exit(1)
-        else:
-            msg = ('WARNING: source services from package or project will not'
-                   'be executed. This may not be the same build as on server!')
-            print(msg)
-
         if not opts.local_package:
             try:
                 package = store_read_package(os.curdir)

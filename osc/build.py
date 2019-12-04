@@ -674,14 +674,41 @@ def main(apiurl, opts, argv):
         except:
             pass
 
+    # define buildinfo & config local cache
+    bi_file = None
+    bc_file = None
+    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
+    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
+    if is_package_dir('.') and os.access(osc.core.store, os.W_OK):
+        bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
+        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
+    elif not os.access('.', os.W_OK):
+        bi_file = NamedTemporaryFile(prefix=bi_filename)
+        bi_filename = bi_file.name
+        bc_file = NamedTemporaryFile(prefix=bc_filename)
+        bc_filename = bc_file.name
+    else:
+        bi_filename = os.path.abspath(bi_filename)
+        bc_filename = os.path.abspath(bc_filename)
+
     if opts.shell:
         buildargs.append("--shell")
-        if os.path.exists(build_root) and not opts.clean and not opts.extra_pkgs:
+        if os.path.exists(build_root) and os.path.exists(bi_filename) and not opts.clean and not opts.extra_pkgs:
             opts.noinit = True
             opts.offline = True
+            # we should check if the service did run before and only skip it then,
+            # but we have no save point for this atm
+            opts.noservice = True
 
     if opts.noinit:
         buildargs.append('--noinit')
+
+    # check for source services
+    if not opts.offline and not opts.noservice:
+        p = Package('.')
+        r = p.run_source_services(verbose=True)
+        if r:
+            raise oscerr.ServiceRuntimeError('Source service run failed!')
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
@@ -768,22 +795,6 @@ def main(apiurl, opts, argv):
         if not os.path.isdir(myoverlay):
             raise oscerr.WrongOptions('--overlay %s is no valid directory!' % opts.overlay)
         specialcmdopts += ['--overlay='+myoverlay]
-
-    bi_file = None
-    bc_file = None
-    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
-    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
-    if is_package_dir('.') and os.access(osc.core.store, os.W_OK):
-        bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
-        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
-    elif not os.access('.', os.W_OK):
-        bi_file = NamedTemporaryFile(prefix=bi_filename)
-        bi_filename = bi_file.name
-        bc_file = NamedTemporaryFile(prefix=bc_filename)
-        bc_filename = bc_file.name
-    else:
-        bi_filename = os.path.abspath(bi_filename)
-        bc_filename = os.path.abspath(bc_filename)
 
     try:
         if opts.noinit:
