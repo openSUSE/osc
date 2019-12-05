@@ -9,6 +9,7 @@
     * repository, architecture and vm_type from last build is automatically
       reused if not specified otherwise.
     * support building for kiwi products using obsrepositories:/
+    * support local building using RedHat rpm-md modules
   - fix decoding for osc aggregatepac
 
 0.166.2

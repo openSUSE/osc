@@ -145,6 +145,9 @@ class Buildinfo:
         self.keys = []
         self.prjkeys = []
         self.pathes = []
+        self.modules = []
+        for node in root.findall('module'):
+            self.modules.append(node.text)
         for node in root.findall('bdep'):
             p = Pac(node, self.buildarch, self.pacsuffix,
                     apiurl, localpkgs)
@@ -939,6 +942,7 @@ def main(apiurl, opts, argv):
                       api_host_options = config['api_host_options'],
                       offline = opts.noinit or opts.offline,
                       http_debug = config['http_debug'],
+                      modules = bi.modules,
                       enable_cpio = not opts.disable_cpio_bulk_download,
                       cookiejar=cookiejar)
 
