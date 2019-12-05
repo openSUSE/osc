@@ -73,8 +73,8 @@ class Fetcher:
                     # getbinarylist instead of the public/... route
                     # (which is routed to getbinaries)
                     # getbinaries does not support kiwi builds
-                    if hdr.filename == '.errors':
-                        archive.copyin_file(hdr.filename)
+                    if hdr.filename == b'.errors':
+                        archive.copyin_file(decode_it(hdr.filename))
                         raise oscerr.APIError('CPIO archive is incomplete '
                                               '(see .errors file)')
                     if package == '_repository':
