@@ -1,7 +1,14 @@
 0.167
   - Added --lastsucceeded option for logfile display (requires OBS 2.11)
   - osc shell/chroot/wipe is now handled via build script (working for chroot and KVM only atm)
-  - osc build --vm-type=qemu support for cross architecture builds
+  - osc build/shell features:
+    * --vm-type=qemu support for cross architecture builds
+    * additional debug packages are read from build config now
+      (extra-pkgs definition is therefore by default empty now)
+    * --vm-disk-size=  switch supported (has only an effect on clean builds)
+    * repository, architecture and vm_type from last build is automatically
+      reused if not specified otherwise.
+    * support building for kiwi products using obsrepositories:/
 
 0.166.2
   - Don't enforce password reuse (boo#1156501)

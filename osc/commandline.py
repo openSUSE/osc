@@ -6117,7 +6117,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         # it seems to be an architecture in general
                         arg_arch = arg
                         if not (arg == osc.build.hostarch or arg in osc.build.can_also_build.get(osc.build.hostarch, [])):
-                            print("WARNING: native compile is not possible, an emulator must be configured!")
+                            if not (vm_type == 'qemu' or vm_type == 'emulator'):
+                               print("WARNING: native compile is not possible, a emulator via binfmt misc handler must be configured!")
                     elif not arg_repository:
                         arg_repository = arg
                     else:
@@ -6265,6 +6266,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Do not run build checks on the resulting packages.')
     @cmdln.option('--no-verify', '--noverify', action='store_true',
                   help='Skip signature verification (via pgp keys) of packages used for build. (Global config in oscrc: no_verify)')
+    @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
+                  help='Skip installation of additional debug packages for CLI builds')
     @cmdln.option('--noservice', '--no-service', action='store_true',
                   help='Skip run of local source services as specified in _service file.')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -6305,7 +6308,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--linksources', action='store_true',
                   help='use hard links instead of a deep copied source')
     @cmdln.option('--vm-memory', metavar='MEMORY',
-                  help='use given MB for VM')
+                  help='amount of memory for VM defined in MB')
+    @cmdln.option('--vm-disk-size', metavar='DISKSIZE',
+                  help='size for newly created disk image in MB')
     @cmdln.option('--vm-type', metavar='TYPE',
                   help='use VM type TYPE (e.g. kvm)')
     @cmdln.option('--vm-telnet', metavar='TELNET',
@@ -6437,19 +6442,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if project == opts.alternative_project:
             opts.alternative_project = None
 
-        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
+        if len(args) == 0:
+            # build env not specified, just read from last build attempt
+            lastbuildroot = store_read_last_buildroot(os.curdir)
+            if lastbuildroot:
+               args = [ lastbuildroot[0], lastbuildroot[1] ]
+               if not opts.vm_type:
+                  opts.vm_type = lastbuildroot[2]
 
-        # check for source services
-        if not opts.offline and not opts.noservice:
-            p = Package('.')
-            r = p.run_source_services(verbose=True)
-            if r:
-                print('Source service run failed!', file=sys.stderr)
-                sys.exit(1)
-        else:
-            msg = ('WARNING: source services from package or project will not'
-                   'be executed. This may not be the same build as on server!')
-            print(msg)
+        args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 
         if not opts.local_package:
             try:

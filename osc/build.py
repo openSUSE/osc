@@ -531,6 +531,7 @@ def main(apiurl, opts, argv):
     cache_dir  = None
     build_uid = ''
     vm_memory = config['build-memory']
+    vm_disk_size = config['build-vmdisk-rootsize']
     vm_type = config['build-type']
     vm_telnet = None
 
@@ -620,6 +621,8 @@ def main(apiurl, opts, argv):
             return 1
     if opts.vm_memory:
         vm_memory = opts.vm_memory
+    if opts.vm_disk_size:
+        vm_disk_size = opts.vm_disk_size
     if opts.vm_type:
         vm_type = opts.vm_type
     if opts.vm_telnet:
@@ -671,14 +674,41 @@ def main(apiurl, opts, argv):
         except:
             pass
 
+    # define buildinfo & config local cache
+    bi_file = None
+    bc_file = None
+    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
+    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
+    if is_package_dir('.') and os.access(osc.core.store, os.W_OK):
+        bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
+        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
+    elif not os.access('.', os.W_OK):
+        bi_file = NamedTemporaryFile(prefix=bi_filename)
+        bi_filename = bi_file.name
+        bc_file = NamedTemporaryFile(prefix=bc_filename)
+        bc_filename = bc_file.name
+    else:
+        bi_filename = os.path.abspath(bi_filename)
+        bc_filename = os.path.abspath(bc_filename)
+
     if opts.shell:
         buildargs.append("--shell")
-        if os.path.exists(build_root) and not opts.clean:
+        if os.path.exists(build_root) and os.path.exists(bi_filename) and not opts.clean and not opts.extra_pkgs:
             opts.noinit = True
             opts.offline = True
+            # we should check if the service did run before and only skip it then,
+            # but we have no save point for this atm
+            opts.noservice = True
 
     if opts.noinit:
         buildargs.append('--noinit')
+
+    # check for source services
+    if not opts.offline and not opts.noservice:
+        p = osc.core.Package(os.curdir)
+        r = p.run_source_services(verbose=True)
+        if r:
+            raise oscerr.ServiceRuntimeError('Source service run failed!')
 
     cache_dir = config['packagecachedir'] % {'apihost': apihost}
 
@@ -766,22 +796,6 @@ def main(apiurl, opts, argv):
             raise oscerr.WrongOptions('--overlay %s is no valid directory!' % opts.overlay)
         specialcmdopts += ['--overlay='+myoverlay]
 
-    bi_file = None
-    bc_file = None
-    bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
-    bc_filename = '_buildconfig-%s-%s' % (repo, arch)
-    if is_package_dir('.') and os.access(osc.core.store, os.W_OK):
-        bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
-        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
-    elif not os.access('.', os.W_OK):
-        bi_file = NamedTemporaryFile(prefix=bi_filename)
-        bi_filename = bi_file.name
-        bc_file = NamedTemporaryFile(prefix=bc_filename)
-        bc_filename = bc_file.name
-    else:
-        bi_filename = os.path.abspath(bi_filename)
-        bc_filename = os.path.abspath(bc_filename)
-
     try:
         if opts.noinit:
             if not os.path.isfile(bi_filename):
@@ -797,8 +811,18 @@ def main(apiurl, opts, argv):
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
-            print('Getting buildinfo from server and store to %s' % bi_filename)
+            print('Getting buildconfig from server and store to %s' % bc_filename)
+            bc = get_buildconfig(apiurl, prj, repo)
+            if not bc_file:
+                bc_file = open(bc_filename, 'w')
+            bc_file.write(decode_it(bc))
+            bc_file.flush()
+            if os.path.exists('/usr/lib/build/queryconfig') and not opts.nodebugpackages:
+                debug_pkgs = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
+                if len(debug_pkgs) > 0:
+                    extra_pkgs += debug_pkgs.strip().split(" ")
 
+            print('Getting buildinfo from server and store to %s' % bi_filename)
             bi_text = decode_it(get_buildinfo(apiurl,
                                     prj,
                                     pac,
@@ -814,12 +838,10 @@ def main(apiurl, opts, argv):
             kiwipath = None
             if build_type == 'kiwi':
                 kiwipath = get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo)
-            print('Getting buildconfig from server and store to %s' % bc_filename)
-            bc = get_buildconfig(apiurl, prj, repo, kiwipath)
-            if not bc_file:
-                bc_file = open(bc_filename, 'w')
-            bc_file.write(decode_it(bc))
-            bc_file.flush()
+                bc = get_buildconfig(apiurl, prj, repo, kiwipath)
+                bc_file.seek(0)
+                bc_file.write(decode_it(bc))
+                bc_file.flush()
     except HTTPError as e:
         if e.code == 404:
             # check what caused the 404
@@ -1072,11 +1094,26 @@ def main(apiurl, opts, argv):
             print(open(build_descr).read(), file=sys.stderr)
             sys.exit(1)
         root = tree.getroot()
+
         # product
         for xml in root.findall('instsource'):
-            if xml.find('instrepo').find('source').get('path') == 'obsrepositories:/':
-                print("obsrepositories:/ for product builds is not yet supported in osc!")
-                sys.exit(1)
+            found_obsrepositories = 0
+            for node in xml.findall('instrepo'):
+                if node and node.find('source').get('path') == 'obsrepositories:/':
+                   found_obsrepositories = found_obsrepositories + 1
+                   for path in bi.pathes:
+                       new_node = ET.SubElement(xml, 'instrepo')
+                       new_node.set('name', node.get('name') + "_" + str(found_obsrepositories))
+                       new_node.set('priority', node.get('priority'))
+                       new_node.set('local', 'true')
+                       new_source_node = ET.SubElement(new_node, 'source')
+                       new_source_node.set('path', "obs://" + path)
+                   xml.remove(node)
+
+            if found_obsrepositories > 0:
+               build_descr = '_service:' + build_descr.rsplit('/', 1)[-1]
+               tree.write(open(build_descr, 'wb'))
+
         # appliance
         expand_obsrepos=None
         for xml in root.findall('repository'):
@@ -1217,9 +1254,9 @@ def main(apiurl, opts, argv):
                     vm_options += [ '--vm-initrd=' + config['build-initrd'] ]
 
             build_root += '/.mount'
+        if vm_disk_size:
+            vm_options += [ '--vmdisk-rootsize=' + vm_disk_size ]
 
-        if config['build-vmdisk-rootsize']:
-            vm_options += [ '--vmdisk-rootsize=' + config['build-vmdisk-rootsize'] ]
         if config['build-vmdisk-swapsize']:
             vm_options += [ '--vmdisk-swapsize=' + config['build-vmdisk-swapsize'] ]
         if config['build-vmdisk-filesystem']:
@@ -1252,6 +1289,9 @@ def main(apiurl, opts, argv):
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
         cmd = [ change_personality[bi.buildarch] ] + cmd
+
+    # record our settings for later builds
+    osc.core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
 
     try:
         rc = run_external(cmd[0], *cmd[1:])
