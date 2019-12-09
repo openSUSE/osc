@@ -6442,7 +6442,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if project == opts.alternative_project:
             opts.alternative_project = None
 
-        if len(args) == 0:
+        if len(args) == 0 and is_package_dir(os.curdir):
             # build env not specified, just read from last build attempt
             lastbuildroot = store_read_last_buildroot(os.curdir)
             if lastbuildroot:
