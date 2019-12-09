@@ -1295,7 +1295,8 @@ def main(apiurl, opts, argv):
         cmd = [ change_personality[bi.buildarch] ] + cmd
 
     # record our settings for later builds
-    osc.core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
+    if is_package_dir(os.curdir):
+        osc.core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
 
     try:
         rc = run_external(cmd[0], *cmd[1:])
