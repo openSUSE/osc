@@ -1,3 +1,10 @@
+0.167.1
+  - fix cpio fetch error handling
+  - support local build using RedHat rpm-md modules
+  - fix local build outside of the working copy of a package.
+    (fixes boo#1136584)
+  - Use the distro module for linux platform detection
+
 0.167.0
   - Added --lastsucceeded option for logfile display (requires OBS 2.11)
   - osc shell/chroot/wipe is now handled via build script (working for chroot and KVM only atm)
