@@ -28,8 +28,8 @@ from .meter import create_text_meter
 
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
-                 modules = [], http_debug=False, cookiejar=None, offline=False,
-                 enable_cpio=True):
+                 http_debug=False, cookiejar=None, offline=False,
+                 enable_cpio=True, modules=[]):
         # set up progress bar callback
         self.progress_obj = None
         if sys.stdout.isatty():
