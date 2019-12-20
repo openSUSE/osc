@@ -6341,6 +6341,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help=SUPPRESS_HELP)
     @cmdln.option('--shell-cmd', metavar='COMMAND',
                   help='run specified command instead of bash')
+    @cmdln.option('-f', '--force', action='store_true',
+                  help='Do not ask for confirmation to wipe')
     @cmdln.option('--host', metavar='HOST',
             help='perform the build on a remote server - user@server:~/remote/directory')
     @cmdln.option('--trust-all-projects', action='store_true',
@@ -6425,9 +6427,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.debuginfo and opts.disable_debuginfo:
             raise oscerr.WrongOptions('osc: --debuginfo and --disable-debuginfo are mutual exclusive')
 
-        if subcmd == 'chroot' or subcmd == 'shell':
-            opts.shell = True
-
         if subcmd == 'wipe':
             opts.wipe = True
 
@@ -6449,6 +6448,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                args = [ lastbuildroot[0], lastbuildroot[1] ]
                if not opts.vm_type:
                   opts.vm_type = lastbuildroot[2]
+
+        vm_chroot = opts.vm_type or conf.config['build-type']
+        if (subcmd in ('shell', 'chroot') or opts.shell or opts.wipe) and not vm_chroot:
+            if opts.root:
+                build_root = opts.root
+            else:
+                args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
+                repo, arch, build_descr = args
+                prj, pac = osc.build.calculate_prj_pac(opts, build_descr)
+                apihost = urlsplit(self.get_api_url())[1]
+                build_root = osc.build.calculate_build_root(apihost, prj, pac, repo,
+                                                    arch)
+            if opts.wipe and not opts.force:
+                    # Confirm delete
+                    print("Really wipe '%s'? [y/N]: " % build_root)
+                    choice = raw_input().lower()
+                    if choice != 'y':
+                        print('Aborting')
+                        sys.exit(0)
+            build_args = ['--root=' + build_root, '--noinit', '--shell']
+            if opts.wipe:
+                build_args.append('--wipe')
+            sys.exit(osc.build.run_build(*build_args))
+        elif subcmd in ('shell', 'chroot') or opts.shell:
+            print('--shell in combination with build-type %s is experimental.' % vm_chroot)
+            print('The semantics may change at any time!')
+            opts.shell = True
 
         args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
 

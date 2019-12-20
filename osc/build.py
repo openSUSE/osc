@@ -524,6 +524,32 @@ def get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo):
     kiwipath.insert(0, myprp)
     return kiwipath
 
+def calculate_prj_pac(opts, descr):
+    project = opts.alternative_project or store_read_project('.')
+    if opts.local_package:
+        package = os.path.splitext(os.path.basename(descr))[0]
+    else:
+        package = store_read_package('.')
+    return project, package
+
+def calculate_build_root(apihost, prj, pac, repo, arch):
+    buildroot = os.environ.get('OSC_BUILD_ROOT', config['build-root']) \
+                            % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
+    return buildroot
+
+def run_build(*args):
+    cmd = [config['build-cmd']]
+    cmd += args
+
+    sucmd = os.environ.get('OSC_SU_WRAPPER', config['su-wrapper']).split()
+    if sucmd[0] == 'su':
+        if sucmd[-1] == '-c':
+            sucmd.pop()
+        cmd = sucmd + ['-s', cmd[0], 'root', '--'] + cmd[1:]
+    else:
+        cmd = sucmd + cmd
+    return run_external(cmd[0], *cmd[1:])
+
 def main(apiurl, opts, argv):
 
     repo = argv[0]
@@ -696,12 +722,6 @@ def main(apiurl, opts, argv):
 
     if opts.shell:
         buildargs.append("--shell")
-        if os.path.exists(build_root) and os.path.exists(bi_filename) and not opts.clean and not opts.extra_pkgs:
-            opts.noinit = True
-            opts.offline = True
-            # we should check if the service did run before and only skip it then,
-            # but we have no save point for this atm
-            opts.noservice = True
 
     if opts.noinit:
         buildargs.append('--noinit')
