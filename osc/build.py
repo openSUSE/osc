@@ -727,7 +727,7 @@ def main(apiurl, opts, argv):
         buildargs.append('--noinit')
 
     # check for source services
-    if not opts.offline and not opts.noservice:
+    if not opts.offline and not opts.noservice and not opts.local_package:
         p = osc.core.Package(os.curdir)
         r = p.run_source_services(verbose=True)
         if r:
