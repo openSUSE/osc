@@ -7886,7 +7886,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('please specify a package name with the \'--name\' option. ' \
                                 'The automatic detection failed', file=sys.stderr)
             sys.exit(1)
-
+        pac = pac.decode()
         if conf.config['do_package_tracking']:
             createPackageDir(os.path.join(project.dir, pac), project)
         else:
