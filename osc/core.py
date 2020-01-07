@@ -4706,18 +4706,6 @@ def get_binary_file(apiurl, prj, repo, arch,
     if target_filename.endswith('.AppImage'):
         os.chmod(target_filename, 0o755)
 
-def dgst_from_string(str):
-    # Python 2.5 depracates the md5 modules
-    # Python 2.4 doesn't have hashlib yet
-    try:
-        import hashlib
-        md5_hash = hashlib.md5()
-    except ImportError:
-        import md5
-        md5_hash = md5.new()
-    md5_hash.update(str)
-    return md5_hash.hexdigest()
-
 def dgst(file):
 
     #if not os.path.exists(file):
