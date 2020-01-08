@@ -2191,7 +2191,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             osc request accept [-m TEXT] ID
             osc request approve [-m TEXT] ID
-            osc request cancelapprove [-m TEXT] ID
+            osc request cancelapproval [-m TEXT] ID
             osc request decline [-m TEXT] ID
             osc request revoke [-m TEXT] ID
             osc request reopen [-m TEXT] ID
