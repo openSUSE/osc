@@ -72,7 +72,8 @@ class PackageQuery:
         elif magic[:5] == b'<?xml':
             f.close()
             return None
-        elif magic[:5] == b'\375\067zXZ' or magic[:2] == b'\037\213':
+        # arch tar ball compressed with gz, xz or zst
+        elif magic[:5] == b'\375\067zXZ' or magic[:2] == b'\037\213' or magic[:5] == b'(\xb5/\xfd\x2f':
             from . import archquery
             pkgquery = archquery.ArchQuery(f)
         else:
