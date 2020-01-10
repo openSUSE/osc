@@ -4186,12 +4186,12 @@ def create_release_request(apiurl, src_project, message=''):
     return r
 
 # create a maintenance incident per request
-def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False):
+def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False, rev=None):
     import cgi
     r = Request()
     if src_packages:
         for p in src_packages:
-            r.add_action('maintenance_incident', src_project=src_project, src_package=p, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
+            r.add_action('maintenance_incident', src_project=src_project, src_package=p, src_rev=rev, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
@@ -4271,7 +4271,7 @@ def create_submit_request(apiurl,
             if project is None:
                 raise oscerr.APIError("Server did not define a default maintenance project, can't submit.")
             tproject = project.get('name')
-            r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message)
+            r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message, rev=orev)
             r = r.reqid
         else:
             raise
