@@ -424,7 +424,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     if type == 'dsc' or type == 'collax' or type == 'livebuild':
         suffix = '*.deb'
     elif type == 'arch':
-        suffix = '*.pkg.tar.xz'
+        suffix = '*.pkg.tar.*'
 
     for dir in dirs:
         # check for repodata
