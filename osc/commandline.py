@@ -6470,7 +6470,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             build_args = ['--root=' + build_root, '--noinit', '--shell']
             if opts.wipe:
                 build_args.append('--wipe')
-            sys.exit(osc.build.run_build(*build_args))
+            sys.exit(osc.build.run_build(opts, *build_args))
         elif subcmd in ('shell', 'chroot') or opts.shell:
             print('--shell in combination with build-type %s is experimental.' % vm_chroot)
             print('The semantics may change at any time!')
