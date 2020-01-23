@@ -3283,7 +3283,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             target_project = project.get('name')
             if opts.incident:
                 target_project += ":" + opts.incident
-            print('Using target project \'%s\'' % target_project)
+            release_in = ''
+            if release_project is not None:
+                release_in = '. (release in \'%s\')' % release_project
+            print('Using target project \'%s\'%s' % (target_project, release_in))
 
         if not opts.message:
             opts.message = edit_message()
