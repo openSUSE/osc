@@ -3324,6 +3324,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nodevelproject', action='store_true',
                         help='do not follow a defined devel project ' \
                              '(primary project where a package is developed)')
+    @cmdln.option('--version', action='store_true',
+                        help='print version of maintained package')
     @cmdln.alias('sm')
     @cmdln.alias('maintained')
     def do_mbranch(self, subcmd, opts, *args):
@@ -3381,6 +3383,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.dryrun:
             for r in result.findall('package'):
                 line="%s/%s"%(r.get('project'), r.get('package'))
+                if opts.version:
+                    sr = get_source_rev(apiurl, r.get('project'), r.get('package'))
+                    version = sr.get('version')
+                    if not version or version == 'unknown':
+                        version = 'unknown'
+                    line = line + (' (version: %s)' % version)
                 for d in r.findall('devel'):
                    line+=" using sources from %s/%s"%(d.get('project'), d.get('package'))
                 print(line)
