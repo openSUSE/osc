@@ -151,6 +151,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
             # whether to keep passwords in plaintext (deprecated (see creds manager)).
             'plaintext_passwd': '0',
+            # whether to print Web UI links to directly insert in browser (where possible)
+            'print_web_links': '0',
             # limit the age of requests shown with 'osc req list'.
             # this is a default only, can be overridden by 'osc req list -D NNN'
             # Use 0 for unlimted.
@@ -198,7 +200,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-    'status_mtime_heuristic']
+    'status_mtime_heuristic', 'print_web_links']
 integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
