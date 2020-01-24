@@ -7528,7 +7528,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 if tmpfile is not None:
                     tmpfile.seek(0)
                     # the read bytes probably have a moderate size so the str won't be too large
-                    footer += '\n\n' + tmpfile.read()
+                    footer += '\n\n' + decode_it(tmpfile.read())
                 if msg is None:
                     try:
                         msg = edit_message(footer = footer, template=msg_template)
