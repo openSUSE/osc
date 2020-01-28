@@ -19,9 +19,11 @@ import sys
 
 if sys.version_info >= ( 3, ):
     import configparser
+    ConfigParser = configparser.ConfigParser
 else:
     #python 2.x
     import ConfigParser as configparser
+    ConfigParser = configparser.SafeConfigParser
 
 import re
 
@@ -188,7 +190,7 @@ class OptionLine(Line):
         self.format(line)
 
     def format(self, line):
-        mo = configparser.ConfigParser.OPTCRE.match(line.strip())
+        mo = ConfigParser.OPTCRE.match(line.strip())
         key, val = mo.group('option', 'value')
         self.frmt = line.replace(key.strip(), '%s', 1)
         pos = val.find(' ;')
@@ -201,7 +203,7 @@ class OptionLine(Line):
         return self.value
 
 
-class OscConfigParser(configparser.SafeConfigParser):
+class OscConfigParser(ConfigParser):
     """
     OscConfigParser() behaves like a normal ConfigParser() object. The
     only differences is that it preserves the order+format of configuration entries
@@ -210,7 +212,7 @@ class OscConfigParser(configparser.SafeConfigParser):
     class.
     """
     def __init__(self, defaults={}):
-        configparser.SafeConfigParser.__init__(self, defaults)
+        ConfigParser.__init__(self, defaults)
         self._sections = ConfigLineOrder()
 
     # XXX: unfortunately we have to override the _read() method from the ConfigParser()
@@ -319,7 +321,7 @@ class OscConfigParser(configparser.SafeConfigParser):
             fp.write(str(self))
             fp.write('\n')
         else:
-            configparser.SafeConfigParser.write(self, fp)
+            ConfigParser.write(self, fp)
 
     def has_option(self, section, option, proper=False, **kwargs):
         """
@@ -329,7 +331,7 @@ class OscConfigParser(configparser.SafeConfigParser):
         """
         if proper:
             return self.optionxform(option) in self._sections[section].keys()
-        return configparser.SafeConfigParser.has_option(self, section, option, **kwargs)
+        return ConfigParser.has_option(self, section, option, **kwargs)
 
     # XXX: simplify!
     def __str__(self):
