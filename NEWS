@@ -1,5 +1,6 @@
 0.168.0
   - MR creation honors orev now (bsc#1160446)
+  - allow "osc r --vertical" for projects
 
 0.167.2
   - fix regression in osc chroot
