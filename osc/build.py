@@ -537,7 +537,7 @@ def calculate_build_root(apihost, prj, pac, repo, arch):
                             % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
     return buildroot
 
-def run_build(*args):
+def run_build(opts, *args):
     cmd = [config['build-cmd']]
     cmd += args
 
@@ -548,6 +548,8 @@ def run_build(*args):
         cmd = sucmd + ['-s', cmd[0], 'root', '--'] + cmd[1:]
     else:
         cmd = sucmd + cmd
+    if not opts.userootforbuild:
+        cmd.append('--norootforbuild')
     return run_external(cmd[0], *cmd[1:])
 
 def main(apiurl, opts, argv):
