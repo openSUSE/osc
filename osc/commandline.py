@@ -5251,6 +5251,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Disable results for all direct affect packages inside of the project')
     @cmdln.option('-M', '--multibuild-package', action='append', default=[],
                         help='Only show results for the specified multibuild package')
+    @cmdln.option('-V', '--vertical', action='store_true',
+                        help='list packages vertically instead horizontally for entire project')
     @cmdln.option('-w', '--watch', action='store_true',
                         help='watch the results until all finished building')
     @cmdln.option('', '--xml', action='store_true', default=False,
@@ -5295,7 +5297,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.hide_legend = None
             opts.name_filter = None
             opts.status_filter = None
-            opts.vertical = None
             opts.show_non_building = None
             opts.show_excluded = None
             return self.do_prjresults('prjresults', opts, *args)
