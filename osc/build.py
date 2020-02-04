@@ -1124,8 +1124,8 @@ def main(apiurl, opts, argv):
             found_obsrepositories = 0
             for node in xml.findall('instrepo'):
                 if node and node.find('source').get('path') == 'obsrepositories:/':
-                   found_obsrepositories = found_obsrepositories + 1
                    for path in bi.pathes:
+                       found_obsrepositories += 1
                        new_node = ET.SubElement(xml, 'instrepo')
                        new_node.set('name', node.get('name') + "_" + str(found_obsrepositories))
                        new_node.set('priority', node.get('priority'))
