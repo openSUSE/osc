@@ -1120,6 +1120,10 @@ def main(apiurl, opts, argv):
         root = tree.getroot()
 
         # product
+        if root.find('instsource'):
+            # leads to unsigned media, but avoids build failure
+            buildargs.append('--signdummy')
+
         for xml in root.findall('instsource'):
             found_obsrepositories = 0
             for node in xml.findall('instrepo'):
