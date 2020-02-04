@@ -1120,12 +1120,16 @@ def main(apiurl, opts, argv):
         root = tree.getroot()
 
         # product
+        if root.find('instsource'):
+            # leads to unsigned media, but avoids build failure
+            buildargs.append('--signdummy')
+
         for xml in root.findall('instsource'):
             found_obsrepositories = 0
             for node in xml.findall('instrepo'):
                 if node and node.find('source').get('path') == 'obsrepositories:/':
-                   found_obsrepositories = found_obsrepositories + 1
                    for path in bi.pathes:
+                       found_obsrepositories += 1
                        new_node = ET.SubElement(xml, 'instrepo')
                        new_node.set('name', node.get('name') + "_" + str(found_obsrepositories))
                        new_node.set('priority', node.get('priority'))
