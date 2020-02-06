@@ -160,15 +160,14 @@ projects ()
     done
     shift $argc
     cur="$1"
-    if test -n "${cur}" ; then
-	list=($(command grep -E "^${cur}" ${projects}))
-    else
-	list=($(command cat ${projects}))
-    fi
     if ((colon)) ; then
 	local colon_word
 	colon_word=${cur%${cur##*:}}
-	builtin compgen -W "${list[*]}" -- "${cur}" | sed -r "s@^${colon_word}@@g"
+	if test -n "${cur}" ; then
+	    builtin compgen -W '`grep -E "^${cur}" ${projects}`' -- "${cur}" | sed -r "s@^${colon_word}@@g"
+	else
+	    builtin compgen -W '`cat ${projects}`' -- "${cur}" | sed -r "s@^${colon_word}@@g"
+	fi
     else
 	builtin compgen -W "${list[*]}" -- "${cur}"
     fi
