@@ -1460,7 +1460,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        dst_project, dst_package,
                                        opts.message, orev=rev,
 				       src_update=src_update, dst_updatelink=opts.update_link)
+
         print('created request id', result)
+        if conf.config['print_web_links']:
+            root = ET.fromstring(b''.join(show_configuration(apiurl)))
+            node = root.find('obs_url')
+            if node is None or not node.text:
+                raise oscerr.APIError('obs_url configuration element expected')
+            obs_url = node.text
+            print('%s/request/show/%s' % (obs_url, result))
 
         if supersede_existing:
             for req in reqs:
