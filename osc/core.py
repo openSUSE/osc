@@ -7901,7 +7901,7 @@ def vc_export_env(apiurl, quiet=False):
         if missing_tags:
             user = conf.get_apiurl_usr(apiurl)
             data = get_user_data(apiurl, user, *missing_tags)
-            if data is not None:
+            if data:
                 for tag in missing_tags:
                     val = data.pop(0)
                     if val != '-':
