@@ -172,6 +172,8 @@ def run(prg, argv=None):
     except RPMError as e:
         print(e, file=sys.stderr)
     except SSLError as e:
+        if 'tlsv1' in str(e):
+            print('The python on this system does not support TLSv1.2', file=sys.stderr)
         print("SSL Error:", e, file=sys.stderr)
     except SSLVerificationError as e:
         print("Certificate Verification Error:", e, file=sys.stderr)
