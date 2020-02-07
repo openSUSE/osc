@@ -240,7 +240,7 @@ class Pac:
         elif pacsuffix == 'arch':
             canonname = archquery.ArchQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release, self.mp['arch'].encode())
         else:
-            canonname = rpmquery.RpmQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release, self.mp['arch'].encode())
+            canonname = rpmquery.RpmQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release or b'0', self.mp['arch'].encode())
 
         self.mp['canonname'] = decode_it(canonname)
         # maybe we should rename filename key to binary
