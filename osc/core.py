@@ -3808,6 +3808,19 @@ def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_lin
 
     return makeurl(apiurl, [path], query)
 
+def parse_meta_to_string(data):
+    """
+    Converts the output of meta_exists into a string value
+    """
+    # data can be a bytes object, a list with strings, a list with bytes, just a string.
+    # So we need the following even if it is ugly.
+    if sys.version_info >= (3, 0):
+        if isinstance(data, bytes):
+            data = decode_it(data)
+        elif isinstance(data, list):
+            data = decode_list(data)
+    return ''.join(data)
+
 
 def edit_meta(metatype,
               path_args=None,
@@ -3837,19 +3850,7 @@ def edit_meta(metatype,
     if metatype == 'pkg':
         # check if the package is a link to a different project
         project, package = path_args
-        # data can be a bytes object, a list with strings, a list with bytes, just a string.
-        # So we need the following even if it is ugly.
-        if sys.version_info >= (3, 0):
-            if isinstance(data, bytes):
-                data = decode_it(data)
-                orgprj = ET.fromstring(''.join(data)).get('project')
-            elif isinstance(data, list):
-                decode_data = decode_list(data)
-                orgprj = ET.fromstring(''.join(decode_data)).get('project')
-            else:
-                orgprj = ET.fromstring(''.join(data)).get('project')
-        else:
-            orgprj = ET.fromstring(''.join(data)).get('project')
+        orgprj = ET.fromstring(parse_meta_to_string(data)).get('project')
 
         if orgprj is not None and unquote(project) != orgprj:
             print('The package is linked from a different project.')
@@ -5134,7 +5135,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
                                path_args=(quote_plus(dst_project), quote_plus(dst_package)),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
-        root = ET.fromstring(b''.join(dst_meta))
+        root = ET.fromstring(parse_meta_to_string(dst_meta))
         if root.get('project') != dst_project:
             # The source comes from a different project via a project link, we need to create this instance
             meta_change = True
@@ -5229,7 +5230,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
                                path_args=(quote_plus(dst_project), quote_plus(dst_package)),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
-        root = ET.fromstring(b''.join(dst_meta))
+        root = ET.fromstring(parse_meta_to_string(dst_meta))
         if root.get('project') != dst_project:
             # The source comes from a different project via a project link, we need to create this instance
             meta_change = True
@@ -6947,7 +6948,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
                        create_new=False)
 
     if data and get_user_meta(apiurl, user) != None:
-        root = ET.fromstring(b''.join(data))
+        root = ET.fromstring(parse_meta_to_string(data))
         found = False
         for person in root.getiterator('person'):
             if person.get('userid') == user and person.get('role') == role:
@@ -6980,7 +6981,7 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
                        template_args=None,
                        create_new=False)
     if data and get_user_meta(apiurl, user) != None:
-        root = ET.fromstring(''.join(data))
+        root = ET.fromstring(parse_meta_to_string(data))
         found = False
         for person in root.getiterator('person'):
             if person.get('userid') == user and person.get('role') == role:
@@ -7011,7 +7012,7 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
         group=user.replace('group:', '')
         user=None
     if data:
-        root = ET.fromstring(b''.join(data))
+        root = ET.fromstring(parse_meta_to_string(data))
         for group_element in root.getiterator('group'):
             if  group_element.get('role') == "bugowner":
                 root.remove(group_element)
@@ -7037,7 +7038,7 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
                        create_new=False)
 
     if data and show_project_meta(apiurl, dprj) != None:
-        root = ET.fromstring(''.join(data))
+        root = ET.fromstring(parse_meta_to_string(data))
         if not root.find('devel') != None:
             ET.SubElement(root, 'devel')
         elem = root.find('devel')
