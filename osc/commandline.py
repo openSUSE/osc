@@ -7267,16 +7267,35 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) == 3:
             project, repository, architecture = args
         elif len(args) >= 1 and len(args) <= 2:
-            if is_package_dir(os.getcwd()):
+            in_package_dir = is_package_dir(os.getcwd())
+            in_project_dir = is_project_dir(os.getcwd())
+
+            r = []
+            if not in_package_dir and not in_project_dir and len(args) == 2:
+                try:
+                    project, package = args
+                    for results in get_package_results(apiurl, project, package):
+                        r += [(res['repository'], res['arch']) for res, _is_multi in result_xml_to_dicts(results) if res['code'] not in ('excluded', )]
+                except:
+                    # Ignore request failure in case of invalid project/package pair.
+                    pass
+
+            if in_package_dir:
                 project = store_read_project(os.curdir)
                 package = store_read_package(os.curdir)
-            elif is_project_dir(os.getcwd()):
+            elif in_project_dir:
                 project = store_read_project(os.curdir)
+            elif len(r) == 1:
+                repository, architecture = r[0]
+            elif len(r) > 1:
+                valid_arguments = "\n".join([repo + " " + arch for repo, arch in r])
+                raise oscerr.WrongArgs('Missing arguments: <repository> and <architecture>\nValid arguments:\n' + valid_arguments)
             else:
                 raise oscerr.WrongArgs('Missing arguments: either specify <project> and ' \
                                        '<package> or move to a project or package working copy')
-            repository   = args[0]
-            if len(args) == 2:
+
+            repository = repository or args[0]
+            if architecture is None and len(args) == 2:
                 architecture = args[1]
         else:
             raise oscerr.WrongArgs('Need either 1, 2, 3 or 4 arguments')
