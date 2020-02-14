@@ -199,7 +199,10 @@ class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
         self._keyring_backend = keyring_backend
 
     def name(self):
-        return self._keyring_backend.name
+        if hasattr(self._keyring_backend, 'name'):
+            return self._keyring_backend.name
+        else:
+            return self._keyring_backend.__class__.__name__
 
     def description(self):
         return 'Backend provided by python-keyring'
