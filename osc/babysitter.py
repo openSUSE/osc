@@ -22,8 +22,10 @@ try:
     from M2Crypto.SSL.Checker import SSLVerificationError
     from M2Crypto.SSL import SSLError as SSLError
 except:
-    SSLError = None
-    SSLVerificationError = None
+    class SSLError(Exception):
+        pass
+    class SSLVerificationError(Exception):
+        pass
 
 try:
     # import as RPMError because the class "error" is too generic
