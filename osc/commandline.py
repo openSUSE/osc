@@ -2090,6 +2090,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-d', '--diff', action='store_true',
                   help='generate a diff')
+    @cmdln.option('-S', '--superseded-request', metavar='SUPERSEDED_REQUEST',
+                        help='Create the diff relative to a given former request')
     @cmdln.option('-u', '--unified', action='store_true',
                   help='output the diff in the unified diff format')
     @cmdln.option('--no-devel', action='store_true',
@@ -2512,8 +2514,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff = b''
                 try:
                     # works since OBS 2.1
-                    diff = request_diff(apiurl, reqid)
+                    diff = request_diff(apiurl, reqid, opts.superseded_request)
                 except HTTPError as e:
+                    if e.code == 404:
+                        # Any referenced object does not exist, eg. the superseded request
+                        root = ET.fromstring(e.read())
+                        summary = root.find('summary')
+                        print(summary.text, file=sys.stderr)
+                        raise oscerr.WrongOptions("Object does not exist")
+
                     # for OBS 2.0 and before
                     sr_actions = r.get_actions('submit')
                     if not r.get_actions('submit') and not r.get_actions('maintenance_incident') and not r.get_actions('maintenance_release'):

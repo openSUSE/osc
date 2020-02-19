@@ -4896,8 +4896,11 @@ def server_diff_noex(apiurl,
             return rdiff
 
 
-def request_diff(apiurl, reqid):
-    u = makeurl(apiurl, ['request', reqid], query={'cmd': 'diff'} )
+def request_diff(apiurl, reqid, superseded_reqid=None):
+    query = {'cmd': 'diff'}
+    if superseded_reqid:
+        query['diff_to_superseded'] = superseded_reqid
+    u = makeurl(apiurl, ['request', reqid], query)
 
     f = http_POST(u)
     return f.read()
