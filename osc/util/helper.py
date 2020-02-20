@@ -3,6 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+from osc import oscerr
 
 def cmp_to_key(mycmp):
     """ Converts a cmp= function into a key= function.
