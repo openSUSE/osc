@@ -6132,7 +6132,6 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
         query['last'] = 1
     if lastsucceeded:
         query['lastsucceeded'] = 1
-    retry_count = 0
     while True:
         query['start'] = offset
         start_offset = offset
@@ -6142,9 +6141,6 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
                 offset += len(data)
                 print_data(data, strip_time)
         except IncompleteRead as e:
-            if retry_count >= 3:
-                raise e
-            retry_count += 1
             data = e.partial
             if len(data):
                 offset += len(data)
