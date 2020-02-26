@@ -73,7 +73,7 @@ class PackageQuery:
             f.close()
             return None
         # arch tar ball compressed with gz, xz or zst
-        elif magic[:5] == b'\375\067zXZ' or magic[:2] == b'\037\213' or magic[:5] == b'(\xb5/\xfd\x2f':
+        elif magic[:5] == b'\375\067zXZ' or magic[:2] == b'\037\213' or magic[:4] == b'(\xb5/\xfd':
             from . import archquery
             pkgquery = archquery.ArchQuery(f)
         else:
