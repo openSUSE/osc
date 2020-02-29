@@ -1018,7 +1018,7 @@ def interactive_config_setup(conffile, apiurl, initial=True):
 
 def select_credentials_manager_descr():
     if not credentials.has_keyring_support():
-        print('To use keyrings please install python-keyring.')
+        print('To use keyrings please install python%d-keyring.' % sys.version_info.major)
     creds_mgr_descriptors = credentials.get_credentials_manager_descriptors()
     for i, creds_mgr_descr in enumerate(creds_mgr_descriptors, 1):
         print('%d) %s (%s)' % (i, creds_mgr_descr.name(), creds_mgr_descr.description()))#
