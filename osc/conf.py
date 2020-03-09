@@ -819,7 +819,8 @@ def get_config(override_conffile=None,
                override_post_mortem=None,
                override_no_keyring=None,
                override_no_gnome_keyring=None,
-               override_verbose=None):
+               override_verbose=None,
+               active_apiurl=None):
     """do the actual work (see module documentation)"""
     global config
 
@@ -886,6 +887,17 @@ def get_config(override_conffile=None,
         # backward compatiblity
         scheme, host, path = parse_apisrv_url(config.get('scheme', 'https'), url)
         apiurl = urljoin(scheme, host, path)
+        if cp.has_option(url, 'aliases'):
+            for i in cp.get(url, 'aliases').split(','):
+                key = i.strip()
+                if key == '':
+                    continue
+                if key in aliases:
+                    msg = 'duplicate alias entry: \'%s\' is already used for another apiurl' % key
+                    raise oscerr.ConfigError(msg, conffile)
+                aliases[key] = url
+        if active_apiurl and apiurl != active_apiurl and not active_apiurl in aliases:
+            continue
         creds_mgr = _get_credentials_manager(url, cp)
         # if the deprecated gnomekeyring is used we should use the apiurl instead of url
         # (that's what the old code did), but this makes things more complex
@@ -902,15 +914,6 @@ def get_config(override_conffile=None,
             http_headers = http_header_regexp.findall(http_headers)
         else:
             http_headers = []
-        if cp.has_option(url, 'aliases'):
-            for i in cp.get(url, 'aliases').split(','):
-                key = i.strip()
-                if key == '':
-                    continue
-                if key in aliases:
-                    msg = 'duplicate alias entry: \'%s\' is already used for another apiurl' % key
-                    raise oscerr.ConfigError(msg, conffile)
-                aliases[key] = url
 
         entry = {'user': user,
                  'pass': password,

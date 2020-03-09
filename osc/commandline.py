@@ -133,6 +133,9 @@ class Osc(cmdln.Cmdln):
     def postoptparse(self, try_again = True):
         """merge commandline options into the config"""
         try:
+            apiurl = conf.DEFAULTS['apiurl']
+            if self.options.apiurl:
+                apiurl = self.options.apiurl
             conf.get_config(override_conffile = self.options.conffile,
                             override_apiurl = self.options.apiurl,
                             override_debug = self.options.debug,
@@ -142,7 +145,8 @@ class Osc(cmdln.Cmdln):
                             override_post_mortem = self.options.post_mortem,
                             override_no_keyring = self.options.no_keyring,
                             override_no_gnome_keyring = self.options.no_gnome_keyring,
-                            override_verbose = self.options.verbose)
+                            override_verbose = self.options.verbose,
+                            active_apiurl=apiurl)
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
