@@ -1450,7 +1450,7 @@ class Package:
 
         if not skip_local_service_run:
             r = self.run_source_services(mode="trylocal", verbose=verbose)
-            if r is not 0:
+            if r != 0:
                 # FIXME: it is better to raise this in Serviceinfo.execute with more
                 # information (like which service/command failed)
                 raise oscerr.ServiceRuntimeError('A service failed with error: %d' % r)
@@ -4177,18 +4177,18 @@ def clone_request(apiurl, reqid, msg=None):
 
 # create a maintenance release request
 def create_release_request(apiurl, src_project, message=''):
-    import cgi
+    import html
     r = Request()
     # api will complete the request
     r.add_action('maintenance_release', src_project=src_project)
     # XXX: clarify why we need the unicode(...) stuff
-    r.description = cgi.escape(unicode(message, 'utf8'))
+    r.description = html.escape(unicode(message, 'utf8'), quote=False)
     r.create(apiurl)
     return r
 
 # create a maintenance incident per request
 def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False, rev=None):
-    import cgi
+    import html
     r = Request()
     if src_packages:
         for p in src_packages:
@@ -4196,7 +4196,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
-    r.description = cgi.escape(unicode(message, 'utf8'))
+    r.description = html.escape(unicode(message, 'utf8'), quote=False)
     r.create(apiurl, addrevision=True, enforce_branching=enforce_branching)
     return r
 
@@ -4205,7 +4205,7 @@ def create_submit_request(apiurl,
                          dst_project=None, dst_package=None,
                          message="", orev=None, src_update=None, dst_updatelink=None):
 
-    import cgi
+    import html
     options_block = ""
     package = ""
     if src_package:
@@ -4241,9 +4241,9 @@ def create_submit_request(apiurl,
        orev or show_upstream_rev(apiurl, src_project, src_package),
        targetxml,
        options_block,
-       cgi.escape(message))
+       html.escape(message, quote=False))
 
-    # Don't do cgi.escape(unicode(message, "utf8"))) above.
+    # Don't do html.escape(unicode(message, "utf8"))) above.
     # Promoting the string to utf8, causes the post to explode with:
     #   uncaught exception: Fatal error: Start tag expected, '&lt;' not found at :1.
     # I guess, my original workaround was not that bad.
