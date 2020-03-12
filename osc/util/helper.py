@@ -3,6 +3,11 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+try:
+    import html
+except ImportError:
+    import cgi as html
+
 from osc import oscerr
 
 def cmp_to_key(mycmp):
@@ -83,3 +88,7 @@ def raw_input(*args):
     except EOFError:
         # interpret ctrl-d as user abort
         raise oscerr.UserAbort()
+
+
+def _html_escape(data):
+    return html.escape(data, quote=False)

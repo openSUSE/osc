@@ -61,7 +61,7 @@ try:
 except ImportError:
     from .util.helper import cmp_to_key
 
-from osc.util.helper import decode_list, decode_it, raw_input
+from osc.util.helper import decode_list, decode_it, raw_input, _html_escape
 
 try:
     # python 2.6 and python 2.7
@@ -4177,18 +4177,16 @@ def clone_request(apiurl, reqid, msg=None):
 
 # create a maintenance release request
 def create_release_request(apiurl, src_project, message=''):
-    import html
     r = Request()
     # api will complete the request
     r.add_action('maintenance_release', src_project=src_project)
     # XXX: clarify why we need the unicode(...) stuff
-    r.description = html.escape(unicode(message, 'utf8'), quote=False)
+    r.description = _html_escape(unicode(message, 'utf8'))
     r.create(apiurl)
     return r
 
 # create a maintenance incident per request
 def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False, rev=None):
-    import html
     r = Request()
     if src_packages:
         for p in src_packages:
@@ -4196,7 +4194,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
-    r.description = html.escape(unicode(message, 'utf8'), quote=False)
+    r.description = _html_escape(unicode(message, 'utf8'))
     r.create(apiurl, addrevision=True, enforce_branching=enforce_branching)
     return r
 
@@ -4204,8 +4202,6 @@ def create_submit_request(apiurl,
                          src_project, src_package=None,
                          dst_project=None, dst_package=None,
                          message="", orev=None, src_update=None, dst_updatelink=None):
-
-    import html
     options_block = ""
     package = ""
     if src_package:
@@ -4241,9 +4237,9 @@ def create_submit_request(apiurl,
        orev or show_upstream_rev(apiurl, src_project, src_package),
        targetxml,
        options_block,
-       html.escape(message, quote=False))
+       _html_escape(message))
 
-    # Don't do html.escape(unicode(message, "utf8"))) above.
+    # Don't do _html_escape(unicode(message, "utf8"))) above.
     # Promoting the string to utf8, causes the post to explode with:
     #   uncaught exception: Fatal error: Start tag expected, '&lt;' not found at :1.
     # I guess, my original workaround was not that bad.
