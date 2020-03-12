@@ -1241,7 +1241,10 @@ class Osc(cmdln.Cmdln):
         if len(args) < 2 and is_project_dir(os.getcwd()):
             if opts.diff:
                 raise oscerr.WrongOptions('\'--diff\' is not supported in a project working copy')
-            import html 
+            try:
+                import html 
+            except ImportError:
+                import cgi as html
             project = store_read_project(os.curdir)
 
             sr_ids = []
@@ -1872,7 +1875,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not opts.message:
             opts.message = edit_message()
 
-        import cgi
+        try:
+            import html
+        except ImportError:
+            import cgi as html
         xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
               (actionsxml, html.escape(opts.message or "", quote=False))
         u = makeurl(apiurl, ['request'], query='cmd=create')
@@ -1911,7 +1917,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ${cmd_option_list}
         """
-        import cgi
+        try:
+            import html
+        except ImportError:
+            import cgi as html
         args = slash_split(args)
         apiurl = self.get_api_url()
 
@@ -1991,7 +2000,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc deletereq [-m TEXT] PROJECT [--all|--repository REPOSITORY]
         ${cmd_option_list}
         """
-        import cgi
+        try:
+            import html
+        except ImportError:
+            import cgi as html
 
         args = slash_split(args)
 
@@ -2033,7 +2045,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         r = Request()
         r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
-        r.description = cgi.escape(opts.message)
+        r.description = html.escape(opts.message, quote=False)
         if opts.accept_in_hours:
           r.accept_at_in_hours(int(opts.accept_in_hours))
         r.create(self.get_api_url())
@@ -2054,7 +2066,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         osc changedevelrequest PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
         """
-        import cgi
+        try:
+            import html
+        except ImportError:
+            import cgi as html
+
 
         if len(args) == 0 and is_package_dir('.') and find_default_project():
             wd = os.curdir
@@ -2609,7 +2625,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 # check for devel instances after accepted requests
                 if cmd in ['accept']:
-                    import cgi
+                    try:
+                        import html
+                    except ImportError:
+                        import cgi as html
+
                     sr_actions = rq.get_actions('submit')
                     for action in sr_actions:
                         u = makeurl(apiurl, ['/search/package'], {
@@ -8219,7 +8239,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     message = edit_message()
 
-                import cgi
+                try:
+                    import html
+                except ImportError:
+                    import cgi as html
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
                       (requestactionsxml, html.escape(message or "", quote=False))
                 u = makeurl(apiurl, ['request'], query='cmd=create')

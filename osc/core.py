@@ -4177,7 +4177,10 @@ def clone_request(apiurl, reqid, msg=None):
 
 # create a maintenance release request
 def create_release_request(apiurl, src_project, message=''):
-    import html
+    try:
+        import html
+    except ImportError:
+        import cgi as html
     r = Request()
     # api will complete the request
     r.add_action('maintenance_release', src_project=src_project)
@@ -4188,7 +4191,10 @@ def create_release_request(apiurl, src_project, message=''):
 
 # create a maintenance incident per request
 def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False, rev=None):
-    import html
+    try:
+        import html
+    except ImportError:
+        import cgi as html
     r = Request()
     if src_packages:
         for p in src_packages:
@@ -4204,8 +4210,10 @@ def create_submit_request(apiurl,
                          src_project, src_package=None,
                          dst_project=None, dst_package=None,
                          message="", orev=None, src_update=None, dst_updatelink=None):
-
-    import html
+    try:
+        import html
+    except ImportError:
+        import cgi as html
     options_block = ""
     package = ""
     if src_package:
