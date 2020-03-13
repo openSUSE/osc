@@ -132,18 +132,21 @@ if test -n "$alias" ; then
     command="$command -A $alias"
 fi
 
-if test -s "${projects}" ; then
-    typeset -i ctime=$(command date -d "$(command stat -c '%z' ${projects})" +'%s')
-    typeset -i   now=$(command date -d now +'%s')
-    if ((now - ctime > 86400)) ; then
-	if tmp=$(mktemp ${projects}.XXXXXX) ; then
-	    command ${command} ls / >| $tmp
-	    mv -uf $tmp ${projects}
-	fi
+update_projects_list ()
+{
+    if test -s "${projects}" ; then
+        typeset -i ctime=$(command date -d "$(command stat -c '%z' ${projects})" +'%s')
+        typeset -i   now=$(command date -d now +'%s')
+        if ((now - ctime > 86400)) ; then
+            if tmp=$(mktemp ${projects}.XXXXXX) ; then
+                command ${command} ls / >| $tmp
+	        mv -uf $tmp ${projects}
+	    fi
+        fi
+    else
+        command ${command} ls / >| "${projects}"
     fi
-else
-    command ${command} ls / >| "${projects}"
-fi
+}
 
 projects ()
 {
@@ -159,6 +162,7 @@ projects ()
 	argv[argc++]=$arg
     done
     shift $argc
+    update_projects_list
     cur="$1"
     if test -n "${cur}" ; then
 	list=($(command grep -E "^${cur}" ${projects}))
@@ -273,6 +277,7 @@ targets ()
 
 users ()
 {
+    update_projects_list
     if test -s ${projects} ; then
 	command sed -rn "/^home:$1/{ s/^home:([^:]*):.*/\1/p}" ${projects}|command sort -u
     elif test -s ~/.oscrc; then
