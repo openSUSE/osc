@@ -26,6 +26,9 @@ typeset -i remove
 typeset -i colon
 typeset -r OIFS="$IFS"
 
+# Do not pollute the terminal session with warnings or errors
+exec 2>/dev/null
+
 if test "/proc/$PPID/exe" -ef /bin/tcsh ; then
     export COMP_TYPE=63
     export COMP_KEY=9
