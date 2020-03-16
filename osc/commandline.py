@@ -6938,18 +6938,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc service COMMAND (inside working copy)
             osc service run [SOURCE_SERVICE]
             osc service runall
-            osc service localrun
-            osc service disabledrun
+            osc service manualrun [SOURCE_SERVICE]
+            osc service localrun [SOURCE_SERVICE]
+            osc service disabledrun [SOURCE_SERVICE]
             osc service remoterun [PROJECT PACKAGE]
             osc service merge [PROJECT PACKAGE]
             osc service wait [PROJECT PACKAGE]
 
             COMMAND can be:
-            run         r  run defined services locally, it takes an optional parameter to run only a
+            run         r  run defined services with modes "trylocal", "localonly", or no mode set locally, may take an optional parameter to run only a
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
             runall      ra run all services independent of the used mode
-            manualrun   mr run all services with mode "manual"
+            manualrun   mr run all services with mode "manual", may take an optional parameter to run only a
+                           specified source service
             remoterun   rr trigger a re-run on the server side
             merge          commits all server side generated files and drops the _service definition
             wait           waits until the service finishes and returns with an error if it failed

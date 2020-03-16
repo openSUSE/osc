@@ -422,10 +422,13 @@ class Serviceinfo:
                     os.unlink(ent)
 
         allservices = self.services or []
-        if singleservice and not singleservice in allservices:
+        service_names = [s['name'] for s in allservices]
+        if singleservice and singleservice not in service_names:
             # set array to the manual specified singleservice, if it is not part of _service file
-            data = { 'name' : singleservice, 'command' : [ singleservice ], 'mode' : '' }
+            data = { 'name' : singleservice, 'command' : [ singleservice ], 'mode' : callmode }
             allservices = [data]
+        elif singleservice:
+            allservices = [s for s in allservices if s['name'] == singleservice]
 
         if not allservices:
             # short-circuit to avoid a potential http request in vc_export_env
@@ -449,8 +452,6 @@ class Serviceinfo:
         ret = 0
         for service in allservices:
             if callmode != "all":
-                if singleservice and service['name'] != singleservice:
-                    continue
                 if service['mode'] == "buildtime":
                     continue
                 if service['mode'] == "serveronly" and callmode != "local":
