@@ -526,7 +526,10 @@ def _build_opener(apiurl):
             from M2Crypto import m2urllib2
         except ImportError as e:
             print(e)
-            raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto.' % apiurl)
+            if sys.version_info[0] < 3:
+                raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto.' % apiurl)
+            else:
+                raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python3-m2crypto or try "pip3 install M2Crypto"' % apiurl)
 
         cafile = options.get('cafile', None)
         capath = options.get('capath', None)
