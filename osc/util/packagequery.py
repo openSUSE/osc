@@ -151,14 +151,14 @@ class PackageQueryResult:
         raise NotImplementedError
 
     def evr(self):
-        evr = decode_it(self.version())
+        evr = self.version()
 
         if self.release():
-            evr += "-" + decode_it(self.release())
+            evr += b"-" + self.release()
 
         epoch = self.epoch()
         if epoch is not None and epoch != 0:
-            evr = epoch + ":" + evr 
+            evr = epoch + b":" + evr 
         return evr 
 
 

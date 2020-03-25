@@ -480,7 +480,7 @@ def create_deps(pkgqs):
         d = p.supplements()
         if d:
             depfile.append(b's:%s%s' % (id, b' '.join(d)))
-        depfile.append(b'I:%s%s-%s 0-%s' % (id, p.name(), p.evr().encode(), p.arch()))
+        depfile.append(b'I:%s%s-%s 0-%s' % (id, p.name(), p.evr(), p.arch()))
     return depfile
 
 

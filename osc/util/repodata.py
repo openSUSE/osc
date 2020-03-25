@@ -71,6 +71,25 @@ def queries(directory):
 
     return packageQueries
 
+
+def _to_bytes_or_None(method):
+    def _method(self, *args, **kwargs):
+        res = method(self, *args, **kwargs)
+        if res is None:
+            return None
+        return res.encode()
+
+    return _method
+
+
+def _to_bytes_list(method):
+    def _method(self, *args, **kwargs):
+        res = method(self, *args, **kwargs)
+        return [data.encode() for data in res]
+
+    return _method
+
+
 class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
     """PackageQueryResult that reads in data from the repodata directory files."""
 
@@ -119,18 +138,22 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
     def __versionElement(self):
         return self.__element.find(namespace("common") + "version")
 
+    @_to_bytes_or_None
     def arch(self):
         return self.__element.find(namespace("common") + "arch").text
 
+    @_to_bytes_or_None
     def description(self):
         return self.__element.find(namespace("common") + "description").text
 
     def distribution(self):
         return None
 
+    @_to_bytes_or_None
     def epoch(self):
         return self.__versionElement().get("epoch")
 
+    @_to_bytes_or_None
     def name(self):
         return self.__element.find(namespace("common") + "name").text
 
@@ -141,30 +164,39 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
 
         return absolutePath
 
+    @_to_bytes_list
     def provides(self):
         return self.__parseEntryCollection("provides")
 
+    @_to_bytes_or_None
     def release(self):
         return self.__versionElement().get("rel")
 
+    @_to_bytes_list
     def requires(self):
         return self.__parseEntryCollection("requires")
 
+    @_to_bytes_list
     def conflicts(self):
         return self.__parseEntryCollection('conflicts')
 
+    @_to_bytes_list
     def obsoletes(self):
         return self.__parseEntryCollection('obsoletes')
 
+    @_to_bytes_list
     def recommends(self):
         return self.__parseEntryCollection('recommends')
 
+    @_to_bytes_list
     def suggests(self):
         return self.__parseEntryCollection('suggests')
 
+    @_to_bytes_list
     def supplements(self):
         return self.__parseEntryCollection('supplements')
 
+    @_to_bytes_list
     def enhances(self):
         return self.__parseEntryCollection('enhances')
 
@@ -172,23 +204,27 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
         if self.release() is None:
             release = None
         else:
-            release = self.release().encode()
-        return osc.util.rpmquery.RpmQuery.filename(self.name().encode(), None,
-            self.version().encode(), release, self.arch().encode())
+            release = self.release()
+        return osc.util.rpmquery.RpmQuery.filename(self.name(), None,
+            self.version(), release, self.arch())
 
     def gettag(self, tag):
         # implement me, if needed
         return None
 
     def vercmp(self, other):
+        # if either self.epoch() or other.epoch() is None, the vercmp will do
+        # the correct thing because one is transformed into b'None' and the
+        # other one into b"b'<epoch>'" (and 'b' is greater than 'N')
         res = osc.util.rpmquery.RpmQuery.rpmvercmp(str(self.epoch()).encode(), str(other.epoch()).encode())
         if res != 0:
             return res
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.version().encode(), other.version().encode())
+        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.version(), other.version())
         if res != 0:
             return res
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.release().encode(), other.release().encode())
+        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.release(), other.release())
         return res
 
+    @_to_bytes_or_None
     def version(self):
         return self.__versionElement().get("ver")
