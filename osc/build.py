@@ -317,7 +317,7 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
         try:
             gr.urlgrab(url, filename=ifile_path_part, text='fetching image')
         except HTTPError as e:
-            print("Failed to download! ecode:%i reason:%i" % (e.code, e.reason))
+            print("Failed to download! ecode:%i reason:%s" % (e.code, e.reason))
             return ('', '', [])
         # download ok, rename partial file to final file name
         os.rename(ifile_path_part, ifile_path)
