@@ -619,7 +619,7 @@ def main(apiurl, opts, argv):
             buildargs.append('--icecream=%s' % num)
             xp.append('icecream')
             xp.append('gcc-c++')
-    if opts.ccache:
+    if opts.ccache or config['ccache']:
         buildargs.append('--ccache')
         xp.append('ccache')
     if opts.linksources:
