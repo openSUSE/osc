@@ -5765,16 +5765,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     # FIXME: the new osc syntax should allow to specify multiple packages
     # FIXME: the command should optionally use buildinfo data to show all dependencies
-    @cmdln.alias('whatdependson')
     def do_dependson(self, subcmd, opts, *args):
-        """${cmd_name}: Show the build dependencies
+        """${cmd_name}: dependson shows the build dependencies inside of a project, valid for a
+        given repository and architecture.
 
-        The command dependson and whatdependson can be used to find out what
-        will be triggered when a certain package changes.
+        The command can be used to find build dependencies (wrt. a given repository and arch)
+        that reside in the same project. To see all build dependencies use the buildinfo command.
+
         This is no guarantee, since the new build might have changed dependencies.
 
-        dependson shows the build dependencies inside of a project, valid for a
-        given repository and architecture.
         NOTE: to see all binary packages, which can trigger a build you need to
               refer the buildinfo, since this command shows only the dependencies
               inside of a project.
@@ -5784,17 +5783,42 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage in package or project directory:
             osc dependson REPOSITORY ARCH
-            osc whatdependson REPOSITORY ARCH
 
         usage:
             osc dependson PROJECT [PACKAGE] REPOSITORY ARCH
+
+        ${cmd_option_list}
+        """
+        self._dependson(False, *args)
+
+
+    def do_whatdependson(self, subcmd, opts, *args):
+        """${cmd_name}: Show the packages that require the specified package during the
+        build.
+
+        The command whatdependson can be used to find out what will be triggered when
+        a certain package changes.
+
+        This is no guarantee, since the new build might have changed dependencies.
+
+        The arguments REPOSITORY and ARCH can be taken from the first two columns
+        of the 'osc repos' output.
+
+        usage in package or project directory:
+            osc whatdependson REPOSITORY ARCH
+
+        usage:
             osc whatdependson PROJECT [PACKAGE] REPOSITORY ARCH
 
         ${cmd_option_list}
         """
+        self._dependson(True, *args)
+
+
+    def _dependson(self, reverse, *args):
         wd = os.curdir
         args = slash_split(args)
-        project = packages = repository = arch = reverse = None
+        project = packages = repository = arch = None
 
         if len(args) < 2 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
@@ -5823,9 +5847,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = [args[1]]
             repository = args[2]
             arch = args[3]
-
-        if subcmd == 'whatdependson':
-            reverse = 1
 
         xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
 
