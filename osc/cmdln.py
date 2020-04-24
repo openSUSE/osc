@@ -97,6 +97,9 @@ _NOT_SPECIFIED = ("Not", "Specified")
 _INCORRECT_NUM_ARGS_RE = re.compile(
     r"(takes [\w ]+ )(\d+)( arguments? \()(\d+)( given\))")
 
+_INCORRECT_NUM_ARGS_RE_PY3 = re.compile(
+    r"(missing\s+\d+.*)")
+
 # Static bits of man page
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -1246,6 +1249,7 @@ class Cmdln(RawCmdln):
                     raise
                 msg = ex.args[0]
                 match = _INCORRECT_NUM_ARGS_RE.search(msg)
+                match_py3 = _INCORRECT_NUM_ARGS_RE_PY3.search(msg)
                 if match:
                     msg = list(match.groups())
                     msg[1] = int(msg[1]) - 3
@@ -1254,6 +1258,8 @@ class Cmdln(RawCmdln):
                     msg[3] = int(msg[3]) - 3
                     msg = ''.join(map(str, msg))
                     raise CmdlnUserError(msg)
+                elif match_py3:
+                    raise CmdlnUserError(match_py3.group(1))
                 else:
                     raise
         else:
