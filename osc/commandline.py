@@ -5512,7 +5512,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = { 'view': 'entry' }
             if opts.last:
                 query['last'] = 1
-            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
+            u = makeurl(self.get_api_url(), ['build', quote_plus(project), quote_plus(repository), quote_plus(arch), quote_plus(package), '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
             offset = int(root.find('entry').get('size'))
@@ -5525,7 +5525,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last)
+        print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last)
 
 
     def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments', project=None):
@@ -5604,7 +5604,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = { 'view': 'entry' }
             if opts.last:
                 query['last'] = 1
-            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
+            u = makeurl(self.get_api_url(), ['build', quote_plus(project), quote_plus(repository), quote_plus(arch), quote_plus(package), '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
             offset = int(root.find('entry').get('size'))
@@ -5617,7 +5617,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
+        print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last, opts.lastsucceeded)
 
     def _find_last_repo_arch(self, repo=None, fatal=True):
         import glob
