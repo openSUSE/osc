@@ -68,11 +68,10 @@ osc.util.safewriter module
     :undoc-members:
     :show-inheritance:
 
+osc.util.helper module
+--------------------------
 
-Module contents
----------------
-
-.. automodule:: osc.util
+.. automodule:: osc.util.helper
     :members:
     :undoc-members:
     :show-inheritance:

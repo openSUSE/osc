@@ -8,6 +8,9 @@ This is the osc core module.
 basic structures
 ----------------
 
+.. automodule:: osc.core
+   :members:
+
 .. autoclass:: File
     :members:
 
@@ -18,3 +21,7 @@ basic structures
 
 .. autoclass:: Linkinfo
     :members:
+
+.. autoclass:: Project
+    :members:
+
