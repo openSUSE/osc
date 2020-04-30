@@ -8,3 +8,7 @@ These are the packages in the osc package.
 
    osc.core
    osc.util
+   osc.credentials
+   osc.build
+   osc.conf
+   osc.OscConfigParser
