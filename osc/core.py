@@ -5654,9 +5654,12 @@ def get_repos_of_project(apiurl, prj):
         for node2 in node.findall('arch'):
             yield Repo(node.get('name'), node2.text)
 
-def get_binarylist(apiurl, prj, repo, arch, package=None, verbose=False):
+def get_binarylist(apiurl, prj, repo, arch, package=None, verbose=False, withccache=False):
     what = package or '_repository'
-    u = makeurl(apiurl, ['build', prj, repo, arch, what])
+    query = {}
+    if withccache:
+        query['withccache'] = 1
+    u = makeurl(apiurl, ['build', prj, repo, arch, what], query=query)
     f = http_GET(u)
     tree = ET.parse(f)
     if not verbose:

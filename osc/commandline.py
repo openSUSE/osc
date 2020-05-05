@@ -7224,6 +7224,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='also fetch source packages')
     @cmdln.option('--debug', action="store_true",
                   help='also fetch debug packages')
+    @cmdln.option('--ccache', action="store_true",
+                  help='allow fetching ccache archive')
     def do_getbinaries(self, subcmd, opts, *args):
         """${cmd_name}: Download binaries to a local directory
 
@@ -7304,7 +7306,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for arch in arches:
             for pac in package:
                 binaries = get_binarylist(apiurl, project, repository, arch,
-                                          package=pac, verbose=True)
+                                          package=pac, verbose=True, withccache=opts.ccache)
                 if not binaries:
                     print('no binaries found: Either the package %s ' \
                                         'does not exist or no binaries have been built.' % pac, file=sys.stderr)
