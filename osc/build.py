@@ -725,6 +725,10 @@ def main(apiurl, opts, argv):
     if opts.shell:
         buildargs.append("--shell")
 
+    if opts.shell_cmd:
+        buildargs.append("--shell-cmd")
+        buildargs.append(opts.shell_cmd)
+
     if opts.noinit:
         buildargs.append('--noinit')
 

@@ -6406,10 +6406,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             osc shell [OPTS] REPOSITORY ARCH
 
+        Run a single command inside of the build environment:
+            osc shell --shell-cmd=COMMAND [OPTS] REPOSITORY ARCH
+
         OPTS may be
 
             --noinit             # for faster run
             --shell-cmd=COMMAND
+            --extra-pkgs=PACKAGE # install additional packages
 
         To clean up the build environment run
 
