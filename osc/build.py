@@ -508,8 +508,7 @@ def check_trusted_projects(apiurl, projects):
         config['api_host_options'][apiurl]['trusted_prj'] = trusted
         conf.config_set_option(apiurl, 'trusted_prj', ' '.join(trusted))
 
-def get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo):
-    bi = Buildinfo(bi_filename, apiurl, 'kiwi')
+def get_kiwipath_from_buildinfo(bi, prj, repo):
     # If the project does not have a path defined we need to get the config
     # via the repositories in the kiwi file. Unfortunately the buildinfo
     # does not include a hint if this is the case, so we rely on a heuristic
@@ -866,7 +865,8 @@ def main(apiurl, opts, argv):
             bi_file.flush()
             kiwipath = None
             if build_type == 'kiwi':
-                kiwipath = get_kiwipath_from_buildinfo(apiurl, bi_filename, prj, repo)
+                bi = Buildinfo(bi_filename, apiurl, 'kiwi', list(prefer_pkgs.keys()))
+                kiwipath = get_kiwipath_from_buildinfo(bi, prj, repo)
                 bc = get_buildconfig(apiurl, prj, repo, kiwipath)
                 bc_file.seek(0)
                 bc_file.write(decode_it(bc))
