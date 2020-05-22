@@ -6324,6 +6324,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use N parallel build jobs with icecream')
     @cmdln.option('--ccache', action='store_true',
                   help='use ccache to speed up rebuilds')
+    @cmdln.option('--pkg-ccache', metavar='/path/to/_ccache.tar',
+                  help='path to an existing uncompressed archive ccache. Using this option implies --ccache')
     @cmdln.option('--with', metavar='X', dest='_with', action='append',
                   help='enable feature X for build')
     @cmdln.option('--without', metavar='X', action='append',

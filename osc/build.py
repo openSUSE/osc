@@ -621,6 +621,9 @@ def main(apiurl, opts, argv):
     if opts.ccache or config['ccache']:
         buildargs.append('--ccache')
         xp.append('ccache')
+    if opts.pkg_ccache:
+        buildargs.append('--pkg-ccache=%s' % opts.pkg_ccache)
+        xp.append('ccache')
     if opts.linksources:
         buildargs.append('--linksources')
     if opts.baselibs:
