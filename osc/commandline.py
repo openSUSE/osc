@@ -417,17 +417,28 @@ class Osc(cmdln.Cmdln):
         # list sources
         elif not opts.binaries:
             if not args:
-                for prj in meta_get_project_list(apiurl, opts.deleted):
-                    print(prj)
+                is_project = None
+                is_package = None
+                cwd = os.getcwd()
+                if is_project_dir(cwd):
+                    project = store_read_project(cwd)
+                    is_project = True
+                elif is_package_dir(cwd):
+                    project = store_read_project(cwd)
+                    package = store_read_package(cwd)
+                    is_package = True
+                else:
+                    for prj in meta_get_project_list(apiurl, opts.deleted):
+                        print(prj)
 
-            elif len(args) == 1:
+            if len(args) == 1 or is_project:
                 if opts.verbose:
                     if self.options.verbose:
                         print('Sorry, the --verbose option is not implemented for projects.', file=sys.stderr)
                 for pkg in meta_get_packagelist(apiurl, project, deleted = opts.deleted, expand = opts.expand):
                     print(pkg)
 
-            elif len(args) == 2 or len(args) == 3:
+            elif len(args) == 2 or len(args) == 3 or is_package:
                 link_seen = False
                 print_not_found = True
                 rev = opts.revision
