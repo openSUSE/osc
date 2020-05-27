@@ -1,3 +1,6 @@
+0.170.0
+  -
+
 0.169.0
   - improve speed and usability of osc bash completion
   - switch packagequery.py to return only bytes
