@@ -232,18 +232,15 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         # to read().  This weird wrapping allows the returned object to
         # have readline() and readlines() methods.
         r.recv = r.read
-        if (sys.version_info < (3, 0)):
-            fp = socket._fileobject(r, close=True)
-        else:
-            r._decref_socketios = lambda: None
-            r.ssl = h.sock.ssl
-            r._timeout = -1.0
-            # hack to bypass python3 bug with 0 buffer size and
-            # http/client.py readinto method for response class
-            if r.length is not None and r.length == 0:
-                r.readinto = lambda b: 0
-            r.recv_into = r.readinto
-            fp = socket.SocketIO(r, 'rb')
+        r._decref_socketios = lambda: None
+        r.ssl = h.sock.ssl
+        r._timeout = -1.0
+        # hack to bypass python3 bug with 0 buffer size and
+        # http/client.py readinto method for response class
+        if r.length is not None and r.length == 0:
+            r.readinto = lambda b: 0
+        r.recv_into = r.readinto
+        fp = socket.SocketIO(r, 'rb')
 
         resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
