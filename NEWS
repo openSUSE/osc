@@ -1,5 +1,5 @@
-0.170.0
-  -
+0.169.1
+  - add --ccache option to osc getbinaries
 
 0.169.0
   - improve speed and usability of osc bash completion
