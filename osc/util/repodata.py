@@ -5,11 +5,13 @@ information instead of scanning individual rpms."""
 import gzip
 import os.path
 
-# cElementTree can be standard or 3rd-party depending on python version
 try:
+    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
     from xml.etree import cElementTree as ET
 except ImportError:
-    import cElementTree as ET
+    # will import a fast implementation from 3.3 onwards, needed
+    # for 3.9+
+    from xml.etree import ElementTree as ET
 
 # project modules
 import osc.util.rpmquery
