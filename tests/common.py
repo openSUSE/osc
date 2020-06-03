@@ -7,9 +7,6 @@ import sys
 from xml.etree import cElementTree as ET
 EXPECTED_REQUESTS = []
 
-if sys.version_info[0:2] in ((2, 6), (2, 7)):
-    bytes = lambda x, *args: x
-
 try:
     #python 2.x
     from cStringIO import StringIO
@@ -111,7 +108,7 @@ class MyHTTPHandler(HTTPHandler):
         if 'text' not in kwargs and 'file' in kwargs:
             f = BytesIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'rb').read())
         elif 'text' in kwargs and 'file' not in kwargs:
-            f = BytesIO(bytes(kwargs['text'], 'utf-8'))
+            f = BytesIO(kwargs['text'].encode('utf-8'))
         else:
             raise RuntimeError('either specify text or file')
         resp = addinfourl(f, {}, url)
