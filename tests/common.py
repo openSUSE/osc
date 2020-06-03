@@ -90,16 +90,18 @@ class MyHTTPHandler(HTTPHandler):
         if exp is not None and 'expfile' in kwargs:
             raise RuntimeError('either specify exp or expfile')
         elif 'expfile' in kwargs:
-            exp = open(os.path.join(self.__fixtures_dir, kwargs['expfile']), 'r').read()
+            exp = open(os.path.join(self.__fixtures_dir, kwargs['expfile']), 'rb').read()
         elif exp is None:
             raise RuntimeError('exp or expfile required')
-        if exp is not None:
-            # use req.data instead of req.get_data() for python3 compatiblity
-            data = req.data
-            if hasattr(data, 'read'):
-                data = data.read()
-            if data != bytes(exp, "utf-8"):
-                raise RequestDataMismatch(req.get_full_url(), repr(data), repr(exp))
+        else:
+            # for now, assume exp is a str
+            exp = exp.encode('utf-8')
+        # use req.data instead of req.get_data() for python3 compatiblity
+        data = req.data
+        if hasattr(data, 'read'):
+            data = data.read()
+        if data != exp:
+            raise RequestDataMismatch(req.get_full_url(), repr(data), repr(exp))
         return self.__get_response(req.get_full_url(), **kwargs)
 
     def __get_response(self, url, **kwargs):
