@@ -3,7 +3,13 @@ import osc.oscerr
 import os
 import sys
 from common import GET, PUT, POST, DELETE, OscTestCase
-from xml.etree import cElementTree as ET
+try:
+    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
+    from xml.etree import cElementTree as ET
+except ImportError:
+    # will import a fast implementation from 3.3 onwards, needed
+    # for 3.9+
+    from xml.etree import ElementTree as ET
 try:
     from urllib.error import HTTPError
 except ImportError:

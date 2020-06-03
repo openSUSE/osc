@@ -47,11 +47,13 @@ except ImportError:
     from cStringIO import StringIO
     from httplib import IncompleteRead
 
-
 try:
+    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
     from xml.etree import cElementTree as ET
 except ImportError:
-    import cElementTree as ET
+    # will import a fast implementation from 3.3 onwards, needed
+    # for 3.9+
+    from xml.etree import ElementTree as ET
 
 from . import oscerr
 from . import conf
@@ -816,7 +818,7 @@ class Project:
 
     def read_packages(self):
         """
-        Returns an ``xml.etree.cElementTree`` object representing the
+        Returns an ``xml.etree.ElementTree`` object representing the
         parsed contents of the project's ``.osc/_packages`` XML file.
         """
         global store

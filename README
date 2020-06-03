@@ -24,10 +24,6 @@ Alternatively, you can directly use osc-wrapper.py from the source dir
 (which is easier if you develop on osc).
 
 
-The program needs the cElementTree python module installed. On SUSE, the
-respective package is called python-elementtree (before 10.2: python-xml).
-
-
 
 CONFIGURATION:
 
