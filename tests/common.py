@@ -42,6 +42,30 @@ def urlcompare(url, *args):
 
     return True
 
+
+def xml_equal(actual, exp):
+    try:
+        actual_xml = ET.fromstring(actual)
+        exp_xml = ET.fromstring(exp)
+    except ET.ParseError:
+        return False
+    todo = [(actual_xml, exp_xml)]
+    while todo:
+        actual_xml, exp_xml = todo.pop(0)
+        if actual_xml.tag != exp_xml.tag:
+            return False
+        if actual_xml.attrib != exp_xml.attrib:
+            return False
+        if actual_xml.text != exp_xml.text:
+            return False
+        if actual_xml.tail != exp_xml.tail:
+            return False
+        if len(actual_xml) != len(exp_xml):
+            return False
+        todo.extend(list(zip(actual_xml, exp_xml)))
+    return True
+
+
 class RequestWrongOrder(Exception):
     """raised if an unexpected request is issued to urllib2"""
     def __init__(self, url, exp_url, method, exp_method):
@@ -98,7 +122,14 @@ class MyHTTPHandler(HTTPHandler):
         if hasattr(data, 'read'):
             data = data.read()
         if data != exp:
-            raise RequestDataMismatch(req.get_full_url(), repr(data), repr(exp))
+            # We do not have a notion to explicitly mark xml content. In case
+            # of xml, we do not care about the exact xml representation (for
+            # now). Hence, if both, data and exp, are xml and are "equal",
+            # everything is fine (for now); otherwise, error out
+            # (of course, this is problematic if we want to ensure that XML
+            # documents are bit identical...)
+            if not xml_equal(data, exp):
+                raise RequestDataMismatch(req.get_full_url(), repr(data), repr(exp))
         return self.__get_response(req.get_full_url(), **kwargs)
 
     def __get_response(self, url, **kwargs):
@@ -192,13 +223,26 @@ class OscTestCase(unittest.TestCase):
 
     def _check_digests(self, fname, *skipfiles):
         fname = os.path.join(self._get_fixtures_dir(), fname)
-        self.assertEqual(open(os.path.join('.osc', '_files'), 'r').read(), open(fname, 'r').read())
-        root = ET.parse(fname).getroot()
+        with open(os.path.join('.osc', '_files'), 'r') as f:
+            files_act = f.read()
+        with open(fname, 'r') as f:
+            files_exp = f.read()
+        self.assertXMLEqual(files_act, files_exp)
+        root = ET.fromstring(files_act)
         for i in root.findall('entry'):
             if i.get('name') in skipfiles:
                 continue
             self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
             self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+
+    def assertXMLEqual(self, act, exp):
+        if xml_equal(act, exp):
+            return
+        # ok, xmls are different, hence, assertEqual is expected to fail
+        # (we just use it in order to get a "nice" error message)
+        self.assertEqual(act, exp)
+        # not reached (unless assertEqual is overridden in an incompatible way)
+        raise RuntimeError('assertEqual assumptions violated')
 
     def assertEqualMultiline(self, got, exp):
         if (got + exp).find('\n') == -1:

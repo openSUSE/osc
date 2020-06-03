@@ -38,7 +38,7 @@ class TestRequest(OscTestCase):
     <target package="bar" project="foobar" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_createsr_with_option(self):
         """create a submitrequest with option"""
@@ -67,7 +67,7 @@ class TestRequest(OscTestCase):
     </options>
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_createsr_missing_tgt_package(self):
         """create a submitrequest with missing target package"""
@@ -88,7 +88,7 @@ class TestRequest(OscTestCase):
     <target project="foobar" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_createsr_invalid_argument(self):
         """create a submitrequest with invalid action argument"""
@@ -117,7 +117,7 @@ class TestRequest(OscTestCase):
     <person name="user" role="reader" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_add_role_group(self):
         """create an add_role request (group element)"""
@@ -138,7 +138,7 @@ class TestRequest(OscTestCase):
     <group name="group" role="reviewer" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_add_role_person_group(self):
         """create an add_role request (person+group element)"""
@@ -161,7 +161,7 @@ class TestRequest(OscTestCase):
     <group name="group" role="reviewer" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_set_bugowner_project(self):
         """create a set_bugowner request for a project"""
@@ -179,7 +179,7 @@ class TestRequest(OscTestCase):
     <person name="buguser" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_set_bugowner_package(self):
         """create a set_bugowner request for a package"""
@@ -197,7 +197,7 @@ class TestRequest(OscTestCase):
     <person name="buguser" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_delete_project(self):
         """create a delete request for a project"""
@@ -213,7 +213,7 @@ class TestRequest(OscTestCase):
     <target project="foo" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_delete_package(self):
         """create a delete request for a package"""
@@ -229,7 +229,7 @@ class TestRequest(OscTestCase):
     <target package="deleteme" project="foo" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_create_change_devel(self):
         """create a change devel request"""
@@ -248,7 +248,7 @@ class TestRequest(OscTestCase):
     <target package="devpkg" project="devprj" />
   </action>
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_action_from_xml1(self):
         """create action from xml"""
@@ -266,7 +266,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(action.person_role, 'reader')
         self.assertEqual(action.group_name, 'group')
         self.assertEqual(action.group_role, 'reviewer')
-        self.assertEqual(xml, action.to_str())
+        self.assertXMLEqual(xml, action.to_str())
 
     def test_action_from_xml2(self):
         """create action from xml"""
@@ -288,7 +288,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(action.opt_sourceupdate, 'cleanup')
         self.assertEqual(action.opt_updatelink, '1')
         self.assertTrue(action.src_rev is None)
-        self.assertEqual(xml, action.to_str())
+        self.assertXMLEqual(xml, action.to_str())
 
     def test_action_from_xml3(self):
         """create action from xml (with acceptinfo element)"""
@@ -312,7 +312,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(action.acceptinfo_xsrcmd5, 'ffffffffffffffffffffffffffffffff')
         self.assertTrue(action.acceptinfo_osrcmd5 is None)
         self.assertTrue(action.acceptinfo_oxsrcmd5 is None)
-        self.assertEqual(xml, action.to_str())
+        self.assertXMLEqual(xml, action.to_str())
 
     def test_action_from_xml_unknown_type(self):
         """try to create action from xml with unknown type"""
@@ -350,7 +350,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.description, 'this is a\nvery long\ndescription')
         self.assertTrue(len(r.statehistory) == 1)
         self.assertTrue(len(r.reviews) == 0)
-        self.assertEqual(xml, r.to_str())
+        self.assertXMLEqual(xml, r.to_str())
 
     def test_read_request2(self):
         """read in a request (with reviews)"""
@@ -389,7 +389,7 @@ class TestRequest(OscTestCase):
         self.assertEqual(r.creator, 'creator')
         self.assertTrue(len(r.statehistory) == 1)
         self.assertTrue(len(r.reviews) == 1)
-        self.assertEqual(xml, r.to_str())
+        self.assertXMLEqual(xml, r.to_str())
 
     def test_read_request3(self):
         """read in a request (with an "empty" comment+description)"""
@@ -426,7 +426,7 @@ class TestRequest(OscTestCase):
   <state name="new" when="2010-12-28T12:36:29" who="xyz" />
 </request>"""
 
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_request_list_view1(self):
         """test the list_view method"""
@@ -559,7 +559,7 @@ Comment: <no comment>"""
   </action>
   <state name="new" when="2010-12-30T02:11:22" who="olduser" />
 </request>"""
-        self.assertEqual(exp, r.to_str())
+        self.assertXMLEqual(exp, r.to_str())
 
     def test_get_actions(self):
         """test get_actions method"""
