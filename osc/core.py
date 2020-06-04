@@ -6118,6 +6118,8 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
+        # hmm calling decode_it is a bit problematic because data might begin
+        # or end with an, for instance, incomplete utf-8 sequence
         sys.stdout.write(decode_it(data.translate(all_bytes, remove_bytes)))
 
     # to protect us against control characters
