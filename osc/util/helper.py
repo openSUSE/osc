@@ -56,22 +56,19 @@ def decode_list(ilist):
 
 
 def decode_it(obj):
-    """ Decodes the given object if obj is not a string
-        based on the chardet module if possible
-    """
+    """Decode the given object.
 
-    if obj is None or isinstance(obj, str):
+    If the given object has no decode method, the object itself is
+    returned. Otherwise, try to decode the object using utf-8. If this
+    fails due to a UnicodeDecodeError, try to decode the object using
+    latin-1.
+    """
+    if not hasattr(obj, 'decode'):
         return obj
-    else:
-        try:
-            import chardet
-            return obj.decode(chardet.detect(obj)['encoding'])
-        except:
-            try:
-                import locale
-                return obj.decode(locale.getlocale()[1])
-            except:
-                return obj.decode('latin-1')
+    try:
+        return obj.decode('utf-8')
+    except UnicodeDecodeError:
+        return obj.decode('latin-1')
 
 
 def raw_input(*args):
