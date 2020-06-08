@@ -9,11 +9,11 @@ import sys, os
 
 try:
     from urllib.parse import quote_plus
-    from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
+    from urllib.request import HTTPError
 except ImportError:
     #python 2.x
     from urllib import quote_plus
-    from urllib2 import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, HTTPError
+    from urllib2 import HTTPError
 
 from .core import makeurl, streamfile, dgst
 from .grabber import OscFileGrabber, OscMirrorGroup
@@ -43,13 +43,6 @@ class Fetcher:
         self.cpio = {}
         self.enable_cpio = enable_cpio
 
-        passmgr = HTTPPasswordMgrWithDefaultRealm()
-        for host in api_host_options:
-            passmgr.add_password(None, host, api_host_options[host]['user'],
-                                 api_host_options[host]['pass'])
-        openers = (HTTPBasicAuthHandler(passmgr), )
-        if cookiejar:
-            openers += (HTTPCookieProcessor(cookiejar), )
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
     def __add_cpio(self, pac):
