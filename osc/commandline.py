@@ -3932,6 +3932,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='do not fail if the source or target project/package does not exist on the server')
     @cmdln.option('-u', '--unexpand', action='store_true',
                         help='diff unexpanded version if sources are linked')
+    @cmdln.option('--xml', action='store_true',
+                        help='show diff as xml (only for issues diff)')
     def do_rdiff(self, subcmd, opts, *args):
         """${cmd_name}: Server-side "pretty" diff of two packages
 
@@ -4009,9 +4011,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             new_project, new_package, rev2, not opts.plain, opts.missingok,
                             meta=opts.meta,
                             expand=not opts.unexpand,
-                            onlyissues=opts.issues_only)
+                            onlyissues=opts.issues_only,
+                            xml=opts.xml)
         if opts.issues_only:
-            print(rdiff)
+            print(decode_it(rdiff))
         else:
             run_pager(rdiff)
 
