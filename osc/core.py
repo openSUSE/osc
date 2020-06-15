@@ -4822,7 +4822,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
                 new_project, new_package, new_revision,
-                unified=False, missingok=False, meta=False, expand=True, onlyissues=False, full=True):
+                unified=False, missingok=False, meta=False, expand=True, onlyissues=False, full=True, xml=False):
     query = {'cmd': 'diff'}
     if expand:
         query['expand'] = 1
@@ -4850,24 +4850,34 @@ def server_diff(apiurl,
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
     f = http_POST(u)
-    if onlyissues:
-        issue_list = []
+    if onlyissues and not xml:
+        del_issue_list = []
+        add_issue_list = []
+        chn_issue_list = []
         root = ET.fromstring(f.read())
         node = root.find('issues')
         for issuenode in node.findall('issue'):
-            issue_list.append(issuenode.get('label'))
-        return '\n'.join(issue_list)
+            if issuenode.get('state') == 'deleted':
+                del_issue_list.append(issuenode.get('label'))
+            elif issuenode.get('state') == 'added':
+                add_issue_list.append(issuenode.get('label'))
+            else:
+                chn_issue_list.append(issuenode.get('label'))
+        string = 'added:\n----------\n' + '\n'.join(add_issue_list) + \
+            '\n\nchanged:\n----------\n' + '\n'.join(chn_issue_list) + \
+            '\n\ndeleted:\n----------\n' + '\n'.join(del_issue_list)
+        return string
     return f.read()
 
 def server_diff_noex(apiurl,
                 old_project, old_package, old_revision,
                 new_project, new_package, new_revision,
-                unified=False, missingok=False, meta=False, expand=True, onlyissues=False):
+                unified=False, missingok=False, meta=False, expand=True, onlyissues=False, xml=False):
     try:
         return server_diff(apiurl,
                             old_project, old_package, old_revision,
                             new_project, new_package, new_revision,
-                            unified, missingok, meta, expand, onlyissues)
+                            unified, missingok, meta, expand, onlyissues, True, xml)
     except HTTPError as e:
         msg = None
         body = None
