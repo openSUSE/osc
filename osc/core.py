@@ -5695,7 +5695,7 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False, code=None):
     query = []
     if package:
         query.append('package=%s' % quote_plus(package))
@@ -5707,6 +5707,8 @@ def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], 
         query.append('multibuild=1')
     if locallink:
         query.append('locallink=1')
+    if code:
+        query.append('code=%s' % quote_plus(code))
     for repo in repository:
         query.append('repository=%s' % quote_plus(repo))
     for a in arch:
@@ -5779,6 +5781,7 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     printed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])
     show_excluded = kwargs.pop('showexcl', False)
+    code_filter = kwargs.get('code')
     for results in get_package_results(apiurl, project, package, **kwargs):
         r = []
         for res, is_multi in result_xml_to_dicts(results):
@@ -5811,11 +5814,14 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                     res['status'] += '(unpublished)'
                 else:
                     res['status'] += '*'
-
-            if is_multi:
-                r.append(result_line_mb_templ % res)
-            else:
-                r.append(result_line_templ % res)
+            # we need to do the code filtering again, because result_xml_to_dicts returns the code
+            # of the repository if the result is already prefiltered by the backend. So we need
+            # to filter out the repository states.
+            if code_filter is None or code_filter == res['code']:
+                if is_multi:
+                    r.append(result_line_mb_templ % res)
+                else:
+                    r.append(result_line_templ % res)
 
         if printJoin:
             if printed:
@@ -5868,7 +5874,7 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
     yield xml
 
 
-def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None):
+def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None, brief=False):
     #print '----------------------------------------'
     global buildstatus_symbols
 
@@ -5908,8 +5914,8 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     targets.sort()
 
     # filter option
+    filters = []
     if status_filter or name_filter or not show_excluded:
-
         pacs_to_show = []
         targets_to_show = []
 
@@ -5919,20 +5925,20 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                 # a list is needed because if status_filter == "U"
                 # we have to filter either an "expansion error" (obsolete)
                 # or an "unresolvable" state
-                filters = []
                 for txt, sym in buildstatus_symbols.items():
                     if sym == status_filter:
                         filters.append(txt)
-                for filt_txt in filters:
-                    for pkg in status.keys():
-                        for repo in status[pkg].keys():
-                            if status[pkg][repo] == filt_txt:
-                                if not name_filter:
-                                    pacs_to_show.append(pkg)
-                                    targets_to_show.append(repo)
-                                elif name_filter in pkg:
-                                    pacs_to_show.append(pkg)
-
+            else:
+                filters.append(status_filter)
+            for filt_txt in filters:
+                for pkg in status.keys():
+                    for repo in status[pkg].keys():
+                        if status[pkg][repo] == filt_txt:
+                            if not name_filter:
+                                pacs_to_show.append(pkg)
+                                targets_to_show.append(repo)
+                            elif name_filter in pkg:
+                                pacs_to_show.append(pkg)
         #filtering for Package Name
         elif name_filter:
             for pkg in pacs:
@@ -5966,6 +5972,14 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         for pac in pacs:
             row = [pac] + [status[pac][tg] for tg in targets if tg in status[pac]]
             r.append(';'.join(row))
+        return r
+
+    if brief:
+        for pac, repo_states in status.items():
+            for repo, state in repo_states.items():
+                if filters and state not in filters:
+                    continue
+                r.append('%s %s %s %s' % (pac, repo[0], repo[1], state))
         return r
 
     if not vertical:
