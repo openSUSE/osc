@@ -56,14 +56,14 @@ def decode_list(ilist):
 
 
 def decode_it(obj):
-    """Decode the given object.
+    """Decode the given object unless it is a str.
 
-    If the given object has no decode method, the object itself is
+    If the given object is a str or has no decode method, the object itself is
     returned. Otherwise, try to decode the object using utf-8. If this
     fails due to a UnicodeDecodeError, try to decode the object using
     latin-1.
     """
-    if not hasattr(obj, 'decode'):
+    if isinstance(obj, str) or not hasattr(obj, 'decode'):
         return obj
     try:
         return obj.decode('utf-8')
