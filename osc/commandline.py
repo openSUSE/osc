@@ -6941,18 +6941,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         project = package = singleservice = mode = None
         apiurl = self.get_api_url()
+        remote_commands = ('remoterun', 'rr', 'merge', 'wait')
 
         if len(args) < 1:
             raise oscerr.WrongArgs('No command given.')
         elif len(args) < 3:
-            if is_package_dir(os.curdir):
-                project = store_read_project(os.curdir)
+            if args[0] in remote_commands:
+                if not is_package_dir(os.curdir):
+                    msg = ('Either specify the project and package or execute '
+                           'the command in a package working copy.')
+                    raise oscerr.WrongArgs(msg)
                 package = store_read_package(os.curdir)
+                project = store_read_project(os.curdir)
             else:
-                raise oscerr.WrongArgs('Too few arguments.')
+                # raise an appropriate exception if os.curdir is no package wc
+                store_read_package(os.curdir)
             if len(args) == 2:
                 singleservice = args[1]
-        elif len(args) == 3 and args[0] in ('remoterun', 'rr', 'merge', 'wait'):
+        elif len(args) == 3 and args[0] in remote_commands:
             project = args[1]
             package = args[2]
         else:
