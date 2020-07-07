@@ -5289,6 +5289,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified repo(s)')
     @cmdln.option('-a', '--arch', action='append', default = [],
                         help='Show results only for specified architecture(s)')
+    @cmdln.option('-b', '--brief', action='store_true',
+                        help='show the result in "pkgname repo arch result". Default for -f')
     @cmdln.option('-v', '--verbose', action='store_true', default=False,
                         help='more verbose output')
     @cmdln.option('--no-multibuild', action='store_true', default=False,
@@ -5299,6 +5301,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='list packages vertically instead horizontally for entire project')
     @cmdln.option('-w', '--watch', action='store_true',
                         help='watch the results until all finished building')
+    @cmdln.option('-s', '--status-filter',
+                        help='only show packages with the given build status')
+    @cmdln.option('-f', '--failed', action='store_true',
+                        help='show only failed results')
     @cmdln.option('', '--xml', action='store_true', default=False,
                         help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
@@ -5337,10 +5343,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if project == None:
             raise oscerr.WrongOptions("No project given")
 
+        if opts.failed and opts.status_filter:
+            raise oscerr.WrongArgs('-s and -f cannot be used together')
+
+        if opts.failed:
+            opts.status_filter = 'failed'
+            opts.brief = True
+
         if package == None:
             opts.hide_legend = None
             opts.name_filter = None
-            opts.status_filter = None
             opts.show_non_building = None
             opts.show_excluded = None
             return self.do_prjresults('prjresults', opts, *args)
@@ -5350,7 +5362,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         kwargs = {'apiurl': apiurl, 'project': project, 'package': package,
                   'lastbuild': opts.last_build, 'repository': opts.repo,
-                  'arch': opts.arch, 'wait': opts.watch, 'showexcl': opts.show_excluded}
+                  'arch': opts.arch, 'wait': opts.watch, 'showexcl': opts.show_excluded,
+                  'code': opts.status_filter}
         if opts.multibuild_package:
             opts.no_multibuild = False
             kwargs['multibuild_packages'] = opts.multibuild_package
@@ -5378,6 +5391,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     #          as well when adding a new option!
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
+    @cmdln.option('-b', '--brief', action='store_true',
+                        help='show the result in "pkgname repo arch result"')
     @cmdln.option('-w', '--watch', action='store_true',
                         help='watch the results until all finished building, only supported with --xml')
     @cmdln.option('-c', '--csv', action='store_true',
@@ -5436,7 +5451,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         csv=opts.csv, status_filter=opts.status_filter, \
                                         name_filter=opts.name_filter, repo=opts.repo, \
                                         arch=opts.arch, vertical=opts.vertical, \
-                                        show_excluded=opts.show_excluded)))
+                                        show_excluded=opts.show_excluded, brief=opts.brief)))
 
     @cmdln.option('-q', '--hide-legend', action='store_true',
                         help='hide the legend')
