@@ -3329,6 +3329,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message, opts.enforce_branching)
         print(r.reqid)
+        if conf.config['print_web_links']:
+            root = ET.fromstring(b''.join(show_configuration(apiurl)))
+            node = root.find('obs_url')
+            if node is None or not node.text:
+                raise oscerr.APIError('obs_url configuration element expected')
+            obs_url = node.text
+            print('%s/request/show/%s' % (obs_url, r.reqid))
 
         if supersede_existing:
             for req in reqs:
