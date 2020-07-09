@@ -1,3 +1,26 @@
+0.170
+  - fix code for python3.8 and python3.9
+  - remove dead code
+  - fix tests
+  - don't use chardet to guess encoding. utf-8 or latin-1 is now assumed
+    This will speed up decoding (bsc#1173926)
+  - escape sequences are interpreted correctly on -m
+    osc sr -m "1st line\n2nd line"
+	results in
+    1st line
+    2nd line
+  - add status filter to osc results
+  - add --brief to osc prjresults
+	Gives:
+	build openSUSE_Leap_15.1 x86_64 succeeded
+	build openSUSE_Leap_15.0 x86_64 succeeded
+	build openSUSE_Leap_15.0 armv7l unresolvable
+	build openSUSE_Factory_ARM armv7l succeeded
+	build openSUSE_Factory_ARM aarch64 succeeded
+  - osc prjresults -s <status>: status can now be the long text like "succeeded", "failed"
+  - improve error message if osc service <servicename> is not run in working directory
+  - web links are now also printed for osc mr when print_web_links=1 is set
+
 0.169.1
   - add --ccache option to osc getbinaries
 
