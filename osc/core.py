@@ -7385,6 +7385,13 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             return True
         except HTTPError as e:
             print('Server returned an error:', e, file=sys.stderr)
+            details = e.hdrs.get('X-Opensuse-Errorcode')
+            if details:
+                print(details, file=sys.stderr)
+            root = ET.fromstring(e.read())
+            summary = root.find('summary')
+            if summary is not None:
+                print(summary.text, file=sys.stderr)
             print('Try -f to force the state change', file=sys.stderr)
         return False
 
