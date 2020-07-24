@@ -453,7 +453,11 @@ class Serviceinfo:
                     continue
                 if service['mode'] == "buildtime":
                     continue
-                if service['mode'] == "serveronly" and callmode != "disabled":
+                if service['mode'] == "serveronly" and callmode != "local":
+                    continue
+                if service['mode'] == "manual" and callmode != "manual":
+                    continue
+                if service['mode'] != "manual" and callmode == "manual":
                     continue
                 if service['mode'] == "disabled" and callmode != "disabled":
                     continue
@@ -479,7 +483,7 @@ class Serviceinfo:
                     #        updating _services.
                     return r
 
-                if service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal" or callmode == "all":
+                if service['mode'] == "manual" or service['mode'] == "disabled" or service['mode'] == "trylocal" or service['mode'] == "localonly" or callmode == "local" or callmode == "trylocal" or callmode == "all":
                     for filename in os.listdir(temp_dir):
                         os.rename(os.path.join(temp_dir, filename), os.path.join(dir, filename))
                 else:
