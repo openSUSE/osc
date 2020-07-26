@@ -504,7 +504,7 @@ def check_trusted_projects(apiurl, projects):
                 print("adding '%s' to oscrc: ['%s']['trusted_prj']" % (prj, apiurl))
                 trusted.append(prj)
             elif r != '2':
-                print("Well, good good bye then :-)")
+                print("Well, goodbye then :-)")
                 raise oscerr.UserAbort()
 
     if tlen != len(trusted):
