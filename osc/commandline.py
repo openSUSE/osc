@@ -6949,12 +6949,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            specified source service. In case parameters exist for this one in _service file
                            they are used.
             runall      ra run all services independent of the used mode
-            localrun    lr run all services except the ones with mode "buildtime", "disabled", or
-                           "serveronly" (deprecated)
-            disabledrun dr run all services with mode "disabled" or "serveronly" (deprecated)
+            manualrun   mr run all services with mode "manual"
             remoterun   rr trigger a re-run on the server side
             merge          commits all server side generated files and drops the _service definition
             wait           waits until the service finishes and returns with an error if it failed
+
+            Not for common usage anymore:
+            localrun    lr the same as "run" but services with mode "serveronly" are also executed
+            disabledrun dr run all services with mode "disabled"
 
         ${cmd_option_list}
         """
@@ -6988,7 +6990,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         command = args[0]
 
-        if not (command in ( 'runall', 'ra', 'run', 'localrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'r', 'rr', 'merge', 'wait' )):
+        if not (command in ( 'runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'mr', 'rr', 'merge', 'wait' )):
             raise oscerr.WrongArgs('Wrong command given.')
 
         if command == "remoterun" or command == "rr":
@@ -7003,12 +7005,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(mergeservice(apiurl, project, package))
             return
 
-        if command in ('runall', 'ra', 'run', 'localrun', 'disabledrun', 'lr', 'dr', 'r'):
+        if command in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'lr', 'mr', 'dr', 'r'):
             if not is_package_dir(os.curdir):
                 raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
             if command == "localrun" or command == "lr":
                 mode = "local"
+            elif command == "manualrun" or command == "mr":
+                mode = "manual"
             elif command == "disabledrun" or command == "dr":
                 mode = "disabled"
             elif command == "runall" or command == "ra":
