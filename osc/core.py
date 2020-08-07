@@ -2676,6 +2676,9 @@ class Action:
         'maintenance_release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name',
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
                             'acceptinfo_oxsrcmd5', 'acceptinfo_oproject', 'acceptinfo_opackage'),
+        'release': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'person_name',
+                            'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
+                            'acceptinfo_oxsrcmd5', 'acceptinfo_oproject', 'acceptinfo_opackage', 'tgt_repository'),
         'maintenance_incident': ('src_project', 'src_package', 'src_rev', 'tgt_project', 'tgt_package', 'tgt_releaseproject', 'person_name', 'opt_sourceupdate', 'opt_makeoriginolder',
                             'acceptinfo_rev', 'acceptinfo_srcmd5', 'acceptinfo_xsrcmd5', 'acceptinfo_osrcmd5',
                             'acceptinfo_oxsrcmd5'),
@@ -2935,7 +2938,7 @@ class Request:
             srcupdate = ' '
             if action.opt_sourceupdate and show_srcupdate:
                 srcupdate = '(%s)' % action.opt_sourceupdate
-        elif action.type == 'maintenance_release':
+        elif action.type in ('maintenance_release', 'release'):
             d['source'] = '%s' % prj_pkg_join(action.src_project, action.src_package)
             if action.src_rev:
                 d['source'] = d['source'] + '@%s' % action.src_rev

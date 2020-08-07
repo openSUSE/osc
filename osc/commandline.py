@@ -3107,18 +3107,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.option('-m', '--message', metavar='TEXT',
-                        help='specify message TEXT')
+                  help='specify message TEXT')
+    @cmdln.option('-p', '--package', metavar='PKG', action='append',
+                  help='specify packages to release')
     def do_releaserequest(self, subcmd, opts, *args):
-        """${cmd_name}: Create a request for releasing a maintenance update.
+        """${cmd_name}: Create a release request
 
-        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
-         for information on this topic.]
+        For maintenance incident projects:
 
         This command is used by the maintenance team to start the release process of a maintenance update.
         This includes usually testing based on the defined reviewers of the update project.
 
+        [See https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.maintenance_setup.html
+         for information on this topic.]
+
+        For normal projects:
+
+        This command is used to transfer sources and binaries without rebuilding them.
+        It requires defined release targets set to trigger="manual".
+
+        [See https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.request_and_review_system.html
+         for information on this topic.]
+
         usage:
-            osc releaserequest [ SOURCEPROJECT ]
+            osc releaserequest [-p package] [ SOURCEPROJECT ]
 
         ${cmd_option_list}
         """
@@ -3140,12 +3152,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 0:
             source_project = args[0]
 
+        f = show_project_meta(apiurl, source_project)
+        root = ET.fromstring(b''.join(f))
+
         if not opts.message:
             opts.message = edit_message()
         else:
             opts.message = str(opts.message.encode().decode('unicode_escape'))
 
-        r = create_release_request(apiurl, source_project, opts.message)
+        if 'kind' in root.attrib and root.attrib['kind'] == 'maintenance_incident':
+            r = create_release_request(apiurl, source_project, opts.message)
+        else:
+            r = Request()
+            if opts.package:
+                for pac in opts.package:
+                    r.add_action('release', src_project=source_project, src_package=pac)
+            else:
+                r.add_action('release', src_project=source_project)
+            r.description = _html_escape(opts.message)
+            r.create(apiurl)
         print(r.reqid)
 
 
