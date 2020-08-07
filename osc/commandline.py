@@ -3986,7 +3986,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-r', '--revision', metavar='N[:M]',
                   help='revision id, where N = old revision and M = new revision')
     @cmdln.option('-p', '--plain', action='store_true',
-                  help='output the diff in plain (not unified) diff format')
+                  help='output the diff in plain (not unified) diff format'
+                       ' and show diff of files in archives')
     @cmdln.option('-c', '--change', metavar='rev',
                         help='the change made by revision rev (like -r rev-1:rev). '
                              'If rev is negative this is like -r rev:rev-1.')
@@ -4003,11 +4004,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         changes of a specified revision of a package (two arguments)
 
         If no revision is specified the latest revision is used.
-
-        Note that this command doesn't return a normal diff (which could be
-        applied as patch), but a "pretty" diff, which also compares the content
-        of tarballs.
-
 
         usage:
             osc ${cmd_name} OLDPRJ OLDPAC NEWPRJ [NEWPAC]
