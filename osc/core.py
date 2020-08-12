@@ -6809,12 +6809,21 @@ def search(apiurl, queries=None, **kwargs):
         res[urlpath] = ET.parse(f).getroot()
     return res
 
-def owner(apiurl, binary, mode="binary", attribute=None, project=None, usefilter=None, devel=None, limit=None):
+def owner(apiurl, search_term=None, mode="binary", attribute=None,
+          project=None, usefilter=None, devel=None, limit=None, binary=None):
     """
     Perform a binary package owner search. This is supported since OBS 2.4.
     """
+
+    # binary is just for API backward compatibility
+    if not ((search_term is None) ^ (binary is None)):
+        raise ValueError('Either specify search_term or binary')
+    elif binary is not None:
+        search_term = binary
+ 
     # find default project, if not specified
-    query = { mode: binary }
+    # mode can be "binary" or "package" atm
+    query = { mode: search_term }
     if attribute:
         query['attribute'] = attribute
     if project:
