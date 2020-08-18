@@ -6079,9 +6079,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: gets the information to a worker from the server
 
         Examples:
-            osc workerinfo <workername>
+            osc workerinfo x86_64:goat:1
 
-        ${cmd_usage}
+        Usage:
+            osc workerinfo <hostarch>:<workerid>
+
         ${cmd_option_list}
         """
         apiurl = self.get_api_url()
