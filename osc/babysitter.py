@@ -49,11 +49,16 @@ except ImportError:
 def catchterm(*args):
     raise oscerr.SignalInterrupt
 
+
+# Signals which should terminate the program safely
 for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
     num = getattr(signal, name, None)
     if num:
         signal.signal(num, catchterm)
 
+# Signals which should be ignored
+for sig in (signal.SIGWINCH,):
+    signal.signal(sig, signal.SIG_IGN)
 
 def run(prg, argv=None):
     try:
