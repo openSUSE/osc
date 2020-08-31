@@ -9,7 +9,6 @@ from . import cmdln
 from . import conf
 from . import oscerr
 import sys
-import signal
 import time
 import imp
 import inspect
@@ -1276,7 +1275,7 @@ class Osc(cmdln.Cmdln):
                         t = linkinfo.get('project')
                         if t is None:
                             print("Skipping package ", p,  " since it is a source link pointing inside the project.")
-                            continue 
+                            continue
                     print("Submitting package ", p)
                     try:
                         result = create_submit_request(apiurl, project, p, target_project, src_update=src_update)
