@@ -8180,7 +8180,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Show maintainers according to server side configuration
 
             # Search for official maintained sources in OBS instance
-            osc maintainer BINARY <options>
+            osc maintainer BINARY_OR_PACKAGE_NAME <options>
             osc maintainer -U <user> <options>
             osc maintainer -G <group> <options>
 
@@ -8228,7 +8228,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     opts.set_bugowner_request = bugowner
                     opts.set_bugowner = None
 
-        binary = None
+        search_term = None
         prj = None
         pac = None
         metaroot = None
@@ -8250,8 +8250,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pass
             prj = store_read_project('.')
         elif len(args) == 1:
-            # it is unclear if one argument is a binary or a project, try binary first for new OBS 2.4
-            binary = prj = args[0]
+            # it is unclear if one argument is a search_term or a project, try search_term first for new OBS 2.4
+            search_term = prj = args[0]
         elif len(args) == 2:
             prj = args[0]
             pac = args[1]
@@ -8261,7 +8261,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         # Try the OBS 2.4 way first.
-        if binary or opts.user or opts.group:
+        if search_term or opts.user or opts.group:
             limit = None
             if opts.all:
                 limit = 0
@@ -8269,13 +8269,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if filterroles == [ 'bugowner', 'maintainer' ]:
                 # use server side configured default
                 filterroles = None
-            if binary:
-                searchresult = owner(apiurl, binary, "binary", usefilter=filterroles, devel=None, limit=limit)
+            if search_term:
+                # try the package name first, it is faster and may catch cases where no
+                # binary with that name exists for the given package name
+                searchresult = owner(apiurl, search_term, "package", usefilter=filterroles, devel=None, limit=limit)
+                if searchresult == None or len(searchresult) == 0:
+                    searchresult = owner(apiurl, search_term, "binary", usefilter=filterroles, devel=None, limit=limit)
                 if searchresult != None and len(searchresult) == 0:
                     # We talk to an OBS 2.4 or later understanding the call
                     if opts.set_bugowner or opts.set_bugowner_request:
                         # filtered search did not succeed, but maybe we want to set an owner initially?
-                        searchresult = owner(apiurl, binary, "binary", usefilter="", devel=None, limit=-1)
+                        searchresult = owner(apiurl, search_term, "binary", usefilter="", devel=None, limit=-1)
                         if searchresult:
                             print("WARNING: the binary exists, but has no matching maintainership roles defined.")
                             print("Do you want to set it in the container where the binary appeared first?")
