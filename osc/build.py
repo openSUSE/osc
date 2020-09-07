@@ -275,9 +275,10 @@ class Pac:
         return "%s" % self.name
 
 
-def get_preinstall_image(apiurl, arch, cache_dir, img_info):
+def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
     """
-    Searches preinstall image according to build info and downloads it to cache.
+    Searches preinstall image according to build info and downloads it to cache
+    (unless offline is set to True (default: False)).
     Returns preinstall image path, source and list of image binaries, which can
     be used to create rpmlist.
     NOTE: preinstall image can be used only for new build roots!
@@ -304,6 +305,8 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info):
     imagesource = "%s/%s/%s [%s]" % (img_project, img_repository, img_pkg, img_hdrmd5)
 
     if not os.path.exists(ifile_path):
+        if offline:
+            return '', '', []
         url = "%s/build/%s/%s/%s/%s/%s" % (apiurl, img_project, img_repository, img_arch, img_pkg, img_file)
         print("downloading preinstall image %s" % imagesource)
         if not os.path.exists(cache_path):
@@ -987,10 +990,11 @@ def main(apiurl, opts, argv):
     imagebins = []
     if (not config['no_preinstallimage'] and not opts.nopreinstallimage and
         bi.preinstallimage and
-        not opts.noinit and not opts.offline and
+        not opts.noinit and
         (opts.clean or (not os.path.exists(build_root + "/installed-pkg") and
                         not os.path.exists(build_root + "/.build/init_buildsystem.data")))):
-        (imagefile, imagesource, imagebins) = get_preinstall_image(apiurl, arch, cache_dir, bi.preinstallimage)
+        (imagefile, imagesource, imagebins) = get_preinstall_image(apiurl, arch, cache_dir, bi.preinstallimage,
+                                                                   opts.offline)
         if imagefile:
             # remove binaries from build deps which are included in preinstall image
             for i in bi.deps:
