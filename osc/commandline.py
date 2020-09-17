@@ -4384,14 +4384,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_repourls(self, subcmd, opts, *args):
         """${cmd_name}: Shows URLs of .repo files
 
-        Shows URLs on which to access the project .repos files (yum-style
-        metadata) on download.opensuse.org.
+        Shows URLs on which to access the project repositories.
 
         usage:
            osc repourls [PROJECT]
 
         ${cmd_option_list}
         """
+        import tempfile
+
+        def _repo_type(apiurl, project,repo):
+            if not os.path.exists('/usr/lib/build/queryconfig'):
+                return None
+            build_config = get_buildconfig(apiurl, project, repo)
+            with tempfile.NamedTemporaryFile() as f:
+                f.write(build_config)
+                f.flush()
+                repo_type = return_external('/usr/lib/build/queryconfig', '--dist',
+                                        f.name, 'repotype').rstrip(b'\n')
+            if not repo_type:
+                return None
+            return decode_it(repo_type)
 
         apiurl = self.get_api_url()
 
@@ -4407,10 +4420,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if elm is None or not elm.text:
             raise oscerr.APIError('download_url configuration element expected')
 
+        url_deb_tmpl = 'deb ' + elm.text + '/%s/%s/ /'
+        url_arch_tmpl = 'Server=' + elm.text + '/%s/%s/$arch'
         url_tmpl = elm.text + '/%s/%s/%s.repo'
         repos = get_repositories_of_project(apiurl, project)
         for repo in repos:
-            print(url_tmpl % (project.replace(':', ':/'), repo, project))
+            repo_type = _repo_type(apiurl, project, repo)
+            if repo_type == 'debian':
+                print(url_deb_tmpl % (project.replace(':', ':/'), repo))
+            elif repo_type == 'arch':
+                print(url_arch_tmpl % (project.replace(':', ':/'), repo))
+            else:
+                # We assume everything else is rpm-md
+                print(url_tmpl % (project.replace(':', ':/'), repo, project))
 
 
     def do_browse(self, subcmd, opts, *args):
