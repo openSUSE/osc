@@ -7,13 +7,8 @@ from __future__ import print_function
 
 import sys, os
 
-try:
-    from urllib.parse import quote_plus
-    from urllib.request import HTTPError
-except ImportError:
-    #python 2.x
-    from urllib import quote_plus
-    from urllib2 import HTTPError
+from urllib.parse import quote_plus
+from urllib.request import HTTPError
 
 from .core import makeurl, streamfile, dgst
 from .grabber import OscFileGrabber, OscMirrorGroup

@@ -10,13 +10,8 @@ import re
 import sys
 import shutil
 
-try:
-    from urllib.parse import urlsplit
-    from urllib.request import URLError, HTTPError
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit
-    from urllib2 import URLError, HTTPError
+from urllib.parse import urlsplit
+from urllib.request import URLError, HTTPError
 
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
@@ -28,7 +23,7 @@ import osc.conf
 from . import oscerr
 import subprocess
 try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
+    # Works up to Python 3.8, needed for Python < 3.3
     from xml.etree import cElementTree as ET
 except ImportError:
     # will import a fast implementation from 3.3 onwards, needed

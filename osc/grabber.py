@@ -7,16 +7,10 @@ import sys
 import os.path
 from .core import streamfile
 
-try:
-    from urllib.request import HTTPError
-    from urllib.parse import urlparse
-    from urllib.parse import unquote
-    from urllib.error import URLError
-except ImportError:
-    from urllib2 import HTTPError
-    from urlparse import urlparse
-    from urllib import unquote
-    from urllib2 import URLError
+from urllib.request import HTTPError
+from urllib.parse import urlparse
+from urllib.parse import unquote
+from urllib.error import URLError
 
 
 class OscFileGrabber(object):

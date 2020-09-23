@@ -6,7 +6,7 @@ import gzip
 import os.path
 
 try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
+    # Works up to Python 3.8, needed for Python < 3.3
     from xml.etree import cElementTree as ET
 except ImportError:
     # will import a fast implementation from 3.3 onwards, needed

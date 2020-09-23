@@ -2,10 +2,7 @@ import importlib
 import bz2
 import base64
 import getpass
-try:
-    from urllib.parse import urlsplit
-except ImportError:
-    from urlparse import urlsplit
+from urllib.parse import urlsplit
 try:
     import keyring
 except ImportError:

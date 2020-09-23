@@ -31,24 +31,15 @@ try:
 except ImportError:
     distro = None
 
-try:
-    from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
-    from urllib.error import HTTPError
-    from urllib.request import pathname2url, install_opener, urlopen
-    from urllib.request import Request as URLRequest
-    from io import StringIO
-    from http.client import IncompleteRead
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit, urlunsplit, urlparse
-    from urllib import pathname2url, quote_plus, urlencode, unquote
-    from urllib2 import HTTPError, install_opener, urlopen
-    from urllib2 import Request as URLRequest
-    from cStringIO import StringIO
-    from httplib import IncompleteRead
+from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+from urllib.error import HTTPError
+from urllib.request import pathname2url, install_opener, urlopen
+from urllib.request import Request as URLRequest
+from io import StringIO
+from http.client import IncompleteRead
 
 try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
+    # Works up to Python 3.8, needed for Python < 3.3
     from xml.etree import cElementTree as ET
 except ImportError:
     # will import a fast implementation from 3.3 onwards, needed
@@ -65,18 +56,10 @@ except ImportError:
 
 from osc.util.helper import decode_list, decode_it, raw_input, _html_escape
 
-try:
-    # python 2.6 and python 2.7
-    unicode
-    ET_ENCODING = "utf-8"
-    # python 2.6 does not have bytes and python 2.7 reimplements it as alias to
-    # str, but in incompatible way as it does not accept the same arguments
-    bytes = lambda x, *args: x
-except:
-    #python3 does not have unicode, so lets reimplement it
-    #as void function as it already gets unicode strings
-    unicode = lambda x, *args: x
-    ET_ENCODING = "unicode"
+# python3 does not have unicode, so lets reimplement it
+# as void function as it already gets unicode strings
+unicode = lambda x, *args: x
+ET_ENCODING = "unicode"
 
 def compare(a, b): return cmp(a[1:], b[1:])
 
@@ -3330,11 +3313,6 @@ def http_request(method, url, headers={}, data=None, file=None):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
     def create_memoryview(obj):
-        if sys.version_info < (2, 7, 99):
-            # obj might be a mmap and python 2.7's mmap does not
-            # behave like a bytearray (a bytearray in turn can be used
-            # to create the memoryview). For now simply return a buffer
-            return buffer(obj)
         return memoryview(obj)
 
     filefd = None
@@ -3824,11 +3802,10 @@ def parse_meta_to_string(data):
     """
     # data can be a bytes object, a list with strings, a list with bytes, just a string.
     # So we need the following even if it is ugly.
-    if sys.version_info >= (3, 0):
-        if isinstance(data, bytes):
-            data = decode_it(data)
-        elif isinstance(data, list):
-            data = decode_list(data)
+    if isinstance(data, bytes):
+        data = decode_it(data)
+    elif isinstance(data, list):
+        data = decode_list(data)
     return ''.join(data)
 
 
@@ -4804,14 +4781,9 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
     to_file = b'%s\t(working copy)' % origfilename.encode()
 
-    if sys.version_info < (3,0):
-        d = difflib.unified_diff(s1, s2,
-            fromfile = from_file, \
+    d = difflib.diff_bytes(difflib.unified_diff, s1, s2, \
+        fromfile = from_file, \
         tofile = to_file)
-    else:
-        d = difflib.diff_bytes(difflib.unified_diff, s1, s2, \
-            fromfile = from_file, \
-            tofile = to_file)
     d = list(d)
     # python2.7's difflib slightly changed the format
     # adapt old format to the new format
@@ -6156,10 +6128,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
 
     # to protect us against control characters
     import string
-    if sys.version_info >= (3, 0):
-        all_bytes = bytes.maketrans(b'', b'')
-    else:
-        all_bytes = string.maketrans(b'', b'')
+    all_bytes = bytes.maketrans(b'', b'')
     remove_bytes = all_bytes[:8] + all_bytes[14:32] # accept tabs and newlines
 
     query = {'nostream' : '1', 'start' : '%s' % offset}
@@ -7792,16 +7761,6 @@ def return_external(filename, *args, **kwargs):
         cmd = filename
 
     try:
-        # backward compatibility for python 2.6
-        if 'check_output' not in dir(subprocess):
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-            output, errstr = process.communicate()
-            retcode = process.poll()
-            if retcode:
-                error = subprocess.CalledProcessError(retcode, cmd)
-                error.output = output
-                raise error
-            return output
         return subprocess.check_output(cmd, **kwargs)
     except OSError as e:
         if e.errno != errno.ENOENT:

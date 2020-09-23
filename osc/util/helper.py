@@ -72,13 +72,8 @@ def decode_it(obj):
 
 
 def raw_input(*args):
-    try:
-        import builtins
-        func = builtins.input
-    except ImportError:
-        #python 2.7
-        import __builtin__
-        func = __builtin__.raw_input
+    import builtins
+    func = builtins.input
 
     try:
         return func(*args)

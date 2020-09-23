@@ -4,7 +4,7 @@ import os
 import sys
 from common import GET, PUT, POST, DELETE, OscTestCase
 try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
+    # Works up to Python 3.8, needed for Python < 3.3
     from xml.etree import cElementTree as ET
 except ImportError:
     # will import a fast implementation from 3.3 onwards, needed
@@ -208,10 +208,7 @@ class TestRepairWC(OscTestCase):
 
     def test_invalidapiurl_param(self):
         """pass an invalid apiurl to wc_repair"""
-        try:
-            from urllib.error import URLError
-        except ImportError:
-            from urllib2 import URLError
+        from urllib.error import URLError
         self._change_to_pkg('invalid_apiurl')
         p = osc.core.Package('.', wc_check=False)
         self.assertRaises(URLError, p.wc_repair, 'http:/localhost')
@@ -254,10 +251,7 @@ class TestRepairWC(OscTestCase):
     def test_project_invalidapiurl_param(self):
         """pass an invalid apiurl to wc_repair"""
         import shutil
-        try:
-            from urllib.error import URLError
-        except ImportError:
-            from urllib2 import URLError
+        from urllib.error import URLError
         prj_dir = os.path.join(self.tmpdir, 'prj_invalidapiurl')
         shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_invalidapiurl'), prj_dir)
         storedir = os.path.join(prj_dir, osc.core.store)

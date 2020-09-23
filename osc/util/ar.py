@@ -23,9 +23,6 @@ import stat
 from io import BytesIO
 
 
-# workaround for python24
-if not hasattr(os, 'SEEK_SET'):
-    os.SEEK_SET = 0
 
 class ArError(Exception):
     """Base class for all ar related errors"""

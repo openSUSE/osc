@@ -17,11 +17,6 @@ except ImportError:
     HAVE_LZMA = False
 
 
-if (not hasattr(itertools, 'zip_longest')
-    and hasattr(itertools, 'izip_longest')):
-    # python2 case
-    itertools.zip_longest = itertools.izip_longest
-
 
 class DebError(packagequery.PackageError):
     pass
@@ -47,10 +42,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         if debbin.read() != b'2.0\n':
             raise DebError(self.__path, 'invalid debian binary format')
         control = arfile.get_file(b'control.tar.gz')
-        if control is not None:
-            # XXX: python2.4 relies on a name
-            tar = tarfile.open(name='control.tar.gz', fileobj=control)
-        else:
+        if control is None:
             control = arfile.get_file(b'control.tar.xz')
             if control is None:
                 raise DebError(self.__path, 'missing control.tar')
@@ -61,9 +53,6 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                                fileobj=BytesIO(decompressed))
         try:
             name = './control'
-            # workaround for python2.4's tarfile module
-            if 'control' in tar.getnames():
-                name = 'control'
             control = tar.extractfile(name)
         except KeyError:
             raise DebError(self.__path,

@@ -45,22 +45,13 @@ import ssl
 import warnings
 import getpass
 
-try:
-    from http.cookiejar import LWPCookieJar, CookieJar
-    from http.client import HTTPConnection, HTTPResponse
-    from io import StringIO
-    from urllib.parse import urlsplit
-    from urllib.error import URLError
-    from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
-except ImportError:
-    #python 2.x
-    from cookielib import LWPCookieJar, CookieJar
-    from httplib import HTTPConnection, HTTPResponse
-    from StringIO import StringIO
-    from urlparse import urlsplit
-    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler, AbstractBasicAuthHandler
-    from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
+from http.cookiejar import LWPCookieJar, CookieJar
+from http.client import HTTPConnection, HTTPResponse
+from io import StringIO
+from urllib.parse import urlsplit
+from urllib.error import URLError
+from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
+from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
 
 from . import OscConfigParser
 from osc import oscerr
@@ -487,35 +478,6 @@ def _build_opener(apiurl):
 
     # workaround for http://bugs.python.org/issue9639
     authhandler_class = HTTPBasicAuthHandler
-    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 9):
-        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
-            # The following two functions were backported from upstream 2.7.
-            def http_error_auth_reqed(self, authreq, host, req, headers):
-                authreq = headers.get(authreq, None)
-
-                if authreq:
-                    mo = AbstractBasicAuthHandler.rx.search(authreq)
-                    if mo:
-                        scheme, quote, realm = mo.groups()
-                        if quote not in ['"', "'"]:
-                            warnings.warn("Basic Auth Realm was unquoted",
-                                          UserWarning, 2)
-                        if scheme.lower() == 'basic':
-                            return self.retry_http_basic_auth(host, req, realm)
-
-            def retry_http_basic_auth(self, host, req, realm):
-                user, pw = self.passwd.find_user_password(realm, host)
-                if pw is not None:
-                    raw = "%s:%s" % (user, pw)
-                    auth = 'Basic %s' % base64.b64encode(raw).strip()
-                    if req.get_header(self.auth_header, None) == auth:
-                        return None
-                    req.add_unredirected_header(self.auth_header, auth)
-                    return self.parent.open(req, timeout=req.timeout)
-                else:
-                    return None
-
-        authhandler_class = OscHTTPBasicAuthHandler
 
     options = config['api_host_options'][apiurl]
     # with None as first argument, it will always use this username/password

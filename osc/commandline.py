@@ -13,15 +13,9 @@ import time
 import imp
 import inspect
 import os
-try:
-    from urllib.parse import urlsplit
-    from urllib.error import HTTPError
-    ET_ENCODING = "unicode"
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit
-    from urllib2 import HTTPError
-    ET_ENCODING = "utf-8"
+from urllib.parse import urlsplit
+from urllib.error import HTTPError
+ET_ENCODING = "unicode"
 
 from optparse import SUPPRESS_HELP
 

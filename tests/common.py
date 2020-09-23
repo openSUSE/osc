@@ -5,7 +5,7 @@ import tempfile
 import os
 import sys
 try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
+    # Works up to Python 3.8, needed for Python < 3.3
     from xml.etree import cElementTree as ET
 except ImportError:
     # will import a fast implementation from 3.3 onwards, needed
@@ -13,15 +13,9 @@ except ImportError:
     from xml.etree import ElementTree as ET
 EXPECTED_REQUESTS = []
 
-try:
-    #python 2.x
-    from cStringIO import StringIO
-    from urllib2 import HTTPHandler, addinfourl, build_opener
-    from urlparse import urlparse, parse_qs
-except ImportError:
-    from io import StringIO
-    from urllib.request import HTTPHandler, addinfourl, build_opener
-    from urllib.parse import urlparse, parse_qs
+from io import StringIO
+from urllib.request import HTTPHandler, addinfourl, build_opener
+from urllib.parse import urlparse, parse_qs
 
 from io import BytesIO
 

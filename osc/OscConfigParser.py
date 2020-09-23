@@ -17,13 +17,8 @@ from __future__ import print_function
 
 import sys
 
-if sys.version_info >= ( 3, ):
-    import configparser
-    ConfigParser = configparser.ConfigParser
-else:
-    #python 2.x
-    import ConfigParser as configparser
-    ConfigParser = configparser.SafeConfigParser
+import configparser
+ConfigParser = configparser.ConfigParser
 
 import re
 
