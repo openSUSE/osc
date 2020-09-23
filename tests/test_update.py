@@ -111,7 +111,7 @@ class TestUpdate(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_deletelist('foo\n')
         self._check_conflictlist('merge\n')
-        self.assertEqual(open('foo', 'r').read(), open(os.path.join('.osc', 'foo'), 'r').read())
+        self.assertEqual(open('foo').read(), open(os.path.join('.osc', 'foo')).read())
         self._check_digests('testUpdateLocalDeletions_files')
 
     @GET('http://localhost/source/osctest/restore?rev=latest', file='testUpdateRestore_files')

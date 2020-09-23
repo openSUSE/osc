@@ -14,7 +14,7 @@ def cmp_to_key(mycmp):
     """ Converts a cmp= function into a key= function.
     """
 
-    class K(object):
+    class K:
         def __init__(self, obj, *args):
             self.obj = obj
 

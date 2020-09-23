@@ -233,7 +233,7 @@ class TestRepairWC(OscTestCase):
         prj.wc_repair('http://localhost')
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
-        self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
+        self.assertEqual(open(os.path.join(storedir, '_apiurl')).read(), 'http://localhost\n')
 
     def test_project_invalidapiurl(self):
         """the project wc has an invalid _apiurl file (invalid url format)"""
@@ -246,7 +246,7 @@ class TestRepairWC(OscTestCase):
         prj.wc_repair('http://localhost')
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
-        self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
+        self.assertEqual(open(os.path.join(storedir, '_apiurl')).read(), 'http://localhost\n')
 
     def test_project_invalidapiurl_param(self):
         """pass an invalid apiurl to wc_repair"""

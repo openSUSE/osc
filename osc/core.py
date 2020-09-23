@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-from __future__ import print_function
 
 __version__ = '0.171.git'
 
@@ -1255,9 +1254,9 @@ class Package:
         state = '?'
         try:
             state = self.status(n)
-        except IOError as ioe:
+        except OSError as e:
             if not force:
-                raise ioe
+                raise e
         if state in ['?', 'A', 'M', 'R', 'C'] and not force:
             return (False, state)
         # special handling for skipped files: if file exists, simply delete it
@@ -1524,7 +1523,7 @@ class Package:
         sfilelist = self.__send_commitlog(msg, filelist, validate=True)
         hash_entries = [e for e in sfilelist.findall('entry') if e.get('hash') is not None] 
         if sfilelist.get('error') and hash_entries:
-            name2elem = dict([(e.get('name'), e) for e in filelist.findall('entry')])
+            name2elem = {e.get('name'): e for e in filelist.findall('entry')}
             for entry in hash_entries:
                 filename = entry.get('name')
                 fileelem = name2elem.get(filename)
@@ -1827,7 +1826,7 @@ class Package:
 
     def get_pulled_srcmd5(self):
         pulledrev = None
-        for line in open(os.path.join(self.storedir, '_pulled'), 'r'):
+        for line in open(os.path.join(self.storedir, '_pulled')):
             pulledrev = line.strip()
         return pulledrev
 
@@ -2148,7 +2147,7 @@ rev: %s
             print('*' * 36, 'new', '*' * 36)
             print(ET.tostring(root, encoding=ET_ENCODING))
             print('*' * 72)
-            repl = raw_input('Write? (y/N/e) ')
+            repl = input('Write? (y/N/e) ')
         else:
             repl = 'y'
 
@@ -2672,10 +2671,10 @@ class Action:
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
 
     def __init__(self, type, **kwargs):
-        if not type in Action.type_args.keys():
+        if not type in list(Action.type_args.keys()):
             raise oscerr.WrongArgs('invalid action type: \'%s\'' % type)
         self.type = type
-        for i in kwargs.keys():
+        for i in list(kwargs.keys()):
             if not i in Action.type_args[type]:
                 raise oscerr.WrongArgs('invalid argument: \'%s\'' % i)
         # set all type specific attributes
@@ -2726,17 +2725,17 @@ class Action:
     def from_xml(action_node):
         """create action from XML"""
         if action_node is None or \
-            not action_node.get('type') in Action.type_args.keys() or \
+            not action_node.get('type') in list(Action.type_args.keys()) or \
             not action_node.tag in ('action', 'submit'):
             raise oscerr.WrongArgs('invalid argument')
-        elm_to_prefix = dict([(i[1], i[0]) for i in Action.prefix_to_elm.items()])
+        elm_to_prefix = {i[1]: i[0] for i in list(Action.prefix_to_elm.items())}
         kwargs = {}
         for node in action_node:
             prefix = elm_to_prefix.get(node.tag, node.tag)
             if prefix == 'opt':
                 data = [('opt_%s' % opt.tag, opt.text.strip()) for opt in node if opt.text]
             else:
-                data = [('%s_%s' % (prefix, k), v) for k, v in node.items()]
+                data = [('%s_%s' % (prefix, k), v) for k, v in list(node.items())]
             # it would be easier to store everything in a list but in
             # this case we would lose some "structure" (see to_xml)
             for k, v in data:
@@ -3240,7 +3239,7 @@ def store_readlist(dir, name):
 
     r = []
     if os.path.exists(os.path.join(dir, store, name)):
-        r = [line.rstrip('\n') for line in open(os.path.join(dir, store, name), 'r')]
+        r = [line.rstrip('\n') for line in open(os.path.join(dir, store, name))]
     return r
 
 def read_tobeadded(dir):
@@ -3342,7 +3341,7 @@ def http_request(method, url, headers={}, data=None, file=None):
         req.add_header('Content-Type', 'application/octet-stream')
 
     if isinstance(headers, type({})):
-        for i in headers.keys():
+        for i in list(headers.keys()):
             print(headers[i])
             req.add_header(i, headers[i])
 
@@ -3359,7 +3358,7 @@ def http_request(method, url, headers={}, data=None, file=None):
                 else:
                     data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
                 data = create_memoryview(data)
-            except EnvironmentError as e:
+            except OSError as e:
                 if e.errno == 19:
                     sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
                              '\non a filesystem which does not support this.' % (e, file))
@@ -3709,7 +3708,7 @@ class metafile:
                     summary = root.find('summary')
                     if summary is not None:
                         print(summary.text, file=sys.stderr)
-                    ri = raw_input('Try again? ([y/N]): ')
+                    ri = input('Try again? ([y/N]): ')
                     if ri not in ['y', 'Y']:
                         break
         finally:
@@ -3779,7 +3778,7 @@ def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_lin
 
     if not apiurl:
         apiurl = conf.config['apiurl']
-    if metatype not in metatypes.keys():
+    if metatype not in list(metatypes.keys()):
         raise AttributeError('make_meta_url(): Unknown meta type \'%s\'' % metatype)
     path = metatypes[metatype]['path']
 
@@ -3990,13 +3989,13 @@ def read_meta_from_spec(specfile, *args):
         else:
             tags.append(itm)
 
-    tag_pat = '(?P<tag>^%s)\s*:\s*(?P<val>.*)'
+    tag_pat = r'(?P<tag>^%s)\s*:\s*(?P<val>.*)'
     for tag in tags:
         m = re.compile(tag_pat % tag, re.I | re.M).search(''.join(lines))
         if m and m.group('val'):
             spec_data[tag] = m.group('val').strip()
 
-    section_pat = '^%s\s*?$'
+    section_pat = r'^%s\s*?$'
     for section in sections:
         m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
         if m:
@@ -4135,7 +4134,7 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
                 reason = 'Log message not specified'
                 if template == msg:
                     reason = 'Default log message was not changed. Press \'c\' to continue.'
-                ri = raw_input('%s\na)bort, c)ontinue, e)dit: ' % reason)
+                ri = input('%s\na)bort, c)ontinue, e)dit: ' % reason)
                 if ri in 'aA':
                     raise oscerr.UserAbort()
                 elif ri in 'cC':
@@ -4363,7 +4362,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         todo['project'] = project
     if package:
         todo['package'] = package
-    for kind, val in todo.items():
+    for kind, val in list(todo.items()):
         xpath_base = 'action/target/@%(kind)s=\'%(val)s\''
 
         if conf.config['include_request_from_project']:
@@ -4450,7 +4449,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
         todo['project'] = project
     if package:
         todo['package'] = package
-    for kind, val in todo.items():
+    for kind, val in list(todo.items()):
         xpath_base = 'action/target/@%(kind)s=\'%(val)s\''
         if conf.config['include_request_from_project']:
             xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
@@ -4491,7 +4490,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), 
         if not projpkgs:
             return []
     xpath = ''
-    for prj, pacs in projpkgs.items():
+    for prj, pacs in list(projpkgs.items()):
         if not len(pacs):
             xpath = xpath_join(xpath, 'action/target/@project=\'%s\'' % prj, inner=True)
         else:
@@ -4548,10 +4547,10 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
             supersede_request_string = "Supersede the old requests?"
         print('%s %s.' % \
               (open_request_string, ', '.join([i.reqid for i in reqs])))
-        repl = raw_input('%s (y/n/c) ' % supersede_request_string)
+        repl = input('%s (y/n/c) ' % supersede_request_string)
         while repl.lower() not in ['c', 'y', 'n']:
             print('%s is not a valid option.' % repl)
-            repl = raw_input('%s (y/n/c) ' % supersede_request_string)
+            repl = input('%s (y/n/c) ' % supersede_request_string)
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
@@ -4576,10 +4575,10 @@ def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_p
             supersede_request_string = "Supersede the old requests?"
         print('%s %s.' % \
               (open_request_string, ', '.join([i.reqid for i in reqs])))
-        repl = raw_input('%s (y/n/c) ' % supersede_request_string)
+        repl = input('%s (y/n/c) ' % supersede_request_string)
         while repl.lower() not in ['c', 'y', 'n']:
             print('%s is not a valid option.' % repl)
-            repl = raw_input('%s (y/n/c) ' % supersede_request_string)
+            repl = input('%s (y/n/c) ' % supersede_request_string)
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
@@ -5267,7 +5266,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
         aggregate_template += """\
     <nosources />
 """
-    for src, tgt in repo_map.items():
+    for src, tgt in list(repo_map.items()):
         aggregate_template += """\
     <repository target="%s" source="%s" />
 """ % (tgt, src)
@@ -5622,7 +5621,7 @@ class Repo:
         if not os.path.exists(filename):
             return []
         repos = []
-        lines = open(filename, 'r').readlines()
+        lines = open(filename).readlines()
         for line in lines:
             data = line.split()
             if len(data) == 2:
@@ -5901,18 +5900,18 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
 
         #filtering for Package Status
         if status_filter:
-            if status_filter in buildstatus_symbols.values():
+            if status_filter in list(buildstatus_symbols.values()):
                 # a list is needed because if status_filter == "U"
                 # we have to filter either an "expansion error" (obsolete)
                 # or an "unresolvable" state
-                for txt, sym in buildstatus_symbols.items():
+                for txt, sym in list(buildstatus_symbols.items()):
                     if sym == status_filter:
                         filters.append(txt)
             else:
                 filters.append(status_filter)
             for filt_txt in filters:
-                for pkg in status.keys():
-                    for repo in status[pkg].keys():
+                for pkg in list(status.keys()):
+                    for repo in list(status[pkg].keys()):
                         if status[pkg][repo] == filt_txt:
                             if not name_filter:
                                 pacs_to_show.append(pkg)
@@ -5928,9 +5927,9 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         #filter non building states
         elif not show_excluded:
             enabled = {}
-            for pkg in status.keys():
+            for pkg in list(status.keys()):
                 showpkg = False
-                for repo in status[pkg].keys():
+                for repo in list(status[pkg].keys()):
                     if status[pkg][repo] != "excluded":
                         enabled[repo] = 1
                         showpkg = True
@@ -5938,7 +5937,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                 if showpkg:
                     pacs_to_show.append(pkg)
 
-            targets_to_show = enabled.keys()
+            targets_to_show = list(enabled.keys())
 
         pacs = [ i for i in pacs if i in pacs_to_show ]
         if len(targets_to_show):
@@ -5955,8 +5954,8 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
         return r
 
     if brief:
-        for pac, repo_states in status.items():
-            for repo, state in repo_states.items():
+        for pac, repo_states in list(status.items()):
+            for repo, state in list(repo_states.items()):
                 if filters and state not in filters:
                     continue
                 r.append('%s %s %s %s' % (pac, repo[0], repo[1], state))
@@ -6030,7 +6029,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     if not hide_legend and len(pacs):
         r.append(' Legend:')
         legend = []
-        for i, j in buildstatus_symbols.items():
+        for i, j in list(buildstatus_symbols.items()):
             if i == "expansion error":
                 continue
             legend.append('%3s %-20s' % (j, i))
@@ -6109,10 +6108,10 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 def buildlog_strip_time(data):
     """Strips the leading build time from the log"""
     if isinstance(data, str):
-        time_regex = re.compile('^\[[^\]]*\] ', re.M)
+        time_regex = re.compile(r'^\[[^\]]*\] ', re.M)
         return time_regex.sub('', data)
     else:
-        time_regex = re.compile(b'^\[[^\]]*\] ', re.M)
+        time_regex = re.compile(br'^\[[^\]]*\] ', re.M)
         return time_regex.sub(b'', data)
 
 
@@ -6239,7 +6238,7 @@ def get_source_rev(apiurl, project, package, revision=None):
     if not ent:
         return { 'version': None, 'error': 'empty revisionlist: no such package?' }
     e = {}
-    for k in ent.keys():
+    for k in list(ent.keys()):
         e[k] = ent.get(k)
     for k in list(ent):
         e[k.tag] = k.text
@@ -6378,7 +6377,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('</logentry>')
         else:
             if requestid:
-                requestid = decode_it((b"rq" + requestid))
+                requestid = decode_it(b"rq" + requestid)
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
                 '\n' + decode_it(comment)
@@ -6459,7 +6458,7 @@ def store_read_project(dir):
 
     try:
         p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
-    except IOError:
+    except OSError:
         msg = 'Error: \'%s\' is not an osc project dir or working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg += '\nTry svn instead of osc.'
@@ -6472,7 +6471,7 @@ def store_read_package(dir):
 
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
-    except IOError:
+    except OSError:
         msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg += '\nTry svn instead of osc.'
@@ -6768,7 +6767,7 @@ def search(apiurl, queries=None, **kwargs):
     if queries is None:
         queries = {}
     res = {}
-    for urlpath, xpath in kwargs.items():
+    for urlpath, xpath in list(kwargs.items()):
         path = [ 'search' ]
         path += urlpath.split('_') # FIXME: take underscores as path seperators. I see no other way atm to fix OBS api calls and not breaking osc api
         query = queries.get(urlpath, {})
@@ -6840,9 +6839,9 @@ def _set_link_rev(apiurl, project, package, root, revision='', expand=False):
     src_package = root.get('package', package)
     vrev = None
     if revision is None:
-        if 'rev' in root.keys():
+        if 'rev' in list(root.keys()):
             del root.attrib['rev']
-        if 'vrev' in root.keys():
+        if 'vrev' in list(root.keys()):
             del root.attrib['vrev']
     elif not revision or expand:
         revision, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, revision=revision, expand=expand)
@@ -6891,7 +6890,7 @@ def unpack_srcrpm(srpm, dir, *files):
     if os.path.isdir(dir):
         os.chdir(dir)
     ret = -1
-    with open(srpm, 'r') as fsrpm:
+    with open(srpm) as fsrpm:
         with open(os.devnull, 'w') as devnull:
             rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
                                              stdout=subprocess.PIPE)
@@ -7058,12 +7057,12 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
         if dprj:
             elem.set('project', dprj)
         else:
-            if 'project' in elem.keys():
+            if 'project' in list(elem.keys()):
                 del elem.attrib['project']
         if dpkg:
             elem.set('package', dpkg)
         else:
-            if 'package' in elem.keys():
+            if 'package' in list(elem.keys()):
                 del elem.attrib['package']
         edit_meta(metatype='pkg',
                   path_args=path,
@@ -7195,7 +7194,7 @@ def addFiles(filenames, prj_obj = None):
         if not is_package_dir(directory):
             print('osc: warning: \'%s\' cannot be associated to a package' % filename)
             continue
-        resp = raw_input("%s is a directory, do you want to archive it for submission? (y/n) " % (filename))
+        resp = input("%s is a directory, do you want to archive it for submission? (y/n) " % (filename))
         if resp not in ('y', 'Y'):
             continue
         archive = "%s.obscpio" % filename
@@ -7288,7 +7287,7 @@ def get_commit_message_template(pac):
             diff += get_source_file_diff(pac.absdir, filename, pac.rev)
         elif pac.status(filename) == 'A':
             with open(os.path.join(pac.absdir, filename), 'rb') as f:
-                diff.extend((b'+' + line for line in f))
+                diff.extend(b'+' + line for line in f)
 
     if diff:
         template = parse_diff_for_commit_message(''.join(decode_list(diff)))
@@ -7401,7 +7400,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             return False
         while True:
             try:
-                lint_n = int(raw_input('Number of rpmlint log to examine (0 - %i): ' % (len(lintlogs)-1)))
+                lint_n = int(input('Number of rpmlint log to examine (0 - %i): ' % (len(lintlogs)-1)))
                 lintlogs[lint_n]
                 break
             except (ValueError, IndexError):
@@ -7475,7 +7474,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 repl = initial_cmd
                 initial_cmd = ''
             else:
-                repl = raw_input(prompt).strip()
+                repl = input(prompt).strip()
             if repl == 'i' and src_actions:
                 req_summary = str(request) + '\n'
                 issues = '\n\n' + get_formatted_issues(apiurl, request.reqid)
@@ -7531,7 +7530,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 prompt = 'd(i)ff/(a)ccept/(b)uildstatus/(e)dit/(s)kip/(c)ancel > '
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
-                mo = re.search('^([adrl])(?:\s+(-f)?\s*-m\s+(.*))?$', repl)
+                mo = re.search(r'^([adrl])(?:\s+(-f)?\s*-m\s+(.*))?$', repl)
                 if mo is None or orequest and mo.group(1) != 'a':
                     print('invalid choice: \'%s\'' % repl, file=sys.stderr)
                     continue
@@ -7563,7 +7562,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     if not safe_change_request_state(apiurl, request.reqid, 'accepted', msg, force=force):
                         # an error occured
                         continue
-                    repl = raw_input('Supersede original request? (y|N) ')
+                    repl = input('Supersede original request? (y|N) ')
                     if repl in ('y', 'Y'):
                         safe_change_request_state(apiurl, orequest.reqid, 'superseded',
                             'superseded by %s' % request.reqid, request.reqid, force=force)
@@ -7586,7 +7585,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                         for i in range(len(reviews)):
                             fmt = Request.format_review(reviews[i])
                             print('(%i)' % i, 'by %(type)-10s %(by)s' % fmt)
-                        num = raw_input('> ')
+                        num = input('> ')
                         try:
                             num = int(num)
                         except ValueError:
@@ -7619,7 +7618,7 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
             # of a submit action does not need instance specific data
             fmt = orequest.format_action(actions[i])
             print('(%i)' % i, '%(source)s  %(target)s' % fmt)
-        num = raw_input('> ')
+        num = input('> ')
         try:
             num = int(num)
         except ValueError:
@@ -7651,7 +7650,7 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
         if modified:
             print('Your working copy has the following modifications:')
             print('\n'.join([statfrmt(st, filename) for st, filename in modified]))
-            repl = raw_input('Do you want to commit the local changes first? (y|N) ')
+            repl = input('Do you want to commit the local changes first? (y|N) ')
             if repl in ('y', 'Y'):
                 msg = get_commit_msg(p.absdir, [p])
                 p.commit(msg=msg)
@@ -7707,7 +7706,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
         if e.code != 400 or not role_filter_xpath:
             raise e
         # backward compatibility: local role filtering
-        what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+        what = {kind: role_filter_xpath for kind in list(what.keys())}
         if 'package' in what:
             what['package'] = xpath_join(role_filter_xpath, excl_pkg, op='and')
         if 'project' in what:
@@ -7773,7 +7772,7 @@ def filter_role(meta, user, role):
     remove all project/package nodes if no person node exists
     where @userid=user and @role=role
     """
-    for kind, root in meta.items():
+    for kind, root in list(meta.items()):
         delete = []
         for node in root.findall(kind):
             found = False
@@ -7901,7 +7900,7 @@ def vc_export_env(apiurl, quiet=False):
         tag2val = {}
         missing_tags = []
 
-        for (tag, envs) in tag2envs.items():
+        for (tag, envs) in list(tag2envs.items()):
             env_present = [env for env in envs if env in os.environ]
             config_present = tag in conf.config['api_host_options'][apiurl]
             if not env_present and not config_present:
@@ -7921,7 +7920,7 @@ def vc_export_env(apiurl, quiet=False):
                         msg = 'Try env %s=...' % tag2envs[tag][0]
                         print(msg, file=sys.stderr)
 
-        for (tag, val) in tag2val.items():
+        for (tag, val) in list(tag2val.items()):
             for env in tag2envs[tag]:
                 os.environ[env] = val
 

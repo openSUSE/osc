@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-from __future__ import print_function
 
 from . import cmdln
 from . import conf
@@ -874,7 +873,7 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
-        if not args or args[0] not in metatypes.keys():
+        if not args or args[0] not in list(metatypes.keys()):
             raise oscerr.WrongArgs('Unknown meta type. Choose one of %s.' \
                                                % ', '.join(metatypes))
 
@@ -1316,7 +1315,7 @@ class Osc(cmdln.Cmdln):
                 repl = ''
                 print('\n\nThere are already following submit request: %s.' % \
                       ', '.join([str(i) for i in myreqs ]))
-                repl = raw_input('\nSupersede the old requests? (y/n) ')
+                repl = input('\nSupersede the old requests? (y/n) ')
                 if repl.lower() == 'y':
                     myreqs += [ value ]
 
@@ -1356,7 +1355,7 @@ class Osc(cmdln.Cmdln):
             modified = [i for i in p.filenamelist if not p.status(i) in (' ', '?', 'S')]
             if len(modified) > 0 and not opts.yes:
                 print('Your working copy has local modifications.')
-                repl = raw_input('Proceed without committing the local changes? (y|N) ')
+                repl = input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
                     raise oscerr.UserAbort()
         elif len(args) >= 3:
@@ -1580,7 +1579,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
             if len(modified) > 0:
                 print('Your working copy has local modifications.')
-                repl = raw_input('Proceed without committing the local changes? (y|N) ')
+                repl = input('Proceed without committing the local changes? (y|N) ')
                 if repl != 'y':
                     sys.exit(1)
         elif len(args) >= 3:
@@ -1620,7 +1619,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(myreqs) > 0 and not opts.yes:
             print('You already created the following submit request: %s.' % \
                   ', '.join([i.reqid for i in myreqs ]))
-            repl = raw_input('Supersede the old requests? (y/n/c) ')
+            repl = input('Supersede the old requests? (y/n/c) ')
             if repl.lower() == 'c':
                 print('Aborting', file=sys.stderr)
                 sys.exit(1)
@@ -2583,7 +2582,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     elif rq.state.name != "new" and rq.state.name != "review":
                         return 0
                 if rq.state.name == state_map[cmd]:
-                    repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** " % \
+                    repl = input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** " % \
                                      (reqid, rq.state.name))
                     if repl.lower() != 'y':
                         print('Aborted...', file=sys.stderr)
@@ -2648,7 +2647,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 print(project, end=' ')
                                 if package != action.tgt_package:
                                     print("/", package, end=' ')
-                                repl = raw_input('\nForward this submit to it? ([y]/n)')
+                                repl = input('\nForward this submit to it? ([y]/n)')
                                 if repl.lower() == 'y' or repl == '':
                                     (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
                                                                                 project, package)
@@ -4907,7 +4906,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         for pac in prj.pacs_have if prj.get_state(pac) == ' ')
                 can_branch = False
                 if any(pac.is_link_to_different_project() for pac in pacs):
-                    repl = raw_input('Some of the packages are links to a different project!\n' \
+                    repl = input('Some of the packages are links to a different project!\n' \
                                      'Create a local branch before commit? (y|N) ')
                     if repl in('y', 'Y'):
                         can_branch = True
@@ -4955,7 +4954,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     # fail with an appropriate error message
                     store_read_apiurl(pac, defaulturl=False)
-            for prj_path, packages in prj_paths.items():
+            for prj_path, packages in list(prj_paths.items()):
                 prj = Project(prj_path)
                 if not msg and not opts.no_message:
                     msg = get_commit_msg(prj.absdir, pac_objs[prj_path])
@@ -4963,7 +4962,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # check any of the packages is a link, if so, as for branching
                 can_branch = False
                 if any(pac.is_link_to_different_project() for pac in pacs):
-                    repl = raw_input('Some of the packages are links to a different project!\n' \
+                    repl = input('Some of the packages are links to a different project!\n' \
                                      'Create a local branch before commit? (y|N) ')
                     if repl in('y', 'Y'):
                         can_branch = True
@@ -5308,7 +5307,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for filename in files:
             if not opts.force:
-                resp = raw_input("rm: remove source file `%s' from `%s/%s'? (yY|nN) " % (filename, project, package))
+                resp = input("rm: remove source file `%s' from `%s/%s'? (yY|nN) " % (filename, project, package))
                 if resp not in ('y', 'Y'):
                     continue
             try:
@@ -6142,10 +6141,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         constraintsfile_data = None
         if constraintsfile is not None:
-            constraintsfile_data = open(constraintsfile, 'r').read()
+            constraintsfile_data = open(constraintsfile).read()
         elif not opts.ignore_file:
             if os.path.isfile("_constraints"):
-                constraintsfile_data = open("_constraints", 'r').read()
+                constraintsfile_data = open("_constraints").read()
             else:
                 print("No local _constraints file. Using just the project constraints")
 
@@ -6276,7 +6275,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 Repo.tofile(repolistfile, repositories)
 
         no_repo = False
-        repo_names = sorted(set([r.name for r in repositories]))
+        repo_names = sorted({r.name for r in repositories})
         if not arg_repository and repositories:
             # XXX: we should avoid hardcoding repository names
             # Use a default value from config, but just even if it's available
@@ -6598,7 +6597,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.wipe and not opts.force:
                     # Confirm delete
                     print("Really wipe '%s'? [y/N]: " % build_root)
-                    choice = raw_input().lower()
+                    choice = input().lower()
                     if choice != 'y':
                         print('Aborting')
                         sys.exit(0)
@@ -7665,7 +7664,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         dummy_elm = ET.Element('dummy')
         roles = {}
-        if len(what.keys()) == 2:
+        if len(list(what.keys())) == 2:
             for i in res.get('project_id', res.get('project', dummy_elm)).findall('project'):
                 request_todo[i.get('name')] = []
                 roles[i.get('name')] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
@@ -7773,8 +7772,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # XXX: is it a good idea to make this the default?
         # support perl symbols:
-        if re.match('^perl\(\w+(::\w+)*\)$', search_term):
-            search_term = re.sub('\)', '', re.sub('(::|\()', '-', search_term))
+        if re.match(r'^perl\(\w+(::\w+)*\)$', search_term):
+            search_term = re.sub(r'\)', '', re.sub(r'(::|\()', '-', search_term))
             opts.package = True
 
         if opts.mine:
@@ -7795,7 +7794,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.binary and (opts.title or opts.description or opts.involved or opts.bugowner or opts.maintainer
                             or opts.project or opts.package):
             raise oscerr.WrongOptions('Sorry, \'--binary\' and \'--title\' or \'--description\' or \'--involved ' \
-                                      'or \'--bugowner\' or \'--maintainer\' or \'--limit-to-attribute <attr>\ ' \
+                                      'or \'--bugowner\' or \'--maintainer\' or \'--limit-to-attribute <attr>\\ ' \
                                       'or \'--project\' or \'--package\' are mutually exclusive')
 
         apiurl = self.get_api_url()
@@ -7863,13 +7862,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # backward compatibility: local role filtering
             if opts.limit_to_attribute:
                 role_filter_xpath = xpath_join(role_filter_xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
-            what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+            what = {kind: role_filter_xpath for kind in list(what.keys())}
             res = search(apiurl, **what)
             filter_role(res, search_term, role_filter)
         if role_filter:
             role_filter = '%s (%s)' % (search_term, role_filter)
         kind_map = {'published/binary/id': 'binary'}
-        for kind, root in res.items():
+        for kind, root in list(res.items()):
             results = []
             for node in root.findall(kind_map.get(kind, kind)):
                 result = []
@@ -7944,7 +7943,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.binary:
                 headline.append('# filepath')
             if not opts.csv:
-                if len(what.keys()) > 1:
+                if len(list(what.keys())) > 1:
                     print('#' * 68)
                 print('matches for \'%s\' in %ss:\n' % (role_filter or search_term, kind))
             for row in build_table(len(headline), results, headline, 2, csv = opts.csv):
@@ -8239,7 +8238,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if package:
                     print("/", package, end=' ')
                 print()
-                repl = raw_input('\nCreating a request instead? (y/n) ')
+                repl = input('\nCreating a request instead? (y/n) ')
                 if repl.lower() == 'y':
                     opts.set_bugowner_request = bugowner
                     opts.set_bugowner = None
@@ -8303,7 +8302,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             print("This is: " + result.get('project'), end=' ')
                             if result.get('package'):
                                 print (" / " + result.get('package'))
-                            repl = raw_input('\nUse this container? (y/n) ')
+                            repl = input('\nUse this container? (y/n) ')
                             if repl.lower() != 'y':
                                 searchresult = None
             elif opts.user:
@@ -9024,7 +9023,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 fp = open(fn_changelog)
                 titleline = fp.readline()
                 fp.close()
-                if re.match('^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
+                if re.match(r'^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
                     meego_style = True
             except IndexError:
                 pass
@@ -9176,7 +9175,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 import getpass
                 inp = getpass.getpass(prompt_value).strip()
             else:
-                inp = raw_input(prompt_value).strip()
+                inp = input(prompt_value).strip()
             if not inp:
                 raise oscerr.WrongArgs('error: no value was entered')
             val = [inp]
@@ -9238,7 +9237,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 'Please choose one from the following list (enter the number):')
             for i in range(len(apiurls)):
                 print(' %d) %s' % (i, apiurls[i]))
-            num = raw_input('> ')
+            num = input('> ')
             try:
                 num = int(num)
             except ValueError:

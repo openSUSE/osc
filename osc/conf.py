@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-from __future__ import print_function
 
 """Read osc configuration and store it in a dictionary
 
@@ -573,11 +572,11 @@ def init_basicauth(config, config_mtime):
         if int(round(config_mtime)) > int(os.stat(cookie_file).st_mtime):
             cookiejar.clear()
             cookiejar.save()
-    except IOError:
+    except OSError:
         try:
             fd = os.open(cookie_file, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
             os.close(fd)
-        except IOError:
+        except OSError:
             # hmm is any good reason why we should catch the IOError?
             #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
             cookiejar = CookieJar()
@@ -631,7 +630,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     """
     cp = get_configParser(config['conffile'])
     # don't allow "internal" options
-    general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
+    general_opts = [i for i in list(DEFAULTS.keys()) if not i in ['user', 'pass', 'passx']]
     if section != 'general':
         section = config['apiurl_aliases'].get(section, section)
         scheme, host, path = \
@@ -971,7 +970,7 @@ def identify_conf():
     return conffile
 
 def interactive_config_setup(conffile, apiurl, initial=True):
-    user = raw_input('Username: ')
+    user = input('Username: ')
     passwd = getpass.getpass()
     creds_mgr_descr = select_credentials_manager_descr()
     if initial:
@@ -988,7 +987,7 @@ def select_credentials_manager_descr():
     creds_mgr_descriptors = credentials.get_credentials_manager_descriptors()
     for i, creds_mgr_descr in enumerate(creds_mgr_descriptors, 1):
         print('%d) %s (%s)' % (i, creds_mgr_descr.name(), creds_mgr_descr.description()))#
-    i = raw_input('Select credentials manager: ')
+    i = input('Select credentials manager: ')
     if not i.isdigit():
         sys.exit('Invalid selection')
     i = int(i) - 1

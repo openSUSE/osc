@@ -21,7 +21,7 @@ except:
     HAVE_PY2EXE = False
 
 
-class build_osc(build.build, object):
+class build_osc(build.build):
     """
     Custom build command which generates man page.
     """
@@ -41,7 +41,7 @@ class build_osc(build.build, object):
         outfile.close()
 
     def run(self):
-        super(build_osc, self).run()
+        super().run()
         self.build_man_page()
 
 
@@ -71,13 +71,13 @@ class build_docs(distutils.core.Command):
 # take a potential build-base option into account (for instance, if osc is
 # build and installed like this:
 # python setup.py build --build-base=<dir> ... install ...)
-class install_data(install_data.install_data, object):
+class install_data(install_data.install_data):
     def initialize_options(self):
-        super(install_data, self).initialize_options()
+        super().initialize_options()
         self.built_data = None
 
     def finalize_options(self):
-        super(install_data, self).finalize_options()
+        super().finalize_options()
         self.set_undefined_options('build', ('build_base', 'built_data'))
         data_files = []
         for f in self.data_files:

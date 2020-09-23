@@ -1,6 +1,3 @@
-
-from __future__ import print_function
-
 import os.path
 import re
 import tarfile
@@ -163,8 +160,8 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             if not (len(ver1) and len(ver2)):
                 break
             # check if we have a digits segment
-            mo1 = re.match(b'(\d+)', ver1)
-            mo2 = re.match(b'(\d+)', ver2)
+            mo1 = re.match(br'(\d+)', ver1)
+            mo2 = re.match(br'(\d+)', ver2)
             numeric = True
             if mo1 is None:
                 mo1 = re.match(b'([a-zA-Z]+)', ver1)
@@ -210,7 +207,7 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 if __name__ == '__main__':
     import sys
     archq = ArchQuery.query(sys.argv[1])
-    print(archq.name(), archq.version(), archq.release(), archq.arch())
+    print((archq.name(), archq.version(), archq.release(), archq.arch()))
     try:
         print(archq.canonname())
     except ArchError as e:

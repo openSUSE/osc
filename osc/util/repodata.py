@@ -47,7 +47,7 @@ def primaryPath(directory):
             primaryPath = os.path.join(directory, locationElement.get("href"))
             break
     else:
-        raise IOError("'%s' contains no primary location" % metaDataPath)
+        raise OSError("'%s' contains no primary location" % metaDataPath)
 
     return primaryPath
 

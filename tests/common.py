@@ -207,7 +207,7 @@ class OscTestCase(unittest.TestCase):
     def _check_list(self, fname, exp):
         fname = os.path.join('.osc', fname)
         self.assertTrue(os.path.exists(fname))
-        self.assertEqual(open(fname, 'r').read(), exp)
+        self.assertEqual(open(fname).read(), exp)
 
     def _check_addlist(self, exp):
         self._check_list('_to_be_added', exp)
@@ -223,9 +223,9 @@ class OscTestCase(unittest.TestCase):
 
     def _check_digests(self, fname, *skipfiles):
         fname = os.path.join(self._get_fixtures_dir(), fname)
-        with open(os.path.join('.osc', '_files'), 'r') as f:
+        with open(os.path.join('.osc', '_files')) as f:
             files_act = f.read()
-        with open(fname, 'r') as f:
+        with open(fname) as f:
             files_exp = f.read()
         self.assertXMLEqual(files_act, files_exp)
         root = ET.fromstring(files_act)

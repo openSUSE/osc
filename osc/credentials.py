@@ -13,7 +13,7 @@ except ImportError:
     gnomekeyring = None
 
 
-class AbstractCredentialsManagerDescriptor(object):
+class AbstractCredentialsManagerDescriptor:
     def name(self):
         raise NotImplementedError()
 
@@ -27,11 +27,11 @@ class AbstractCredentialsManagerDescriptor(object):
         return self.name() < other.name()
 
 
-class AbstractCredentialsManager(object):
+class AbstractCredentialsManager:
     config_entry = 'credentials_mgr_class'
 
     def __init__(self, cp, options):
-        super(AbstractCredentialsManager, self).__init__()
+        super().__init__()
         self._cp = cp
         self._process_options(options)
 

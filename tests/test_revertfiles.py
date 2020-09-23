@@ -90,7 +90,7 @@ class TestRevertFiles(OscTestCase):
         storefile = os.path.join('.osc', fname)
         self.assertTrue(os.path.exists(fname))
         self.assertTrue(os.path.exists(storefile))
-        self.assertEqual(open(fname, 'r').read(), open(storefile, 'r').read())
+        self.assertEqual(open(fname).read(), open(storefile).read())
 
 if __name__ == '__main__':
     import unittest

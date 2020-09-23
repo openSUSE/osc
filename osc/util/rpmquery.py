@@ -1,6 +1,3 @@
-
-from __future__ import print_function
-
 import os
 import re
 import struct
@@ -34,8 +31,7 @@ class RpmHeader:
         return None
 
     def __iter__(self):
-        for i in self.entries:
-            yield i
+        yield from self.entries
 
     def __len__(self):
         return len(self.entries)
@@ -341,8 +337,8 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                 break
 
             # check if we have a digits segment
-            mo1 = re.match('(\d+)', ver1)
-            mo2 = re.match('(\d+)', ver2)
+            mo1 = re.match(r'(\d+)', ver1)
+            mo2 = re.match(r'(\d+)', ver2)
             numeric = True
             if mo1 is None:
                 mo1 = re.match('([a-zA-Z]+)', ver1)
@@ -393,7 +389,7 @@ if __name__ == '__main__':
     except RpmError as e:
         print(e.msg)
         sys.exit(2)
-    print(rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url())
+    print((rpmq.name(), rpmq.version(), rpmq.release(), rpmq.arch(), rpmq.url()))
     print(rpmq.summary())
     print(rpmq.description())
     print('##########')

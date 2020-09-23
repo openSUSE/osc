@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-from __future__ import print_function
 
 from M2Crypto.SSL.Checker import SSLVerificationError
 from M2Crypto import m2, SSL, httpslib
@@ -111,7 +110,7 @@ class ValidationErrors:
         self.failures[depth].errs.append(err)
 
     def show(self, out):
-        for depth in self.failures.keys():
+        for depth in list(self.failures.keys()):
             cert = self.failures[depth].cert
             print("*** certificate verify failed at depth %d" % depth, file=out)
             print("Subject: ", cert.get_subject(), file=out)
@@ -215,7 +214,7 @@ class myHTTPSHandler(M2Crypto.m2urllib2.HTTPSHandler):
         try:
             h.request(req.get_method(), request_uri, req.data, headers)
             r = h.getresponse()
-        except socket.error as err:  # XXX what error?
+        except OSError as err:  # XXX what error?
             raise M2Crypto.m2urllib2.URLError(err)
 
         # Pick apart the HTTPResponse object to get the addinfourl
@@ -278,7 +277,7 @@ class myHTTPSConnection(M2Crypto.httpslib.HTTPSConnection):
                 connected = self._connect(addrinfo[0])
                 if connected:
                     break
-            except socket.error as e:
+            except OSError as e:
                 last_exc = e
             finally:
                 if not connected and self.sock is not None:
@@ -389,7 +388,7 @@ Would you like to
 """, file=out)
 
             print("Enter choice [0129]: ", end='', file=out)
-            r = raw_input()
+            r = input()
             if not r or r == '0':
                 connection.close()
                 raise SSLVerificationError("Untrusted Certificate")

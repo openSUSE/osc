@@ -68,7 +68,7 @@ class TestAddFiles(OscTestCase):
         exp = 'A    foo\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.assertNotEqual(open(os.path.join('.osc', 'foo'), 'r').read(), 'replaced file\n')
+        self.assertNotEqual(open(os.path.join('.osc', 'foo')).read(), 'replaced file\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self._check_status(p, 'foo', 'R')
         self._check_addlist('foo\n')

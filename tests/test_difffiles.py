@@ -322,9 +322,9 @@ Binary file 'binary' has changed.
         def __canonise_diff(diff):
             # we cannot use re.M because python 2.6's re.sub does
             # not support a flags argument
-            diff = [re.sub('^@@ -(\d+) ', '@@ -\\1,\\1 ', line)
+            diff = [re.sub(r'^@@ -(\d+) ', '@@ -\\1,\\1 ', line)
                     for line in diff.split('\n')]
-            diff = [re.sub('^(@@ -\d+,\d+) \+(\d+) ', '\\1 +\\2,\\2 ', line)
+            diff = [re.sub(r'^(@@ -\d+,\d+) \+(\d+) ', '\\1 +\\2,\\2 ', line)
                     for line in diff]
             return '\n'.join(diff)
 

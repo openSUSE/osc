@@ -13,7 +13,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import print_function
 
 import sys
 
@@ -126,7 +125,7 @@ class SectionLine(Line):
         self._lines.append(CommentLine(line))
 
     def copy(self):
-        return dict(self.items())
+        return dict(list(self.items()))
 
     def items(self):
         return [ (i.name, i.value) for i in self._lines if i.type == 'option' ]
@@ -325,7 +324,7 @@ class OscConfigParser(ConfigParser):
         this section and not "inherited" from the default.
         """
         if proper:
-            return self.optionxform(option) in self._sections[section].keys()
+            return self.optionxform(option) in list(self._sections[section].keys())
         return ConfigParser.has_option(self, section, option, **kwargs)
 
     # XXX: simplify!

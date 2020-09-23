@@ -3,7 +3,6 @@
 # Author:  Trent Mick (TrentM@ActiveState.com)
 # Home:    http://trentm.com/projects/cmdln/
 
-from __future__ import print_function
 
 """An improvement on Python's standard cmd.py module.
 
@@ -65,7 +64,7 @@ def introspect_handler(handler):
 
 #---- globals
 
-LOOP_ALWAYS, LOOP_NEVER, LOOP_IF_EMPTY = range(3)
+LOOP_ALWAYS, LOOP_NEVER, LOOP_IF_EMPTY = list(range(3))
 
 # An unspecified optional argument when None is a meaningful value.
 _NOT_SPECIFIED = ("Not", "Specified")
@@ -703,7 +702,7 @@ class RawCmdln(cmd.Cmd):
             "${cmd_option_list}": self._help_preprocess_cmd_option_list,
         }
 
-        for marker, preprocessor in preprocessors.items():
+        for marker, preprocessor in list(preprocessors.items()):
             if marker in help:
                 help = preprocessor(help, cmdname)
         return help
@@ -734,7 +733,7 @@ class RawCmdln(cmd.Cmd):
         # Find any aliases for commands.
         token2canonical = self._get_canonical_map()
         aliases = {}
-        for token, cmdname in token2canonical.items():
+        for token, cmdname in list(token2canonical.items()):
             if token == cmdname:
                 continue
             aliases.setdefault(cmdname, []).append(token)
@@ -941,7 +940,7 @@ class RawCmdln(cmd.Cmd):
                     continue
                 cmd2funcname[cmdname] = attr
                 token2canonical[cmdname] = cmdname
-            for cmdname, funcname in cmd2funcname.items(): # add aliases
+            for cmdname, funcname in list(cmd2funcname.items()): # add aliases
                 func = getattr(self, funcname)
                 aliases = getattr(func, "aliases", [])
                 for alias in aliases:

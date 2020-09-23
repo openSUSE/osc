@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-from __future__ import print_function
 
 import errno
 import os.path
@@ -124,7 +123,7 @@ def run(prg, argv=None):
         if e.code >= 500 and e.code <= 599:
             print('\nRequest: %s' % e.filename)
             print('Headers:')
-            for h, v in e.hdrs.items():
+            for h, v in list(e.hdrs.items()):
                 if h != 'Set-Cookie':
                     print("%s: %s" % (h, v))
 
@@ -135,7 +134,7 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except URLError as e:
         print('Failed to reach a server:\n', e.reason, file=sys.stderr)
-    except IOError as e:
+    except OSError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:
             raise

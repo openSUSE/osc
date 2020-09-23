@@ -1,6 +1,3 @@
-
-from __future__ import print_function
-
 from . import ar
 import os.path
 import re
@@ -63,9 +60,9 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def __parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
         while data:
-            field, val = re.split(b':\s*', data.strip(), 1)
+            field, val = re.split(br':\s*', data.strip(), 1)
             data = control.readline()
-            while data and re.match(b'\s+', data):
+            while data and re.match(br'\s+', data):
                 val += b'\n' + data.strip()
                 data = control.readline().rstrip()
             field = field.replace(b'-', b'_').lower()
@@ -96,7 +93,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             # add self provides entry
             self.fields[b'provides'].append(b'%s (= %s)' % (self.name(), b'-'.join(versrel)))
 
-    def _split_field_value(self, field, delimeter=b',\s*'):
+    def _split_field_value(self, field, delimeter=br',\s*'):
         return [i.strip()
                 for i in re.split(delimeter, self.fields.get(field, b'')) if i]
 
@@ -177,8 +174,8 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         """
         # 32 is arbitrary - it is needed for the "longer digit string wins" handling
         # (found this nice approach in Build/Deb.pm (build package))
-        ver1 = re.sub(b'(\d+)', lambda m: (32 * b'0' + m.group(1))[-32:], ver1)
-        ver2 = re.sub(b'(\d+)', lambda m: (32 * b'0' + m.group(1))[-32:], ver2)
+        ver1 = re.sub(br'(\d+)', lambda m: (32 * b'0' + m.group(1))[-32:], ver1)
+        ver2 = re.sub(br'(\d+)', lambda m: (32 * b'0' + m.group(1))[-32:], ver2)
         vers = itertools.zip_longest(ver1, ver2, fillvalue=b'')
         for v1, v2 in vers:
             if v1 == v2:
@@ -229,7 +226,7 @@ if __name__ == '__main__':
     except DebError as e:
         print(e.msg)
         sys.exit(2)
-    print(debq.name(), debq.version(), debq.release(), debq.arch())
+    print((debq.name(), debq.version(), debq.release(), debq.arch()))
     print(debq.description())
     print('##########')
     print(b'\n'.join(debq.provides()))

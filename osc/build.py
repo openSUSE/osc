@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-from __future__ import print_function
 
 import os
 import re
@@ -451,10 +450,10 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
-    prefer_pkgs = dict((decode_it(name), packageQuery.path())
-                       for name, packageQuery in packageQueries.items())
+    prefer_pkgs = {decode_it(name): packageQuery.path()
+                       for name, packageQuery in list(packageQueries.items())}
 
-    depfile = create_deps(packageQueries.values())
+    depfile = create_deps(list(packageQueries.values()))
     cpio.add(b'deps', b'\n'.join(depfile))
     return prefer_pkgs
 
@@ -497,7 +496,7 @@ def check_trusted_projects(apiurl, projects):
         if not prj in trusted:
             print("\nThe build root needs packages from project '%s'." % prj)
             print("Note that malicious packages can compromise the build result or even your system.")
-            r = raw_input(trustprompt % { 'project': prj })
+            r = input(trustprompt % { 'project': prj })
             if r == '1':
                 print("adding '%s' to oscrc: ['%s']['trusted_prj']" % (prj, apiurl))
                 trusted.append(prj)
@@ -938,7 +937,7 @@ def main(apiurl, opts, argv):
     rpmlist_prefers = []
     if prefer_pkgs:
         print('Evaluating preferred packages')
-        for name, path in prefer_pkgs.items():
+        for name, path in list(prefer_pkgs.items()):
             if bi.has_dep(name):
                 # We remove a preferred package from the buildinfo, so that the
                 # fetcher doesn't take care about them.
@@ -978,7 +977,7 @@ def main(apiurl, opts, argv):
 
     if not opts.trust_all_projects:
         # implicitly trust the project we are building for
-        check_trusted_projects(apiurl, [ i for i in bi.projects.keys() if not i == prj ])
+        check_trusted_projects(apiurl, [ i for i in list(bi.projects.keys()) if not i == prj ])
 
     imagefile = ''
     imagesource = ''
@@ -1111,7 +1110,7 @@ def main(apiurl, opts, argv):
                 else:
                     os.symlink(sffn, tffn)
             if prefer_pkgs:
-                for name, path in prefer_pkgs.items():
+                for name, path in list(prefer_pkgs.items()):
                     if name == filename:
                         print("Using prefered package: " + path + "/" + filename)
                         os.unlink(tffn)

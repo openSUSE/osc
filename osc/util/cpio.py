@@ -13,7 +13,6 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import print_function
 
 import mmap
 import os
@@ -61,7 +60,7 @@ class CpioHdr:
         self.namesize = namesize
         # != 0 indicates CRC format (which we do not support atm)
         self.checksum = checksum
-        for k, v in self.__dict__.items():
+        for k, v in list(self.__dict__.items()):
             self.__dict__[k] = int(v, 16)
         self.filename = filename
         # data starts at dataoff and ends at dataoff+filesize
@@ -97,8 +96,7 @@ class CpioRead:
             self.__file.close()
 
     def __iter__(self):
-        for h in self.hdrs:
-            yield h
+        yield from self.hdrs
 
     def _init_datastructs(self):
         self.hdrs = []
@@ -148,7 +146,7 @@ class CpioRead:
         self._init_datastructs()
         data = self.__file.read(6)
         self.format = data
-        if not self.format in self.sfmt.values():
+        if not self.format in list(self.sfmt.values()):
             raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
         while (len(data) != 0):

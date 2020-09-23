@@ -8,11 +8,12 @@ import sys
 import os
 
 from osc import commandline, babysitter
+import importlib
 
 try:
 # this is a hack to make osc work as expected with utf-8 characters,
 # no matter how site.py is set...
-    reload(sys)
+    importlib.reload(sys)
     loc = locale.getpreferredencoding()
     if not loc:
         loc = sys.getpreferredencoding()

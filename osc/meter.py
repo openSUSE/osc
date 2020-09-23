@@ -10,7 +10,7 @@ except ImportError:
     have_pb_module = False
 
 
-class PBTextMeter(object):
+class PBTextMeter:
 
     def start(self, basename, size=None):
         if size is None:
@@ -32,7 +32,7 @@ class PBTextMeter(object):
         self.bar.finish()
 
 
-class NoPBTextMeter(object):
+class NoPBTextMeter:
     _complained = False
 
     def start(self, basename, size=None):
