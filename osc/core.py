@@ -412,14 +412,16 @@ class Serviceinfo:
     def execute(self, dir, callmode = None, singleservice = None, verbose = None):
         import tempfile
 
+        oldcreated = False
         # cleanup existing generated files
         for filename in os.listdir(dir):
             if filename.startswith('_service:') or filename.startswith('_service_'):
-                ent = os.path.join(dir, filename)
-                if os.path.isdir(ent):
-                    shutil.rmtree(ent)
-                else:
-                    os.unlink(ent)
+                if not oldcreated:
+                    if os.path.exists('.old'):
+                        raise oscerr.ServiceRuntimeError('The directory ".old" exists, please remove it')
+                    oldcreated = True
+                    os.mkdir('.old')
+                os.rename(filename, os.path.join('.old', filename))
 
         allservices = self.services or []
         service_names = [s['name'] for s in allservices]
@@ -494,6 +496,9 @@ class Serviceinfo:
             finally:
                 if temp_dir is not None:
                     shutil.rmtree(temp_dir)
+
+        if os.path.exists('.old'):
+            shutil.rmtree('.old')
 
         return 0
 
