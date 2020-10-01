@@ -410,16 +410,27 @@ class Serviceinfo:
         return r
 
     def execute(self, dir, callmode = None, singleservice = None, verbose = None):
+        old_dir = os.path.join(dir, '.old')
+        if os.path.exists(old_dir) or os.path.islink(old_dir):
+            msg = '"%s" exists, please remove it' % old_dir
+            raise oscerr.OscIOError(None, msg)
+        try:
+            os.mkdir(old_dir)
+            return self._execute(dir, old_dir, callmode, singleservice,
+                                 verbose)
+        finally:
+            if os.path.exists(old_dir):
+                shutil.rmtree(old_dir)
+
+    def _execute(self, dir, old_dir, callmode=None, singleservice=None,
+                 verbose=None):
         import tempfile
 
         # cleanup existing generated files
         for filename in os.listdir(dir):
             if filename.startswith('_service:') or filename.startswith('_service_'):
-                ent = os.path.join(dir, filename)
-                if os.path.isdir(ent):
-                    shutil.rmtree(ent)
-                else:
-                    os.unlink(ent)
+                os.rename(os.path.join(dir, filename),
+                          os.path.join(old_dir, filename))
 
         allservices = self.services or []
         service_names = [s['name'] for s in allservices]
