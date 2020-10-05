@@ -5788,7 +5788,7 @@ def result_xml_to_dicts(xml):
         rmap['repostate'] = node.get('code')
         rmap['pkg'] = rmap['package'] = rmap['pac'] = ''
         rmap['code'] = node.get('code')
-        rmap['details'] = ''
+        rmap['details'] = node.get('details')
         # the way we currently use this function, there should be
         # always a status element
         snodes = node.findall('status')
@@ -5809,6 +5809,10 @@ def result_xml_to_dicts(xml):
             details = statusnode.find('details')
             if details is not None:
                 smap['details'] = details.text
+            if rmap['code'] == 'broken':
+                # real error just becomes visible in details/verbose
+                smap['code'] = rmap['code']
+                smap['details'] = "repository: " + rmap['details']
             yield smap, is_multi
 
 
@@ -5951,6 +5955,8 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             state = "outdated"
         else:
             state = node.get('state')
+        if node.get('details'):
+            state += ' details: ' + node.get('details')
         tg = (node.get('repository'), node.get('arch'), state)
         targets.append(tg)
         for pacnode in node.findall('status'):
