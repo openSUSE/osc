@@ -3326,7 +3326,7 @@ def makeurl(baseurl, l, query=[]):
     return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
 
 
-def http_request(method, url, headers={}, data=None, file=None):
+def http_request(method, url, headers={}, data=None, file=None, timeout=60):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
     def create_memoryview(obj):
@@ -3396,7 +3396,7 @@ def http_request(method, url, headers={}, data=None, file=None):
     try:
         if isinstance(data, str):
             data = bytes(data, "utf-8")
-        fd = urlopen(req, data=data)
+        fd = urlopen(req, data=data, timeout=timeout)
 
     finally:
         if hasattr(conf.cookiejar, 'save'):
