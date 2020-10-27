@@ -6689,7 +6689,7 @@ def checkRevision(prj, pac, revision, apiurl=None, meta=False):
     if not apiurl:
         apiurl = conf.config['apiurl']
     try:
-        if int(revision) > int(show_upstream_rev(apiurl, prj, pac, meta)) \
+        if int(revision) > int(show_upstream_rev(apiurl, prj, pac, meta=meta)) \
            or int(revision) <= 0:
             return False
         else:
