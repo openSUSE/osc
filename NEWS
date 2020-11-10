@@ -1,5 +1,11 @@
-0.171
+0.171.0
   - maintainer search: lookup via package name by default and binary as fallback
+  - fix crash on console resize when downloading files during build
+  - add proper repourls to osc reporuls
+  - new command osc releaserequest: This command is used to transfer sources and
+    binaries without rebuilding them.
+    It requires defined release targets set to trigger="manual".
+  - some improvements on output of help and error messages
 
 0.170
   - fix code for python3.8 and python3.9
