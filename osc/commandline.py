@@ -242,7 +242,8 @@ class Osc(cmdln.Cmdln):
         apiurl = self.get_api_url()
 
         if not package:
-            Project.init_project(apiurl, os.curdir, project, conf.config['do_package_tracking'])
+            Project.init_project(apiurl, os.curdir, project, conf.config['do_package_tracking'],
+                                 getPackageList=False)
             print('Initializing %s (Project: %s)' % (os.curdir, project))
         else:
             Package.init_package(apiurl, project, package, os.curdir)
