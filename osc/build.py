@@ -389,6 +389,11 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'flatpak':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -587,7 +592,9 @@ def main(apiurl, opts, argv):
         build_type = 'docker'
     if os.path.basename(build_descr) == 'fissile.yml':
         build_type = 'fissile'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'simpleimage', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile']:
+    if build_descr.endswith('flatpak.yaml') or build_descr.endswith('flatpak.yml') or build_descr.endswith('flatpak.json'):
+        build_type = 'flatpak'
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'simpleimage', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile', 'flatpak']:
         raise oscerr.WrongArgs(
                 'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, snapcraft.yaml or Dockerfile' \
                         % build_type)
