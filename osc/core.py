@@ -5604,14 +5604,9 @@ def get_distibutions(apiurl, discon=False):
 
         for node in root.findall('distribution'):
             rmap = {}
-            for node2 in node.findall('name'):
-                rmap['name'] = node2.text
-            for node3 in node.findall('project'):
-                rmap['project'] = node3.text
-            for node4 in node.findall('repository'):
-                rmap['repository'] = node4.text
-            for node5 in node.findall('reponame'):
-                rmap['reponame'] = node5.text
+            for child in node:
+                if child.tag in ('name', 'project', 'repository', 'reponame'):
+                    rmap[child.tag] = child.text
             r.append(result_line_templ % rmap)
 
         r.insert(0, 'distribution              project                   repository                reponame')
