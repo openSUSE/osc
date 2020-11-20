@@ -90,8 +90,8 @@ class Fetcher:
                     try:
                         fd, tmpfile = tempfile.mkstemp(prefix='osc_build_file')
                         archive.copyin_file(hdr.filename,
-                                            os.path.dirname(tmpfile),
-                                            os.path.basename(tmpfile))
+                                            decode_it(os.path.dirname(tmpfile)),
+                                            decode_it(os.path.basename(tmpfile)))
                         self.move_package(tmpfile, pac.localdir, pac)
                     finally:
                         os.close(fd)
