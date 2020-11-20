@@ -182,7 +182,7 @@ class CpioRead:
         hdr = self._get_hdr(filename)
         if not hdr:
             raise CpioError(filename, '\'%s\' does not exist in archive' % filename)
-        dest = dest or os.getcwd()
+        dest = dest or os.getcwd().encode()
         fn = new_fn or filename
         self._copyin_file(hdr, dest, fn)
 
@@ -191,7 +191,7 @@ class CpioRead:
         extracts the cpio archive to dest.
         If dest is None $PWD will be used.
         """
-        dest = dest or os.getcwd()
+        dest = dest or os.getcwd().encode()
         for h in self.hdrs:
             self._copyin_file(h, dest, h.filename)
 
