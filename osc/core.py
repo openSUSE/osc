@@ -5891,6 +5891,9 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     f = show_prj_results_meta(apiurl, prj)
     root = ET.fromstring(b''.join(f))
 
+    if name_filter is not None:
+        name_filter = re.compile(name_filter)
+
     pacs = []
     # sequence of (repo,arch) tuples
     targets = []
@@ -5945,12 +5948,12 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
                             if not name_filter:
                                 pacs_to_show.append(pkg)
                                 targets_to_show.append(repo)
-                            elif name_filter in pkg:
+                            elif name_filter.search(pkg) is not None:
                                 pacs_to_show.append(pkg)
         #filtering for Package Name
         elif name_filter:
             for pkg in pacs:
-                if name_filter in pkg:
+                if name_filter.search(pkg) is not None:
                     pacs_to_show.append(pkg)
 
         #filter non building states
