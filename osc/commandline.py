@@ -1976,7 +1976,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             r.add_action('add_role', tgt_project=project, tgt_package=package,
               person_name=user, person_role=role)
-        r.description = _html_escape(opts.message or '')
+        r.description = opts.message
         r.create(apiurl)
         print(r.reqid)
 
@@ -2043,7 +2043,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         r = Request()
         r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
-        r.description = _html_escape(opts.message)
+        r.description = opts.message
         if opts.accept_in_hours:
           r.accept_at_in_hours(int(opts.accept_in_hours))
         r.create(self.get_api_url())
@@ -2093,7 +2093,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r = Request()
         r.add_action('change_devel', src_project=devel_project, src_package=devel_package,
             tgt_project=project, tgt_package=package)
-        r.description = _html_escape(opts.message)
+        r.description = opts.message
         r.create(self.get_api_url())
         print(r.reqid)
 
@@ -2661,7 +2661,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                                 project, package)
                                     msg = "%s (forwarded request %s from %s)" % (rq.description, reqid, rq.creator)
                                     rid = create_submit_request(apiurl, action.tgt_project, action.tgt_package,
-                                                                project, package, _html_escape(msg))
+                                                                project, package, msg)
                                     print(msg)
                                     print("New request #", rid)
                                     for req in reqs:
@@ -3169,7 +3169,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     r.add_action('release', src_project=source_project, src_package=pac)
             else:
                 r.add_action('release', src_project=source_project)
-            r.description = _html_escape(opts.message)
+            r.description = opts.message
             r.create(apiurl)
         print(r.reqid)
 

@@ -4191,7 +4191,7 @@ def create_release_request(apiurl, src_project, message=''):
     # api will complete the request
     r.add_action('maintenance_release', src_project=src_project)
     # XXX: clarify why we need the unicode(...) stuff
-    r.description = _html_escape(unicode(message, 'utf8'))
+    r.description = unicode(message, 'utf8')
     r.create(apiurl)
     return r
 
@@ -4204,7 +4204,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     # XXX: clarify why we need the unicode(...) stuff
-    r.description = _html_escape(unicode(message, 'utf8'))
+    r.description = unicode(message, 'utf8')
     r.create(apiurl, addrevision=True, enforce_branching=enforce_branching)
     return r
 
