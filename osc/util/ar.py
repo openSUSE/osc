@@ -72,7 +72,7 @@ class ArFile(BytesIO):
         and permissions.
         """
         if not dir:
-            dir = os.getcwd()
+            dir = os.getcwdb()
         fn = os.path.join(dir, self.name)
         with open(fn, 'wb') as f:
             f.write(self.getvalue())
