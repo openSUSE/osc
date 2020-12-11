@@ -596,7 +596,7 @@ def main(apiurl, opts, argv):
         build_type = 'flatpak'
     if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'simpleimage', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile', 'flatpak']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, snapcraft.yaml or Dockerfile' \
+                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml or Dockerfile' \
                         % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
