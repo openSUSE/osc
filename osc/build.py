@@ -687,6 +687,18 @@ def main(apiurl, opts, argv):
         pac = pac + ":" + opts.multibuild_package
     if opts.wipe:
         buildargs.append("--wipe")
+    if (opts.stage_single and (opts.stage_pre or opts.stage_post)) \
+       or (opts.stage_pre and opts.stage_post):
+        raise oscerr.WrongOptions('Options --stage-single, --stage-pre and --stage-post cannot be combined')
+    if (opts.stage_single):
+        buildargs.append("--stage=%s" % opts.stage_single)
+        buildargs.append("--mode=single")
+    if (opts.stage_pre):
+        buildargs.append("--stage=%s" % opts.stage_pre)
+        buildargs.append("--mode=pre")
+    if (opts.stage_post):
+        buildargs.append("--stage=%s" % opts.stage_post)
+        buildargs.append("--mode=post")
 
     orig_build_root = config['build-root']
     # make it possible to override configuration of the rc file

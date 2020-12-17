@@ -6489,6 +6489,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='trust packages from all projects')
     @cmdln.option('--nopreinstallimage', '--no-preinstallimage', action='store_true',
                   help='Do not use preinstall images for creating the build root.')
+    @cmdln.option('--ssingle', '--stage-single', dest='stage_single',
+                  help='Only perform specified build stage.')
+    @cmdln.option('--spre', '--stage-pre', dest='stage_pre',
+                  help='Only perform build stages up to and including specified stage.')
+    @cmdln.option('--spost', '--stage-post', dest='stage_post',
+                  help='Only perform build stages starting from and including specified stage.')
     @cmdln.alias('chroot')
     @cmdln.alias('shell')
     @cmdln.alias('wipe')
