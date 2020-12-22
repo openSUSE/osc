@@ -1841,14 +1841,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         i = 0
         actionsxml = ""
-        supersede = []
+        supersede = set()
         for ai in opts.actions:
             if ai == 'submit':
                 args = opts.actiondata[i]
                 i = i+1
                 actions, to_supersede = self._submit_request(args, opts, options_block)
                 actionsxml += actions
-                supersede.extend(to_supersede)
+                supersede.update(to_supersede)
             elif ai == 'delete':
                 args = opts.actiondata[i]
                 actionsxml += self._delete_request(args, opts)
