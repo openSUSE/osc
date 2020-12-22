@@ -1623,10 +1623,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new', 'review'])
         user = conf.get_apiurl_usr(apiurl)
         myreqs = [ i for i in reqs if i.state.who == user and i.reqid != opts.supersede ]
+        myreq_ids = [r.reqid for r in myreqs]
         repl = 'y'
         if len(myreqs) > 0 and not opts.yes:
             print('You already created the following submit request: %s.' % \
-                  ', '.join([i.reqid for i in myreqs ]))
+                  ', '.join(myreq_ids))
             repl = raw_input('Supersede the old requests? (y/n/c) ')
             if repl.lower() == 'c':
                 print('Aborting', file=sys.stderr)
@@ -1637,10 +1638,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         actionxml = """<action type="submit"> <source project="%s" package="%s"  rev="%s"/> <target project="%s" package="%s"/> %s </action>"""  % \
                 (src_project, src_package, opts.revision or show_upstream_rev(apiurl, src_project, src_package), dst_project, dst_package, options_block)
         if opts.supersede:
-            myreqs.append(opts.supersede)
+            myreq_ids.append(opts.supersede)
 
         #print 'created request id', result
-        return actionxml, myreqs
+        return actionxml, myreq_ids
 
     def _delete_request(self, args, opts):
         if len(args) < 1:
