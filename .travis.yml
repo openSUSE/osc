@@ -16,6 +16,8 @@ before_deploy:
   - rm -rf $TRAVIS_BUILD_DIR/dist/*
 deploy:
   provider: pypi
+  skip_existing: true
+  skip_cleanup: true
   user: suse
   password:
     secure: R4+YNPW2tsiY06hibGvONYn0//1z1QdcY8VmNbYpIRly4eTAbPE9uejKpyuflUkznpEkoqCdFzi5FNFhgat9N+AkIKyX9NTkf0oxaKKbdqBM7H1V8bqLYlAO479262spRyO0ee5fV5v6g81AFjncIV+pGjtQ0Vg/sjVcvGa61bs=
