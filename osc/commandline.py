@@ -5553,6 +5553,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('buildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
+    @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
+                        help='Show the last succeeded log file')
     @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
                     help='get log of the specified multibuild package')
     @cmdln.option('-o', '--offset', metavar='OFFSET',
@@ -5610,6 +5612,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = { 'view': 'entry' }
             if opts.last:
                 query['last'] = 1
+            if opts.lastsucceeded:
+                query['lastsucceeded'] = 1
             u = makeurl(self.get_api_url(), ['build', quote_plus(project), quote_plus(repository), quote_plus(arch), quote_plus(package), '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
@@ -5623,7 +5627,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last)
+        print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last, opts.lastsucceeded)
 
 
     def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments', project=None):
@@ -5658,7 +5662,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('remotebuildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
-    @cmdln.option('--lastsucceeded', action='store_true',
+    @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
                         help='Show the last succeeded log file')
     @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
                         help='show log file for specified multibuild package')
@@ -5702,6 +5706,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = { 'view': 'entry' }
             if opts.last:
                 query['last'] = 1
+            if opts.lastsucceeded:
+                query['lastsucceeded'] = 1
             u = makeurl(self.get_api_url(), ['build', quote_plus(project), quote_plus(repository), quote_plus(arch), quote_plus(package), '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
