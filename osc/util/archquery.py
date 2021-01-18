@@ -22,11 +22,15 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def read(self, all_tags=True, self_provides=True, *extra_tags):
         # all_tags and *extra_tags are currently ignored
         f = open(self.__path, 'rb')
-        #self.magic = f.read(5)
-        #if self.magic == '\375\067zXZ':
-        #    self.pkgsuffix = 'pkg.tar.xz'
+        magic = f.read(4)
+        f.close()
         fn = open('/dev/null', 'wb')
-        pipe = subprocess.Popen(['tar', '-O', '-xf', self.__path, '.PKGINFO'], stdout=subprocess.PIPE, stderr=fn).stdout
+        pipe = None
+        if magic == b'(\xb5/\xfd':
+            decompress = subprocess.Popen(['zstdcat', self.__path], stdout=subprocess.PIPE, stderr=fn)
+            pipe = subprocess.Popen(['tar', '-O', '-xf', '-', '.PKGINFO'], stdin=decompress.stdout, stdout=subprocess.PIPE, stderr=fn).stdout
+        else:
+            pipe = subprocess.Popen(['tar', '-O', '-xf', self.__path, '.PKGINFO'], stdout=subprocess.PIPE, stderr=fn).stdout
         for line in pipe.readlines():
             line = line.rstrip().split(b' = ', 2)
             if len(line) == 2:
