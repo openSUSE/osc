@@ -1506,7 +1506,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         parser.values.actions.append(value[0])
         del value[0]
-        parser.values.actiondata.append(value)
+        parser.values.actiondata.append(slash_split(value))
 
     def _submit_request(self, args, opts, options_block):
         actionxml = ""
