@@ -1,5 +1,17 @@
 0.172.0
-  -
+  - support --lastsucceeded/--last-succeeded in "osc buildlog", "osc
+    remotebuildlog" + friends (perform the corresponding operation on
+    the build log of the last successful build)
+  - fix pypi deployment via Travis CI
+  - several fixes in request related code paths (no double html_escape
+    of a request's description etc.)
+  - support local builds in a systemd-nspawn container
+  - fix potential TypeErrors+UnicodeEncodeErrors in the util.cpio and
+    util.ar modules
+  - support local flatpak builds (requires a recent build version)
+  - "osc init <prj>" works for a non-existent (server-side) project <prj>
+  - .old dir support for source services so that some services have access
+    to the results of a previous service run
 
 0.171.0
   - maintainer search: lookup via package name by default and binary as fallback
