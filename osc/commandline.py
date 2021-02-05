@@ -739,6 +739,33 @@ class Osc(cmdln.Cmdln):
         set_devel_project(apiurl, project, package, devprj, devpkg)
 
 
+    def do_showlinked(self, subcmd, opts, *args):
+        """${cmd_name}: Show all packages linking to a given one
+
+        Examples:
+            osc showlinked [PROJECT PACKAGE]
+        ${cmd_option_list}
+        """
+
+        args = slash_split(args)
+        apiurl = self.get_api_url()
+        localdir = os.getcwd()
+        project = package = None
+        if len(args) == 2:
+            project = args[0]
+            package = args[1]
+        elif is_package_dir(localdir):
+            project = store_read_project(localdir)
+            package = store_read_package(localdir)
+        else:
+            raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
+
+        url = makeurl(apiurl, ['source', project, package], query={'cmd': 'showlinked'})
+        f = http_POST(url)
+        root = ET.parse(f).getroot()
+        for node in root.findall('package'):
+            print(node.get('project') + " " + node.get('name'))
+
     @cmdln.option('-c', '--create', action='store_true',
                         help='Create a new token')
     @cmdln.option('-d', '--delete', metavar='TOKENID',
