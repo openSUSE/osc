@@ -108,6 +108,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-uid': '',                    # use the default provided by build
             'build-device': '',                 # required for VM builds
             'build-memory': '',                 # required for VM builds
+            'build-shell-after-fail': '0',      # optional for VM builds
             'build-swap': '',                   # optional for VM builds
             'build-vmdisk-rootsize': '',        # optional for VM builds
             'build-vmdisk-swapsize': '',        # optional for VM builds
@@ -201,7 +202,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-    'status_mtime_heuristic', 'print_web_links', 'ccache']
+    'status_mtime_heuristic', 'print_web_links', 'ccache', 'build-shell-after-fail']
 integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
@@ -237,6 +238,9 @@ apiurl = %(apiurl)s
 #     qemu -  qemu VM build
 #     lxc  -  lxc build
 #build-type =
+
+# Execute always a shell prompt on build failure inside of the build environment
+#build-shell-after-fail = 1
 
 # build-device is the disk-image file to use as root for VM builds
 # e.g. /var/tmp/FILE.root
