@@ -571,6 +571,7 @@ def main(apiurl, opts, argv):
     build_root = None
     cache_dir  = None
     build_uid = ''
+    build_shell_after_fail = config['build-shell-after-fail']
     vm_memory = config['build-memory']
     vm_disk_size = config['build-vmdisk-rootsize']
     vm_type = config['build-type']
@@ -665,6 +666,8 @@ def main(apiurl, opts, argv):
         else:
             print('Error: build-uid arg must be 2 colon separated numerics: "uid:gid" or "caller"', file=sys.stderr)
             return 1
+    if opts.shell_after_fail:
+        build_shell_after_fail = opts.shell_after_fail
     if opts.vm_memory:
         vm_memory = opts.vm_memory
     if opts.vm_disk_size:
@@ -739,6 +742,9 @@ def main(apiurl, opts, argv):
 
     if opts.shell:
         buildargs.append("--shell")
+
+    if build_shell_after_fail:
+        buildargs.append("--shell-after-fail")
 
     if opts.shell_cmd:
         buildargs.append("--shell-cmd")

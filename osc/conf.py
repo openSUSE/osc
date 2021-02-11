@@ -108,6 +108,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-uid': '',                    # use the default provided by build
             'build-device': '',                 # required for VM builds
             'build-memory': '',                 # required for VM builds
+            'build-shell-after-fail': '',       # optional for VM builds
             'build-swap': '',                   # optional for VM builds
             'build-vmdisk-rootsize': '',        # optional for VM builds
             'build-vmdisk-swapsize': '',        # optional for VM builds
