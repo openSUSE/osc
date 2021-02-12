@@ -771,7 +771,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Delete a token')
     @cmdln.option('-o', '--operation', metavar='OPERATION',
-                        help='Default is "runservice", but "release" or "rebuild" can also be used')
+                        help='Default is "runservice", but "branch", "release" or "rebuild" can also be used')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     def do_token(self, subcmd, opts, *args):
@@ -6512,6 +6512,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help=SUPPRESS_HELP)
     @cmdln.option('--shell', action='store_true',
                   help=SUPPRESS_HELP)
+    @cmdln.option('--shell-after-fail', action='store_true',
+                  help="run a shell if the build tool fails")
     @cmdln.option('--shell-cmd', metavar='COMMAND',
                   help='run specified command instead of bash')
     @cmdln.option('-f', '--force', action='store_true',
@@ -6571,6 +6573,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             --noinit             # for faster run
             --shell-cmd=COMMAND
+            --shell-after-fail
             --extra-pkgs=PACKAGE # install additional packages
 
         To clean up the build environment run
