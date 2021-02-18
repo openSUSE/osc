@@ -1,6 +1,9 @@
 0.173.0
   - add showlinked command to show all references of packages linking to a given one
   - add build --shell-after-build flag. It can also be set via .oscrc.
+  - add build --stage flag. Useful for example for fixing file lists and just
+    running the install section to see the result of it (use --stage=i=).
+    Check the help for more details.
 
 0.172.0
   - support --lastsucceeded/--last-succeeded in "osc buildlog", "osc

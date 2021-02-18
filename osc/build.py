@@ -936,7 +936,12 @@ def main(apiurl, opts, argv):
         bi.release = opts.release
 
     if bi.release:
-        buildargs.append('--release=%s' % bi.release)
+        buildargs.append('--release')
+        buildargs.append(bi.release)
+
+    if opts.stage:
+        buildargs.append('--stage')
+        buildargs.append(opts.stage)
 
     if opts.build_opt:
         buildargs += opts.build_opt
