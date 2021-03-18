@@ -7208,7 +7208,7 @@ def addDownloadUrlService(url):
     f.close()
 
 
-def addFiles(filenames, prj_obj = None):
+def addFiles(filenames, prj_obj = None, force=False):
     for filename in filenames:
         if not os.path.exists(filename):
             raise oscerr.OscIOError(None, 'file \'%s\' does not exist' % filename)
@@ -7267,7 +7267,7 @@ def addFiles(filenames, prj_obj = None):
         for filename in pac.todo:
             if filename in pac.skipped:
                 continue
-            if filename in pac.excluded:
+            if filename in pac.excluded and not force:
                 print('osc: warning: \'%s\' is excluded from a working copy' % filename, file=sys.stderr)
                 continue
             try:

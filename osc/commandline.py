@@ -4759,6 +4759,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('\n'.join(lines))
 
 
+    @cmdln.option('-f', '--force', action='store_true',
+                  help='add files even if they are excluded by the exclude_glob config option')
     def do_add(self, subcmd, opts, *args):
         """${cmd_name}: Mark files to be added upon the next commit
 
@@ -4784,7 +4786,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif arg.startswith('http://') or arg.startswith('https://') or arg.startswith('ftp://'):
                 addDownloadUrlService(arg)
             else:
-                addFiles([arg])
+                addFiles([arg], force=opts.force)
 
 
     def do_mkpac(self, subcmd, opts, *args):
