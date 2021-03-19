@@ -552,12 +552,13 @@ def run_build(opts, *args):
     cmd += args
 
     sucmd = os.environ.get('OSC_SU_WRAPPER', config['su-wrapper']).split()
-    if sucmd[0] == 'su':
-        if sucmd[-1] == '-c':
-            sucmd.pop()
-        cmd = sucmd + ['-s', cmd[0], 'root', '--'] + cmd[1:]
-    else:
-        cmd = sucmd + cmd
+    if sucmd:
+        if sucmd[0] == 'su':
+            if sucmd[-1] == '-c':
+                sucmd.pop()
+            cmd = sucmd + ['-s', cmd[0], 'root', '--'] + cmd[1:]
+        else:
+            cmd = sucmd + cmd
     if not opts.userootforbuild:
         cmd.append('--norootforbuild')
     return run_external(cmd[0], *cmd[1:])
@@ -1341,12 +1342,13 @@ def main(apiurl, opts, argv):
 
     if need_root:
         sucmd = config['su-wrapper'].split()
-        if sucmd[0] == 'su':
-            if sucmd[-1] == '-c':
-                sucmd.pop()
-            cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
-        else:
-            cmd = sucmd + cmd
+        if sucmd:
+            if sucmd[0] == 'su':
+                if sucmd[-1] == '-c':
+                    sucmd.pop()
+                cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
+            else:
+                cmd = sucmd + cmd
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
