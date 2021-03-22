@@ -219,6 +219,8 @@ apiurl = %(apiurl)s
 
 # Wrapper to call build as root (sudo, su -, ...)
 #su-wrapper = %(su-wrapper)s
+# set it empty to run build script as user (works only with KVM atm):
+#su-wrapper =
 
 # rootdir to setup the chroot environment
 # can contain %%(repo)s, %%(arch)s, %%(project)s, %%(package)s and %%(apihost)s (apihost is the hostname
