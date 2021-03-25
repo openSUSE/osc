@@ -1291,7 +1291,6 @@ def main(apiurl, opts, argv):
         # before
         my_build_device = build_root + '/img'
 
-    need_root = True
     if vm_type:
         if config['build-swap']:
             my_build_swap = config['build-swap'] % subst
@@ -1308,9 +1307,6 @@ def main(apiurl, opts, argv):
             vm_options += [ '--vm-swap=' + my_build_swap ]
             vm_options += [ '--logfile=%s/.build.log' % build_root ]
             if vm_type == 'kvm':
-                if os.access(build_root, os.W_OK) and os.access('/dev/kvm', os.W_OK):
-                    # so let's hope there's also an fstab entry
-                    need_root = False
                 if config['build-kernel']:
                     vm_options += [ '--vm-kernel=' + config['build-kernel'] ]
                 if config['build-initrd']:
@@ -1340,15 +1336,14 @@ def main(apiurl, opts, argv):
     cmd += specialcmdopts + vm_options + buildargs
     cmd += [ build_descr ]
 
-    if need_root:
-        sucmd = config['su-wrapper'].split()
-        if sucmd:
-            if sucmd[0] == 'su':
-                if sucmd[-1] == '-c':
-                    sucmd.pop()
-                cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
-            else:
-                cmd = sucmd + cmd
+    sucmd = config['su-wrapper'].split()
+    if sucmd:
+        if sucmd[0] == 'su':
+            if sucmd[-1] == '-c':
+                sucmd.pop()
+            cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
+        else:
+            cmd = sucmd + cmd
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:

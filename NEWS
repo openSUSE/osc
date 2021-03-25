@@ -5,6 +5,7 @@
     running the install section to see the result of it (use --stage=i=).
     Check the help for more details.
   - allow to run build script as non-root, by setting su-wrapper empty
+    => osc is not guessing anymore if user builds are wanted
 
 0.172.0
   - support --lastsucceeded/--last-succeeded in "osc buildlog", "osc
