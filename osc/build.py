@@ -547,10 +547,12 @@ def calculate_build_root(apihost, prj, pac, repo, arch):
                             % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
     return buildroot
 
-def run_build(opts, *args):
-    cmd = [config['build-cmd']]
-    cmd += args
+def build_as_user():
+    if os.environ.get('OSC_SU_WRAPPER', config['su-wrapper']).split():
+        return False
+    return True
 
+def su_wrapper(cmd):
     sucmd = os.environ.get('OSC_SU_WRAPPER', config['su-wrapper']).split()
     if sucmd:
         if sucmd[0] == 'su':
@@ -559,6 +561,14 @@ def run_build(opts, *args):
             cmd = sucmd + ['-s', cmd[0], 'root', '--'] + cmd[1:]
         else:
             cmd = sucmd + cmd
+    return cmd
+
+def run_build(opts, *args):
+    cmd = [config['build-cmd']]
+    cmd += args
+
+    cmd = su_wrapper(cmd)
+
     if not opts.userootforbuild:
         cmd.append('--norootforbuild')
     return run_external(cmd[0], *cmd[1:])
@@ -1007,6 +1017,9 @@ def main(apiurl, opts, argv):
     imagefile = ''
     imagesource = ''
     imagebins = []
+    if build_as_user():
+       # preinstallimage extraction will fail
+       bi.preinstallimage = None
     if (not config['no_preinstallimage'] and not opts.nopreinstallimage and
         bi.preinstallimage and
         not opts.noinit and
@@ -1336,14 +1349,7 @@ def main(apiurl, opts, argv):
     cmd += specialcmdopts + vm_options + buildargs
     cmd += [ build_descr ]
 
-    sucmd = config['su-wrapper'].split()
-    if sucmd:
-        if sucmd[0] == 'su':
-            if sucmd[-1] == '-c':
-                sucmd.pop()
-            cmd = sucmd + ['-s', cmd[0], 'root', '--' ] + cmd[1:]
-        else:
-            cmd = sucmd + cmd
+    cmd = su_wrapper(cmd)
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
