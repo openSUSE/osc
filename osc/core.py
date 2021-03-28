@@ -7139,7 +7139,7 @@ def stripETxml(node):
     node.tail = None
     if node.text != None:
         node.text = node.text.replace(" ", "").replace("\n", "")
-    for child in node.getchildren():
+    for child in node:
         stripETxml(child)
 
 def addGitSource(url):
