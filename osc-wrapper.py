@@ -23,6 +23,7 @@ except NameError:
     pass
 
 # avoid buffering output on pipes (bnc#930137)
+# Note: the following only applies to python2
 # Basically, a "print('foo')" call is translated to a corresponding
 # fwrite call that writes to the stdout stream (cf. string_print
 # (Objects/stringobject.c) and builtin_print (Python/bltinmodule.c));
@@ -35,6 +36,9 @@ except NameError:
 # remains fully buffered (see PyFile_SetBufSize (Objects/fileobject.c))).
 if not os.isatty(sys.stdout.fileno()):
     sys.stdout = os.fdopen(sys.stdout.fileno(), sys.stdout.mode, 1)
+
+if not os.isatty(sys.stderr.fileno()):
+    sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
 
 osccli = commandline.Osc()
 
