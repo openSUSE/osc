@@ -6463,6 +6463,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use ccache to speed up rebuilds')
     @cmdln.option('--pkg-ccache', metavar='/path/to/_ccache.tar',
                   help='path to an existing uncompressed archive ccache. Using this option implies --ccache')
+    @cmdln.option('--sccache', action='store_true',
+                  help='use sccache to speed up rebuilds. Conflicts with --cache')
+    @cmdln.option('--sccache-uri', metavar='redis://127.0.0.1:6389',
+                  help='Optional remote URI for sccache storage. Implies --sccache.')
     @cmdln.option('--with', metavar='X', dest='_with', action='append',
                   help='enable feature X for build')
     @cmdln.option('--without', metavar='X', action='append',
