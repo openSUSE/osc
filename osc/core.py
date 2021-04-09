@@ -3340,22 +3340,28 @@ def makeurl(baseurl, l, query=[]):
 def http_request(method, url, headers={}, data=None, file=None):
     """wrapper around urllib2.urlopen for error handling,
     and to support additional (PUT, DELETE) methods"""
-    def create_memoryview(obj):
-        if sys.version_info < (2, 7, 99):
-            # obj might be a mmap and python 2.7's mmap does not
-            # behave like a bytearray (a bytearray in turn can be used
-            # to create the memoryview). For now simply return a buffer
-            return buffer(obj)
-        return memoryview(obj)
+    class DataContext:
+        """Wrap a data value (or None) in a context manager."""
 
-    filefd = None
+        def __init__(self, data):
+            self._data = data
+
+        def __enter__(self):
+            return self._data
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            return None
+
+
+    if file is not None and data is not None:
+        raise RuntimeError('file and data are mutually exclusive')
 
     if conf.config['http_debug']:
         print('\n\n--', method, url, file=sys.stderr)
 
     if method == 'POST' and not file and not data:
         # adding data to an urllib2 request transforms it into a POST
-        data = ''
+        data = b''
 
     req = URLRequest(url)
     api_host_options = {}
@@ -3379,43 +3385,28 @@ def http_request(method, url, headers={}, data=None, file=None):
             print(headers[i])
             req.add_header(i, headers[i])
 
-    if file and not data:
-        size = os.path.getsize(file)
-        if size < 1024*512:
-            data = open(file, 'rb').read()
-        else:
-            import mmap
-            filefd = open(file, 'rb')
-            try:
-                if sys.platform[:3] != 'win':
-                    data = mmap.mmap(filefd.fileno(), os.path.getsize(file), mmap.MAP_SHARED, mmap.PROT_READ)
-                else:
-                    data = mmap.mmap(filefd.fileno(), os.path.getsize(file))
-                data = create_memoryview(data)
-            except EnvironmentError as e:
-                if e.errno == 19:
-                    sys.exit('\n\n%s\nThe file \'%s\' could not be memory mapped. It is ' \
-                             '\non a filesystem which does not support this.' % (e, file))
-                elif hasattr(e, 'winerror') and e.winerror == 5:
-                    # falling back to the default io
-                    data = open(file, 'rb').read()
-                else:
-                    raise
-
     if conf.config['debug']: print(method, url, file=sys.stderr)
 
-    try:
+    content_length = None
+    if data is not None:
         if isinstance(data, str):
-            data = bytes(data, "utf-8")
-        fd = urlopen(req, data=data)
+            data = data.encode('utf-8')
+        content_length = len(data)
+    elif file is not None:
+        content_length = os.path.getsize(file)
 
-    finally:
-        if hasattr(conf.cookiejar, 'save'):
-            conf.cookiejar.save(ignore_discard=True)
-
-    if filefd: filefd.close()
-
-    return fd
+    with (open(file, 'rb') if file is not None else DataContext(data)) as d:
+        req.data = d
+        if content_length is not None:
+            # do this after setting req.data because the corresponding setter
+            # kills an existing Content-Length header (see urllib.Request class
+            # (python38))
+            req.add_header('Content-Length', str(content_length))
+        try:
+            return urlopen(req)
+        finally:
+            if hasattr(conf.cookiejar, 'save'):
+                conf.cookiejar.save(ignore_discard=True)
 
 
 def http_GET(*args, **kwargs):    return http_request('GET', *args, **kwargs)

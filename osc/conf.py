@@ -478,6 +478,25 @@ def get_apiurl_usr(apiurl):
 def _build_opener(apiurl):
     from osc.core import __version__
     global config
+
+    class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler, object):
+        # python2: inherit from object in order to make it a new-style class
+        # (HTTPBasicAuthHandler is not a new-style class)
+        def _rewind_request(self, req):
+            if hasattr(req.data, 'seek'):
+                # if the request is issued again (this time with an
+                # Authorization header), the file's offset has to be
+                # repositioned to the beginning of the file (otherwise,
+                # a 0-length body is sent which most likely does not match
+                # the Content-Length header (if present))
+                req.data.seek(0)
+
+        def retry_http_basic_auth(self, host, req, realm):
+            self._rewind_request(req)
+            return super(self.__class__, self).retry_http_basic_auth(host, req,
+                                                                     realm)
+
+
     if 'last_opener' not in _build_opener.__dict__:
         _build_opener.last_opener = (None, None)
     if apiurl == _build_opener.last_opener[0]:
@@ -491,10 +510,10 @@ def _build_opener(apiurl):
         # read proxies from env
         proxyhandler = ProxyHandler()
 
+    authhandler_class = OscHTTPBasicAuthHandler
     # workaround for http://bugs.python.org/issue9639
-    authhandler_class = HTTPBasicAuthHandler
     if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 9):
-        class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler):
+        class OscHTTPBasicAuthHandlerCompat(OscHTTPBasicAuthHandler):
             # The following two functions were backported from upstream 2.7.
             def http_error_auth_reqed(self, authreq, host, req, headers):
                 authreq = headers.get(authreq, None)
@@ -510,6 +529,7 @@ def _build_opener(apiurl):
                             return self.retry_http_basic_auth(host, req, realm)
 
             def retry_http_basic_auth(self, host, req, realm):
+                self._rewind_request(req)
                 user, pw = self.passwd.find_user_password(realm, host)
                 if pw is not None:
                     raw = "%s:%s" % (user, pw)
@@ -521,7 +541,7 @@ def _build_opener(apiurl):
                 else:
                     return None
 
-        authhandler_class = OscHTTPBasicAuthHandler
+        authhandler_class = OscHTTPBasicAuthHandlerCompat
 
     options = config['api_host_options'][apiurl]
     # with None as first argument, it will always use this username/password
