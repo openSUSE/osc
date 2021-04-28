@@ -7036,9 +7036,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc service wait [PROJECT PACKAGE]
 
             COMMAND can be:
-            run         r  run defined services with modes "trylocal", "localonly", or no mode set locally, may take an optional parameter to run only a
-                           specified source service. In case parameters exist for this one in _service file
-                           they are used.
+            run         r  run defined services with modes "trylocal", "localonly", or no mode set locally,
+                           may take an optional parameter to run only a specified source service. In case
+                           parameters exist for this one in _service file they are used.
             runall      ra run all services independent of the used mode
             manualrun   mr run all services with mode "manual", may take an optional parameter to run only a
                            specified source service
