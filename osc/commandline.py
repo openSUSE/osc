@@ -9013,21 +9013,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
             f = http_DELETE(url)
         else:
-            while True:
-                try:
-                    url = makeurl(apiurl, ['source', prj, '_pubkey'])
-                    if opts.sslcert:
-                        url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'], 'meta=1')
-                    f = http_GET(url)
-                    break
-                except HTTPError as e:
-                    l = prj.rsplit(':', 1)
-                    # try key from parent project
-                    if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:
-                        print('%s has no key, trying %s' % (prj, l[0]))
-                        prj = l[0]
-                    else:
-                        raise
+            try:
+                # use current api, supporting fallback to higher project and server side scripts
+                query = {}
+                if opts.sslcert:
+                    query['withsslcert'] = 1
+                url = makeurl(apiurl, ['source', prj, '_keyinfo'], query)
+                f = http_GET(url)
+            except HTTPError as e:
+                # old way to do it
+                while True:
+                    try:
+                        url = makeurl(apiurl, ['source', prj, '_pubkey'])
+                        if opts.sslcert:
+                            url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'], 'meta=1')
+                        f = http_GET(url)
+                        break
+                    except HTTPError as e:
+                        l = prj.rsplit(':', 1)
+                        # try key from parent project
+                        if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:
+                            print('%s has no key, trying %s' % (prj, l[0]))
+                            prj = l[0]
+                        else:
+                            raise
 
         while True:
             buf = f.read(16384)
