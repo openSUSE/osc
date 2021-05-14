@@ -121,6 +121,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
             'icecream': '0',
             'ccache': '0',
+            'sccache': '0',
+            'sccache_uri': '',
 
             'buildlog_strip_time': '0',  # strips the build time from the build log
 
@@ -202,7 +204,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-    'status_mtime_heuristic', 'print_web_links', 'ccache', 'build-shell-after-fail']
+    'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
 integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
@@ -286,6 +288,12 @@ apiurl = %(apiurl)s
 
 # Enable ccache in build roots.
 # ccache = 1
+
+# Enable sccache in build roots. Conflicts with ccache.
+# sccache = 1
+
+# Optional remote URI for sccache storage.
+# sccache_uri = redis://127.0.0.1:6379
 
 # extra packages to install when building packages locally (osc build)
 # this corresponds to osc build's -x option and can be overridden with that

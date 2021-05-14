@@ -649,6 +649,16 @@ def main(apiurl, opts, argv):
     if opts.pkg_ccache:
         buildargs.append('--pkg-ccache=%s' % opts.pkg_ccache)
         xp.append('ccache')
+    if opts.sccache_uri or config['sccache_uri'] or opts.sccache or config['sccache']:
+        if opts.pkg_ccache or opts.ccache or config['ccache']:
+            raise oscerr.WrongArgs('Error: sccache and ccache can not be enabled at the same time')
+        if opts.sccache_uri:
+            buildargs.append('--sccache-uri=%s' % opts.sccache_uri)
+        elif config['sccache_uri']:
+            buildargs.append('--sccache-uri=%s' % config['sccache_uri'])
+        else:
+            buildargs.append('--sccache')
+        xp.append('sccache')
     if opts.linksources:
         buildargs.append('--linksources')
     if opts.baselibs:
