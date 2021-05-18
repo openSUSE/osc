@@ -7,6 +7,11 @@
   - allow to run build script as non-root, by setting su-wrapper empty
     => osc is not guessing anymore if user builds are wanted
   - add support for cross arch local build using a sysroot
+  - support slash notation in "osc creq -a <action type> args"
+  - add "--force" option to the "osc add" command (can be used to override
+    the exclude_glob config option)
+  - support the commit of arbitrary sized files
+  - add support for sccache
 
 0.172.0
   - support --lastsucceeded/--last-succeeded in "osc buildlog", "osc
