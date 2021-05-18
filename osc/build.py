@@ -126,11 +126,20 @@ class Buildinfo:
             # snapcraft also supports rpm
             self.pacsuffix = 'deb'
 
+        # The architectures become a bit mad ...
+        # buildarch: The architecture of the build result      (host arch in GNU definition)
+        # hostarch:  The architecture of the build environment (build arch in GNU defintion)
+        # crossarch: Same as hostarch, but indicating that a sysroot with an incompatible architecture exists
         self.buildarch = root.find('arch').text
+        if root.find('crossarch') != None:
+            self.crossarch = root.find('crossarch').text
+        else:
+            self.crossarch = None
         if root.find('hostarch') != None:
             self.hostarch = root.find('hostarch').text
         else:
             self.hostarch = None
+
         if root.find('release') != None:
             self.release = root.find('release').text
         else:
@@ -152,8 +161,15 @@ class Buildinfo:
         for node in root.findall('module'):
             self.modules.append(node.text)
         for node in root.findall('bdep'):
-            p = Pac(node, self.buildarch, self.pacsuffix,
-                    apiurl, localpkgs)
+            if node.find('sysroot'):
+                p = Pac(node, self.buildarch, self.pacsuffix,
+                        apiurl, localpkgs)
+            else:
+                pac_arch = self.crossarch
+                if pac_arch == None:
+                        pac_arch = self.buildarch
+                p = Pac(node, pac_arch, self.pacsuffix,
+                        apiurl, localpkgs)
             if p.project:
                 self.projects[p.project] = 1
             self.deps.append(p)
@@ -195,7 +211,7 @@ class Pac:
         self.mp = {}
         for i in ['binary', 'package',
                   'epoch', 'version', 'release', 'hdrmd5',
-                  'project', 'repository',
+                  'project', 'repository', 'sysroot',
                   'preinstall', 'vminstall', 'runscripts',
                   'noinstall', 'installonly', 'notmeta',
                  ]:
@@ -1278,7 +1294,13 @@ def main(apiurl, opts, argv):
     if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman'or build_type == 'fissile':
         rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
     else:
-        rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps ]
+        rpmlist = []
+        for dep in bi.deps:
+            if dep.sysroot:
+                # packages installed in sysroot subdirectory need to get a prefix for init_buildsystem
+                rpmlist.append('sysroot: %s %s\n' % (dep.name, dep.fullfilename))
+            else:
+                rpmlist.append('%s %s\n' % (dep.name, dep.fullfilename))
     for i in imagebins:
         rpmlist.append('%s preinstallimage\n' % i)
     rpmlist += [ '%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers ]
