@@ -1032,7 +1032,7 @@ class Project:
                         p.commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run, can_branch=can_branch, force=force)
                     elif pac in self.pacs_unvers and not is_package_dir(os.path.join(self.dir, pac)):
                         print('osc: \'%s\' is not under version control' % pac)
-                    elif pac in self.pacs_broken:
+                    elif pac in self.pacs_broken or not os.path.exists(os.path.join(self.dir, pac)):
                         print('osc: \'%s\' package not found' % pac)
                     elif state == None:
                         self.commitExtPackage(pac, msg, todo, verbose=verbose, skip_local_service_run=skip_local_service_run)
