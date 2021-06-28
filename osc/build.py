@@ -1213,7 +1213,7 @@ def main(apiurl, opts, argv):
                    xml.remove(node)
 
             if found_obsrepositories > 0:
-               build_descr = '_service:' + build_descr.rsplit('/', 1)[-1]
+               build_descr = os. getcwd()  + '/_service:osc_obsrepositories:' + build_descr.rsplit('/', 1)[-1]
                tree.write(open(build_descr, 'wb'))
 
         # appliance
