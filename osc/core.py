@@ -1533,8 +1533,8 @@ class Package:
                         'error: file \'%s\' with state \'%s\' is not known by meta' \
                         % (filename, st))
                 todo_send[filename] = f.md5
-            if ((self.ispulled() or self.islinkrepair()) and st != 'A'
-                and filename not in sha256sums):
+            if ((self.ispulled() or self.islinkrepair() or self.isfrozen())
+                and st != 'A' and filename not in sha256sums):
                 # Ignore files with state 'A': if we should consider it,
                 # it would have been in pac.todo, which implies that it is
                 # in sha256sums.
