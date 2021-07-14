@@ -762,7 +762,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     elif delete and (cp.has_option(section, opt) or opt == 'pass'):
         if opt == 'pass':
             creds_mgr = _get_credentials_manager(section, cp)
-            user = _extract_user_compar(cp, section, creds_mgr)
+            user = _extract_user_compat(cp, section, creds_mgr)
             creds_mgr.delete_password(section, user)
         else:
             cp.remove_option(section, opt)
