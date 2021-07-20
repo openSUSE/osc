@@ -4474,6 +4474,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         apiurl = self.get_api_url()
+        args = slash_split(args)
 
         package = None
         if len(args) == 1:
