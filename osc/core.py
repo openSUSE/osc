@@ -1300,7 +1300,7 @@ class Package:
             self.to_be_added.remove(n)
             self.write_addlist()
         elif state == 'C':
-            # don't remove "merge files" (*.r, *.mine...)
+            # don't remove "merge files" (*.mine, *.new...)
             # that's why we don't use clear_from_conflictlist
             self.in_conflict.remove(n)
             self.write_conflictlist()
@@ -1336,15 +1336,10 @@ class Package:
             filename = os.path.join(self.dir, n)
             storefilename = os.path.join(self.storedir, n)
             myfilename = os.path.join(self.dir, n + '.mine')
-            if self.islinkrepair() or self.ispulled():
-                upfilename = os.path.join(self.dir, n + '.new')
-            else:
-                upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+            upfilename = os.path.join(self.dir, n + '.new')
 
             try:
                 os.unlink(myfilename)
-                # the working copy may be updated, so the .r* ending may be obsolete...
-                # then we don't care
                 os.unlink(upfilename)
                 if self.islinkrepair() or self.ispulled():
                     os.unlink(os.path.join(self.dir, n + '.old'))
@@ -1683,7 +1678,7 @@ class Package:
         filename = os.path.join(self.dir, n)
         storefilename = os.path.join(self.storedir, n)
         myfilename = os.path.join(self.dir, n + '.mine')
-        upfilename = os.path.join(self.dir, n + '.r' + self.rev)
+        upfilename = os.path.join(self.dir, n + '.new')
         origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
         origfile = os.path.join(self.storedir, '_in_update', n)
         shutil.copyfile(filename, origfile_tmp)
