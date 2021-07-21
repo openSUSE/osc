@@ -9207,6 +9207,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) != 1:
                 raise oscerr.WrongArgs('--change-password only needs the apiurl')
             args = [args[0], 'pass']
+        elif opts.select_password_store:
+            if len(args) != 1:
+                raise oscerr.WrongArgs('--select-password-store only needs the apiurl')
+            args = [args[0], 'pass']
+
         if len(args) < 2 and not (opts.dump or opts.dump_full):
             raise oscerr.WrongArgs('Too few arguments')
         elif opts.dump or opts.dump_full:

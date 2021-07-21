@@ -726,6 +726,13 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     if section == 'general' and not opt in general_opts or \
        section != 'general' and not opt in api_host_options:
         raise oscerr.ConfigError('unknown config option \'%s\'' % opt, config['conffile'])
+
+    if not val and not delete and opt == 'pass' and creds_mgr_descr is not None:
+        # change password store
+        creds_mgr = _get_credentials_manager(section, cp)
+        user = _extract_user_compat(cp, section, creds_mgr)
+        val = creds_mgr.get_password(section, user)
+
     run = False
     if val:
         if opt == 'pass':
@@ -755,7 +762,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     elif delete and (cp.has_option(section, opt) or opt == 'pass'):
         if opt == 'pass':
             creds_mgr = _get_credentials_manager(section, cp)
-            user = _extract_user_compar(cp, section, creds_mgr)
+            user = _extract_user_compat(cp, section, creds_mgr)
             creds_mgr.delete_password(section, user)
         else:
             cp.remove_option(section, opt)
