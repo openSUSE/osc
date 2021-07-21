@@ -1,5 +1,12 @@
 0.174.0
-  -
+  - fix password deletion via "osc config -d <apiurl> pass"
+  - support changing the password store via "osc config <apiurl>
+    --select-password-store")
+  - support slash syntax in osc browse ("osc browse prj/pkg" is equivalent to
+    "osc browse prj pkg")
+  - fix the commit of a frozen package wc
+  - fix local product builds using obsrepositories:/ directives
+  - print a meaningful message when trying to a commit a non-existent package
 
 0.173.0
   - add showlinked command to show all references of packages linking to a given one
