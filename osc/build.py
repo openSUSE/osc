@@ -790,6 +790,9 @@ def main(apiurl, opts, argv):
     if opts.noinit:
         buildargs.append('--noinit')
 
+    if not is_package_dir('.'):
+        opts.noservice = True
+
     # check for source services
     if not opts.offline and not opts.noservice:
         p = osc.core.Package(os.curdir)
