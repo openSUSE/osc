@@ -7960,10 +7960,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     result.append(s)
 
                 if opts.verbose:
-                    title = node.findtext('title').strip()
-                    if len(title) > 60:
-                        title = title[:61] + '...'
-                    result.append(title)
+                    if opts.binary:
+                        result.append(node.get('repository') or '-')
+                        result.append(node.get('arch') or '-')
+                        result.append(node.get('version') or '-')
+                        result.append(node.get('release') or '-')
+                    else:
+                        title = node.findtext('title').strip()
+                        if len(title) > 60:
+                            title = title[:61] + '...'
+                        result.append(title)
 
                 if opts.repos_baseurl:
                     # FIXME: no hardcoded URL of instance
@@ -7995,7 +8001,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 headline.append('Rev')
                 headline.append('Srcmd5')
             if opts.verbose:
-                headline.append('# Title')
+                if opts.binary:
+                    headline.extend(['# Repository', '# Arch', '# Version',
+                                     '# Release'])
+                else:
+                    headline.append('# Title')
             if opts.repos_baseurl:
                 headline.append('# URL')
             if opts.binary:
