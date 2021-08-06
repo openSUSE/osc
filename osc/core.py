@@ -24,6 +24,7 @@ import errno
 import shlex
 import hashlib
 import platform
+from .util import cpio
 
 
 try:
@@ -6200,7 +6201,7 @@ def get_dependson(apiurl, project, repository, arch, packages=None, reverse=None
     f = http_GET(u)
     return f.read()
 
-def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None, debug=None):
+def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None, debug=None, servicefile=None):
     query = []
     if addlist:
         for i in addlist:
@@ -6210,8 +6211,18 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
 
     u = makeurl(apiurl, ['build', prj, repository, arch, package, '_buildinfo'], query=query)
 
+    post_body = specfile
+    if servicefile:
+        if specfile is None:
+            e.osc_msg = 'error - application need to send also the build description file when sending a _service file'
+            raise
+        cpio = cpio.CpioWrite()
+        cpio.add(b'buildinfo.spec', specfile)
+        cpio.add(b'_service', servicefile)
+        post_body = cpio.get()
+
     if specfile:
-        f = http_POST(u, data=specfile)
+        f = http_POST(u, data=post_body)
     else:
         f = http_GET(u)
     return f.read()
