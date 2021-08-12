@@ -94,6 +94,19 @@ def _get_processors():
     except ValueError as e:
         return 1
 
+
+def _identify_osccookiejar():
+    if os.path.isfile(os.path.join(os.path.expanduser("~"), '.osc_cookiejar')):
+        # For backwards compatibility, use the old location if it exists
+        return '~/.osc_cookiejar'
+
+    if os.getenv('XDG_STATE_HOME', '') != '':
+        osc_state_dir = os.path.join(os.getenv('XDG_STATE_HOME'), 'osc')
+    else:
+        osc_state_dir = os.path.join(os.path.expanduser("~"), '.local', 'state', 'osc')
+
+    return os.path.join(osc_state_dir, 'cookiejar')
+
 DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'user': None,
             'pass': None,
@@ -136,7 +149,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'post_mortem': '0',
             'use_keyring': '0',
             'gnome_keyring': '0',
-            'cookiejar': '~/.osc_cookiejar',
+            'cookiejar': _identify_osccookiejar(),
             # fallback for osc build option --no-verify
             'no_verify': '0',
             # enable project tracking by default
@@ -638,6 +651,8 @@ def init_basicauth(config, config_mtime):
         AbstractHTTPHandler.__init__ = urllib2_debug_init
 
     cookie_file = os.path.expanduser(config['cookiejar'])
+    if not os.path.exists(os.path.dirname(cookie_file)):
+        os.makedirs(os.path.dirname(cookie_file), mode=0o700)
     global cookiejar
     cookiejar = LWPCookieJar(cookie_file)
     try:
