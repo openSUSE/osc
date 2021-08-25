@@ -2653,7 +2653,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     sr_actions = rq.get_actions('submit')
                     for action in sr_actions:
                         u = makeurl(apiurl, ['/search/package'], {
-                              'match' : "([devel/[@project='%s' and @package='%s']])" % (action.tgt_project, action.tgt_package)
+                              'match' : "([devel[@project='%s' and @package='%s']])" % (action.tgt_project, action.tgt_package)
                               })
                         f = http_GET(u)
                         root = ET.parse(f).getroot()
@@ -7627,7 +7627,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if list_patchinfos:
             u = makeurl(apiurl, ['/search/package'], {
-                'match' : "([kind='patchinfo' and issue/[@state='OPEN' and owner/@login='%s']])" % user
+                'match' : "([kind='patchinfo' and issue[@state='OPEN' and owner/@login='%s']])" % user
                  })
             f = http_GET(u)
             root = ET.parse(f).getroot()
