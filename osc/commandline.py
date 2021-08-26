@@ -771,9 +771,11 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Delete a token')
     @cmdln.option('-o', '--operation', metavar='OPERATION',
-                        help='Default is "runservice", but "branch", "release" or "rebuild" can also be used')
+                        help='Default is "runservice", but "branch", "release", "rebuild", or "workflow" can also be used')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
+    @cmdln.option('', '--scm-token', metavar ='SCM_TOKEN',
+                        help='The scm\'s access token (only in combination with a --operation=workflow option)')
     def do_token(self, subcmd, opts, *args):
         """${cmd_name}: Show and manage authentication token
 
@@ -790,14 +792,23 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
+        if opts.scm_token and opts.operation != 'workflow':
+            msg = 'The --scm-token option requires a --operation=workflow option'
+            raise oscerr.WrongOptions(msg)
+
         apiurl = self.get_api_url()
         url_path = ['person', conf.get_apiurl_usr(apiurl), 'token']
 
         if opts.create:
+            if opts.operation == 'workflow' and not opts.scm_token:
+                msg = 'The --operation=workflow option requires a --scm-token=<token> option'
+                raise oscerr.WrongOptions(msg)
             print("Create a new token")
             query = {'cmd': 'create'}
             if opts.operation:
                 query['operation'] = opts.operation
+            if opts.scm_token:
+                query['scm_token'] = opts.scm_token
             if len(args) > 1:
                 query['project'] = args[0]
                 query['package'] = args[1]
