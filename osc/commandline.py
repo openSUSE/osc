@@ -791,17 +791,18 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
 
         apiurl = self.get_api_url()
-        url = apiurl + "/person/" + conf.get_apiurl_usr(apiurl) + "/token"
+        url_path = ['person', conf.get_apiurl_usr(apiurl), 'token']
 
         if opts.create:
             print("Create a new token")
-            url += "?cmd=create"
+            query = {'cmd': 'create'}
             if opts.operation:
-                url += "&operation=" + opts.operation
+                query['operation'] = opts.operation
             if len(args) > 1:
-                url += "&project=" + args[0]
-                url += "&package=" + args[1]
+                query['project'] = args[0]
+                query['package'] = args[1]
 
+            url = makeurl(apiurl, url_path, query)
             f = http_POST(url)
             while True:
                 buf = f.read(16384)
@@ -811,15 +812,17 @@ class Osc(cmdln.Cmdln):
 
         elif opts.delete:
             print("Delete token")
-            url += "/" + opts.delete
+            url_path.append(opts.delete)
+            url = makeurl(apiurl, url_path)
             http_DELETE(url)
         elif opts.trigger:
             print("Trigger token")
             operation = opts.operation or "runservice"
-            url = apiurl + "/trigger/" + operation
+            query = {}
             if len(args) > 1:
-                url += "?project=" + args[0]
-                url += "&package=" + args[1]
+                query['project'] = args[0]
+                query['package'] = args[1]
+            url = makeurl(apiurl, ['trigger', operation], query)
             req = URLRequest(url)
             req.get_method = lambda: "POST"
             req.add_header('Content-Type', 'application/octet-stream')
@@ -830,6 +833,7 @@ class Osc(cmdln.Cmdln):
             if args and args[0] in ['create', 'delete', 'trigger']:
                 raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
             # just list token
+            url = makeurl(apiurl, url_path)
             for data in streamfile(url, http_GET):
                 sys.stdout.write(decode_it(data))
 
