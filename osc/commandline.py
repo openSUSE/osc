@@ -771,9 +771,11 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Delete a token')
     @cmdln.option('-o', '--operation', metavar='OPERATION',
-                        help='Default is "runservice", but "branch", "release" or "rebuild" can also be used')
+                        help='Default is "runservice", but "branch", "release", "rebuild", or "workflow" can also be used')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
+    @cmdln.option('', '--scm-token', metavar ='SCM_TOKEN',
+                        help='The scm\'s access token (only in combination with a --operation=workflow option)')
     def do_token(self, subcmd, opts, *args):
         """${cmd_name}: Show and manage authentication token
 
@@ -790,18 +792,28 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
+        if opts.scm_token and opts.operation != 'workflow':
+            msg = 'The --scm-token option requires a --operation=workflow option'
+            raise oscerr.WrongOptions(msg)
+
         apiurl = self.get_api_url()
-        url = apiurl + "/person/" + conf.get_apiurl_usr(apiurl) + "/token"
+        url_path = ['person', conf.get_apiurl_usr(apiurl), 'token']
 
         if opts.create:
+            if opts.operation == 'workflow' and not opts.scm_token:
+                msg = 'The --operation=workflow option requires a --scm-token=<token> option'
+                raise oscerr.WrongOptions(msg)
             print("Create a new token")
-            url += "?cmd=create"
+            query = {'cmd': 'create'}
             if opts.operation:
-                url += "&operation=" + opts.operation
+                query['operation'] = opts.operation
+            if opts.scm_token:
+                query['scm_token'] = opts.scm_token
             if len(args) > 1:
-                url += "&project=" + args[0]
-                url += "&package=" + args[1]
+                query['project'] = args[0]
+                query['package'] = args[1]
 
+            url = makeurl(apiurl, url_path, query)
             f = http_POST(url)
             while True:
                 buf = f.read(16384)
@@ -811,15 +823,17 @@ class Osc(cmdln.Cmdln):
 
         elif opts.delete:
             print("Delete token")
-            url += "/" + opts.delete
+            url_path.append(opts.delete)
+            url = makeurl(apiurl, url_path)
             http_DELETE(url)
         elif opts.trigger:
             print("Trigger token")
             operation = opts.operation or "runservice"
-            url = apiurl + "/trigger/" + operation
+            query = {}
             if len(args) > 1:
-                url += "?project=" + args[0]
-                url += "&package=" + args[1]
+                query['project'] = args[0]
+                query['package'] = args[1]
+            url = makeurl(apiurl, ['trigger', operation], query)
             req = URLRequest(url)
             req.get_method = lambda: "POST"
             req.add_header('Content-Type', 'application/octet-stream')
@@ -830,6 +844,7 @@ class Osc(cmdln.Cmdln):
             if args and args[0] in ['create', 'delete', 'trigger']:
                 raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
             # just list token
+            url = makeurl(apiurl, url_path)
             for data in streamfile(url, http_GET):
                 sys.stdout.write(decode_it(data))
 
