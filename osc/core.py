@@ -2162,8 +2162,11 @@ rev: %s
             url = ET.SubElement(root, 'url')
         url.text = self.url
 
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, '_meta'])
-        mf = metafile(u, ET.tostring(root, encoding=ET_ENCODING))
+        delegate = lambda force=False: make_meta_url('pkg',
+                                                     (self.prjname, self.name),
+                                                     self.apiurl, force=force)
+        url_factory = metafile._URLFactory(delegate)
+        mf = metafile(url_factory, ET.tostring(root, encoding=ET_ENCODING))
 
         if not force:
             print('*' * 36, 'old', '*' * 36)
@@ -3674,10 +3677,29 @@ def show_configuration(apiurl):
 
 class metafile:
     """metafile that can be manipulated and is stored back after manipulation."""
+
+    class _URLFactory:
+        # private class which might go away again...
+        def __init__(self, delegate, force_supported=True):
+            self._delegate = delegate 
+            self._force_supported = force_supported
+
+        def is_force_supported(self):
+            return self._force_supported
+
+        def __call__(self, **kwargs):
+            return self._delegate(**kwargs)
+
     def __init__(self, url, input, change_is_required=False, file_ext='.xml'):
         import tempfile
 
-        self.url = url
+        if isinstance(url, self._URLFactory):
+            self._url_factory = url
+        else:
+            delegate = lambda **kwargs: url
+            # force is not supported for a raw url
+            self._url_factory = self._URLFactory(delegate, False)
+        self.url = self._url_factory()
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix = 'osc_metafile.', suffix = file_ext)
 
@@ -3711,8 +3733,11 @@ class metafile:
 
     def edit(self):
         try:
+            try_force = False
             while True:
-                run_editor(self.filename)
+                if not try_force:
+                    run_editor(self.filename)
+                try_force = False
                 try:
                     self.sync()
                     break
@@ -3728,8 +3753,18 @@ class metafile:
                     summary = root.find('summary')
                     if summary is not None:
                         print(summary.text, file=sys.stderr)
-                    ri = raw_input('Try again? ([y/N]): ')
-                    if ri not in ['y', 'Y']:
+                    if self._url_factory.is_force_supported():
+                        prompt = 'Try again? ([y/N/f]): '
+                    else:
+                        prompt = 'Try again? ([y/N): '
+
+                    ri = raw_input(prompt)
+                    if ri in ('y', 'Y'):
+                        self.url = self._url_factory()
+                    elif ri in ('f', 'F') and self._url_factory.is_force_supported():
+                        self.url = self._url_factory(force='1')
+                        try_force = True
+                    else:
                         break
         finally:
             self.discard()
@@ -3866,8 +3901,12 @@ def edit_meta(metatype,
             print('  osc meta pkg %s %s -e' % (unquote(project), package))
             return
 
-    url = make_meta_url(metatype, path_args, apiurl, force, remove_linking_repositories, msg)
-    f = metafile(url, data, change_is_required, metatypes[metatype]['file_ext'])
+    delegate = lambda force=force: make_meta_url(metatype, path_args, apiurl,
+                                                 force,
+                                                 remove_linking_repositories,
+                                                 msg)
+    url_factory = metafile._URLFactory(delegate)
+    f = metafile(url_factory, data, change_is_required, metatypes[metatype]['file_ext'])
 
     if edit:
         f.edit()
