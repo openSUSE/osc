@@ -221,7 +221,8 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
     'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
 integer_opts = ['build-jobs']
 
-api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj']
+api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
+    'downloadurl']
 
 new_conf_template = """
 [general]
@@ -1023,6 +1024,16 @@ def get_config(override_conffile=None,
             api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
         else:
             api_host_options[apiurl]['trusted_prj'] = []
+
+        # ⚠️  This option is experimental and may be removed at any time in the future!
+        # This allows overriding the download url for an OBS instance to specify a closer mirror
+        # or proxy system, which can greatly improve download performance, latency and more.
+        # For example, this can use https://github.com/Firstyear/opensuse-proxy-cache in a local
+        # geo to improve performance.
+        if cp.has_option(url, 'downloadurl'):
+            api_host_options[apiurl]['downloadurl'] = cp.get(url, 'downloadurl')
+        else:
+            api_host_options[apiurl]['downloadurl'] = None
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
