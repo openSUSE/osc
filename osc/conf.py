@@ -87,11 +87,11 @@ except:
 def _get_processors():
     """
     get number of processors (online) based on
-    SC_NPROCESSORS_ONLN (returns 1 if config name does not exist).
+    SC_NPROCESSORS_ONLN (returns 1 if config name/os.sysconf does not exist).
     """
     try:
         return os.sysconf('SC_NPROCESSORS_ONLN')
-    except ValueError as e:
+    except (AttributeError, ValueError):
         return 1
 
 
