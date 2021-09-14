@@ -540,7 +540,7 @@ class Linkinfo:
 
     def islink(self):
         """returns True if the linkinfo is not empty, otherwise False"""
-        if self.xsrcmd5 or self.lsrcmd5:
+        if self.xsrcmd5 or self.lsrcmd5 or self.error is not None:
             return True
         return False
 

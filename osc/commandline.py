@@ -2855,7 +2855,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             li = Linkinfo()
             li.read(root.find('linkinfo'))
             if li.islink() and li.haserror():
-                raise oscerr.LinkExpandError(project, package, li.error)
+                try:
+                    show_package_meta(apiurl, li.project, li.package)
+                except HTTPError as e:
+                    if e.code == 404:
+                        print("Link target got removed, dropping link. WARNING: latest submissions in link target might be lost!")
+                        delete_files(apiurl, project, package, ['_link'])
+                    else:
+                        raise oscerr.LinkExpandError(project, package, li.error)
             elif not li.islink():
                 print('package \'%s/%s\' is no link' % (project, package), file=sys.stderr)
             else:
