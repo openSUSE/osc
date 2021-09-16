@@ -36,6 +36,7 @@ class Fetcher:
             self.progress_obj = create_text_meter(use_pb_fallback=False)
 
         self.cachedir = cachedir
+        # generic download URL lists
         self.urllist = urllist
         self.modules = modules
         self.http_debug = http_debug
@@ -193,17 +194,26 @@ class Fetcher:
                 print(e, file=sys.stderr)
                 sys.exit(1)
 
+    def _build_urllist(self, buildinfo, pac):
+        urllist = self.urllist
+        key = '%s/%s' % (pac.project, pac.repository)
+        project_repo_url = buildinfo.urls.get(key)
+        if project_repo_url is not None:
+            urllist = [project_repo_url]
+        return urllist
+
     def run(self, buildinfo):
         cached = 0
         all = len(buildinfo.deps)
         for i in buildinfo.deps:
-            i.makeurls(self.cachedir, self.urllist)
+            urllist = self._build_urllist(buildinfo, i)
+            i.makeurls(self.cachedir, urllist)
             # find container extension by looking in the cache
             if i.name.startswith('container:') and i.fullfilename.endswith('.tar.xz'):
                 for ext in ['.tar.xz', '.tar.gz', '.tar']:
                     if os.path.exists(i.fullfilename[:-7] + ext):
                         i.canonname = i.canonname[:-7] + ext
-                        i.makeurls(self.cachedir, self.urllist)
+                        i.makeurls(self.cachedir, urllist)
 
             if os.path.exists(i.fullfilename):
                 cached += 1
@@ -216,6 +226,7 @@ class Fetcher:
                     if not hdrmd5 or hdrmd5 != i.hdrmd5:
                         os.unlink(i.fullfilename)
                         cached -= 1
+
         miss = 0
         needed = all - cached
         if all:
@@ -223,7 +234,6 @@ class Fetcher:
         print("%.1f%% cache miss. %d/%d dependencies cached.\n" % (miss, cached, all))
         done = 1
         for i in buildinfo.deps:
-            i.makeurls(self.cachedir, self.urllist)
             if not os.path.exists(i.fullfilename):
                 if self.offline:
                     raise oscerr.OscIOError(None,
