@@ -139,7 +139,11 @@ def run(prg, argv=None):
     except HTTPException as e:
         print(e, file=sys.stderr)
     except URLError as e:
-        print('Failed to reach a server:\n', e.reason, file=sys.stderr)
+        msg = 'Failed to reach a server'
+        if hasattr(e, '_osc_host_port'):
+            msg += ' (%s)' % e._osc_host_port
+        msg += ':\n'
+        print(msg, e.reason, file=sys.stderr)
     except IOError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:

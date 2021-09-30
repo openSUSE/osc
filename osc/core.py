@@ -33,7 +33,7 @@ except ImportError:
 
 try:
     from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
-    from urllib.error import HTTPError
+    from urllib.error import HTTPError, URLError
     from urllib.request import pathname2url, install_opener, urlopen
     from urllib.request import Request as URLRequest
     from io import StringIO
@@ -42,7 +42,7 @@ except ImportError:
     #python 2.x
     from urlparse import urlsplit, urlunsplit, urlparse
     from urllib import pathname2url, quote_plus, urlencode, unquote
-    from urllib2 import HTTPError, install_opener, urlopen
+    from urllib2 import HTTPError, URLError, install_opener, urlopen
     from urllib2 import Request as URLRequest
     from cStringIO import StringIO
     from httplib import IncompleteRead
@@ -3402,6 +3402,9 @@ def http_request(method, url, headers={}, data=None, file=None):
             req.add_header('Content-Length', str(content_length))
         try:
             return urlopen(req)
+        except URLError as e:
+            e._osc_host_port = req.host
+            raise
         finally:
             if hasattr(conf.cookiejar, 'save'):
                 conf.cookiejar.save(ignore_discard=True)
