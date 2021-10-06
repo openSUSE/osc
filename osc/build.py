@@ -157,6 +157,7 @@ class Buildinfo:
         self.keys = []
         self.prjkeys = []
         self.pathes = []
+        self.urls = {}
         self.modules = []
         for node in root.findall('module'):
             self.modules.append(node.text)
@@ -174,7 +175,12 @@ class Buildinfo:
                 self.projects[p.project] = 1
             self.deps.append(p)
         for node in root.findall('path'):
+            # old simple list for compatibility
+            # XXX: really old? This is currently used for kiwi builds
             self.pathes.append(node.get('project')+"/"+node.get('repository'))
+            # a hash providing the matching URL for specific repos for newer OBS instances
+            if node.get('url'):
+                self.urls[node.get('project')+"/"+node.get('repository')] = node.get('url') + '/%(arch)s/%(filename)s'
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
@@ -1024,7 +1030,9 @@ def main(apiurl, opts, argv):
             else:
                 urllist = config['urllist']
 
-        # OBS 1.5 and before has no downloadurl defined in buildinfo
+        # OBS 1.5 and before has no downloadurl defined in buildinfo, but it is obsolete again meanwhile.
+        # we have now specific download repositories per repository. Could be removed IMHO, since the api fallback
+        # is there. In worst case it could fetch the wrong rpm...
         if bi.downloadurl:
             urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
     if opts.disable_cpio_bulk_download:
