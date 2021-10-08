@@ -3335,6 +3335,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 0 and (is_project_dir(os.curdir) or is_package_dir(os.curdir)):
             source_project = store_read_project(os.curdir)
+            if is_package_dir(os.curdir):
+                source_packages = [store_read_package(os.curdir)]
         elif len(args) == 0:
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
