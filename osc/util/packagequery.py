@@ -87,7 +87,7 @@ class PackageQuery:
         f = open(filename, 'rb')
         magic = f.read(7)
         f.seek(0)
-        if magic[:4] == '\xed\xab\xee\xdb':
+        if magic[:4] == b'\xed\xab\xee\xdb':
             from . import rpmquery
             f.close()
             return rpmquery.RpmQuery.queryhdrmd5(filename)
