@@ -217,6 +217,8 @@ class Fetcher:
 
             if os.path.exists(i.fullfilename):
                 cached += 1
+                if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
+                    continue
                 if i.hdrmd5:
                     from .util import packagequery
                     if i.name.startswith('container:'):
