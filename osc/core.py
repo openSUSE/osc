@@ -6600,6 +6600,8 @@ def store_write_string(dir, file, string, subdir=''):
             string = decode_it(string)
         f.write(string)
         f.close()
+        if sys.platform[:3] == 'win' and os.path.exists(fname):
+            os.remove(fname)
         os.rename(fname + '.new', fname)
     except:
         if os.path.exists(fname + '.new'):
