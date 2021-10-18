@@ -256,6 +256,9 @@ class OscTestCase(unittest.TestCase):
         else:
             start_delim = "\n" + (" 8< ".join(["-----"] * 8)) + "\n"
             end_delim   = "\n" + (" >8 ".join(["-----"] * 8)) + "\n\n"
+            if os.linesep == '\r\n':
+                got = got.replace('\r\n', '\n')
+                exp = exp.replace('\r\n', '\n')
             self.assertEqual(got, exp,
                              "got:"      + start_delim + got + end_delim +
                              "expected:" + start_delim + exp + end_delim)
