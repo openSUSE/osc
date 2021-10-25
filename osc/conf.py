@@ -38,6 +38,7 @@ The configuration dictionary could look like this:
 
 import bz2
 import base64
+import errno
 import os
 import re
 import sys
@@ -896,7 +897,15 @@ def get_config(override_conffile=None,
     # okay, we made sure that oscrc exists
 
     # make sure it is not world readable, it may contain a password.
-    os.chmod(conffile, 0o600)
+    conffile_stat = os.stat(conffile)
+    if conffile_stat.st_mode != 0o600:
+        try:
+            os.chmod(conffile, 0o600)
+        except OSError as e:
+            if e.errno == errno.EROFS:
+                print('Warning: file \'%s\' may have an insecure mode.', conffile)
+            else:
+                raise e
 
     cp = get_configParser(conffile)
 
