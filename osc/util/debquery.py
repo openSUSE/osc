@@ -16,6 +16,13 @@ try:
 except ImportError:
     HAVE_LZMA = False
 
+HAVE_ZSTD = True
+try:
+    # Note: zstd is not supporting stream compression types
+    import zstandard
+except ImportError:
+    HAVE_ZSTD = False
+
 
 if (not hasattr(itertools, 'zip_longest')
     and hasattr(itertools, 'izip_longest')):
@@ -52,13 +59,23 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             tar = tarfile.open(name='control.tar.gz', fileobj=control)
         else:
             control = arfile.get_file(b'control.tar.xz')
+            if control:
+               if not HAVE_LZMA:
+                   raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
+               decompressed = lzma.decompress(control.read())
+               tar = tarfile.open(name="control.tar.xz",
+                                  fileobj=BytesIO(decompressed))
+            else:
+                control = arfile.get_file(b'control.tar.zst')
+                if control:
+                    if not HAVE_ZSTD:
+                        raise DebError(self.__path, 'can\'t open control.tar.zst without python-zstandard')
+                    with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
+                        decompressed = reader.read()
+                    tar = tarfile.open(name="control.tar.zst",
+                                       fileobj=BytesIO(decompressed))
             if control is None:
                 raise DebError(self.__path, 'missing control.tar')
-            if not HAVE_LZMA:
-                raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
-            decompressed = lzma.decompress(control.read())
-            tar = tarfile.open(name="control.tar.xz",
-                               fileobj=BytesIO(decompressed))
         try:
             name = './control'
             # workaround for python2.4's tarfile module
