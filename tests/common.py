@@ -182,6 +182,7 @@ def addExpectedRequest(method, url, **kwargs):
 
 class OscTestCase(unittest.TestCase):
     def setUp(self, copytree=True):
+        os.chdir(os.path.dirname(__file__))
         oscrc = os.path.join(self._get_fixtures_dir(), 'oscrc')
         osc.core.conf.get_config(override_conffile=oscrc,
                                  override_no_keyring=True, override_no_gnome_keyring=True)
