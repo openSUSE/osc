@@ -6259,6 +6259,15 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
     return f.read()
 
 
+def get_repr_buildconfig(apiurl, prj, pkg, repository, arch):
+    u = makeurl(apiurl, ['build', prj, repository, arch, pkg, '_buildenv'])
+    f = http_GET(u)
+
+    root = ET.parse(f).getroot()
+    for config in root.findall('config'):
+       return config.text
+
+
 def get_buildconfig(apiurl, prj, repository, path=None):
     query = []
     if path:

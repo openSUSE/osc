@@ -20,7 +20,7 @@ except ImportError:
 
 from tempfile import NamedTemporaryFile, mkdtemp
 from osc.fetch import *
-from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
+from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst, get_repr_buildconfig
 from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from osc.util import rpmquery, debquery, archquery
 from osc.util.helper import decode_it
@@ -907,8 +907,12 @@ def main(apiurl, opts, argv):
             if not os.path.isfile(bc_filename):
                 raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
         else:
-            print('Getting buildconfig from server and store to %s' % bc_filename)
-            bc = get_buildconfig(apiurl, prj, repo)
+            if opts.reproduce:
+                print('Getting buildconfig from buildenv for original package and store to %s' % bc_filename)
+                bc = get_repr_buildconfig(apiurl, prj, pac, repo, arch)
+            else:
+                print('Getting buildconfig from server and store to %s' % bc_filename)
+                bc = get_buildconfig(apiurl, prj, repo)
             if not bc_file:
                 bc_file = open(bc_filename, 'w')
             bc_file.write(decode_it(bc))

@@ -6450,6 +6450,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Start with cached prjconf and packages without contacting the api server')
     @cmdln.option('-l', '--preload', action='store_true',
                   help='Preload all files into the cache for offline operation')
+    @cmdln.option('-r', '--reproduce', action='store_true',
+                  help='Use buildconfig from buildenv of package to reproduce the original build')
     @cmdln.option('--no-changelog', action='store_true',
                   help='don\'t update the package changelog from a changes file')
     @cmdln.option('--rsync-src', metavar='RSYNCSRCPATH', dest='rsyncsrc',
