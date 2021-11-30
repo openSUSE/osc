@@ -214,7 +214,7 @@ class Osc(cmdln.Cmdln):
             return help
         return cmdln.Cmdln._help_preprocess_cmd_usage(self, help, cmdname)
 
-    def do_init(self, subcmd, opts, project, package=None):
+    def do_init(self, subcmd, opts, project, package=None, scm_url=None):
         """${cmd_name}: Initialize a directory as working copy
 
         Initialize an existing directory to be a working copy of an
@@ -233,10 +233,24 @@ class Osc(cmdln.Cmdln):
         usage:
             osc init PRJ
             osc init PRJ PAC
+            osc init PRJ PAC SCM_URL
         ${cmd_option_list}
         """
 
         apiurl = self.get_api_url()
+
+        if not scm_url:
+            scm_url = show_scmsync(apiurl, project, package)
+
+        if scm_url:
+            if package:
+                Package.init_package(apiurl, project, package, os.curdir, scm_url=scm_url)
+                print('Initializing %s (Project: %s, Package: %s) as git repository' % (os.curdir, project, package))
+            else:
+                Project.init_project(apiurl, os.curdir, project, conf.config['do_package_tracking'],
+                                     getPackageList=False, scm_url=scm_url)
+                print('Initializing %s (Project: %s) as scm repository' % (os.curdir, project))
+            return
 
         if not package:
             Project.init_project(apiurl, os.curdir, project, conf.config['do_package_tracking'],
@@ -702,6 +716,20 @@ class Osc(cmdln.Cmdln):
             print("%s %s" % (devprj, devpkg))
         else:
             print(devprj)
+
+    @cmdln.alias('ca')
+    def do_cleanassets(self, subcmd, opts, *args):
+        """${cmd_name}: Clean all previous downloaded assets.
+
+        This is useful to prepare a new git commit.
+        """
+        clean_assets(".")
+
+    @cmdln.alias('da')
+    def do_downloadassets(self, subcmd, opts, *args):
+        """${cmd_name}: Download all assets referenced in the build descriptions
+        """
+        download_assets(".")
 
     @cmdln.alias('sdp')
     @cmdln.option('-u', '--unset', action='store_true',
@@ -4677,8 +4705,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # check if the project does exist (show_project_meta will throw an exception)
             show_project_meta(apiurl, project)
 
-            Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'])
+            scm_url = show_scmsync(apiurl, project)
+            if scm_url != None:
+                if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
+                    raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
+                os.putenv("OSC_VERSION", get_osc_version())
+                run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', prj_dir, '--url', scm_url])
+
+            Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'], scm_url=scm_url)
             print(statfrmt('A', prj_dir))
+
+            if scm_url != None:
+                return
 
             # all packages
             for package in meta_get_packagelist(apiurl, project):
@@ -6671,10 +6709,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = None
         try:
             project = store_read_project(os.curdir)
+            if project == opts.alternative_project:
+                opts.alternative_project = None
         except oscerr.NoWorkingCopy:
+            # This may be a project managed entirely via git?
+            if os.path.isdir(os.curdir + "/../.osc") and os.path.isdir(os.curdir + "/../.git"):
+                project = store_read_project(os.curdir + "/..")
+                opts.alternative_project = project
             pass
-        if project == opts.alternative_project:
-            opts.alternative_project = None
 
         if len(args) == 0 and is_package_dir(os.curdir):
             # build env not specified, just read from last build attempt

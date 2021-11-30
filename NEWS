@@ -1,5 +1,8 @@
 0.178.0
-  - 
+  - EXPERIMENTAL: git repository handling
+    * init command is working inside of a git repository
+    * downloadassets command fetches references assets from build description
+    * checkout is cloning from git
 
 0.177.0
   - switch to python3 in osc-wrapper and make python3 explicit
