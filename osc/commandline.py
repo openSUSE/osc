@@ -131,7 +131,7 @@ class Osc(cmdln.Cmdln):
         return optparser
 
 
-    def postoptparse(self, try_again = True):
+    def postoptparse(self):
         """merge commandline options into the config"""
         try:
             conf.get_config(override_conffile = self.options.conffile,
@@ -152,19 +152,16 @@ class Osc(cmdln.Cmdln):
                 apiurl = self.options.apiurl
             conf.interactive_config_setup(e.file, apiurl)
             print('done', file=sys.stderr)
-            if try_again:
-                self.postoptparse(try_again = False)
+            self.postoptparse()
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
             conf.interactive_config_setup(e.file, e.url, initial=False)
-            if try_again:
-                self.postoptparse(try_again = False)
+            self.postoptparse()
         except oscerr.ConfigMissingCredentialsError as e:
             print(e.msg)
             print('Please enter new credentials.')
             conf.interactive_config_setup(e.file, e.url, initial=False)
-            if try_again:
-                self.postoptparse(try_again = False)
+            self.postoptparse()
 
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
