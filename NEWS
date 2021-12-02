@@ -1,5 +1,17 @@
 0.175.0
-  -
+  - do not crash when running "osc search --binary --verbose foo"
+  - don't run source services when building outside of an OSC package working copy
+  - fix XDG_CONFIG_HOME
+  - offer a force ("f") choice in metafile.edit's error handling code path
+  - fix XPath used in search requests
+  - add support for creating a workflow token via "osc token"
+  - handle missing os.sysconf more gracefully
+  - detachbranch: remove _link when link target got removed
+  - improve error message in case of an URLError
+  - fix downloading from mirrors
+  - avoid sending entire projects on "osc mr"
+  - fix hdmrd5 check of local cached files
+  - improve logic for conffile mode handling
 
 0.174.0
   - fix password deletion via "osc config -d <apiurl> pass"
