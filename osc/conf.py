@@ -695,8 +695,20 @@ def write_config(fname, cp):
     if os.path.exists(fname) and not os.path.isfile(fname):
         # only write to a regular file
         return
+
+    # config file is behind a symlink
+    # resolve the symlink and continue writing the config as usual
+    if os.path.islink(fname):
+        fname = os.readlink(fname)
+
+    # create directories to the config file (if they don't exist already)
     if not os.path.exists(os.path.dirname(fname)):
-        os.makedirs(os.path.dirname(fname), mode=0o700)
+        try:
+            os.makedirs(os.path.dirname(fname), mode=0o700)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
     with open(fname + '.new', 'w') as f:
         cp.write(f, comments=True)
     try:
