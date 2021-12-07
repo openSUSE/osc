@@ -353,12 +353,22 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
 
 def get_built_files(pacdir, buildtype):
     if buildtype == 'spec':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'),
-                                    '-name', '*.rpm'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'),
-                                    '-name', '*.rpm'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
+        debs_dir = os.path.join(pacdir, 'DEBS')
+        sdebs_dir = os.path.join(pacdir, 'SDEBS')
+        if os.path.isdir(debs_dir) or os.path.isdir(sdebs_dir):
+            # (S)DEBS directories detected, list their *.(s)deb files
+            b_built = subprocess.Popen(['find', debs_dir, '-name', '*.deb'],
+                                       stdout=subprocess.PIPE).stdout.read().strip()
+            s_built = subprocess.Popen(['find', sdebs_dir, '-name', '*.sdeb'],
+                                       stdout=subprocess.PIPE).stdout.read().strip()
+        else:
+            # default: (S)RPMS directories and their *.rpm files
+            b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'),
+                                        '-name', '*.rpm'],
+                                       stdout=subprocess.PIPE).stdout.read().strip()
+            s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'),
+                                        '-name', '*.rpm'],
+                                       stdout=subprocess.PIPE).stdout.read().strip()
     elif buildtype == 'kiwi':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'),
                                     '-type', 'f'],
