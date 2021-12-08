@@ -180,7 +180,8 @@ class Buildinfo:
             self.pathes.append(node.get('project')+"/"+node.get('repository'))
             # a hash providing the matching URL for specific repos for newer OBS instances
             if node.get('url'):
-                self.urls[node.get('project')+"/"+node.get('repository')] = node.get('url') + '/%(arch)s/%(filename)s'
+                url = node.get('url').replace('%', '%%')
+                self.urls[node.get('project')+"/"+node.get('repository')] = url + '/%(arch)s/%(filename)s'
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
@@ -1044,7 +1045,7 @@ def main(apiurl, opts, argv):
         # we have now specific download repositories per repository. Could be removed IMHO, since the api fallback
         # is there. In worst case it could fetch the wrong rpm...
         if bi.downloadurl:
-            urllist.append(bi.downloadurl + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
+            urllist.append(bi.downloadurl.replace('%', '%%') + '/%(extproject)s/%(extrepository)s/%(arch)s/%(filename)s')
     if opts.disable_cpio_bulk_download:
         urllist.append( '%(apiurl)s/build/%(project)s/%(repository)s/%(repoarch)s/%(repopackage)s/%(repofilename)s' )
 
