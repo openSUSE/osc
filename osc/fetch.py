@@ -243,10 +243,6 @@ class Fetcher:
                                             '--offline not possible.' %
                                             i.fullfilename)
                 self.dirSetup(i)
-                if i.hdrmd5 and self.enable_cpio:
-                    self.__add_cpio(i)
-                    done += 1
-                    continue
                 try:
                     # if there isn't a progress bar, there is no output at all
                     prefix = ''
