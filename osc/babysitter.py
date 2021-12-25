@@ -17,6 +17,7 @@ from .oscsslexcp import NoSecureSSLError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
 from osc.util.helper import decode_it
+from osc.OscConfigParser import configparser
 
 try:
     from M2Crypto.SSL.Checker import SSLVerificationError
@@ -154,6 +155,8 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except (oscerr.ConfigError, oscerr.NoConfigfile) as e:
         print(e.msg, file=sys.stderr)
+    except configparser.Error as e:
+        print(e.message, file=sys.stderr)
     except oscerr.OscIOError as e:
         print(e.msg, file=sys.stderr)
         if getattr(prg.options, 'debug', None) or \
