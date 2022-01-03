@@ -3,6 +3,9 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+
+import signal
+
 try:
     import progressbar as pb
     have_pb_module = True
@@ -23,6 +26,11 @@ class PBTextMeter(object):
                 # a ZeroDivisionException
                 widgets.insert(1, pb.Percentage())
             self.bar = pb.ProgressBar(widgets=widgets, maxval=size)
+        # When a signal handler is set, it resets SA_RESTART flag
+        # - see signal.siginterrupt() python docs.
+        # ProgressBar's constructor sets signal handler for SIGWINCH.
+        # So let's make sure that it doesn't interrupt syscalls in osc.
+        signal.siginterrupt(signal.SIGWINCH, False)
         self.bar.start()
 
     def update(self, amount_read):
