@@ -57,9 +57,6 @@ for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
     if num:
         signal.signal(num, catchterm)
 
-# Signals which should be ignored
-for sig in (signal.SIGWINCH,):
-    signal.signal(sig, signal.SIG_IGN)
 
 def run(prg, argv=None):
     try:
