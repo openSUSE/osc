@@ -1,5 +1,5 @@
 0.176.0
-  -
+  - add --verbose option to build command
 
 0.175.0
   - do not crash when running "osc search --binary --verbose foo"
