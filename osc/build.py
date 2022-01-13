@@ -742,6 +742,8 @@ def main(apiurl, opts, argv):
     if opts.multibuild_package:
         buildargs.append('--buildflavor=%s' % opts.multibuild_package)
         pac = pac + ":" + opts.multibuild_package
+    if opts.verbose:
+        buildargs.append('--verbose=%s' % opts.verbose)
     if opts.wipe:
         buildargs.append("--wipe")
 
