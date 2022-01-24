@@ -1,5 +1,6 @@
 .gitattributes export-ignore
 .github export-ignore
+behave export-ignore
 contrib/build_rpm.py export-ignore
 contrib/osc.spec export-ignore
 osc/util/git_version.py export-subst

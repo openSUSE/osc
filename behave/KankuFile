@@ -1,0 +1,91 @@
+domain_name: obs-server
+default_job: kanku-job
+login_user: root
+login_pass: opensuse
+
+jobs:
+ kanku-job:
+  -
+    use_module: Kanku::Handler::SetJobContext
+    options:
+      host_interface: eth0
+  -
+    use_module: Kanku::Handler::OBSCheck
+    options:
+      api_url: https://api.opensuse.org/public
+      # Please have a look at
+      # kanku lsi
+      # to find more official Images
+      project: OBS:Server:Unstable
+      package: OBS-Appliance:qcow2
+      repository: images
+      arch: x86_64
+      use_oscrc: 0
+  -
+    use_module: Kanku::Handler::ImageDownload
+  -
+    use_module: Kanku::Handler::CreateDomain
+    options:
+      memory: 5G
+      vcpu: 4
+      use_9p: 1
+  -
+    use_module: Kanku::Handler::PrepareSSH
+  -
+    use_module: Kanku::Handler::ExecuteCommandViaSSH
+    options:
+      commands:
+        # fix the following error in scheduler: unknown host 'obs-server.kanku.site'
+        - echo "127.0.0.1       obs-server.kanku.site" >> /etc/hosts
+        - echo "::1             obs-server.kanku.site" >> /etc/hosts
+
+        # disable OBS:Server:Unstable, we want to install only stable packages from now on
+        - zypper --non-interactive modifyrepo --disable OBS:Server:Unstable
+
+        # refresh repodata and install additional packages
+        - zypper --non-interactive --gpg-auto-import-keys refresh
+        - zypper --non-interactive install bash-completion rpm-build sudo
+
+        # reinstall osc with a stable version
+        - zypper --non-interactive install --force osc
+
+        # install test requirements
+        - rpmbuild -bs --define='_srcrpmdir /opt/' --without=host_only_packages /tmp/kanku/requirements.spec
+        - zypper --non-interactive source-install --build-deps-only /opt/osc-behave-requirements-1-0.src.rpm
+
+        # zramswap for more available memory
+        - zypper --non-interactive install systemd-zram-service
+        - systemctl enable zramswap
+
+        # decrease number of workers
+        - sed -i 's@^OBS_WORKER_INSTANCES=.*@OBS_WORKER_INSTANCES="1"@' /etc/sysconfig/obs-server
+
+        # configure OBS URL (for osc browse)
+        - echo "UPDATE configurations SET obs_url='https://obs-server.kanku.site';" | mysql api_production
+
+        # configure download URL
+        - echo "UPDATE configurations SET download_url='http://obs-server.kanku.site:82';" | mysql api_production
+
+        # write configuration from the database on disk
+        - cd /srv/www/obs/api; RAILS_ENV=production SAFETY_ASSURED=1 bin/rails writeconfiguration
+  -
+    use_module: Kanku::Handler::Reboot
+    # Reboot to restart obs services.
+    # Restarting them via systemctl doesn't always work, it ends up with the following error:
+    # > scheduler is already running for <arch>!
+    # We also need them restarted because they're failing on unresolvable obs-server.kanku.site.
+  -
+    use_module: Kanku::Handler::ExecuteCommandViaSSH
+    options:
+      commands:
+        # use behave to setup OBS - create projects and packages
+        - cd /tmp/kanku && behave obs-setup
+
+        # unmount /tmp/kanku so we are able to create a snapshot of the VM
+        - umount /tmp/kanku
+  -
+    use_module: Kanku::Handler::DomainSnapshot
+    options:
+      # create a snapshot we'll use as a starting point for running tests
+      command: create
+      name: current
