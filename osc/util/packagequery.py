@@ -26,7 +26,7 @@ class PackageQueries(dict):
         """Adds package query to dict if it is of the correct architecture and
         is newer (has a greater version) than the currently assigned package.
 
-        @param a PackageQuery
+        :param query: a PackageQuery
         """
         self.__setitem__(query.name(), query)
 
