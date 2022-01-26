@@ -113,7 +113,7 @@ setuptools.setup(
     long_description_content_type="text/plain",
     author='openSUSE project',
     author_email='opensuse-buildservice@opensuse.org',
-    license='GPL',
+    license='GPLv2+',
     platforms=['Linux', 'Mac OSX', 'Windows XP/2000/NT', 'Windows 95/98/ME', 'FreeBSD'],
     keywords=['openSUSE', 'SUSE', 'RPM', 'build', 'buildservice'],
     url='http://en.opensuse.org/openSUSE:OSC',
