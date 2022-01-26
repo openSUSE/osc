@@ -4653,8 +4653,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             prj_dir = opts.output_dir if opts.output_dir else project
             if not opts.output_dir and conf.config['checkout_no_colon']:
                 prj_dir = prj_dir.replace(':', '/')
-            if sys.platform[:3] == 'win':
-                prj_dir = prj_dir.replace(':', ';')
             if os.path.exists(prj_dir):
                 sys.exit('osc: project directory \'%s\' already exists' % prj_dir)
 
