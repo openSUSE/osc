@@ -6320,7 +6320,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for subarch in osc.build.can_also_build.get(mainarch):
                     all_archs.append(subarch)
             for arg in args:
-                if arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or arg.endswith('.livebuild') or arg == 'PKGBUILD' or arg == 'build.collax' or arg == 'Dockerfile' or arg == 'fissile.yml' or arg == 'appimage.yml' or arg.endswith('flatpak.yaml') or arg.endswith('flatpak.yml') or arg.endswith('flatpak.json'):
+                if (arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or
+                        arg.endswith('.livebuild') or arg == 'PKGBUILD' or arg == 'build.collax' or
+                        arg == 'Dockerfile' or arg == 'fissile.yml' or arg == 'appimage.yml' or
+                        arg == '_preinstallimage' or arg.endswith('flatpak.yaml') or
+                        arg.endswith('flatpak.yml') or arg.endswith('flatpak.json')):
                     arg_descr = arg
                 else:
                     if (arg == osc.build.hostarch or arg in all_archs) and arg_arch is None:
