@@ -37,39 +37,19 @@ The configuration dictionary could look like this:
 """
 
 import bz2
-import base64
 import errno
 import os
 import re
 import sys
-import ssl
 import getpass
-import time
-import subprocess
 
-try:
-    from http.cookiejar import LWPCookieJar, CookieJar
-    from http.client import HTTPConnection, HTTPResponse
-    from io import StringIO
-    from urllib.parse import urlsplit
-    from urllib.error import URLError
-    from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
-    from urllib.request import BaseHandler, parse_keqv_list, parse_http_list
-except ImportError:
-    #python 2.x
-    from cookielib import LWPCookieJar, CookieJar
-    from httplib import HTTPConnection, HTTPResponse
-    from StringIO import StringIO
-    from urlparse import urlsplit
-    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
-    from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
-    from urllib2 import BaseHandler, parse_keqv_list, parse_http_list
+from io import StringIO
+from urllib.error import URLError
+from urllib.parse import urlsplit
 
 from . import OscConfigParser
 from osc import oscerr
-from osc.util.helper import raw_input, decode_it
-from .oscsslexcp import NoSecureSSLError
+from osc.util.helper import raw_input
 from osc import credentials
 
 GENERIC_KEYRING = False
@@ -428,8 +408,6 @@ the apiurl \'%s\' does not exist in the config file. Please enter
 your credentials for this apiurl.
 """
 
-cookiejar = None
-
 
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
@@ -500,334 +478,6 @@ def get_apiurl_usr(apiurl):
         print('no specific section found in config file for host of [\'%s\'] - using default user: \'%s\'' \
             % (apiurl, config['user']), file=sys.stderr)
         return config['user']
-
-
-# workaround m2crypto issue:
-# if multiple SSL.Context objects are created
-# m2crypto only uses the last object which was created.
-# So we need to build a new opener everytime we switch the
-# apiurl (because different apiurls may have different
-# cafile/capath locations)
-def _build_opener(apiurl):
-    from osc.core import __version__
-    global config
-
-    class OscHTTPAuthHandler(HTTPBasicAuthHandler, object):
-        # python2: inherit from object in order to make it a new-style class
-        # (HTTPBasicAuthHandler is not a new-style class)
-
-        def __init__(self, password_mgr=None, signatureauthhandler=None):
-            super(self.__class__, self).__init__(password_mgr)
-            self.signatureauthhandler = signatureauthhandler
-
-        def add_parent(self, parent):
-            super(self.__class__, self).add_parent(parent)
-            if self.signatureauthhandler:
-                self.signatureauthhandler.add_parent(parent)
-
-        def _rewind_request(self, req):
-            if hasattr(req.data, 'seek'):
-                # if the request is issued again (this time with an
-                # Authorization header), the file's offset has to be
-                # repositioned to the beginning of the file (otherwise,
-                # a 0-length body is sent which most likely does not match
-                # the Content-Length header (if present))
-                req.data.seek(0)
-
-        def http_error_401(self, req, fp, code, msg, headers):
-            self._rewind_request(req)
-            authreqs = {}
-            for authreq in headers.get_all('www-authenticate', []):
-                scheme = authreq.split()[0].lower()
-                authreqs[scheme] = authreq
-
-            if 'signature' in authreqs \
-                and self.signatureauthhandler \
-                and (
-                    # sshkey explicitly set in the config file, use it instead of doing basic auth
-                    self.signatureauthhandler.sshkey_known()
-                    or (
-                        # can't fall-back to basic auth, because server doesn't support it
-                        'basic' not in authreqs
-                        # can't fall-back to basic auth, because there's no password provided
-                        or not self.passwd.find_user_password(None, apiurl)[1]
-                    )):
-                del headers['www-authenticate']
-                headers['www-authenticate'] = authreqs['signature']
-                return self.signatureauthhandler.http_error_401(req, fp, code, msg, headers)
-
-            if 'basic' in authreqs:
-                del headers['www-authenticate']
-                headers['www-authenticate'] = authreqs['basic']
-
-            response = super(self.__class__, self).http_error_401(req, fp, code, msg, headers)
-            # workaround for http://bugs.python.org/issue9639
-            if hasattr(self, 'retried'):
-                self.retried = 0
-            return response
-
-    class OscHTTPSignatureAuthHandler(BaseHandler, object):
-        def __init__(self, user, sshkey):
-            super(self.__class__, self).__init__()
-            self.user = user
-            self.sshkey = sshkey
-
-        def list_ssh_agent_keys(self):
-            cmd = ['ssh-add', '-l']
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, _ = proc.communicate()
-            if proc.returncode == 0 and stdout.strip():
-                return [self.get_fingerprint(line) for line in stdout.splitlines()]
-            else:
-                return []
-
-        def is_ssh_private_keyfile(self, keyfile_path):
-            if not os.path.isfile(keyfile_path):
-                return False
-            with open(keyfile_path, "r") as f:
-                try:
-                   line = f.readline(100).strip()
-                except UnicodeDecodeError:
-                   # skip binary files
-                   return False
-                if line == "-----BEGIN RSA PRIVATE KEY-----":
-                    return True
-                if line == "-----BEGIN OPENSSH PRIVATE KEY-----":
-                    return True
-            return False
-
-        def is_ssh_public_keyfile(self, keyfile_path):
-            if not os.path.isfile(keyfile_path):
-                return False
-            return keyfile_path.endswith(".pub")
-
-        @staticmethod
-        def get_fingerprint(line):
-            parts = line.strip().split(b" ")
-            if len(parts) < 2:
-                raise ValueError("Unable to retrieve ssh key fingerprint from line: {}".format(line))
-            return parts[1]
-
-        def list_ssh_dir_keys(self):
-            sshdir = os.path.expanduser('~/.ssh')
-            keys_in_home_ssh = {}
-            for keyfile in os.listdir(sshdir):
-                if keyfile.startswith(("agent-", "authorized_keys", "config", "known_hosts")):
-                    # skip files that definitely don't contain keys
-                    continue
-
-                keyfile_path = os.path.join(sshdir, keyfile)
-                # public key alone may be sufficient because the private key
-                # can get loaded into ssh-agent from gpg (yubikey works this way)
-                is_public = self.is_ssh_public_keyfile(keyfile_path)
-                # skip private detection if we think the key is a public one already
-                is_private = False if is_public else self.is_ssh_private_keyfile(keyfile_path)
-
-                if not is_public and not is_private:
-                    continue
-
-                cmd = ["ssh-keygen", "-lf", keyfile_path]
-                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                stdout, _ = proc.communicate()
-                if proc.returncode == 0:
-                    fingerprint = self.get_fingerprint(stdout)
-                    if fingerprint and (fingerprint not in keys_in_home_ssh or is_private):
-                        # prefer path to a private key
-                        keys_in_home_ssh[fingerprint] = keyfile_path
-            return keys_in_home_ssh
-
-        def guess_keyfile(self):
-            keys_in_agent = self.list_ssh_agent_keys()
-            if keys_in_agent:
-                keys_in_home_ssh = self.list_ssh_dir_keys()
-                for fingerprint in keys_in_agent:
-                    if fingerprint in keys_in_home_ssh:
-                        return keys_in_home_ssh[fingerprint]
-            sshdir = os.path.expanduser('~/.ssh')
-            keyfiles = ('id_ed25519', 'id_ed25519_sk', 'id_rsa', 'id_ecdsa', 'id_ecdsa_sk', 'id_dsa')
-            for keyfile in keyfiles:
-                keyfile_path = os.path.join(sshdir, keyfile)
-                if os.path.isfile(keyfile_path):
-                    return keyfile_path
-            raise oscerr.OscIOError(None, 'could not guess ssh identity keyfile')
-
-        def ssh_sign(self, data, namespace, keyfile=None):
-            try:
-                data = bytes(data, 'utf-8')
-            except:
-                pass
-            if not keyfile:
-                keyfile = self.guess_keyfile()
-            else:
-                if '/' not in keyfile:
-                    keyfile = '~/.ssh/' + keyfile
-                keyfile = os.path.expanduser(keyfile)
-
-            cmd = ['ssh-keygen', '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
-            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-            stdout, _ = proc.communicate(data)
-            if proc.returncode:
-                raise oscerr.OscIOError(None, 'ssh-keygen signature creation failed: %d' % proc.returncode)
-
-            signature = decode_it(stdout)
-            match = re.match(r"\A-----BEGIN SSH SIGNATURE-----\n(.*)\n-----END SSH SIGNATURE-----", signature, re.S)
-            if not match:
-                raise oscerr.OscIOError(None, 'could not extract ssh signature')
-            return base64.b64decode(match.group(1))
-
-        def get_authorization(self, req, chal):
-            realm = chal.get('realm', '')
-            now = int(time.time())
-            sigdata = "(created): %d" % now
-            signature = self.ssh_sign(sigdata, realm, self.sshkey)
-            signature = decode_it(base64.b64encode(signature))
-            return 'keyId="%s",algorithm="ssh",headers="(created)",created=%d,signature="%s"' \
-                % (self.user, now, signature)
-
-        def retry_http_signature_auth(self, req, auth):
-            old_auth_val = req.get_header('Authorization', None)
-            if old_auth_val:
-                old_scheme = old_auth_val.split()[0]
-                if old_scheme.lower() == 'signature':
-                    return None
-            token, challenge = auth.split(' ', 1)
-            chal = parse_keqv_list(filter(None, parse_http_list(challenge)))
-            auth = self.get_authorization(req, chal)
-            if auth:
-                auth_val = 'Signature %s' % auth
-                req.add_unredirected_header('Authorization', auth_val)
-                return self.parent.open(req, timeout=req.timeout)
-
-        def http_error_401(self, req, fp, code, msg, headers):
-            authreq = headers.get('www-authenticate', None)
-            if authreq:
-                scheme = authreq.split()[0]
-                if scheme.lower() == 'signature':
-                    return self.retry_http_signature_auth(req, authreq)
-                raise ValueError("OscHTTPSignatureAuthHandler does not support"
-                                 " the following scheme: '%s'" % scheme)
-
-        def sshkey_known(self):
-            return self.sshkey is not None
-
-
-    if 'last_opener' not in _build_opener.__dict__:
-        _build_opener.last_opener = (None, None)
-    if apiurl == _build_opener.last_opener[0]:
-        return _build_opener.last_opener[1]
-
-    # respect no_proxy env variable
-    if proxy_bypass(apiurl):
-        # initialize with empty dict
-        proxyhandler = ProxyHandler({})
-    else:
-        # read proxies from env
-        proxyhandler = ProxyHandler()
-
-    options = config['api_host_options'][apiurl]
-    signatureauthhandler = OscHTTPSignatureAuthHandler(options['user'], options['sshkey'])
-    # with None as first argument, it will always use this username/password
-    # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler = OscHTTPAuthHandler(HTTPPasswordMgrWithDefaultRealm(), signatureauthhandler)
-    authhandler.add_password(None, apiurl, options['user'], options['pass'])
-
-    if options['sslcertck']:
-        try:
-            from . import oscssl
-            from M2Crypto import m2urllib2
-        except ImportError as e:
-            print(e)
-            raise NoSecureSSLError('M2Crypto is needed to access %s in a secure way.\nPlease install python-m2crypto.' % apiurl)
-
-        cafile = options.get('cafile', None)
-        capath = options.get('capath', None)
-        if not cafile and not capath:
-            for i in ['/etc/pki/tls/cert.pem', '/etc/ssl/certs']:
-                if os.path.isfile(i):
-                    cafile = i
-                    break
-                elif os.path.isdir(i):
-                    capath = i
-                    break
-        if not cafile and not capath:
-            raise oscerr.OscIOError(None, 'No CA certificates found. (You may want to install ca-certificates-mozilla package)')
-        ctx = oscssl.mySSLContext()
-        if ctx.load_verify_locations(capath=capath, cafile=cafile) != 1:
-            raise oscerr.OscIOError(None, 'No CA certificates found. (You may want to install ca-certificates-mozilla package)')
-        opener = m2urllib2.build_opener(ctx, oscssl.myHTTPSHandler(ssl_context=ctx, appname='osc'), HTTPCookieProcessor(cookiejar), authhandler, proxyhandler)
-    else:
-        handlers = [HTTPCookieProcessor(cookiejar), authhandler, proxyhandler]
-        try:
-            # disable ssl cert check in python >= 2.7.9
-            ctx = ssl._create_unverified_context()
-            handlers.append(HTTPSHandler(context=ctx))
-        except AttributeError:
-            pass
-        print("WARNING: SSL certificate checks disabled. Connection is insecure!\n", file=sys.stderr)
-        opener = build_opener(*handlers)
-    opener.addheaders = [('User-agent', 'osc/%s' % __version__)]
-    _build_opener.last_opener = (apiurl, opener)
-    return opener
-
-
-def init_basicauth(config, config_mtime):
-    """initialize urllib2 with the credentials for Basic Authentication"""
-
-    def filterhdrs(meth, ishdr, *hdrs):
-        # this is so ugly but httplib doesn't use
-        # a logger object or such
-        def new_method(self, *args, **kwargs):
-            # check if this is a recursive call (note: we do not
-            # have to care about thread safety)
-            is_rec_call = getattr(self, '_orig_stdout', None) is not None
-            try:
-                if not is_rec_call:
-                    self._orig_stdout = sys.stdout
-                    sys.stdout = StringIO()
-                meth(self, *args, **kwargs)
-                hdr = sys.stdout.getvalue()
-            finally:
-                # restore original stdout
-                if not is_rec_call:
-                    sys.stdout = self._orig_stdout
-                    del self._orig_stdout
-            for i in hdrs:
-                if ishdr:
-                    hdr = re.sub(r'%s:[^\\r]*\\r\\n' % i, '', hdr)
-                else:
-                    hdr = re.sub(i, '', hdr)
-            sys.stdout.write(hdr)
-        new_method.__name__ = meth.__name__
-        return new_method
-
-    if config['http_debug'] and not config['http_full_debug']:
-        HTTPConnection.send = filterhdrs(HTTPConnection.send, True, 'Cookie', 'Authorization')
-        HTTPResponse.begin = filterhdrs(HTTPResponse.begin, False, 'header: Set-Cookie.*\n')
-
-    if config['http_debug']:
-        # brute force
-        def urllib2_debug_init(self, debuglevel=0):
-            self._debuglevel = 1
-        AbstractHTTPHandler.__init__ = urllib2_debug_init
-
-    cookie_file = os.path.expanduser(config['cookiejar'])
-    if not os.path.exists(os.path.dirname(cookie_file)):
-        os.makedirs(os.path.dirname(cookie_file), mode=0o700)
-    global cookiejar
-    cookiejar = LWPCookieJar(cookie_file)
-    try:
-        cookiejar.load(ignore_discard=True)
-        if int(round(config_mtime)) > int(os.stat(cookie_file).st_mtime):
-            cookiejar.clear()
-            cookiejar.save()
-    except IOError:
-        try:
-            fd = os.open(cookie_file, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
-            os.close(fd)
-        except IOError:
-            # hmm is any good reason why we should catch the IOError?
-            #print 'Unable to create cookiejar file: \'%s\'. Using RAM-based cookies.' % cookie_file
-            cookiejar = CookieJar()
 
 
 def get_configParser(conffile=None, force_read=False):
@@ -1246,8 +896,10 @@ def get_config(override_conffile=None,
         e.file = conffile
         raise e
 
-    # finally, initialize urllib2 for to use the credentials for Basic Authentication
-    init_basicauth(config, os.stat(conffile).st_mtime)
+    # enable connection debugging after all config options are set
+    from .connection import enable_http_debug
+    enable_http_debug(config)
+
 
 def identify_conf():
     # needed for compat reasons(users may have their oscrc still in ~

@@ -1,29 +1,18 @@
-import unittest
-import osc.core
-import shutil
-import tempfile
+import io
 import os
+import shutil
 import sys
-try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
-    from xml.etree import cElementTree as ET
-except ImportError:
-    # will import a fast implementation from 3.3 onwards, needed
-    # for 3.9+
-    from xml.etree import ElementTree as ET
-EXPECTED_REQUESTS = []
+import tempfile
+import unittest
+from unittest.mock import patch
+from urllib.request import HTTPHandler, addinfourl, build_opener
+from urllib.parse import urlparse, parse_qs
+from xml.etree import ElementTree as ET
 
-try:
-    #python 2.x
-    from cStringIO import StringIO
-    from urllib2 import HTTPHandler, addinfourl, build_opener
-    from urlparse import urlparse, parse_qs
-except ImportError:
-    from io import StringIO
-    from urllib.request import HTTPHandler, addinfourl, build_opener
-    from urllib.parse import urlparse, parse_qs
+import urllib3.response
 
-from io import BytesIO
+import osc.core
+
 
 def urlcompare(url, *args):
     """compare all components of url except query string - it is converted to
@@ -94,94 +83,122 @@ class RequestDataMismatch(Exception):
     def __str__(self):
         return '%s, %s, %s' % (self.url, self.got, self.exp)
 
-class MyHTTPHandler(HTTPHandler):
-    def __init__(self, exp_requests, fixtures_dir):
-        HTTPHandler.__init__(self)
-        self.__exp_requests = exp_requests
-        self.__fixtures_dir = fixtures_dir
 
-    def http_open(self, req):
-        r = self.__exp_requests.pop(0)
-        if not urlcompare(req.get_full_url(), r[1]) or req.get_method() != r[0]:
-            raise RequestWrongOrder(req.get_full_url(), r[1], req.get_method(), r[0])
-        if req.get_method() in ('GET', 'DELETE'):
-            return self.__mock_GET(r[1], **r[2])
-        elif req.get_method() in ('PUT', 'POST'):
-            return self.__mock_PUT(req, **r[2])
+EXPECTED_REQUESTS = []
 
-    def __mock_GET(self, fullurl, **kwargs):
-        return self.__get_response(fullurl, **kwargs)
 
-    def __mock_PUT(self, req, **kwargs):
-        exp = kwargs.get('exp', None)
-        if exp is not None and 'expfile' in kwargs:
-            raise RuntimeError('either specify exp or expfile')
-        elif 'expfile' in kwargs:
-            exp = open(os.path.join(self.__fixtures_dir, kwargs['expfile']), 'rb').read()
-        elif exp is None:
-            raise RuntimeError('exp or expfile required')
+# HACK: Fix "ValueError: I/O operation on closed file." error in tests on openSUSE Leap 15.2.
+#       The problem seems to appear only in the tests, possibly some interaction with MockHTTPConnectionPool.
+#       Porting 753fbc03 to urllib3 in openSUSE Leap 15.2 would fix the problem.
+urllib3.response.HTTPResponse.__iter__ = lambda self : iter(self._fp)
+
+
+class MockHTTPConnectionPool:
+    def __init__(self, host, port=None, **conn_kw):
+        pass
+
+    def urlopen(self, method, url, body=None, headers=None, retries=None, **response_kw):
+        global EXPECTED_REQUESTS
+        request = EXPECTED_REQUESTS.pop(0)
+
+        url = f"http://localhost{url}"
+
+        if not urlcompare(request["url"], url) or request["method"] != method:
+            raise RequestWrongOrder(request["url"], url, request["method"], method)
+
+        if method in ("POST", "PUT"):
+            if 'exp' not in request and 'expfile' in request:
+                with open(request['expfile'], 'rb') as f:
+                    exp = f.read()
+            elif 'exp' in request and 'expfile' not in request:
+                exp = request['exp'].encode('utf-8')
+            else:
+                raise RuntimeError('Specify either `exp` or `expfile`')
+
+            body = body or b""
+            if hasattr(body, "read"):
+                # if it is a file-like object, read it
+                body = body.read()
+            if hasattr(body, "encode"):
+                # if it can be encoded to bytes, do it
+                body = body.encode("utf-8")
+
+            if body != exp:
+                # We do not have a notion to explicitly mark xml content. In case
+                # of xml, we do not care about the exact xml representation (for
+                # now). Hence, if both, data and exp, are xml and are "equal",
+                # everything is fine (for now); otherwise, error out
+                # (of course, this is problematic if we want to ensure that XML
+                # documents are bit identical...)
+                if not xml_equal(body, exp):
+                    raise RequestDataMismatch(url, repr(body), repr(exp))
+
+        if 'exception' in request:
+            raise request["exception"]
+
+        if 'text' not in request and 'file' in request:
+            with open(request['file'], 'rb') as f:
+                data = f.read()
+        elif 'text' in request and 'file' not in request:
+            data = request['text'].encode('utf-8')
         else:
-            # for now, assume exp is a str
-            exp = exp.encode('utf-8')
-        # use req.data instead of req.get_data() for python3 compatiblity
-        data = req.data
-        if hasattr(data, 'read'):
-            data = data.read()
-        if data != exp:
-            # We do not have a notion to explicitly mark xml content. In case
-            # of xml, we do not care about the exact xml representation (for
-            # now). Hence, if both, data and exp, are xml and are "equal",
-            # everything is fine (for now); otherwise, error out
-            # (of course, this is problematic if we want to ensure that XML
-            # documents are bit identical...)
-            if not xml_equal(data, exp):
-                raise RequestDataMismatch(req.get_full_url(), repr(data), repr(exp))
-        return self.__get_response(req.get_full_url(), **kwargs)
+            raise RuntimeError('Specify either `text` or `file`')
 
-    def __get_response(self, url, **kwargs):
-        f = None
-        if 'exception' in kwargs:
-            raise kwargs['exception']
-        if 'text' not in kwargs and 'file' in kwargs:
-            f = BytesIO(open(os.path.join(self.__fixtures_dir, kwargs['file']), 'rb').read())
-        elif 'text' in kwargs and 'file' not in kwargs:
-            f = BytesIO(kwargs['text'].encode('utf-8'))
-        else:
-            raise RuntimeError('either specify text or file')
-        resp = addinfourl(f, {}, url)
-        resp.code = kwargs.get('code', 200)
-        resp.msg = ''
-        return resp
+        response = urllib3.response.HTTPResponse(body=data, status=request.get("code", 200))
+        response._fp = io.BytesIO(data)
 
-def urldecorator(method, fullurl, **kwargs):
+        return response
+
+
+def urldecorator(method, url, **kwargs):
     def decorate(test_method):
-        def wrapped_test_method(*args):
-            addExpectedRequest(method, fullurl, **kwargs)
-            test_method(*args)
-        # "rename" method otherwise we cannot specify a TestCaseClass.testName
-        # cmdline arg when using unittest.main()
+        def wrapped_test_method(self):
+            # put all args into a single dictionary
+            kwargs["method"] = method
+            kwargs["url"] = url
+
+            # prepend fixtures dir to `file`
+            if "file" in kwargs:
+                kwargs["file"] = os.path.join(self._get_fixtures_dir(), kwargs["file"])
+
+            # prepend fixtures dir to `expfile`
+            if "expfile" in kwargs:
+                kwargs["expfile"] = os.path.join(self._get_fixtures_dir(), kwargs["expfile"])
+
+            EXPECTED_REQUESTS.append(kwargs)
+
+            test_method(self)
+
+        # mock connection pool, but only just once
+        if not hasattr(test_method, "_MockHTTPConnectionPool"):
+            wrapped_test_method = patch('urllib3.HTTPConnectionPool', MockHTTPConnectionPool)(wrapped_test_method)
+            wrapped_test_method._MockHTTPConnectionPool = True
+
         wrapped_test_method.__name__ = test_method.__name__
         return wrapped_test_method
     return decorate
 
-def GET(fullurl, **kwargs):
-    return urldecorator('GET', fullurl, **kwargs)
 
-def PUT(fullurl, **kwargs):
-    return urldecorator('PUT', fullurl, **kwargs)
+def GET(path, **kwargs):
+    return urldecorator('GET', path, **kwargs)
 
-def POST(fullurl, **kwargs):
-    return urldecorator('POST', fullurl, **kwargs)
 
-def DELETE(fullurl, **kwargs):
-    return urldecorator('DELETE', fullurl, **kwargs)
+def PUT(path, **kwargs):
+    return urldecorator('PUT', path, **kwargs)
 
-def addExpectedRequest(method, url, **kwargs):
-    global EXPECTED_REQUESTS
-    EXPECTED_REQUESTS.append((method, url, kwargs))
+
+def POST(path, **kwargs):
+    return urldecorator('POST', path, **kwargs)
+
+
+def DELETE(path, **kwargs):
+    return urldecorator('DELETE', path, **kwargs)
+
 
 class OscTestCase(unittest.TestCase):
     def setUp(self, copytree=True):
+        global EXPECTED_REQUESTS
+        EXPECTED_REQUESTS = []
         os.chdir(os.path.dirname(__file__))
         oscrc = os.path.join(self._get_fixtures_dir(), 'oscrc')
         osc.core.conf.get_config(override_conffile=oscrc,
@@ -191,19 +208,16 @@ class OscTestCase(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
         if copytree:
             shutil.copytree(os.path.join(self._get_fixtures_dir(), 'osctest'), os.path.join(self.tmpdir, 'osctest'))
-        global EXPECTED_REQUESTS
-        EXPECTED_REQUESTS = []
-        osc.core.conf._build_opener = lambda u: build_opener(MyHTTPHandler(EXPECTED_REQUESTS, self._get_fixtures_dir()))
         self.stdout = sys.stdout
-        sys.stdout = StringIO()
+        sys.stdout = io.StringIO()
 
     def tearDown(self):
-        self.assertTrue(len(EXPECTED_REQUESTS) == 0)
         sys.stdout = self.stdout
         try:
             shutil.rmtree(self.tmpdir)
         except:
             pass
+        self.assertTrue(len(EXPECTED_REQUESTS) == 0)
 
     def _get_fixtures_dir(self):
         raise NotImplementedError('subclasses should implement this method')

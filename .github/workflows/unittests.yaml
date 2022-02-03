@@ -30,8 +30,7 @@ jobs:
           - 'opensuse/tumbleweed'
 
           # CentOS Stream
-          # stream9 doesn't contain m2crypto required by osc
-          # - 'quay.io/centos/centos:stream9'
+          - 'quay.io/centos/centos:stream9'
 
           # Debian
           - 'debian:stable'
@@ -50,7 +49,7 @@ jobs:
             zypper --non-interactive --gpg-auto-import-keys refresh
             zypper --non-interactive dist-upgrade
             zypper --non-interactive install git-lfs
-            zypper --non-interactive install diffstat diffutils python3 python3-chardet python3-M2Crypto python3-pip python3-rpm python3-setuptools
+            zypper --non-interactive install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - name: 'Install packages (Fedora/CentOS)'
         if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:')  }}
@@ -58,7 +57,7 @@ jobs:
             dnf -y makecache
             dnf -y distro-sync
             dnf -y install git-lfs
-            dnf -y install diffstat diffutils python3 python3-chardet python3-m2crypto python3-pip python3-rpm python3-setuptools
+            dnf -y install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - name: 'Install packages (Debian/Ubuntu)'
         if: ${{ startsWith(matrix.container, 'debian:') || startsWith(matrix.container, 'ubuntu:')  }}
@@ -66,7 +65,7 @@ jobs:
             apt-get -y update
             apt-get -y upgrade
             apt-get -y --no-install-recommends install git-lfs
-            apt-get -y --no-install-recommends install diffstat diffutils python3 python3-chardet python3-m2crypto python3-pip python3-rpm python3-setuptools
+            apt-get -y --no-install-recommends install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - uses: actions/checkout@v3
 

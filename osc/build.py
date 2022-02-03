@@ -35,7 +35,8 @@ except ImportError:
     # for 3.9+
     from xml.etree import ElementTree as ET
 
-from .conf import config, cookiejar
+from . import connection
+from .conf import config
 
 from .meter import create_text_meter
 
@@ -1092,7 +1093,7 @@ def main(apiurl, opts, argv):
                       http_debug = config['http_debug'],
                       modules = bi.modules,
                       enable_cpio=not opts.disable_cpio_bulk_download and bi.enable_cpio,
-                      cookiejar=cookiejar,
+                      cookiejar=CookieJarAuthHandler(os.path.expanduser(conf.config["cookiejar"]))._cookiejar,
                       download_api_only=opts.download_api_only)
 
     if not opts.trust_all_projects:

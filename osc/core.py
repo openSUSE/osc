@@ -34,21 +34,11 @@ try:
 except ImportError:
     distro = None
 
-try:
-    from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
-    from urllib.error import HTTPError, URLError
-    from urllib.request import pathname2url, install_opener, urlopen
-    from urllib.request import Request as URLRequest
-    from io import StringIO
-    from http.client import IncompleteRead
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit, urlunsplit, urlparse
-    from urllib import pathname2url, quote_plus, urlencode, unquote
-    from urllib2 import HTTPError, URLError, install_opener, urlopen
-    from urllib2 import Request as URLRequest
-    from cStringIO import StringIO
-    from httplib import IncompleteRead
+from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+from urllib.error import HTTPError
+from urllib.request import pathname2url
+from io import StringIO
+from http.client import IncompleteRead
 
 try:
     # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
@@ -60,6 +50,7 @@ except ImportError:
 
 from . import oscerr
 from . import conf
+from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
 
 try:
     from functools import cmp_to_key
@@ -3380,87 +3371,6 @@ def makeurl(baseurl, l, query=[]):
 
     scheme, netloc, path = urlsplit(baseurl)[0:3]
     return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
-
-
-def http_request(method, url, headers={}, data=None, file=None):
-    """wrapper around urllib2.urlopen for error handling,
-    and to support additional (PUT, DELETE) methods"""
-    class DataContext:
-        """Wrap a data value (or None) in a context manager."""
-
-        def __init__(self, data):
-            self._data = data
-
-        def __enter__(self):
-            return self._data
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            return None
-
-
-    if file is not None and data is not None:
-        raise RuntimeError('file and data are mutually exclusive')
-
-    if conf.config['http_debug']:
-        print('\n\n--', method, url, file=sys.stderr)
-
-    if method == 'POST' and not file and not data:
-        # adding data to an urllib2 request transforms it into a POST
-        data = b''
-
-    req = URLRequest(url)
-    api_host_options = {}
-    apiurl = conf.extract_known_apiurl(url)
-    if apiurl is not None:
-        # ok no external request
-        install_opener(conf._build_opener(apiurl))
-        api_host_options = conf.get_apiurl_api_host_options(apiurl)
-        for header, value in api_host_options['http_headers']:
-            req.add_header(header, value)
-
-    req.get_method = lambda: method
-
-    # POST requests are application/x-www-form-urlencoded per default
-    # but sending data requires an octet-stream type
-    if method == 'PUT' or (method == 'POST' and (data or file)):
-        req.add_header('Content-Type', 'application/octet-stream')
-
-    if isinstance(headers, type({})):
-        for i in headers.keys():
-            print(headers[i])
-            req.add_header(i, headers[i])
-
-    if conf.config['debug']: print(method, url, file=sys.stderr)
-
-    content_length = None
-    if data is not None:
-        if isinstance(data, str):
-            data = data.encode('utf-8')
-        content_length = len(data)
-    elif file is not None:
-        content_length = os.path.getsize(file)
-
-    with (open(file, 'rb') if file is not None else DataContext(data)) as d:
-        req.data = d
-        if content_length is not None:
-            # do this after setting req.data because the corresponding setter
-            # kills an existing Content-Length header (see urllib.Request class
-            # (python38))
-            req.add_header('Content-Length', str(content_length))
-        try:
-            return urlopen(req)
-        except URLError as e:
-            e._osc_host_port = req.host
-            raise
-        finally:
-            if hasattr(conf.cookiejar, 'save'):
-                conf.cookiejar.save(ignore_discard=True)
-
-
-def http_GET(*args, **kwargs):    return http_request('GET', *args, **kwargs)
-def http_POST(*args, **kwargs):   return http_request('POST', *args, **kwargs)
-def http_PUT(*args, **kwargs):    return http_request('PUT', *args, **kwargs)
-def http_DELETE(*args, **kwargs): return http_request('DELETE', *args, **kwargs)
 
 
 def check_store_version(dir):

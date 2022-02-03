@@ -4,47 +4,40 @@ import osc.oscerr
 import os
 import re
 import sys
-from .common import GET, POST, OscTestCase, addExpectedRequest, EXPECTED_REQUESTS
+from .common import GET, POST, OscTestCase, EXPECTED_REQUESTS
 
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'prdiff_fixtures')
-API_URL  = 'http://localhost/'
 UPSTREAM = 'some:project'
 BRANCH   = 'home:user:branches:' + UPSTREAM
 
 def rdiff_url(pkg, oldprj, newprj):
-    return API_URL + 'source/%s/%s?unified=1&opackage=%s&oproject=%s&cmd=diff&expand=1&tarlimit=0&filelimit=0' % \
+    return 'http://localhost/source/%s/%s?unified=1&opackage=%s&oproject=%s&cmd=diff&expand=1&tarlimit=0&filelimit=0' % \
         (newprj, pkg, pkg, oldprj.replace(':', '%3A'))
 
 def request_url(prj):
-    return API_URL + 'search/request?match=%%28state%%2F%%40name%%3D%%27new%%27+or+state%%2F%%40name%%3D%%27review%%27%%29+and+%%28action%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+action%%2Fsource%%2F%%40project%%3D%%27%s%%27%%29' % \
+    return 'http://localhost/search/request?match=%%28state%%2F%%40name%%3D%%27new%%27+or+state%%2F%%40name%%3D%%27review%%27%%29+and+%%28action%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+action%%2Fsource%%2F%%40project%%3D%%27%s%%27%%29' % \
         tuple([prj.replace(':', '%3A')] * 2)
+
 
 def GET_PROJECT_PACKAGES(*projects):
     def decorator(test_method):
-        def wrapped_test_method(*args):
-            for project in projects:
-                addExpectedRequest('GET', API_URL + 'source/' + project,
-                                   file='%s/directory' % project)
-            test_method(*args)
-        # "rename" method otherwise we cannot specify a TestCaseClass.testName
-        # cmdline arg when using unittest.main()
-        wrapped_test_method.__name__ = test_method.__name__
-        return wrapped_test_method
+        # decorators get applied in the reversed order (bottom-up)
+        for project in reversed(projects):
+            test_method = GET(f'http://localhost/source/{project}', file=f'{project}/directory')(test_method)
+        return test_method
     return decorator
+
 
 def POST_RDIFF(oldprj, newprj):
     def decorator(test_method):
-        def wrapped_test_method(*args):
-            addExpectedRequest('POST', rdiff_url('common-one',   oldprj, newprj), exp='', text='')
-            addExpectedRequest('POST', rdiff_url('common-two',   oldprj, newprj), exp='', file='common-two-diff')
-            addExpectedRequest('POST', rdiff_url('common-three', oldprj, newprj), exp='', text='')
-            test_method(*args)
-        # "rename" method otherwise we cannot specify a TestCaseClass.testName
-        # cmdline arg when using unittest.main()
-        wrapped_test_method.__name__ = test_method.__name__
-        return wrapped_test_method
+        # decorators get applied in the reversed order (bottom-up)
+        test_method = POST(rdiff_url('common-three', oldprj, newprj), exp='', text='')(test_method)
+        test_method = POST(rdiff_url('common-two', oldprj, newprj), exp='', file='common-two-diff')(test_method)
+        test_method = POST(rdiff_url('common-one', oldprj, newprj), exp='', text='')(test_method)
+        return test_method
     return decorator
+
 
 def suite():
     import unittest
