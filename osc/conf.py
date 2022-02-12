@@ -75,6 +75,36 @@ GNOME_KEYRING = False
 try:
     import keyring
     GENERIC_KEYRING = True
+    try:
+        import secretstorage
+        if 'DISPLAY' in os.environ:
+            # Looks lie we have desktop session
+            # Continue to the normal desktop unlock procedures.
+            pass
+        if 'DBUS_SESSION_BUS_ADDRESS' in os.environ:
+            # Ensure DBUS has launced for headless GNOME_KEYRING.
+            pass
+        else:
+            raise SystemExit ("""
+The DBUS_SESSION_BUS_ADDRESS environment variable s not set which
+probably means that DBUS is not running.
+
+If you have just installed osc or gnome keyring then you need to
+logout and login again, or source /etc/profile.
+""")
+        if 'GNOME_KEYRING_CONTORL' in os.environ:
+            # Ensure the GNOME_KEYRING is started.
+            pass
+        else:
+            raise SystemExit ("""
+The GNOME_KEYRING_CONTROL enviornment variable is not set which
+probably means GNOME KEYRING DAEMON is not running.
+
+If you have just installed osc or gnome keying then you need to logout
+and login again.
+""")
+    except:
+        pass
 except:
     try:
         import gobject
@@ -84,6 +114,31 @@ except:
     except:
         pass
 
+
+def _unlock_gnome_keyring(prompt):
+    import subprocess
+
+    # Make the uses .local directory.  Otherwise initial keyring creation
+    # will fail.
+    if not os.path.exists(os.path.expanduser('~/.local')):
+        os.makedirs(os.path.expanduser('~/.local'), mode=0o700)
+
+    process = subprocess.Popen(['/usr/bin/gnome-keyring-daemon', '--start',
+                                '--components=secrets'],
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE)
+    password = getpass.getpass(prompt=prompt)
+    password = (password + '\n').encode('UTF-8')
+    process = subprocess.Popen(['/usr/bin/gnome-keyring-daemon', '--unlock',
+                                '--replace', '--components=secrets'],
+        stdin  = subprocess.PIPE,
+        stdout = subprocess.PIPE,
+        stderr = subprocess.PIPE)
+    stdoutdata,stderrdata = process.communicate(input=password)
+    dbus = secretstorage.dbus_init()
+    collection = secretstorage.get_default_collection(dbus)
+    if collection.is_locked():
+        raise SystemExit('Unable to unlock keyring.')
 
 def _get_processors():
     """
@@ -833,7 +888,16 @@ def write_initial_config(conffile, entries, custom_template='', creds_mgr_descri
         creds_mgr = creds_mgr_descriptor.create(cp)
     else:
         creds_mgr = _get_credentials_manager(config['apiurl'], cp)
-    creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
+    try:
+        creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
+    except keyring.errors.InitError:
+        print ('Creating a new keyring.')
+        _unlock_gnome_keyring('New keyring password: ')
+        creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
+    except keyring.eror.KeyringLocked:
+        print ('Unlock keyring.')
+        _unlock_gnome_keyring('Keyring password: ')
+        creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
     write_config(conffile, cp)
 
 
@@ -853,7 +917,16 @@ def add_section(filename, url, user, passwd, creds_mgr_descriptor=None):
         creds_mgr = creds_mgr_descriptor.create(cp)
     else:
         creds_mgr = _get_credentials_manager(url, cp)
-    creds_mgr.set_password(url, user, passwd)
+    try:
+        creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
+    except keyring.errors.InitError:
+        print ('Creating a new keyring.')
+        _unlock_gnome_keyring('New keyring password: ')
+        creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
+    except keyring.eror.KeyringLocked:
+        print ('Unlock keyring.')
+        _unlock_gnome_keyring('Keyring password: ')
+        creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
     write_config(filename, cp)
 
 
@@ -974,7 +1047,17 @@ def get_config(override_conffile=None,
         user = _extract_user_compat(cp, url, creds_mgr)
         if user is None:
             raise oscerr.ConfigMissingCredentialsError('No user found in section %s' % url, conffile, url)
-        password = creds_mgr.get_password(url, user)
+        try:
+            password = creds_mgr.get_password(url, user)
+        except keyring.errors.InitError:
+            print ('Creating a new keyring.')
+            _unlock_gnome_keyring('New keyring password: ')
+            password = creds_mgr.get_password(url, user)
+        except keyring.errors.KeyringLocked:
+            print ('Unlock keyring.')
+            _unlock_gnome_keyring('Keyring password: ')
+            password = creds_mgr.get_password(url, user)
+
         if password is None:
             raise oscerr.ConfigMissingCredentialsError('No password found in section %s' % url, conffile, url)
 
