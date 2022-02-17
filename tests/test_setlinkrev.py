@@ -1,8 +1,8 @@
 import osc.core
 import osc.oscerr
 import os
-from common import GET, PUT, OscTestCase
-FIXTURES_DIR = os.path.join(os.getcwd(), 'setlinkrev_fixtures')
+from .common import GET, PUT, OscTestCase
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'setlinkrev_fixtures')
 
 def suite():
     import unittest

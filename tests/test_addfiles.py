@@ -2,9 +2,9 @@ import osc.core
 import osc.oscerr
 import os
 import sys
-from common import OscTestCase
+from .common import OscTestCase
 
-FIXTURES_DIR = os.path.join(os.getcwd(), 'addfile_fixtures')
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'addfile_fixtures')
 
 def suite():
     import unittest

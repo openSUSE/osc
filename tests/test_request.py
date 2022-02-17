@@ -9,9 +9,9 @@ except ImportError:
 import osc.core
 import osc.oscerr
 import os
-from common import OscTestCase
+from .common import OscTestCase
 
-FIXTURES_DIR = os.path.join(os.getcwd(), 'request_fixtures')
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'request_fixtures')
 
 def suite():
     import unittest

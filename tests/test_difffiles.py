@@ -3,9 +3,9 @@ import osc.oscerr
 from osc.util.helper import decode_list
 import os
 import re
-from common import GET, OscTestCase
+from .common import GET, OscTestCase
 
-FIXTURES_DIR = os.path.join(os.getcwd(), 'difffile_fixtures')
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'difffile_fixtures')
 
 def suite():
     import unittest

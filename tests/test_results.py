@@ -1,5 +1,5 @@
 import osc.commandline
-from common import GET, OscTestCase
+from .common import GET, OscTestCase
 import os
 import sys
 
