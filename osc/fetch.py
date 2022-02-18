@@ -223,7 +223,6 @@ class Fetcher:
                 if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
                     continue
                 if i.hdrmd5:
-                    from .util import packagequery
                     if i.name.startswith('container:'):
                         hdrmd5 = dgst(i.fullfilename)
                     else:
@@ -254,6 +253,20 @@ class Fetcher:
                     else:
                         prefix = '[%d/%d] ' % (done, needed)
                     self.fetch(i, prefix=prefix)
+
+                    if not os.path.isfile(i.fullfilename):
+                        # if the file wasn't downloaded and cannot be found on disk,
+                        # mark it for downloading from the API
+                        self.__add_cpio(i)
+                    else:
+                        # if the checksum of the downloaded package doesn't match,
+                        # delete it and mark it for downloading from the API
+                        hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
+                        if not hdrmd5 or hdrmd5 != i.hdrmd5:
+                            print('%s/%s: attempting download from api, since the hdrmd5 did not match'
+                                % (i.project, i.name))
+                        os.unlink(i.fullfilename)
+                        self.__add_cpio(i)
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
