@@ -29,7 +29,7 @@ from .meter import create_text_meter
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
                  http_debug=False, cookiejar=None, offline=False,
-                 enable_cpio=True, modules=[]):
+                 enable_cpio=True, modules=[], download_api_only=False):
         # set up progress bar callback
         self.progress_obj = None
         if sys.stdout.isatty():
@@ -43,6 +43,7 @@ class Fetcher:
         self.offline = offline
         self.cpio = {}
         self.enable_cpio = enable_cpio
+        self.download_api_only = download_api_only
 
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
@@ -195,6 +196,8 @@ class Fetcher:
                 sys.exit(1)
 
     def _build_urllist(self, buildinfo, pac):
+        if self.download_api_only:
+            return []
         urllist = self.urllist
         key = '%s/%s' % (pac.project, pac.repository)
         project_repo_url = buildinfo.urls.get(key)
