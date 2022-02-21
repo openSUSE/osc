@@ -4082,8 +4082,6 @@ def _get_linux_distro():
 
 def get_default_editor():
     system = platform.system()
-    if system == 'Windows':
-        return 'notepad'
     if system == 'Linux':
         dist = _get_linux_distro()
         if dist == 'debian':
@@ -4095,8 +4093,6 @@ def get_default_editor():
 
 def get_default_pager():
     system = platform.system()
-    if system == 'Windows':
-        return 'less'
     if system == 'Linux':
         dist = _get_linux_distro()
         if dist == 'debian':
@@ -5061,12 +5057,8 @@ def checkout_package(apiurl, project, package,
 
     if not prj_dir:
         prj_dir = olddir
-    else:
-        if sys.platform[:3] == 'win':
-            prj_dir = prj_dir[:2] + prj_dir[2:].replace(':', ';')
-        else:
-            if conf.config['checkout_no_colon']:
-                prj_dir = prj_dir.replace(':', '/')
+    elif conf.config['checkout_no_colon']:
+        prj_dir = prj_dir.replace(':', '/')
 
     root_dots = '.'
     if conf.config['checkout_rooted']:
