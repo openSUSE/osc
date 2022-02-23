@@ -3449,6 +3449,11 @@ def meta_get_packagelist(apiurl, prj, deleted=None, expand=False):
     query = {}
     if deleted:
         query['deleted'] = 1
+    elif deleted in (False, 0):
+        # HACK: Omitted 'deleted' and 'deleted=0' produce different results.
+        # By explicit 'deleted=0', we also get multibuild packages listed.
+        # See: https://github.com/openSUSE/open-build-service/issues/9715
+        query['deleted'] = 0
     if expand:
         query['expand'] = 1
 

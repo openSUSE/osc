@@ -7496,7 +7496,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
         if package is None:
-            package = meta_get_packagelist(apiurl, project)
+            package = meta_get_packagelist(apiurl, project, deleted=0)
         else:
             if opts.multibuild_package:
                 packages = []
