@@ -7524,6 +7524,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for i in binaries:
                     if binary != None and binary != i.name:
                         continue
+                    # skip metadata (unless explicitly specified as the `FILE` (== `binary`) argument)
+                    if not binary and i.name.startswith("_"):
+                        continue
+                    # skip logs (unless explicitly specified as the `FILE` (== `binary`) argument)
+                    if not binary and i.name.endswith(".log"):
+                        continue
                     # skip source rpms
                     if not opts.sources and (i.name.endswith('src.rpm') or i.name.endswith('sdeb')):
                         continue
