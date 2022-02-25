@@ -1177,6 +1177,8 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('-F', '--file', metavar='FILE',
+                  help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-r', '--revision', metavar='REV',
                   help='specify a certain source revision ID (the md5 sum) for the source package')
     @cmdln.option('-s', '--supersede', metavar='REQUEST_ID',
@@ -1257,6 +1259,14 @@ class Osc(cmdln.Cmdln):
 
         if opts.message:
             opts.message = str(opts.message.encode().decode('unicode_escape'))
+        elif opts.file:
+            if opts.file == '-':
+                opts.message = sys.stdin.read()
+            else:
+                try:
+                    opts.message = open(opts.file).read()
+                except:
+                    sys.exit('could not open file \'%s\'.' % opts.file)
 
         myreqs = []
         if opts.supersede:
