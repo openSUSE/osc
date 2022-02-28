@@ -7427,8 +7427,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='do not show downloading progress')
     @cmdln.option('-d', '--destdir', default='./binaries', metavar='DIR',
                   help='destination directory')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                  help='get binaries from specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help='Get binaries from the specified flavor of a multibuild package.'
+                  ' It is meant for use from a package checkout when it is not possible to specify package:flavor.')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
     @cmdln.option('--debug', action="store_true",
@@ -7457,6 +7458,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project = None
         package = None
         binary = None
+
+        if opts.multibuild_package and ((len(args) > 2) or (len(args) <= 2 and is_project_dir(os.getcwd()))):
+            self.optparser.error("The -M/--multibuild-package option can be only used from a package checkout.")
 
         if len(args) < 1 and is_package_dir('.'):
             self.print_repos()
