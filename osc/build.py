@@ -1058,7 +1058,8 @@ def main(apiurl, opts, argv):
                       http_debug = config['http_debug'],
                       modules = bi.modules,
                       enable_cpio = not opts.disable_cpio_bulk_download,
-                      cookiejar=cookiejar)
+                      cookiejar=cookiejar,
+                      download_api_only=opts.download_api_only)
 
     if not opts.trust_all_projects:
         # implicitly trust the project we are building for
