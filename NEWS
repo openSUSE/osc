@@ -1,5 +1,21 @@
 0.176.0
+  - add -F option to osc submitreq
   - add --verbose option to build command
+  - fix getbinaries command to fetch also multibuild packages
+  - fix getbinaries -M/--multibuild-package option usage
+  - skip fetching metadata and logs in the getbinaries command
+  - do not download a bdep with a hdrmd5 from the api by default
+  - re-download file from API when hdrmd5 doesn't match
+  - honor --download-api-only option
+  - remove Windows from the supported operating systems
+  - fix license in setup.py
+  - add py3.10 and py3.11 to the classifiers in setup.py
+  - use the latest version of COPYING file from gnu.org
+  - fix crash on terminal resize during download
+  - do not fail with a traceback in case of a config error
+  - preserve oscrc symlink when writing conf file
+  - escape % character in binary download URLs
+  - fix printing paths to built debian packages
 
 0.175.0
   - do not crash when running "osc search --binary --verbose foo"
