@@ -2972,7 +2972,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         DESTPAC is omitted.
 
         usage:
-            osc aggregatepac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+            osc aggregatepac SOURCEPRJ SOURCEPAC[:FLAVOR] DESTPRJ [DESTPAC]
         ${cmd_option_list}
         """
 

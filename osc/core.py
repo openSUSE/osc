@@ -5277,9 +5277,14 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
     meta_change = False
     dst_meta = ''
     apiurl = conf.config['apiurl']
+
+    # we need to remove :flavor from the package names when accessing meta
+    src_package_meta = src_package.split(":")[0]
+    dst_package_meta = dst_package.split(":")[0]
+
     try:
         dst_meta = meta_exists(metatype='pkg',
-                               path_args=(quote_plus(dst_project), quote_plus(dst_package)),
+                               path_args=(quote_plus(dst_project), quote_plus(dst_package_meta)),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
         root = ET.fromstring(parse_meta_to_string(dst_meta))
@@ -5292,8 +5297,8 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
         meta_change = True
 
     if meta_change:
-        src_meta = show_package_meta(apiurl, src_project, src_package)
-        dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+        src_meta = show_package_meta(apiurl, src_project, src_package_meta)
+        dst_meta = replace_pkg_meta(src_meta, dst_package_meta, dst_project)
         meta_change = True
 
     if disable_publish:
@@ -5307,12 +5312,12 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
         dst_meta = ET.tostring(root, encoding=ET_ENCODING)
     if meta_change:
         edit_meta('pkg',
-                  path_args=(dst_project, dst_package),
+                  path_args=(dst_project, dst_package_meta),
                   data=dst_meta)
 
     # create the _aggregate file
     # but first, make sure not to overwrite an existing one
-    if '_aggregate' in meta_get_filelist(apiurl, dst_project, dst_package):
+    if '_aggregate' in meta_get_filelist(apiurl, dst_project, dst_package_meta):
         print(file=sys.stderr)
         print('_aggregate file already exists...! Aborting', file=sys.stderr)
         sys.exit(1)
@@ -5341,7 +5346,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
 </aggregatelist>
 """
 
-    u = makeurl(apiurl, ['source', dst_project, dst_package, '_aggregate'])
+    u = makeurl(apiurl, ['source', dst_project, dst_package_meta, '_aggregate'])
     http_PUT(u, data=aggregate_template)
     print('Done.')
 
