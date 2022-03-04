@@ -304,9 +304,14 @@ apiurl = %(apiurl)s
 # ccache = 1
 
 # Enable sccache in build roots. Conflicts with ccache.
+# Equivalent to sccache_uri = file:///var/tmp/osbuild-sccache-{pkgname}.tar
 # sccache = 1
 
-# Optional remote URI for sccache storage.
+# Optional URI for sccache storage. Maybe a file://, redis:// or other URI supported
+# by the configured sccache install. This uri MAY take {pkgname} as a special parameter
+# which will be replaced with the name of the package to be built.
+# sccache_uri = file:///var/tmp/osbuild-sccache-{pkgname}.tar.lzop
+# sccache_uri = file:///var/tmp/osbuild-sccache-{pkgname}.tar
 # sccache_uri = redis://127.0.0.1:6379
 
 # extra packages to install when building packages locally (osc build)

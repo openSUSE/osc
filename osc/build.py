@@ -682,16 +682,6 @@ def main(apiurl, opts, argv):
     if opts.pkg_ccache:
         buildargs.append('--pkg-ccache=%s' % opts.pkg_ccache)
         xp.append('ccache')
-    if opts.sccache_uri or config['sccache_uri'] or opts.sccache or config['sccache']:
-        if opts.pkg_ccache or opts.ccache or config['ccache']:
-            raise oscerr.WrongArgs('Error: sccache and ccache can not be enabled at the same time')
-        if opts.sccache_uri:
-            buildargs.append('--sccache-uri=%s' % opts.sccache_uri)
-        elif config['sccache_uri']:
-            buildargs.append('--sccache-uri=%s' % config['sccache_uri'])
-        else:
-            buildargs.append('--sccache')
-        xp.append('sccache')
     if opts.linksources:
         buildargs.append('--linksources')
     if opts.baselibs:
@@ -778,6 +768,21 @@ def main(apiurl, opts, argv):
                          'project': prj, 'package': pacname, 'apihost': apihost}
         except:
             pass
+
+    # We configure sccache after pacname, so that in default cases we can have an sccache for each
+    # package to prevent cross-cache polutions. It helps to make the local-use case a bit nicer.
+    if opts.sccache_uri or config['sccache_uri'] or opts.sccache or config['sccache']:
+        if opts.pkg_ccache or opts.ccache or config['ccache']:
+            raise oscerr.WrongArgs('Error: sccache and ccache can not be enabled at the same time')
+        sccache_arg = "--sccache-uri=/var/tmp/osbuild-sccache-{pkgname}.tar"
+        if opts.sccache_uri:
+            sccache_arg = '--sccache-uri=%s' % opts.sccache_uri
+        elif config['sccache_uri']:
+            sccache_arg = '--sccache-uri=%s' % config['sccache_uri']
+        # Format the package name.
+        sccache_arg = sccache_arg.format(pkgname=pacname)
+        buildargs.append(sccache_arg)
+        xp.append('sccache')
 
     # define buildinfo & config local cache
     bi_file = None
