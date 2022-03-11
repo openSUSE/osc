@@ -5267,16 +5267,20 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
     http_PUT(u, data=link_template)
     print('Done.')
 
-def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map = {}, disable_publish = False, nosources = False):
+
+def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map=None,
+                  disable_publish=False, nosources=False, repo_check=True):
     """
     aggregate package
      - "src" is the original package
      - "dst" is the "aggregate" package that we are creating here
      - "map" is a dictionary SRC => TARGET repository mappings
+     - "repo_check" determines if presence of repos in the source and destination repos is checked
     """
     meta_change = False
     dst_meta = ''
     apiurl = conf.config['apiurl']
+    repo_map = repo_map or {}
 
     # we need to remove :flavor from the package names when accessing meta
     src_package_meta = src_package.split(":")[0]
@@ -5295,6 +5299,34 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
         if e.code != 404:
            raise
         meta_change = True
+
+    if repo_check:
+        src_repos = set(get_repositories_of_project(apiurl, src_project))
+        dst_repos = set(get_repositories_of_project(apiurl, dst_project))
+
+        if repo_map:
+            map_from = set(repo_map.keys())
+            map_to = set(repo_map.values())
+
+            # only repos that do not exist in src/dst remain
+            delta_from = map_from - src_repos
+            delta_to = map_to - dst_repos
+
+            if delta_from or delta_to:
+                msg = ["The following repos in repo map do not exist"]
+                if delta_from:
+                    msg += ["  Source repos: " + ", ".join(sorted(delta_from))]
+                if delta_to:
+                    msg += ["  Destination repos: " + ", ".join(sorted(delta_to))]
+                raise oscerr.OscBaseError("\n".join(msg))
+        else:
+            # no overlap between src and dst repos leads to the 'broken: missing repositories: <src_project>' message
+            if not src_repos & dst_repos:
+                msg = [
+                    "The source and the destination project do not have any repository names in common.",
+                    "Use repo map to specify actual repository mapping.",
+                ]
+                raise oscerr.OscBaseError("\n".join(msg))
 
     if meta_change:
         src_meta = show_package_meta(apiurl, src_project, src_package_meta)
