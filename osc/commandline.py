@@ -3110,8 +3110,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Release sources and binaries
 
         This command is used to transfer sources and binaries without rebuilding them.
-        It requires defined release targets set to trigger="manual". Please refer the
-        release management chapter in the OBS book for details.
+        It requires defined release targets set to trigger="manual".
 
         usage:
             osc release [ SOURCEPROJECT [ SOURCEPACKAGE ] ]
