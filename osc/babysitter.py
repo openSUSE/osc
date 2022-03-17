@@ -205,9 +205,6 @@ def main():
         sys.stdout = os.fdopen(sys.stdout.fileno(), sys.stdout.mode, 1)
         sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
 
-    if not os.isatty(sys.stderr.fileno()):
-        sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
-
     sys.exit(run(commandline.Osc()))
 
 # vim: sw=4 et
