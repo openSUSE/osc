@@ -7518,8 +7518,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
         if package is None:
+            package_specified = False
             package = meta_get_packagelist(apiurl, project, deleted=0)
         else:
+            package_specified = True
             if opts.multibuild_package:
                 packages = []
                 for subpackage in opts.multibuild_package:
@@ -7554,7 +7556,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             continue
                         if i.name.find('-debugsource-') >= 0:
                             continue
-                    fname = '%s/%s' % (target_dir, i.name)
+
+                    if package_specified:
+                        # if package is specified, download everything into the target dir
+                        fname = '%s/%s' % (target_dir, i.name)
+                    elif i.name.startswith("_") or i.name.endswith(".log"):
+                        # download logs and metadata into subdirs
+                        # to avoid overwriting them with files with indentical names
+                        fname = '%s/%s/%s' % (target_dir, pac, i.name)
+                    else:
+                        # always download packages into the target dir
+                        fname = '%s/%s' % (target_dir, i.name)
+
                     if os.path.exists(fname):
                         st = os.stat(fname)
                         if st.st_mtime == i.mtime and st.st_size == i.size:
