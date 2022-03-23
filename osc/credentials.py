@@ -164,12 +164,91 @@ class TransientDescriptor(AbstractCredentialsManagerDescriptor):
 
 
 class KeyringCredentialsManager(AbstractCredentialsManager):
+    def _start_SecretService_Keyring(self):
+        import os
+        import subprocess
+
+        keyring_daemon = '/usr/bin/gnome-keyring-daemon'
+        if not os.path.exists(keyring_daemon):
+            # Gnome Keyring Daemon in not installed.
+            # return quickly since there is nothing to do.
+            return
+
+        # Starts and unlock GNOME keyring when running headless.
+
+        if 'DISPLAY' in os.environ:
+            # Looks like we have desktop session
+            # Continue to the normal desktop unlock procedures.
+            return
+        if 'DBUS_SESSION_BUS_ADDRESS' in os.environ:
+            # Ensure DBUS has launced for headless GNOME_KEYRING.
+            pass
+        else:
+            raise SystemExit("""
+The DBUS_SESSION_BUS_ADDRESS environment variable is not set which
+probably means that DBUS is not running.
+""")
+
+        # Ensure the GNOME_KEYRING is started.
+        if 'GNOME_KEYRING_CONTORL' in os.environ:
+            if not os.path.exists(os.environ.get('GNOME_KEYRING_CONTROL')):
+                # Make the uses .local directory.  Otherwise
+                # initial keyring creation will fail.
+                if not os.path.exists(os.path.expanduser('~/.local')):
+                    os.makedirs(os.path.expanduser('~/.local'), mode=0o700)
+            # GNOME Keyring daemon is not running, so we start it here.
+            process = subprocess.Popen([keyring_daemon,
+                                        '--start', '--components=secrets'],
+                                       stdin=subprocess.DEVNULL,
+                                       stdout=subprocess.DEVNULL,
+                                       stderr=subprocess.DEVNULL)
+            process.communicate(timeout=5)
+        try:
+            import secretstorage
+            dbus = secretstorage.dbus_init()
+            collection = secretstorage.get_default_collection(dbus)
+            if collection.is_locked():
+                pass
+            else:
+                return
+        except BaseException:
+            collection = None
+        self._unlock_SecretService_Keyring(keyring_daemon, collection)
+
+    def _unlock_SecretService_Keyring(self, keyring_daemon, collection):
+        import os
+        import subprocess
+        keyringf = os.path.expanduser('~/.local/share/keyrings/login.keyring')
+        keystore = os.path.expanduser('~/.local/share/keyrings/user.keystore')
+        if not os.path.exists(keyringf) and not os.path.exists(keystore):
+            prompt = 'New keyring password: '
+        else:
+            prompt = 'Keyring password: '
+
+        password = getpass.getpass(prompt=prompt)
+        password = (password + '\n').encode('UTF-8')
+        process = subprocess.Popen([keyring_daemon,
+                                    '--unlock', '--replace',
+                                    '--components=secrets'],
+                                   stdin=subprocess.PIPE,
+                                   stdout=subprocess.DEVNULL,
+                                   stderr=subprocess.DEVNULL)
+        process.communicate(input=password, timeout=5)
+        if collection is None:
+            import secretstorage
+            dbus = secretstorage.dbus_init()
+            collection = secretstorage.get_default_collection(dbus)
+        if collection.is_locked():
+            raise SystemExit('Unable to unlock keyring.')
+
     def _process_options(self, options):
         if options is None:
             raise RuntimeError('options may not be None')
         self._backend_cls_name = options
 
     def _load_backend(self):
+        if self._backend_cls_name == 'keyring.backends.SecretService.Keyring':
+            self._start_SecretService_Keyring()
         keyring_backend = keyring.core.load_keyring(self._backend_cls_name)
         keyring.set_keyring(keyring_backend)
 
