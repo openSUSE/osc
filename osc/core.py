@@ -4302,9 +4302,9 @@ def create_submit_request(apiurl,
         r = root.get('id')
     except HTTPError as e:
         if e.hdrs.get('X-Opensuse-Errorcode') == "submit_request_rejected":
-            print("WARNING:")
-            print("WARNING: Project does not accept submit request, a NEW maintenance incident request will be created instead")
-            print("WARNING:")
+            print('WARNING: As the project is in maintenance, a maintenance incident request is')
+            print('WARNING: being created (instead of a regular submit request). If this is not your')
+            print('WARNING: intention please revoke it to avoid unnecessary work for all involved parties.')
             xpath = 'maintenance/maintains/@project = \'%s\' and attribute/@name = \'%s\'' % (dst_project, conf.config['maintenance_attribute'])
             res = search(apiurl, project_id=xpath)
             root = res['project_id']
