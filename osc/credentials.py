@@ -195,16 +195,21 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
 
 
 class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
-    def __init__(self, keyring_backend):
+    def __init__(self, keyring_backend, name=None, description=None):
         self._keyring_backend = keyring_backend
+        self._name = name
+        self._description = description
 
     def name(self):
+        if self._name:
+            return self._name
         if hasattr(self._keyring_backend, 'name'):
             return self._keyring_backend.name
-        else:
-            return self._keyring_backend.__class__.__name__
+        return self._keyring_backend.__class__.__name__
 
     def description(self):
+        if self._description:
+            return self._description
         return 'Backend provided by python-keyring'
 
     def create(self, cp):
@@ -280,14 +285,34 @@ class GnomeKeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
         return GnomeKeyringCredentialsManager(cp, None)
 
 
+# we're supporting only selected python-keyring backends in osc
+SUPPORTED_KEYRING_BACKENDS = {
+    "keyutils.osc.OscKernelKeyringBackend": {
+        "name": "Kernel keyring",
+        "description": "Store password in user session keyring in kernel keyring [secure, in-memory, per-session]",
+    },
+    "keyring.backends.SecretService.Keyring": {
+        "name": "Secret Service",
+        "description": "Store password in Secret Service (GNOME Keyring backend) [secure, persistent]",
+    },
+    "keyring.backends.kwallet.DBusKeyring": {
+        "name": "KWallet",
+        "description": "Store password in KWallet [secure, persistent]",
+    },
+}
+
+
 def get_credentials_manager_descriptors():
-    if has_keyring_support():
-        backend_list = keyring.backend.get_all_keyring()
-    else:
-        backend_list = []
     descriptors = []
-    for backend in backend_list:
-        descriptors.append(KeyringCredentialsDescriptor(backend))
+
+    if has_keyring_support():
+        for backend in keyring.backend.get_all_keyring():
+            qualified_backend_name = qualified_name(backend)
+            data = SUPPORTED_KEYRING_BACKENDS.get(qualified_backend_name, None)
+            if not data:
+                continue
+            descriptor = KeyringCredentialsDescriptor(backend, data["name"], data["description"])
+            descriptors.append(descriptor)
     descriptors.sort()
     if gnomekeyring:
         descriptors.append(GnomeKeyringCredentialsDescriptor())
