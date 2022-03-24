@@ -23,11 +23,16 @@ class AbstractCredentialsManagerDescriptor(object):
     def description(self):
         raise NotImplementedError()
 
+    def priority(self):
+        # priority determines order in the credentials managers list
+        # higher number means higher priority
+        raise NotImplementedError()
+
     def create(self, cp):
         raise NotImplementedError()
 
     def __lt__(self, other):
-        return self.name() < other.name()
+        return (-self.priority(), self.name()) < (-other.priority(), other.name())
 
 
 class AbstractCredentialsManager(object):
@@ -86,6 +91,9 @@ class PlaintextConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
     def description(self):
         return 'Store the password in plain text in the osc config file [insecure, persistent]'
 
+    def priority(self):
+        return 1
+
     def create(self, cp):
         return PlaintextConfigFileCredentialsManager(cp, None)
 
@@ -120,6 +128,9 @@ class ObfuscatedConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
 
     def description(self):
         return 'Store the password in obfuscated form in the osc config file [insecure, persistent]'
+
+    def priority(self):
+        return 2
 
     def create(self, cp):
         return ObfuscatedConfigFileCredentialsManager(cp, None)
@@ -159,6 +170,9 @@ class TransientDescriptor(AbstractCredentialsManagerDescriptor):
     def description(self):
         return 'Do not store the password and always ask for it [secure, in-memory]'
 
+    def priority(self):
+        return 3
+
     def create(self, cp):
         return TransientCredentialsManager(cp, None)
 
@@ -195,10 +209,11 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
 
 
 class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
-    def __init__(self, keyring_backend, name=None, description=None):
+    def __init__(self, keyring_backend, name=None, description=None, priority=None):
         self._keyring_backend = keyring_backend
         self._name = name
         self._description = description
+        self._priority = priority
 
     def name(self):
         if self._name:
@@ -211,6 +226,11 @@ class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
         if self._description:
             return self._description
         return 'Backend provided by python-keyring'
+
+    def priority(self):
+        if self._priority is not None:
+            return self._priority
+        return 0
 
     def create(self, cp):
         qualified_backend_name = qualified_name(self._keyring_backend)
@@ -281,6 +301,9 @@ class GnomeKeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
         return 'Deprecated GNOME Keyring Manager. If you use \
                 this we will send you a Dial-In modem'
 
+    def priority(self):
+        return 0
+
     def create(self, cp):
         return GnomeKeyringCredentialsManager(cp, None)
 
@@ -290,14 +313,17 @@ SUPPORTED_KEYRING_BACKENDS = {
     "keyutils.osc.OscKernelKeyringBackend": {
         "name": "Kernel keyring",
         "description": "Store password in user session keyring in kernel keyring [secure, in-memory, per-session]",
+        "priority": 10,
     },
     "keyring.backends.SecretService.Keyring": {
         "name": "Secret Service",
         "description": "Store password in Secret Service (GNOME Keyring backend) [secure, persistent]",
+        "priority": 9,
     },
     "keyring.backends.kwallet.DBusKeyring": {
         "name": "KWallet",
         "description": "Store password in KWallet [secure, persistent]",
+        "priority": 8,
     },
 }
 
@@ -311,14 +337,19 @@ def get_credentials_manager_descriptors():
             data = SUPPORTED_KEYRING_BACKENDS.get(qualified_backend_name, None)
             if not data:
                 continue
-            descriptor = KeyringCredentialsDescriptor(backend, data["name"], data["description"])
+            descriptor = KeyringCredentialsDescriptor(
+                backend,
+                data["name"],
+                data["description"],
+                data["priority"]
+            )
             descriptors.append(descriptor)
-    descriptors.sort()
     if gnomekeyring:
         descriptors.append(GnomeKeyringCredentialsDescriptor())
     descriptors.append(PlaintextConfigFileDescriptor())
     descriptors.append(ObfuscatedConfigFileDescriptor())
     descriptors.append(TransientDescriptor())
+    descriptors.sort()
     return descriptors
 
 
