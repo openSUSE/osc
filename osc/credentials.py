@@ -15,6 +15,9 @@ try:
 except ImportError:
     gnomekeyring = None
 
+from . import conf
+from . import oscerr
+
 
 class AbstractCredentialsManagerDescriptor(object):
     def name(self):
@@ -184,7 +187,11 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
         self._backend_cls_name = options
 
     def _load_backend(self):
-        keyring_backend = keyring.core.load_keyring(self._backend_cls_name)
+        try:
+            keyring_backend = keyring.core.load_keyring(self._backend_cls_name)
+        except ModuleNotFoundError:
+            msg = "Invalid credentials_mgr_class: {}".format(self._backend_cls_name)
+            raise oscerr.ConfigError(msg, conf.config['conffile'])
         keyring.set_keyring(keyring_backend)
 
     @classmethod

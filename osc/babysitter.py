@@ -151,7 +151,7 @@ def run(prg, argv=None):
             raise
         print(e, file=sys.stderr)
     except (oscerr.ConfigError, oscerr.NoConfigfile) as e:
-        print(e.msg, file=sys.stderr)
+        print(e, file=sys.stderr)
     except configparser.Error as e:
         print(e.message, file=sys.stderr)
     except oscerr.OscIOError as e:
