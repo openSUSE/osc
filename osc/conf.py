@@ -1109,8 +1109,18 @@ def select_credentials_manager_descr():
     if not credentials.has_keyring_support():
         print('To use keyrings please install python%d-keyring.' % sys.version_info.major)
     creds_mgr_descriptors = credentials.get_credentials_manager_descriptors()
+
+    rows = []
     for i, creds_mgr_descr in enumerate(creds_mgr_descriptors, 1):
-        print('%d) %s (%s)' % (i, creds_mgr_descr.name(), creds_mgr_descr.description()))#
+        rows += [str(i), creds_mgr_descr.name(), creds_mgr_descr.description()]
+
+    from .core import build_table
+    headline = ('NUM', 'NAME', 'DESCRIPTION')
+    table = build_table(len(headline), rows, headline)
+    print()
+    for row in table:
+        print(row)
+
     i = raw_input('Select credentials manager: ')
     if not i.isdigit():
         sys.exit('Invalid selection')
