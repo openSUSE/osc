@@ -81,10 +81,10 @@ class PlaintextConfigFileCredentialsManager(AbstractCredentialsManager):
 
 class PlaintextConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
     def name(self):
-        return 'Config file credentials manager'
+        return 'Config'
 
     def description(self):
-        return 'Store the credentials in the config file (plain text)'
+        return 'Store the password in plain text in the osc config file [insecure, persistent]'
 
     def create(self, cp):
         return PlaintextConfigFileCredentialsManager(cp, None)
@@ -116,10 +116,10 @@ class ObfuscatedConfigFileCredentialsManager(
 
 class ObfuscatedConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
     def name(self):
-        return 'Obfuscated Config file credentials manager'
+        return 'Obfuscated config'
 
     def description(self):
-        return 'Store the credentials in the config file (obfuscated)'
+        return 'Store the password in obfuscated form in the osc config file [insecure, persistent]'
 
     def create(self, cp):
         return ObfuscatedConfigFileCredentialsManager(cp, None)
@@ -154,10 +154,10 @@ class TransientCredentialsManager(AbstractCredentialsManager):
 
 class TransientDescriptor(AbstractCredentialsManagerDescriptor):
     def name(self):
-        return 'Transient password store'
+        return 'Transient'
 
     def description(self):
-        return 'Do not store the password and always ask for the password'
+        return 'Do not store the password and always ask for it [secure, in-memory]'
 
     def create(self, cp):
         return TransientCredentialsManager(cp, None)
