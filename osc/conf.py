@@ -1121,7 +1121,9 @@ def select_credentials_manager_descr():
     for row in table:
         print(row)
 
-    i = raw_input('Select credentials manager: ')
+    i = raw_input('Select credentials manager [default=1]: ')
+    if not i:
+        i = "1"
     if not i.isdigit():
         sys.exit('Invalid selection')
     i = int(i) - 1
