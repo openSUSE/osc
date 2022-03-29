@@ -232,7 +232,12 @@ class Fetcher:
                     else:
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                         if hdrmd5 != i.hdrmd5:
-                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                            if i.hdrmd5 == "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0":
+                                # download on demand - the checksum is not known even to the server
+                                # let's log the actual hdrmd5 at least
+                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename} because the file originates in download on demand repository and the server doesn't know the checksum yet: {hdrmd5} (actual)")
+                                hdrmd5_is_valid = True
+                            elif conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
                                 print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
                                 hdrmd5_is_valid = True
                             else:
@@ -273,7 +278,11 @@ class Fetcher:
                     else:
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                         if hdrmd5 != i.hdrmd5:
-                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                            if i.hdrmd5 == "d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0":
+                                # download on demand - the checksum is not known even to the server
+                                # let's log the actual hdrmd5 at least
+                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename} because the file originates in download on demand repository and the server doesn't know the checksum yet: {hdrmd5} (actual)")
+                            elif conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
                                 print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
                             else:
                                 print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
