@@ -22,6 +22,9 @@ class ConfigError(OscBaseError):
         self.msg = msg
         self.file = fname
 
+    def __str__(self):
+        return "Error in config file {}\n   {}".format(self.file, self.msg)
+
 class ConfigMissingApiurl(ConfigError):
     """Exception raised when a apiurl does not exist in the config file"""
     def __init__(self, msg, fname, url):
@@ -45,6 +48,9 @@ class NoConfigfile(OscBaseError):
         OscBaseError.__init__(self)
         self.file = fname
         self.msg = msg
+
+    def __str__(self):
+        return "Config file cannot be found: {}\n   {}".format(self.file, self.msg)
 
 class ExtRuntimeError(OscBaseError):
     """Exception raised when there is a runtime error of an external tool"""
