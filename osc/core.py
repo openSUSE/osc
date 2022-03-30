@@ -32,7 +32,7 @@ except ImportError:
     distro = None
 
 try:
-    from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+    from urllib.parse import urlsplit, urlunsplit, urlparse, quote, quote_plus, urlencode, unquote
     from urllib.error import HTTPError, URLError
     from urllib.request import pathname2url, install_opener, urlopen
     from urllib.request import Request as URLRequest
@@ -41,7 +41,7 @@ try:
 except ImportError:
     #python 2.x
     from urlparse import urlsplit, urlunsplit, urlparse
-    from urllib import pathname2url, quote_plus, urlencode, unquote
+    from urllib import pathname2url, quote, quote_plus, urlencode, unquote
     from urllib2 import HTTPError, URLError, install_opener, urlopen
     from urllib2 import Request as URLRequest
     from cStringIO import StringIO
@@ -3332,7 +3332,22 @@ def makeurl(baseurl, l, query=[]):
         query = urlencode(query)
 
     scheme, netloc, path = urlsplit(baseurl)[0:3]
-    return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
+
+    # quote all parts of path in case there's a unicode character
+    l = [quote(i) for i in l]
+
+    joined_path = '/'.join([path] + list(l))
+    result = urlunsplit((scheme, netloc, joined_path, query, ''))
+
+    # check if URL path doesn't contain illegal characters
+    illegal_chars = ['?']
+    for illegal_char in illegal_chars:
+        quoted_illegal_char = quote(illegal_char)
+        if quoted_illegal_char in joined_path:
+            msg = "Illegal character '{}' ({}) in URL path: {}"
+            raise URLError(msg.format(illegal_char, quoted_illegal_char, result))
+
+    return result
 
 
 def http_request(method, url, headers={}, data=None, file=None):
