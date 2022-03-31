@@ -2,17 +2,31 @@ import importlib
 import bz2
 import base64
 import getpass
+import sys
+
 try:
     from urllib.parse import urlsplit
 except ImportError:
     from urlparse import urlsplit
+
 try:
     import keyring
 except ImportError:
     keyring = None
+except BaseException as e:
+    # catch and report any exceptions raised in the 'keyring' module
+    msg = "Warning: Unable to load the 'keyring' module due to an internal error:"
+    print(msg, e, file=sys.stderr)
+    keyring = None
+
 try:
     import gnomekeyring
 except ImportError:
+    gnomekeyring = None
+except BaseException as e:
+    # catch and report any exceptions raised in the 'gnomekeyring' module
+    msg = "Warning: Unable to load the 'gnomekeyring' module due to an internal error:"
+    print(msg, e, file=sys.stderr)
     gnomekeyring = None
 
 from . import conf
