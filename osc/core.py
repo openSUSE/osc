@@ -6707,12 +6707,15 @@ def parseRevisionOption(string, allow_md5=True):
     revisions = [None, None]
     if string:
         parts = string.split(':')
-        for i, revision in enumerate(parts[0:2], 0):
+
+        if len(parts) > 2:
+            raise oscerr.OscInvalidRevision(string)
+
+        for i, revision in enumerate(parts, 0):
             if revision.isdigit() or (allow_md5 and revision.isalnum() and len(revision) == 32):
                 revisions[i] = revision
             elif revision != '' and revision != 'latest':
-                print('your revision \'%s\' will be ignored' % string, file=sys.stderr)
-                return None, None
+                raise oscerr.OscInvalidRevision(string)
 
     return tuple(revisions)
 

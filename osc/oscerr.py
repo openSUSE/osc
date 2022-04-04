@@ -121,6 +121,22 @@ class OscIOError(OscBaseError):
         self.e = e
         self.msg = msg
 
+
+class OscValueError(OscBaseError):
+    """
+    Invalid argument value (of correct type).
+    """
+    pass
+
+
+class OscInvalidRevision(OscValueError):
+    """
+    Invalid revision value.
+    """
+    def __str__(self):
+        return "Invalid revision value: {}".format("".join(self.args))
+
+
 class PackageNotInstalled(OscBaseError):
     """
     Exception raised when a package is not installed on local system
