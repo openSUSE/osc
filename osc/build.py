@@ -144,7 +144,15 @@ class Buildinfo:
             self.release = root.find('release').text
         else:
             self.release = None
-        self.downloadurl = root.get('downloadurl')
+        if config['api_host_options'][apiurl]['downloadurl']:
+            self.enable_cpio = False
+            self.downloadurl = config['api_host_options'][apiurl]['downloadurl'] + "/repositories"
+            if config['http_debug']:
+                print("⚠️   setting dl_url to %s" % config['api_host_options'][apiurl]['downloadurl'])
+        else:
+            self.enable_cpio = True
+            self.downloadurl = root.get('downloadurl')
+
         self.debuginfo = 0
         if root.find('debuginfo') != None:
             try:
@@ -181,7 +189,12 @@ class Buildinfo:
             # a hash providing the matching URL for specific repos for newer OBS instances
             if node.get('url'):
                 url = node.get('url').replace('%', '%%')
-                self.urls[node.get('project')+"/"+node.get('repository')] = url + '/%(arch)s/%(filename)s'
+                if config['api_host_options'][apiurl]['downloadurl']:
+                    # Add the path element to the download url override.
+                    baseurl = config['api_host_options'][apiurl]['downloadurl'] + urlsplit(node.get('url'))[2]
+                else:
+                    baseurl = node.get('url')
+                self.urls[node.get('project')+"/"+node.get('repository')] = baseurl + '/%(arch)s/%(filename)s'
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
         self.preinstall_list = [ dep.name for dep in self.deps if dep.preinstall ]
@@ -1062,7 +1075,7 @@ def main(apiurl, opts, argv):
                       offline = opts.noinit or opts.offline,
                       http_debug = config['http_debug'],
                       modules = bi.modules,
-                      enable_cpio = not opts.disable_cpio_bulk_download,
+                      enable_cpio=not opts.disable_cpio_bulk_download and bi.enable_cpio,
                       cookiejar=cookiejar,
                       download_api_only=opts.download_api_only)
 
