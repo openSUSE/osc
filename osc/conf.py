@@ -44,7 +44,6 @@ import sys
 import getpass
 
 from io import StringIO
-from urllib.error import URLError
 from urllib.parse import urlsplit
 
 from . import OscConfigParser
@@ -404,7 +403,7 @@ Make sure that it has a [general] section.
 """
 
 config_missing_apiurl_text = """
-the apiurl \'%s\' does not exist in the config file. Please enter
+The apiurl \'%s\' does not exist in the config file. Please enter
 your credentials for this apiurl.
 """
 
@@ -415,8 +414,7 @@ def parse_apisrv_url(scheme, apisrv):
     elif scheme != None:
         url = scheme + apisrv
     else:
-        msg = 'invalid apiurl \'%s\' (specify the protocol (http:// or https://))' % apisrv
-        raise URLError(msg)
+        url = "https://" + apisrv
     scheme, url, path = urlsplit(url)[0:3]
     return scheme, url, path.rstrip('/')
 
@@ -647,7 +645,7 @@ def write_initial_config(conffile, entries, custom_template='', creds_mgr_descri
     write_config(conffile, cp)
 
 
-def add_section(filename, url, user, passwd, creds_mgr_descriptor=None):
+def add_section(filename, url, user, passwd, creds_mgr_descriptor=None, allow_http=None):
     """
     Add a section to config file for new api url.
     """
@@ -664,6 +662,8 @@ def add_section(filename, url, user, passwd, creds_mgr_descriptor=None):
     else:
         creds_mgr = _get_credentials_manager(url, cp)
     creds_mgr.set_password(url, user, passwd)
+    if allow_http:
+        cp.set(url, 'allow_http', "1")
     write_config(filename, cp)
 
 
@@ -810,10 +810,10 @@ def get_config(override_conffile=None,
                  'http_headers': http_headers}
         api_host_options[apiurl] = APIHostOptionsEntry(entry)
 
-        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey')
+        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey', 'allow_http')
         for key in optional:
             if cp.has_option(url, key):
-                if key == 'sslcertck':
+                if key in ('sslcertck', 'allow_http'):
                     api_host_options[apiurl][key] = cp.getboolean(url, key)
                 else:
                     api_host_options[apiurl][key] = cp.get(url, key)
@@ -823,8 +823,8 @@ def get_config(override_conffile=None,
         if not 'sslcertck' in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
-        if scheme == 'http':
-            api_host_options[apiurl]['sslcertck'] = False
+        if 'allow_http' not in api_host_options[apiurl]:
+            api_host_options[apiurl]['allow_http'] = False
 
         if cp.has_option(url, 'trusted_prj'):
             api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
@@ -896,6 +896,13 @@ def get_config(override_conffile=None,
         e.file = conffile
         raise e
 
+    scheme = urlsplit(apiurl)[0]
+    if scheme == "http" and not api_host_options[apiurl]['allow_http']:
+        msg = "The apiurl '{apiurl}' uses HTTP protocol without any encryption.\n"
+        msg += "All communication incl. sending your password IS NOT ENCRYPTED!\n"
+        msg += "Add 'allow_http=1' to the [{apiurl}] config file section to mute this message.\n"
+        print(msg.format(apiurl=apiurl), file=sys.stderr)
+
     # enable connection debugging after all config options are set
     from .connection import enable_http_debug
     enable_http_debug(config)
@@ -916,6 +923,18 @@ def identify_conf():
     return conffile
 
 def interactive_config_setup(conffile, apiurl, initial=True):
+    scheme = urlsplit(apiurl)[0]
+    http = scheme == "http"
+    if http:
+        msg = "The apiurl '{apiurl}' uses HTTP protocol without any encryption.\n"
+        msg += "All communication incl. sending your password WILL NOT BE ENCRYPTED!\n"
+        msg += "Do you really want to continue with no encryption?\n"
+        print(msg.format(apiurl=apiurl), file=sys.stderr)
+        yes = raw_input("Type 'YES' to continue: ")
+        if yes != "YES":
+            raise oscerr.UserAbort()
+        print()
+
     user = raw_input('Username: ')
     passwd = getpass.getpass()
     creds_mgr_descr = select_credentials_manager_descr()
@@ -923,9 +942,11 @@ def interactive_config_setup(conffile, apiurl, initial=True):
         config = {'user': user, 'pass': passwd}
         if apiurl:
             config['apiurl'] = apiurl
+        if http:
+            config['allow_http'] = 1
         write_initial_config(conffile, config, creds_mgr_descriptor=creds_mgr_descr)
     else:
-        add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr)
+        add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr, allow_http=http)
 
 def select_credentials_manager_descr():
     if not credentials.has_keyring_support():
