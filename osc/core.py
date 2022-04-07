@@ -5646,24 +5646,37 @@ def get_distibutions(apiurl, discon=False):
         r.insert(1, '------------              -------')
 
     else:
-        result_line_templ = '%(name)-25s %(project)-25s %(repository)-25s %(reponame)s'
         f = http_GET(makeurl(apiurl, ['distributions']))
         root = ET.fromstring(b''.join(f))
 
+        distlist = []
         for node in root.findall('distribution'):
-            rmap = {}
-            for node2 in node.findall('name'):
-                rmap['name'] = node2.text
-            for node3 in node.findall('project'):
-                rmap['project'] = node3.text
-            for node4 in node.findall('repository'):
-                rmap['repository'] = node4.text
-            for node5 in node.findall('reponame'):
-                rmap['reponame'] = node5.text
-            r.append(result_line_templ % rmap)
+            dmap = {}
+            for child in node:
+                if child.tag in ('name', 'project', 'repository', 'reponame'):
+                   dmap[child.tag] = child.text
+            dmap['distribution'] = dmap.pop('name')
+            distlist.append(dmap)
 
-        r.insert(0, 'distribution              project                   repository                reponame')
-        r.insert(1, '------------              -------                   ----------                --------')
+        # pretty printing table
+        headers = ('distribution', 'project', 'repository', 'reponame')
+        maxlen = [len(h) for h in headers]
+        for d in distlist:
+            for i,field in enumerate(headers):
+                maxlen[i] = max(maxlen[i], len(d[field]))
+
+        def format_row(dist, proj, repotype, reponame):
+            result_line_templ = '%-*s  %-*s  %-*s  %-s'
+            return result_line_templ % (
+                maxlen[0], dist,
+                maxlen[1], proj,
+                maxlen[2], repotype,
+                reponame
+                )
+        r.append(format_row('distribution', 'project', 'repository', 'reponame'))
+        r.append(format_row('-'*maxlen[0], '-'*maxlen[1], '-'*maxlen[2], '-'*maxlen[2]))
+        for d in distlist:
+            r.append(format_row(d['distribution'], d['project'], d['repository'], d['reponame']))
 
     return r
 
