@@ -1379,7 +1379,7 @@ class Osc(cmdln.Cmdln):
             if len(myreqs) > 0:
                 for req in myreqs:
                     change_request_state(apiurl, str(req), 'superseded',
-                                             'superseded by %s' % result, result)
+                                             'superseded by %s' % sr_ids[0], sr_ids[0])
 
             sys.exit('Successfully finished')
 
