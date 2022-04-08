@@ -168,6 +168,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'getpac_default_project': 'openSUSE:Factory',
             # alternate filesystem layout: have multiple subdirs, where colons were.
             'checkout_no_colon': '0',
+            # project separator
+            'project_separator': ':',
             # change filesystem layout: avoid checkout from within a proj or package dir.
             'checkout_rooted': '0',
             # local files to ignore with status, addremove, ....
@@ -337,6 +339,9 @@ apiurl = %(apiurl)s
 
 # alternate filesystem layout: have multiple subdirs, where colons were.
 #checkout_no_colon = %(checkout_no_colon)s
+
+# instead of colons, use the specified as separator
+#project_separator = %(project_separator)s
 
 # change filesystem layout: avoid checkout within a project or package dir.
 #checkout_rooted = %(checkout_rooted)s

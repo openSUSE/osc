@@ -4704,6 +4704,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             prj_dir = opts.output_dir if opts.output_dir else project
             if not opts.output_dir and conf.config['checkout_no_colon']:
                 prj_dir = prj_dir.replace(':', '/')
+            else:
+                prj_dir = prj_dir.replace(':', conf.config['project_separator'])
             if os.path.exists(prj_dir):
                 sys.exit('osc: project directory \'%s\' already exists' % prj_dir)
 
