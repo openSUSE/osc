@@ -33,6 +33,31 @@ from . import conf
 from . import oscerr
 
 
+class _LazyPassword(object):
+    def __init__(self, pwfunc):
+        self._pwfunc = pwfunc
+        self._password = None
+
+    def __str__(self):
+        if self._password is None:
+            self._password = self._pwfunc()
+            if self._password is None:
+                raise oscerr.OscIOError(None, 'Unable to retrieve password')
+        return self._password
+
+    def __len__(self):
+        return len(str(self))
+
+    def __add__(self, other):
+        return str(self) + other
+
+    def __radd__(self, other):
+        return other + str(self)
+
+    def __getattr__(self, name):
+        return getattr(str(self), name)
+
+
 class AbstractCredentialsManagerDescriptor(object):
     def name(self):
         raise NotImplementedError()
@@ -64,13 +89,14 @@ class AbstractCredentialsManager(object):
     def create(cls, cp, options):
         return cls(cp, options)
 
-    def get_password(self, url, user, defer=True):
-        # If defer is True a callable can be returned
-        # and the password is retrieved if the callable
-        # is called. Implementations are free to ignore
-        # defer parameter and can directly return the password.
-        # If defer is False the password is directly returned.
+    def _get_password(self, url, user):
         raise NotImplementedError()
+
+    def get_password(self, url, user, defer=True):
+        if defer:
+            return _LazyPassword(lambda: self._get_password(url, user))
+        else:
+            return self._get_password(url, user)
 
     def set_password(self, url, user, password):
         raise NotImplementedError()
@@ -162,10 +188,10 @@ class TransientCredentialsManager(AbstractCredentialsManager):
         if options is not None:
             raise RuntimeError('options must be None')
 
-    def get_password(self, url, user, defer=True):
-        if defer:
-            return self
-        return self()
+    def _get_password(self, url, user):
+        if self._password is None:
+            self._password = getpass.getpass('Password: ')
+        return self._password
 
     def set_password(self, url, user, password):
         self._password = password
@@ -173,11 +199,6 @@ class TransientCredentialsManager(AbstractCredentialsManager):
 
     def delete_password(self, url, user):
         self._password = None
-
-    def __call__(self):
-        if self._password is None:
-            self._password = getpass.getpass('Password: ')
-        return self._password
 
 
 class TransientDescriptor(AbstractCredentialsManagerDescriptor):
@@ -214,7 +235,7 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
             return None
         return super(cls, cls).create(cp, options)
 
-    def get_password(self, url, user, defer=True):
+    def _get_password(self, url, user):
         self._load_backend()
         return keyring.get_password(urlsplit(url)[1], user)
 
@@ -265,7 +286,7 @@ class GnomeKeyringCredentialsManager(AbstractCredentialsManager):
             return None
         return super(cls, cls).create(cp, options)
 
-    def get_password(self, url, user, defer=True):
+    def _get_password(self, url, user):
         gk_data = self._keyring_data(url, user)
         if gk_data is None:
             return None

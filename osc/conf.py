@@ -765,7 +765,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
         # change password store
         creds_mgr = _get_credentials_manager(section, cp)
         user = _extract_user_compat(cp, section, creds_mgr)
-        val = creds_mgr.get_password(section, user)
+        val = creds_mgr.get_password(section, user, defer=False)
 
     run = False
     if val:
@@ -885,6 +885,8 @@ class APIHostOptionsEntry(dict):
     def __getitem__(self, key, *args, **kwargs):
         value = super(self.__class__, self).__getitem__(key, *args, **kwargs)
         if key == 'pass' and callable(value):
+            print('Warning: use of a deprecated credentials manager API.',
+                  file=sys.stderr)
             value = value()
         return value
 
@@ -980,7 +982,7 @@ def get_config(override_conffile=None,
         user = _extract_user_compat(cp, url, creds_mgr)
         if user is None:
             raise oscerr.ConfigMissingCredentialsError('No user found in section %s' % url, conffile, url)
-        password = creds_mgr.get_password(url, user)
+        password = creds_mgr.get_password(url, user, defer=True)
         if password is None:
             raise oscerr.ConfigMissingCredentialsError('No password found in section %s' % url, conffile, url)
 
