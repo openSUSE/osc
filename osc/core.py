@@ -1255,13 +1255,6 @@ class Package:
                 self.in_conflict.remove(fname)
                 self.write_conflictlist()
 
-    def _compute_verifymd5(self):
-        md5str = ''
-        for f in self.filelist:
-            if f.name != '_link':
-                md5str += f.md5+'  '+f.name+"\n"
-        return hashlib.md5(md5str.encode('utf-8')).hexdigest()
-
     def info(self):
         source_url = makeurl(self.apiurl, ['source', self.prjname, self.name])
         r = info_templ % (self.prjname, self.name, self.absdir, self.apiurl, source_url, self.srcmd5, self.rev, self.linkinfo)
@@ -2270,8 +2263,6 @@ rev: %s
     def update_needed(self, sinfo):
         # this method might return a false-positive (that is a True is returned,
         # even though no update is needed) (for details, see comments below)
-        if sinfo.get('verifymd5') == self._compute_verifymd5():
-            return False
         if self.islink():
             if self.isexpanded():
                 # check if both revs point to the same expanded sources
