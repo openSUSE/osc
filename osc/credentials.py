@@ -40,9 +40,14 @@ class _LazyPassword(object):
 
     def __str__(self):
         if self._password is None:
-            self._password = self._pwfunc()
-            if self._password is None:
+            password = self._pwfunc()
+            if callable(password):
+                print('Warning: use of a deprecated credentials manager API.',
+                      file=sys.stderr)
+                password = password()
+            if password is None:
                 raise oscerr.OscIOError(None, 'Unable to retrieve password')
+            self._password = password
         return self._password
 
     def __len__(self):
