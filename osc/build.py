@@ -420,6 +420,11 @@ def get_built_files(pacdir, buildtype):
                                     '-name', '*.iso*'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'helm':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'HELM'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     elif buildtype == 'snapcraft':
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
                                     '-name', '*.snap'],
@@ -647,6 +652,8 @@ def main(apiurl, opts, argv):
         build_type = 'collax'
     if os.path.basename(build_descr) == 'appimage.yml':
         build_type = 'appimage'
+    if os.path.basename(build_descr) == 'Chart.yaml':
+        build_type = 'helm'
     if os.path.basename(build_descr) == 'snapcraft.yaml':
         build_type = 'snapcraft'
     if os.path.basename(build_descr) == 'simpleimage':
@@ -660,14 +667,15 @@ def main(apiurl, opts, argv):
     if build_descr.endswith('flatpak.yaml') or build_descr.endswith('flatpak.yml') or build_descr.endswith('flatpak.json'):
         build_type = 'flatpak'
     if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild',
-                          'simpleimage', 'snapcraft', 'appimage', 'docker',
+                          'simpleimage', 'snapcraft', 'appimage', 'docker', 'helm',
                           'podman', 'fissile', 'flatpak', 'preinstallimage']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. '
-                'Build description should end in .spec, .dsc, .kiwi, or .livebuild. '
-                'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
-                'snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, preinstallimage '
-                'or Dockerfile' % build_type)
+            'Unknown build type: \'%s\'. '
+            'Build description should end in .spec, .dsc, .kiwi, or .livebuild. '
+            'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
+            'Chart.yaml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, '
+            'preinstallimage or Dockerfile' % build_type)
+
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
 

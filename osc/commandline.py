@@ -6320,11 +6320,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for subarch in osc.build.can_also_build.get(mainarch):
                     all_archs.append(subarch)
             for arg in args:
-                if (arg.endswith('.spec') or arg.endswith('.dsc') or arg.endswith('.kiwi') or
-                        arg.endswith('.livebuild') or arg == 'PKGBUILD' or arg == 'build.collax' or
-                        arg == 'Dockerfile' or arg == 'fissile.yml' or arg == 'appimage.yml' or
-                        arg == '_preinstallimage' or arg.endswith('flatpak.yaml') or
-                        arg.endswith('flatpak.yml') or arg.endswith('flatpak.json')):
+                if (arg.endswith('.spec') or arg.endswith('.dsc') or
+                    arg.endswith('.kiwi') or arg.endswith('.livebuild') or
+                    arg.endswith('flatpak.yaml') or arg.endswith('flatpak.yml') or
+                    arg.endswith('flatpak.json') or
+                    arg in ('PKGBUILD', 'build.collax', 'Chart.yaml', 'Dockerfile',
+                            'fissile.yml', 'appimage.yml', '_preinstallimage')):
                     arg_descr = arg
                 else:
                     if (arg == osc.build.hostarch or arg in all_archs) and arg_arch is None:
@@ -6386,10 +6387,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # can be implemented using
         # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
         # but be a bit more readable :)
-        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') \
-                + glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + glob.glob('fissile.yml') \
-                + glob.glob('appimage.yml') \
-                + glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json')
+        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') + \
+            glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + \
+            glob.glob('fissile.yml') + glob.glob('appimage.yml') + glob.glob('Chart.yaml') + \
+            glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json')
 
         # FIXME:
         # * request repos from server and select by build type.
