@@ -291,9 +291,9 @@ class Serviceinfo:
     def __init__(self):
         """creates an empty serviceinfo instance"""
         self.services = []
-        self.apiurl   = None
-        self.project  = None
-        self.package  = None
+        self.apiurl = None
+        self.project = None
+        self.package = None
 
     def read(self, serviceinfo_node, append=False):
         """read in the source services <services> element passed as
@@ -316,7 +316,7 @@ class Serviceinfo:
             if len(name) < 3 or '/' in name:
                 error("invalid service name: %s" % name, service)
             mode = service.get('mode', '')
-            data = { 'name' : name, 'mode' : mode }
+            data = {'name': name, 'mode': mode}
             command = [ name ]
             for param in service.findall('param'):
                 option = param.get('name')
@@ -359,7 +359,7 @@ class Serviceinfo:
         r = serviceinfo_node
         s = ET.Element( "service", name="verify_file" )
         ET.SubElement(s, "param", name="file").text = filename
-        ET.SubElement(s, "param", name="verifier").text  = "sha256"
+        ET.SubElement(s, "param", name="verifier").text = "sha256"
         ET.SubElement(s, "param", name="checksum").text = digest
 
         r.append( s )
@@ -375,10 +375,10 @@ class Serviceinfo:
         r = serviceinfo_node
         s = ET.Element( "service", name="download_url" )
         ET.SubElement(s, "param", name="protocol").text = protocol
-        ET.SubElement(s, "param", name="host").text     = host
-        ET.SubElement(s, "param", name="path").text     = path
+        ET.SubElement(s, "param", name="host").text = host
+        ET.SubElement(s, "param", name="path").text = path
 
-        r.append( s )
+        r.append(s)
         return r
 
     def addSetVersion(self, serviceinfo_node):
@@ -453,7 +453,7 @@ class Serviceinfo:
         # set environment when using OBS 2.3 or later
         if self.project != None:
             # These need to be kept in sync with bs_service
-            os.putenv("OBS_SERVICE_APIURL",  self.apiurl)
+            os.putenv("OBS_SERVICE_APIURL", self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
             os.putenv("OBS_SERVICE_PACKAGE", self.package)
             # also export vc env vars (some services (like obs_scm) use them)
@@ -481,8 +481,8 @@ class Serviceinfo:
             try:
                 temp_dir = tempfile.mkdtemp(dir=dir, suffix='.%s.service' % service['name'])
                 cmd = service['command']
-                if not os.path.exists("/usr/lib/obs/service/"+cmd[0]):
-                    raise oscerr.PackageNotInstalled("obs-service-%s"%cmd[0])
+                if not os.path.exists("/usr/lib/obs/service/" + cmd[0]):
+                    raise oscerr.PackageNotInstalled("obs-service-%s" % cmd[0])
                 cmd[0] = "/usr/lib/obs/service/"+cmd[0]
                 cmd = cmd + [ "--outdir", temp_dir ]
                 if conf.config['verbose'] > 1 or verbose or conf.config['debug']:
@@ -533,9 +533,9 @@ class Linkinfo:
         self.package = linkinfo_node.get('package')
         self.xsrcmd5 = linkinfo_node.get('xsrcmd5')
         self.lsrcmd5 = linkinfo_node.get('lsrcmd5')
-        self.srcmd5  = linkinfo_node.get('srcmd5')
-        self.error   = linkinfo_node.get('error')
-        self.rev     = linkinfo_node.get('rev')
+        self.srcmd5 = linkinfo_node.get('srcmd5')
+        self.error = linkinfo_node.get('error')
+        self.rev = linkinfo_node.get('rev')
         self.baserev = linkinfo_node.get('baserev')
 
     def islink(self):
@@ -2387,7 +2387,7 @@ rev: %s
             # the file was already deleted but we cannot know this
             # OR we're processing a _service: file (simply keep the file)
             if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) not in ('M', 'C'):
-#            if self.status(f.name) != 'M':
+                # if self.status(f.name) != 'M':
                 self.delete_localfile(f.name)
             self.delete_storefile(f.name)
             print(statfrmt('D', os.path.join(pathn, f.name)))
@@ -4310,11 +4310,11 @@ def create_submit_request(apiurl,
             root = res['project_id']
             project = root.find('project')
             if project is None:
-               print("WARNING: This project is not maintained in the maintenance project specified by '%s', looking elsewhere" % conf.config['maintenance_attribute'])
-               xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
-               res = search(apiurl, project_id=xpath)
-               root = res['project_id']
-               project = root.find('project')
+                print("WARNING: This project is not maintained in the maintenance project specified by '%s', looking elsewhere" % conf.config['maintenance_attribute'])
+                xpath = 'maintenance/maintains/@project = \'%s\'' % dst_project
+                res = search(apiurl, project_id=xpath)
+                root = res['project_id']
+                project = root.find('project')
             if project is None:
                 raise oscerr.APIError("Server did not define a default maintenance project, can't submit.")
             tproject = project.get('name')
@@ -4447,11 +4447,11 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
 # this function uses the logic in the api which is faster and more exact then the xpath search
 def get_request_collection(apiurl, role=None, req_who=None, req_states=('new', 'review', 'declined')):
 
-    query={ "view" : "collection" }
+    query = {"view": "collection"}
     if role:
-       query["roles"] = role
+        query["roles"] = role
     if req_who:
-       query["user"] = req_who
+        query["user"] = req_who
 
     query["states"] = ",".join(req_states)
 
@@ -4624,10 +4624,10 @@ def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_p
                                         release_project, ask=True):
     reqs = []
     for src_package in src_packages:
-       reqs += get_exact_request_list(apiurl, src_project, dst_project,
-                                  src_package, None,
-                                  req_type='maintenance_incident',
-                                  req_state=['new', 'review', 'declined'])
+        reqs += get_exact_request_list(apiurl, src_project, dst_project,
+                                       src_package, None,
+                                       req_type='maintenance_incident',
+                                       req_state=['new', 'review', 'declined'])
     if not ask:
         return True, reqs
     repl = ''
@@ -4853,7 +4853,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
     to_file = b'%s\t(working copy)' % origfilename.encode()
 
-    if sys.version_info < (3,0):
+    if sys.version_info < (3, 0):
         d = difflib.unified_diff(s1, s2,
             fromfile = from_file, \
         tofile = to_file)
@@ -5174,7 +5174,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers = False,
             root.remove(dp)
     return ET.tostring(root, encoding=ET_ENCODING)
 
-def link_to_branch(apiurl, project,  package):
+def link_to_branch(apiurl, project, package):
     """
      convert a package with a _link + project.diff to a branch
     """
@@ -5205,7 +5205,7 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             meta_change = True
     except HTTPError as e:
         if e.code != 404:
-           raise
+            raise
         meta_change = True
     if meta_change:
         if missing_target:
@@ -5300,7 +5300,7 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map =
             meta_change = True
     except HTTPError as e:
         if e.code != 404:
-           raise
+            raise
         meta_change = True
 
     if meta_change:
@@ -5452,8 +5452,8 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     except HTTPError as e:
         root = ET.fromstring(e.read())
         if missingok:
-           if root and root.get('code') == "not_missing":
-              raise oscerr.NotMissing("Package exists already via project link, but link will point to given project")
+            if root and root.get('code') == "not_missing":
+                raise oscerr.NotMissing("Package exists already via project link, but link will point to given project")
         summary = root.find('summary')
         if summary is None:
             raise oscerr.APIError('unexpected response:\n%s' % ET.tostring(root, encoding=ET_ENCODING))
@@ -5640,7 +5640,7 @@ def get_distibutions(apiurl, discon=False):
                 rmap = {}
                 rmap['name'] = node.get('name').replace('DISCONTINUED:', '').replace(':', ' ')
                 rmap['project'] = node.get('name')
-                r.append (result_line_templ % rmap)
+                r.append(result_line_templ % rmap)
 
         r.insert(0, 'distribution              project')
         r.insert(1, '------------              -------')
@@ -6096,7 +6096,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     else:
         offset = 0
         for tg in targets:
-            r.append('| ' * offset + '%s %s (%s)'%tg )
+            r.append('| ' * offset + '%s %s (%s)' % tg)
             offset += 1
 
         for pac in pacs:
@@ -6120,7 +6120,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
 
         line = []
         for i in range(0, len(targets)):
-            line.append(str(i%10))
+            line.append(str(i % 10))
         r.append(' '.join(line))
 
         r.append('')
@@ -6136,7 +6136,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
 
         if vertical:
             for i in range(0, len(targets)):
-                s = '%1d %s %s (%s)' % (i%10, targets[i][0], targets[i][1], targets[i][2])
+                s = '%1d %s %s (%s)' % (i % 10, targets[i][0], targets[i][1], targets[i][2])
                 if i < len(legend):
                     legend[i] += s
                 else:
@@ -6365,12 +6365,12 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', li
         t = time.gmtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
         if duration == None:
-           duration = ""
+            duration = ""
 
         if format == 'csv':
             r.append('%s|%s|%s|%s.%d|%s' % (t, srcmd5, rev, versrel, bcnt, duration))
         else:
-            bversrel='%s.%d' % (versrel, bcnt)
+            bversrel = '%s.%d' % (versrel, bcnt)
             r.append('%s   %s    %s %s %s' % (t, srcmd5, bversrel.ljust(16)[:16], rev, duration.rjust(10)))
 
     if format == 'text':
@@ -6794,7 +6794,7 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
             table.append(row)
         # there is no need to justify the entries of the last column
         # or when generating csv
-        if i == col_num -1 or csv:
+        if i == col_num - 1 or csv:
             row.append(itm)
         else:
             row.append(itm.ljust(longest_col[i]))
@@ -7113,12 +7113,12 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
                        template_args=None,
                        create_new=False)
     if user.startswith('group:'):
-        group=user.replace('group:', '')
-        user=None
+        group = user.replace('group:', '')
+        user = None
     if data:
         root = ET.fromstring(parse_meta_to_string(data))
         for group_element in root.getiterator('group'):
-            if  group_element.get('role') == "bugowner":
+            if group_element.get('role') == "bugowner":
                 root.remove(group_element)
         for person_element in root.getiterator('person'):
             if person_element.get('role') == "bugowner":
@@ -7609,7 +7609,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 create_comment(apiurl, 'request', comment, request.reqid)
             elif repl == 'b' and src_actions:
                 print_source_buildstatus(src_actions)
-            elif repl =='li' and src_actions:
+            elif repl == 'li' and src_actions:
                 safe_get_rpmlint_log(src_actions)
             elif repl == 'e' and editable_actions:
                 # this is only for editable actions
@@ -7944,7 +7944,7 @@ def print_comments(apiurl, kind, *args):
         for comment in comments:
             print(indent, end='')
             print('(', comment.get('id'), ')', 'On', comment.get('when'), comment.get('who'), 'wrote:')
-            text = indent + comment.text.replace('\r\n',' \n')
+            text = indent + comment.text.replace('\r\n', ' \n')
             print(('\n' + indent).join(text.split('\n')))
             print()
             print_rec([c for c in root if c.get('parent') == comment.get('id')], indent + '  ')

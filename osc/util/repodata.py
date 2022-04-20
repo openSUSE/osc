@@ -21,11 +21,11 @@ def namespace(name):
     return "{http://linux.duke.edu/metadata/%s}" % name
 
 OPERATOR_BY_FLAGS = {
-    "EQ" : "=",
-    "LE" : "<=",
-    "GE" : ">=",
-    "LT" : "<",
-    "GT" : ">"
+    "EQ": "=",
+    "LE": "<=",
+    "GE": ">=",
+    "LT": "<",
+    "GT": ">"
 }
 
 def primaryPath(directory):
