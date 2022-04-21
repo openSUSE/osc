@@ -7516,7 +7516,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if architecture is None:
             arches = [i.arch for i in repos if repository == i.name]
 
-
         if package is None:
             package_specified = False
             package = meta_get_packagelist(apiurl, project, deleted=0)
@@ -7541,21 +7540,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 binaries = get_binarylist(apiurl, project, repository, arch,
                                           package=pac, verbose=True, withccache=opts.ccache)
                 if not binaries:
-                    print('no binaries found: Either the package %s ' \
-                                        'does not exist or no binaries have been built.' % pac, file=sys.stderr)
+                    print('no binaries found: Either the package %s '
+                          'does not exist or no binaries have been built.' % pac, file=sys.stderr)
                     continue
 
                 for i in binaries:
                     if binary != None and binary != i.name:
                         continue
                     # skip source rpms
-                    if not opts.sources and (i.name.endswith('src.rpm') or i.name.endswith('sdeb')):
+                    if not opts.sources and (i.name.endswith('.src.rpm') or i.name.endswith('.sdeb')):
                         continue
-                    if not opts.debug:
-                        if i.name.find('-debuginfo-') >= 0:
-                            continue
-                        if i.name.find('-debugsource-') >= 0:
-                            continue
+                    # skip debuginfo rpms
+                    if not opts.debug and ('-debuginfo-' in i.name or '-debugsource-' in i.name):
+                        continue
 
                     if package_specified:
                         # if package is specified, download everything into the target dir
