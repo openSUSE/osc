@@ -4747,6 +4747,15 @@ def get_binary_file(apiurl, prj, repo, arch,
 
     target_filename = target_filename or filename
 
+    # create target directory if it doesn't exist
+    target_dir = os.path.dirname(target_filename)
+    if target_dir:
+        try:
+            os.makedirs(target_dir, 0o755)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
     where = package or '_repository'
     u = makeurl(apiurl, ['build', prj, repo, arch, where, filename])
     download(u, target_filename, progress_obj, target_mtime)
