@@ -507,7 +507,7 @@ def _build_opener(apiurl):
     from osc.core import __version__
     global config
 
-    class OscHTTPBasicAuthHandler(HTTPBasicAuthHandler, object):
+    class OscHTTPAuthHandler(HTTPBasicAuthHandler, object):
         # python2: inherit from object in order to make it a new-style class
         # (HTTPBasicAuthHandler is not a new-style class)
         def _rewind_request(self, req):
@@ -548,7 +548,7 @@ def _build_opener(apiurl):
     options = config['api_host_options'][apiurl]
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler = OscHTTPBasicAuthHandler( \
+    authhandler = OscHTTPAuthHandler( \
         HTTPPasswordMgrWithDefaultRealm())
     authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
