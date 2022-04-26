@@ -1,5 +1,16 @@
 0.177.0
-  - 
+  - switch to python3 in osc-wrapper and make python3 explicit
+  - allow formatting of the sccache uri
+  - show repository state and details
+  - a few minor fixes and improvements in credentials handling
+  - order credential managers by priority
+  - kernel keyring is now supported as credential manager
+  - support regex based name filtering in core.get_prj_results()
+  - revision parsing parseRevisionOption(): cleanup and make logic consistent
+  - use sr_ids[0] for superseding (fixes issues with superseding requests
+    containing many packages
+  - download logs and metadata in subdirs named by packages when osc getbinaries
+    is issued on project level or in multibuild case
 
 0.176.0
   - add -F option to osc submitreq
