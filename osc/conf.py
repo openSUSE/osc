@@ -112,6 +112,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'user': None,
             'pass': None,
             'passx': None,
+            'sshkey': None,
             'packagecachedir': '/var/tmp/osbuild-packagecache',
             'su-wrapper': 'sudo',
 
@@ -222,7 +223,7 @@ boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'tr
 integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
-    'downloadurl']
+    'downloadurl', 'sshkey']
 
 new_conf_template = """
 [general]
@@ -980,7 +981,7 @@ def get_config(override_conffile=None,
                  'http_headers': http_headers}
         api_host_options[apiurl] = APIHostOptionsEntry(entry)
 
-        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath')
+        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey')
         for key in optional:
             if cp.has_option(url, key):
                 if key == 'sslcertck':
@@ -1010,6 +1011,9 @@ def get_config(override_conffile=None,
             api_host_options[apiurl]['downloadurl'] = cp.get(url, 'downloadurl')
         else:
             api_host_options[apiurl]['downloadurl'] = None
+
+        if api_host_options[apiurl]['sshkey'] is None:
+            api_host_options[apiurl]['sshkey'] = config['sshkey']
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
