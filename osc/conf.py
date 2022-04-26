@@ -524,6 +524,13 @@ def _build_opener(apiurl):
             return super(self.__class__, self).retry_http_basic_auth(host, req,
                                                                      realm)
 
+        def http_error_401(self, req, fp, code, msg, headers):
+            response = super(self.__class__, self).http_error_401(req, fp, code, msg, headers)
+            # workaround for http://bugs.python.org/issue9639
+            if hasattr(self, 'retried'):
+                self.retried = 0
+            return response
+
 
     if 'last_opener' not in _build_opener.__dict__:
         _build_opener.last_opener = (None, None)
@@ -538,43 +545,10 @@ def _build_opener(apiurl):
         # read proxies from env
         proxyhandler = ProxyHandler()
 
-    authhandler_class = OscHTTPBasicAuthHandler
-    # workaround for http://bugs.python.org/issue9639
-    if sys.version_info >= (2, 6, 6) and sys.version_info < (2, 7, 9):
-        class OscHTTPBasicAuthHandlerCompat(OscHTTPBasicAuthHandler):
-            # The following two functions were backported from upstream 2.7.
-            def http_error_auth_reqed(self, authreq, host, req, headers):
-                authreq = headers.get(authreq, None)
-
-                if authreq:
-                    mo = AbstractBasicAuthHandler.rx.search(authreq)
-                    if mo:
-                        scheme, quote, realm = mo.groups()
-                        if quote not in ['"', "'"]:
-                            warnings.warn("Basic Auth Realm was unquoted",
-                                          UserWarning, 2)
-                        if scheme.lower() == 'basic':
-                            return self.retry_http_basic_auth(host, req, realm)
-
-            def retry_http_basic_auth(self, host, req, realm):
-                self._rewind_request(req)
-                user, pw = self.passwd.find_user_password(realm, host)
-                if pw is not None:
-                    raw = "%s:%s" % (user, pw)
-                    auth = 'Basic %s' % base64.b64encode(raw).strip()
-                    if req.get_header(self.auth_header, None) == auth:
-                        return None
-                    req.add_unredirected_header(self.auth_header, auth)
-                    return self.parent.open(req, timeout=req.timeout)
-                else:
-                    return None
-
-        authhandler_class = OscHTTPBasicAuthHandlerCompat
-
     options = config['api_host_options'][apiurl]
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler = authhandler_class( \
+    authhandler = OscHTTPBasicAuthHandler( \
         HTTPPasswordMgrWithDefaultRealm())
     authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
