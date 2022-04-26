@@ -45,6 +45,8 @@ import sys
 import ssl
 import warnings
 import getpass
+import time
+import subprocess
 
 try:
     from http.cookiejar import LWPCookieJar, CookieJar
@@ -54,6 +56,7 @@ try:
     from urllib.error import URLError
     from urllib.request import HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
     from urllib.request import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
+    from urllib.request import BaseHandler, parse_keqv_list, parse_http_list
 except ImportError:
     #python 2.x
     from cookielib import LWPCookieJar, CookieJar
@@ -62,10 +65,11 @@ except ImportError:
     from urlparse import urlsplit
     from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler, AbstractBasicAuthHandler
     from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
+    from urllib2 import BaseHandler, parse_keqv_list, parse_http_list
 
 from . import OscConfigParser
 from osc import oscerr
-from osc.util.helper import raw_input
+from osc.util.helper import raw_input, decode_it
 from .oscsslexcp import NoSecureSSLError
 from osc import credentials
 
@@ -531,6 +535,80 @@ def _build_opener(apiurl):
             if hasattr(self, 'retried'):
                 self.retried = 0
             return response
+
+    class OscHTTPSignatureAuthHandler(BaseHandler):
+        def __init__(self, user, sshkey):
+            super(self.__class__, self).__init__()
+            self.user = user
+            self.sshkey = sshkey
+
+        def guess_keyfile(self):
+            sshdir = os.path.expanduser('~/.ssh')
+            keyfiles = ('id_ed25519', 'id_rsa')
+            for keyfile in keyfiles:
+                keyfile_path = os.path.join(sshdir, keyfile)
+                if os.path.isfile(keyfile_path):
+                    return keyfile_path
+            raise oscerr.OscIOError(None, 'could not guess ssh identity keyfile')
+
+        def ssh_sign(self, data, namespace, keyfile=None):
+            try:
+                data = bytes(data, 'utf-8')
+            except:
+                pass
+            if not keyfile:
+                keyfile = self.guess_keyfile()
+            else:
+                if '/' not in keyfile:
+                    keyfile = '~/.ssh/' + keyfile
+                keyfile = os.path.expanduser(keyfile)
+
+            cmd = ['ssh-keygen', '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
+            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            stdout, _ = proc.communicate(data)
+            if proc.returncode:
+                raise oscerr.OscIOError(None, 'ssh-keygen signature creation failed: %d' % proc.returncode)
+
+            signature = decode_it(stdout)
+            match = re.match(r"\A-----BEGIN SSH SIGNATURE-----\n(.*)\n-----END SSH SIGNATURE-----", signature, re.S)
+            if not match:
+                raise oscerr.OscIOError(None, 'could not extract ssh signature')
+            return base64.b64decode(match.group(1))
+
+        def get_authorization(self, req, chal):
+            realm = chal.get('realm', '')
+            now = int(time.time())
+            sigdata = "(created): %d" % now
+            signature = self.ssh_sign(sigdata, realm, self.sshkey)
+            signature = decode_it(base64.b64encode(signature))
+            return 'keyId="%s",algorithm="ssh",headers="(created)",created=%d,signature="%s"' \
+                % (self.user, now, signature)
+
+        def retry_http_signature_auth(self, req, auth):
+            old_auth_val = req.get_header('Authorization', None)
+            if old_auth_val:
+                old_scheme = old_auth_val.split()[0]
+                if old_scheme.lower() == 'signature':
+                    return None
+            token, challenge = auth.split(' ', 1)
+            chal = parse_keqv_list(filter(None, parse_http_list(challenge)))
+            auth = self.get_authorization(req, chal)
+            if auth:
+                auth_val = 'Signature %s' % auth
+                req.add_unredirected_header('Authorization', auth_val)
+                return self.parent.open(req, timeout=req.timeout)
+
+        def http_error_401(self, req, fp, code, msg, headers):
+            authreq = headers.get('www-authenticate', None)
+            if authreq:
+                scheme = authreq.split()[0]
+                if scheme.lower() == 'signature':
+                    return self.retry_http_signature_auth(req, authreq)
+                raise ValueError("OscHTTPSignatureAuthHandler does not support"
+                                 " the following scheme: '%s'" % scheme)
+
+        def sshkey_known(self):
+            return self.sshkey is not None
 
 
     if 'last_opener' not in _build_opener.__dict__:
