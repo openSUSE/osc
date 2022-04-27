@@ -237,8 +237,8 @@ class Pac:
                  ]:
             self.mp[i] = node.get(i)
 
-        self.mp['buildarch']  = buildarch
-        self.mp['pacsuffix']  = pacsuffix
+        self.mp['buildarch'] = buildarch
+        self.mp['pacsuffix'] = pacsuffix
 
         self.mp['arch'] = node.get('arch') or self.mp['buildarch']
         self.mp['name'] = node.get('name') or self.mp['binary']
@@ -631,7 +631,7 @@ def main(apiurl, opts, argv):
     build_descr = argv[2]
     xp = []
     build_root = None
-    cache_dir  = None
+    cache_dir = None
     build_uid = ''
     build_shell_after_fail = config['build-shell-after-fail']
     vm_memory = config['build-memory']
@@ -918,7 +918,7 @@ def main(apiurl, opts, argv):
 
     # special handling for overlay and rsync-src/dest
     specialcmdopts = []
-    if opts.rsyncsrc or opts.rsyncdest :
+    if opts.rsyncsrc or opts.rsyncdest:
         if not opts.rsyncsrc or not opts.rsyncdest:
             raise oscerr.WrongOptions('When using --rsync-{src,dest} both parameters have to be specified.')
         myrsyncsrc = os.path.abspath(os.path.expanduser(os.path.expandvars(opts.rsyncsrc)))
@@ -1099,11 +1099,11 @@ def main(apiurl, opts, argv):
     imagesource = ''
     imagebins = []
     if build_as_user():
-       # preinstallimage extraction will fail
-       bi.preinstallimage = None
+        # preinstallimage extraction will fail
+        bi.preinstallimage = None
     if build_type == 'preinstallimage':
-       # preinstallimage would repackage just the previously built preinstallimage
-       bi.preinstallimage = None
+        # preinstallimage would repackage just the previously built preinstallimage
+        bi.preinstallimage = None
 
     if (not config['no_preinstallimage'] and not opts.nopreinstallimage and
         bi.preinstallimage and
@@ -1261,62 +1261,62 @@ def main(apiurl, opts, argv):
             found_obsrepositories = 0
             for node in xml.findall('instrepo'):
                 if node and node.find('source').get('path') == 'obsrepositories:/':
-                   for path in bi.pathes:
-                       found_obsrepositories += 1
-                       new_node = ET.SubElement(xml, 'instrepo')
-                       new_node.set('name', node.get('name') + "_" + str(found_obsrepositories))
-                       new_node.set('priority', node.get('priority'))
-                       new_node.set('local', 'true')
-                       new_source_node = ET.SubElement(new_node, 'source')
-                       new_source_node.set('path', "obs://" + path)
-                   xml.remove(node)
+                    for path in bi.pathes:
+                        found_obsrepositories += 1
+                        new_node = ET.SubElement(xml, 'instrepo')
+                        new_node.set('name', node.get('name') + "_" + str(found_obsrepositories))
+                        new_node.set('priority', node.get('priority'))
+                        new_node.set('local', 'true')
+                        new_source_node = ET.SubElement(new_node, 'source')
+                        new_source_node.set('path', "obs://" + path)
+                    xml.remove(node)
 
             if found_obsrepositories > 0:
-               build_descr = os. getcwd()  + '/_service:osc_obsrepositories:' + build_descr.rsplit('/', 1)[-1]
-               tree.write(open(build_descr, 'wb'))
+                build_descr = os.getcwd() + '/_service:osc_obsrepositories:' + build_descr.rsplit('/', 1)[-1]
+                tree.write(open(build_descr, 'wb'))
 
         # appliance
-        expand_obsrepos=None
+        expand_obsrepos = None
         for xml in root.findall('repository'):
             if xml.find('source').get('path') == 'obsrepositories:/':
-                expand_obsrepos=True
+                expand_obsrepos = True
         if expand_obsrepos:
-          buildargs.append('--kiwi-parameter')
-          buildargs.append('--ignore-repos')
-          for xml in root.findall('repository'):
-              if xml.find('source').get('path') == 'obsrepositories:/':
-                  for path in bi.pathes:
-                      if not os.path.isdir("repos/"+path):
-                          continue
-                      buildargs.append('--kiwi-parameter')
-                      buildargs.append('--add-repo')
-                      buildargs.append('--kiwi-parameter')
-                      buildargs.append("dir://./repos/"+path)
-                      buildargs.append('--kiwi-parameter')
-                      buildargs.append('--add-repotype')
-                      buildargs.append('--kiwi-parameter')
-                      buildargs.append('rpm-md')
-                      if xml.get('priority'):
-                          buildargs.append('--kiwi-parameter')
-                          buildargs.append('--add-repoprio='+xml.get('priority'))
-              else:
-                   m = re.match(r"obs://[^/]+/([^/]+)/(\S+)", xml.find('source').get('path'))
-                   if not m:
-                       # short path without obs instance name
-                       m = re.match(r"obs://([^/]+)/(.+)", xml.find('source').get('path'))
-                   project=m.group(1).replace(":", ":/")
-                   repo=m.group(2)
-                   buildargs.append('--kiwi-parameter')
-                   buildargs.append('--add-repo')
-                   buildargs.append('--kiwi-parameter')
-                   buildargs.append("dir://./repos/"+project+"/"+repo)
-                   buildargs.append('--kiwi-parameter')
-                   buildargs.append('--add-repotype')
-                   buildargs.append('--kiwi-parameter')
-                   buildargs.append('rpm-md')
-                   if xml.get('priority'):
-                       buildargs.append('--kiwi-parameter')
-                       buildargs.append('--add-repopriority='+xml.get('priority'))
+            buildargs.append('--kiwi-parameter')
+            buildargs.append('--ignore-repos')
+            for xml in root.findall('repository'):
+                if xml.find('source').get('path') == 'obsrepositories:/':
+                    for path in bi.pathes:
+                        if not os.path.isdir("repos/"+path):
+                            continue
+                        buildargs.append('--kiwi-parameter')
+                        buildargs.append('--add-repo')
+                        buildargs.append('--kiwi-parameter')
+                        buildargs.append("dir://./repos/"+path)
+                        buildargs.append('--kiwi-parameter')
+                        buildargs.append('--add-repotype')
+                        buildargs.append('--kiwi-parameter')
+                        buildargs.append('rpm-md')
+                        if xml.get('priority'):
+                            buildargs.append('--kiwi-parameter')
+                            buildargs.append('--add-repoprio='+xml.get('priority'))
+                else:
+                    m = re.match(r"obs://[^/]+/([^/]+)/(\S+)", xml.find('source').get('path'))
+                    if not m:
+                        # short path without obs instance name
+                        m = re.match(r"obs://([^/]+)/(.+)", xml.find('source').get('path'))
+                    project = m.group(1).replace(":", ":/")
+                    repo = m.group(2)
+                    buildargs.append('--kiwi-parameter')
+                    buildargs.append('--add-repo')
+                    buildargs.append('--kiwi-parameter')
+                    buildargs.append("dir://./repos/"+project+"/"+repo)
+                    buildargs.append('--kiwi-parameter')
+                    buildargs.append('--add-repotype')
+                    buildargs.append('--kiwi-parameter')
+                    buildargs.append('rpm-md')
+                    if xml.get('priority'):
+                        buildargs.append('--kiwi-parameter')
+                        buildargs.append('--add-repopriority='+xml.get('priority'))
 
     if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc" or vm_type == "nspawn":
         print('Skipping verification of package signatures due to secure VM build')
@@ -1352,8 +1352,8 @@ def main(apiurl, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman'or build_type == 'fissile':
-        rpmlist = [ '%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall ]
+    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman' or build_type == 'fissile':
+        rpmlist = ['%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall]
     else:
         rpmlist = []
         for dep in bi.deps:
@@ -1385,7 +1385,7 @@ def main(apiurl, opts, argv):
     rpmlist_file.writelines(rpmlist)
     rpmlist_file.flush()
 
-    subst = { 'repo': repo, 'arch': arch, 'project' : prj, 'package' : pacname }
+    subst = {'repo': repo, 'arch': arch, 'project': prj, 'package': pacname}
     vm_options = []
     # XXX check if build-device present
     my_build_device = ''
