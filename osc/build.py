@@ -122,7 +122,7 @@ class Buildinfo:
         if self.buildtype == 'livebuild':
             self.pacsuffix = 'deb'
         if self.buildtype == 'snapcraft':
-            # atm ubuntu is used as base, but we need to be more clever when 
+            # atm ubuntu is used as base, but we need to be more clever when
             # snapcraft also supports rpm
             self.pacsuffix = 'deb'
 
@@ -440,6 +440,11 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'preinstallimage':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -650,12 +655,19 @@ def main(apiurl, opts, argv):
         build_type = 'docker'
     if os.path.basename(build_descr) == 'fissile.yml':
         build_type = 'fissile'
+    if os.path.basename(build_descr) == '_preinstallimage':
+        build_type = 'preinstallimage'
     if build_descr.endswith('flatpak.yaml') or build_descr.endswith('flatpak.yml') or build_descr.endswith('flatpak.json'):
         build_type = 'flatpak'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild', 'simpleimage', 'snapcraft', 'appimage', 'docker', 'podman', 'fissile', 'flatpak']:
+    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild',
+                          'simpleimage', 'snapcraft', 'appimage', 'docker',
+                          'podman', 'fissile', 'flatpak', 'preinstallimage']:
         raise oscerr.WrongArgs(
-                'Unknown build type: \'%s\'. Build description should end in .spec, .dsc, .kiwi, or .livebuild. Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml or Dockerfile' \
-                        % build_type)
+                'Unknown build type: \'%s\'. '
+                'Build description should end in .spec, .dsc, .kiwi, or .livebuild. '
+                'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
+                'snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, preinstallimage '
+                'or Dockerfile' % build_type)
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
 
@@ -1089,6 +1101,10 @@ def main(apiurl, opts, argv):
     if build_as_user():
        # preinstallimage extraction will fail
        bi.preinstallimage = None
+    if build_type == 'preinstallimage':
+       # preinstallimage would repackage just the previously built preinstallimage
+       bi.preinstallimage = None
+
     if (not config['no_preinstallimage'] and not opts.nopreinstallimage and
         bi.preinstallimage and
         not opts.noinit and
