@@ -515,6 +515,16 @@ def _build_opener(apiurl):
     class OscHTTPAuthHandler(HTTPBasicAuthHandler, object):
         # python2: inherit from object in order to make it a new-style class
         # (HTTPBasicAuthHandler is not a new-style class)
+
+        def __init__(self, password_mgr=None, signatureauthhandler=None):
+            super(self.__class__, self).__init__(password_mgr)
+            self.signatureauthhandler = signatureauthhandler
+
+        def add_parent(self, parent):
+            super(self.__class__, self).add_parent(parent)
+            if self.signatureauthhandler:
+                self.signatureauthhandler.add_parent(parent)
+
         def _rewind_request(self, req):
             if hasattr(req.data, 'seek'):
                 # if the request is issued again (this time with an
@@ -524,12 +534,20 @@ def _build_opener(apiurl):
                 # the Content-Length header (if present))
                 req.data.seek(0)
 
-        def retry_http_basic_auth(self, host, req, realm):
-            self._rewind_request(req)
-            return super(self.__class__, self).retry_http_basic_auth(host, req,
-                                                                     realm)
-
         def http_error_401(self, req, fp, code, msg, headers):
+            self._rewind_request(req)
+            authreqs = {}
+            for authreq in headers.get_all('www-authenticate', []):
+                scheme = authreq.split()[0].lower()
+                authreqs[scheme] = authreq
+            if 'signature' in authreqs and self.signatureauthhandler and \
+                    (self.signatureauthhandler.sshkey_known() or 'basic' not in authreqs):
+                del headers['www-authenticate']
+                headers['www-authenticate'] = authreqs['signature']
+                return self.signatureauthhandler.http_error_401(req, fp, code, msg, headers)
+            if 'basic' in authreqs:
+                del headers['www-authenticate']
+                headers['www-authenticate'] = authreqs['basic']
             response = super(self.__class__, self).http_error_401(req, fp, code, msg, headers)
             # workaround for http://bugs.python.org/issue9639
             if hasattr(self, 'retried'):
@@ -625,10 +643,10 @@ def _build_opener(apiurl):
         proxyhandler = ProxyHandler()
 
     options = config['api_host_options'][apiurl]
+    signatureauthhandler = OscHTTPSignatureAuthHandler(options['user'], options['sshkey'])
     # with None as first argument, it will always use this username/password
     # combination for urls for which arg2 (apisrv) is a super-url
-    authhandler = OscHTTPAuthHandler( \
-        HTTPPasswordMgrWithDefaultRealm())
+    authhandler = OscHTTPAuthHandler(HTTPPasswordMgrWithDefaultRealm(), signatureauthhandler)
     authhandler.add_password(None, apiurl, options['user'], options['pass'])
 
     if options['sslcertck']:
