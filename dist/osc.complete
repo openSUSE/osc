@@ -1157,7 +1157,7 @@ copypac|linkpac)
     elif ((count == 4)) ; then
 	projects -- "${cmdline[4]}"
     elif ((count == 5)) ; then
-	packages"${cmdline[4]}" -- "${cmdline[5]}"
+	packages "${cmdline[4]}" -- "${cmdline[5]}"
     elif ((count == 6)) ; then
 	builtin compgen -W "--message ${opts[*]}" -- "${cmdline[6]}"
     fi
