@@ -560,7 +560,49 @@ def _build_opener(apiurl):
             self.user = user
             self.sshkey = sshkey
 
+        def list_ssh_agent_keys(self):
+            cmd = ['ssh-add', '-l']
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, _ = proc.communicate()
+            if proc.returncode == 0 and stdout.strip():
+                return stdout.splitlines()
+            else:
+                return []
+
+        def is_ssh_private_keyfile(self, keyfile_path):
+            if not os.path.isfile(keyfile_path):
+                return False
+            with open(keyfile_path, "r") as f:
+                line = f.readline(100).strip()
+                if line == "-----BEGIN OPENSSH PRIVATE KEY-----":
+                    return True
+            return False
+
+        def list_ssh_dir_keys(self):
+            sshdir = os.path.expanduser('~/.ssh')
+            keys_in_home_ssh = {}
+            for keyfile in os.listdir(sshdir):
+                if keyfile.endswith(".pub"):
+                    continue
+                keyfile_path = os.path.join(sshdir, keyfile)
+                if not self.is_ssh_private_keyfile(keyfile_path):
+                    continue
+                cmd = ["ssh-keygen", "-lf", keyfile_path]
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, _ = proc.communicate()
+                if proc.returncode == 0:
+                    fingerprint = stdout.strip()
+                    if fingerprint:
+                        keys_in_home_ssh[fingerprint] = keyfile_path
+            return keys_in_home_ssh
+
         def guess_keyfile(self):
+            keys_in_agent = self.list_ssh_agent_keys()
+            if keys_in_agent:
+                keys_in_home_ssh = self.list_ssh_dir_keys()
+                for fingerprint in keys_in_agent:
+                    if fingerprint in keys_in_home_ssh:
+                        return keys_in_home_ssh[fingerprint]
             sshdir = os.path.expanduser('~/.ssh')
             keyfiles = ('id_ed25519', 'id_rsa')
             for keyfile in keyfiles:
