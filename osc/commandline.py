@@ -6533,8 +6533,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
                   help='Save built packages into this directory')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                  help='Build the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
     @cmdln.option('--root', metavar='ROOT',
