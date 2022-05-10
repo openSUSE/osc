@@ -63,6 +63,11 @@ You can modify osc commands, or roll your own, via the plugin API:
 osc was written by several authors. This man page is automatically generated.
 """
 
+HELP_MULTIBUILD_MANY = """Only work with the specified flavors of a multibuild package.
+Globs are resolved according to _multibuild file from server.
+Empty string is resolved to a package without a flavor."""
+
+
 class Osc(cmdln.Cmdln):
     """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
     or: osc help SUBCOMMAND
@@ -7207,8 +7212,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='trigger rebuilds for a specific repository')
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                  help='rebuild specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help=HELP_MULTIBUILD_MANY)
     @cmdln.option('--all', action='store_true',
                         help='Rebuild all packages of entire project')
     @cmdln.alias('rebuildpac')
@@ -7224,7 +7229,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output.
 
         usage:
-            osc rebuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
+            osc rebuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
 
@@ -7265,12 +7270,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch or code):
             raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
 
-        packages = []
         if opts.multibuild_package:
-            for subpackage in opts.multibuild_package:
-                packages.append(package + ":" + subpackage)
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
-            packages.append(package)
+            packages = [package]
 
         for package in packages:
             print(rebuild(apiurl, project, package, repo, arch, code))
