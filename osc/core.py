@@ -8024,7 +8024,7 @@ def filter_role(meta, user, role):
             root.remove(node)
 
 def find_default_project(apiurl=None, package=None):
-    """"
+    """
     look though the list of conf.config['getpac_default_project']
     and find the first project where the given package exists in the build service.
     """
