@@ -67,6 +67,8 @@ HELP_MULTIBUILD_MANY = """Only work with the specified flavors of a multibuild p
 Globs are resolved according to _multibuild file from server.
 Empty string is resolved to a package without a flavor."""
 
+HELP_MULTIBUILD_ONE = "Only work with the specified flavor of a multibuild package."
+
 
 class Osc(cmdln.Cmdln):
     """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
@@ -5664,8 +5666,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show the last finished log file')
     @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
                         help='Show the last succeeded log file')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                    help='get log of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log start or end from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
