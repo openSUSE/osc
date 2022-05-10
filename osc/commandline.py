@@ -6075,8 +6075,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='verbose output of build dependencies')
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                  help='Show the buildinfo of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -6111,7 +6111,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 osc buildinfo [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
                 Note: if BUILD_DESCR does not exist locally the remote BUILD_DESCR is used
 
-            osc buildinfo [OPTS] PROJECT PACKAGE REPOSITORY ARCH [BUILD_DESCR]
+            osc buildinfo [OPTS] PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH [BUILD_DESCR]
 
         ${cmd_option_list}
         """
