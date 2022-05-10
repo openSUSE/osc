@@ -6989,8 +6989,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                        help='get jobhistory for the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('jobhist')
     def do_jobhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the job history of a project
@@ -7000,7 +7000,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc jobhist REPOSITORY ARCHITECTURE  (in project dir)
-           osc jobhist PROJECT [PACKAGE] REPOSITORY ARCHITECTURE
+           osc jobhist PROJECT [PACKAGE[:FLAVOR]] REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
         wd = os.curdir
@@ -7033,7 +7033,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        if opts.multibuild_package and package is not None:
+        if opts.multibuild_package and package:
             package = package + ":" + opts.multibuild_package
 
         format = 'text'
