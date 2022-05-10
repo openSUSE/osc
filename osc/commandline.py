@@ -7407,8 +7407,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Delete all binary packages for a specific architecture')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                        help='Delete all binary packages for specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help=HELP_MULTIBUILD_MANY)
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Delete all binary packages for a specific repository')
     @cmdln.option('--build-disabled', action='store_true',
@@ -7430,9 +7430,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc wipebinaries OPTS                       # works in checked out project dir
-            osc wipebinaries OPTS PROJECT [PACKAGE]
+            osc wipebinaries OPTS PROJECT [PACKAGE[:FLAVOR]]
             osc unpublish OPTS                       # works in checked out project dir
-            osc unpublish OPTS PROJECT [PACKAGE]
+            osc unpublish OPTS PROJECT [PACKAGE[:FLAVOR]]
         ${cmd_option_list}
         """
 
@@ -7477,12 +7477,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(codes) == 0:
             raise oscerr.WrongOptions('No option has been provided. If you want to delete all binaries, use --all option.')
 
-        packages = []
         if opts.multibuild_package:
-            for subpackage in opts.multibuild_package:
-                packages.append(package + ":" + subpackage)
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
-            packages.append(package)
+            packages = [package]
 
         # make a new request for each code= parameter and for each package in packages
         for package in packages:
