@@ -7297,9 +7297,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for p in pacs:
             print(p.info())
 
-
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                        help='specify a specific multibuild flavor')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append',
+                  help=HELP_MULTIBUILD_MANY)
     def do_sendsysrq(self, subcmd, opts, *args):
         """${cmd_name}: trigger a sysrq in a running build
 
@@ -7309,7 +7308,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc sendsysrq REPOSITORY ARCH SYSRQ
-            osc sendsysrq PROJECT PACKAGE REPOSITORY ARCH SYSRQ
+            osc sendsysrq PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH SYSRQ
         ${cmd_option_list}
         """
         args = slash_split(args)
@@ -7336,9 +7335,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[3]
             sysrq = args[4]
 
-        packages = [package]
         if opts.multibuild_package:
-            packages = ['%s:%s' % (package, flavor) for flavor in opts.multibuild_package]
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
+        else:
+            packages = [package]
+
         for package in packages:
             print(cmdbuild(apiurl, 'sendsysrq', project, package, arch, repo, None, sysrq))
 
