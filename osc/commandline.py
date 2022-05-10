@@ -5454,8 +5454,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='more verbose output')
     @cmdln.option('--no-multibuild', action='store_true', default=False,
                         help='Disable results for all direct affect packages inside of the project')
-    @cmdln.option('-M', '--multibuild-package', action='append', default=[],
-                        help='Only show results for the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append', default=[],
+                        help=HELP_MULTIBUILD_MANY)
     @cmdln.option('-V', '--vertical', action='store_true',
                         help='list packages vertically instead horizontally for entire project')
     @cmdln.option('-w', '--watch', action='store_true',
@@ -5477,7 +5477,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Usage:
             osc results                 # (inside working copy of PRJ or PKG)
-            osc results PROJECT [PACKAGE]
+            osc results PROJECT [PACKAGE[:FLAVOR]]
 
         ${cmd_option_list}
         """
@@ -5525,7 +5525,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   'code': opts.status_filter}
         if opts.multibuild_package:
             opts.no_multibuild = False
-            kwargs['multibuild_packages'] = opts.multibuild_package
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            kwargs['multibuild_packages'] = resolver.resolve(opts.multibuild_package)
         if not opts.no_multibuild:
             kwargs['multibuild'] = kwargs['locallink'] = True
         if opts.xml or opts.csv:

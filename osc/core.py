@@ -5968,7 +5968,8 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                 continue
             if multibuild_packages:
                 l = res['pkg'].rsplit(':', 1)
-                if len(l) != 2 or l[1] not in multibuild_packages:
+                if (len(l) != 2 or l[1] not in multibuild_packages) and not (len(l) == 1 and "" in multibuild_packages):
+                    # special case: packages without flavor when multibuild_packages contains an empty string
                     continue
             res['status'] = res['code']
             if verbose and res['details'] is not None:
