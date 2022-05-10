@@ -6940,8 +6940,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
-    @cmdln.option('-M', '--multibuild-package', metavar= 'MPAC',
-                        help='Show the buildhistory of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build history of a package
@@ -6951,7 +6951,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc buildhist REPOSITORY ARCHITECTURE
-           osc buildhist PROJECT PACKAGE REPOSITORY ARCHITECTURE
+           osc buildhist PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
 
