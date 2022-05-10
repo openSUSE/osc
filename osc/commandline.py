@@ -5775,8 +5775,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show the last finished log file')
     @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
                         help='Show the last succeeded log file')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                        help='show log file for specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log starting or ending from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5790,9 +5790,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         remotebuildlogtail shows just the tail of the log file.
 
         usage:
-            osc remotebuildlog project package repository arch
+            osc remotebuildlog project package[:flavor] repository arch
             or
-            osc remotebuildlog project/package/repository/arch
+            osc remotebuildlog project/package[:flavor]/repository/arch
             or
             osc remotebuildlog buildlogurl
         ${cmd_option_list}
