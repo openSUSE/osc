@@ -5912,8 +5912,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             data = f.read(BUFSIZE)
         f.close()
 
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                    help='get triggerreason of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('tr')
     def do_triggerreason(self, subcmd, opts, *args):
         """${cmd_name}: Show reason why a package got triggered to build
@@ -5930,7 +5929,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage in package or project directory:
             osc triggerreason REPOSITORY ARCH
-            osc triggerreason PROJECT PACKAGE REPOSITORY ARCH
+            osc triggerreason PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH
 
         ${cmd_option_list}
         """
