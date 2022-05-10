@@ -7346,8 +7346,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Restart builds for a specific architecture')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                        help='Restart builds for specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help=HELP_MULTIBUILD_MANY)
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Restart builds for a specific repository')
     @cmdln.option('--all', action='store_true',
@@ -7357,7 +7357,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Restart the build of a certain project or package
 
         usage:
-            osc restartbuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
+            osc restartbuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
         args = slash_split(args)
@@ -7394,12 +7394,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to restart all packages of the entire project, use --all option.')
 
-        packages = []
         if opts.multibuild_package:
-            for subpackage in opts.multibuild_package:
-                packages.append(package + ":" + subpackage)
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
-            packages.append(package)
+            packages = [package]
 
         for package in packages:
             print(cmdbuild(apiurl, subcmd, project, package, arch, repo))
