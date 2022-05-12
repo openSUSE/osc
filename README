@@ -258,6 +258,5 @@ chmod 0600 ~/.w3m/passwd
 NOTES about the testsuite
 
 A new test suite has been created and should run via doing
-# cd tests
-# python suite.py
+# ./setup.py test
 

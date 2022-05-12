@@ -1,8 +1,8 @@
 import osc.core
 import osc.oscerr
 import os
-from common import GET, OscTestCase
-FIXTURES_DIR = os.path.join(os.getcwd(), 'init_project_fixtures')
+from .common import GET, OscTestCase
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_project_fixtures')
 
 def suite():
     import unittest

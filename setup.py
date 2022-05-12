@@ -135,4 +135,5 @@ setuptools.setup(
         'build_docs': build_docs,
         'install_data': install_data
     },
+    test_suite="tests",
 )

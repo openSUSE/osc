@@ -4,10 +4,10 @@ import osc.oscerr
 import os
 import re
 import sys
-from common import GET, POST, OscTestCase, addExpectedRequest, EXPECTED_REQUESTS
+from .common import GET, POST, OscTestCase, addExpectedRequest, EXPECTED_REQUESTS
 
 
-FIXTURES_DIR = os.path.join(os.getcwd(), 'prdiff_fixtures')
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'prdiff_fixtures')
 API_URL  = 'http://localhost/'
 UPSTREAM = 'some:project'
 BRANCH   = 'home:user:branches:' + UPSTREAM
