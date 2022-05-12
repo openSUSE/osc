@@ -2000,6 +2000,9 @@ class Package:
                     rev = 'working copy'
                 diff.append(b'+++ %s\t(%s)\n' % (fname.encode(), rev.encode()))
                 fname = os.path.join(self.absdir, fname)
+                if not os.path.isfile(fname):
+                    raise oscerr.OscIOError(None, 'file \'%s\' is marked as \'A\' but does not exist\n'
+                                            '(either add the missing file or revert it)' % fname)
             else:
                 if revision:
                     b_revision = str(revision).encode()
