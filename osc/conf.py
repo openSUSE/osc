@@ -43,7 +43,6 @@ import os
 import re
 import sys
 import ssl
-import warnings
 import getpass
 import time
 import subprocess
@@ -63,7 +62,7 @@ except ImportError:
     from httplib import HTTPConnection, HTTPResponse
     from StringIO import StringIO
     from urlparse import urlsplit
-    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler, AbstractBasicAuthHandler
+    from urllib2 import URLError, HTTPBasicAuthHandler, HTTPCookieProcessor, HTTPPasswordMgrWithDefaultRealm, ProxyHandler
     from urllib2 import AbstractHTTPHandler, build_opener, proxy_bypass, HTTPSHandler
     from urllib2 import BaseHandler, parse_keqv_list, parse_http_list
 
