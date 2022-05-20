@@ -158,8 +158,8 @@ class PackageQueryResult:
 
         epoch = self.epoch()
         if epoch is not None and epoch != 0:
-            evr = epoch + b":" + evr 
-        return evr 
+            evr = epoch + b":" + evr
+        return evr
 
 
 def cmp(a, b):

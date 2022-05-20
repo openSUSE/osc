@@ -318,11 +318,11 @@ apiurl = %(apiurl)s
 # extra packages to install when building packages locally (osc build)
 # this corresponds to osc build's -x option and can be overridden with that
 # -x '' can also be given on the command line to override this setting, or
-# you can have an empty setting here. This global setting may leads to 
+# you can have an empty setting here. This global setting may leads to
 # dependency problems when the base distro is not providing the package.
 # => using server side definition via cli_debug_packages substitute rule is
 #    recommended therefore.
-#extra-pkgs = 
+#extra-pkgs =
 
 # build platform is used if the platform argument is omitted to osc build
 #build_repository = %(build_repository)s
