@@ -188,12 +188,10 @@ class Buildinfo:
             self.pathes.append(node.get('project')+"/"+node.get('repository'))
             # a hash providing the matching URL for specific repos for newer OBS instances
             if node.get('url'):
-                url = node.get('url').replace('%', '%%')
+                baseurl = node.get('url').replace('%', '%%')
                 if config['api_host_options'][apiurl]['downloadurl']:
                     # Add the path element to the download url override.
                     baseurl = config['api_host_options'][apiurl]['downloadurl'] + urlsplit(node.get('url'))[2]
-                else:
-                    baseurl = node.get('url')
                 self.urls[node.get('project')+"/"+node.get('repository')] = baseurl + '/%(arch)s/%(filename)s'
 
         self.vminstall_list = [ dep.name for dep in self.deps if dep.vminstall ]
