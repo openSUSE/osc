@@ -293,14 +293,9 @@ class Pac:
 
 
     def makeurls(self, cachedir, urllist):
-
-        self.urllist = []
         self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
         self.fullfilename = os.path.join(self.localdir, self.canonname)
-
-        # remote URLs
-        for url in urllist:
-            self.urllist.append(url % self.mp)
+        self.urllist = [url % self.mp for url in urllist]
 
     def __str__(self):
         return self.name
