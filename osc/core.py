@@ -685,6 +685,7 @@ class Project:
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
+        self.scm_url = store_read_scmurl(self.dir)
         self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
 
         dirty_files = []
@@ -725,7 +726,7 @@ class Project:
         global store
         dirty_files = []
         req_storefiles = Project.REQ_STOREFILES
-        if conf.config['do_package_tracking']:
+        if conf.config['do_package_tracking'] and self.scm_url == None:
             req_storefiles += ('_packages',)
         for fname in req_storefiles:
             if not os.path.exists(os.path.join(self.absdir, store, fname)):
@@ -959,7 +960,11 @@ class Project:
                         p = Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj)
                         rev = None
                         needs_update = True
-                        if expand_link and p.islink() and not p.isexpanded():
+                        if p.scm_url != None:
+                            # git managed.
+                            print("Skipping git managed package ", pac)
+                            continue
+                        elif expand_link and p.islink() and not p.isexpanded():
                             if p.haslinkerror():
                                 try:
                                     rev = show_upstream_xsrcmd5(p.apiurl, p.prjname, p.name, revision=p.rev)
@@ -1137,7 +1142,7 @@ class Project:
         return '\n'.join(r)
 
     @staticmethod
-    def init_project(apiurl, dir, project, package_tracking=True, getPackageList=True, progress_obj=None, wc_check=True):
+    def init_project(apiurl, dir, project, package_tracking=True, getPackageList=True, progress_obj=None, wc_check=True, scm_url=None):
         global store
 
         if not os.path.exists(dir):
@@ -1152,6 +1157,9 @@ class Project:
 
         store_write_project(dir, project)
         store_write_apiurl(dir, apiurl)
+        if scm_url:
+            store_write_string(dir, '_scm', scm_url + '\n')
+            package_tracking = None
         if package_tracking:
             store_write_initial_packages(dir, project, [])
         return Project(dir, getPackageList, progress_obj, wc_check)
@@ -1174,6 +1182,7 @@ class Package:
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
         self.size_limit = size_limit
+        self.scm_url = store_read_scmurl(self.dir)
         if size_limit and size_limit == 0:
             self.size_limit = None
 
@@ -1198,6 +1207,8 @@ class Package:
 
     def wc_check(self):
         dirty_files = []
+        if self.scm_url:
+            return dirty_files
         for fname in self.filenamelist:
             if not os.path.exists(os.path.join(self.storedir, fname)) and not fname in self.skipped:
                 dirty_files.append(fname)
@@ -1774,6 +1785,20 @@ class Package:
         called).
         """
         import fnmatch
+        if self.scm_url:
+            self.filenamelist = []
+            self.filelist = []
+            self.skipped = []
+            self.to_be_added = []
+            self.to_be_deleted = []
+            self.in_conflict = []
+            self.linkrepair = None
+            self.rev = None
+            self.srcmd5 = None
+            self.linkinfo = None
+            self.serviceinfo = None
+            return
+
         files_tree = read_filemeta(self.dir)
         files_tree_root = files_tree.getroot()
 
@@ -1784,10 +1809,10 @@ class Package:
         self.linkinfo.read(files_tree_root.find('linkinfo'))
         self.serviceinfo = DirectoryServiceinfo()
         self.serviceinfo.read(files_tree_root.find('serviceinfo'))
-
         self.filenamelist = []
         self.filelist = []
         self.skipped = []
+
         for node in files_tree_root.findall('entry'):
             try:
                 f = File(node.get('name'),
@@ -2491,7 +2516,7 @@ rev: %s
             self.write_addlist()
 
     @staticmethod
-    def init_package(apiurl, project, package, dir, size_limit=None, meta=False, progress_obj=None):
+    def init_package(apiurl, project, package, dir, size_limit=None, meta=False, progress_obj=None, scm_url=None):
         global store
 
         if not os.path.exists(dir):
@@ -2509,7 +2534,10 @@ rev: %s
             store_write_string(dir, '_meta_mode', '')
         if size_limit:
             store_write_string(dir, '_size_limit', str(size_limit) + '\n')
-        store_write_string(dir, '_files', '<directory />' + '\n')
+        if scm_url:
+            store_write_string(dir, '_scm', scm_url + '\n')
+        else:
+            store_write_string(dir, '_files', '<directory />' + '\n')
         store_write_string(dir, '_osclib_version', __store_version__ + '\n')
         return Package(dir, progress_obj=progress_obj, size_limit=size_limit)
 
@@ -3255,6 +3283,8 @@ def read_filemeta(dir):
     filesmeta = os.path.join(dir, store, '_files')
     if not is_package_dir(dir):
         raise oscerr.NoWorkingCopy(msg)
+    if os.path.isfile(os.path.join(dir, store, '_scm')):
+        raise oscerr.NoWorkingCopy("Is managed via scm")
     if not os.path.isfile(filesmeta):
         raise oscerr.NoWorkingCopy('%s (%s does not exist)' % (msg, filesmeta))
 
@@ -3609,6 +3639,23 @@ def show_attribute_meta(apiurl, prj, pac, subpac, attribute, with_defaults, with
         e.osc_msg = 'Error getting meta for project \'%s\' package \'%s\'' % (prj, pac)
         raise
 
+
+def clean_assets(directory):
+    return run_external(conf.config['download-assets-cmd'], '--clean', directory)
+
+def download_assets(directory):
+    return run_external(conf.config['download-assets-cmd'], '--unpack', '--noassetdir', directory)
+
+def show_scmsync(apiurl, prj, pac=None):
+    if pac:
+        m = show_package_meta(apiurl, prj, pac)
+    else:
+        m = show_project_meta(apiurl, prj)
+    node = ET.fromstring(b''.join(m)).find('scmsync')
+    if node is None:
+        return None
+    else:
+        return node.text
 
 def show_devel_project(apiurl, prj, pac):
     m = show_package_meta(apiurl, prj, pac)
@@ -5123,7 +5170,17 @@ def checkout_package(apiurl, project, package,
 
     # before we create directories and stuff, check if the package actually
     # exists
-    show_package_meta(apiurl, quote_plus(project), quote_plus(package), meta)
+    meta_data = b''.join(show_package_meta(apiurl, quote_plus(project), quote_plus(package)))
+    root = ET.fromstring(meta_data)
+    if root.find('scmsync') != None and root.find('scmsync').text != None:
+        if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
+            raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
+        scm_url = root.find('scmsync').text
+        directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
+        os.putenv("OSC_VERSION", get_osc_version())
+        run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
+        Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
+        return
 
     isfrozen = False
     if expand_link:
@@ -6576,6 +6633,21 @@ def store_read_package(dir):
 
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
+    except IOError:
+        msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
+        if os.path.exists(os.path.join(dir, '.svn')):
+            msg += '\nTry svn instead of osc.'
+        raise oscerr.NoWorkingCopy(msg)
+    return p
+
+def store_read_scmurl(dir):
+    global store
+
+    url_file = os.path.join(dir, store, '_scm')
+    if not os.path.exists(url_file):
+        return
+    try:
+        p = open(url_file).readlines()[0].strip()
     except IOError:
         msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):

@@ -134,6 +134,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-vm-user': '',                # optional for VM builds
             'build-kernel': '',                 # optional for VM builds
             'build-initrd': '',                 # optional for VM builds
+            'download-assets-cmd': '/usr/lib/build/download_assets', # optional for scm/git based builds
 
             'build-jobs': str(_get_processors()),
             'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
