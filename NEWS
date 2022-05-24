@@ -3,6 +3,19 @@
     * init command is working inside of a git repository
     * downloadassets command fetches references assets from build description
     * checkout is cloning from git
+  - EXPERIMENTAL: signature (ssh key) authetication
+    * allow to configure 'sshkey' option in the config
+    * try to guess ssh key from the keys added to ssh-agent
+    * rename OscHTTPBasicAuthHandler to OscHTTPAuthHandler
+    * simplify bad auth retry workaround needed for old python versions
+  - add support for building preinstall images
+  - add support for building Helm charts
+  - show the md5s that are failing to validate after fetching a package
+  - add missing space to copypac completion
+  - never require login in the help command
+  - linkdiff: raise an exception when an added file is missing
+  - run tests via calling 'setup.py test'
+  - several coding style fixes
 
 0.177.0
   - switch to python3 in osc-wrapper and make python3 explicit
