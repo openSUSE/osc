@@ -573,7 +573,13 @@ def _build_opener(apiurl):
             if not os.path.isfile(keyfile_path):
                 return False
             with open(keyfile_path, "r") as f:
-                line = f.readline(100).strip()
+                try:
+                   line = f.readline(100).strip()
+                except UnicodeDecodeError:
+                   # skip binary files
+                   return False
+                if line == "-----BEGIN RSA PRIVATE KEY-----":
+                    return True
                 if line == "-----BEGIN OPENSSH PRIVATE KEY-----":
                     return True
             return False
