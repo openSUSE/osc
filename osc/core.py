@@ -5972,7 +5972,7 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                 if len(l) != 2 or l[1] not in multibuild_packages:
                     continue
             res['status'] = res['code']
-            if verbose and res['details'] != '':
+            if verbose and res['details'] is not None:
                 if res['code'] in ('unresolvable', 'expansion error'):
                     lines = res['details'].split(',')
                     res['status'] += ': \n      ' + '\n     '.join(lines)
