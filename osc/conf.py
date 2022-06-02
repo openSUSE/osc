@@ -448,7 +448,7 @@ def urljoin(scheme, apisrv, path=''):
 
 
 def is_known_apiurl(url):
-    """returns true if url is a known apiurl"""
+    """returns ``True`` if url is a known apiurl"""
     apiurl = urljoin(*parse_apisrv_url(None, url))
     return apiurl in config['api_host_options']
 
@@ -470,8 +470,8 @@ def extract_known_apiurl(url):
 
 def get_apiurl_api_host_options(apiurl):
     """
-    Returns all apihost specific options for the given apiurl, None if
-    no such specific optiosn exist.
+    Returns all apihost specific options for the given apiurl, ``None`` if
+    no such specific options exist.
     """
     # FIXME: in A Better World (tm) there was a config object which
     # knows this instead of having to extract it from a url where it
@@ -849,9 +849,9 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     """
     Sets a config option. If val is not specified the current/default value is
     returned. If val is specified, opt is set to val and the new value is returned.
-    If an option was modified get_config is called with **kwargs unless update is set
-    to False (override_conffile defaults to config['conffile']).
-    If val is not specified and delete is True then the option is removed from the
+    If an option was modified get_config is called with ``**kwargs`` unless update is set
+    to ``False`` (``override_conffile`` defaults to ``config['conffile']``).
+    If val is not specified and delete is ``True`` then the option is removed from the
     config/reset to the default value.
     """
     cp = get_configParser(config['conffile'])

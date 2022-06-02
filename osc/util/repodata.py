@@ -31,9 +31,10 @@ OPERATOR_BY_FLAGS = {
 def primaryPath(directory):
     """Returns path to the primary repository data file.
 
-    @param directory repository directory that contains the repodata subdirectory
-    @return str path to primary repository data file
-    @raise IOError if repomd.xml contains no primary location
+    :param directory: repository directory that contains the repodata subdirectory
+    :return:  path to primary repository data file
+    :rtype: str
+    :raise IOError: if repomd.xml contains no primary location
     """
     metaDataPath = os.path.join(directory, "repodata", "repomd.xml")
     elementTree = ET.parse(metaDataPath)
@@ -55,10 +56,9 @@ def queries(directory):
     """Returns a list of RepoDataQueries constructed from the repodata under
     the directory.
 
-    @param directory path to a repository directory (parent directory of
-                     repodata directory)
-    @return list of RepoDataQueryResult instances
-    @raise IOError if repomd.xml contains no primary location
+    :param directory: path to a repository directory (parent directory of repodata directory)
+    :return: list of RepoDataQueryResult instances
+    :raise IOError: if repomd.xml contains no primary location
     """
     path = primaryPath(directory)
 
@@ -99,9 +99,8 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
         """Creates a RepoDataQueryResult from the a package Element under a metadata
         Element in a primary.xml file.
 
-        @param directory repository directory path.  Used to convert relative
-                         paths to full paths.
-        @param element package Element
+        :param directory: repository directory path. Used to convert relative paths to full paths.
+        :param element: package Element
         """
         self.__directory = os.path.abspath(directory)
         self.__element = element

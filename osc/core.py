@@ -296,7 +296,7 @@ class Serviceinfo:
         self.package = None
 
     def read(self, serviceinfo_node, append=False):
-        """read in the source services <services> element passed as
+        """read in the source services ``<services>`` element passed as
         elementtree node.
         """
         def error(msg, xml):
@@ -509,7 +509,7 @@ class Serviceinfo:
         return 0
 
 class Linkinfo:
-    """linkinfo metadata (which is part of the xml representing a directory
+    """linkinfo metadata (which is part of the xml representing a directory)
     """
     def __init__(self):
         """creates an empty linkinfo instance"""
@@ -523,9 +523,9 @@ class Linkinfo:
         self.baserev = None
 
     def read(self, linkinfo_node):
-        """read in the linkinfo metadata from the <linkinfo> element passed as
+        """read in the linkinfo metadata from the ``<linkinfo>`` element passed as
         elementtree node.
-        If the passed element is None, the method does nothing.
+        If the passed element is ``None``, the method does nothing.
         """
         if linkinfo_node == None:
             return
@@ -539,19 +539,19 @@ class Linkinfo:
         self.baserev = linkinfo_node.get('baserev')
 
     def islink(self):
-        """returns True if the linkinfo is not empty, otherwise False"""
+        """:return: ``True`` if the linkinfo is not empty, otherwise ``False``"""
         if self.xsrcmd5 or self.lsrcmd5 or self.error is not None:
             return True
         return False
 
     def isexpanded(self):
-        """returns True if the package is an expanded link"""
+        """:return: ``True`` if the package is an expanded link"""
         if self.lsrcmd5 and not self.xsrcmd5:
             return True
         return False
 
     def haserror(self):
-        """returns True if the link is in error state (could not be applied)"""
+        """:return: ``True`` if the link is in error state (could not be applied)"""
         if self.error:
             return True
         return False
@@ -1849,12 +1849,12 @@ class Package:
     def islink(self):
         """tells us if the package is a link (has 'linkinfo').
         A package with linkinfo is a package which links to another package.
-        Returns True if the package is a link, otherwise False."""
+        Returns ``True`` if the package is a link, otherwise ``False``."""
         return self.linkinfo.islink()
 
     def isexpanded(self):
         """tells us if the package is a link which is expanded.
-        Returns True if the package is expanded, otherwise False."""
+        Returns ``True`` if the package is expanded, otherwise ``False``."""
         return self.linkinfo.isexpanded()
 
     def islinkrepair(self):
@@ -1881,21 +1881,21 @@ class Package:
 
     def haslinkerror(self):
         """
-        Returns True if the link is broken otherwise False.
-        If the package is not a link it returns False.
+        Returns ``True`` if the link is broken otherwise ``False``.
+        If the package is not a link it returns ``False``.
         """
         return self.linkinfo.haserror()
 
     def linkerror(self):
         """
-        Returns an error message if the link is broken otherwise None.
-        If the package is not a link it returns None.
+        Returns an error message if the link is broken otherwise ``None``.
+        If the package is not a link it returns ``None``.
         """
         return self.linkinfo.error
 
     def hasserviceinfo(self):
         """
-        Returns True, if this package contains services.
+        Returns ``True``, if this package contains services.
         """
         return self.serviceinfo.lsrcmd5 is not None or self.serviceinfo.xsrcmd5 is not None
 
@@ -1933,24 +1933,22 @@ class Package:
 
     def status(self, n):
         """
-        status can be:
+        status can be::
 
-         file  storefile  file present  STATUS
-        exists  exists      in _files
-
-          x       -            -        'A' and listed in _to_be_added
-          x       x            -        'R' and listed in _to_be_added
-          x       x            x        ' ' if digest differs: 'M'
-                                            and if in conflicts file: 'C'
-          x       -            -        '?'
-          -       x            x        'D' and listed in _to_be_deleted
-          x       x            x        'D' and listed in _to_be_deleted (e.g. if deleted file was modified)
-          x       x            x        'C' and listed in _in_conflict
-          x       -            x        'S' and listed in self.skipped
-          -       -            x        'S' and listed in self.skipped
-          -       x            x        '!'
-          -       -            -        NOT DEFINED
-
+             file  storefile  file present  STATUS
+            exists  exists      in _files
+              x       -            -        'A' and listed in _to_be_added
+              x       x            -        'R' and listed in _to_be_added
+              x       x            x        ' ' if digest differs: 'M'
+                                                and if in conflicts file: 'C'
+              x       -            -        '?'
+              -       x            x        'D' and listed in _to_be_deleted
+              x       x            x        'D' and listed in _to_be_deleted (e.g. if deleted file was modified)
+              x       x            x        'C' and listed in _in_conflict
+              x       -            x        'S' and listed in self.skipped
+              -       -            x        'S' and listed in self.skipped
+              -       x            x        '!'
+              -       -            -        NOT DEFINED
         """
 
         known_by_meta = False
@@ -2544,29 +2542,29 @@ rev: %s
 
 class AbstractState:
     """
-    Base class which represents state-like objects (<review />, <state />).
+    Base class which represents state-like objects (``<review />``, ``<state />``).
     """
     def __init__(self, tag):
         self.__tag = tag
 
     def get_node_attrs(self):
-        """return attributes for the tag/element"""
+        """:return: attributes for the tag/element"""
         raise NotImplementedError()
 
     def get_node_name(self):
-        """return tag/element name"""
+        """:return: tag/element name"""
         return self.__tag
 
     def get_comment(self):
-        """return data from <comment /> tag"""
+        """:return: data from ``<comment />`` tag"""
         raise NotImplementedError()
 
     def get_description(self):
-        """return data from <description /> tag"""
+        """:return: data from ``<description />`` tag"""
         raise NotImplementedError()
 
     def to_xml(self):
-        """serialize object to XML"""
+        """:return: object serialized to XML"""
         root = ET.Element(self.get_node_name())
         for attr in self.get_node_attrs():
             val = getattr(self, attr)
@@ -2579,7 +2577,7 @@ class AbstractState:
         return root
 
     def to_str(self):
-        """return "pretty" XML data"""
+        """:return: object serialized to pretty-printed XML"""
         root = self.to_xml()
         xmlindent(root)
         return ET.tostring(root, encoding=ET_ENCODING)
@@ -2686,11 +2684,15 @@ class RequestState(AbstractState):
 
 class Action:
     """
-    Represents a <action /> element of a Request.
+    Represents an ``<action />`` element of a Request.
     This class is quite common so that it can be used for all different
-    action types. Note: instances only provide attributes for their specific
-    type.
-    Examples:
+    action types.
+
+    .. note::
+        Instances only provide attributes for their specific type.
+
+    Examples::
+
       r = Action('set_bugowner', tgt_project='foo', person_name='buguser')
       # available attributes: r.type (== 'set_bugowner'), r.tgt_project (== 'foo'), r.tgt_package (== None)
       r.to_str() ->
@@ -2698,7 +2700,7 @@ class Action:
         <target project="foo" />
         <person name="buguser" />
       </action>
-      ##
+
       r = Action('delete', tgt_project='foo', tgt_package='bar')
       # available attributes: r.type (== 'delete'), r.tgt_project (== 'foo'), r.tgt_package (=='bar')
       r.to_str() ->
@@ -2743,13 +2745,18 @@ class Action:
         """
         Serialize object to XML.
         The xml tag names and attributes are constructed from the instance's attributes.
-        Example:
+
+        :return: object serialized to XML
+
+        Example::
+
           self.group_name  -> tag name is "group", attribute name is "name"
           self.src_project -> tag name is "source" (translated via prefix_to_elm dict),
                               attribute name is "project"
-        Attributes prefixed with "opt_" need a special handling, the resulting xml should
-        look like this: opt_updatelink -> <options><updatelink>value</updatelink></options>.
-        Attributes which are "None" will be skipped.
+
+        Attributes prefixed with ``opt_`` need a special handling, the resulting xml should
+        look like this: ``opt_updatelink`` -> ``<options><updatelink>value</updatelink></options>``.
+        Attributes which are ``None`` will be skipped.
         """
         root = ET.Element('action', type=self.type)
         for i in Action.type_args[self.type]:
@@ -2774,7 +2781,7 @@ class Action:
         return root
 
     def to_str(self):
-        """return "pretty" XML data"""
+        """:return: object serialized to pretty-printed XML"""
         root = self.to_xml()
         xmlindent(root)
         return ET.tostring(root, encoding=ET_ENCODING)
@@ -2809,7 +2816,7 @@ class Action:
 
 
 class Request:
-    """Represents a request (<request />)"""
+    """Represents a request (``<request />``)"""
 
     def __init__(self):
         self._init_attributes()
@@ -2881,7 +2888,7 @@ class Request:
         return self.creator
 
     def to_xml(self):
-        """serialize object to XML"""
+        """:return: object serialized to XML"""
         root = ET.Element('request')
         if self.reqid is not None:
             root.set('id', self.reqid)
@@ -2906,7 +2913,7 @@ class Request:
         return root
 
     def to_str(self):
-        """return "pretty" XML data"""
+        """:return: object serialized to pretty-printed XML"""
         root = self.to_xml()
         xmlindent(root)
         return ET.tostring(root, encoding=ET_ENCODING)
@@ -4848,7 +4855,7 @@ def sha256_dgst(file):
     return s.hexdigest()
 
 def binary(s):
-    """return true if a string is binary data using diff's heuristic"""
+    """return ``True`` if a string is binary data using diff's heuristic"""
     if s and bytes('\0', "utf-8") in s[:4096]:
         return True
     return False
@@ -6872,7 +6879,11 @@ def checkRevision(prj, pac, revision, apiurl=None, meta=False):
 def build_table(col_num, data = [], headline = [], width=1, csv = False):
     """
     This method builds a simple table.
-    Example1: build_table(2, ['foo', 'bar', 'suse', 'osc'], ['col1', 'col2'], 2)
+
+    Example::
+
+        build_table(2, ['foo', 'bar', 'suse', 'osc'], ['col1', 'col2'], 2)
+
         col1  col2
         foo   bar
         suse  osc
@@ -7442,7 +7453,9 @@ def getPrjPacPaths(path):
     returns the path for a project and a package
     from path. This is needed if you try to add
     or delete packages:
-    Examples:
+
+    Examples::
+
         osc add pac1/: prj_dir = CWD;
                        pac_dir = pac1
         osc add /path/to/pac1:
@@ -7947,8 +7960,8 @@ def run_external(filename, *args, **kwargs):
 def return_external(filename, *args, **kwargs):
     """Executes the program filename via subprocess.check_output.
 
-    *args are additional arguments which are passed to the
-    program filename. **kwargs specify additional arguments for
+    ``*args`` are additional arguments which are passed to the
+    program filename. ``**kwargs`` specify additional arguments for
     the subprocess.check_output function.
     if no args are specified the plain filename is passed
     to subprocess.check_output (this can be used to execute a shell
@@ -7956,7 +7969,6 @@ def return_external(filename, *args, **kwargs):
     to the subprocess.check_output function.
 
     Returns the output of the command.
-
     """
     if args:
         cmd = [filename] + list(args)

@@ -1,7 +1,7 @@
 .. py:module:: osc.OscConfigParser
 
 OscConfigParser
-====
+===============
 
 This is the osc config parser.
 

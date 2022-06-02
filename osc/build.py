@@ -314,10 +314,12 @@ class Pac:
 def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
     """
     Searches preinstall image according to build info and downloads it to cache
-    (unless offline is set to True (default: False)).
+    (unless offline is set to ``True`` (default: ``False``)).
     Returns preinstall image path, source and list of image binaries, which can
     be used to create rpmlist.
-    NOTE: preinstall image can be used only for new build roots!
+
+    .. note::
+        preinstall image can be used only for new build roots!
     """
     imagefile = ''
     imagesource = ''
@@ -459,8 +461,9 @@ def get_built_files(pacdir, buildtype):
 def get_repo(path):
     """Walks up path looking for any repodata directories.
 
-    @param path path to a directory
-    @return str path to repository directory containing repodata directory
+    :param path: path to a directory
+    :return: path to repository directory containing repodata directory
+    :rtype: str
     """
     oldDirectory = None
     currentDirectory = os.path.abspath(path)

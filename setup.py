@@ -6,6 +6,9 @@ from distutils.command import build, install_data
 import gzip
 import os.path
 
+import sphinx.setup_command
+
+
 import setuptools
 
 import osc.core
@@ -34,29 +37,6 @@ class build_osc(build.build, object):
     def run(self):
         super(build_osc, self).run()
         self.build_man_page()
-
-
-# Support for documentation (sphinx)
-class build_docs(distutils.core.Command):
-    description = 'builds documentation using sphinx'
-    user_options = []
-
-    def initialize_options(self):
-        self.built_docs = None
-
-    def finalize_options(self):
-        self.set_undefined_options('build', ('build_base', 'built_docs'))
-
-    def run(self):
-        # metadata contains information supplied in setup()
-        metadata = self.distribution.metadata
-        # package_dir may be None, in that case use the current directory.
-        src_dir = (self.distribution.package_dir or {'': ''})['']
-        src_dir = os.path.join(os.getcwd(), src_dir)
-        import sphinx
-        sphinx.main(['runme',
-                     '-D', 'version=%s' % metadata.get_version(),
-                     os.path.join('docs', ), os.path.join(self.built_docs, 'docs')])
 
 
 # take a potential build-base option into account (for instance, if osc is
@@ -128,11 +108,10 @@ setuptools.setup(
         "Topic :: System :: Archiving :: Packaging",
     ],
 
-
     # Override certain command classes with our own ones
     cmdclass={
         'build': build_osc,
-        'build_docs': build_docs,
+        'build_doc': sphinx.setup_command.BuildDoc,
         'install_data': install_data
     },
     test_suite="tests",

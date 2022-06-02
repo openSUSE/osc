@@ -173,11 +173,13 @@ class CommentLine(Line):
 
 class OptionLine(Line):
     """
-    This class represents an option. The class' "name" attribute is used
+    This class represents an option. The class' ``name`` attribute is used
     to store the option's name and the "value" attribute contains the option's
-    value. The "frmt" attribute preserves the format which was used in the configuration
+    value. The ``frmt`` attribute preserves the format which was used in the configuration
     file.
-    Example:
+
+    Example::
+
         optionx:<SPACE><SPACE>value
         => self.frmt = '%s:<SPACE><SPACE>%s'
         optiony<SPACE>=<SPACE>value<SPACE>;<SPACE>some_comment
