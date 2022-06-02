@@ -588,17 +588,20 @@ def _build_opener(apiurl):
             sshdir = os.path.expanduser('~/.ssh')
             keys_in_home_ssh = {}
             for keyfile in os.listdir(sshdir):
-                if keyfile.endswith(".pub"):
-                    continue
                 keyfile_path = os.path.join(sshdir, keyfile)
-                if not self.is_ssh_private_keyfile(keyfile_path):
+                if (not os.path.isfile(keyfile_path) or
+                        keyfile.startswith("authorized_keys") or
+                        keyfile == "config" or
+                        keyfile.startswith("agent-") or
+                        keyfile.startswith("known_hosts")):
                     continue
+                is_private = self.is_ssh_private_keyfile(keyfile_path)
                 cmd = ["ssh-keygen", "-lf", keyfile_path]
                 proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 stdout, _ = proc.communicate()
                 if proc.returncode == 0:
                     fingerprint = stdout.strip()
-                    if fingerprint:
+                    if fingerprint and (fingerprint not in keys_in_home_ssh or is_private):
                         keys_in_home_ssh[fingerprint] = keyfile_path
             return keys_in_home_ssh
 
