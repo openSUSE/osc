@@ -6,9 +6,6 @@ from distutils.command import build, install_data
 import gzip
 import os.path
 
-import sphinx.setup_command
-
-
 import setuptools
 
 import osc.core
@@ -67,6 +64,20 @@ data_files.append((os.path.join('share', 'man', 'man1'), ['osc.1.gz']))
 with open("README") as fh:
     long_description = fh.read()
 
+cmdclass = {
+    'build': build_osc,
+    'install_data': install_data
+}
+
+# keep build deps minimal and be tolerant to missing sphinx
+# that is not needed during package build
+try:
+    import sphinx.setup_command
+    cmdclass['build_doc'] = sphinx.setup_command.BuildDoc
+except ImportError:
+    pass
+
+
 setuptools.setup(
     name='osc',
     version=osc.core.__version__,
@@ -107,12 +118,7 @@ setuptools.setup(
         "Topic :: Software Development :: Build Tools",
         "Topic :: System :: Archiving :: Packaging",
     ],
-
     # Override certain command classes with our own ones
-    cmdclass={
-        'build': build_osc,
-        'build_doc': sphinx.setup_command.BuildDoc,
-        'install_data': install_data
-    },
+    cmdclass=cmdclass,
     test_suite="tests",
 )
