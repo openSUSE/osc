@@ -7048,7 +7048,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = args[0]
             package = args[1]
 
-        rev, rev_upper = parseRevisionOption(opts.revision, allow_md5=False)
+        rev, rev_upper = parseRevisionOption(opts.revision)
         if rev and not checkRevision(project, package, rev, apiurl, opts.meta):
             print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
