@@ -1556,7 +1556,7 @@ class Package:
         print('Transmitting file data', end=' ')
         filelist = self.__generate_commitlist(todo_send)
         sfilelist = self.__send_commitlog(msg, filelist, validate=True)
-        hash_entries = [e for e in sfilelist.findall('entry') if e.get('hash') is not None] 
+        hash_entries = [e for e in sfilelist.findall('entry') if e.get('hash') is not None]
         if sfilelist.get('error') and hash_entries:
             name2elem = dict([(e.get('name'), e) for e in filelist.findall('entry')])
             for entry in hash_entries:
@@ -3746,7 +3746,7 @@ class metafile:
     class _URLFactory:
         # private class which might go away again...
         def __init__(self, delegate, force_supported=True):
-            self._delegate = delegate 
+            self._delegate = delegate
             self._force_supported = force_supported
 
         def is_force_supported(self):
@@ -6047,7 +6047,7 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
         if not wait or not waiting:
             break
         else:
-            yield xml 
+            yield xml
     yield xml
 
 
