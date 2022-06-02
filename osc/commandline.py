@@ -4862,7 +4862,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # Do some magic here, when adding a url. We want that the server to download the tar ball and to verify it
         for arg in parseargs(args):
-            if arg.endswith('.git') or arg.startswith('git://') or arg.startswith('git@') or arg.startswith('https://github.com') or arg.startswith('https://gitlab.com'):
+            if arg.endswith('.git') or arg.startswith('git://') or \
+               arg.startswith('git@') or (arg.startswith('https://github.com') and not '/releases/' in arg) or \
+               arg.startswith('https://gitlab.com'):
                 addGitSource(arg)
             elif arg.startswith('http://') or arg.startswith('https://') or arg.startswith('ftp://'):
                 addDownloadUrlService(arg)
