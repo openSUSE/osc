@@ -5,7 +5,10 @@
 
 from __future__ import print_function
 
-__version__ = '0.179'
+
+from .util import git_version
+__version__ = git_version.get_version('0.179.0')
+
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
