@@ -554,7 +554,7 @@ def _build_opener(apiurl):
                 self.retried = 0
             return response
 
-    class OscHTTPSignatureAuthHandler(BaseHandler):
+    class OscHTTPSignatureAuthHandler(BaseHandler, object):
         def __init__(self, user, sshkey):
             super(self.__class__, self).__init__()
             self.user = user
@@ -1146,7 +1146,7 @@ def get_config(override_conffile=None,
         else:
             api_host_options[apiurl]['trusted_prj'] = []
 
-        # ⚠️  This option is experimental and may be removed at any time in the future!
+        # This option is experimental and may be removed at any time in the future!
         # This allows overriding the download url for an OBS instance to specify a closer mirror
         # or proxy system, which can greatly improve download performance, latency and more.
         # For example, this can use https://github.com/Firstyear/opensuse-proxy-cache in a local
