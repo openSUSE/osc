@@ -61,8 +61,17 @@ class install_data(install_data.install_data, object):
 data_files = []
 data_files.append((os.path.join('share', 'man', 'man1'), ['osc.1.gz']))
 
-with open("README") as fh:
-    long_description = fh.read()
+with open("README.md") as fh:
+    lines = fh.readlines()
+    while lines:
+        line = lines[0].strip()
+        if not line or line.startswith("["):
+            # skip leading empty lines
+            # skip leading lines with links to badges
+            lines.pop(0)
+            continue
+        break
+    long_description = "".join(lines)
 
 cmdclass = {
     'build': build_osc,
