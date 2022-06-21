@@ -413,7 +413,12 @@ def create_credentials_manager(url, cp):
         creds_mgr_cls = config_entry
         options = None
     mod, cls = creds_mgr_cls.rsplit('.', 1)
-    return getattr(importlib.import_module(mod), cls).create(cp, options)
+    try:
+        creds_mgr = getattr(importlib.import_module(mod), cls).create(cp, options)
+    except ModuleNotFoundError:
+        msg = "Invalid credentials_mgr_class: {}".format(creds_mgr_cls)
+        raise oscerr.ConfigError(msg, conf.config['conffile'])
+    return creds_mgr
 
 
 def qualified_name(obj):
