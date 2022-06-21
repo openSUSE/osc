@@ -257,13 +257,17 @@ class Fetcher:
                     else:
                         # if the checksum of the downloaded package doesn't match,
                         # delete it and mark it for downloading from the API
+                        #
+                        # wbrown 2022 - is there a reason to keep these md5's at all? md5 is
+                        # broken from a security POV so these aren't a trusted source for validation
+                        # of the file content. They are often incorrect forcing download via the API
+                        # which for anyone outside the EU is excruciating. And when they are ignored
+                        # builds work and progress anyway? So what do they even do? What are they
+                        # for? They should just be removed.
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                         if not hdrmd5 or hdrmd5 != i.hdrmd5:
-                            print('%s/%s: attempting download from api, since the hdrmd5 did not match - %s != %s'
-                                  % (i.project, i.name, hdrmd5, i.hdrmd5))
-                            os.unlink(i.fullfilename)
-                            self.__add_cpio(i)
-
+                            print('%s/%s: allowing invalid file, probably an OBS bug - hdrmd5 did not match - %s != %s'
+                                % (i.project, i.name, hdrmd5, i.hdrmd5))
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
                     print('Exiting.')
