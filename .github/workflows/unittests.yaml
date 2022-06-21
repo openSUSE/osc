@@ -1,0 +1,81 @@
+name: 'unit tests'
+
+on:
+  push:
+    branches: ['master']
+  pull_request:
+    branches: ['master']
+
+jobs:
+  test:
+    name: 'unit tests'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Testing per python-version using actions/setup-python is not possible,
+        # because rpm doesn't exist on pypi and cannot be installed via pip on ubuntu.
+        # That's why we're going to test on the target distros directly.
+        container:
+
+          # Fedora
+          - 'fedora:36'
+          - 'fedora:rawhide'
+
+          # OpenSUSE
+          # leap < 15.2 doesn't contain git-lfs which causes actions/checkout to fail
+          - 'opensuse/leap:15.2'
+          - 'opensuse/leap:15.3'
+          - 'opensuse/leap:15.4'
+          - 'opensuse/tumbleweed'
+
+          # CentOS Stream
+          # stream9 doesn't contain m2crypto required by osc
+          # - 'quay.io/centos/centos:stream9'
+
+          # Debian
+          - 'debian:stable'
+          - 'debian:unstable'
+
+          # Ubuntu
+          - 'ubuntu:latest'
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: 'Install packages (OpenSUSE)'
+        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        run: |
+            zypper --non-interactive --gpg-auto-import-keys refresh
+            zypper --non-interactive dist-upgrade
+            zypper --non-interactive install git-lfs
+            zypper --non-interactive install python3-pytest-cov
+            zypper --non-interactive install diffstat diffutils python3 python3-chardet python3-M2Crypto python3-pip python3-rpm python3-setuptools
+
+      - name: 'Install packages (Fedora/CentOS)'
+        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:')  }}
+        run: |
+            dnf -y makecache
+            dnf -y distro-sync
+            dnf -y install git-lfs
+            dnf -y install diffstat diffutils python3 python3-chardet python3-m2crypto python3-pip python3-rpm python3-setuptools
+
+      - name: 'Install packages (Debian/Ubuntu)'
+        if: ${{ startsWith(matrix.container, 'debian:') || startsWith(matrix.container, 'ubuntu:')  }}
+        run: |
+            apt-get -y update
+            apt-get -y upgrade
+            apt-get -y --no-install-recommends install git-lfs
+            apt-get -y --no-install-recommends install diffstat diffutils python3 python3-chardet python3-m2crypto python3-pip python3-rpm python3-setuptools
+
+      - uses: actions/checkout@v3
+
+      - name: 'Run unit tests'
+        run: |
+          pip3 install -e .
+          python3 setup.py test
+
+      - name: 'Upload coverage reports to Codecov (OpenSUSE Tumbleweed)'
+        if: ${{ matrix.container == 'opensuse/tumbleweed' }}
+        uses: codecov/codecov-action@v3
