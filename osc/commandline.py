@@ -5176,6 +5176,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for arg in arg_list:
             if is_project_dir(arg):
                 prj = Project(arg, progress_obj=self.download_progress)
+                if prj.scm_url:
+                    print("Please use git to update project", prj.name)
+                    continue
 
                 if conf.config['do_package_tracking']:
                     prj.update(expand_link=opts.expand_link,
@@ -5237,6 +5240,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 #                                        'copy has local modifications.\nPlease revert/commit them ' \
 #                                        'and try again.'
 #                    sys.exit(1)
+            if p.scm_url:
+                print("Please use git to update package", p.name)
+                continue
 
             if not rev:
                 if opts.expand_link:
@@ -9332,7 +9338,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.no_echo = True
             opts.prompt = True
             opts.select_password_store = True
-            prompt_value = 'Password: '
+            prompt_value = 'Password : '
             if len(args) != 1:
                 raise oscerr.WrongArgs('--change-password only needs the apiurl')
             args = [args[0], 'pass']
