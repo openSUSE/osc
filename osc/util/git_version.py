@@ -24,7 +24,11 @@ def get_git_version():
     # run the command from the place where this file is placed
     # to ensure that we're in a git repo
     cwd = os.path.dirname(__file__)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
+    except OSError:
+        # `git` command not found
+        return None
     stdout, _ = proc.communicate()
 
     if proc.returncode != 0:
