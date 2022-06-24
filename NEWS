@@ -1,3 +1,11 @@
+0.180.0
+  - warn when trying to commit a prj/pac managed in scm
+  - fix crash on "osc up" for git based package/projects
+  - don't traceback on invalid credentials manager
+  - improve README, rename it to README.md
+  - declare OscHTTPSignatureAuthHandler as a new-style class
+  - remove illegal character in comment
+
 0.179.0
   - signature (ssh key) authetication fixes (RSA key support, skip binary files)
   - commandline: handle calls without arguments gracefully
