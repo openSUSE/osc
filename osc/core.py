@@ -5181,16 +5181,19 @@ def checkout_package(apiurl, project, package,
     # before we create directories and stuff, check if the package actually
     # exists
     meta_data = b''.join(show_package_meta(apiurl, quote_plus(project), quote_plus(package)))
-    root = ET.fromstring(meta_data)
-    if root.find('scmsync') != None and root.find('scmsync').text != None:
-        if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
-            raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
-        scm_url = root.find('scmsync').text
-        directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
-        os.putenv("OSC_VERSION", get_osc_version())
-        run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
-        Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
-        return
+
+    # package == "_project" returns empty meta_data and XML parser would fail on it
+    if meta_data:
+        root = ET.fromstring(meta_data)
+        if root.find('scmsync') != None and root.find('scmsync').text != None:
+            if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
+                raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
+            scm_url = root.find('scmsync').text
+            directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
+            os.putenv("OSC_VERSION", get_osc_version())
+            run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
+            Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
+            return
 
     isfrozen = False
     if expand_link:
