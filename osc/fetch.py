@@ -265,8 +265,8 @@ class Fetcher:
                         if not hdrmd5 or hdrmd5 != i.hdrmd5:
                             print('%s/%s: attempting download from api, since the hdrmd5 did not match - %s != %s'
                                 % (i.project, i.name, hdrmd5, i.hdrmd5))
-                        os.unlink(i.fullfilename)
-                        self.__add_cpio(i)
+                            os.unlink(i.fullfilename)
+                            self.__add_cpio(i)
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')

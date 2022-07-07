@@ -293,7 +293,7 @@ class Pac:
 
 
     def makeurls(self, cachedir, urllist):
-        self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.arch)
+        self.localdir = '%s/%s/%s/%s' % (cachedir, self.project, self.repository, self.repoarch)
         self.fullfilename = os.path.join(self.localdir, self.canonname)
         self.urllist = [url % self.mp for url in urllist]
 
