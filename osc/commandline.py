@@ -983,10 +983,6 @@ class Osc(cmdln.Cmdln):
         # If project or package arguments missing, assume to work
         # with project and/or package in current local directory.
         attributepath = []
-
-        if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
-
         if cmd in ['prj', 'prjconf']:
             if len(args) < 1:
                 apiurl = store_read_apiurl(os.curdir)
@@ -1291,7 +1287,7 @@ class Osc(cmdln.Cmdln):
             src_update = "noupdate"
 
         if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
+            pass
         elif opts.file:
             if opts.file == '-':
                 opts.message = sys.stdin.read()
@@ -1962,8 +1958,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.message:
             opts.message = edit_message()
-        else:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
               (actionsxml, _html_escape(opts.message or ""))
@@ -2041,8 +2035,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('invalid \'--role\': either specify \'maintainer\' or \'bugowner\'')
         if not opts.message:
             opts.message = edit_message()
-        else:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         r = Request()
         if user.startswith('group:'):
@@ -2121,8 +2113,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 footer = textwrap.TextWrapper(width = 66).fill(
                          'please explain why you like to delete project %s' % project)
             opts.message = edit_message(footer)
-        else:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         r = Request()
         r.add_action('delete', tgt_project=project, tgt_package=package, tgt_repository=repository)
@@ -2170,8 +2160,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      'please explain why you like to change the devel project of %s/%s to %s/%s'
                      % (project, package, devel_project, devel_package))
             opts.message = edit_message(footer)
-        else:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         r = Request()
         r.add_action('change_devel', src_project=devel_project, src_package=devel_package,
@@ -2340,9 +2328,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.incoming:
             conf.config['include_request_from_project'] = False
-
-        if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         if args[0] == 'help':
             return self.do_help(['help', 'request'])
@@ -2895,8 +2880,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         else:
             raise oscerr.WrongArgs('Too few arguments (required none or two)')
-        if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
+
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
         except HTTPError as e:
@@ -3108,7 +3092,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev, dummy = parseRevisionOption(opts.revision)
 
         if opts.message:
-            comment = str(opts.message.encode().decode('unicode_escape'))
+            comment = opts.message
         else:
             if not rev:
                 rev = show_upstream_rev(src_apiurl, src_project, src_package)
@@ -3255,8 +3239,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.message:
             opts.message = edit_message()
-        else:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         if 'kind' in root.attrib and root.attrib['kind'] == 'maintenance_incident':
             r = create_release_request(apiurl, source_project, opts.message)
@@ -3300,8 +3282,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         maintenance_attribute = conf.config['maintenance_attribute']
         if opts.attribute:
             maintenance_attribute = opts.attribute
-        if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         source_project = target_project = None
 
@@ -3440,8 +3420,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.message:
             opts.message = edit_message()
-        else:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
 
         supersede_existing = False
         reqs = []
@@ -3665,9 +3643,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 4:
             tpackage = args[3]
 
-        if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
-
         try:
             exists, targetprj, targetpkg, srcprj, srcpkg = \
                 branch_pkg(apiurl, args[0], args[1],
@@ -3761,7 +3736,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         msg = ''
         if opts.message:
-            msg = str(opts.message.encode().decode('unicode_escape'))
+            msg = opts.message
         else:
             msg = edit_message()
 
@@ -3808,7 +3783,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         msg = ''
         if opts.message:
-            msg = str(opts.message.encode().decode('unicode_escape'))
+            msg = opts.message
         else:
             msg = edit_message()
 
@@ -3854,8 +3829,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         ${cmd_option_list}
         """
         apiurl = self.get_api_url()
-        if opts.message:
-            opts.message = str(opts.message.encode().decode('unicode_escape'))
         kind = 'prj'
         path_args = (project,)
         if package is not None:
@@ -3896,7 +3869,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         msg = ''
         if opts.message:
-            msg = str(opts.message.encode().decode('unicode_escape'))
+            msg = opts.message
         else:
             msg = edit_message()
 
@@ -5003,7 +4976,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         msg = ''
         if opts.message:
-            msg = str(opts.message.encode().decode('unicode_escape'))
+            msg = opts.message
         elif opts.file:
             if opts.file == '-':
                 msg = sys.stdin.read()
@@ -8538,7 +8511,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if requestactionsxml != "":
                 if opts.message:
-                    message = str(opts.message.encode().decode('unicode_escape'))
+                    message = opts.message
                 else:
                     message = edit_message()
 
