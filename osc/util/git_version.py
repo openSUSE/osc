@@ -10,8 +10,9 @@ def get_git_archive_version():
     # the `version` variable contents get substituted during `git archive`
     # it requires adding this to .gitattributes: <path to this file> export-subst
     version = "$Format:%(describe:tags=true)$"
-    if version.startswith("$"):
-        # version hasn't been substituted during `git archive`
+    if version.startswith(("$", "%")):
+        # "$": version hasn't been substituted during `git archive`
+        # "%": "Format:" and "$" characters get removed from the version string (a GitHub bug?)
         return None
     return version
 
