@@ -540,14 +540,26 @@ def _build_opener(apiurl):
             for authreq in headers.get_all('www-authenticate', []):
                 scheme = authreq.split()[0].lower()
                 authreqs[scheme] = authreq
-            if 'signature' in authreqs and self.signatureauthhandler and \
-                    (self.signatureauthhandler.sshkey_known() or 'basic' not in authreqs):
+
+            if 'signature' in authreqs \
+                and self.signatureauthhandler \
+                and (
+                    # sshkey explicitly set in the config file, use it instead of doing basic auth
+                    self.signatureauthhandler.sshkey_known()
+                    or (
+                        # can't fall-back to basic auth, because server doesn't support it
+                        'basic' not in authreqs
+                        # can't fall-back to basic auth, because there's no password provided
+                        or not self.passwd.find_user_password(None, apiurl)[1]
+                    )):
                 del headers['www-authenticate']
                 headers['www-authenticate'] = authreqs['signature']
                 return self.signatureauthhandler.http_error_401(req, fp, code, msg, headers)
+
             if 'basic' in authreqs:
                 del headers['www-authenticate']
                 headers['www-authenticate'] = authreqs['basic']
+
             response = super(self.__class__, self).http_error_401(req, fp, code, msg, headers)
             # workaround for http://bugs.python.org/issue9639
             if hasattr(self, 'retried'):
