@@ -3612,10 +3612,6 @@ def show_package_meta(apiurl, prj, pac, meta=False, blame=None):
         query['view'] = "blame"
         query['meta'] = 1
 
-    # The fake packages _project has no _meta file
-    if pac.startswith('_project'):
-        return ""
-
     url = makeurl(apiurl, ['source', prj, pac, '_meta'], query)
     try:
         f = http_GET(url)
