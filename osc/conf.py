@@ -827,9 +827,10 @@ def write_config(fname, cp):
         fname = os.readlink(fname)
 
     # create directories to the config file (if they don't exist already)
-    if not os.path.exists(os.path.dirname(fname)):
+    fdir = os.path.dirname(fname)
+    if fdir:
         try:
-            os.makedirs(os.path.dirname(fname), mode=0o700)
+            os.makedirs(fdir, mode=0o700)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
