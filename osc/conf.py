@@ -644,7 +644,7 @@ def _build_opener(apiurl):
                     if fingerprint in keys_in_home_ssh:
                         return keys_in_home_ssh[fingerprint]
             sshdir = os.path.expanduser('~/.ssh')
-            keyfiles = ('id_ed25519', 'id_rsa')
+            keyfiles = ('id_ed25519', 'id_ed25519_sk', 'id_rsa', 'id_ecdsa', 'id_ecdsa_sk', 'id_dsa')
             for keyfile in keyfiles:
                 keyfile_path = os.path.join(sshdir, keyfile)
                 if os.path.isfile(keyfile_path):
