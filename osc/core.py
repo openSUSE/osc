@@ -1800,6 +1800,10 @@ class Package:
             self.srcmd5 = None
             self.linkinfo = None
             self.serviceinfo = None
+            self.size_limit = None
+            self.meta = None
+            self.excluded = []
+            self.filenamelist_unvers = []
             return
 
         files_tree = read_filemeta(self.dir)
