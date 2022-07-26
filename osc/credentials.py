@@ -166,6 +166,9 @@ class ObfuscatedConfigFileCredentialsManager(
 
     @classmethod
     def decode_password(cls, password):
+        if password is None:
+            # avoid crash on encoding None when 'pass' is not specified in the config
+            return None
         compressed_pw = base64.b64decode(password.encode("ascii"))
         return bz2.decompress(compressed_pw).decode("ascii")
 
