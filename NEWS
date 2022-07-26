@@ -1,3 +1,16 @@
+0.181.0
+  - fix crash when 'pass' is not set in the config file
+  - add missing attributes to Package when scm_url is set
+  - fix failure to create config in current dir
+  - update list of considered file names for ssh key autodetection
+  - allow users to prefer ssh key over password auth
+  - ssh: recognize gpg keys (yubikey usage)
+  - fix operating on _project meta
+  - revert "interpretation of string literals in messages" that broke unicode handling
+  - fix product build rpm caching
+  - enable md5 revisions in osc log
+  - parseRevisionOption(): raise an exception on invalid revisions
+
 0.180.0
   - warn when trying to commit a prj/pac managed in scm
   - fix crash on "osc up" for git based package/projects
