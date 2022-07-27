@@ -6111,7 +6111,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         wd = os.curdir
         args = slash_split(args)
 
-        project = package = repository = arch = build_descr = None
+        project = package = repository = arch = build_descr = service_data = None
         if len(args) <= 3:
             if not is_package_dir('.'):
                 raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
@@ -6121,6 +6121,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 project = store_read_project('.')
                 package = store_read_package('.')
+                if os.path.exists('_service'):
+                    service_data = open('_service', 'rb').read()
             repository, arch, build_descr = self.parse_repoarchdescr(args, alternative_project=opts.alternative_project, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
             project = args[0]
@@ -6129,6 +6131,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[3]
             if len(args) == 5:
                 build_descr = args[4]
+                if os.path.exists('_service'):
+                    service_data = open('_service', 'rb').read()
         else:
             raise oscerr.WrongArgs('Too many arguments.')
 
@@ -6157,7 +6161,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     project, package, repository, arch,
                                     specfile=build_descr_data,
                                     debug=opts.debug,
-                                    addlist=opts.extra_pkgs)))
+                                    addlist=opts.extra_pkgs,
+                                    servicefile=service_data)))
 
 
     def do_buildconfig(self, subcmd, opts, *args):
