@@ -206,17 +206,6 @@ class TestRepairWC(OscTestCase):
         self.assertEqual(open(os.path.join('.osc', '_apiurl')).read(), 'http://localhost\n')
         self.assertEqual(p.apiurl, 'http://localhost')
 
-    def test_invalidapiurl_param(self):
-        """pass an invalid apiurl to wc_repair"""
-        try:
-            from urllib.error import URLError
-        except ImportError:
-            from urllib2 import URLError
-        self._change_to_pkg('invalid_apiurl')
-        p = osc.core.Package('.', wc_check=False)
-        self.assertRaises(URLError, p.wc_repair, 'http:/localhost')
-        self.assertRaises(URLError, p.wc_repair, 'invalid')
-
     def test_noapiurlNotExistingApiurl(self):
         """the package wc has no _apiurl file and no apiurl is passed to repairwc"""
         self._change_to_pkg('noapiurl')
@@ -238,33 +227,6 @@ class TestRepairWC(OscTestCase):
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
         self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
 
-    def test_project_invalidapiurl(self):
-        """the project wc has an invalid _apiurl file (invalid url format)"""
-        import shutil
-        prj_dir = os.path.join(self.tmpdir, 'prj_invalidapiurl')
-        shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_invalidapiurl'), prj_dir)
-        storedir = os.path.join(prj_dir, osc.core.store)
-        self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Project, prj_dir, getPackageList=False)
-        prj = osc.core.Project(prj_dir, wc_check=False, getPackageList=False)
-        prj.wc_repair('http://localhost')
-        self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
-        self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
-        self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
-
-    def test_project_invalidapiurl_param(self):
-        """pass an invalid apiurl to wc_repair"""
-        import shutil
-        try:
-            from urllib.error import URLError
-        except ImportError:
-            from urllib2 import URLError
-        prj_dir = os.path.join(self.tmpdir, 'prj_invalidapiurl')
-        shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_invalidapiurl'), prj_dir)
-        storedir = os.path.join(prj_dir, osc.core.store)
-        self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Project, prj_dir, getPackageList=False)
-        prj = osc.core.Project(prj_dir, wc_check=False, getPackageList=False)
-        self.assertRaises(URLError, prj.wc_repair, 'http:/localhost')
-        self.assertRaises(URLError, prj.wc_repair, 'invalid')
 
 if __name__ == '__main__':
     import unittest

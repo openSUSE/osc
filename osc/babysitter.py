@@ -8,25 +8,17 @@ from __future__ import print_function
 import errno
 import os.path
 import pdb
+import ssl
 import sys
 import signal
 import traceback
 
 from osc import oscerr
-from .oscsslexcp import NoSecureSSLError
+from .oscssl import CertVerificationError
 from osc.util.cpio import CpioError
 from osc.util.packagequery import PackageError
 from osc.util.helper import decode_it
 from osc.OscConfigParser import configparser
-
-try:
-    from M2Crypto.SSL.Checker import SSLVerificationError
-    from M2Crypto.SSL import SSLError as SSLError
-except:
-    class SSLError(Exception):
-        pass
-    class SSLVerificationError(Exception):
-        pass
 
 try:
     # import as RPMError because the class "error" is too generic
@@ -36,13 +28,9 @@ except:
     class RPMError(Exception):
         pass
 
-try:
-    from http.client import HTTPException, BadStatusLine
-    from urllib.error import URLError, HTTPError
-except ImportError:
-    #python 2.x
-    from httplib import HTTPException, BadStatusLine
-    from urllib2 import URLError, HTTPError
+import urllib3.exceptions
+from http.client import HTTPException, BadStatusLine
+from urllib.error import URLError, HTTPError
 
 # the good things are stolen from Matt Mackall's mercurial
 
@@ -142,6 +130,10 @@ def run(prg, argv=None):
             msg += ' (%s)' % e._osc_host_port
         msg += ':\n'
         print(msg, e.reason, file=sys.stderr)
+    except ssl.SSLError as e:
+        if 'tlsv1' in str(e):
+            print('The python on this system or the server does not support TLSv1.2', file=sys.stderr)
+        print("SSL Error:", e, file=sys.stderr)
     except IOError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:
@@ -182,14 +174,10 @@ def run(prg, argv=None):
         print('%s:' % e.fname, e.msg, file=sys.stderr)
     except RPMError as e:
         print(e, file=sys.stderr)
-    except SSLError as e:
-        if 'tlsv1' in str(e):
-            print('The python on this system does not support TLSv1.2', file=sys.stderr)
-        print("SSL Error:", e, file=sys.stderr)
-    except SSLVerificationError as e:
-        print("Certificate Verification Error:", e, file=sys.stderr)
-    except NoSecureSSLError as e:
+    except CertVerificationError as e:
         print(e, file=sys.stderr)
+    except urllib3.exceptions.MaxRetryError as e:
+        print(e.reason, file=sys.stderr)
     except CpioError as e:
         print(e, file=sys.stderr)
     except oscerr.OscBaseError as e:
