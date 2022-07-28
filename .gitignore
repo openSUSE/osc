@@ -3,3 +3,5 @@
 tags
 build
 *junit-xml-results
+*.egg
+osc.egg-info/*

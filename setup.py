@@ -101,9 +101,13 @@ setuptools.setup(
     url='http://en.opensuse.org/openSUSE:OSC',
     download_url='https://github.com/openSUSE/osc',
     packages=['osc', 'osc.util'],
-    scripts=['osc-wrapper.py'],
     data_files=data_files,
     install_requires=['cryptography', 'urllib3'],
+    entry_points={
+      'console_scripts': [
+          'osc=osc.babysitter:main'
+          ],
+    },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
