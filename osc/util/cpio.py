@@ -100,8 +100,7 @@ class CpioRead:
             self.__file.close()
 
     def __iter__(self):
-        for h in self.hdrs:
-            yield h
+        yield from self.hdrs
 
     def _init_datastructs(self):
         self.hdrs = []

@@ -10,7 +10,7 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'deletefile_fixtures')
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestDeleteFiles)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestDeleteFiles)
 
 class TestDeleteFiles(OscTestCase):
     def _get_fixtures_dir(self):

@@ -162,8 +162,8 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             if not (len(ver1) and len(ver2)):
                 break
             # check if we have a digits segment
-            mo1 = re.match(b'(\d+)', ver1)
-            mo2 = re.match(b'(\d+)', ver2)
+            mo1 = re.match(br'(\d+)', ver1)
+            mo2 = re.match(br'(\d+)', ver2)
             numeric = True
             if mo1 is None:
                 mo1 = re.match(b'([a-zA-Z]+)', ver1)

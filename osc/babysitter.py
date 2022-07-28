@@ -135,7 +135,7 @@ def run(prg, argv=None):
         if 'tlsv1' in str(e):
             print('The python on this system or the server does not support TLSv1.2', file=sys.stderr)
         print("SSL Error:", e, file=sys.stderr)
-    except IOError as e:
+    except OSError as e:
         # ignore broken pipe
         if e.errno != errno.EPIPE:
             raise

@@ -499,8 +499,8 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
-    prefer_pkgs = dict((decode_it(name), packageQuery.path())
-                       for name, packageQuery in packageQueries.items())
+    prefer_pkgs = {decode_it(name): packageQuery.path()
+                       for name, packageQuery in packageQueries.items()}
 
     depfile = create_deps(packageQueries.values())
     cpio.add(b'deps', b'\n'.join(depfile))

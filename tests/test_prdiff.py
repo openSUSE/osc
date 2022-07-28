@@ -43,7 +43,7 @@ def POST_RDIFF(oldprj, newprj):
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestProjectDiff)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestProjectDiff)
 
 class TestProjectDiff(OscTestCase):
     diff_hdr = 'Index: %s\n==================================================================='

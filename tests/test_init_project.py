@@ -10,7 +10,7 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_project_fixtures')
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestInitProject)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestInitProject)
 
 class TestInitProject(OscTestCase):
     def _get_fixtures_dir(self):

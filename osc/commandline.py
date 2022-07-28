@@ -4533,9 +4533,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         obs_url = node.text
 
         if package is None:
-            url = "{}/project/show/{}".format(obs_url, project)
+            url = f"{obs_url}/project/show/{project}"
         else:
-            url = "{}/package/show/{}/{}".format(obs_url, project, package)
+            url = f"{obs_url}/package/show/{project}/{package}"
 
         run_external('xdg-open', url)
 
@@ -4986,7 +4986,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(arg)
 
                 if prj.scm_url:
-                    print("WARNING: Skipping project '{}' because it is managed in scm (git): {}".format(prj.name, prj.scm_url))
+                    print(f"WARNING: Skipping project '{prj.name}' because it is managed in scm (git): {prj.scm_url}")
                     args.remove(arg)
                     continue
 
@@ -5010,7 +5010,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for pac in pacs.copy():
             if pac.scm_url:
-                print("WARNING: Skipping package '{}' because it is managed in scm (git): {}".format(pac.name, pac.scm_url))
+                print(f"WARNING: Skipping package '{pac.name}' because it is managed in scm (git): {pac.scm_url}")
                 pacs.remove(pac)
                 continue
 
@@ -6251,10 +6251,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         constraintsfile_data = None
         if constraintsfile is not None:
-            constraintsfile_data = open(constraintsfile, 'r').read()
+            constraintsfile_data = open(constraintsfile).read()
         elif not opts.ignore_file:
             if os.path.isfile("_constraints"):
-                constraintsfile_data = open("_constraints", 'r').read()
+                constraintsfile_data = open("_constraints").read()
             else:
                 print("No local _constraints file. Using just the project constraints")
 
@@ -6390,7 +6390,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 Repo.tofile(repolistfile, repositories)
 
         no_repo = False
-        repo_names = sorted(set([r.name for r in repositories]))
+        repo_names = sorted({r.name for r in repositories})
         if not arg_repository and repositories:
             # XXX: we should avoid hardcoding repository names
             # Use a default value from config, but just even if it's available
@@ -7919,8 +7919,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # XXX: is it a good idea to make this the default?
         # support perl symbols:
-        if re.match('^perl\(\w+(::\w+)*\)$', search_term):
-            search_term = re.sub('\)', '', re.sub('(::|\()', '-', search_term))
+        if re.match(r'^perl\(\w+(::\w+)*\)$', search_term):
+            search_term = re.sub(r'\)', '', re.sub(r'(::|\()', '-', search_term))
             opts.package = True
 
         if opts.mine:
@@ -7941,7 +7941,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.binary and (opts.title or opts.description or opts.involved or opts.bugowner or opts.maintainer
                             or opts.project or opts.package):
             raise oscerr.WrongOptions('Sorry, \'--binary\' and \'--title\' or \'--description\' or \'--involved ' \
-                                      'or \'--bugowner\' or \'--maintainer\' or \'--limit-to-attribute <attr>\ ' \
+                                      'or \'--bugowner\' or \'--maintainer\' or \'--limit-to-attribute <attr>\\ ' \
                                       'or \'--project\' or \'--package\' are mutually exclusive')
 
         apiurl = self.get_api_url()
@@ -8009,7 +8009,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # backward compatibility: local role filtering
             if opts.limit_to_attribute:
                 role_filter_xpath = xpath_join(role_filter_xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
-            what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+            what = {kind: role_filter_xpath for kind in what.keys()}
             res = search(apiurl, **what)
             filter_role(res, search_term, role_filter)
         if role_filter:
@@ -9189,7 +9189,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 fp = open(fn_changelog)
                 titleline = fp.readline()
                 fp.close()
-                if re.match('^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
+                if re.match(r'^\*\W+(.+\W+\d{1,2}\W+20\d{2})\W+(.+)\W+<(.+)>\W+(.+)$', titleline):
                     meego_style = True
             except IndexError:
                 pass
