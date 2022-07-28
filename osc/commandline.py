@@ -856,11 +856,11 @@ class Osc(cmdln.Cmdln):
                 query['project'] = args[0]
                 query['package'] = args[1]
             url = makeurl(apiurl, ['trigger', operation], query)
-            req = URLRequest(url)
-            req.get_method = lambda: "POST"
-            req.add_header('Content-Type', 'application/octet-stream')
-            req.add_header('Authorization', "Token "+opts.trigger)
-            fd = urlopen(req, data=None)
+            headers = {
+                'Content-Type': 'application/octet-stream',
+                'Authorization': "Token " + opts.trigger,
+            }
+            fd = http_POST(url, headers=headers)
             print(decode_it(fd.read()))
         else:
             if args and args[0] in ['create', 'delete', 'trigger']:
