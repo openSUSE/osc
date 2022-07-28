@@ -1,8 +1,12 @@
-import osc.core
-import osc.oscerr
 import os
 import sys
+
+import osc.core
+import osc.oscerr
+
 from .common import GET, OscTestCase
+
+
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'update_fixtures')
 
 def suite():

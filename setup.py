@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 
-from distutils.core import setup
+
 import distutils.core
-from distutils.command import build, install_data
 import gzip
-import os.path
-
+import os
 import setuptools
+from distutils.command import build, install_data
 
+import osc.commandline
 import osc.core
-from osc import commandline
 
 
 class build_osc(build.build, object):
@@ -23,7 +22,7 @@ class build_osc(build.build, object):
         man_path = os.path.join(self.build_base, 'osc.1.gz')
         distutils.log.info('generating %s' % man_path)
         outfile = gzip.open(man_path, 'wt')
-        osccli = commandline.Osc(stdout=outfile)
+        osccli = osc.commandline.Osc(stdout=outfile)
         # FIXME: we cannot call the main method because osc expects an ~/.oscrc
         # file (this would break builds in environments like the obs)
         # osccli.main(argv = ['osc','man'])
@@ -119,9 +118,7 @@ setuptools.setup(
         "Operating System :: POSIX :: BSD :: FreeBSD",
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

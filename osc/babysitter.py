@@ -3,23 +3,26 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-from __future__ import print_function
 
 import errno
-import os.path
+import os
 import pdb
+import signal
 import ssl
 import sys
-import signal
 import traceback
+from http.client import HTTPException, BadStatusLine
+from urllib.error import URLError, HTTPError
 
-from osc import commandline
-from osc import oscerr
+import urllib3.exceptions
+
+from . import commandline
+from . import oscerr
+from .OscConfigParser import configparser
 from .oscssl import CertVerificationError
-from osc.util.cpio import CpioError
-from osc.util.packagequery import PackageError
-from osc.util.helper import decode_it
-from osc.OscConfigParser import configparser
+from .util.cpio import CpioError
+from .util.helper import decode_it
+from .util.packagequery import PackageError
 
 try:
     # import as RPMError because the class "error" is too generic
@@ -29,9 +32,6 @@ except:
     class RPMError(Exception):
         pass
 
-import urllib3.exceptions
-from http.client import HTTPException, BadStatusLine
-from urllib.error import URLError, HTTPError
 
 # the good things are stolen from Matt Mackall's mercurial
 

@@ -3,28 +3,22 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-from __future__ import print_function
 
-import sys, os
+import os
+import re
+import sys
+import tempfile
+from urllib.parse import quote_plus
+from urllib.request import HTTPError
 
-try:
-    from urllib.parse import quote_plus
-    from urllib.request import HTTPError
-except ImportError:
-    #python 2.x
-    from urllib import quote_plus
-    from urllib2 import HTTPError
-
-from .core import makeurl, streamfile, dgst
-from .grabber import OscFileGrabber, OscMirrorGroup
-from .util import packagequery, cpio
 from . import conf
 from . import oscerr
-import tempfile
-import re
-
-from osc.util.helper import decode_it
+from .core import makeurl, streamfile, dgst
+from .grabber import OscFileGrabber, OscMirrorGroup
 from .meter import create_text_meter
+from .util import packagequery, cpio
+from .util.helper import decode_it
+
 
 class Fetcher:
     def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],

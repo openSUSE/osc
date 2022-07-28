@@ -3,42 +3,27 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
-from __future__ import print_function
-
 import os
 import re
-import sys
 import shutil
-
-try:
-    from urllib.parse import urlsplit
-    from urllib.request import URLError, HTTPError
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit
-    from urllib2 import URLError, HTTPError
-
-from tempfile import NamedTemporaryFile, mkdtemp
-from osc.fetch import *
-from osc.core import get_buildinfo, store_read_apiurl, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
-from osc.core import get_binarylist, get_binary_file, run_external, return_external, raw_input
-from osc.util import rpmquery, debquery, archquery
-from osc.util.helper import decode_it
-import osc.conf
-from . import oscerr
 import subprocess
-try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
-    from xml.etree import cElementTree as ET
-except ImportError:
-    # will import a fast implementation from 3.3 onwards, needed
-    # for 3.9+
-    from xml.etree import ElementTree as ET
+import sys
+from tempfile import NamedTemporaryFile, mkdtemp
+from urllib.parse import urlsplit
+from urllib.request import URLError, HTTPError
+from xml.etree import ElementTree as ET
 
+from . import conf
 from . import connection
+from . import oscerr
 from .conf import config
-
+from .core import get_buildinfo, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
+from .core import get_binarylist, get_binary_file, run_external, return_external, raw_input
+from .fetch import Fetcher, verify_pacs
 from .meter import create_text_meter
+from .util import rpmquery, debquery, archquery
+from .util.helper import decode_it
+
 
 change_personality = {
             'i686':  'linux32',
@@ -819,9 +804,9 @@ def main(apiurl, opts, argv):
     bc_file = None
     bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
     bc_filename = '_buildconfig-%s-%s' % (repo, arch)
-    if is_package_dir('.') and os.access(osc.core.store, os.W_OK):
-        bi_filename = os.path.join(os.getcwd(), osc.core.store, bi_filename)
-        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
+    if is_package_dir('.') and os.access(core.store, os.W_OK):
+        bi_filename = os.path.join(os.getcwd(), core.store, bi_filename)
+        bc_filename = os.path.join(os.getcwd(), core.store, bc_filename)
     elif not os.access('.', os.W_OK):
         bi_file = NamedTemporaryFile(prefix=bi_filename)
         bi_filename = bi_file.name
@@ -849,7 +834,7 @@ def main(apiurl, opts, argv):
 
     # check for source services
     if not opts.offline and not opts.noservice:
-        p = osc.core.Package(os.curdir)
+        p = core.Package(os.curdir)
         r = p.run_source_services(verbose=True)
         if r:
             raise oscerr.ServiceRuntimeError('Source service run failed!')
@@ -1132,12 +1117,12 @@ def main(apiurl, opts, argv):
         if not old_pkg_dir.startswith('/') and not opts.offline:
             data = [ prj, pacname, repo, arch]
             if old_pkg_dir == '_link':
-                p = osc.core.findpacs(os.curdir)[0]
+                p = core.findpacs(os.curdir)[0]
                 if not p.islink():
                     raise oscerr.WrongOptions('package is not a link')
                 data[0] = p.linkinfo.project
                 data[1] = p.linkinfo.package
-                repos = osc.core.get_repositories_of_project(apiurl, data[0])
+                repos = core.get_repositories_of_project(apiurl, data[0])
                 # hack for links to e.g. Factory
                 if not data[2] in repos and 'standard' in repos:
                     data[2] = 'standard'
@@ -1455,7 +1440,7 @@ def main(apiurl, opts, argv):
 
     # record our settings for later builds
     if is_package_dir(os.curdir):
-        osc.core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
+        core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
 
     try:
         rc = run_external(cmd[0], *cmd[1:])

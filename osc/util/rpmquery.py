@@ -1,11 +1,10 @@
-
-from __future__ import print_function
-
 import os
 import re
 import struct
 from . import packagequery
-from osc.util.helper import decode_it
+
+from .helper import decode_it
+
 
 def cmp(a, b):
     return (a > b) - (a < b)

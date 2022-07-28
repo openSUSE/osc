@@ -1,7 +1,10 @@
+import os
+
 import osc.core
 import osc.oscerr
-import os
+
 from .common import OscTestCase
+
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'project_package_status_fixtures')
 

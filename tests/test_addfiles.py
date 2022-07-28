@@ -1,8 +1,11 @@
-import osc.core
-import osc.oscerr
 import os
 import sys
+
+import osc.core
+import osc.oscerr
+
 from .common import OscTestCase
+
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'addfile_fixtures')
 

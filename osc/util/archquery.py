@@ -1,11 +1,10 @@
-
-from __future__ import print_function
-
-import os.path
+import os
 import re
-import tarfile
-from . import packagequery
 import subprocess
+import tarfile
+
+from . import packagequery
+
 
 class ArchError(packagequery.PackageError):
     pass

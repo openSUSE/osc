@@ -3,7 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-from __future__ import print_function
 
 """Read osc configuration and store it in a dictionary
 
@@ -36,20 +35,21 @@ The configuration dictionary could look like this:
 
 """
 
+
 import bz2
 import errno
+import getpass
 import os
 import re
 import sys
-import getpass
-
 from io import StringIO
 from urllib.parse import urlsplit
 
+from . import credentials
 from . import OscConfigParser
-from osc import oscerr
-from osc.util.helper import raw_input
-from osc import credentials
+from . import oscerr
+from .util.helper import raw_input
+
 
 GENERIC_KEYRING = False
 GNOME_KEYRING = False

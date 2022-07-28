@@ -13,19 +13,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
-from __future__ import print_function
 
-import sys
+import configparser
 
-if sys.version_info >= ( 3, ):
-    import configparser
-    ConfigParser = configparser.ConfigParser
-else:
-    #python 2.x
-    import ConfigParser as configparser
-    ConfigParser = configparser.SafeConfigParser
-
-import re
 
 # inspired from http://code.google.com/p/iniparse/ - although their implementation is
 # quite different
@@ -192,7 +182,7 @@ class OptionLine(Line):
         self.format(line)
 
     def format(self, line):
-        mo = ConfigParser.OPTCRE.match(line.strip())
+        mo = configparser.ConfigParser.OPTCRE.match(line.strip())
         key, val = mo.group('option', 'value')
         self.frmt = line.replace(key.strip(), '%s', 1)
         pos = val.find(' ;')
@@ -205,7 +195,7 @@ class OptionLine(Line):
         return self.value
 
 
-class OscConfigParser(ConfigParser):
+class OscConfigParser(configparser.ConfigParser):
     """
     OscConfigParser() behaves like a normal ConfigParser() object. The
     only differences is that it preserves the order+format of configuration entries
@@ -214,7 +204,7 @@ class OscConfigParser(ConfigParser):
     class.
     """
     def __init__(self, defaults={}):
-        ConfigParser.__init__(self, defaults)
+        super().__init__(defaults)
         self._sections = ConfigLineOrder()
 
     # XXX: unfortunately we have to override the _read() method from the ConfigParser()
@@ -323,7 +313,7 @@ class OscConfigParser(ConfigParser):
             fp.write(str(self))
             fp.write('\n')
         else:
-            ConfigParser.write(self, fp)
+            super().write(fp)
 
     def has_option(self, section, option, proper=False, **kwargs):
         """
@@ -333,7 +323,7 @@ class OscConfigParser(ConfigParser):
         """
         if proper:
             return self.optionxform(option) in self._sections[section].keys()
-        return ConfigParser.has_option(self, section, option, **kwargs)
+        return super().has_option(section, option, **kwargs)
 
     # XXX: simplify!
     def __str__(self):

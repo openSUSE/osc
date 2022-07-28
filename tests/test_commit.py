@@ -1,20 +1,13 @@
-import osc.core
-import osc.oscerr
 import os
 import sys
+from urllib.error import HTTPError
+from xml.etree import ElementTree as ET
+
+import osc.core
+import osc.oscerr
+
 from .common import GET, PUT, POST, DELETE, OscTestCase
-try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
-    from xml.etree import cElementTree as ET
-except ImportError:
-    # will import a fast implementation from 3.3 onwards, needed
-    # for 3.9+
-    from xml.etree import ElementTree as ET
-try:
-    from urllib.error import HTTPError
-except ImportError:
-    #python 2.x
-    from urllib2 import HTTPError
+
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'commit_fixtures')
 

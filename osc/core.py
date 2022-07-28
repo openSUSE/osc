@@ -3,8 +3,6 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-from __future__ import print_function
-
 
 from .util import git_version
 __version__ = git_version.get_version('1.0.0~b0')
@@ -15,62 +13,37 @@ __version__ = git_version.get_version('1.0.0~b0')
 # functionality to check_store_version().
 __store_version__ = '1.0'
 
+
+import errno
+import hashlib
 import locale
 import os
-import os.path
-import sys
+import platform
+import re
+import shlex
 import shutil
 import subprocess
-import re
-import socket
-import errno
-import shlex
-import hashlib
-import platform
-
+import sys
+from functools import cmp_to_key
+from http.client import IncompleteRead
+from io import StringIO
+from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+from urllib.error import HTTPError
+from urllib.request import pathname2url
+from xml.etree import ElementTree as ET
 
 try:
     import distro
 except ImportError:
     distro = None
 
-from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
-from urllib.error import HTTPError
-from urllib.request import pathname2url
-from io import StringIO
-from http.client import IncompleteRead
-
-try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
-    from xml.etree import cElementTree as ET
-except ImportError:
-    # will import a fast implementation from 3.3 onwards, needed
-    # for 3.9+
-    from xml.etree import ElementTree as ET
-
-from . import oscerr
 from . import conf
+from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
+from .util.helper import decode_list, decode_it, raw_input, _html_escape
 
-try:
-    from functools import cmp_to_key
-except ImportError:
-    from .util.helper import cmp_to_key
 
-from osc.util.helper import decode_list, decode_it, raw_input, _html_escape
-
-try:
-    # python 2.6 and python 2.7
-    unicode
-    ET_ENCODING = "utf-8"
-    # python 2.6 does not have bytes and python 2.7 reimplements it as alias to
-    # str, but in incompatible way as it does not accept the same arguments
-    bytes = lambda x, *args: x
-except:
-    #python3 does not have unicode, so lets reimplement it
-    #as void function as it already gets unicode strings
-    unicode = lambda x, *args: x
-    ET_ENCODING = "unicode"
+ET_ENCODING = "unicode"
 
 def compare(a, b): return cmp(a[1:], b[1:])
 
@@ -4200,8 +4173,7 @@ def create_release_request(apiurl, src_project, message=''):
     r = Request()
     # api will complete the request
     r.add_action('maintenance_release', src_project=src_project)
-    # XXX: clarify why we need the unicode(...) stuff
-    r.description = unicode(message, 'utf8')
+    r.description = message
     r.create(apiurl)
     return r
 
@@ -4213,8 +4185,7 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
             r.add_action('maintenance_incident', src_project=src_project, src_package=p, src_rev=rev, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
     else:
         r.add_action('maintenance_incident', src_project=src_project, tgt_project=tgt_project, tgt_releaseproject=tgt_releaseproject, opt_sourceupdate = opt_sourceupdate)
-    # XXX: clarify why we need the unicode(...) stuff
-    r.description = unicode(message, 'utf8')
+    r.description = message
     r.create(apiurl, addrevision=True, enforce_branching=enforce_branching)
     return r
 
@@ -4258,11 +4229,6 @@ def create_submit_request(apiurl,
        targetxml,
        options_block,
        _html_escape(message))
-
-    # Don't do _html_escape(unicode(message, "utf8"))) above.
-    # Promoting the string to utf8, causes the post to explode with:
-    #   uncaught exception: Fatal error: Start tag expected, '&lt;' not found at :1.
-    # I guess, my original workaround was not that bad.
 
     u = makeurl(apiurl, ['request'], query='cmd=create')
     r = None

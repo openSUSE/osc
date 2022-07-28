@@ -1,9 +1,11 @@
-import osc.commandline
-import osc.core
-import osc.oscerr
 import os
 import re
 import sys
+
+import osc.commandline
+import osc.core
+import osc.oscerr
+
 from .common import GET, POST, OscTestCase, EXPECTED_REQUESTS
 
 

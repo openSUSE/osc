@@ -1,5 +1,7 @@
 import unittest
+
 from osc.util.helper import decode_it, decode_list
+
 
 def suite():
     return unittest.makeSuite(TestResults)

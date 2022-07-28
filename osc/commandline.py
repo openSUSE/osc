@@ -3,39 +3,24 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-from __future__ import print_function
+import imp
+import inspect
+import os
+import sys
+import time
+from functools import cmp_to_key
+from operator import itemgetter
+from optparse import SUPPRESS_HELP
+from urllib.parse import urlsplit
+from urllib.error import HTTPError
 
 from . import cmdln
 from . import conf
 from . import oscerr
-import sys
-import time
-import imp
-import inspect
-import os
-try:
-    from urllib.parse import urlsplit
-    from urllib.error import HTTPError
-    ET_ENCODING = "unicode"
-except ImportError:
-    #python 2.x
-    from urlparse import urlsplit
-    from urllib2 import HTTPError
-    ET_ENCODING = "utf-8"
-
-from optparse import SUPPRESS_HELP
-
 from .core import *
 from .util import safewriter
-
-try:
-    from functools import cmp_to_key
-except ImportError:
-    from .util.helper import cmp_to_key
-
 from .util.helper import _html_escape
 
-from operator import itemgetter
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
 .SH NAME
@@ -8224,7 +8209,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     data.find('title').text = ''.join(title)
                     data.find('description').text = ''.join(descr)
                     data.find('url').text = url
-                    data = ET.tostring(data, encoding=ET_ENCODING)
+                    data = ET.tostring(data, encoding="unicode")
                 else:
                     print('error - cannot get meta data', file=sys.stderr)
                     sys.exit(1)

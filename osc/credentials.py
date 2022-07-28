@@ -1,13 +1,9 @@
-import importlib
-import bz2
 import base64
+import bz2
 import getpass
+import importlib
 import sys
-
-try:
-    from urllib.parse import urlsplit
-except ImportError:
-    from urlparse import urlsplit
+from urllib.parse import urlsplit
 
 try:
     import keyring
