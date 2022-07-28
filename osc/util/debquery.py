@@ -1,13 +1,11 @@
-
-from __future__ import print_function
-
-from . import ar
-import os.path
+import itertools
+import os
 import re
 import tarfile
 from io import BytesIO
+
+from . import ar
 from . import packagequery
-import itertools
 
 
 HAVE_LZMA = True

@@ -1,6 +1,5 @@
+from .helper import decode_it
 
-from __future__ import print_function
-from osc.util.helper import decode_it
 
 class PackageError(Exception):
     """base class for all package related errors"""

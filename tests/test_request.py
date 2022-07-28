@@ -1,15 +1,11 @@
-try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
-    from xml.etree import cElementTree as ET
-except ImportError:
-    # will import a fast implementation from 3.3 onwards, needed
-    # for 3.9+
-    from xml.etree import ElementTree as ET
+import os
+from xml.etree import ElementTree as ET
 
 import osc.core
 import osc.oscerr
-import os
+
 from .common import OscTestCase
+
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'request_fixtures')
 

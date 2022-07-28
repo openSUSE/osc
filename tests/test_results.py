@@ -1,7 +1,10 @@
-import osc.commandline
-from .common import GET, OscTestCase
 import os
 import sys
+
+import osc.commandline
+
+from .common import GET, OscTestCase
+
 
 def suite():
     import unittest

@@ -1,7 +1,7 @@
+import unittest
+
 from osc.core import parseRevisionOption
 from osc.oscerr import OscInvalidRevision
-
-import unittest
 
 
 class TestParseRevisionOption(unittest.TestCase):

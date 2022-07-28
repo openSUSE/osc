@@ -1,10 +1,10 @@
-from __future__ import print_function
-
-from tempfile import mkdtemp
-import os
-from shutil import rmtree
-import rpm
 import base64
+import os
+from tempfile import mkdtemp
+from shutil import rmtree
+
+import rpm
+
 
 class KeyError(Exception):
     def __init__(self, key, *args):

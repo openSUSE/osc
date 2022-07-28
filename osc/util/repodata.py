@@ -1,21 +1,14 @@
 """Module for reading repodata directory (created with createrepo) for package
 information instead of scanning individual rpms."""
 
-# standard modules
+
 import gzip
-import os.path
+import os
+from xml.etree import ElementTree as ET
 
-try:
-    # Works up to Python 3.8, needed for Python < 3.3 (inc 2.7)
-    from xml.etree import cElementTree as ET
-except ImportError:
-    # will import a fast implementation from 3.3 onwards, needed
-    # for 3.9+
-    from xml.etree import ElementTree as ET
+from . import rpmquery
+from . import packagequery
 
-# project modules
-import osc.util.rpmquery
-import osc.util.packagequery
 
 def namespace(name):
     return "{http://linux.duke.edu/metadata/%s}" % name
@@ -92,7 +85,7 @@ def _to_bytes_list(method):
     return _method
 
 
-class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
+class RepoDataQueryResult(packagequery.PackageQueryResult):
     """PackageQueryResult that reads in data from the repodata directory files."""
 
     def __init__(self, directory, element):
@@ -206,7 +199,7 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
             release = None
         else:
             release = self.release()
-        return osc.util.rpmquery.RpmQuery.filename(self.name(), None,
+        return rpmquery.RpmQuery.filename(self.name(), None,
             self.version(), release, self.arch())
 
     def gettag(self, tag):
@@ -217,13 +210,13 @@ class RepoDataQueryResult(osc.util.packagequery.PackageQueryResult):
         # if either self.epoch() or other.epoch() is None, the vercmp will do
         # the correct thing because one is transformed into b'None' and the
         # other one into b"b'<epoch>'" (and 'b' is greater than 'N')
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(str(self.epoch()).encode(), str(other.epoch()).encode())
+        res = rpmquery.RpmQuery.rpmvercmp(str(self.epoch()).encode(), str(other.epoch()).encode())
         if res != 0:
             return res
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.version(), other.version())
+        res = rpmquery.RpmQuery.rpmvercmp(self.version(), other.version())
         if res != 0:
             return res
-        res = osc.util.rpmquery.RpmQuery.rpmvercmp(self.release(), other.release())
+        res = rpmquery.RpmQuery.rpmvercmp(self.release(), other.release())
         return res
 
     @_to_bytes_or_None

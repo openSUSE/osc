@@ -1,9 +1,12 @@
+import os
+import re
+
 import osc.core
 import osc.oscerr
 from osc.util.helper import decode_list
-import os
-import re
+
 from .common import GET, OscTestCase
+
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'difffile_fixtures')
 
