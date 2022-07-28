@@ -32,6 +32,14 @@ from urllib.error import HTTPError
 from urllib.request import pathname2url
 from xml.etree import ElementTree as ET
 
+# Poor man's colorama
+GREEN = b'\x1b[32m'
+RED = b'\x1b[31m'
+BLUE = b'\x1b[34m'
+RESET = b'\x1b[39m'
+
+COLORIZE = True
+
 try:
     import distro
 except ImportError:
@@ -2005,7 +2013,7 @@ class Package:
                 diff.append(b'--- %s\t(revision %s)\n' % (fname.encode(), b_revision))
                 diff.append(b'+++ %s\t(working copy)\n' % fname.encode())
                 fname = os.path.join(self.storedir, fname)
-               
+
             try:
                 if revision is not None and not add:
                     (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
@@ -3033,7 +3041,7 @@ class Request:
             lines.append('    *** This request has classified as '+self.priority+' ! ***\n')
         if self.state and self.state.approver and self.state.name == 'review':
             lines.append('    *** This request got approved by '+self.state.approver+'. It will get automatically accepted after last review got accepted! ***\n')
-            
+
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
             if action.type == 'delete':
@@ -4623,7 +4631,7 @@ def get_user_data(apiurl, user, *tags):
     """get specified tags from the user meta"""
     meta = get_user_meta(apiurl, user)
     return _get_xml_data(meta, *tags)
-    
+
 
 def get_group_data(apiurl, group, *tags):
     meta = get_group_meta(apiurl, group)
@@ -4744,6 +4752,19 @@ def binary_file(fn):
     return binary(open(fn, 'rb').read(4096))
 
 
+# From the snippet on https://chezsoi.org/lucas/blog/colored-diff-output-with-python.html
+def color_diff(diff):
+    for line in diff:
+        if line.startswith(b'+'):
+            yield GREEN + line + RESET
+        elif line.startswith(b'-'):
+            yield RED + line + RESET
+        elif line.startswith(b'^'):
+            yield BLUE + line + RESET
+        else:
+            yield line
+
+
 def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, origfilename = None):
     """
     This methods diffs oldfilename against filename (so filename will
@@ -4784,7 +4805,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
             f1.close()
         if f2:
             f2.close()
-    
+
     from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
     to_file = b'%s\t(working copy)' % origfilename.encode()
 
@@ -4804,7 +4825,12 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
             d[i] += b'\n\\ No newline at end of file'
             if i+1 != len(d):
                 d[i] += b'\n'
-    return d
+
+    # Don’t colorize piped stdout
+    if sys.stdout.isatty() and COLORIZE:
+        return color_diff(d)
+    else:
+        return d
 
 def server_diff(apiurl,
                 old_project, old_package, old_revision,
@@ -5881,7 +5907,7 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
                 if pkg is not None and pkg.get('code') in waiting_states:
                     waiting = True
                     break
-                
+
         if not wait or not waiting:
             break
         else:
@@ -6841,7 +6867,7 @@ def owner(apiurl, search_term=None, mode="binary", attribute=None,
         raise ValueError('Either specify search_term or binary')
     elif binary is not None:
         search_term = binary
- 
+
     # find default project, if not specified
     # mode can be "binary" or "package" atm
     query = { mode: search_term }
