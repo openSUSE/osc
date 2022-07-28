@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import base64
 import bz2
 import getpass
@@ -25,7 +27,6 @@ except BaseException as e:
     print(msg, e, file=sys.stderr)
     gnomekeyring = None
 
-from . import conf
 from . import oscerr
 
 
