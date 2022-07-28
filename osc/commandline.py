@@ -63,6 +63,13 @@ You can modify osc commands, or roll your own, via the plugin API:
 osc was written by several authors. This man page is automatically generated.
 """
 
+HELP_MULTIBUILD_MANY = """Only work with the specified flavors of a multibuild package.
+Globs are resolved according to _multibuild file from server.
+Empty string is resolved to a package without a flavor."""
+
+HELP_MULTIBUILD_ONE = "Only work with the specified flavor of a multibuild package."
+
+
 class Osc(cmdln.Cmdln):
     """Usage: osc [GLOBALOPTS] SUBCOMMAND [OPTS] [ARGS...]
     or: osc help SUBCOMMAND
@@ -5449,8 +5456,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='more verbose output')
     @cmdln.option('--no-multibuild', action='store_true', default=False,
                         help='Disable results for all direct affect packages inside of the project')
-    @cmdln.option('-M', '--multibuild-package', action='append', default=[],
-                        help='Only show results for the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append', default=[],
+                        help=HELP_MULTIBUILD_MANY)
     @cmdln.option('-V', '--vertical', action='store_true',
                         help='list packages vertically instead horizontally for entire project')
     @cmdln.option('-w', '--watch', action='store_true',
@@ -5472,7 +5479,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Usage:
             osc results                 # (inside working copy of PRJ or PKG)
-            osc results PROJECT [PACKAGE]
+            osc results PROJECT [PACKAGE[:FLAVOR]]
 
         ${cmd_option_list}
         """
@@ -5520,7 +5527,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   'code': opts.status_filter}
         if opts.multibuild_package:
             opts.no_multibuild = False
-            kwargs['multibuild_packages'] = opts.multibuild_package
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            kwargs['multibuild_packages'] = resolver.resolve(opts.multibuild_package)
         if not opts.no_multibuild:
             kwargs['multibuild'] = kwargs['locallink'] = True
         if opts.xml or opts.csv:
@@ -5658,8 +5666,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show the last finished log file')
     @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
                         help='Show the last succeeded log file')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                    help='get log of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log start or end from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5767,8 +5775,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show the last finished log file')
     @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
                         help='Show the last succeeded log file')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                        help='show log file for specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-o', '--offset', metavar='OFFSET',
                     help='get log starting or ending from the offset')
     @cmdln.option('-s', '--strip-time', action='store_true',
@@ -5782,9 +5790,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         remotebuildlogtail shows just the tail of the log file.
 
         usage:
-            osc remotebuildlog project package repository arch
+            osc remotebuildlog project package[:flavor] repository arch
             or
-            osc remotebuildlog project/package/repository/arch
+            osc remotebuildlog project/package[:flavor]/repository/arch
             or
             osc remotebuildlog buildlogurl
         ${cmd_option_list}
@@ -5904,8 +5912,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             data = f.read(BUFSIZE)
         f.close()
 
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                    help='get triggerreason of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('tr')
     def do_triggerreason(self, subcmd, opts, *args):
         """${cmd_name}: Show reason why a package got triggered to build
@@ -5922,7 +5929,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage in package or project directory:
             osc triggerreason REPOSITORY ARCH
-            osc triggerreason PROJECT PACKAGE REPOSITORY ARCH
+            osc triggerreason PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH
 
         ${cmd_option_list}
         """
@@ -6068,8 +6075,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='verbose output of build dependencies')
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                  help='Show the buildinfo of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
@@ -6104,7 +6111,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 osc buildinfo [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
                 Note: if BUILD_DESCR does not exist locally the remote BUILD_DESCR is used
 
-            osc buildinfo [OPTS] PROJECT PACKAGE REPOSITORY ARCH [BUILD_DESCR]
+            osc buildinfo [OPTS] PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH [BUILD_DESCR]
 
         ${cmd_option_list}
         """
@@ -6526,8 +6533,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
                   help='Save built packages into this directory')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                  help='Build the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
     @cmdln.option('--root', metavar='ROOT',
@@ -6933,8 +6940,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
-    @cmdln.option('-M', '--multibuild-package', metavar= 'MPAC',
-                        help='Show the buildhistory of the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the build history of a package
@@ -6944,7 +6951,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc buildhist REPOSITORY ARCHITECTURE
-           osc buildhist PROJECT PACKAGE REPOSITORY ARCHITECTURE
+           osc buildhist PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
 
@@ -6982,8 +6989,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='generate output in CSV (separated by |)')
     @cmdln.option('-l', '--limit', metavar='limit',
                         help='for setting the number of results')
-    @cmdln.option('-M', '--multibuild-package', metavar='MPAC',
-                        help='get jobhistory for the specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('jobhist')
     def do_jobhistory(self, subcmd, opts, *args):
         """${cmd_name}: Shows the job history of a project
@@ -6993,7 +7000,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc jobhist REPOSITORY ARCHITECTURE  (in project dir)
-           osc jobhist PROJECT [PACKAGE] REPOSITORY ARCHITECTURE
+           osc jobhist PROJECT [PACKAGE[:FLAVOR]] REPOSITORY ARCHITECTURE
         ${cmd_option_list}
         """
         wd = os.curdir
@@ -7026,7 +7033,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        if opts.multibuild_package and package is not None:
+        if opts.multibuild_package and package:
             package = package + ":" + opts.multibuild_package
 
         format = 'text'
@@ -7207,8 +7214,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='trigger rebuilds for a specific repository')
     @cmdln.option('-f', '--failed', action='store_true',
                   help='rebuild all failed packages')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                  help='rebuild specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help=HELP_MULTIBUILD_MANY)
     @cmdln.option('--all', action='store_true',
                         help='Rebuild all packages of entire project')
     @cmdln.alias('rebuildpac')
@@ -7224,7 +7231,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output.
 
         usage:
-            osc rebuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
+            osc rebuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
 
@@ -7265,12 +7272,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch or code):
             raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
 
-        packages = []
         if opts.multibuild_package:
-            for subpackage in opts.multibuild_package:
-                packages.append(package + ":" + subpackage)
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
-            packages.append(package)
+            packages = [package]
 
         for package in packages:
             print(rebuild(apiurl, project, package, repo, arch, code))
@@ -7292,9 +7298,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for p in pacs:
             print(p.info())
 
-
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                        help='specify a specific multibuild flavor')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append',
+                  help=HELP_MULTIBUILD_MANY)
     def do_sendsysrq(self, subcmd, opts, *args):
         """${cmd_name}: trigger a sysrq in a running build
 
@@ -7304,7 +7309,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc sendsysrq REPOSITORY ARCH SYSRQ
-            osc sendsysrq PROJECT PACKAGE REPOSITORY ARCH SYSRQ
+            osc sendsysrq PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH SYSRQ
         ${cmd_option_list}
         """
         args = slash_split(args)
@@ -7331,16 +7336,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[3]
             sysrq = args[4]
 
-        packages = [package]
         if opts.multibuild_package:
-            packages = ['%s:%s' % (package, flavor) for flavor in opts.multibuild_package]
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
+        else:
+            packages = [package]
+
         for package in packages:
             print(cmdbuild(apiurl, 'sendsysrq', project, package, arch, repo, None, sysrq))
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Restart builds for a specific architecture')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                        help='Restart builds for specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help=HELP_MULTIBUILD_MANY)
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Restart builds for a specific repository')
     @cmdln.option('--all', action='store_true',
@@ -7350,7 +7358,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """${cmd_name}: Restart the build of a certain project or package
 
         usage:
-            osc restartbuild [PROJECT [PACKAGE [REPOSITORY [ARCH]]]]
+            osc restartbuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         ${cmd_option_list}
         """
         args = slash_split(args)
@@ -7387,12 +7395,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch):
             raise oscerr.WrongOptions('No option has been provided. If you want to restart all packages of the entire project, use --all option.')
 
-        packages = []
         if opts.multibuild_package:
-            for subpackage in opts.multibuild_package:
-                packages.append(package + ":" + subpackage)
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
-            packages.append(package)
+            packages = [package]
 
         for package in packages:
             print(cmdbuild(apiurl, subcmd, project, package, arch, repo))
@@ -7400,8 +7407,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Delete all binary packages for a specific architecture')
-    @cmdln.option('-M', '--multibuild-package', action='append',
-                        help='Delete all binary packages for specified multibuild package')
+    @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
+                  help=HELP_MULTIBUILD_MANY)
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Delete all binary packages for a specific repository')
     @cmdln.option('--build-disabled', action='store_true',
@@ -7423,9 +7430,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             osc wipebinaries OPTS                       # works in checked out project dir
-            osc wipebinaries OPTS PROJECT [PACKAGE]
+            osc wipebinaries OPTS PROJECT [PACKAGE[:FLAVOR]]
             osc unpublish OPTS                       # works in checked out project dir
-            osc unpublish OPTS PROJECT [PACKAGE]
+            osc unpublish OPTS PROJECT [PACKAGE[:FLAVOR]]
         ${cmd_option_list}
         """
 
@@ -7470,12 +7477,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(codes) == 0:
             raise oscerr.WrongOptions('No option has been provided. If you want to delete all binaries, use --all option.')
 
-        packages = []
         if opts.multibuild_package:
-            for subpackage in opts.multibuild_package:
-                packages.append(package + ":" + subpackage)
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
-            packages.append(package)
+            packages = [package]
 
         # make a new request for each code= parameter and for each package in packages
         for package in packages:

@@ -5882,7 +5882,8 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
                 continue
             if multibuild_packages:
                 l = res['pkg'].rsplit(':', 1)
-                if len(l) != 2 or l[1] not in multibuild_packages:
+                if (len(l) != 2 or l[1] not in multibuild_packages) and not (len(l) == 1 and "" in multibuild_packages):
+                    # special case: packages without flavor when multibuild_packages contains an empty string
                     continue
             res['status'] = res['code']
             if verbose and res['details'] is not None:
@@ -7930,7 +7931,7 @@ def filter_role(meta, user, role):
             root.remove(node)
 
 def find_default_project(apiurl=None, package=None):
-    """"
+    """
     look though the list of conf.config['getpac_default_project']
     and find the first project where the given package exists in the build service.
     """
@@ -8067,6 +8068,116 @@ def vc_export_env(apiurl, quiet=False):
         for (tag, val) in tag2val.items():
             for env in tag2envs[tag]:
                 os.environ[env] = val
+
+
+class MultibuildFlavorResolver:
+    def __init__(self, apiurl, project, package, use_local=False):
+        self.apiurl = apiurl
+        self.project = project
+        self.package = package
+        # whether to use local _multibuild file or download it from server
+        self.use_local = use_local
+
+    def get_multibuild_data(self):
+        """
+        Retrieve contents of _multibuild file from given project/package.
+        Return None if the file doesn't exist.
+        """
+
+        # use local _multibuild file
+        if self.use_local:
+            try:
+                with open("_multibuild", "r") as f:
+                    return f.read()
+            except IOError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+            return None
+
+        # use _multibuild file from server
+        query = {}
+        query['expand'] = 1
+        u = makeurl(self.apiurl, ['source', self.project, self.package, '_multibuild'], query=query)
+
+        try:
+            f = http_GET(u)
+        except HTTPError as e:
+            if e.code == 404:
+                return None
+            raise
+        return f.read()
+
+    @staticmethod
+    def parse_multibuild_data(s):
+        """
+        Return set of flavors from a string with multibuild xml.
+        """
+        result = set()
+
+        # handle empty string and None
+        if not s:
+            return result
+
+        root = ET.fromstring(s)
+        for node in root.findall("flavor"):
+            result.add(node.text)
+        return result
+
+    def resolve(self, patterns):
+        """
+        Return list of flavors based on given flavor `patterns`.
+        If `patterns` contain a glob, it's resolved according to _multibuild file,
+        values without globs are passed through.
+        """
+
+        # determine if we're using globs
+        #   yes: contact server and do glob matching
+        #   no: use the specified values directly
+        use_globs = False
+        for pattern in patterns:
+            if '*' in pattern:
+                use_globs = True
+                break
+
+        if use_globs:
+            import fnmatch
+            multibuild_xml = self.get_multibuild_data()
+            all_flavors = self.parse_multibuild_data(multibuild_xml)
+            flavors = set()
+            for pattern in patterns:
+                # not a glob, use it as it is
+                if '*' not in pattern:
+                    flavors.add(pattern)
+                    continue
+
+                # match the globs with flavors from server
+                for flavor in all_flavors:
+                    if fnmatch.fnmatch(flavor, pattern):
+                        flavors.add(flavor)
+
+        else:
+            flavors = patterns
+
+        return sorted(flavors)
+
+    def resolve_as_packages(self, patterns):
+        """
+        Return list of package:flavor based on given flavor `patterns`.
+        If a value from `patterns` contains a glob, it is resolved according to the _multibuild
+        file. Values without globs are passed through. If a value is empty string, package
+        without flavor is returned.
+        """
+
+        flavors = self.resolve(patterns)
+
+        packages = []
+        for flavor in flavors:
+            if flavor:
+                packages.append(self.package + ':' + flavor)
+            else:
+                # special case: no flavor
+                packages.append(self.package)
+        return packages
 
 
 # vim: sw=4 et
