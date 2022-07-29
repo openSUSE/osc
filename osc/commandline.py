@@ -5364,7 +5364,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             rows = []
             for dist in dists:
                 rows.append([dist[h] for h in headers])
-            print(format_table(rows, headers))
+            print(format_table(rows, headers).rstrip())
 
 
     @cmdln.hide(1)
