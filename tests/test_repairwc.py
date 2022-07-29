@@ -12,7 +12,7 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'repairwc_fixtures')
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestRepairWC)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestRepairWC)
 
 class TestRepairWC(OscTestCase):
     def _get_fixtures_dir(self):
@@ -223,7 +223,7 @@ class TestRepairWC(OscTestCase):
         prj.wc_repair('http://localhost')
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
-        self.assertEqual(open(os.path.join(storedir, '_apiurl'), 'r').read(), 'http://localhost\n')
+        self.assertEqual(open(os.path.join(storedir, '_apiurl')).read(), 'http://localhost\n')
 
 
 if __name__ == '__main__':

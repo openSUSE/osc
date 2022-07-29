@@ -1,6 +1,6 @@
 # be careful when debugging this code:
 # don't add print statements when setting sys.stdout = SafeWriter(sys.stdout)...
-class SafeWriter(object):
+class SafeWriter:
     """
     Safely write an (unicode) str. In case of an "UnicodeEncodeError" the
     the str is encoded with the "encoding" encoding.
@@ -20,4 +20,4 @@ class SafeWriter(object):
         return getattr(self._writer, name)
 
     def __setattr__(self, name, value):
-        super(SafeWriter, self).__setattr__(name, value)
+        super().__setattr__(name, value)

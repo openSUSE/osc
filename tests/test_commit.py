@@ -13,7 +13,7 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'commit_fixtures')
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestCommit)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestCommit)
 
 rev_dummy = '<revision rev="repository">\n  <srcmd5>empty</srcmd5>\n</revision>'
 
@@ -40,7 +40,7 @@ class TestCommit(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_digests('testSimple_cfilesremote')
         self.assertTrue(os.path.exists('nochange'))
-        self.assertEqual(open('nochange', 'r').read(), open(os.path.join('.osc', 'nochange'), 'r').read())
+        self.assertEqual(open('nochange').read(), open(os.path.join('.osc', 'nochange')).read())
         self._check_status(p, 'nochange', ' ')
         self._check_status(p, 'foo', ' ')
         self._check_status(p, 'merge', ' ')
@@ -64,7 +64,7 @@ class TestCommit(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_digests('testAddfile_cfilesremote')
         self.assertTrue(os.path.exists('add'))
-        self.assertEqual(open('add', 'r').read(), open(os.path.join('.osc', 'add'), 'r').read())
+        self.assertEqual(open('add').read(), open(os.path.join('.osc', 'add')).read())
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
         self._check_status(p, 'add', ' ')
         self._check_status(p, 'foo', ' ')
@@ -241,7 +241,7 @@ class TestCommit(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_digests('testAddfile_cfilesremote')
         self.assertTrue(os.path.exists('add'))
-        self.assertEqual(open('add', 'r').read(), open(os.path.join('.osc', 'add'), 'r').read())
+        self.assertEqual(open('add').read(), open(os.path.join('.osc', 'add')).read())
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
         self._check_status(p, 'add', ' ')
         self._check_status(p, 'foo', ' ')
@@ -341,7 +341,7 @@ class TestCommit(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_digests('testSimple_cfilesremote')
         self.assertTrue(os.path.exists('nochange'))
-        self.assertEqual(open('nochange', 'r').read(), open(os.path.join('.osc', 'nochange'), 'r').read())
+        self.assertEqual(open('nochange').read(), open(os.path.join('.osc', 'nochange')).read())
         self._check_status(p, 'nochange', ' ')
         self._check_status(p, 'foo', ' ')
         self._check_status(p, 'merge', ' ')

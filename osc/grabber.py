@@ -14,7 +14,7 @@ from urllib.error import URLError
 from .core import streamfile
 
 
-class OscFileGrabber(object):
+class OscFileGrabber:
     def __init__(self, progress_obj=None):
         self.progress_obj = progress_obj
 
@@ -28,7 +28,7 @@ class OscFileGrabber(object):
                 f.write(i)
 
 
-class OscMirrorGroup(object):
+class OscMirrorGroup:
     def __init__(self, grabber, mirrors):
         self._grabber = grabber
         self._mirrors = mirrors

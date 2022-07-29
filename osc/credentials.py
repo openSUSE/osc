@@ -29,7 +29,7 @@ from . import conf
 from . import oscerr
 
 
-class _LazyPassword(object):
+class _LazyPassword:
     def __init__(self, pwfunc):
         self._pwfunc = pwfunc
         self._password = None
@@ -59,7 +59,7 @@ class _LazyPassword(object):
         return getattr(str(self), name)
 
 
-class AbstractCredentialsManagerDescriptor(object):
+class AbstractCredentialsManagerDescriptor:
     def name(self):
         raise NotImplementedError()
 
@@ -78,11 +78,11 @@ class AbstractCredentialsManagerDescriptor(object):
         return (-self.priority(), self.name()) < (-other.priority(), other.name())
 
 
-class AbstractCredentialsManager(object):
+class AbstractCredentialsManager:
     config_entry = 'credentials_mgr_class'
 
     def __init__(self, cp, options):
-        super(AbstractCredentialsManager, self).__init__()
+        super().__init__()
         self._cp = cp
         self._process_options(options)
 
@@ -229,7 +229,7 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
         try:
             keyring_backend = keyring.core.load_keyring(self._backend_cls_name)
         except ModuleNotFoundError:
-            msg = "Invalid credentials_mgr_class: {}".format(self._backend_cls_name)
+            msg = f"Invalid credentials_mgr_class: {self._backend_cls_name}"
             raise oscerr.ConfigError(msg, conf.config['conffile'])
         keyring.set_keyring(keyring_backend)
 
@@ -415,7 +415,7 @@ def create_credentials_manager(url, cp):
     try:
         creds_mgr = getattr(importlib.import_module(mod), cls).create(cp, options)
     except ModuleNotFoundError:
-        msg = "Invalid credentials_mgr_class: {}".format(creds_mgr_cls)
+        msg = f"Invalid credentials_mgr_class: {creds_mgr_cls}"
         raise oscerr.ConfigError(msg, conf.config['conffile'])
     return creds_mgr
 

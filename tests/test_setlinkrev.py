@@ -10,7 +10,7 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'setlinkrev_fixtures')
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestSetLinkRev)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestSetLinkRev)
 
 class TestSetLinkRev(OscTestCase):
     def setUp(self):

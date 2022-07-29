@@ -15,11 +15,12 @@ from xml.etree import ElementTree as ET
 
 from . import conf
 from . import connection
+from . import core
 from . import oscerr
 from .conf import config
 from .core import get_buildinfo, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
 from .core import get_binarylist, get_binary_file, run_external, return_external, raw_input
-from .fetch import Fetcher, verify_pacs
+from .fetch import Fetcher, OscFileGrabber, verify_pacs
 from .meter import create_text_meter
 from .util import rpmquery, debquery, archquery
 from .util.helper import decode_it
@@ -499,8 +500,8 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
-    prefer_pkgs = dict((decode_it(name), packageQuery.path())
-                       for name, packageQuery in packageQueries.items())
+    prefer_pkgs = {decode_it(name): packageQuery.path()
+                       for name, packageQuery in packageQueries.items()}
 
     depfile = create_deps(packageQueries.values())
     cpio.add(b'deps', b'\n'.join(depfile))
@@ -1078,7 +1079,7 @@ def main(apiurl, opts, argv):
                       http_debug = config['http_debug'],
                       modules = bi.modules,
                       enable_cpio=not opts.disable_cpio_bulk_download and bi.enable_cpio,
-                      cookiejar=CookieJarAuthHandler(os.path.expanduser(conf.config["cookiejar"]))._cookiejar,
+                      cookiejar=connection.CookieJarAuthHandler(os.path.expanduser(conf.config["cookiejar"]))._cookiejar,
                       download_api_only=opts.download_api_only)
 
     if not opts.trust_all_projects:

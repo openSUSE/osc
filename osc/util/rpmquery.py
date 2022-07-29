@@ -33,8 +33,7 @@ class RpmHeader:
         return None
 
     def __iter__(self):
-        for i in self.entries:
-            yield i
+        yield from self.entries
 
     def __len__(self):
         return len(self.entries)
@@ -340,8 +339,8 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                 break
 
             # check if we have a digits segment
-            mo1 = re.match('(\d+)', ver1)
-            mo2 = re.match('(\d+)', ver2)
+            mo1 = re.match(r'(\d+)', ver1)
+            mo2 = re.match(r'(\d+)', ver2)
             numeric = True
             if mo1 is None:
                 mo1 = re.match('([a-zA-Z]+)', ver1)

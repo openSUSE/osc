@@ -50,7 +50,7 @@ class Checker:
         if file in self.imported:
             return
 
-        fd = open(file, "r")
+        fd = open(file)
         line = fd.readline()
         if line and line[0:14] == "-----BEGIN PGP":
             line = fd.readline()

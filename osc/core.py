@@ -1261,7 +1261,7 @@ class Package:
         state = '?'
         try:
             state = self.status(n)
-        except IOError as ioe:
+        except OSError as ioe:
             if not force:
                 raise ioe
         if state in ['?', 'A', 'M', 'R', 'C'] and not force:
@@ -1450,7 +1450,7 @@ class Package:
         if self.is_link_to_different_project():
             if can_branch:
                 orgprj = self.get_local_origin_project()
-                print("Branching {} from {} to {}".format(self.name, orgprj, self.prjname))
+                print(f"Branching {self.name} from {orgprj} to {self.prjname}")
                 exists, targetprj, targetpkg, srcprj, srcpkg = branch_pkg(
                     self.apiurl, orgprj, self.name, target_project=self.prjname)
                 # update _meta and _files to sychronize the local package
@@ -1458,7 +1458,7 @@ class Package:
                 self.update_local_pacmeta()
                 self.update_local_filesmeta()
             else:
-                print("{} Not commited because is link to a different project".format(self.name))
+                print(f"{self.name} Not commited because is link to a different project")
                 return 1
 
         if not self.todo:
@@ -1525,7 +1525,7 @@ class Package:
         sfilelist = self.__send_commitlog(msg, filelist, validate=True)
         hash_entries = [e for e in sfilelist.findall('entry') if e.get('hash') is not None]
         if sfilelist.get('error') and hash_entries:
-            name2elem = dict([(e.get('name'), e) for e in filelist.findall('entry')])
+            name2elem = {e.get('name'): e for e in filelist.findall('entry')}
             for entry in hash_entries:
                 filename = entry.get('name')
                 fileelem = name2elem.get(filename)
@@ -1846,7 +1846,7 @@ class Package:
 
     def get_pulled_srcmd5(self):
         pulledrev = None
-        for line in open(os.path.join(self.storedir, '_pulled'), 'r'):
+        for line in open(os.path.join(self.storedir, '_pulled')):
             pulledrev = line.strip()
         return pulledrev
 
@@ -2764,7 +2764,7 @@ class Action:
             not action_node.get('type') in Action.type_args.keys() or \
             not action_node.tag in ('action', 'submit'):
             raise oscerr.WrongArgs('invalid argument')
-        elm_to_prefix = dict([(i[1], i[0]) for i in Action.prefix_to_elm.items()])
+        elm_to_prefix = {i[1]: i[0] for i in Action.prefix_to_elm.items()}
         kwargs = {}
         for node in action_node:
             prefix = elm_to_prefix.get(node.tag, node.tag)
@@ -3277,7 +3277,7 @@ def store_readlist(dir, name):
 
     r = []
     if os.path.exists(os.path.join(dir, store, name)):
-        r = [line.rstrip('\n') for line in open(os.path.join(dir, store, name), 'r')]
+        r = [line.rstrip('\n') for line in open(os.path.join(dir, store, name))]
     return r
 
 def read_tobeadded(dir):
@@ -3438,7 +3438,7 @@ def meta_get_project_list(apiurl, deleted=None):
     u = makeurl(apiurl, ['source'], query)
     f = http_GET(u)
     root = ET.parse(f).getroot()
-    return sorted([ node.get('name') for node in root if node.get('name')])
+    return sorted( node.get('name') for node in root if node.get('name'))
 
 
 def show_project_meta(apiurl, prj, rev=None, blame=None):
@@ -3607,7 +3607,7 @@ def show_pattern_metalist(apiurl, prj):
     except HTTPError as e:
         e.osc_msg = 'show_pattern_metalist: Error getting pattern list for project \'%s\'' % prj
         raise
-    r = sorted([ node.get('name') for node in tree.getroot() ])
+    r = sorted( node.get('name') for node in tree.getroot() )
     return r
 
 
@@ -3807,11 +3807,10 @@ def parse_meta_to_string(data):
     """
     # data can be a bytes object, a list with strings, a list with bytes, just a string.
     # So we need the following even if it is ugly.
-    if sys.version_info >= (3, 0):
-        if isinstance(data, bytes):
-            data = decode_it(data)
-        elif isinstance(data, list):
-            data = decode_list(data)
+    if isinstance(data, bytes):
+        data = decode_it(data)
+    elif isinstance(data, list):
+        data = decode_list(data)
     return ''.join(data)
 
 
@@ -4000,13 +3999,13 @@ def read_meta_from_spec(specfile, *args):
         else:
             tags.append(itm)
 
-    tag_pat = '(?P<tag>^%s)\s*:\s*(?P<val>.*)'
+    tag_pat = r'(?P<tag>^%s)\s*:\s*(?P<val>.*)'
     for tag in tags:
         m = re.compile(tag_pat % tag, re.I | re.M).search(''.join(lines))
         if m and m.group('val'):
             spec_data[tag] = m.group('val').strip()
 
-    section_pat = '^%s\s*?$'
+    section_pat = r'^%s\s*?$'
     for section in sections:
         m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
         if m:
@@ -4789,12 +4788,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
     to_file = b'%s\t(working copy)' % origfilename.encode()
 
-    if sys.version_info < (3, 0):
-        d = difflib.unified_diff(s1, s2,
-            fromfile = from_file, \
-        tofile = to_file)
-    else:
-        d = difflib.diff_bytes(difflib.unified_diff, s1, s2, \
+    d = difflib.diff_bytes(difflib.unified_diff, s1, s2, \
             fromfile = from_file, \
             tofile = to_file)
     d = list(d)
@@ -5605,7 +5599,7 @@ def get_platforms(apiurl):
 def get_repositories(apiurl):
     f = http_GET(makeurl(apiurl, ['platform']))
     tree = ET.parse(f)
-    r = sorted([ node.get('name') for node in tree.getroot() ])
+    r = sorted( node.get('name') for node in tree.getroot() )
     return r
 
 
@@ -5694,7 +5688,7 @@ class Repo:
         if not os.path.exists(filename):
             return []
         repos = []
-        lines = open(filename, 'r').readlines()
+        lines = open(filename).readlines()
         for line in lines:
             data = line.split()
             if len(data) == 2:
@@ -6191,10 +6185,10 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
 def buildlog_strip_time(data):
     """Strips the leading build time from the log"""
     if isinstance(data, str):
-        time_regex = re.compile('^\[[^\]]*\] ', re.M)
+        time_regex = re.compile(r'^\[[^\]]*\] ', re.M)
         return time_regex.sub('', data)
     else:
-        time_regex = re.compile(b'^\[[^\]]*\] ', re.M)
+        time_regex = re.compile(br'^\[[^\]]*\] ', re.M)
         return time_regex.sub(b'', data)
 
 
@@ -6210,10 +6204,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
 
     # to protect us against control characters
     import string
-    if sys.version_info >= (3, 0):
-        all_bytes = bytes.maketrans(b'', b'')
-    else:
-        all_bytes = string.maketrans(b'', b'')
+    all_bytes = bytes.maketrans(b'', b'')
     remove_bytes = all_bytes[:8] + all_bytes[14:32] # accept tabs and newlines
 
     query = {'nostream' : '1', 'start' : '%s' % offset}
@@ -6463,7 +6454,7 @@ def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False,
             r.append('</logentry>')
         else:
             if requestid:
-                requestid = decode_it((b"rq" + requestid))
+                requestid = decode_it(b"rq" + requestid)
             s = '-' * 76 + \
                 '\nr%s | %s | %s | %s | %s | %s\n' % (rev, user, t, srcmd5, version, requestid) + \
                 '\n' + decode_it(comment)
@@ -6544,7 +6535,7 @@ def store_read_project(dir):
 
     try:
         p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
-    except IOError:
+    except OSError:
         msg = 'Error: \'%s\' is not an osc project dir or working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg += '\nTry svn instead of osc.'
@@ -6557,7 +6548,7 @@ def store_read_package(dir):
 
     try:
         p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
-    except IOError:
+    except OSError:
         msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg += '\nTry svn instead of osc.'
@@ -6572,7 +6563,7 @@ def store_read_scmurl(dir):
         return
     try:
         p = open(url_file).readlines()[0].strip()
-    except IOError:
+    except OSError:
         msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
             msg += '\nTry svn instead of osc.'
@@ -6988,7 +6979,7 @@ def unpack_srcrpm(srpm, dir, *files):
     if os.path.isdir(dir):
         os.chdir(dir)
     ret = -1
-    with open(srpm, 'r') as fsrpm:
+    with open(srpm) as fsrpm:
         with open(os.devnull, 'w') as devnull:
             rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
                                              stdout=subprocess.PIPE)
@@ -7387,7 +7378,7 @@ def get_commit_message_template(pac):
             diff += get_source_file_diff(pac.absdir, filename, pac.rev)
         elif pac.status(filename) == 'A':
             with open(os.path.join(pac.absdir, filename), 'rb') as f:
-                diff.extend((b'+' + line for line in f))
+                diff.extend(b'+' + line for line in f)
 
     if diff:
         template = parse_diff_for_commit_message(''.join(decode_list(diff)))
@@ -7451,7 +7442,7 @@ def print_request_list(apiurl, project, package = None, states = ('new', 'review
     requests = get_request_list(apiurl, project, package, req_state=states)
     msg = '\nPending requests for %s: %s (%s)'
     if sys.stdout.isatty():
-        msg = '\033[1m{}\033[0m'.format(msg)
+        msg = f'\033[1m{msg}\033[0m'
     if package is None and len(requests):
         print(msg % ('project', project, len(requests)))
     elif len(requests):
@@ -7632,7 +7623,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 prompt = 'd(i)ff/(a)ccept/(b)uildstatus/(e)dit/(s)kip/(c)ancel > '
             else:
                 state_map = {'a': 'accepted', 'd': 'declined', 'r': 'revoked'}
-                mo = re.search('^([adrl])(?:\s+(-f)?\s*-m\s+(.*))?$', repl)
+                mo = re.search(r'^([adrl])(?:\s+(-f)?\s*-m\s+(.*))?$', repl)
                 if mo is None or orequest and mo.group(1) != 'a':
                     print('invalid choice: \'%s\'' % repl, file=sys.stderr)
                     continue
@@ -7808,7 +7799,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, p
         if e.code != 400 or not role_filter_xpath:
             raise e
         # backward compatibility: local role filtering
-        what = dict([[kind, role_filter_xpath] for kind in what.keys()])
+        what = {kind: role_filter_xpath for kind in what.keys()}
         if 'package' in what:
             what['package'] = xpath_join(role_filter_xpath, excl_pkg, op='and')
         if 'project' in what:
@@ -8053,9 +8044,9 @@ class MultibuildFlavorResolver:
         # use local _multibuild file
         if self.use_local:
             try:
-                with open("_multibuild", "r") as f:
+                with open("_multibuild") as f:
                     return f.read()
-            except IOError as e:
+            except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
             return None

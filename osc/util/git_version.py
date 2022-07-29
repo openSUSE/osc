@@ -72,11 +72,11 @@ def get_version(version):
     # removing "~" because it is not an allowed character in git tags
     # and also because the normalized form is (for example) 1.0.0b0
     if version and git_tag != version.replace("~", ""):
-        msg = "Git tag '{}' doesn't correspond with version '{}' specified in the source code".format(git_tag, version)
+        msg = f"Git tag '{git_tag}' doesn't correspond with version '{version}' specified in the source code"
         raise ValueError(msg)
 
     result = git_tag
     if git_hash:
-        result += "+{}.git.{}".format(git_commits, git_hash)
+        result += f"+{git_commits}.git.{git_hash}"
 
     return result

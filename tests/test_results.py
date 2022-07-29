@@ -8,7 +8,7 @@ from .common import GET, OscTestCase
 
 def suite():
     import unittest
-    return unittest.makeSuite(TestResults)
+    return unittest.defaultTestLoader.loadTestsFromTestCase(TestResults)
 
 class TestResults(OscTestCase):
     def setUp(self):
@@ -29,7 +29,7 @@ class TestResults(OscTestCase):
         return sys.stdout.getvalue()
 
     def _get_fixture(self, filename):
-        return open(os.path.join(self._get_fixtures_dir(), filename), 'r').read()
+        return open(os.path.join(self._get_fixtures_dir(), filename)).read()
 
     @GET('http://localhost/build/testproject/_result', file='result.xml')
     def testPrjresults(self):

@@ -71,9 +71,9 @@ class Fetcher:
                         raise oscerr.APIError('CPIO archive is incomplete '
                                               '(see .errors file)')
                     if package == '_repository':
-                        n = re.sub(b'\.pkg\.tar\.(zst|.z)$', b'.arch', hdr.filename)
+                        n = re.sub(br'\.pkg\.tar\.(zst|.z)$', b'.arch', hdr.filename)
                         if n.startswith(b'container:'):
-                            n = re.sub(b'\.tar\.(zst|.z)$', b'.tar', hdr.filename)
+                            n = re.sub(br'\.tar\.(zst|.z)$', b'.tar', hdr.filename)
                             pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
                             pac.canonname = hdr.filename
                         else:
@@ -108,10 +108,10 @@ class Fetcher:
                 raise oscerr.APIError('unable to fetch cpio archive: '
                                       'server always returns code 414')
             n = int(len(pkgs) / 2)
-            new_pkgs = dict([(k, pkgs[k]) for k in keys[:n]])
+            new_pkgs = {k: pkgs[k] for k in keys[:n]}
             self.__download_cpio_archive(apiurl, project, repo, arch,
                                          package, **new_pkgs)
-            new_pkgs = dict([(k, pkgs[k]) for k in keys[n:]])
+            new_pkgs = {k: pkgs[k] for k in keys[n:]}
             self.__download_cpio_archive(apiurl, project, repo, arch,
                                          package, **new_pkgs)
 

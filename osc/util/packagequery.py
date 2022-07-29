@@ -19,7 +19,7 @@ class PackageQueries(dict):
 
     def __init__(self, wanted_architecture):
         self.wanted_architecture = wanted_architecture
-        super(PackageQueries, self).__init__()
+        super().__init__()
 
     def add(self, query):
         """Adds package query to dict if it is of the correct architecture and
@@ -43,7 +43,7 @@ class PackageQueries(dict):
 
             # if current query does not exist or is older than this new query
             if current_query is None or current_query.vercmp(query) <= 0:
-                super(PackageQueries, self).__setitem__(name, query)
+                super().__setitem__(name, query)
 
 class PackageQuery:
     """abstract base class for all package types"""

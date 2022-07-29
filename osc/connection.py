@@ -469,7 +469,7 @@ class SignatureAuthHandler(AuthHandlerBase):
     def is_ssh_private_keyfile(self, keyfile_path):
         if not os.path.isfile(keyfile_path):
             return False
-        with open(keyfile_path, "r") as f:
+        with open(keyfile_path) as f:
             try:
                line = f.readline(100).strip()
             except UnicodeDecodeError:
@@ -490,7 +490,7 @@ class SignatureAuthHandler(AuthHandlerBase):
     def get_fingerprint(line):
         parts = line.strip().split(b" ")
         if len(parts) < 2:
-            raise ValueError("Unable to retrieve ssh key fingerprint from line: {}".format(line))
+            raise ValueError(f"Unable to retrieve ssh key fingerprint from line: {line}")
         return parts[1]
 
     def list_ssh_dir_keys(self):
