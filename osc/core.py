@@ -5625,20 +5625,19 @@ def get_distributions(apiurl, discon=False):
         r.insert(1, '------------              -------')
         return r
 
-    else:
-        f = http_GET(makeurl(apiurl, ['distributions']))
-        root = ET.fromstring(b''.join(f))
+    f = http_GET(makeurl(apiurl, ['distributions']))
+    root = ET.fromstring(b''.join(f))
 
-        distlist = []
-        for node in root.findall('distribution'):
-            dmap = {}
-            for child in node:
-                if child.tag == 'name':
-                    dmap['distribution'] = child.text
-                elif child.tag in ('project', 'repository', 'reponame'):
-                    dmap[child.tag] = child.text
-            distlist.append(dmap)
-        return distlist
+    distlist = []
+    for node in root.findall('distribution'):
+        dmap = {}
+        for child in node:
+            if child.tag == 'name':
+                dmap['distribution'] = child.text
+            elif child.tag in ('project', 'repository', 'reponame'):
+                dmap[child.tag] = child.text
+        distlist.append(dmap)
+    return distlist
 
 
 # old compat lib call
