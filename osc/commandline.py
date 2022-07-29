@@ -5358,7 +5358,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
 
-        print('\n'.join(get_distibutions(apiurl)))  # FIXME:, opts.discontinued))
+        print('\n'.join(get_distributions(apiurl)))  # FIXME:, opts.discontinued))
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):

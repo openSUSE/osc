@@ -5603,7 +5603,7 @@ def get_repositories(apiurl):
     return r
 
 
-def get_distibutions(apiurl, discon=False):
+def get_distributions(apiurl, discon=False):
     r = []
 
     # FIXME: this is just a naming convention on api.opensuse.org, but not a general valid apparoach
