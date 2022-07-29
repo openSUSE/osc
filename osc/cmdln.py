@@ -48,22 +48,8 @@ import time
 from pprint import pprint
 from datetime import datetime
 
-# this is python 2.x style
-def introspect_handler_2(handler):
-    # Extract the introspection bits we need.
-    func = handler.im_func
-    if func.func_defaults:
-        func_defaults = func.func_defaults
-    else:
-        func_defaults = []
-    return \
-        func_defaults,   \
-        func.func_code.co_argcount, \
-        func.func_code.co_varnames, \
-        func.func_code.co_flags,    \
-        func
 
-def introspect_handler_3(handler):
+def introspect_handler(handler):
     defaults = handler.__defaults__
     if not defaults:
         defaults = []
@@ -75,12 +61,6 @@ def introspect_handler_3(handler):
         handler.__code__.co_varnames, \
         handler.__code__.co_flags,    \
         handler.__func__
-
-if sys.version_info[0] == 2:
-    introspect_handler = introspect_handler_2
-    bytes = lambda x, *args: x
-else:
-    introspect_handler = introspect_handler_3
 
 
 #---- globals
