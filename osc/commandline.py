@@ -19,7 +19,7 @@ from . import conf
 from . import oscerr
 from .core import *
 from .util import safewriter
-from .util.helper import _html_escape
+from .util.helper import _html_escape, format_table
 
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
@@ -5358,7 +5358,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
 
-        print('\n'.join(get_distributions(apiurl)))  # FIXME:, opts.discontinued))
+        dists = get_distributions(apiurl)
+        if dists:
+            headers = dists[0].keys()
+            rows = []
+            for dist in dists:
+                rows.append([dist[h] for h in headers])
+            print(format_table(rows, headers))
+
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):

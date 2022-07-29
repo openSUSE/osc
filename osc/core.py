@@ -40,7 +40,7 @@ except ImportError:
 from . import conf
 from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
-from .util.helper import decode_list, decode_it, raw_input, _html_escape, format_table
+from .util.helper import decode_list, decode_it, raw_input, _html_escape
 
 
 ET_ENCODING = "unicode"
@@ -5604,10 +5604,12 @@ def get_repositories(apiurl):
 
 
 def get_distributions(apiurl, discon=False):
-    r = []
+    """Returns list of dicts with headers
+      'distribution', 'project', 'repository', 'reponame'"""
 
     # FIXME: this is just a naming convention on api.opensuse.org, but not a general valid apparoach
     if discon:
+        r = []
         result_line_templ = '%(name)-25s %(project)s'
         f = http_GET(makeurl(apiurl, ['build']))
         root = ET.fromstring(''.join(f))
@@ -5621,14 +5623,13 @@ def get_distributions(apiurl, discon=False):
 
         r.insert(0, 'distribution              project')
         r.insert(1, '------------              -------')
+        return r
 
     else:
         f = http_GET(makeurl(apiurl, ['distributions']))
         root = ET.fromstring(b''.join(f))
 
-        headers = ('distribution', 'project', 'repository', 'reponame')
         distlist = []
-        rows = []
         for node in root.findall('distribution'):
             dmap = {}
             for child in node:
@@ -5637,12 +5638,7 @@ def get_distributions(apiurl, discon=False):
                 elif child.tag in ('project', 'repository', 'reponame'):
                     dmap[child.tag] = child.text
             distlist.append(dmap)
-            # append row sorted by headers
-            rows.append([dmap[h] for h in headers])
-
-        return format_table(rows, headers).splitlines()
-
-    return r
+        return distlist
 
 
 # old compat lib call
