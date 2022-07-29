@@ -5626,34 +5626,40 @@ def get_distributions(apiurl, discon=False):
         f = http_GET(makeurl(apiurl, ['distributions']))
         root = ET.fromstring(b''.join(f))
 
+        def format_table(rows, headers):
+            """Format list of tuples into equal width table with headers"""
+            maxlens = [len(h) for h in headers]
+            for r in rows:
+                for i, c in enumerate(r):
+                    maxlens[i] = max(maxlens[i], len(c))
+            tpltpl = []
+            for i, m in enumerate(maxlens):
+                tpltpl.append('{%s:<%s}' % (i, m))
+            # {0:12}  {1:7}  {2:10}  {3:8}
+            templ = '  '.join(tpltpl) + '\n'
+
+            out = ''
+            out += templ.format(*headers)
+            out += templ.format(*['-'*m for m in maxlens])
+            for r in rows:
+                out += templ.format(*r)
+            return out
+
+        headers = ('distribution', 'project', 'repository', 'reponame')
         distlist = []
+        rows = []
         for node in root.findall('distribution'):
             dmap = {}
             for child in node:
-                if child.tag in ('name', 'project', 'repository', 'reponame'):
-                   dmap[child.tag] = child.text
-            dmap['distribution'] = dmap.pop('name')
+                if child.tag == 'name':
+                    dmap['distribution'] = child.text
+                elif child.tag in ('project', 'repository', 'reponame'):
+                    dmap[child.tag] = child.text
             distlist.append(dmap)
+            # append row sorted by headers
+            rows.append([dmap[h] for h in headers])
 
-        # pretty printing table
-        headers = ('distribution', 'project', 'repository', 'reponame')
-        maxlen = [len(h) for h in headers]
-        for d in distlist:
-            for i,field in enumerate(headers):
-                maxlen[i] = max(maxlen[i], len(d[field]))
-
-        def format_row(dist, proj, repotype, reponame):
-            result_line_templ = '%-*s  %-*s  %-*s  %-s'
-            return result_line_templ % (
-                maxlen[0], dist,
-                maxlen[1], proj,
-                maxlen[2], repotype,
-                reponame
-                )
-        r.append(format_row('distribution', 'project', 'repository', 'reponame'))
-        r.append(format_row('-'*maxlen[0], '-'*maxlen[1], '-'*maxlen[2], '-'*maxlen[2]))
-        for d in distlist:
-            r.append(format_row(d['distribution'], d['project'], d['repository'], d['reponame']))
+        return format_table(rows, headers).splitlines()
 
     return r
 
