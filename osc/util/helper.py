@@ -51,3 +51,22 @@ def raw_input(*args):
 
 def _html_escape(data):
     return html.escape(data, quote=False)
+
+
+def format_table(rows, headers):
+    """Format list of tuples into equal width table with headers"""
+    maxlens = [len(h) for h in headers]
+    for r in rows:
+        for i, c in enumerate(r):
+            maxlens[i] = max(maxlens[i], len(c))
+    tpltpl = []
+    for i, m in enumerate(maxlens):
+        tpltpl.append('{%s:<%s}' % (i, m))
+    # {0:12}  {1:7}  {2:10}  {3:8}
+    templ = '  '.join(tpltpl) + '\n'
+
+    out = templ.format(*headers)
+    out += templ.format(*['-'*m for m in maxlens])
+    for r in rows:
+        out += templ.format(*r)
+    return out

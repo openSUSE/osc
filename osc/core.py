@@ -40,7 +40,7 @@ except ImportError:
 from . import conf
 from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
-from .util.helper import decode_list, decode_it, raw_input, _html_escape
+from .util.helper import decode_list, decode_it, raw_input, _html_escape, format_table
 
 
 ET_ENCODING = "unicode"
@@ -5625,25 +5625,6 @@ def get_distributions(apiurl, discon=False):
     else:
         f = http_GET(makeurl(apiurl, ['distributions']))
         root = ET.fromstring(b''.join(f))
-
-        def format_table(rows, headers):
-            """Format list of tuples into equal width table with headers"""
-            maxlens = [len(h) for h in headers]
-            for r in rows:
-                for i, c in enumerate(r):
-                    maxlens[i] = max(maxlens[i], len(c))
-            tpltpl = []
-            for i, m in enumerate(maxlens):
-                tpltpl.append('{%s:<%s}' % (i, m))
-            # {0:12}  {1:7}  {2:10}  {3:8}
-            templ = '  '.join(tpltpl) + '\n'
-
-            out = ''
-            out += templ.format(*headers)
-            out += templ.format(*['-'*m for m in maxlens])
-            for r in rows:
-                out += templ.format(*r)
-            return out
 
         headers = ('distribution', 'project', 'repository', 'reponame')
         distlist = []
