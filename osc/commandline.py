@@ -126,7 +126,11 @@ class Osc(cmdln.Cmdln):
     def postoptparse(self):
         """merge commandline options into the config"""
 
-        if not self.args or self._get_canonical_cmd_name(self.args[0]) == "help":
+        if (
+            not self.args
+            or self._get_canonical_cmd_name(self.args[0]) == "help"
+            or {'-h', '--help'} & set(self.args)
+        ):
             # avoid loading config that may trigger prompt for username, password etc.
             return
 
