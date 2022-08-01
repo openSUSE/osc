@@ -102,6 +102,9 @@ setuptools.setup(
     packages=['osc', 'osc.util'],
     data_files=data_files,
     install_requires=['cryptography', 'urllib3'],
+    extras_require={
+       'RPM signature verification': ['rpm'],
+    },
     entry_points={
       'console_scripts': [
           'osc=osc.babysitter:main'
