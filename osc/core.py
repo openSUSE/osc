@@ -5603,59 +5603,23 @@ def get_repositories(apiurl):
     return r
 
 
-def get_distibutions(apiurl, discon=False):
-    r = []
+def get_distributions(apiurl):
+    """Returns list of dicts with headers
+      'distribution', 'project', 'repository', 'reponame'"""
 
-    # FIXME: this is just a naming convention on api.opensuse.org, but not a general valid apparoach
-    if discon:
-        result_line_templ = '%(name)-25s %(project)s'
-        f = http_GET(makeurl(apiurl, ['build']))
-        root = ET.fromstring(''.join(f))
+    f = http_GET(makeurl(apiurl, ['distributions']))
+    root = ET.fromstring(b''.join(f))
 
-        for node in root.findall('entry'):
-            if node.get('name').startswith('DISCONTINUED:'):
-                rmap = {}
-                rmap['name'] = node.get('name').replace('DISCONTINUED:', '').replace(':', ' ')
-                rmap['project'] = node.get('name')
-                r.append(result_line_templ % rmap)
-
-        r.insert(0, 'distribution              project')
-        r.insert(1, '------------              -------')
-
-    else:
-        f = http_GET(makeurl(apiurl, ['distributions']))
-        root = ET.fromstring(b''.join(f))
-
-        distlist = []
-        for node in root.findall('distribution'):
-            dmap = {}
-            for child in node:
-                if child.tag in ('name', 'project', 'repository', 'reponame'):
-                   dmap[child.tag] = child.text
-            dmap['distribution'] = dmap.pop('name')
-            distlist.append(dmap)
-
-        # pretty printing table
-        headers = ('distribution', 'project', 'repository', 'reponame')
-        maxlen = [len(h) for h in headers]
-        for d in distlist:
-            for i,field in enumerate(headers):
-                maxlen[i] = max(maxlen[i], len(d[field]))
-
-        def format_row(dist, proj, repotype, reponame):
-            result_line_templ = '%-*s  %-*s  %-*s  %-s'
-            return result_line_templ % (
-                maxlen[0], dist,
-                maxlen[1], proj,
-                maxlen[2], repotype,
-                reponame
-                )
-        r.append(format_row('distribution', 'project', 'repository', 'reponame'))
-        r.append(format_row('-'*maxlen[0], '-'*maxlen[1], '-'*maxlen[2], '-'*maxlen[2]))
-        for d in distlist:
-            r.append(format_row(d['distribution'], d['project'], d['repository'], d['reponame']))
-
-    return r
+    distlist = []
+    for node in root.findall('distribution'):
+        dmap = {}
+        for child in node:
+            if child.tag == 'name':
+                dmap['distribution'] = child.text
+            elif child.tag in ('project', 'repository', 'reponame'):
+                dmap[child.tag] = child.text
+        distlist.append(dmap)
+    return distlist
 
 
 # old compat lib call

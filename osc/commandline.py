@@ -19,7 +19,7 @@ from . import conf
 from . import oscerr
 from .core import *
 from .util import safewriter
-from .util.helper import _html_escape
+from .util.helper import _html_escape, format_table
 
 
 MAN_HEADER = r""".TH %(ucname)s "1" "%(date)s" "%(name)s %(version)s" "User Commands"
@@ -5341,10 +5341,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.alias('dists')
-# FIXME: using just ^DISCONTINUED as match is not a general approach and only valid for one instance
-#        we need to discuss an api call for that, if we need this
-#    @cmdln.option('-d', '--discontinued', action='store_true',
-#                        help='show discontinued distributions')
     def do_distributions(self, subcmd, opts, *args):
         """${cmd_name}: Shows all available distributions
 
@@ -5358,7 +5354,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
 
-        print('\n'.join(get_distibutions(apiurl)))  # FIXME:, opts.discontinued))
+        dists = get_distributions(apiurl)
+        if dists:
+            headers = dists[0].keys()
+            rows = []
+            for dist in dists:
+                rows.append([dist[h] for h in headers])
+            print(format_table(rows, headers).rstrip())
+
 
     @cmdln.hide(1)
     def do_results_meta(self, subcmd, opts, *args):
