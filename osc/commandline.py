@@ -5341,10 +5341,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     @cmdln.alias('dists')
-# FIXME: using just ^DISCONTINUED as match is not a general approach and only valid for one instance
-#        we need to discuss an api call for that, if we need this
-#    @cmdln.option('-d', '--discontinued', action='store_true',
-#                        help='show discontinued distributions')
     def do_distributions(self, subcmd, opts, *args):
         """${cmd_name}: Shows all available distributions
 

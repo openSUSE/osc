@@ -5603,27 +5603,9 @@ def get_repositories(apiurl):
     return r
 
 
-def get_distributions(apiurl, discon=False):
+def get_distributions(apiurl):
     """Returns list of dicts with headers
       'distribution', 'project', 'repository', 'reponame'"""
-
-    # FIXME: this is just a naming convention on api.opensuse.org, but not a general valid apparoach
-    if discon:
-        r = []
-        result_line_templ = '%(name)-25s %(project)s'
-        f = http_GET(makeurl(apiurl, ['build']))
-        root = ET.fromstring(''.join(f))
-
-        for node in root.findall('entry'):
-            if node.get('name').startswith('DISCONTINUED:'):
-                rmap = {}
-                rmap['name'] = node.get('name').replace('DISCONTINUED:', '').replace(':', ' ')
-                rmap['project'] = node.get('name')
-                r.append(result_line_templ % rmap)
-
-        r.insert(0, 'distribution              project')
-        r.insert(1, '------------              -------')
-        return r
 
     f = http_GET(makeurl(apiurl, ['distributions']))
     root = ET.fromstring(b''.join(f))
