@@ -6629,8 +6629,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The command works from a package checkout (local changes are fine).
 
         You can use `osc repos` to look up REPOSITORY and ARCH arguments. If
-        they are not set, `osc` choses suitable at random. BUILD_DESCR is
-        either a RPM spec file, or a Debian dsc file.
+        they are not set, `osc` choses from configured repos in this priority:
+          1. `build_repository` mentioned in config file
+          2. "standard"
+          3. "openSUSE_Factory"
+          4. "openSUSE_Tumbleweed"
+          5. last repo from the sorted list
+
+        BUILD_DESCR is either a RPM spec file, or a Debian dsc file.
 
         The command honors packagecachedir, build-root and build-uid
         settings in oscrc, if present. You may want to set su-wrapper = 'sudo'
