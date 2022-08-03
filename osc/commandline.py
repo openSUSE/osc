@@ -6400,7 +6400,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('no configured repos to build against')
 
         arch_repos = sorted({r.name for r in repositories if r.arch == arg_arch})
-        if arg_repository not in arch_repos:
+        if not arch_repos:
             raise oscerr.WrongArgs('no configured repos for arch %s' % (arg_arch))
 
         no_repo = False
