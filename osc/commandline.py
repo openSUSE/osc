@@ -6380,6 +6380,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_repository, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
+        if self.options.debug:
+            print("hostarch: ", osc.build.hostarch)
+            print("arg_arch: ", arg_arch)
 
         repositories = []
         # store list of repos for potential offline use
@@ -6621,12 +6624,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
-        You need to call the command inside a package directory, which should be a
-        buildsystem checkout. (Local modifications are fine.)
+        The command works from a package checkout (local changes are fine).
 
-        The arguments REPOSITORY and ARCH can be taken from the first two columns
-        of the 'osc repos' output. BUILD_DESCR is either a RPM spec file, or a
-        Debian dsc file.
+        You can use `osc repos` to look up REPOSITORY and ARCH arguments. If
+        they are not set, `osc` choses suitable at random. BUILD_DESCR is
+        either a RPM spec file, or a Debian dsc file.
 
         The command honors packagecachedir, build-root and build-uid
         settings in oscrc, if present. You may want to set su-wrapper = 'sudo'
@@ -6637,10 +6639,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         is usually the fastest option.
 
         If the package doesn't exist on the server please use the --local-package
-        option.
-        If the project of the package doesn't exist on the server please use the
-        --alternative-project <alternative-project> option:
-        Example:
+        option. If the project of the package doesn't exist on the server use the
+        --alternative-project <alternative-project> option. Example:
             osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
         usage:
@@ -6652,28 +6652,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc build [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
             osc build [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
 
-        For debugging purposes you can run after a build the following to jump inside of of
-        the build environemnt:
-
+        For debugging after a build you can jump into the build environment:
             osc shell [OPTS] REPOSITORY ARCH
 
         Run a single command inside of the build environment:
             osc shell --shell-cmd=COMMAND [OPTS] REPOSITORY ARCH
 
-        OPTS may be
-
+        Useful `shell` OPTS
             --noinit             # for faster run
             --shell-cmd=COMMAND
             --shell-after-fail
             --extra-pkgs=PACKAGE # install additional packages
 
         To clean up the build environment run
-
             osc wipe [OPTS]
             osc wipe [OPTS] REPOSITORY ARCH
 
-        You may set the used VM type in oscrc already, but you can also overwrite it for example
-        with
+        If you've set the used VM type in oscrc, it can be also overridden here
 
             --vm-type=chroot     # for faster, but uncleaner and unsecure build
             --vm-type=kvm        # for clean and secure build
