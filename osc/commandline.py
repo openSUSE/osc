@@ -208,7 +208,7 @@ class Osc(cmdln.Cmdln):
             print('Initializing %s (Project: %s)' % (os.curdir, project))
         else:
             Package.init_package(apiurl, project, package, os.curdir)
-            store_write_string(os.curdir, '_files', show_files_meta(apiurl, project, package) + '\n')
+            store_write_string(os.curdir, '_files', show_files_meta(apiurl, project, package) + b'\n')
             print('Initializing %s (Project: %s, Package: %s)' % (os.curdir, project, package))
 
     @cmdln.alias('ls')
