@@ -6383,6 +6383,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if self.options.debug:
             print("hostarch: ", osc.build.hostarch)
             print("arg_arch: ", arg_arch)
+            print("arg_repository: ", arg_repository)
+            print("arg_descr: ", arg_descr)
 
         repositories = []
         # store list of repos for potential offline use
