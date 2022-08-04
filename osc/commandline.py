@@ -87,6 +87,11 @@ class Osc(cmdln.Cmdln):
         sys.stderr = safewriter.SafeWriter(sys.stderr)
         sys.stdout = safewriter.SafeWriter(sys.stdout)
 
+    def _debug(self, *args):
+        # if options are not initialized, still allow to use it
+        if not hasattr(self, 'options') or self.options.debug:
+            print(*args, file=sys.stderr)
+
     def get_version(self):
         return get_osc_version()
 
@@ -2460,8 +2465,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 ## FIXME -B not implemented!
                 if opts.bugowner:
-                    if (self.options.debug):
-                        print('list: option --bugowner ignored: not impl.')
+                    self._debug('list: option --bugowner ignored: not impl.')
 
                 if subcmd == 'review':
                     # FIXME: do the review list for the user and for all groups he belong to
@@ -6380,11 +6384,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_repository, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
-        if self.options.debug:
-            print("hostarch: ", osc.build.hostarch)
-            print("arg_arch: ", arg_arch)
-            print("arg_repository: ", arg_repository)
-            print("arg_descr: ", arg_descr)
+        self._debug("hostarch: ", osc.build.hostarch)
+        self._debug("arg_arch: ", arg_arch)
+        self._debug("arg_repository: ", arg_repository)
+        self._debug("arg_descr: ", arg_descr)
 
         repositories = []
         # store list of repos for potential offline use
