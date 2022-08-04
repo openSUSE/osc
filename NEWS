@@ -1,3 +1,15 @@
+1.0.0b1
+  - drop Python 2 support
+  - switch http_request() to urllib3 and cryptography (drop M2Crypto dependency)
+  - warn when using HTTP connection, Make HTTPS the default
+  - add XDG compatible location for osc plugins
+  - replace osc-wrapper.py with entry_points.
+  - core: add functions for glob matching of multibuild flavors
+  - fix multibuild packages in all osc commands where applicable
+  - do not ask for login for -h,--help
+  - move format_table() to util.helper
+  - code cleanups
+
 0.181.0
   - fix crash when 'pass' is not set in the config file
   - add missing attributes to Package when scm_url is set

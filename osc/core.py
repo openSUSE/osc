@@ -5,7 +5,7 @@
 
 
 from .util import git_version
-__version__ = git_version.get_version('1.0.0~b0')
+__version__ = git_version.get_version('1.0.0~b1')
 
 
 # __store_version__ is to be incremented when the format of the working copy
