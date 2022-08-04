@@ -95,9 +95,10 @@ class Osc(cmdln.Cmdln):
                       help='disable usage of desktop keyring system')
         optparser.add_argument('--no-gnome-keyring', action='store_true',
                       help='disable usage of GNOME Keyring')
-        optparser.add_argument('-v', '--verbose', dest='verbose', action='count', default=0,
+        verbose_group = optparser.add_mutually_exclusive_group()
+        verbose_group.add_argument('-v', '--verbose', action='store_true',
                       help='increase verbosity')
-        optparser.add_argument('-q', '--quiet', dest='verbose', action='store_const', const=-1,
+        verbose_group.add_argument('-q', '--quiet', action='store_true',
                       help='be quiet, not verbose')
 
     def post_argparse(self):
@@ -225,9 +226,7 @@ class Osc(cmdln.Cmdln):
                         help='expand linked package (only for sources)')
     @cmdln.option('-u', '--unexpand', action='store_true',
                         help='always work with unexpanded (source) packages')
-    @cmdln.option('-v', '--verbose', action='store_true',
-                        help='print extra information')
-    @cmdln.option('-l', '--long', action='store_true', dest='verbose',
+    @cmdln.option('-l', '--long', dest='verbose', action='store_true',
                         help='print extra information')
     @cmdln.option('-D', '--deleted', action='store_true',
                         help='show only the former deleted projects or packages')
@@ -383,9 +382,6 @@ class Osc(cmdln.Cmdln):
                     print(prj)
 
             elif len(args) == 1:
-                if opts.verbose:
-                    if self.options.verbose:
-                        print('Sorry, the --verbose option is not implemented for projects.', file=sys.stderr)
                 for pkg in meta_get_packagelist(apiurl, project, deleted = opts.deleted, expand = opts.expand):
                     print(pkg)
 
@@ -4662,10 +4658,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             self.argparse_error("Incorrect number of arguments.")
 
 
-    @cmdln.option('-q', '--quiet', action='store_true',
-                        help='print as little as possible')
-    @cmdln.option('-v', '--verbose', action='store_true',
-                        help='print extra information')
     @cmdln.option('-e', '--show-excluded', action='store_true',
                         help='also show files which are excluded by the ' \
                              '"exclude_glob" config option')
@@ -4698,9 +4690,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc status [OPTS] [PATH...]
         """
-
-        if opts.quiet and opts.verbose:
-            raise oscerr.WrongOptions('\'--quiet\' and \'--verbose\' are mutually exclusive')
 
         args = parseargs(args)
         lines = []
@@ -4855,8 +4844,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='force commit, even if there were no changes')
     @cmdln.option('--skip-validation', default=False, action="store_true",
                   help='deprecated, don\'t use it')
-    @cmdln.option('-v', '--verbose', default=False, action="store_true",
-                  help='Run the source services with verbose information')
     @cmdln.option('--skip-local-service-run', '--noservice', default=False, action="store_true",
                   help='Skip service run of configured source services for local run')
     def do_commit(self, subcmd, opts, *args):
@@ -5356,8 +5343,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Show results only for specified architecture(s)')
     @cmdln.option('-b', '--brief', action='store_true',
                         help='show the result in "pkgname repo arch result". Default for -f')
-    @cmdln.option('-v', '--verbose', action='store_true', default=False,
-                        help='more verbose output')
     @cmdln.option('--no-multibuild', action='store_true', default=False,
                         help='Disable results for all direct affect packages inside of the project')
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append', default=[],
@@ -5967,8 +5952,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print("  ", dep.text)
 
 
-    @cmdln.option('-d', '--debug', action='store_true',
-                  help='verbose output of build dependencies')
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
@@ -6502,8 +6485,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='only fetch packages from the api')
     @cmdln.option('--oldpackages', metavar='DIR',
             help='take previous build from DIR (special values: _self, _link)')
-    @cmdln.option('--verbose', metavar='VERBOSE',
-                  help='set a verbose mode, arguments can be "all" or "vm"')
     @cmdln.option('--wipe', action='store_true',
                   help=SUPPRESS_HELP)
     @cmdln.option('--shell', action='store_true',
@@ -7381,8 +7362,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(wipebinaries(apiurl, project, package, opts.arch, opts.repo, code))
 
 
-    @cmdln.option('-q', '--quiet', action='store_true',
-                  help='do not show downloading progress')
     @cmdln.option('-d', '--destdir', default='./binaries', metavar='DIR',
                   help='destination directory')
     @cmdln.option('-M', '--multibuild-package', metavar="FLAVOR", action='append',
@@ -7390,7 +7369,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   ' It is meant for use from a package checkout when it is not possible to specify package:flavor.')
     @cmdln.option('--sources', action="store_true",
                   help='also fetch source packages')
-    @cmdln.option('--debug', action="store_true",
+    @cmdln.option('--debuginfo', action="store_true",
                   help='also fetch debug packages')
     @cmdln.option('--ccache', action="store_true",
                   help='allow fetching ccache archive')
@@ -7491,7 +7470,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not opts.sources and (i.name.endswith('.src.rpm') or i.name.endswith('.sdeb')):
                         continue
                     # skip debuginfo rpms
-                    if not opts.debug and ('-debuginfo-' in i.name or '-debugsource-' in i.name):
+                    if not opts.debuginfo and ('-debuginfo-' in i.name or '-debugsource-' in i.name):
                         continue
 
                     if package_specified:
@@ -7529,8 +7508,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search for USER instead of yourself')
     @cmdln.option('--exclude-project', action='append',
                         help='exclude requests for specified project')
-    @cmdln.option('-v', '--verbose', action='store_true',
-                        help='verbose listing')
     @cmdln.option('--maintained', action='store_true',
                         help='limit search results to packages with maintained attribute set.')
     def do_my(self, subcmd, opts, *args):
@@ -7765,8 +7742,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='search for matches in the \'description\' element')
     @cmdln.option('-a', '--limit-to-attribute', metavar='ATTRIBUTE',
                         help='match only when given attribute exists in meta data')
-    @cmdln.option('-v', '--verbose', action='store_true',
-                        help='show more information')
     @cmdln.option('-V', '--version', action='store_true',
                         help='show package version, revision, and srcmd5. CAUTION: This is slow and unreliable')
     @cmdln.option('-i', '--involved', action='store_true',
@@ -8226,8 +8201,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nodevelproject', action='store_true',
                   help='do not follow a defined devel project ' \
                        '(primary project where a package is developed)')
-    @cmdln.option('-v', '--verbose', action='store_true',
-                  help='show more information')
     @cmdln.option('-D', '--devel-project', metavar='devel_project',
                   help='define the project where this package is primarily developed')
     @cmdln.option('-a', '--add', metavar='user',
