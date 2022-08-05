@@ -19,6 +19,10 @@ class build_osc(build.build):
     def build_man_page(self):
         """
         """
+        try:
+            os.makedirs(self.build_base)
+        except OSError:
+            pass
         man_path = os.path.join(self.build_base, 'osc.1.gz')
         distutils.log.info('generating %s' % man_path)
         outfile = gzip.open(man_path, 'wt')
