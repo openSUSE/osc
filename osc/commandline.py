@@ -87,6 +87,11 @@ class Osc(cmdln.Cmdln):
         sys.stderr = safewriter.SafeWriter(sys.stderr)
         sys.stdout = safewriter.SafeWriter(sys.stdout)
 
+    def _debug(self, *args):
+        # if options are not initialized, still allow to use it
+        if not hasattr(self, 'options') or self.options.debug:
+            print(*args, file=sys.stderr)
+
     def get_version(self):
         return get_osc_version()
 
@@ -2460,8 +2465,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 ## FIXME -B not implemented!
                 if opts.bugowner:
-                    if (self.options.debug):
-                        print('list: option --bugowner ignored: not impl.')
+                    self._debug('list: option --bugowner ignored: not impl.')
 
                 if subcmd == 'review':
                     # FIXME: do the review list for the user and for all groups he belong to
@@ -6380,6 +6384,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arg_repository, arg_arch, arg_descr = args
 
         arg_arch = arg_arch or osc.build.hostarch
+        self._debug("hostarch: ", osc.build.hostarch)
+        self._debug("arg_arch: ", arg_arch)
+        self._debug("arg_repository: ", arg_repository)
+        self._debug("arg_descr: ", arg_descr)
 
         repositories = []
         # store list of repos for potential offline use
@@ -6621,12 +6629,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def do_build(self, subcmd, opts, *args):
         """${cmd_name}: Build a package on your local machine
 
-        You need to call the command inside a package directory, which should be a
-        buildsystem checkout. (Local modifications are fine.)
+        The command works from a package checkout (local changes are fine).
 
-        The arguments REPOSITORY and ARCH can be taken from the first two columns
-        of the 'osc repos' output. BUILD_DESCR is either a RPM spec file, or a
-        Debian dsc file.
+        You can use `osc repos` to look up REPOSITORY and ARCH arguments. If
+        they are not set, `osc` choses from configured repos in this priority:
+          1. `build_repository` mentioned in config file
+          2. "standard"
+          3. "openSUSE_Factory"
+          4. "openSUSE_Tumbleweed"
+          5. last repo from the sorted list
+
+        BUILD_DESCR is either a RPM spec file, or a Debian dsc file.
 
         The command honors packagecachedir, build-root and build-uid
         settings in oscrc, if present. You may want to set su-wrapper = 'sudo'
@@ -6637,10 +6650,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         is usually the fastest option.
 
         If the package doesn't exist on the server please use the --local-package
-        option.
-        If the project of the package doesn't exist on the server please use the
-        --alternative-project <alternative-project> option:
-        Example:
+        option. If the project of the package doesn't exist on the server use the
+        --alternative-project <alternative-project> option. Example:
             osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
         usage:
@@ -6652,28 +6663,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc build [OPTS] BUILD_DESCR (REPOSITORY = build_repository (config option), ARCH = hostarch)
             osc build [OPTS] (REPOSITORY = build_repository (config option), ARCH = hostarch, BUILD_DESCR is detected automatically)
 
-        For debugging purposes you can run after a build the following to jump inside of of
-        the build environemnt:
-
+        For debugging after a build you can jump into the build environment:
             osc shell [OPTS] REPOSITORY ARCH
 
         Run a single command inside of the build environment:
             osc shell --shell-cmd=COMMAND [OPTS] REPOSITORY ARCH
 
-        OPTS may be
-
+        Useful `shell` OPTS
             --noinit             # for faster run
             --shell-cmd=COMMAND
             --shell-after-fail
             --extra-pkgs=PACKAGE # install additional packages
 
         To clean up the build environment run
-
             osc wipe [OPTS]
             osc wipe [OPTS] REPOSITORY ARCH
 
-        You may set the used VM type in oscrc already, but you can also overwrite it for example
-        with
+        If you've set the used VM type in oscrc, it can be also overridden here
 
             --vm-type=chroot     # for faster, but uncleaner and unsecure build
             --vm-type=kvm        # for clean and secure build
