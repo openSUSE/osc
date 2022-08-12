@@ -75,6 +75,11 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                         decompressed = reader.read()
                     tar = tarfile.open(name="control.tar.zst",
                                        fileobj=BytesIO(decompressed))
+                else:
+                    control = arfile.get_file(b'control.tar')
+                    if control:
+                        tar = tarfile.open(name="control.tar",
+                                           fileobj=control)
             if control is None:
                 raise DebError(self.__path, 'missing control.tar')
         try:
