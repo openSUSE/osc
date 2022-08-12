@@ -1,2 +1,4 @@
+.gitattributes export-ignore
+.github export-ignore
+contrib export-ignore
 osc/util/git_version.py export-subst
-

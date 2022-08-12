@@ -128,7 +128,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'http_debug': '0',
             'http_full_debug': '0',
             'http_retries': '3',
-            'verbose': '1',
+            'verbose': '0',
             'no_preinstallimage': '0',
             'traceback': '0',
             'post_mortem': '0',
@@ -870,13 +870,15 @@ def get_config(override_conffile=None,
     if config['plaintext_passwd']:
         print('The \'plaintext_passwd\' option is deprecated and will be ignored', file=sys.stderr)
 
-    config['verbose'] = int(config['verbose'])
+    config['verbose'] = bool(int(config['verbose']))
     # override values which we were called with
-    if override_verbose:
-        config['verbose'] = override_verbose + 1
+    if override_verbose is not None:
+        config['verbose'] = bool(override_verbose)
 
-    if override_debug:
-        config['debug'] = override_debug
+    config['debug'] = bool(int(config['debug']))
+    if override_debug is not None:
+        config['debug'] = bool(override_debug)
+
     if override_http_debug:
         config['http_debug'] = override_http_debug
     if override_http_full_debug:

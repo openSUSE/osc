@@ -1,0 +1,74 @@
+name: 'rpmbuild test'
+
+on:
+  push:
+    branches: ['master']
+  pull_request:
+    branches: ['master']
+
+jobs:
+  test:
+    name: 'rpmbuild test'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Testing per python-version using actions/setup-python is not possible,
+        # because rpm doesn't exist on pypi and cannot be installed via pip on ubuntu.
+        # That's why we're going to test on the target distros directly.
+        container:
+
+          # Fedora
+          - 'fedora:36'
+          - 'fedora:rawhide'
+
+          # OpenSUSE
+          # leap < 15.2 doesn't contain git-lfs which causes actions/checkout to fail
+          - 'opensuse/leap:15.2'
+          - 'opensuse/leap:15.3'
+          - 'opensuse/leap:15.4'
+          - 'opensuse/tumbleweed'
+
+          # CentOS Stream
+          - 'quay.io/centos/centos:stream9'
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: 'Install packages (OpenSUSE)'
+        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        run: |
+            zypper --non-interactive --gpg-auto-import-keys refresh
+            zypper --non-interactive dist-upgrade
+            zypper --non-interactive install git-lfs rpm-build
+
+      - name: 'Install packages (Fedora/CentOS)'
+        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:')  }}
+        run: |
+            dnf -y makecache
+            dnf -y distro-sync
+            dnf -y install git-lfs rpm-build dnf-plugins-core
+
+      - uses: actions/checkout@v3
+        with:
+            fetch-depth: 0
+
+      - name: 'Install build dependencies (OpenSUSE)'
+        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        run: |
+            zypper --non-interactive install $(rpmspec -q --buildrequires contrib/osc.spec)
+
+      - name: 'Install build dependencies (Fedora/CentOS)'
+        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:')  }}
+        run: |
+            dnf -y builddep contrib/osc.spec
+
+      - name: 'Build SRPM and RPMs'
+        run: |
+            git config --global --add safe.directory "$(pwd)"
+
+            git remote add upstream https://github.com/openSUSE/osc.git
+            git fetch upstream --tags --force
+
+            ./contrib/build_rpm.py --srpm --rpm

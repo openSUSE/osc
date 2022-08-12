@@ -452,7 +452,7 @@ class Serviceinfo:
                     raise oscerr.PackageNotInstalled("obs-service-%s" % cmd[0])
                 cmd[0] = "/usr/lib/obs/service/"+cmd[0]
                 cmd = cmd + [ "--outdir", temp_dir ]
-                if conf.config['verbose'] > 1 or verbose or conf.config['debug']:
+                if conf.config['verbose'] or verbose or conf.config['debug']:
                     print("Run source service:", ' '.join(cmd))
                 r = run_external(*cmd)
 
@@ -3334,7 +3334,7 @@ def makeurl(baseurl, l, query=[]):
     function. In case of a list not -- this is to be backwards compatible.
     """
 
-    if conf.config['verbose'] > 1:
+    if conf.config['verbose']:
         print('makeurl:', baseurl, l, query)
 
     if isinstance(query, type(list())):
@@ -4368,7 +4368,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
             xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
         xpath = xpath_join(xpath, xpath_base % {'kind': kind, 'val': val}, op='and', nexpr_parentheses=True)
 
-    if conf.config['verbose'] > 1:
+    if conf.config['verbose']:
         print('[ %s ]' % xpath)
     res = search(apiurl, request=xpath)
     collection = res['request']
@@ -4420,7 +4420,7 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
     if req_type:
         xpath += " and action/@type=\'%s\'" % req_type
 
-    if conf.config['verbose'] > 1:
+    if conf.config['verbose']:
         print('[ %s ]' % xpath)
 
     res = search(apiurl, request=xpath)
@@ -4459,7 +4459,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
     for i in exclude_target_projects:
         xpath = xpath_join(xpath, '(not(action/target/@project=\'%(prj)s\'))' % {'prj': i}, op='and')
 
-    if conf.config['verbose'] > 1:
+    if conf.config['verbose']:
         print('[ %s ]' % xpath)
     queries = {}
     if withfullhistory:
@@ -5012,7 +5012,7 @@ def checkout_package(apiurl, project, package,
     root_dots = '.'
     if conf.config['checkout_rooted']:
         if prj_dir[:1] == '/':
-            if conf.config['verbose'] > 1:
+            if conf.config['verbose']:
                 print("checkout_rooted ignored for %s" % prj_dir)
             # ?? should we complain if not is_project_dir(prj_dir) ??
         else:
