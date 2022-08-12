@@ -1,7 +1,42 @@
-*.pyc
-*.swp
-tags
-build
-*junit-xml-results
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
 *.egg
-osc.egg-info/*
+MANIFEST
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Temporary/backup files of text editors
+*.swp
+*~
+.#*
+
+# Packages, archives
+*.rpm
+*.tar*
