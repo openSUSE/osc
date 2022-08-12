@@ -95,6 +95,11 @@ class Osc(cmdln.Cmdln):
     def get_version(self):
         return get_osc_version()
 
+    def _process_project_name(self, project):
+        if isinstance(project, str):
+            return project.replace(conf.config['project_separator'], ':')
+        return project
+
     def get_optparser(self):
         """this is the parser for "global" options (not specific to subcommand)"""
 
@@ -350,6 +355,7 @@ class Osc(cmdln.Cmdln):
                 elif is_package_dir(cwd):
                     project = store_read_project(cwd)
                     package = store_read_package(cwd)
+            project = self._process_project_name(project)
         if len(args) > 1:
             package = args[1]
         if len(args) > 2:
@@ -511,7 +517,7 @@ class Osc(cmdln.Cmdln):
                 project = store_read_project(localdir)
                 package = store_read_package(localdir)
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
 
         if project == None or package == None:
@@ -556,7 +562,7 @@ class Osc(cmdln.Cmdln):
             else:
                 raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
 
         query = {'cmd': 'addchannels'}
 
@@ -599,7 +605,7 @@ class Osc(cmdln.Cmdln):
             else:
                 raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             if len(args) > 1:
                 channel = args[1]
 
@@ -652,7 +658,7 @@ class Osc(cmdln.Cmdln):
                 else:
                     sys.exit('This command must be called in a checked out project or patchinfo package.')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             if len(args) > 1:
                 patchinfo = args[1]
 
@@ -710,7 +716,7 @@ class Osc(cmdln.Cmdln):
             project = store_read_project(os.curdir)
             package = store_read_package(os.curdir)
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         else:
             raise oscerr.WrongArgs('need Project and Package')
@@ -752,13 +758,13 @@ class Osc(cmdln.Cmdln):
 
         devprj, devpkg = None, None
         if len(args) == 3 or len(args) == 4:
-            project, package = args[0], args[1]
-            devprj = args[2]
+            project, package = self._process_project_name(args[0]), args[1]
+            devprj = self._process_project_name(args[2])
             if len(args) == 4:
                 devpkg = args[3]
         elif len(args) >= 1 and len(args) <= 2:
             project, package = store_read_project(os.curdir), store_read_package(os.curdir)
-            devprj = args[0]
+            devprj = self._process_project_name(args[0])
             if len(args) == 2:
                 devpkg = args[1]
         else:
@@ -783,7 +789,7 @@ class Osc(cmdln.Cmdln):
         localdir = os.getcwd()
         project = package = None
         if len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         elif is_package_dir(localdir):
             project = store_read_project(localdir)
@@ -989,7 +995,7 @@ class Osc(cmdln.Cmdln):
                 apiurl = store_read_apiurl(os.curdir)
                 project = store_read_project(os.curdir)
             else:
-                project = args[0]
+                project = self._process_project_name(args[0])
 
         elif cmd == 'pkg':
             if len(args) < 2:
@@ -1000,11 +1006,11 @@ class Osc(cmdln.Cmdln):
                 else:
                     package = args[0]
             else:
-                project = args[0]
+                project = self._process_project_name(args[0])
                 package = args[1]
 
         elif cmd == 'attribute':
-            project = args[0]
+            project = self._process_project_name(args[0])
             if len(args) > 1:
                 package = args[1]
             else:
@@ -1027,7 +1033,7 @@ class Osc(cmdln.Cmdln):
         elif cmd == 'group':
             group = args[0]
         elif cmd == 'pattern':
-            project = args[0]
+            project = self._process_project_name(args[0])
             if len(args) > 1:
                 pattern = args[1]
             else:
@@ -1335,7 +1341,7 @@ class Osc(cmdln.Cmdln):
 
             target_project = None
             if len(args) == 1:
-                target_project = args[0]
+                target_project = self._process_project_name(args[0])
             if opts.separate_requests or opts.seperate_requests:
                 for p in meta_get_packagelist(apiurl, project):
                     # get _link info from server, that knows about the local state ...
@@ -1427,7 +1433,7 @@ class Osc(cmdln.Cmdln):
                 dst_project = p.linkinfo.project
                 dst_package = p.linkinfo.package
             elif len(args) > 0:
-                dst_project = args[0]
+                dst_project = self._process_project_name(args[0])
                 if len(args) == 2:
                     dst_package = args[1]
                 else:
@@ -1452,6 +1458,7 @@ class Osc(cmdln.Cmdln):
                 dst_package = args[3]
             else:
                 dst_package = src_package
+            dst_project = self._process_project_name(dst_project)
         else:
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('request'))
@@ -1654,7 +1661,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 dst_project = p.linkinfo.project
                 dst_package = p.linkinfo.package
             elif len(args) > 0:
-                dst_project = args[0]
+                dst_project = self._process_project_name(args[0])
                 if len(args) == 2:
                     dst_package = args[1]
                 else:
@@ -1676,6 +1683,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 dst_package = args[3]
             else:
                 dst_package = src_package
+            dst_project = self._process_project_name(dst_project)
         else:
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('request'))
@@ -1747,12 +1755,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) < 3:
                 raise oscerr.WrongArgs('Too few arguments.')
 
-            devel_project = args[2]
-            project = args[0]
+            devel_project = self._process_project_name(args[2])
+            project = self._process_project_name(args[0])
             package = args[1]
             devel_package = package
             if len(args) > 3:
-                devel_package = args[3]
+                devel_package = self._process_project_name(args[3])
 
         actionxml = """ <action type="change_devel"> <source project="%s" package="%s" /> <target project="%s" package="%s" /> </action> """ % \
                 (devel_project, devel_package, project, package)
@@ -1769,7 +1777,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         user = conf.get_apiurl_usr(apiurl)
         role = args[0]
-        project = args[1]
+        project = self._process_project_name(args[1])
         actionxml = """ <action type="add_role"> <target project="%s" /> <person name="%s" role="%s" /> </action> """ % \
                 (project, user, role)
 
@@ -1793,7 +1801,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         user = args[0]
         role = args[1]
-        project = args[2]
+        project = self._process_project_name(args[2])
         actionxml = """ <action type="add_role"> <target project="%s" /> <person name="%s" role="%s" /> </action> """ % \
                 (project, user, role)
 
@@ -1817,7 +1825,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         group = args[0]
         role = args[1]
-        project = args[2]
+        project = self._process_project_name(args[2])
         actionxml = """ <action type="add_role"> <target project="%s" /> <group name="%s" role="%s" /> </action> """ % \
                 (project, group, role)
 
@@ -1840,7 +1848,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         user = args[0]
-        project = args[1]
+        project = self._process_project_name(args[1])
         package = ""
         if len(args) > 2:
             package = """package="%s" """ % (args[2])
@@ -2002,7 +2010,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         if len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             if package.startswith('group:'):
                 user = package
@@ -2010,7 +2018,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 user = conf.get_apiurl_usr(apiurl)
         elif len(args) == 3:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             user = args[2]
         elif len(args) < 2 and is_package_dir(os.curdir):
@@ -2022,7 +2030,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 user = args[0]
         elif len(args) == 1:
             user = conf.get_apiurl_usr(apiurl)
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = None
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
@@ -2086,9 +2094,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
         elif len(args) == 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         elif is_project_dir(os.getcwd()):
             project = store_read_project(os.curdir)
@@ -2148,8 +2156,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
         else:
-            devel_project = args[2]
-            project = args[0]
+            devel_project = self._process_project_name(args[2])
+            project = self._process_project_name(args[0])
             package = args[1]
             devel_package = package
             if len(args) == 4:
@@ -2371,7 +2379,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = None
             project = None
             if len(args) > 0:
-                project = args[0]
+                project = self._process_project_name(args[0])
             elif opts.project:
                 project = opts.project
                 if opts.package:
@@ -2799,10 +2807,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not p.islink():
                 sys.exit('Local directory is no checked out source link package, aborting')
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         elif len(args) == 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
         else:
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('setlinkrev'))
@@ -2845,7 +2853,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             update_local_dir = False
 
@@ -2875,7 +2883,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(os.curdir)
             package = store_read_package(os.curdir)
         elif len(args) == 2:
-            project, package = args
+            project = self._process_project_name(args[0])
+            package = args[1]
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         else:
@@ -2949,9 +2958,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev, dummy = parseRevisionOption(opts.revision)
         vrev = None
 
-        src_project = args[0]
+        src_project = self._process_project_name(args[0])
         src_package = args[1]
-        dst_project = args[2]
+        dst_project = self._process_project_name(args[2])
         if len(args) > 3:
             dst_package = args[3]
         else:
@@ -3008,9 +3017,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('aggregatepac'))
 
-        src_project = args[0]
+        src_project = self._process_project_name(args[0])
         src_package = args[1]
-        dst_project = args[2]
+        dst_project = self._process_project_name(args[2])
         if len(args) > 3:
             dst_package = args[3]
         else:
@@ -3071,9 +3080,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Incorrect number of arguments.\n\n' \
                   + self.get_cmd_help('copypac'))
 
-        src_project = args[0]
+        src_project = self._process_project_name(args[0])
         src_package = args[1]
-        dst_project = args[2]
+        dst_project = self._process_project_name(args[2])
         if len(args) > 3:
             dst_package = args[3]
         else:
@@ -3161,7 +3170,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
-            source_project = args[0]
+            source_project = self._process_project_name(args[0])
         if len(args) > 1:
             source_package = args[1]
 
@@ -3232,7 +3241,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) == 0:
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
-            source_project = args[0]
+            source_project = self._process_project_name(args[0])
 
         f = show_project_meta(apiurl, source_project)
         root = ET.fromstring(b''.join(f))
@@ -3289,7 +3298,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments.')
 
         if len(args) == 1:
-            target_project = args[0]
+            target_project = self._process_project_name(args[0])
         else:
             xpath = 'attribute/@name = \'%s\'' % maintenance_attribute
             res = search(apiurl, project_id=xpath)
@@ -3384,12 +3393,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     raise oscerr.WrongArgs('No package directory')
             else:
-                source_project = args[0]
+                source_project = self._process_project_name(args[0])
         if len(args) > 1:
             if len(args) == 2:
                 sys.exit('Source package defined, but no release project.')
             source_packages = args[1:]
-            release_project = args[-1]
+            release_project = self._process_project_name(args[-1])
             source_packages.remove(release_project)
         if opts.cleanup:
             opt_sourceupdate = 'cleanup'
@@ -3508,7 +3517,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 1:
             package = args[0]
         if len(args) >= 2:
-            tproject = args[1]
+            tproject = self._process_project_name(args[1])
 
         if subcmd == 'sm' or subcmd == 'maintained':
             opts.dryrun = 1
@@ -3639,13 +3648,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         expected = 'home:%s:branches:%s' % (conf.get_apiurl_usr(apiurl), args[0])
         if len(args) >= 3:
-            expected = tproject = args[2]
+            expected = tproject = self._process_project_name(args[2])
         if len(args) >= 4:
             tpackage = args[3]
 
         try:
             exists, targetprj, targetpkg, srcprj, srcpkg = \
-                branch_pkg(apiurl, args[0], args[1],
+                branch_pkg(apiurl, self._process_project_name(args[0]), args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            linkrev=opts.linkrev,
                            target_project=tproject, target_package=tpackage,
@@ -3661,7 +3670,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('NOTE: Package target exists already via project links, link will point to given project.')
             print('      A submission will initialize a new instance.')
             exists, targetprj, targetpkg, srcprj, srcpkg = \
-                branch_pkg(apiurl, args[0], args[1],
+                branch_pkg(apiurl, self._process_project_name(args[0]), args[1],
                            nodevelproject=opts.nodevelproject, rev=opts.revision,
                            linkrev=opts.linkrev,
                            target_project=tproject, target_package=tpackage,
@@ -3679,7 +3688,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Using existing branch project: %s' % targetprj, file=sys.stderr)
 
         devloc = None
-        if not exists and (srcprj != args[0] or srcpkg != args[1]):
+        if not exists and (srcprj != self._process_project_name(args[0]) or srcpkg != args[1]):
             try:
                 root = ET.fromstring(b''.join(show_attribute_meta(apiurl, args[0], None, None,
                     conf.config['maintained_update_project_attribute'], False, False)))
@@ -3741,7 +3750,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             msg = edit_message()
 
         apiurl = self.get_api_url()
-        prj = args[0]
+        prj = self._process_project_name(args[0])
         pkgs = args[1:]
 
         if pkgs:
@@ -3779,7 +3788,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments')
 
         apiurl = self.get_api_url()
-        prj = args[0]
+        prj = self._process_project_name(args[0])
 
         msg = ''
         if opts.message:
@@ -3865,7 +3874,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments')
 
         apiurl = self.get_api_url()
-        prj = args[0]
+        prj = self._process_project_name(args[0])
 
         msg = ''
         if opts.message:
@@ -4096,7 +4105,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         new_package = None
 
         if len(args) == 2:
-            new_project = args[0]
+            new_project = self._process_project_name(args[0])
             new_package = args[1]
             if opts.oldprj:
                 old_project = opts.oldprj
@@ -4105,13 +4114,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) == 3 or len(args) == 4:
             if opts.oldprj or opts.oldpkg:
                 raise oscerr.WrongArgs('--oldpkg and --oldprj are only valid with two arguments')
-            old_project = args[0]
+            old_project = self._process_project_name(args[0])
             new_package = old_package = args[1]
-            new_project = args[2]
+            new_project = self._process_project_name(args[2])
             if len(args) == 4:
                 new_package = args[3]
         elif len(args) == 1 and opts.meta:
-            new_project = args[0]
+            new_project = self._process_project_name(args[0])
             new_package = '_project'
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
@@ -4260,7 +4269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(os.curdir)
             package = args[0]
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         else:
             raise RuntimeError('Internal error: bad check for arguments.')
@@ -4397,12 +4406,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 raise oscerr.WrongArgs('Current directory is not a project.')
         elif len(args) == 1:
-            newprj = args[0]
+            newprj = self._process_project_name(args[0])
             oldprj = self._get_branch_parent(newprj)
             if oldprj is None:
                 raise oscerr.WrongArgs('Single-argument form must be for a home branch.')
         elif len(args) == 2:
-            oldprj, newprj = args
+            oldprj = self._process_project_name(args[0])
+            newprj = self._process_project_name(args[1])
         else:
             raise RuntimeError('BUG in argument parsing, please report.\n'
                                'args: ' + repr(args))
@@ -4483,7 +4493,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         if len(args) == 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
         elif len(args) == 0:
             project = store_read_project('.')
         else:
@@ -4523,9 +4533,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         package = None
         if len(args) == 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         elif len(args) == 0:
             project = store_read_project('.')
@@ -4629,7 +4639,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = package = filename = None
             apiurl = self.get_api_url()
             try:
-                project = project_dir = args[0]
+                project = project_dir = self._process_project_name(args[0])
                 package = args[1]
                 filename = args[2]
             except:
@@ -4677,6 +4687,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             prj_dir = opts.output_dir if opts.output_dir else project
             if not opts.output_dir and conf.config['checkout_no_colon']:
                 prj_dir = prj_dir.replace(':', '/')
+            else:
+                prj_dir = prj_dir.replace(':', conf.config['project_separator'])
             if os.path.exists(prj_dir):
                 sys.exit('osc: project directory \'%s\' already exists' % prj_dir)
 
@@ -5493,7 +5505,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
             package = store_read_package(wd)
         if len(args) > 0:
-            project = args[0]
+            project = self._process_project_name(args[0])
         if len(args) > 1:
             package = args[1]
 
@@ -5583,7 +5595,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if args:
             if len(args) == 1:
-                project = args[0]
+                project = self._process_project_name(args[0])
             else:
                 raise oscerr.WrongArgs('Wrong number of arguments.')
         else:
@@ -5804,6 +5816,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too many arguments.')
             else:
                 project, package, repository, arch = args
+                project = self._process_project_name(project)
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
@@ -5947,7 +5960,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository = args[0]
             arch = args[1]
         elif len(args) == 4:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             arch = args[3]
@@ -6048,12 +6061,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             arch = args[1]
 
         if len(args) == 3:
-            project = args[0]
+            project = self._process_project_name(args[0])
             repository = args[1]
             arch = args[2]
 
         if len(args) == 4:
-            project = args[0]
+            project = self._process_project_name(args[0])
             packages = [args[1]]
             repository = args[2]
             arch = args[3]
@@ -6126,7 +6139,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 package = store_read_package('.')
             repository, arch, build_descr = self.parse_repoarchdescr(args, alternative_project=opts.alternative_project, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             arch = args[3]
@@ -6198,7 +6211,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = store_read_project(wd)
             repository = args[0]
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             repository = args[1]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
@@ -6243,7 +6256,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
 
         if len(args) == 4:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             arch = args[3]
@@ -6308,9 +6321,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         disabled = None
 
         if len(args) == 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
         elif len(args) == 2:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
         elif len(args) == 0:
             if is_package_dir('.'):
@@ -6961,7 +6974,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         if len(args) == 4:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             arch = args[3]
@@ -7010,12 +7023,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         if len(args) == 4:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             arch = args[3]
         elif len(args) == 3:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = None        # skipped = prj
             repository = args[1]
             arch = args[2]
@@ -7092,10 +7105,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none or two)')
         elif len(args) == 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = "_project"
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
 
         rev, rev_upper = parseRevisionOption(opts.revision)
@@ -7169,7 +7182,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(args) == 2:
                 singleservice = args[1]
         elif len(args) == 3 and args[0] in remote_commands:
-            project = args[1]
+            project = self._process_project_name(args[1])
             package = args[2]
         else:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -7255,7 +7268,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             if len(args) > 1:
                 package = args[1]
 
@@ -7328,7 +7341,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif len(args) != 5:
             raise oscerr.WrongArgs('Wrong number of arguments.')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repo = args[2]
             arch = args[3]
@@ -7381,7 +7394,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
-            project = args[0]
+            project = self._process_project_name(args[0])
             if len(args) > 1:
                 package = args[1]
 
@@ -7453,7 +7466,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # respect given project and package
         if len(args) >= 1:
-            project = args[0]
+            project = self._process_project_name(args[0])
 
         if len(args) == 2:
             package = args[1]
@@ -7534,7 +7547,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         architecture = None
         if len(args) == 4 or len(args) == 5:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             architecture = args[3]
@@ -8436,9 +8449,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             prj = store_read_project('.')
         elif len(args) == 1:
             # it is unclear if one argument is a search_term or a project, try search_term first for new OBS 2.4
-            search_term = prj = args[0]
+            search_term = prj = self._process_project_name(args[0])
         elif len(args) == 2:
-            prj = args[0]
+            prj = self._process_project_name(args[0])
             pac = args[1]
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
@@ -8694,7 +8707,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         args = slash_split(args)
         project = package = filename = None
         if len(args) == 3:
-            project = args[0]
+            project = self._process_project_name(args[0])
             package = args[1]
             filename = args[2]
         elif len(args) == 1 and is_package_dir(os.getcwd()):
@@ -8768,13 +8781,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
         args = slash_split(args)
         if len(args) >= 3 and len(args) <= 4:
-            prj = args[0]
+            prj = self._process_project_name(args[0])
             package = target_package = args[1]
-            target_prj = args[2]
+            target_prj = self._process_project_name(args[2])
             if len(args) == 4:
                 target_package = args[3]
         elif len(args) == 2:
-            target_prj = prj = args[0]
+            target_prj = prj = self._process_project_name(args[0])
             target_package = package = args[1]
         elif is_package_dir(os.getcwd()):
             target_prj = prj = store_read_project(os.getcwd())
@@ -9115,7 +9128,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_project_dir(cwd) or is_package_dir(cwd):
                 prj = store_read_project(cwd)
         if len(args) == 1:
-            prj = args[0]
+            prj = self._process_project_name(args[0])
 
         if not prj:
             raise oscerr.WrongArgs('Please specify just the project')
