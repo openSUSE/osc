@@ -151,7 +151,7 @@ install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 
 # docs
 %license COPYING
-%doc AUTHORS README.md TODO NEWS
+%doc AUTHORS README.md NEWS
 %if %{with man}
 %{_mandir}/man1/osc.*
 %endif
