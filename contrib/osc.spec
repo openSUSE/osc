@@ -130,10 +130,10 @@ install -d %{buildroot}%{osc_plugin_dir}
 install -d %{buildroot}%{_sharedstatedir}/osc-plugins
 
 # install completions
-install -Dm0755 dist/osc.complete %{buildroot}%{_datadir}/osc/complete
-install -Dm0644 dist/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
-install -Dm0644 dist/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
-install -Dm0644 dist/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
+install -Dm0755 contrib/osc.complete %{buildroot}%{_datadir}/osc/complete
+install -Dm0644 contrib/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
+install -Dm0644 contrib/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
+install -Dm0644 contrib/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
 
 # install rpm macros
 install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
