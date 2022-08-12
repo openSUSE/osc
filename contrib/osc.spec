@@ -133,7 +133,7 @@ install -d %{buildroot}%{_sharedstatedir}/osc-plugins
 install -Dm0755 dist/osc.complete %{buildroot}%{_datadir}/osc/complete
 install -Dm0644 dist/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
 install -Dm0644 dist/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
-install -Dm0644 osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
+install -Dm0644 dist/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
 
 # install rpm macros
 install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
