@@ -54,34 +54,15 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             raise DebError(self.__path, 'no debian binary')
         if debbin.read() != b'2.0\n':
             raise DebError(self.__path, 'invalid debian binary format')
-        control = arfile.get_file(b'control.tar.gz')
-        if control is not None:
-            # XXX: python2.4 relies on a name
-            tar = tarfile.open(name='control.tar.gz', fileobj=control)
-        else:
-            control = arfile.get_file(b'control.tar.xz')
-            if control:
-                if not HAVE_LZMA:
-                    raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
-                decompressed = lzma.decompress(control.read())
-                tar = tarfile.open(name="control.tar.xz",
-                                   fileobj=BytesIO(decompressed))
-            else:
-                control = arfile.get_file(b'control.tar.zst')
-                if control:
-                    if not HAVE_ZSTD:
-                        raise DebError(self.__path, 'can\'t open control.tar.zst without python-zstandard')
-                    with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
-                        decompressed = reader.read()
-                    tar = tarfile.open(name="control.tar.zst",
-                                       fileobj=BytesIO(decompressed))
-                else:
-                    control = arfile.get_file(b'control.tar')
-                    if control:
-                        tar = tarfile.open(name="control.tar",
-                                           fileobj=control)
-            if control is None:
-                raise DebError(self.__path, 'missing control.tar')
+        for open_func in [self.__open_tar_gz,
+                          self.__open_tar_xz,
+                          self.__open_tar_zst,
+                          self.__open_tar]:
+            tar = open_func(arfile)
+            if tar is not None:
+                break
+        if tar is None:
+            raise DebError(self.__path, 'missing control.tar')
         try:
             name = './control'
             # workaround for python2.4's tarfile module
@@ -93,6 +74,40 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                            'missing \'control\' file in control.tar')
         self.__parse_control(control, all_tags, self_provides, *extra_tags)
         return self
+
+    def __open_tar(self, arfile):
+        control = arfile.get_file(b'control.tar')
+        if control:
+            # XXX: python2.4 relies on a name
+            return tarfile.open(name="control.tar", fileobj=control)
+        return None
+
+    def __open_tar_gz(self, arfile):
+        control = arfile.get_file(b'control.tar.gz')
+        if control:
+            return tarfile.open(name='control.tar.gz', fileobj=control)
+        return None
+
+    def __open_tar_xz(self, arfile):
+        control = arfile.get_file(b'control.tar.xz')
+        if control:
+            if not HAVE_LZMA:
+                raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
+            decompressed = lzma.decompress(control.read())
+            return tarfile.open(name="control.tar.xz",
+                                fileobj=BytesIO(decompressed))
+        return None
+
+    def __open_tar_zst(self, arfile):
+        control = arfile.get_file(b'control.tar.zst')
+        if control:
+            if not HAVE_ZSTD:
+                raise DebError(self.__path, 'can\'t open control.tar.zst without python-zstandard')
+            with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
+                decompressed = reader.read()
+            return tarfile.open(name="control.tar.zst",
+                                fileobj=BytesIO(decompressed))
+        return None
 
     def __parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
