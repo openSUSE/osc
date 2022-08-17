@@ -165,6 +165,17 @@ class Osc(cmdln.Cmdln):
         else:
             return conf.config['apiurl']
 
+    def do_version(self, subcmd, opts):
+        """
+        Give version of osc binary
+
+        usage:
+            osc version
+        """
+
+        print(get_osc_version())
+
+
     def do_init(self, subcmd, opts, project, package=None, scm_url=None):
         """
         Initialize a directory as working copy
