@@ -2980,8 +2980,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='URL of destination api server. Default is the source api server.')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
+    @cmdln.option('-M', '--make-origin-older', action='store_true',
+                  help='Make origin older, the source vrev is extended and target is guaranteed to be newer')
     @cmdln.option('-e', '--expand', action='store_true',
                         help='if the source package is a link then copy the expanded version of the link')
+    @cmdln.option('-w', '--with-history', action='store_true',
+                  help='copies sources with history on copy command')
+    @cmdln.option('-W', '--with-binaries', action='store_true',
+                  help='copies also binaries on copy command')
     def do_copypac(self, subcmd, opts, *args):
         """
         Copy a package
@@ -3038,6 +3044,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 comment += ", using expand"
             if opts.client_side_copy:
                 comment += ", using client side copy"
+            if opts.make_origin_older:
+                comment += ", making the origin older"
+            if opts.with_history:
+                comment += ", including history"
+            if opts.with_binaries:
+                comment += ", including binaries"
 
         if src_project == dst_project and \
            src_package == dst_package and \
@@ -3053,7 +3065,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      expand=opts.expand,
                      revision=rev,
                      comment=comment,
-                     keep_link=opts.keep_link)
+                     keep_link=opts.keep_link,
+                     make_origin_older=opts.make_origin_older,
+                     with_history=opts.with_history,
+                     with_binaries=opts.with_binaries)
         print(decode_it(r))
 
 
