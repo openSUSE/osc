@@ -5463,7 +5463,7 @@ def copy_pac(src_apiurl, src_project, src_package,
              revision = None,
              comment = None,
              force_meta_update = None,
-             keep_link = None,
+             keep_link=None,
              make_origin_older=False,
              with_history=False,
              with_binaries=False):
