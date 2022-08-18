@@ -296,6 +296,9 @@ def http_request(method, url, headers=None, data=None, file=None):
         # prompt user if we should trust the certificate
         pool.trusted_cert_store.prompt_trust(cert, reason=e.reason)
 
+        if hasattr(data, 'seek'):
+            data.seek(0)
+
         response = pool.urlopen(
             method, urlopen_url, body=data, headers=headers,
             preload_content=False, assert_same_host=assert_same_host
@@ -307,6 +310,8 @@ def http_request(method, url, headers=None, data=None, file=None):
             success = handler.set_request_headers_after_401(url, headers, response)
             if success:
                 break
+        if hasattr(data, 'seek'):
+            data.seek(0)
         response = pool.urlopen(method, urlopen_url, body=data, headers=headers, preload_content=False)
 
     if response.status / 100 != 2:
