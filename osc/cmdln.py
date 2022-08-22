@@ -143,16 +143,20 @@ class Cmdln:
                 self.cmd_map[i] = cmd_func
                 self.alias_to_cmd_name_map[i] = cmd_name
 
-            # split doctext into lines, allow the first line to start at a new line
-            help_lines = cmd_func.__doc__.lstrip().splitlines()
+            if cmd_func.__doc__:
+                # split doctext into lines, allow the first line to start at a new line
+                help_lines = cmd_func.__doc__.lstrip().splitlines()
 
-            # use the first line as help text
-            help_text = help_lines.pop(0)
+                # use the first line as help text
+                help_text = help_lines.pop(0)
 
-            # use the remaining lines as description
-            help_lines = self._remove_leading_spaces_from_lines(help_lines)
-            help_desc = "\n".join(help_lines)
-            help_desc = help_desc.strip()
+                # use the remaining lines as description
+                help_lines = self._remove_leading_spaces_from_lines(help_lines)
+                help_desc = "\n".join(help_lines)
+                help_desc = help_desc.strip()
+            else:
+                help_text = ""
+                help_desc = ""
 
             if hidden:
                 help_text = argparse.SUPPRESS
