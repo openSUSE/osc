@@ -69,9 +69,13 @@ def get_version(version):
         # remove the 'g' prefix from hash
         git_hash = git_hash[1:]
 
-    if version and git_tag != version:
-        msg = "Git tag '{}' doesn't correspond with version '{}' specified in the source code".format(git_tag, version)
-        raise ValueError(msg)
+    # removing "~" because it is not an allowed character in git tags
+    # and also because the normalized form is (for example) 1.0.0b0
+    if version and git_tag != version.replace("~", ""):
+        # Git tag doesn't correspond with version specified in the source code.
+        # The most common reason is that forks do not have their tags in sync with upstream.
+        # In that case just return the version specified in the source code.
+        return version
 
     result = git_tag
     if git_hash:
