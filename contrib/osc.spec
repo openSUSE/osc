@@ -130,10 +130,10 @@ install -d %{buildroot}%{osc_plugin_dir}
 install -d %{buildroot}%{_sharedstatedir}/osc-plugins
 
 # install completions
-install -Dm0755 dist/osc.complete %{buildroot}%{_datadir}/osc/complete
-install -Dm0644 dist/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
-install -Dm0644 dist/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
-install -Dm0644 osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
+install -Dm0755 contrib/osc.complete %{buildroot}%{_datadir}/osc/complete
+install -Dm0644 contrib/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
+install -Dm0644 contrib/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
+install -Dm0644 contrib/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
 
 # install rpm macros
 install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
@@ -151,7 +151,7 @@ install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 
 # docs
 %license COPYING
-%doc AUTHORS README.md TODO NEWS
+%doc AUTHORS README.md NEWS
 %if %{with man}
 %{_mandir}/man1/osc.*
 %endif
