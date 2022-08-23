@@ -85,6 +85,13 @@ Recommends:     obs-service-source_validator
 Recommends:     obs-service-tar_scm
 Recommends:     obs-service-verify_file
 
+%if 0%{?fedora}
+Recommends:     openssh
+%endif
+%if 0%{?suse_version}
+Recommends:     openssh-common
+%endif
+
 # needed for `osc browse` that calls xdg-open
 Recommends:     xdg-utils
 
