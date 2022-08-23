@@ -3,7 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
-import imp
+import importlib.util
 import inspect
 import os
 import sys
@@ -9431,8 +9431,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not extfile.endswith('.py'):
                     continue
                 try:
-                    modname = os.path.splitext(extfile)[0]
-                    mod = imp.load_source(modname, os.path.join(plugin_dir, extfile))
+                    modname = "osc.plugins." + os.path.splitext(extfile)[0]
+                    spec = importlib.util.spec_from_file_location(modname, os.path.join(plugin_dir, extfile))
+                    mod = importlib.util.module_from_spec(spec)
+                    sys.modules[modname] = mod
+                    spec.loader.exec_module(mod)
                     # restore the old exec semantic
                     mod.__dict__.update(globals())
                     for name in dir(mod):
