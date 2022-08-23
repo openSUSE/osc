@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 
 import urllib3.response
 
+import osc.conf
 import osc.core
 
 
@@ -201,7 +202,7 @@ class OscTestCase(unittest.TestCase):
         EXPECTED_REQUESTS = []
         os.chdir(os.path.dirname(__file__))
         oscrc = os.path.join(self._get_fixtures_dir(), 'oscrc')
-        osc.core.conf.get_config(override_conffile=oscrc,
+        osc.conf.get_config(override_conffile=oscrc,
                                  override_no_keyring=True, override_no_gnome_keyring=True)
         os.environ['OSC_CONFIG'] = oscrc
 
