@@ -5062,6 +5062,13 @@ def checkout_package(apiurl, project, package,
         os.putenv("OSC_VERSION", get_osc_version())
         run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
         Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
+
+        # add package to <prj>/.obs/_packages
+        if not prj_obj:
+            prj_obj = Project(prj_dir)
+        prj_obj.set_state(package, ' ')
+        prj_obj.write_packages()
+
         return
 
     isfrozen = False
