@@ -16,6 +16,7 @@ import urllib3.poolmanager
 import urllib3.response
 import urllib3.util
 
+from . import __version__
 from . import conf
 from . import oscerr
 from . import oscssl
@@ -98,7 +99,7 @@ def get_proxy_manager(env):
 
     proxy_headers = urllib3.make_headers(
         proxy_basic_auth=proxy_purl.auth,
-        user_agent=f"osc/{core.__version__}",
+        user_agent=f"osc/{__version__}",
     )
 
     manager = urllib3.ProxyManager(proxy_url, proxy_headers=proxy_headers)
@@ -171,7 +172,7 @@ def http_request(method, url, headers=None, data=None, file=None):
     headers = urllib3.response.HTTPHeaderDict(headers or {})
 
     # identify osc
-    headers.update(urllib3.make_headers(user_agent=f"osc/{core.__version__}"))
+    headers.update(urllib3.make_headers(user_agent=f"osc/{__version__}"))
 
     if data and file:
         raise RuntimeError('Specify either `data` or `file`')

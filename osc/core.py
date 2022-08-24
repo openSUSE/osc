@@ -4,10 +4,6 @@
 # either version 2, or version 3 (at your option).
 
 
-from .util import git_version
-__version__ = git_version.get_version('1.0.0~b1')
-
-
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
@@ -37,6 +33,7 @@ try:
 except ImportError:
     distro = None
 
+from . import __version__
 from . import conf
 from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
