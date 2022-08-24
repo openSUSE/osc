@@ -123,6 +123,24 @@ HTTP_PROXY_MANAGER = get_proxy_manager("HTTP_PROXY")
 HTTPS_PROXY_MANAGER = get_proxy_manager("HTTPS_PROXY")
 
 
+def http_request_wrap_file(func):
+    """
+    Turn file path into a file object and close it automatically
+    by using a context manager.
+    """
+    def new_func(method, url, headers=None, data=None, file=None):
+        if file:
+            with open(file, "rb") as f:
+                return func(method, url, headers, data, file=f)
+        else:
+            return func(method, url, headers, data, file)
+
+    new_func.__name__ = func.__name__
+    new_func.__doc__ = func.__doc__
+    return new_func
+
+
+@http_request_wrap_file
 def http_request(method, url, headers=None, data=None, file=None):
     """
     Send a HTTP request to a server.
@@ -162,8 +180,8 @@ def http_request(method, url, headers=None, data=None, file=None):
             data = data.encode("utf-8")
         content_length = len(data)
     elif file:
-        content_length = os.path.getsize(file)
-        data = open(file, "rb")
+        content_length = os.fstat(file.fileno()).st_size
+        data = file
     else:
         content_length = 0
 

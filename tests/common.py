@@ -233,8 +233,7 @@ class OscTestCase(unittest.TestCase):
 
     def _check_list(self, fname, exp):
         fname = os.path.join('.osc', fname)
-        self.assertTrue(os.path.exists(fname))
-        self.assertEqual(open(fname).read(), exp)
+        self.assertFileContentEqual(fname, exp)
 
     def _check_addlist(self, exp):
         self._check_list('_to_be_added', exp)
@@ -261,6 +260,22 @@ class OscTestCase(unittest.TestCase):
                 continue
             self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
             self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+
+    def assertFilesEqual(self, first, second):
+        self.assertTrue(os.path.exists(first))
+        self.assertTrue(os.path.exists(second))
+        with open(first) as f1, open(second) as f2:
+            self.assertEqual(f1.read(), f2.read())
+
+    def assertFileContentEqual(self, file_path, expected_content):
+        self.assertTrue(os.path.exists(file_path))
+        with open(file_path) as f:
+            self.assertEqual(f.read(), expected_content)
+
+    def assertFileContentNotEqual(self, file_path, expected_content):
+        self.assertTrue(os.path.exists(file_path))
+        with open(file_path) as f:
+            self.assertNotEqual(f.read(), expected_content)
 
     def assertXMLEqual(self, act, exp):
         if xml_equal(act, exp):

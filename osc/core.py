@@ -2023,7 +2023,8 @@ class Package:
                 if not add:
                     tmpl = b'-%s'
                     ltmpl = b'@@ -1,%d +0,0 @@\n'
-                lines = [tmpl % i for i in open(fname, 'rb').readlines()]
+                with open(fname, 'rb') as f:
+                    lines = [tmpl % i for i in f.readlines()]
                 if len(lines):
                     diff.append(ltmpl % len(lines))
                     if not lines[-1].endswith(b'\n'):
@@ -3277,7 +3278,8 @@ def store_readlist(dir, name):
 
     r = []
     if os.path.exists(os.path.join(dir, store, name)):
-        r = [line.rstrip('\n') for line in open(os.path.join(dir, store, name))]
+        with open(os.path.join(dir, store, name)) as f:
+            r = [line.rstrip('\n') for line in f]
     return r
 
 def read_tobeadded(dir):
@@ -3293,7 +3295,8 @@ def read_sizelimit(dir):
     fname = os.path.join(dir, store, '_size_limit')
 
     if os.path.exists(fname):
-        r = open(fname).readline().strip()
+        with open(fname) as f:
+            r = f.readline().strip()
 
     if r is None or not r.isdigit():
         return None
@@ -3351,7 +3354,8 @@ def check_store_version(dir):
 
     versionfile = os.path.join(dir, store, '_osclib_version')
     try:
-        v = open(versionfile).read().strip()
+        with open(versionfile) as f:
+            v = f.read().strip()
     except:
         v = ''
 
@@ -4741,7 +4745,8 @@ def binary(s):
 
 def binary_file(fn):
     """read 4096 bytes from a file named fn, and call binary() on the data"""
-    return binary(open(fn, 'rb').read(4096))
+    with open(fn, 'rb') as f:
+        return binary(f.read(4096))
 
 
 def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, origfilename = None):
@@ -6500,7 +6505,8 @@ def store_read_project(dir):
     global store
 
     try:
-        p = open(os.path.join(dir, store, '_project')).readlines()[0].strip()
+        with open(os.path.join(dir, store, '_project')) as f:
+            p = f.readline().strip()
     except OSError:
         msg = 'Error: \'%s\' is not an osc project dir or working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
@@ -6513,7 +6519,8 @@ def store_read_package(dir):
     global store
 
     try:
-        p = open(os.path.join(dir, store, '_package')).readlines()[0].strip()
+        with open(os.path.join(dir, store, '_package')) as f:
+            p = f.readline().strip()
     except OSError:
         msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
         if os.path.exists(os.path.join(dir, '.svn')):
@@ -6541,7 +6548,8 @@ def store_read_apiurl(dir, defaulturl=True):
 
     fname = os.path.join(dir, store, '_apiurl')
     try:
-        url = open(fname).readlines()[0].strip()
+        with open(fname) as f:
+            url = f.readlines()[0].strip()
         # this is needed to get a proper apiurl
         # (former osc versions may stored an apiurl with a trailing slash etc.)
         apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
@@ -6612,8 +6620,8 @@ def store_read_file(dir, file):
     global store
 
     try:
-        content = open(os.path.join(dir, store, file)).read()
-        return content
+        with open(os.path.join(dir, store, file)) as f:
+            return f.read()
     except:
         return None
 

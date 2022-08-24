@@ -322,7 +322,7 @@ class TestRequest(OscTestCase):
 
     def test_read_request1(self):
         """read in a request"""
-        xml = open(os.path.join(self._get_fixtures_dir(), 'test_read_request1.xml')).read().strip()
+        xml = self._get_fixture('test_read_request1.xml')
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
         self.assertEqual(r.reqid, '42')
@@ -353,7 +353,7 @@ class TestRequest(OscTestCase):
 
     def test_read_request2(self):
         """read in a request (with reviews)"""
-        xml = open(os.path.join(self._get_fixtures_dir(), 'test_read_request2.xml')).read().strip()
+        xml = self._get_fixture('test_read_request2.xml')
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
         self.assertEqual(r.reqid, '123')
@@ -427,7 +427,7 @@ class TestRequest(OscTestCase):
 
     def test_request_list_view1(self):
         """test the list_view method"""
-        xml = open(os.path.join(self._get_fixtures_dir(), 'test_request_list_view1.xml')).read().strip()
+        xml = self._get_fixture('test_request_list_view1.xml')
         exp = """\
     62  State:new        By:Admin        When:2010-12-29T14:57:25
         set_bugowner:    buguser                                            foo
@@ -444,7 +444,7 @@ class TestRequest(OscTestCase):
 
     def test_request_list_view2(self):
         """test the list_view method (with history elements and description)"""
-        xml = open(os.path.join(self._get_fixtures_dir(), 'test_request_list_view2.xml')).read().strip()
+        xml = self._get_fixture('test_request_list_view2.xml')
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
         exp = """\
@@ -458,7 +458,7 @@ class TestRequest(OscTestCase):
 
     def test_request_str1(self):
         """test the __str__ method"""
-        xml = open(os.path.join(self._get_fixtures_dir(), 'test_request_str1.xml')).read().strip()
+        xml = self._get_fixture('test_request_str1.xml')
         r = osc.core.Request()
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
@@ -555,7 +555,7 @@ Comment: <no comment>"""
 
     def test_get_actions(self):
         """test get_actions method"""
-        xml = open(os.path.join(self._get_fixtures_dir(), 'test_request_list_view1.xml')).read().strip()
+        xml = self._get_fixture('test_request_list_view1.xml')
         r = osc.core.Request()
         r.read(ET.fromstring(xml))
         sr_actions = r.get_actions('submit')
