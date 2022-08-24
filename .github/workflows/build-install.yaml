@@ -1,4 +1,4 @@
-name: 'rpmbuild test'
+name: 'build and installation tests'
 
 on:
   push:
@@ -19,7 +19,7 @@ on:
       - 'doc/**'
 
 jobs:
-  test:
+  rpmbuild:
     name: 'rpmbuild test'
     runs-on: 'ubuntu-latest'
     strategy:
@@ -84,3 +84,22 @@ jobs:
             git fetch upstream --tags --force
 
             ./contrib/build_rpm.py --srpm --rpm
+
+  pip:
+    name: 'pip install test'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: 'Install packages'
+        run: |
+            sudo apt-get -y update
+            sudo apt-get -y upgrade
+            sudo apt-get -y --no-install-recommends install git python3-pip python3-rpm
+
+      - uses: actions/checkout@v3
+
+      - name: 'Install osc from pip'
+        run: |
+            pip3 install .
