@@ -16,6 +16,7 @@ import urllib3.poolmanager
 import urllib3.response
 import urllib3.util
 
+from . import __version__
 from . import conf
 from . import oscerr
 from . import oscssl
@@ -98,7 +99,7 @@ def get_proxy_manager(env):
 
     proxy_headers = urllib3.make_headers(
         proxy_basic_auth=proxy_purl.auth,
-        user_agent=f"osc/{core.__version__}",
+        user_agent=f"osc/{__version__}",
     )
 
     manager = urllib3.ProxyManager(proxy_url, proxy_headers=proxy_headers)
@@ -123,6 +124,24 @@ HTTP_PROXY_MANAGER = get_proxy_manager("HTTP_PROXY")
 HTTPS_PROXY_MANAGER = get_proxy_manager("HTTPS_PROXY")
 
 
+def http_request_wrap_file(func):
+    """
+    Turn file path into a file object and close it automatically
+    by using a context manager.
+    """
+    def new_func(method, url, headers=None, data=None, file=None):
+        if file:
+            with open(file, "rb") as f:
+                return func(method, url, headers, data, file=f)
+        else:
+            return func(method, url, headers, data, file)
+
+    new_func.__name__ = func.__name__
+    new_func.__doc__ = func.__doc__
+    return new_func
+
+
+@http_request_wrap_file
 def http_request(method, url, headers=None, data=None, file=None):
     """
     Send a HTTP request to a server.
@@ -153,7 +172,7 @@ def http_request(method, url, headers=None, data=None, file=None):
     headers = urllib3.response.HTTPHeaderDict(headers or {})
 
     # identify osc
-    headers.update(urllib3.make_headers(user_agent=f"osc/{core.__version__}"))
+    headers.update(urllib3.make_headers(user_agent=f"osc/{__version__}"))
 
     if data and file:
         raise RuntimeError('Specify either `data` or `file`')
@@ -162,8 +181,8 @@ def http_request(method, url, headers=None, data=None, file=None):
             data = data.encode("utf-8")
         content_length = len(data)
     elif file:
-        content_length = os.path.getsize(file)
-        data = open(file, "rb")
+        content_length = os.fstat(file.fileno()).st_size
+        data = file
     else:
         content_length = 0
 

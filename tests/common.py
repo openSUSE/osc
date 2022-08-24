@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 
 import urllib3.response
 
+import osc.conf
 import osc.core
 
 
@@ -201,7 +202,7 @@ class OscTestCase(unittest.TestCase):
         EXPECTED_REQUESTS = []
         os.chdir(os.path.dirname(__file__))
         oscrc = os.path.join(self._get_fixtures_dir(), 'oscrc')
-        osc.core.conf.get_config(override_conffile=oscrc,
+        osc.conf.get_config(override_conffile=oscrc,
                                  override_no_keyring=True, override_no_gnome_keyring=True)
         os.environ['OSC_CONFIG'] = oscrc
 
@@ -222,13 +223,17 @@ class OscTestCase(unittest.TestCase):
     def _get_fixtures_dir(self):
         raise NotImplementedError('subclasses should implement this method')
 
+    def _get_fixture(self, filename):
+        path = os.path.join(self._get_fixtures_dir(), filename)
+        with open(path) as f:
+            return f.read()
+
     def _change_to_pkg(self, name):
         os.chdir(os.path.join(self.tmpdir, 'osctest', name))
 
     def _check_list(self, fname, exp):
         fname = os.path.join('.osc', fname)
-        self.assertTrue(os.path.exists(fname))
-        self.assertEqual(open(fname).read(), exp)
+        self.assertFileContentEqual(fname, exp)
 
     def _check_addlist(self, exp):
         self._check_list('_to_be_added', exp)
@@ -255,6 +260,22 @@ class OscTestCase(unittest.TestCase):
                 continue
             self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
             self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+
+    def assertFilesEqual(self, first, second):
+        self.assertTrue(os.path.exists(first))
+        self.assertTrue(os.path.exists(second))
+        with open(first) as f1, open(second) as f2:
+            self.assertEqual(f1.read(), f2.read())
+
+    def assertFileContentEqual(self, file_path, expected_content):
+        self.assertTrue(os.path.exists(file_path))
+        with open(file_path) as f:
+            self.assertEqual(f.read(), expected_content)
+
+    def assertFileContentNotEqual(self, file_path, expected_content):
+        self.assertTrue(os.path.exists(file_path))
+        with open(file_path) as f:
+            self.assertNotEqual(f.read(), expected_content)
 
     def assertXMLEqual(self, act, exp):
         if xml_equal(act, exp):

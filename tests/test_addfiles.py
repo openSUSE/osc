@@ -66,12 +66,12 @@ class TestAddFiles(OscTestCase):
         """replace a deleted file ('foo')"""
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
-        open('foo', 'w').write('replaced file\n')
+        with open('foo', 'w') as f:
+            f.write('replaced file\n')
         p.addfile('foo')
         exp = 'A    foo\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.assertNotEqual(open(os.path.join('.osc', 'foo')).read(), 'replaced file\n')
+        self.assertFileContentNotEqual(os.path.join('.osc', 'foo'), 'replaced file\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self._check_status(p, 'foo', 'R')
         self._check_addlist('foo\n')

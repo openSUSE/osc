@@ -115,7 +115,7 @@ class TestUpdate(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_deletelist('foo\n')
         self._check_conflictlist('merge\n')
-        self.assertEqual(open('foo').read(), open(os.path.join('.osc', 'foo')).read())
+        self.assertFilesEqual('foo', os.path.join('.osc', 'foo'))
         self._check_digests('testUpdateLocalDeletions_files')
 
     @GET('http://localhost/source/osctest/restore?rev=latest', file='testUpdateRestore_files')
@@ -201,11 +201,9 @@ class TestUpdate(OscTestCase):
         exp = 'A    bigfile\nD    _service:exists\nA    _service:bar\nA    _service:foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', '_service:bar')))
-        self.assertTrue(os.path.exists('_service:bar'))
-        self.assertEqual(open('_service:bar').read(), 'another service\n')
+        self.assertFileContentEqual('_service:bar', 'another service\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_service:foo')))
-        self.assertTrue(os.path.exists('_service:foo'))
-        self.assertEqual(open('_service:foo').read(), 'small\n')
+        self.assertFileContentEqual('_service:foo', 'small\n')
         self.assertTrue(os.path.exists('_service:exists'))
         self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
 

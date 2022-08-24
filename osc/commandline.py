@@ -4249,13 +4249,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def _prdiff_output_diff(self, opts, rdiff):
         if opts.diffstat:
             print()
-            p = subprocess.Popen("diffstat",
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 close_fds=True)
-            p.stdin.write(rdiff)
-            p.stdin.close()
-            print("".join(decode_it(x) for x in p.stdout.readlines()))
+            with subprocess.Popen("diffstat", stdin=subprocess.PIPE, stdout=subprocess.PIPE, close_fds=True) as p:
+                p.stdin.write(rdiff)
+                p.stdin.close()
+                print("".join(decode_it(x) for x in p.stdout.readlines()))
         elif opts.unified:
             print()
             if isinstance(rdiff, str):

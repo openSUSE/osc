@@ -84,7 +84,8 @@ class TestInitPackage(OscTestCase):
         """initialize a package dir (dir is a file)"""
         pac_dir = os.path.join(self.tmpdir, 'testpkg')
         os.mkdir(pac_dir)
-        open(os.path.join(pac_dir, osc.core.store), 'w').write('foo\n')
+        with open(os.path.join(pac_dir, osc.core.store), 'w') as f:
+            f.write('foo\n')
         self.assertRaises(osc.oscerr.OscIOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
 
 if __name__ == '__main__':

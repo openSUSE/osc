@@ -192,7 +192,7 @@ class TestRepairWC(OscTestCase):
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair('http://localhost')
         self.assertTrue(os.path.exists(os.path.join('.osc', '_apiurl')))
-        self.assertEqual(open(os.path.join('.osc', '_apiurl')).read(), 'http://localhost\n')
+        self.assertFileContentEqual(os.path.join('.osc', '_apiurl'), 'http://localhost\n')
         self.assertEqual(p.apiurl, 'http://localhost')
 
     def test_invalidapiurl(self):
@@ -201,7 +201,7 @@ class TestRepairWC(OscTestCase):
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair('http://localhost')
         self.assertTrue(os.path.exists(os.path.join('.osc', '_apiurl')))
-        self.assertEqual(open(os.path.join('.osc', '_apiurl')).read(), 'http://localhost\n')
+        self.assertFileContentEqual(os.path.join('.osc', '_apiurl'), 'http://localhost\n')
         self.assertEqual(p.apiurl, 'http://localhost')
 
     def test_noapiurlNotExistingApiurl(self):
@@ -223,7 +223,7 @@ class TestRepairWC(OscTestCase):
         prj.wc_repair('http://localhost')
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
         self.assertTrue(os.path.exists(os.path.join(storedir, '_apiurl')))
-        self.assertEqual(open(os.path.join(storedir, '_apiurl')).read(), 'http://localhost\n')
+        self.assertFileContentEqual(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
 
 
 if __name__ == '__main__':
