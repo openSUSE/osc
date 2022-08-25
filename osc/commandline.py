@@ -4766,8 +4766,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force commit, even if there were no changes')
-    @cmdln.option('--skip-validation', default=False, action="store_true",
-                  help='deprecated, don\'t use it')
     @cmdln.option('--skip-local-service-run', '--noservice', default=False, action="store_true",
                   help='Skip service run of configured source services for local run')
     def do_commit(self, subcmd, opts, *args):
@@ -4800,8 +4798,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _commit(self, subcmd, opts, args):
         args = parseargs(args)
-        if opts.skip_validation:
-            print("WARNING: deprecated option --skip-validation ignored.", file=sys.stderr)
 
         msg = ''
         if opts.message:
