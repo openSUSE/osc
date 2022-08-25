@@ -5424,27 +5424,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         arch=opts.arch, vertical=opts.vertical, \
                                         show_excluded=opts.show_excluded, brief=opts.brief)))
 
-    @cmdln.option('-q', '--hide-legend', action='store_true',
-                        help='hide the legend')
-    @cmdln.option('-c', '--csv', action='store_true',
-                        help='csv output')
-    @cmdln.option('-s', '--status-filter', metavar='STATUS',
-                        help='show only packages with buildstatus STATUS (see legend)')
-    @cmdln.option('-n', '--name-filter', metavar='EXPR',
-                        help='show only packages whose names match EXPR')
-    @cmdln.hide()
-    def do_rprjresults(self, subcmd, opts, *args):
-        """
-        Obsolete command to show project-wide build results. Use 'prjresults' now.
-
-        See the help output of 'prjresults'.
-        """
-
-        print("Command rprjresults is obsolete. Please use 'osc prjresults'",
-              file=sys.stderr)
-        print("See 'osc help prjresults'.", file=sys.stderr)
-        return 2
-
     @cmdln.alias('rpmlint')
     @cmdln.alias('lint')
     def do_rpmlintlog(self, subcmd, opts, *args):
