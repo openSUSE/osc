@@ -172,9 +172,6 @@ class Cmdln:
             for option_args, option_kwargs in options:
                 subparser.add_argument(*option_args, **option_kwargs)
 
-            # HACK: inject 'args' to all commands so we don't have to decorate all of them
-            subparser.add_argument('args', nargs='*')
-
     def argparse_error(self, *args, **kwargs):
         """
         Raise an argument parser error.
@@ -208,8 +205,10 @@ class Cmdln:
 
         self.create_argparser()
 
-        self.options = self.argparser.parse_args(argv[1:])
-        self.args = getattr(self.options, "args", [])
+        self.options, self.args = self.argparser.parse_known_args(argv[1:])
+        unrecognized = [i for i in self.args if i.startswith("-")]
+        if unrecognized:
+            self.argparser.error(f"unrecognized arguments: " + " ".join(unrecognized))
 
         self.post_argparse()
 
