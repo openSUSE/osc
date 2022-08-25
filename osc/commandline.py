@@ -3809,23 +3809,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             unlock_project(apiurl, prj, msg)
 
     @cmdln.hide()
-    def do_deletepac(self, subcmd, opts, *args):
-        """
-        Obsolete command to delete package. Use 'delete' or 'rdelete' now
-
-        See the help output of 'delete' and 'rdelete'.
-        """
-
-        print("""Command deletepac is obsolete !
-
-                 Please use either
-                   osc delete       for checked out packages or projects
-                 or
-                   osc rdelete      for server side operations.""", file=sys.stderr)
-
-        return 2
-
-    @cmdln.hide()
     @cmdln.option('-f', '--force', action='store_true',
                         help='deletes a project and its packages')
     def do_deleteprj(self, subcmd, opts, project):
