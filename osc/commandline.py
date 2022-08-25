@@ -1248,20 +1248,6 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
-        # remove this block later again
-        oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
-        if args and args[0] in oldcmds:
-            print("************************************************************************", file=sys.stderr)
-            print("* WARNING: It looks that you are using this command with a             *", file=sys.stderr)
-            print("*          deprecated syntax.                                          *", file=sys.stderr)
-            print("*          Please run \"osc sr --help\" and \"osc rq --help\"              *", file=sys.stderr)
-            print("*          to see the new syntax.                                      *", file=sys.stderr)
-            print("************************************************************************", file=sys.stderr)
-            if args[0] == 'create':
-                args.pop(0)
-            else:
-                sys.exit(1)
-
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
