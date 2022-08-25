@@ -145,8 +145,6 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'checkout_rooted': '0',
             # local files to ignore with status, addremove, ....
             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
-            # whether to keep passwords in plaintext (deprecated (see creds manager)).
-            'plaintext_passwd': '0',
             # whether to print Web UI links to directly insert in browser (where possible)
             'print_web_links': '0',
             # limit the age of requests shown with 'osc req list'.
@@ -188,7 +186,7 @@ if not os.path.isfile('/usr/bin/build') and os.path.isfile('/usr/bin/obs-build')
 if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-build/vc'):
     DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
 
-boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
+boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
@@ -872,8 +870,6 @@ def get_config(override_conffile=None,
     if 'build_platform' in config:
         print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
         config['build_repository'] = config['build_platform']
-    if config['plaintext_passwd']:
-        print('The \'plaintext_passwd\' option is deprecated and will be ignored', file=sys.stderr)
 
     config['verbose'] = bool(int(config['verbose']))
     # override values which we were called with
