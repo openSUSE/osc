@@ -5222,20 +5222,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rows.append([dist[h] for h in headers])
             print(format_table(rows, headers).rstrip())
 
-
-    @cmdln.hide()
-    def do_results_meta(self, subcmd, opts, *args):
-        """
-        Obsolete command to show build results. Use 'results --xml' now.
-
-        See the help output of 'results'.
-        """
-
-        print("This command is obsolete. Use 'osc results --xml'.",
-              file=sys.stderr)
-        print("See 'osc help results'.", file=sys.stderr)
-        return 2
-
     @cmdln.hide()
     @cmdln.option('-l', '--last-build', action='store_true',
                         help='show last build results (succeeded/failed/unknown)')
