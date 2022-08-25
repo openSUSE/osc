@@ -3808,20 +3808,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             unlock_project(apiurl, prj, msg)
 
-    @cmdln.hide()
-    @cmdln.option('-f', '--force', action='store_true',
-                        help='deletes a project and its packages')
-    def do_deleteprj(self, subcmd, opts, project):
-        """
-        Obsolete command to delete project. Use 'rdelete' now.
-
-        See the help output of 'rdelete'.
-        """
-
-        print("This command is obsolete. Use 'osc rdelete <project>'.", file=sys.stderr)
-        print("See 'osc help rdelete'.", file=sys.stderr)
-        return 2
-
     @cmdln.alias('metafromspec')
     @cmdln.alias('updatepkgmetafromspec')
     @cmdln.option('', '--specfile', metavar='FILE',
