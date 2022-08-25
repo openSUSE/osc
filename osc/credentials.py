@@ -15,16 +15,6 @@ except BaseException as e:
     print(msg, e, file=sys.stderr)
     keyring = None
 
-try:
-    import gnomekeyring
-except ImportError:
-    gnomekeyring = None
-except BaseException as e:
-    # catch and report any exceptions raised in the 'gnomekeyring' module
-    msg = "Warning: Unable to load the 'gnomekeyring' module due to an internal error:"
-    print(msg, e, file=sys.stderr)
-    gnomekeyring = None
-
 from . import conf
 from . import oscerr
 
@@ -283,77 +273,6 @@ class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
         return KeyringCredentialsManager(cp, qualified_backend_name)
 
 
-class GnomeKeyringCredentialsManager(AbstractCredentialsManager):
-    @classmethod
-    def create(cls, cp, options):
-        if gnomekeyring is None:
-            return None
-        return super(cls, cls).create(cp, options)
-
-    def _get_password(self, url, user):
-        gk_data = self._keyring_data(url, user)
-        if gk_data is None:
-            return None
-        return gk_data['password']
-
-    def set_password(self, url, user, password):
-        scheme, host, path = self._urlsplit(url)
-        gnomekeyring.set_network_password_sync(
-            user=user,
-            password=password,
-            protocol=scheme,
-            server=host,
-            object=path)
-        self._cp.set(url, self.config_entry, self._qualified_name())
-
-    def delete_password(self, url, user):
-        gk_data = self._keyring_data(url, user)
-        if gk_data is None:
-            return
-        gnomekeyring.item_delete_sync(gk_data['keyring'], gk_data['item_id'])
-
-    def get_user(self, url):
-        gk_data = self._keyring_data(url, None)
-        if gk_data is None:
-            return None
-        return gk_data['user']
-
-    def _keyring_data(self, url, user):
-        scheme, host, path = self._urlsplit(url)
-        try:
-            entries = gnomekeyring.find_network_password_sync(protocol=scheme,
-                                                              server=host,
-                                                              object=path)
-        except gnomekeyring.NoMatchError:
-            return None
-
-        for entry in entries:
-            if 'user' not in entry or 'password' not in entry:
-                continue
-            if user is None or entry['user'] == user:
-                return entry
-        return None
-
-    def _urlsplit(self, url):
-        splitted_url = urlsplit(url)
-        return splitted_url.scheme, splitted_url.netloc, splitted_url.path
-
-
-class GnomeKeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
-    def name(self):
-        return 'GNOME Keyring Manager (deprecated)'
-
-    def description(self):
-        return 'Deprecated GNOME Keyring Manager. If you use \
-                this we will send you a Dial-In modem'
-
-    def priority(self):
-        return 0
-
-    def create(self, cp):
-        return GnomeKeyringCredentialsManager(cp, None)
-
-
 # we're supporting only selected python-keyring backends in osc
 SUPPORTED_KEYRING_BACKENDS = {
     "keyutils.osc.OscKernelKeyringBackend": {
@@ -390,8 +309,6 @@ def get_credentials_manager_descriptors():
                 data["priority"]
             )
             descriptors.append(descriptor)
-    if gnomekeyring:
-        descriptors.append(GnomeKeyringCredentialsDescriptor())
     descriptors.append(PlaintextConfigFileDescriptor())
     descriptors.append(ObfuscatedConfigFileDescriptor())
     descriptors.append(TransientDescriptor())

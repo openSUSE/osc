@@ -202,8 +202,7 @@ class OscTestCase(unittest.TestCase):
         EXPECTED_REQUESTS = []
         os.chdir(os.path.dirname(__file__))
         oscrc = os.path.join(self._get_fixtures_dir(), 'oscrc')
-        osc.conf.get_config(override_conffile=oscrc,
-                                 override_no_keyring=True, override_no_gnome_keyring=True)
+        osc.conf.get_config(override_conffile=oscrc, override_no_keyring=True)
         os.environ['OSC_CONFIG'] = oscrc
 
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
