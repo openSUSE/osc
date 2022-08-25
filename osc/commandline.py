@@ -7638,8 +7638,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='as -i, but only bugowner')
     @cmdln.option('-m', '--maintainer', action='store_true',
                         help='as -i, but only maintainer')
-    @cmdln.option('--maintained', action='store_true',
-                        help='OBSOLETE: please use maintained command instead.')
     @cmdln.option('-M', '--mine', action='store_true',
                         help='shorthand for --bugowner --package')
     @cmdln.option('--csv', action='store_true',
@@ -7681,9 +7679,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too few arguments')
         else:
             search_term = args[0]
-
-        if opts.maintained:
-            raise oscerr.WrongOptions('The --maintained option is not anymore supported. Please use the maintained command instead.')
 
         # XXX: is it a good idea to make this the default?
         # support perl symbols:
