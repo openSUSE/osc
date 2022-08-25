@@ -2695,26 +2695,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         change_request_state(apiurl, req.reqid, 'superseded',
                                                              'superseded by %s' % rid, rid)
 
-    # editmeta and its aliases are all deprecated
-    @cmdln.alias("editprj")
-    @cmdln.alias("createprj")
-    @cmdln.alias("editpac")
-    @cmdln.alias("createpac")
-    @cmdln.alias("edituser")
-    @cmdln.alias("usermeta")
-    @cmdln.hide()
-    def do_editmeta(self, subcmd, opts, *args):
-        """
-        Obsolete command to edit metadata. Use 'meta' now
-
-        See the help output of 'meta'.
-        """
-
-        print("This command is obsolete. Use 'osc meta <metatype> ...'.", file=sys.stderr)
-        print("See 'osc help meta'.", file=sys.stderr)
-        return 2
-
-
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='use the specified revision.')
     @cmdln.option('-R', '--use-plain-revision', action='store_true',
