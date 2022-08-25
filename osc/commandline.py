@@ -646,7 +646,6 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.alias('bsdevelproject')
     @cmdln.alias('dp')
-    @cmdln.option('-r', '--raw', action='store_true', help='deprecated option')
     def do_develproject(self, subcmd, opts, *args):
         """
         Print the devel project / package of a package
