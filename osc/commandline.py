@@ -3908,12 +3908,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         run_pager(diff)
 
 
-    @cmdln.option('--oldprj', metavar='OLDPRJ',
-                  help='project to compare against'
-                  ' (deprecated, use 3 argument form)')
-    @cmdln.option('--oldpkg', metavar='OLDPKG',
-                  help='package to compare against'
-                  ' (deprecated, use 3 argument form)')
     @cmdln.option('--issues-only', action='store_true',
                         help='show only issues in diff')
     @cmdln.option('-M', '--meta', action='store_true',
@@ -3960,13 +3954,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) == 2:
             new_project = self._process_project_name(args[0])
             new_package = args[1]
-            if opts.oldprj:
-                old_project = opts.oldprj
-            if opts.oldpkg:
-                old_package = opts.oldpkg
         elif len(args) == 3 or len(args) == 4:
-            if opts.oldprj or opts.oldpkg:
-                raise oscerr.WrongArgs('--oldpkg and --oldprj are only valid with two arguments')
             old_project = self._process_project_name(args[0])
             new_package = old_package = args[1]
             new_project = self._process_project_name(args[2])
