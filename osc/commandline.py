@@ -5222,27 +5222,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rows.append([dist[h] for h in headers])
             print(format_table(rows, headers).rstrip())
 
-    @cmdln.hide()
-    @cmdln.option('-l', '--last-build', action='store_true',
-                        help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append', default = [],
-                        help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append', default = [],
-                        help='Show results only for specified architecture(s)')
-    @cmdln.option('', '--xml', action='store_true',
-                        help='generate output in XML (former results_meta)')
-    def do_rresults(self, subcmd, opts, *args):
-        """
-        Obsolete command to show build results. Use 'results' now
-
-        See the help output of 'results'.
-        """
-
-        print("Command rresults is obsolete. Running 'osc results' instead",
-              file=sys.stderr)
-        print("See 'osc help results'.", file=sys.stderr)
-        return self.do_results('results', opts, *args)
-
     @cmdln.option('-f', '--force', action='store_true', default=False,
                         help="Don't ask and delete files")
     def do_rremove(self, subcmd, opts, project, package, *files):
