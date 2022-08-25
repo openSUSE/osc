@@ -6818,19 +6818,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print_jobhistory(apiurl, project, package, repository, arch, format, opts.limit)
 
-    @cmdln.hide()
-    def do_rlog(self, subcmd, opts, *args):
-        """
-        Obsolete command to show commit logs. Use 'log' now
-
-        See the help output of 'log'.
-        """
-
-        print("This command is obsolete. Use 'osc log'.", file=sys.stderr)
-        print("See 'osc help log'.", file=sys.stderr)
-        return 2
-
-
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
     @cmdln.option('', '--csv', action='store_true',
