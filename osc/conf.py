@@ -52,19 +52,12 @@ from .util.helper import raw_input
 
 
 GENERIC_KEYRING = False
-GNOME_KEYRING = False
 
 try:
     import keyring
     GENERIC_KEYRING = True
 except:
-    try:
-        import gobject
-        gobject.set_application_name('osc')
-        import gnomekeyring
-        GNOME_KEYRING = gnomekeyring.is_available()
-    except:
-        pass
+    pass
 
 
 def _get_processors():
@@ -133,7 +126,6 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'traceback': '0',
             'post_mortem': '0',
             'use_keyring': '0',
-            'gnome_keyring': '0',
             'cookiejar': _identify_osccookiejar(),
             # fallback for osc build option --no-verify
             'no_verify': '0',
@@ -153,8 +145,6 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'checkout_rooted': '0',
             # local files to ignore with status, addremove, ....
             'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
-            # whether to keep passwords in plaintext (deprecated (see creds manager)).
-            'plaintext_passwd': '0',
             # whether to print Web UI links to directly insert in browser (where possible)
             'print_web_links': '0',
             # limit the age of requests shown with 'osc req list'.
@@ -196,9 +186,9 @@ if not os.path.isfile('/usr/bin/build') and os.path.isfile('/usr/bin/obs-build')
 if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-build/vc'):
     DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
 
-boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
+boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
+    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
     'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
 integer_opts = ['build-jobs']
@@ -635,9 +625,10 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
         write_config(config['conffile'], cp)
         run = True
     if run and update:
-        kw = {'override_conffile': config['conffile'],
-              'override_no_keyring': config['use_keyring'],
-              'override_no_gnome_keyring': config['gnome_keyring']}
+        kw = {
+            'override_conffile': config['conffile'],
+            'override_no_keyring': config['use_keyring'],
+        }
         kw.update(kwargs)
         get_config(**kw)
     if cp.has_option(section, opt):
@@ -707,9 +698,6 @@ def _get_credentials_manager(url, cp):
         return creds_mgr
     if config['use_keyring'] and GENERIC_KEYRING:
         return credentials.get_keyring_credentials_manager(cp)
-    elif config['gnome_keyring'] and GNOME_KEYRING:
-        protocol, host, path = parse_apisrv_url(None, url)
-        return credentials.GnomeKeyringCredentialsManager(cp, None)
     elif cp.get(url, 'passx') is not None:
         return credentials.ObfuscatedConfigFileCredentialsManager(cp, None)
     return credentials.PlaintextConfigFileCredentialsManager(cp, None)
@@ -733,7 +721,6 @@ def get_config(override_conffile=None,
                override_traceback=None,
                override_post_mortem=None,
                override_no_keyring=None,
-               override_no_gnome_keyring=None,
                override_verbose=None):
     """do the actual work (see module documentation)"""
     global config
@@ -794,8 +781,6 @@ def get_config(override_conffile=None,
     # This needs to be done before processing API sections as it might be already used there
     if override_no_keyring:
         config['use_keyring'] = False
-    if override_no_gnome_keyring:
-        config['gnome_keyring'] = False
 
     aliases = {}
     for url in [x for x in cp.sections() if x != 'general']:
@@ -885,8 +870,6 @@ def get_config(override_conffile=None,
     if 'build_platform' in config:
         print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
         config['build_repository'] = config['build_platform']
-    if config['plaintext_passwd']:
-        print('The \'plaintext_passwd\' option is deprecated and will be ignored', file=sys.stderr)
 
     config['verbose'] = bool(int(config['verbose']))
     # override values which we were called with

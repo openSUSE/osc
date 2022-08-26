@@ -93,8 +93,6 @@ class Osc(cmdln.Cmdln):
                       help='specify alternate configuration file')
         optparser.add_argument('--no-keyring', action='store_true',
                       help='disable usage of desktop keyring system')
-        optparser.add_argument('--no-gnome-keyring', action='store_true',
-                      help='disable usage of GNOME Keyring')
         verbose_group = optparser.add_mutually_exclusive_group()
         verbose_group.add_argument('-v', '--verbose', action='store_true',
                       help='increase verbosity')
@@ -121,7 +119,6 @@ class Osc(cmdln.Cmdln):
                             override_traceback = self.options.traceback,
                             override_post_mortem = self.options.post_mortem,
                             override_no_keyring = self.options.no_keyring,
-                            override_no_gnome_keyring = self.options.no_gnome_keyring,
                             override_verbose = self.options.verbose)
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
@@ -646,7 +643,6 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.alias('bsdevelproject')
     @cmdln.alias('dp')
-    @cmdln.option('-r', '--raw', action='store_true', help='deprecated option')
     def do_develproject(self, subcmd, opts, *args):
         """
         Print the devel project / package of a package
@@ -1170,8 +1166,6 @@ class Osc(cmdln.Cmdln):
                        '(primary project where a package is developed)')
     @cmdln.option('--separate-requests', action='store_true',
                   help='Create multiple requests instead of a single one (when command is used for entire project)')
-    @cmdln.option('--seperate-requests', action='store_true',
-                  help='Deprecated (wrong spelling - see --separate-requests)')
     @cmdln.option('--cleanup', action='store_true',
                   help='remove package if submission gets accepted (default for home:<id>:branch projects)')
     @cmdln.option('--no-cleanup', action='store_true',
@@ -1220,10 +1214,6 @@ class Osc(cmdln.Cmdln):
 
         if opts.cleanup and opts.no_cleanup:
             raise oscerr.WrongOptions('\'--cleanup\' and \'--no-cleanup\' are mutually exclusive')
-        if opts.seperate_requests:
-            # compatibility option will be removed in the future
-            print('--seperate-requests is deprecated (use '
-                  '--separate-requests)', file=sys.stderr)
 
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
@@ -1255,20 +1245,6 @@ class Osc(cmdln.Cmdln):
 
         args = slash_split(args)
 
-        # remove this block later again
-        oldcmds = ['create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke']
-        if args and args[0] in oldcmds:
-            print("************************************************************************", file=sys.stderr)
-            print("* WARNING: It looks that you are using this command with a             *", file=sys.stderr)
-            print("*          deprecated syntax.                                          *", file=sys.stderr)
-            print("*          Please run \"osc sr --help\" and \"osc rq --help\"              *", file=sys.stderr)
-            print("*          to see the new syntax.                                      *", file=sys.stderr)
-            print("************************************************************************", file=sys.stderr)
-            if args[0] == 'create':
-                args.pop(0)
-            else:
-                sys.exit(1)
-
         if len(args) > 4:
             raise oscerr.WrongArgs('Too many arguments.')
 
@@ -1287,7 +1263,7 @@ class Osc(cmdln.Cmdln):
             target_project = None
             if len(args) == 1:
                 target_project = self._process_project_name(args[0])
-            if opts.separate_requests or opts.seperate_requests:
+            if opts.separate_requests:
                 for p in meta_get_packagelist(apiurl, project):
                     # get _link info from server, that knows about the local state ...
                     u = makeurl(apiurl, ['source', project, p])
@@ -2695,26 +2671,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         change_request_state(apiurl, req.reqid, 'superseded',
                                                              'superseded by %s' % rid, rid)
 
-    # editmeta and its aliases are all deprecated
-    @cmdln.alias("editprj")
-    @cmdln.alias("createprj")
-    @cmdln.alias("editpac")
-    @cmdln.alias("createpac")
-    @cmdln.alias("edituser")
-    @cmdln.alias("usermeta")
-    @cmdln.hide()
-    def do_editmeta(self, subcmd, opts, *args):
-        """
-        Obsolete command to edit metadata. Use 'meta' now
-
-        See the help output of 'meta'.
-        """
-
-        print("This command is obsolete. Use 'osc meta <metatype> ...'.", file=sys.stderr)
-        print("See 'osc help meta'.", file=sys.stderr)
-        return 2
-
-
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='use the specified revision.')
     @cmdln.option('-R', '--use-plain-revision', action='store_true',
@@ -3828,37 +3784,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             unlock_project(apiurl, prj, msg)
 
-    @cmdln.hide()
-    def do_deletepac(self, subcmd, opts, *args):
-        """
-        Obsolete command to delete package. Use 'delete' or 'rdelete' now
-
-        See the help output of 'delete' and 'rdelete'.
-        """
-
-        print("""Command deletepac is obsolete !
-
-                 Please use either
-                   osc delete       for checked out packages or projects
-                 or
-                   osc rdelete      for server side operations.""", file=sys.stderr)
-
-        return 2
-
-    @cmdln.hide()
-    @cmdln.option('-f', '--force', action='store_true',
-                        help='deletes a project and its packages')
-    def do_deleteprj(self, subcmd, opts, project):
-        """
-        Obsolete command to delete project. Use 'rdelete' now.
-
-        See the help output of 'rdelete'.
-        """
-
-        print("This command is obsolete. Use 'osc rdelete <project>'.", file=sys.stderr)
-        print("See 'osc help rdelete'.", file=sys.stderr)
-        return 2
-
     @cmdln.alias('metafromspec')
     @cmdln.alias('updatepkgmetafromspec')
     @cmdln.option('', '--specfile', metavar='FILE',
@@ -3980,12 +3905,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         run_pager(diff)
 
 
-    @cmdln.option('--oldprj', metavar='OLDPRJ',
-                  help='project to compare against'
-                  ' (deprecated, use 3 argument form)')
-    @cmdln.option('--oldpkg', metavar='OLDPKG',
-                  help='package to compare against'
-                  ' (deprecated, use 3 argument form)')
     @cmdln.option('--issues-only', action='store_true',
                         help='show only issues in diff')
     @cmdln.option('-M', '--meta', action='store_true',
@@ -4032,13 +3951,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) == 2:
             new_project = self._process_project_name(args[0])
             new_package = args[1]
-            if opts.oldprj:
-                old_project = opts.oldprj
-            if opts.oldpkg:
-                old_package = opts.oldpkg
         elif len(args) == 3 or len(args) == 4:
-            if opts.oldprj or opts.oldpkg:
-                raise oscerr.WrongArgs('--oldpkg and --oldprj are only valid with two arguments')
             old_project = self._process_project_name(args[0])
             new_package = old_package = args[1]
             new_project = self._process_project_name(args[2])
@@ -4850,8 +4763,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='force commit, even if there were no changes')
-    @cmdln.option('--skip-validation', default=False, action="store_true",
-                  help='deprecated, don\'t use it')
     @cmdln.option('--skip-local-service-run', '--noservice', default=False, action="store_true",
                   help='Skip service run of configured source services for local run')
     def do_commit(self, subcmd, opts, *args):
@@ -4884,8 +4795,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _commit(self, subcmd, opts, args):
         args = parseargs(args)
-        if opts.skip_validation:
-            print("WARNING: deprecated option --skip-validation ignored.", file=sys.stderr)
 
         msg = ''
         if opts.message:
@@ -5273,41 +5182,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rows.append([dist[h] for h in headers])
             print(format_table(rows, headers).rstrip())
 
-
-    @cmdln.hide()
-    def do_results_meta(self, subcmd, opts, *args):
-        """
-        Obsolete command to show build results. Use 'results --xml' now.
-
-        See the help output of 'results'.
-        """
-
-        print("This command is obsolete. Use 'osc results --xml'.",
-              file=sys.stderr)
-        print("See 'osc help results'.", file=sys.stderr)
-        return 2
-
-    @cmdln.hide()
-    @cmdln.option('-l', '--last-build', action='store_true',
-                        help='show last build results (succeeded/failed/unknown)')
-    @cmdln.option('-r', '--repo', action='append', default = [],
-                        help='Show results only for specified repo(s)')
-    @cmdln.option('-a', '--arch', action='append', default = [],
-                        help='Show results only for specified architecture(s)')
-    @cmdln.option('', '--xml', action='store_true',
-                        help='generate output in XML (former results_meta)')
-    def do_rresults(self, subcmd, opts, *args):
-        """
-        Obsolete command to show build results. Use 'results' now
-
-        See the help output of 'results'.
-        """
-
-        print("Command rresults is obsolete. Running 'osc results' instead",
-              file=sys.stderr)
-        print("See 'osc help results'.", file=sys.stderr)
-        return self.do_results('results', opts, *args)
-
     @cmdln.option('-f', '--force', action='store_true', default=False,
                         help="Don't ask and delete files")
     def do_rremove(self, subcmd, opts, project, package, *files):
@@ -5509,27 +5383,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                         name_filter=opts.name_filter, repo=opts.repo, \
                                         arch=opts.arch, vertical=opts.vertical, \
                                         show_excluded=opts.show_excluded, brief=opts.brief)))
-
-    @cmdln.option('-q', '--hide-legend', action='store_true',
-                        help='hide the legend')
-    @cmdln.option('-c', '--csv', action='store_true',
-                        help='csv output')
-    @cmdln.option('-s', '--status-filter', metavar='STATUS',
-                        help='show only packages with buildstatus STATUS (see legend)')
-    @cmdln.option('-n', '--name-filter', metavar='EXPR',
-                        help='show only packages whose names match EXPR')
-    @cmdln.hide()
-    def do_rprjresults(self, subcmd, opts, *args):
-        """
-        Obsolete command to show project-wide build results. Use 'prjresults' now.
-
-        See the help output of 'prjresults'.
-        """
-
-        print("Command rprjresults is obsolete. Please use 'osc prjresults'",
-              file=sys.stderr)
-        print("See 'osc help prjresults'.", file=sys.stderr)
-        return 2
 
     @cmdln.alias('rpmlint')
     @cmdln.alias('lint')
@@ -6925,19 +6778,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print_jobhistory(apiurl, project, package, repository, arch, format, opts.limit)
 
-    @cmdln.hide()
-    def do_rlog(self, subcmd, opts, *args):
-        """
-        Obsolete command to show commit logs. Use 'log' now
-
-        See the help output of 'log'.
-        """
-
-        print("This command is obsolete. Use 'osc log'.", file=sys.stderr)
-        print("See 'osc help log'.", file=sys.stderr)
-        return 2
-
-
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
     @cmdln.option('', '--csv', action='store_true',
@@ -7758,8 +7598,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='as -i, but only bugowner')
     @cmdln.option('-m', '--maintainer', action='store_true',
                         help='as -i, but only maintainer')
-    @cmdln.option('--maintained', action='store_true',
-                        help='OBSOLETE: please use maintained command instead.')
     @cmdln.option('-M', '--mine', action='store_true',
                         help='shorthand for --bugowner --package')
     @cmdln.option('--csv', action='store_true',
@@ -7801,9 +7639,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Too few arguments')
         else:
             search_term = args[0]
-
-        if opts.maintained:
-            raise oscerr.WrongOptions('The --maintained option is not anymore supported. Please use the maintained command instead.')
 
         # XXX: is it a good idea to make this the default?
         # support perl symbols:

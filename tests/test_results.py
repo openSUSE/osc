@@ -23,7 +23,7 @@ class TestResults(OscTestCase):
     def _run_osc(self, *args):
         """Runs osc, returning captured STDOUT as a string."""
         cli = osc.commandline.Osc()
-        argv = ['osc', '--no-keyring', '--no-gnome-keyring']
+        argv = ['osc', '--no-keyring']
         argv.extend(args)
         cli.main(argv=argv)
         return sys.stdout.getvalue()
