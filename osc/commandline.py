@@ -5367,8 +5367,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!
-    @cmdln.option('-q', '--hide-legend', action='store_true',
-                        help='hide the legend')
     @cmdln.option('-b', '--brief', action='store_true',
                         help='show the result in "pkgname repo arch result"')
     @cmdln.option('-w', '--watch', action='store_true',
@@ -5424,7 +5422,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Please implement support for osc prjresults --watch without --xml.')
             return 2
 
-        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \
+        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.quiet, \
                                         csv=opts.csv, status_filter=opts.status_filter, \
                                         name_filter=opts.name_filter, repo=opts.repo, \
                                         arch=opts.arch, vertical=opts.vertical, \
