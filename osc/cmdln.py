@@ -117,6 +117,7 @@ class Cmdln:
         )
 
         self.pre_argparse()
+        self.add_global_options(self.argparser)
 
         # map command name to `do_*` function that runs the command
         self.cmd_map = {}
@@ -169,6 +170,8 @@ class Cmdln:
                 prog=self.get_subcommand_prog(cmd_name),
                 formatter_class=HelpFormatter
             )
+            # add hidden copy of global options so they can be used in any place
+            self.add_global_options(subparser, suppress=True)
             for option_args, option_kwargs in options:
                 subparser.add_argument(*option_args, **option_kwargs)
 
@@ -187,6 +190,12 @@ class Cmdln:
         """
         Hook method executed after `.main()` creates `.argparser` instance
         and before `parse_args()` is called.
+        """
+        pass
+
+    def add_global_options(self, parser, suppress=False):
+        """
+        Add options to the main argument parser and all subparsers.
         """
         pass
 

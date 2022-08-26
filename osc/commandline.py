@@ -3,6 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
+import argparse
 import importlib.util
 import inspect
 import os
@@ -69,35 +70,80 @@ class Osc(cmdln.Cmdln):
             return project.replace(conf.config['project_separator'], ':')
         return project
 
-    def pre_argparse(self):
-        """Add global options to the parser (options that are not specific to any subcommand)"""
+    def add_global_options(self, parser, suppress=False):
 
-        optparser = self.argparser
-        optparser.add_argument('--debugger', action='store_true',
-                      help='jump into the debugger before executing anything')
-        optparser.add_argument('--post-mortem', action='store_true',
-                      help='jump into the debugger in case of errors')
-        optparser.add_argument('-t', '--traceback', action='store_true',
-                      help='print call trace in case of errors')
-        optparser.add_argument('-H', '--http-debug', action='store_true',
-                      help='debug HTTP traffic (filters some headers)')
-        optparser.add_argument('--http-full-debug', action='store_true',
-                      help='debug HTTP traffic (filters no headers)')
-        optparser.add_argument('-d', '--debug', action='store_true',
-                      help='print info useful for debugging')
-        optparser.add_argument('-A', '--apiurl', dest='apiurl',
-                      metavar='URL/alias',
-                      help='specify URL to access API server at or an alias')
-        optparser.add_argument('-c', '--config', dest='conffile',
-                      metavar='FILE',
-                      help='specify alternate configuration file')
-        optparser.add_argument('--no-keyring', action='store_true',
-                      help='disable usage of desktop keyring system')
-        verbose_group = optparser.add_mutually_exclusive_group()
-        verbose_group.add_argument('-v', '--verbose', action='store_true',
-                      help='increase verbosity')
-        verbose_group.add_argument('-q', '--quiet', action='store_true',
-                      help='be quiet, not verbose')
+        def _add_parser_arguments_from_data(argument_parser, data):
+            for kwargs in data:
+                args = kwargs.pop("names")
+                if suppress:
+                    kwargs["help"] = argparse.SUPPRESS
+                    kwargs["default"] = argparse.SUPPRESS
+                argument_parser.add_argument(*args, **kwargs)
+
+        arguments = []
+        arguments.append(dict(
+            names=['--debugger'],
+            action='store_true',
+            help='jump into the debugger before executing anything',
+        ))
+        arguments.append(dict(
+            names=['--post-mortem'],
+            action='store_true',
+            help='jump into the debugger in case of errors',
+        ))
+        arguments.append(dict(
+            names=['--traceback'],
+            action='store_true',
+            help='print call trace in case of errors',
+        ))
+        arguments.append(dict(
+            names=['-H', '--http-debug'],
+            action='store_true',
+            help='debug HTTP traffic (filters some headers)',
+        ))
+        arguments.append(dict(
+            names=['--http-full-debug'],
+            action='store_true',
+            help='debug HTTP traffic (filters no headers)',
+        ))
+        arguments.append(dict(
+            names=['--debug'],
+            action='store_true',
+            help='print info useful for debugging',
+        ))
+        arguments.append(dict(
+            names=['-A', '--apiurl'],
+            metavar='URL/alias',
+            help='specify URL to access API server at or an alias',
+        ))
+        arguments.append(dict(
+            names=['--config'],
+            dest='conffile',
+            metavar='FILE',
+            help='specify alternate configuration file',
+        ))
+        arguments.append(dict(
+            names=['--no-keyring'],
+            action='store_true',
+            help='disable usage of desktop keyring system',
+        ))
+
+        _add_parser_arguments_from_data(parser, arguments)
+
+        verbose_group = parser.add_mutually_exclusive_group()
+        verbose_group_arguments = []
+        verbose_group_arguments.append(dict(
+            names=['-v', '--verbose'],
+            action='store_true',
+            help='increase verbosity',
+        ))
+        verbose_group_arguments.append(dict(
+            names=['-q', '--quiet'],
+            action='store_true',
+            help='be quiet, not verbose',
+        ))
+
+        _add_parser_arguments_from_data(verbose_group, verbose_group_arguments)
 
     def post_argparse(self):
         """merge commandline options into the config"""
