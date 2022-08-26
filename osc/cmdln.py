@@ -117,6 +117,7 @@ class Cmdln:
         )
 
         self.pre_argparse()
+        self.add_global_options(self.argparser)
 
         # map command name to `do_*` function that runs the command
         self.cmd_map = {}
@@ -169,11 +170,10 @@ class Cmdln:
                 prog=self.get_subcommand_prog(cmd_name),
                 formatter_class=HelpFormatter
             )
+            # add hidden copy of global options so they can be used in any place
+            self.add_global_options(subparser, suppress=True)
             for option_args, option_kwargs in options:
                 subparser.add_argument(*option_args, **option_kwargs)
-
-            # HACK: inject 'args' to all commands so we don't have to decorate all of them
-            subparser.add_argument('args', nargs='*')
 
     def argparse_error(self, *args, **kwargs):
         """
@@ -193,6 +193,12 @@ class Cmdln:
         """
         pass
 
+    def add_global_options(self, parser, suppress=False):
+        """
+        Add options to the main argument parser and all subparsers.
+        """
+        pass
+
     def post_argparse(self):
         """
         Hook method executed after `.main()` calls `parse_args()`.
@@ -208,8 +214,10 @@ class Cmdln:
 
         self.create_argparser()
 
-        self.options = self.argparser.parse_args(argv[1:])
-        self.args = getattr(self.options, "args", [])
+        self.options, self.args = self.argparser.parse_known_args(argv[1:])
+        unrecognized = [i for i in self.args if i.startswith("-")]
+        if unrecognized:
+            self.argparser.error(f"unrecognized arguments: " + " ".join(unrecognized))
 
         self.post_argparse()
 

@@ -3,6 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
+import argparse
 import importlib.util
 import inspect
 import os
@@ -69,38 +70,83 @@ class Osc(cmdln.Cmdln):
             return project.replace(conf.config['project_separator'], ':')
         return project
 
-    def pre_argparse(self):
-        """Add global options to the parser (options that are not specific to any subcommand)"""
+    def add_global_options(self, parser, suppress=False):
 
-        optparser = self.argparser
-        optparser.add_argument('--debugger', action='store_true',
-                      help='jump into the debugger before executing anything')
-        optparser.add_argument('--post-mortem', action='store_true',
-                      help='jump into the debugger in case of errors')
-        optparser.add_argument('-t', '--traceback', action='store_true',
-                      help='print call trace in case of errors')
-        optparser.add_argument('-H', '--http-debug', action='store_true',
-                      help='debug HTTP traffic (filters some headers)')
-        optparser.add_argument('--http-full-debug', action='store_true',
-                      help='debug HTTP traffic (filters no headers)')
-        optparser.add_argument('-d', '--debug', action='store_true',
-                      help='print info useful for debugging')
-        optparser.add_argument('-A', '--apiurl', dest='apiurl',
-                      metavar='URL/alias',
-                      help='specify URL to access API server at or an alias')
-        optparser.add_argument('-c', '--config', dest='conffile',
-                      metavar='FILE',
-                      help='specify alternate configuration file')
-        optparser.add_argument('--no-keyring', action='store_true',
-                      help='disable usage of desktop keyring system')
-        verbose_group = optparser.add_mutually_exclusive_group()
-        verbose_group.add_argument('-v', '--verbose', action='store_true',
-                      help='increase verbosity')
-        verbose_group.add_argument('-q', '--quiet', action='store_true',
-                      help='be quiet, not verbose')
+        def _add_parser_arguments_from_data(argument_parser, data):
+            for kwargs in data:
+                args = kwargs.pop("names")
+                if suppress:
+                    kwargs["help"] = argparse.SUPPRESS
+                    kwargs["default"] = argparse.SUPPRESS
+                argument_parser.add_argument(*args, **kwargs)
+
+        arguments = []
+        arguments.append(dict(
+            names=['-v', '--verbose'],
+            action='store_true',
+            help='increase verbosity',
+        ))
+        arguments.append(dict(
+            names=['-q', '--quiet'],
+            action='store_true',
+            help='be quiet, not verbose',
+        ))
+        arguments.append(dict(
+            names=['--debugger'],
+            action='store_true',
+            help='jump into the debugger before executing anything',
+        ))
+        arguments.append(dict(
+            names=['--post-mortem'],
+            action='store_true',
+            help='jump into the debugger in case of errors',
+        ))
+        arguments.append(dict(
+            names=['--traceback'],
+            action='store_true',
+            help='print call trace in case of errors',
+        ))
+        arguments.append(dict(
+            names=['-H', '--http-debug'],
+            action='store_true',
+            help='debug HTTP traffic (filters some headers)',
+        ))
+        arguments.append(dict(
+            names=['--http-full-debug'],
+            action='store_true',
+            help='debug HTTP traffic (filters no headers)',
+        ))
+        arguments.append(dict(
+            names=['--debug'],
+            action='store_true',
+            help='print info useful for debugging',
+        ))
+        arguments.append(dict(
+            names=['-A', '--apiurl'],
+            metavar='URL/alias',
+            help='specify URL to access API server at or an alias',
+        ))
+        arguments.append(dict(
+            names=['--config'],
+            dest='conffile',
+            metavar='FILE',
+            help='specify alternate configuration file',
+        ))
+        arguments.append(dict(
+            names=['--no-keyring'],
+            action='store_true',
+            help='disable usage of desktop keyring system',
+        ))
+
+        _add_parser_arguments_from_data(parser, arguments)
 
     def post_argparse(self):
         """merge commandline options into the config"""
+
+        # handle conflicting options manually because the mutually exclusive group is buggy
+        # https://github.com/python/cpython/issues/96310
+        if self.options.quiet and self.options.verbose:
+            self.argparse_error("argument -q/--quiet: not allowed with argument -v/--verbose")
 
         # avoid loading config that may trigger prompt for username, password etc.
         if not self.options.command:
@@ -5321,8 +5367,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     # WARNING: this function is also called by do_results. You need to set a default there
     #          as well when adding a new option!
-    @cmdln.option('-q', '--hide-legend', action='store_true',
-                        help='hide the legend')
     @cmdln.option('-b', '--brief', action='store_true',
                         help='show the result in "pkgname repo arch result"')
     @cmdln.option('-w', '--watch', action='store_true',
@@ -5378,7 +5422,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Please implement support for osc prjresults --watch without --xml.')
             return 2
 
-        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.hide_legend, \
+        print('\n'.join(get_prj_results(apiurl, project, hide_legend=opts.quiet, \
                                         csv=opts.csv, status_filter=opts.status_filter, \
                                         name_filter=opts.name_filter, repo=opts.repo, \
                                         arch=opts.arch, vertical=opts.vertical, \
@@ -8048,7 +8092,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='define the project where this package is primarily developed')
     @cmdln.option('-a', '--add', metavar='user',
                   help='add a new person for given role ("maintainer" by default)')
-    @cmdln.option('-A', '--all', action='store_true',
+    @cmdln.option('--all', action='store_true',
                   help='list all found entries not just the first one')
     @cmdln.option('-s', '--set-bugowner', metavar='user',
                   help='Set the bugowner to specified person (or group via group: prefix)')
