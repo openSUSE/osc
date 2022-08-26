@@ -82,6 +82,16 @@ class Osc(cmdln.Cmdln):
 
         arguments = []
         arguments.append(dict(
+            names=['-v', '--verbose'],
+            action='store_true',
+            help='increase verbosity',
+        ))
+        arguments.append(dict(
+            names=['-q', '--quiet'],
+            action='store_true',
+            help='be quiet, not verbose',
+        ))
+        arguments.append(dict(
             names=['--debugger'],
             action='store_true',
             help='jump into the debugger before executing anything',
@@ -130,23 +140,13 @@ class Osc(cmdln.Cmdln):
 
         _add_parser_arguments_from_data(parser, arguments)
 
-        verbose_group = parser.add_mutually_exclusive_group()
-        verbose_group_arguments = []
-        verbose_group_arguments.append(dict(
-            names=['-v', '--verbose'],
-            action='store_true',
-            help='increase verbosity',
-        ))
-        verbose_group_arguments.append(dict(
-            names=['-q', '--quiet'],
-            action='store_true',
-            help='be quiet, not verbose',
-        ))
-
-        _add_parser_arguments_from_data(verbose_group, verbose_group_arguments)
-
     def post_argparse(self):
         """merge commandline options into the config"""
+
+        # handle conflicting options manually because the mutually exclusive group is buggy
+        # https://github.com/python/cpython/issues/96310
+        if self.options.quiet and self.options.verbose:
+            self.argparse_error("argument -q/--quiet: not allowed with argument -v/--verbose")
 
         # avoid loading config that may trigger prompt for username, password etc.
         if not self.options.command:
