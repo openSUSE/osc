@@ -1,5 +1,5 @@
 import base64
-import errno
+import fcntl
 import os
 import re
 import subprocess
@@ -415,11 +415,20 @@ class AuthHandlerBase:
 
 
 class CookieJarAuthHandler(AuthHandlerBase):
-    # Shared among instances, instantiate on first use, key equals too cookiejar path.
+    # Shared among instances, instantiate on first use, key equals to cookiejar path.
     COOKIEJARS = {}
 
     def __init__(self, cookiejar_path):
         self.cookiejar_path = cookiejar_path
+        if self.cookiejar_path in self.COOKIEJARS:
+            self.cookiejar_lock_path = None
+        else:
+            # Cookiejar hasn't been loaded yet, let's lock it to avoid
+            # doing expensive signature auth in multiple processes.
+            # This usually happens when a user runs multiple osc instances
+            # from the command-line in parallel.
+            self.cookiejar_lock_path = self.cookiejar_path + ".lock"
+        self.cookiejar_lock_fd = None
 
     @property
     def _cookiejar(self):
@@ -427,18 +436,37 @@ class CookieJarAuthHandler(AuthHandlerBase):
         if not jar:
             try:
                 os.makedirs(os.path.dirname(self.cookiejar_path), mode=0o700)
-            except OSError as e:
-                if e.errno != errno.EEXIST:
-                    raise
+            except FileExistsError:
+                pass
             jar = http.cookiejar.LWPCookieJar(self.cookiejar_path)
             if os.path.isfile(self.cookiejar_path):
                 jar.load()
             self.COOKIEJARS[self.cookiejar_path] = jar
         return jar
 
+    def _lock(self):
+        if self.cookiejar_lock_path:
+            try:
+                os.makedirs(os.path.dirname(self.cookiejar_lock_path), mode=0o700)
+            except FileExistsError:
+                pass
+            self.cookiejar_lock_fd = open(self.cookiejar_lock_path, "w")
+            fcntl.flock(self.cookiejar_lock_fd, fcntl.LOCK_EX)
+
+    def _unlock(self):
+        if self.cookiejar_lock_path:
+            self.cookiejar_lock_path = None
+            fcntl.flock(self.cookiejar_lock_fd, fcntl.LOCK_UN)
+            self.cookiejar_lock_fd.close()
+
     def set_request_headers(self, url, request_headers):
+        self._lock()
         self._cookiejar.add_cookie_header(MockRequest(url, request_headers))
-        return bool(request_headers.get_all("cookie", None))
+        if request_headers.get_all("cookie", None):
+            # we have a valid cookie already -> unlock immediately
+            self._unlock()
+            return True
+        return False
 
     def set_request_headers_after_401(self, url, request_headers, response):
         # can't do anything, we have tried setting a cookie already
@@ -447,6 +475,7 @@ class CookieJarAuthHandler(AuthHandlerBase):
     def process_response(self, url, request_headers, response):
         self._cookiejar.extract_cookies(response, MockRequest(url, response.headers))
         self._cookiejar.save()
+        self._unlock()
 
 
 class BasicAuthHandler(AuthHandlerBase):
