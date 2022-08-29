@@ -92,10 +92,9 @@ class SectionLine(Line):
     this certain section in the _lines list. The _lines list either contains
     CommentLine() or OptionLine() instances.
     """
-    def __init__(self, sectname, dict = {}):
+    def __init__(self, sectname):
         Line.__init__(self, sectname, 'section')
         self._lines = []
-        self._dict = dict
 
     def _find(self, name):
         for line in self._lines:
