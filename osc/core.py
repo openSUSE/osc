@@ -3338,9 +3338,9 @@ def makeurl(baseurl, l, query=[]):
     if conf.config['debug']:
         print('makeurl:', baseurl, l, query)
 
-    if isinstance(query, type(list())):
+    if isinstance(query, list):
         query = '&'.join(query)
-    elif isinstance(query, type(dict())):
+    elif isinstance(query, dict):
         query = urlencode(query)
 
     scheme, netloc, path = urlsplit(baseurl)[0:3]
