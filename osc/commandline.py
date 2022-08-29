@@ -1496,7 +1496,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                  dst_package,
                                                                  not opts.yes)
             if not supersede_existing:
-               (supersede_existing, reqs) = check_existing_maintenance_requests(apiurl,
+                (supersede_existing, reqs) = check_existing_maintenance_requests(apiurl,
                                                                  src_project,
                                                                  [src_package],
                                                                  dst_project, None,
@@ -6524,12 +6524,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 build_root = osc.build.calculate_build_root(apihost, prj, pac, repo,
                                                     arch)
             if opts.wipe and not opts.force:
-                    # Confirm delete
-                    print("Really wipe '%s'? [y/N]: " % build_root)
-                    choice = raw_input().lower()
-                    if choice != 'y':
-                        print('Aborting')
-                        sys.exit(0)
+                # Confirm delete
+                print("Really wipe '%s'? [y/N]: " % build_root)
+                choice = raw_input().lower()
+                if choice != 'y':
+                    print('Aborting')
+                    sys.exit(0)
             build_args = ['--root=' + build_root, '--noinit', '--shell']
             if opts.wipe:
                 build_args.append('--wipe')

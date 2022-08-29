@@ -163,7 +163,7 @@ class Buildinfo:
             else:
                 pac_arch = self.crossarch
                 if pac_arch is None:
-                        pac_arch = self.buildarch
+                    pac_arch = self.buildarch
                 p = Pac(node, pac_arch, self.pacsuffix,
                         apiurl, localpkgs)
             if p.project:

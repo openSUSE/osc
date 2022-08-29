@@ -58,11 +58,11 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         else:
             control = arfile.get_file(b'control.tar.xz')
             if control:
-               if not HAVE_LZMA:
-                   raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
-               decompressed = lzma.decompress(control.read())
-               tar = tarfile.open(name="control.tar.xz",
-                                  fileobj=BytesIO(decompressed))
+                if not HAVE_LZMA:
+                    raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
+                decompressed = lzma.decompress(control.read())
+                tar = tarfile.open(name="control.tar.xz",
+                                   fileobj=BytesIO(decompressed))
             else:
                 control = arfile.get_file(b'control.tar.zst')
                 if control:
