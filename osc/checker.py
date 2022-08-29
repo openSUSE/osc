@@ -33,7 +33,7 @@ class Checker:
             except KeyError as e:
                 print(e)
 
-        if not len(self.imported):
+        if not self.imported:
             raise KeyError('', "no key imported")
 
         rpm.delMacro("_dbpath")

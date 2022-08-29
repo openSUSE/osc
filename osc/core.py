@@ -894,7 +894,7 @@ class Project:
             print('unsupported state')
 
     def update(self, pacs = (), expand_link=False, unexpand_link=False, service_files=False):
-        if len(pacs):
+        if pacs:
             for pac in pacs:
                 Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj).update()
         else:
@@ -988,7 +988,7 @@ class Project:
                 self.write_packages()
 
     def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False, can_branch=False, force=False):
-        if len(pacs):
+        if pacs:
             try:
                 for pac in pacs:
                     todo = []
@@ -1553,7 +1553,7 @@ class Package:
             if os.path.isdir(tdir):
                 shutil.rmtree(tdir)
             os.mkdir(tdir)
-            while len(send) and tries:
+            while send and tries:
                 for filename in send[:]:
                     sys.stdout.write('.')
                     sys.stdout.flush()
@@ -1562,7 +1562,7 @@ class Package:
                 tries -= 1
                 sfilelist = self.__send_commitlog(msg, filelist)
                 send = self.commit_get_missing(sfilelist)
-            if len(send):
+            if send:
                 raise oscerr.PackageInternalError(self.prjname, self.name,
                     'server does not accept filelist:\n%s\nmissing:\n%s\n' \
                     % (ET.tostring(filelist, encoding=ET_ENCODING), ET.tostring(sfilelist, encoding=ET_ENCODING)))
@@ -4304,7 +4304,7 @@ def change_request_state(apiurl, reqid, newstate, message='', supersed=None, for
     return root.get('code', 'unknown')
 
 def change_request_state_template(req, newstate):
-    if not len(req.actions):
+    if not req.actions:
         return ''
     action = req.actions[0]
     tmpl_name = '%srequest_%s_template' % (action.type, newstate)
@@ -4492,7 +4492,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), 
             return []
     xpath = ''
     for prj, pacs in projpkgs.items():
-        if not len(pacs):
+        if not pacs:
             xpath = xpath_join(xpath, 'action/target/@project=\'%s\'' % prj, inner=True)
         else:
             xp = ''
@@ -5993,7 +5993,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
             targets_to_show = enabled.keys()
 
         pacs = [ i for i in pacs if i in pacs_to_show ]
-        if len(targets_to_show):
+        if targets_to_show:
             targets = [ i for i in targets if i in targets_to_show ]
 
     # csv output
@@ -6143,7 +6143,7 @@ def streamfile(url, http_meth = http_GET, bufsize=8192, data=None, progress_obj=
     read = 0
     while True:
         data = xread(bufsize)
-        if not len(data):
+        if not data:
             break
         read += len(data)
         if progress_obj:
@@ -7422,9 +7422,9 @@ def print_request_list(apiurl, project, package = None, states = ('new', 'review
     msg = '\nPending requests for %s: %s (%s)'
     if sys.stdout.isatty():
         msg = f'\033[1m{msg}\033[0m'
-    if package is None and len(requests):
+    if package is None and requests:
         print(msg % ('project', project, len(requests)))
-    elif len(requests):
+    elif requests:
         print(msg % ('package', '/'.join([project, package]), len(requests)))
     for r in requests:
         print(r.list_view(), '\n')
@@ -7871,7 +7871,7 @@ def find_default_project(apiurl=None, package=None):
     look though the list of conf.config['getpac_default_project']
     and find the first project where the given package exists in the build service.
     """
-    if not len(conf.config['getpac_default_project']):
+    if not conf.config['getpac_default_project']:
         return None
     candidates = re.split('[, ]+', conf.config['getpac_default_project'])
     if package is None or len(candidates) == 1:

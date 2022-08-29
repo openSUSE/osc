@@ -3449,7 +3449,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.update_project_attribute:
             maintained_update_project_attribute = opts.update_project_attribute
 
-        if not len(args) or len(args) > 2:
+        if not args or len(args) > 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
         if len(args) >= 1:
             package = args[0]
@@ -3732,13 +3732,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             msg = edit_message()
 
         # empty arguments result in recursive project delete ...
-        if not len(prj):
+        if not prj:
             raise oscerr.WrongArgs('Project argument is empty')
 
         if len(args) > 1:
             pkg = args[1]
 
-            if not len(pkg):
+            if not pkg:
                 raise oscerr.WrongArgs('Package argument is empty')
 
             ## FIXME: core.py:commitDelPackage() should have something similar
@@ -3816,13 +3816,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             msg = edit_message()
 
         # empty arguments result in recursive project delete ...
-        if not len(prj):
+        if not prj:
             raise oscerr.WrongArgs('Project argument is empty')
 
         if len(args) > 1:
             pkg = args[1]
 
-            if not len(pkg):
+            if not pkg:
                 raise oscerr.WrongArgs('Package argument is empty')
 
             unlock_package(apiurl, prj, pkg, msg)
@@ -6183,7 +6183,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = alternative_project or store_read_project('.')
             apiurl = self.get_api_url()
             repositories = list(get_repos_of_project(apiurl, project))
-            if not len(repositories):
+            if not repositories:
                 raise oscerr.WrongArgs('no repositories defined for project \'%s\'' % project)
             if alternative_project is None:
                 # only persist our own repos
@@ -7603,7 +7603,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             requests = get_user_projpkgs_request_list(apiurl, user, projpkgs=request_todo)
             for r in sorted(requests, key=lambda x: x.reqid):
                 print(r.list_view(), '\n')
-            if not len(requests):
+            if not requests:
                 print(" -> try also 'osc my sr' to see more.")
         else:
             for i in sorted(roles.keys()):
@@ -7834,7 +7834,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     result.append(node.get('filepath'))
                 results.append(result)
 
-            if not len(results):
+            if not results:
                 print('No matches found for \'%s\' in %ss' % (role_filter or search_term, kind))
                 continue
             # construct a sorted, flat list
@@ -8347,7 +8347,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if prj:
                     # not for user/group search
                     for role in roles:
-                        if opts.bugowner and not len(maintainers.get(role, [])):
+                        if opts.bugowner and not maintainers.get(role, []):
                             role = 'maintainer'
                         if pac:
                             print("%s%s of %s/%s : " % (indent, role, prj, pac))
@@ -8357,7 +8357,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             emails = []
                             for maintainer in maintainers.get(role, []):
                                 user = get_maintainer_data(apiurl, maintainer, verbose=False)
-                                if len(user):
+                                if user:
                                     emails.append(''.join(user))
                             print(indent, end=' ')
                             print(', '.join(emails) or '-')
@@ -8806,7 +8806,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5') + '\n')
         p.unmark_frozen()
         print()
-        if len(p.in_conflict):
+        if p.in_conflict:
             print('Please fix the conflicts (files marked with \'C\' above),')
             print('run \'osc resolved ...\', and commit the changes')
             print('to update the link information.')
@@ -9076,7 +9076,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
 
         section, opt, val = args[0], args[1], args[2:]
-        if len(val) and (opts.delete or opts.stdin or opts.prompt or opts.no_echo):
+        if val and (opts.delete or opts.stdin or opts.prompt or opts.no_echo):
             raise oscerr.WrongOptions('Sorry, \'--delete\' or \'--stdin\' or \'--prompt\' or \'--no-echo\' ' \
                 'and the specification of a value argument are mutually exclusive')
         elif (opts.prompt or opts.no_echo) and opts.stdin:
@@ -9084,7 +9084,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.stdin:
             # strip lines
             val = [i.strip() for i in sys.stdin.readlines() if i.strip()]
-            if not len(val):
+            if not val:
                 raise oscerr.WrongArgs('error: read empty value from stdin')
         elif opts.no_echo or opts.prompt:
             if opts.no_echo:
@@ -9124,7 +9124,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         pacs = findpacs(files)
         for p in pacs:
-            if not len(p.todo):
+            if not p.todo:
                 p.todo = p.filenamelist + p.to_be_added
             for f in p.todo:
                 p.revert(f)
