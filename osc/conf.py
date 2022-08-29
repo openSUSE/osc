@@ -705,7 +705,7 @@ def _get_credentials_manager(url, cp):
 
 class APIHostOptionsEntry(dict):
     def __getitem__(self, key, *args, **kwargs):
-        value = super(self.__class__, self).__getitem__(key, *args, **kwargs)
+        value = super().__getitem__(key, *args, **kwargs)
         if key == 'pass' and callable(value):
             print('Warning: use of a deprecated credentials manager API.',
                   file=sys.stderr)

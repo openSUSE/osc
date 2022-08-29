@@ -137,17 +137,17 @@ class ObfuscatedConfigFileCredentialsManager(PlaintextConfigFileCredentialsManag
         if self._cp.has_option(url, 'passx', proper=True):
             passwd = self._cp.get(url, 'passx', raw=True)
         else:
-            passwd = super(self.__class__, self).get_password(url, user, apiurl=apiurl)
+            passwd = super().get_password(url, user, apiurl=apiurl)
         return self.decode_password(passwd)
 
     def set_password(self, url, user, password):
         compressed_pw = bz2.compress(password.encode('ascii'))
         password = base64.b64encode(compressed_pw).decode("ascii")
-        super(self.__class__, self).set_password(url, user, password)
+        super().set_password(url, user, password)
 
     def delete_password(self, url, user):
         self._cp.remove_option(url, 'passx')
-        super(self.__class__, self).delete_password(url, user)
+        super().delete_password(url, user)
 
     @classmethod
     def decode_password(cls, password):
@@ -174,7 +174,7 @@ class ObfuscatedConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
 
 class TransientCredentialsManager(AbstractCredentialsManager):
     def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._password = None
 
     def _process_options(self, options):
@@ -232,7 +232,7 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
     def create(cls, cp, options):
         if not has_keyring_support():
             return None
-        return super(cls, cls).create(cp, options)
+        return super().create(cp, options)
 
     def _get_password(self, url, user, apiurl=None):
         self._load_backend()
