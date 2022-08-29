@@ -197,7 +197,7 @@ api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realnam
     'downloadurl', 'sshkey']
 
 
-def apply_option_types(config):
+def apply_option_types(config, conffile=""):
     """
     Return a copy of `config` dictionary with values converted to their expected types
     according to the enumerated option types (boolean_opts, integer_opts).
@@ -759,7 +759,7 @@ def get_config(override_conffile=None,
     config = dict(cp.items('general', raw=1))
     config['conffile'] = conffile
 
-    config = apply_option_types(config)
+    config = apply_option_types(config, conffile)
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
     config['exclude_glob'] = config['exclude_glob'].split()
