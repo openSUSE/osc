@@ -97,9 +97,9 @@ class Ar:
                          re.DOTALL)
 
     def __init__(self, fn = None, fh = None):
-        if fn == None and fh == None:
-            raise ValueError('either \'fn\' or \'fh\' must be != None')
-        if fh != None:
+        if fn is None and fh is None:
+            raise ValueError('either \'fn\' or \'fh\' must be is not None')
+        if fh is not None:
             self.__file = fh
             self.__closefile = False
             self.filename = fh.name

@@ -509,7 +509,7 @@ class Osc(cmdln.Cmdln):
             project = self._process_project_name(args[0])
             package = args[1]
 
-        if project == None or package == None:
+        if project is None or package is None:
             raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
 
         query = {'cmd': 'addcontainers'}
@@ -1317,7 +1317,7 @@ class Osc(cmdln.Cmdln):
                     root = ET.parse(f).getroot()
                     _check_service(root)
                     linkinfo = root.find('linkinfo')
-                    if linkinfo == None:
+                    if linkinfo is None:
                         if len(args) < 1:
                             print("Package ", p, " is not a source link and no target specified.")
                             sys.exit("This is currently not supported.")
@@ -1462,7 +1462,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
-            if linkinfo == None:
+            if linkinfo is None:
                 rev = root.get('rev')
             else:
                 if linkinfo.get('project') != dst_project or linkinfo.get('package') != dst_package:
@@ -1543,7 +1543,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         value = []
         if not hasattr(parser.values, 'actiondata'):
             setattr(parser.values, 'actiondata', [])
-        if parser.values.actions == None:
+        if parser.values.actions is None:
             parser.values.actions = []
 
         rargs = parser.rargs
@@ -1581,7 +1581,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     f = http_GET(u)
                     root = ET.parse(f).getroot()
                     linkinfo = root.find('linkinfo')
-                    if linkinfo == None:
+                    if linkinfo is None:
                         print("Package ", p, " is not a source link.")
                         sys.exit("This is currently not supported.")
                     if linkinfo.get('error'):
@@ -1751,7 +1751,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <person name="%s" role="%s" /> </action> """ % \
                 (project, package, user, role)
 
-        if get_user_meta(apiurl, user) == None:
+        if get_user_meta(apiurl, user) is None:
             raise oscerr.WrongArgs('osc: an error occurred.')
 
         return actionxml
@@ -1775,7 +1775,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <person name="%s" role="%s" /> </action> """ % \
                 (project, package, user, role)
 
-        if get_user_meta(apiurl, user) == None:
+        if get_user_meta(apiurl, user) is None:
             raise oscerr.WrongArgs('osc: an error occured.')
 
         return actionxml
@@ -1799,7 +1799,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             actionxml = """ <action type="add_role"> <target project="%s" package="%s" /> <group name="%s" role="%s" /> </action> """ % \
                 (project, package, group, role)
 
-        if get_group_meta(apiurl, group) == None:
+        if get_group_meta(apiurl, group) is None:
             raise oscerr.WrongArgs('osc: an error occured.')
 
         return actionxml
@@ -1822,12 +1822,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             group = user.replace('group:', '')
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <group name="%s" /> </action> """ % \
                     (project, package, group)
-            if get_group_meta(apiurl, group) == None:
+            if get_group_meta(apiurl, group) is None:
                 raise oscerr.WrongArgs('osc: an error occurred.')
         else:
             actionxml = """ <action type="set_bugowner"> <target project="%s" %s /> <person name="%s" /> </action> """ % \
                     (project, package, user)
-            if get_user_meta(apiurl, user) == None:
+            if get_user_meta(apiurl, user) is None:
                 raise oscerr.WrongArgs('osc: an error occured.')
 
 
@@ -2689,7 +2689,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     file = http_GET(link_url)
                                     root = ET.parse(file).getroot()
                                     link_node = root.find('linkinfo')
-                                    if link_node != None:
+                                    if link_node is not None:
                                         links_to_project = link_node.get('project') or project
                                         links_to_package = link_node.get('package') or package
                                 except HTTPError as e:
@@ -2917,7 +2917,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.current and not opts.new_package:
             rev, vrev = show_upstream_rev_vrev(apiurl, src_project, src_package, expand=True)
-            if rev == None or len(rev) < 32:
+            if rev is None or len(rev) < 32:
                 # vrev is only needed for srcmd5 and OBS instances < 2.1.17 do not support it
                 vrev = None
 
@@ -3911,7 +3911,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
-            if linkinfo == None:
+            if linkinfo is None:
                 raise oscerr.APIError('package is not a source link')
             baserev = linkinfo.get('baserev')
             opts.revision = baserev
@@ -4532,7 +4532,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('-D | --deleted can only be used with a package')
 
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev == None:
+        if rev is None:
             rev = "latest"
 
         if rev and rev != "latest" and not checkRevision(project, package, rev):
@@ -4571,7 +4571,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             show_project_meta(apiurl, project)
 
             scm_url = show_scmsync(apiurl, project)
-            if scm_url != None:
+            if scm_url is not None:
                 if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
                     raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
                 os.putenv("OSC_VERSION", get_osc_version())
@@ -4580,7 +4580,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'], scm_url=scm_url)
             print(statfrmt('A', prj_dir))
 
-            if scm_url != None:
+            if scm_url is not None:
                 return
 
             # all packages
@@ -4768,7 +4768,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.recursive:
                     for pac in prj.pacs_have:
                         state = prj.get_state(pac)
-                        if state != None and state != 'D':
+                        if state is not None and state != 'D':
                             pac_dir = getTransActPath(os.path.join(prj.dir, pac))
                             args.append(pac_dir)
                 args.remove(arg)
@@ -5317,7 +5317,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 1:
             package = args[1]
 
-        if project == None:
+        if project is None:
             raise oscerr.WrongOptions("No project given")
 
         if opts.failed and opts.status_filter:
@@ -5327,7 +5327,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.status_filter = 'failed'
             opts.brief = True
 
-        if package == None:
+        if package is None:
             opts.hide_legend = None
             opts.name_filter = None
             opts.show_non_building = None
@@ -7356,7 +7356,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     continue
 
                 for i in binaries:
-                    if binary != None and binary != i.name:
+                    if binary is not None and binary != i.name:
                         continue
                     # skip source rpms
                     if not opts.sources and (i.name.endswith('.src.rpm') or i.name.endswith('.sdeb')):
@@ -7504,13 +7504,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     fp = http_GET(p)
                     issues = ET.parse(fp).findall('issue')
                     for issue in issues:
-                        if issue.find('state') == None or issue.find('state').text != "OPEN":
+                        if issue.find('state') is None or issue.find('state').text != "OPEN":
                             continue
-                        if issue.find('owner') == None or issue.find('owner').find('login').text != user:
+                        if issue.find('owner') is None or issue.find('owner').find('login').text != user:
                             continue
                         print("  #", issue.find('label').text, ': ', end=' ')
                         desc = issue.find('summary')
-                        if desc != None:
+                        if desc is not None:
                             print(desc.text)
                         else:
                             print("\n")
@@ -7800,7 +7800,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not package is None:
                     result.append(package)
 
-                if opts.version and package != None:
+                if opts.version and package is not None:
                     sr = get_source_rev(apiurl, project, package)
                     v = sr.get('version')
                     r = sr.get('rev')
@@ -8204,9 +8204,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # try the package name first, it is faster and may catch cases where no
                 # binary with that name exists for the given package name
                 searchresult = owner(apiurl, search_term, "package", usefilter=filterroles, devel=None, limit=limit)
-                if searchresult == None or len(searchresult) == 0:
+                if searchresult is None or len(searchresult) == 0:
                     searchresult = owner(apiurl, search_term, "binary", usefilter=filterroles, devel=None, limit=limit)
-                if searchresult != None and len(searchresult) == 0:
+                if searchresult is not None and len(searchresult) == 0:
                     # We talk to an OBS 2.4 or later understanding the call
                     if opts.set_bugowner or opts.set_bugowner_request:
                         # filtered search did not succeed, but maybe we want to set an owner initially?
@@ -8529,9 +8529,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         f = http_GET(u)
         root = ET.parse(f).getroot()
         linkinfo = root.find('linkinfo')
-        if linkinfo == None:
+        if linkinfo is None:
             raise oscerr.APIError('package is not a source link')
-        if linkinfo.get('error') == None:
+        if linkinfo.get('error') is None:
             raise oscerr.APIError('source link is not broken')
         workingrev = None
 
@@ -8541,21 +8541,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
-            if linkinfo.get('error') == None:
+            if linkinfo.get('error') is None:
                 workingrev = linkinfo.get('xsrcmd5')
 
-        if workingrev == None:
+        if workingrev is None:
             query = { 'lastworking': 1 }
             u = makeurl(apiurl, ['source', prj, package], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
-            if linkinfo == None:
+            if linkinfo is None:
                 raise oscerr.APIError('package is not a source link')
-            if linkinfo.get('error') == None:
+            if linkinfo.get('error') is None:
                 raise oscerr.APIError('source link is not broken')
             workingrev = linkinfo.get('lastworking')
-            if workingrev == None:
+            if workingrev is None:
                 raise oscerr.APIError('source link never worked')
             print("using last working link target")
         else:
@@ -8575,9 +8575,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         f = http_GET(u)
         root_oldpatched = ET.parse(f).getroot()
         linkinfo_oldpatched = root_oldpatched.find('linkinfo')
-        if linkinfo_oldpatched == None:
+        if linkinfo_oldpatched is None:
             raise oscerr.APIError('working rev is not a source link?')
-        if linkinfo_oldpatched.get('error') != None:
+        if linkinfo_oldpatched.get('error') is not None:
             raise oscerr.APIError('working rev is not working?')
         dir_oldpatched = { 'apiurl': apiurl, 'project': prj, 'package': package }
         dir_oldpatched['srcmd5'] = root_oldpatched.get('srcmd5')
@@ -8709,7 +8709,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('osc pull only works on expanded links.')
         linkinfo = p.linkinfo
         baserev = linkinfo.baserev
-        if baserev == None:
+        if baserev is None:
             raise oscerr.WrongArgs('osc pull only works on links containing a base revision.')
 
         # get revisions we need
@@ -8719,9 +8719,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         meta = f.readlines()
         root_new = ET.fromstring(b''.join(meta))
         linkinfo_new = root_new.find('linkinfo')
-        if linkinfo_new == None:
+        if linkinfo_new is None:
             raise oscerr.APIError('link is not a really a link?')
-        if linkinfo_new.get('error') != None:
+        if linkinfo_new.get('error') is not None:
             raise oscerr.APIError('link target is broken')
         if linkinfo_new.get('srcmd5') == baserev:
             print("Already up-to-date.")

@@ -431,7 +431,7 @@ your credentials for this apiurl.
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         url = apisrv
-    elif scheme != None:
+    elif scheme is not None:
         url = scheme + apisrv
     else:
         url = "https://" + apisrv

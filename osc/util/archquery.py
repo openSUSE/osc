@@ -51,14 +51,14 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     def version(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
-        if pkgver != None:
+        if pkgver is not None:
             pkgver = re.sub(br'[0-9]+:', b'', pkgver, 1)
             pkgver = re.sub(br'-[^-]*$', b'', pkgver)
         return pkgver
 
     def release(self):
         pkgver = self.fields['pkgver'][0] if 'pkgver' in self.fields else None
-        if pkgver != None:
+        if pkgver is not None:
             m = re.search(br'-([^-])*$', pkgver)
             if m:
                 return m.group(1)

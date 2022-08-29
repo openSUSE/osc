@@ -81,7 +81,7 @@ class Buildinfo:
 
         self.apiurl = apiurl
 
-        if root.find('error') != None:
+        if root.find('error') is not None:
             sys.stderr.write('buildinfo is broken... it says:\n')
             error = root.find('error').text
             if error.startswith('unresolvable: '):
@@ -118,16 +118,16 @@ class Buildinfo:
         # hostarch:  The architecture of the build environment (build arch in GNU defintion)
         # crossarch: Same as hostarch, but indicating that a sysroot with an incompatible architecture exists
         self.buildarch = root.find('arch').text
-        if root.find('crossarch') != None:
+        if root.find('crossarch') is not None:
             self.crossarch = root.find('crossarch').text
         else:
             self.crossarch = None
-        if root.find('hostarch') != None:
+        if root.find('hostarch') is not None:
             self.hostarch = root.find('hostarch').text
         else:
             self.hostarch = None
 
-        if root.find('release') != None:
+        if root.find('release') is not None:
             self.release = root.find('release').text
         else:
             self.release = None
@@ -141,7 +141,7 @@ class Buildinfo:
             self.downloadurl = root.get('downloadurl')
 
         self.debuginfo = 0
-        if root.find('debuginfo') != None:
+        if root.find('debuginfo') is not None:
             try:
                 self.debuginfo = int(root.find('debuginfo').text)
             except ValueError:
@@ -162,7 +162,7 @@ class Buildinfo:
                         apiurl, localpkgs)
             else:
                 pac_arch = self.crossarch
-                if pac_arch == None:
+                if pac_arch is None:
                         pac_arch = self.buildarch
                 p = Pac(node, pac_arch, self.pacsuffix,
                         apiurl, localpkgs)
@@ -187,7 +187,7 @@ class Buildinfo:
         self.noinstall_list = [ dep.name for dep in self.deps if dep.noinstall ]
         self.installonly_list = [ dep.name for dep in self.deps if dep.installonly ]
 
-        if root.find('preinstallimage') != None:
+        if root.find('preinstallimage') is not None:
             self.preinstallimage = root.find('preinstallimage')
         else:
             self.preinstallimage = None
@@ -1030,7 +1030,7 @@ def main(apiurl, opts, argv):
     # vs.
     # arch we are supposed to build for
     if vm_type != "emulator" and vm_type != "qemu":
-        if bi.hostarch != None:
+        if bi.hostarch is not None:
             if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
                 print('Error: hostarch \'%s\' is required.' % (bi.hostarch), file=sys.stderr)
                 return 1
@@ -1175,7 +1175,7 @@ def main(apiurl, opts, argv):
                                 target_mtime = i.mtime,
                                 progress_meter = True)
 
-        if old_pkg_dir != None:
+        if old_pkg_dir is not None:
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile

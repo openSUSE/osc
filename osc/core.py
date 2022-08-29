@@ -423,7 +423,7 @@ class Serviceinfo:
         os.putenv("OSC_VERSION", get_osc_version())
 
         # set environment when using OBS 2.3 or later
-        if self.project != None:
+        if self.project is not None:
             # These need to be kept in sync with bs_service
             os.putenv("OBS_SERVICE_APIURL", self.apiurl)
             os.putenv("OBS_SERVICE_PROJECT", self.project)
@@ -499,7 +499,7 @@ class Linkinfo:
         elementtree node.
         If the passed element is ``None``, the method does nothing.
         """
-        if linkinfo_node == None:
+        if linkinfo_node is None:
             return
         self.project = linkinfo_node.get('project')
         self.package = linkinfo_node.get('package')
@@ -698,7 +698,7 @@ class Project:
         global store
         dirty_files = []
         req_storefiles = Project.REQ_STOREFILES
-        if conf.config['do_package_tracking'] and self.scm_url == None:
+        if conf.config['do_package_tracking'] and self.scm_url is None:
             req_storefiles += ('_packages',)
         for fname in req_storefiles:
             if not os.path.exists(os.path.join(self.absdir, store, fname)):
@@ -779,7 +779,7 @@ class Project:
 
     def set_state(self, pac, state):
         node = self.get_package_node(pac)
-        if node == None:
+        if node is None:
             self.new_package_entry(pac, state)
         else:
             node.set('state', state)
@@ -797,7 +797,7 @@ class Project:
 
     def get_state(self, pac):
         node = self.get_package_node(pac)
-        if node != None:
+        if node is not None:
             return node.get('state')
         else:
             return None
@@ -845,7 +845,7 @@ class Project:
                 msg = 'invalid package name: \'%s\' (see \'exclude_glob\' config option)' % pac
                 raise oscerr.OscIOError(None, msg)
         state = self.get_state(pac)
-        if state == None or state == 'D':
+        if state is None or state == 'D':
             self.new_package_entry(pac, 'A')
             self.write_packages()
             # sometimes the new pac doesn't exist in the list because
@@ -888,7 +888,7 @@ class Project:
                 print(statfrmt('D', pac.name))
             else:
                 print('package \'%s\' has local modifications (see osc st for details)' % pac.name)
-        elif state == None:
+        elif state is None:
             print('package is not under version control')
         else:
             print('unsupported state')
@@ -932,7 +932,7 @@ class Project:
                         p = Package(os.path.join(self.dir, pac), progress_obj=self.progress_obj)
                         rev = None
                         needs_update = True
-                        if p.scm_url != None:
+                        if p.scm_url is not None:
                             # git managed.
                             print("Skipping git managed package ", pac)
                             continue
@@ -1011,7 +1011,7 @@ class Project:
                         print('osc: \'%s\' is not under version control' % pac)
                     elif pac in self.pacs_broken or not os.path.exists(os.path.join(self.dir, pac)):
                         print('osc: \'%s\' package not found' % pac)
-                    elif state == None:
+                    elif state is None:
                         self.commitExtPackage(pac, msg, todo, verbose=verbose, skip_local_service_run=skip_local_service_run)
             finally:
                 self.write_packages()
@@ -2161,7 +2161,7 @@ rev: %s
         root.find('title').text = self.summary
         root.find('description').text = ''.join(self.descr)
         url = root.find('url')
-        if url == None:
+        if url is None:
             url = ET.SubElement(root, 'url')
         url.text = self.url
 
@@ -2671,7 +2671,7 @@ class Action:
     Examples::
 
       r = Action('set_bugowner', tgt_project='foo', person_name='buguser')
-      # available attributes: r.type (== 'set_bugowner'), r.tgt_project (== 'foo'), r.tgt_package (== None)
+      # available attributes: r.type (== 'set_bugowner'), r.tgt_project (== 'foo'), r.tgt_package (is None)
       r.to_str() ->
       <action type="set_bugowner">
         <target project="foo" />
@@ -3893,7 +3893,7 @@ def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=Fal
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
-            if sinfo != None and sinfo.get('xsrcmd5') and not sinfo.get('error'):
+            if sinfo is not None and sinfo.get('xsrcmd5') and not sinfo.get('error'):
                 return sinfo.get('xsrcmd5')
         except:
             pass
@@ -3965,7 +3965,7 @@ def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=Non
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
-            if sinfo != None and sinfo.get('xsrcmd5') and not sinfo.get('error'):
+            if sinfo is not None and sinfo.get('xsrcmd5') and not sinfo.get('error'):
                 return sinfo.get('xsrcmd5')
         except:
             pass
@@ -4610,7 +4610,7 @@ def get_user_meta(apiurl, user):
 
 def _get_xml_data(meta, *tags):
     data = []
-    if meta != None:
+    if meta is not None:
         root = ET.fromstring(meta)
         for tag in tags:
             elm = root.find(tag)
@@ -5057,7 +5057,7 @@ def checkout_package(apiurl, project, package,
     # exists
     meta_data = b''.join(show_package_meta(apiurl, quote_plus(project), quote_plus(package)))
     root = ET.fromstring(meta_data)
-    if root.find('scmsync') != None and root.find('scmsync').text != None:
+    if root.find('scmsync') is not None and root.find('scmsync').text is not None:
         if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
             raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
         scm_url = root.find('scmsync').text
@@ -5918,7 +5918,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     targets = []
     # {package: {(repo,arch): status}}
     status = {}
-    if root.find('result') == None:
+    if root.find('result') is None:
         return []
     for results in root.findall('result'):
         for node in results:
@@ -6300,7 +6300,7 @@ def get_source_rev(apiurl, project, package, revision=None):
 def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', limit = None):
     import time
     query = {}
-    if limit != None and int(limit) > 0:
+    if limit is not None and int(limit) > 0:
         query['limit'] = int(limit)
     u = makeurl(apiurl, ['build', prj, repository, arch, package, '_history'], query)
     f = http_GET(u)
@@ -6315,7 +6315,7 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', li
         duration = node.get('duration')
         t = time.gmtime(int(node.get('time')))
         t = time.strftime('%Y-%m-%d %H:%M:%S', t)
-        if duration == None:
+        if duration is None:
             duration = ""
 
         if format == 'csv':
@@ -6334,7 +6334,7 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
     query = {}
     if current_package:
         query['package'] = current_package
-    if limit != None and int(limit) > 0:
+    if limit is not None and int(limit) > 0:
         query['limit'] = int(limit)
     u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], query )
     f = http_GET(u)
@@ -6866,9 +6866,9 @@ def owner(apiurl, search_term=None, mode="binary", attribute=None,
         query['project'] = project
     if devel:
         query['devel'] = devel
-    if limit != None:
+    if limit is not None:
         query['limit'] = limit
-    if usefilter != None:
+    if usefilter is not None:
         query['filter'] = ",".join(usefilter)
     u = makeurl(apiurl, [ 'search', 'owner' ], query)
     res = None
@@ -7027,7 +7027,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
                        template_args=None,
                        create_new=False)
 
-    if data and get_user_meta(apiurl, user) != None:
+    if data and get_user_meta(apiurl, user) is not None:
         root = ET.fromstring(parse_meta_to_string(data))
         found = False
         for person in root.getiterator('person'):
@@ -7060,7 +7060,7 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
                        path_args=path,
                        template_args=None,
                        create_new=False)
-    if data and get_user_meta(apiurl, user) != None:
+    if data and get_user_meta(apiurl, user) is not None:
         root = ET.fromstring(parse_meta_to_string(data))
         found = False
         for person in root.getiterator('person'):
@@ -7117,9 +7117,9 @@ def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
                        template_args=None,
                        create_new=False)
 
-    if data and show_project_meta(apiurl, dprj) != None:
+    if data and show_project_meta(apiurl, dprj) is not None:
         root = ET.fromstring(parse_meta_to_string(data))
-        if not root.find('devel') != None:
+        if not root.find('devel') is not None:
             ET.SubElement(root, 'devel')
         elem = root.find('devel')
         if dprj:
@@ -7162,7 +7162,7 @@ def createPackageDir(pathname, prj_obj=None):
 
 def stripETxml(node):
     node.tail = None
-    if node.text != None:
+    if node.text is not None:
         node.text = node.text.replace(" ", "").replace("\n", "")
     for child in node:
         stripETxml(child)
