@@ -712,7 +712,7 @@ class Project:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'
                 # hmm should we raise oscerr.WrongArgs?
-                raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
+                raise oscerr.WorkingCopyInconsistent(self.name, None, [], msg)
             # sanity check
             conf.parse_apisrv_url(None, apiurl)
             store_write_apiurl(self.dir, apiurl)
