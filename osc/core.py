@@ -2013,7 +2013,7 @@ class Package:
                 diff.append(b'--- %s\t(revision %s)\n' % (fname.encode(), b_revision))
                 diff.append(b'+++ %s\t(working copy)\n' % fname.encode())
                 fname = os.path.join(self.storedir, fname)
-               
+
             try:
                 if revision is not None and not add:
                     (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
@@ -3035,7 +3035,7 @@ class Request:
             lines.append('    *** This request has classified as '+self.priority+' ! ***\n')
         if self.state and self.state.approver and self.state.name == 'review':
             lines.append('    *** This request got approved by '+self.state.approver+'. It will get automatically accepted after last review got accepted! ***\n')
-            
+
         for action in self.actions:
             tmpl = '  %(type)-13s %(source)s %(target)s'
             if action.type == 'delete':
@@ -4631,7 +4631,7 @@ def get_user_data(apiurl, user, *tags):
     """get specified tags from the user meta"""
     meta = get_user_meta(apiurl, user)
     return _get_xml_data(meta, *tags)
-    
+
 
 def get_group_data(apiurl, group, *tags):
     meta = get_group_meta(apiurl, group)
@@ -4793,7 +4793,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
             f1.close()
         if f2:
             f2.close()
-    
+
     from_file = b'%s\t(revision %s)' % (origfilename.encode(), str(rev).encode())
     to_file = b'%s\t(working copy)' % origfilename.encode()
 
@@ -5901,7 +5901,7 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
                 if pkg is not None and pkg.get('code') in waiting_states:
                     waiting = True
                     break
-                
+
         if not wait or not waiting:
             break
         else:
@@ -6866,7 +6866,7 @@ def owner(apiurl, search_term=None, mode="binary", attribute=None,
         raise ValueError('Either specify search_term or binary')
     elif binary is not None:
         search_term = binary
- 
+
     # find default project, if not specified
     # mode can be "binary" or "package" atm
     query = { mode: search_term }
