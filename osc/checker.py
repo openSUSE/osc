@@ -25,7 +25,8 @@ class Checker:
         self.ts.setVSFlags(0)
         #self.ts.Debug(1)
 
-    def readkeys(self, keys=[]):
+    def readkeys(self, keys=None):
+        keys = keys or []
         rpm.addMacro('_dbpath', self.dbdir)
         for key in keys:
             try:

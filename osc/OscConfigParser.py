@@ -202,8 +202,8 @@ class OscConfigParser(configparser.ConfigParser):
     In order to keep the order and the format it makes use of the ConfigLineOrder()
     class.
     """
-    def __init__(self, defaults={}):
-        super().__init__(defaults)
+    def __init__(self, defaults=None):
+        super().__init__(defaults or {})
         self._sections = ConfigLineOrder()
 
     # XXX: unfortunately we have to override the _read() method from the ConfigParser()

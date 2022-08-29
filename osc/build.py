@@ -69,7 +69,8 @@ if hostarch == 'parisc':
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
-    def __init__(self, filename, apiurl, buildtype = 'spec', localpkgs = [], binarytype = 'rpm'):
+    def __init__(self, filename, apiurl, buildtype='spec', localpkgs=None, binarytype='rpm'):
+        localpkgs = localpkgs or []
         try:
             tree = ET.parse(filename)
         except:
@@ -211,8 +212,8 @@ class Pac:
 
     We build a map that's later used to fill our URL templates
     """
-    def __init__(self, node, buildarch, pacsuffix, apiurl, localpkgs = []):
-
+    def __init__(self, node, buildarch, pacsuffix, apiurl, localpkgs=None):
+        localpkgs = localpkgs or []
         self.mp = {}
         for i in ['binary', 'package',
                   'epoch', 'version', 'release', 'hdrmd5',
@@ -1074,7 +1075,6 @@ def main(apiurl, opts, argv):
 
     fetcher = Fetcher(cache_dir,
                       urllist = urllist,
-                      api_host_options = config['api_host_options'],
                       offline = opts.noinit or opts.offline,
                       http_debug = config['http_debug'],
                       modules = bi.modules,

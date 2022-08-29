@@ -987,7 +987,8 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commit(self, pacs = (), msg = '', files = {}, verbose = False, skip_local_service_run = False, can_branch=False, force=False):
+    def commit(self, pacs=(), msg='', files=None, verbose=False, skip_local_service_run=False, can_branch=False, force=False):
+        files = files or {}
         if pacs:
             try:
                 for pac in pacs:
@@ -1034,8 +1035,9 @@ class Project:
             finally:
                 self.write_packages()
 
-    def commitNewPackage(self, pac, msg = '', files = [], verbose = False, skip_local_service_run = False):
+    def commitNewPackage(self, pac, msg='', files=None, verbose=False, skip_local_service_run=False):
         """creates and commits a new package if it does not exist on the server"""
+        files = files or []
         if pac in self.pacs_available:
             print('package \'%s\' already exists' % pac)
         else:
@@ -1083,8 +1085,9 @@ class Project:
         delete_package(self.apiurl, self.name, pac)
         self.del_package_node(pac)
 
-    def commitExtPackage(self, pac, msg, files = [], verbose=False, skip_local_service_run=False):
+    def commitExtPackage(self, pac, msg, files=None, verbose=False, skip_local_service_run=False):
         """commits a package from an external project"""
+        files = files or []
         if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
             pac_path = '.'
         else:
@@ -3326,7 +3329,7 @@ def pathjoin(a, *p):
     return path
 
 
-def makeurl(baseurl, l, query=[]):
+def makeurl(baseurl, l, query=None):
     """Given a list of path compoments, construct a complete URL.
 
     Optional parameters for a query string can be given as a list, as a
@@ -3334,7 +3337,7 @@ def makeurl(baseurl, l, query=[]):
     In case of a dictionary, the parameters will be urlencoded by this
     function. In case of a list not -- this is to be backwards compatible.
     """
-
+    query = query or []
     if conf.config['debug']:
         print('makeurl:', baseurl, l, query)
 
@@ -4434,8 +4437,9 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
         requests.append(r)
     return requests
 
-def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=[],
+def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=None,
                      withfullhistory=False):
+    exclude_target_projects = exclude_target_projects or []
     xpath = ''
     if not 'all' in req_state:
         for state in req_state:
@@ -4476,9 +4480,11 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
     return requests
 
 # old style search, this is to be removed
-def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), req_type=None, exclude_projects=[], projpkgs={}):
+def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), req_type=None, exclude_projects=None, projpkgs=None):
     """OBSOLETE: user involved request search is supported by OBS 2.2 server side in a better way
        Return all running requests for all projects/packages where is user is involved"""
+    exclude_projects = exclude_projects or []
+    projpkgs = projpkgs or {}
     if not projpkgs:
         res = get_user_projpkgs(apiurl, user, exclude_projects=exclude_projects)
         projects = []
@@ -5717,7 +5723,9 @@ def get_binarylist_published(apiurl, prj, repo, arch):
     return r
 
 
-def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=[], arch=[], oldstate=None, multibuild=False, locallink=False, code=None):
+def show_results_meta(apiurl, prj, package=None, lastbuild=None, repository=None, arch=None, oldstate=None, multibuild=False, locallink=False, code=None):
+    repository = repository or []
+    arch = arch or []
     query = []
     if package:
         query.append('package=%s' % quote_plus(package))
@@ -6729,7 +6737,7 @@ def checkRevision(prj, pac, revision, apiurl=None, meta=False):
     except (ValueError, TypeError):
         return False
 
-def build_table(col_num, data = [], headline = [], width=1, csv = False):
+def build_table(col_num, data=None, headline=None, width=1, csv=False):
     """
     This method builds a simple table.
 
@@ -6741,6 +6749,8 @@ def build_table(col_num, data = [], headline = [], width=1, csv = False):
         foo   bar
         suse  osc
     """
+    data = data or []
+    headline = headline or []
 
     longest_col = []
     for i in range(col_num):
@@ -7364,7 +7374,8 @@ def get_commit_message_template(pac):
 
     return template
 
-def parse_diff_for_commit_message(diff, template = []):
+def parse_diff_for_commit_message(diff, template=None):
+    template = template or []
     date_re = re.compile(r'\+(Mon|Tue|Wed|Thu|Fri|Sat|Sun) ([A-Z][a-z]{2}) ( ?[0-9]|[0-3][0-9]) .*')
     diff = diff.split('\n')
 
@@ -7744,8 +7755,9 @@ def edit_submitrequest(apiurl, project, orequest, new_request=None):
             new_action.opt_sourceupdate = 'cleanup'
     return r
 
-def get_user_projpkgs(apiurl, user, role=None, exclude_projects=[], proj=True, pkg=True, maintained=False, metadata=False):
+def get_user_projpkgs(apiurl, user, role=None, exclude_projects=None, proj=True, pkg=True, maintained=False, metadata=False):
     """Return all project/packages where user is involved."""
+    exclude_projects = exclude_projects or []
     xpath = 'person/@userid = \'%s\'' % user
     excl_prj = ''
     excl_pkg = ''

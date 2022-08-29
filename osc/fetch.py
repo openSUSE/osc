@@ -21,9 +21,9 @@ from .util.helper import decode_it
 
 
 class Fetcher:
-    def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
+    def __init__(self, cachedir='/tmp', urllist=None,
                  http_debug=False, cookiejar=None, offline=False,
-                 enable_cpio=True, modules=[], download_api_only=False):
+                 enable_cpio=True, modules=None, download_api_only=False):
         # set up progress bar callback
         self.progress_obj = None
         if sys.stdout.isatty():
@@ -31,8 +31,8 @@ class Fetcher:
 
         self.cachedir = cachedir
         # generic download URL lists
-        self.urllist = urllist
-        self.modules = modules
+        self.urllist = urllist or []
+        self.modules = modules or []
         self.http_debug = http_debug
         self.offline = offline
         self.cpio = {}
