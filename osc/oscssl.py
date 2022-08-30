@@ -52,10 +52,15 @@ class TrustedCertStore:
         if not self.host:
             raise ValueError("Empty `host`")
 
-        file_name = f"{self.host}_{self.port}"
         self.dir_path = os.path.expanduser("~/.config/osc/trusted-certs")
-        self.pem_path = os.path.join(self.dir_path, f"{file_name}.pem")
+        if not os.path.isdir(self.dir_path):
+            try:
+                os.makedirs(self.dir_path, mode=0o700)
+            except FileExistsError:
+                pass
 
+        file_name = f"{self.host}_{self.port}"
+        self.pem_path = os.path.join(self.dir_path, f"{file_name}.pem")
         if os.path.isfile(self.pem_path):
             # load permanently trusted certificate that is stored on disk
             with open(self.pem_path, "rb") as f:
