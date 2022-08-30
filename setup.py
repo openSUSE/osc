@@ -103,7 +103,7 @@ setuptools.setup(
     packages=['osc', 'osc.util'],
     scripts=['osc-wrapper.py'],
     data_files=data_files,
-    install_requires=['M2Crypto', 'chardet'],
+    install_requires=['M2Crypto'],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
@@ -129,5 +129,4 @@ setuptools.setup(
     ],
     # Override certain command classes with our own ones
     cmdclass=cmdclass,
-    test_suite="tests",
 )
