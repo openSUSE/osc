@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import base64
 import bz2
 import getpass
@@ -15,7 +17,6 @@ except BaseException as e:
     print(msg, e, file=sys.stderr)
     keyring = None
 
-from . import conf
 from . import oscerr
 
 
@@ -220,6 +221,7 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
             keyring_backend = keyring.core.load_keyring(self._backend_cls_name)
         except ModuleNotFoundError:
             msg = f"Invalid credentials_mgr_class: {self._backend_cls_name}"
+            from . import conf
             raise oscerr.ConfigError(msg, conf.config['conffile'])
         keyring.set_keyring(keyring_backend)
 
@@ -333,6 +335,7 @@ def create_credentials_manager(url, cp):
         creds_mgr = getattr(importlib.import_module(mod), cls).create(cp, options)
     except ModuleNotFoundError:
         msg = f"Invalid credentials_mgr_class: {creds_mgr_cls}"
+        from . import conf
         raise oscerr.ConfigError(msg, conf.config['conffile'])
     return creds_mgr
 
