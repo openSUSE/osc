@@ -537,7 +537,11 @@ def _build_opener(apiurl):
         def http_error_401(self, req, fp, code, msg, headers):
             self._rewind_request(req)
             authreqs = {}
-            for authreq in headers.get_all('www-authenticate', []):
+            if hasattr(headers, "get_all"):
+                all_headers = headers.get_all('www-authenticate', [])
+            else:
+                all_headers = headers.getallmatchingheaders('www-authenticate')
+            for authreq in all_headers:
                 scheme = authreq.split()[0].lower()
                 authreqs[scheme] = authreq
 
