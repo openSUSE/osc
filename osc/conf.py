@@ -540,7 +540,12 @@ def _build_opener(apiurl):
             if hasattr(headers, "get_all"):
                 all_headers = headers.get_all('www-authenticate', [])
             else:
-                all_headers = headers.getallmatchingheaders('www-authenticate')
+                all_headers = []
+                header_name = 'www-authenticate'
+                for header in headers.getallmatchingheaders(header_name):
+                    header = header[len(header_name) + 1:].lstrip()
+                    all_headers.append(header)
+
             for authreq in all_headers:
                 scheme = authreq.split()[0].lower()
                 authreqs[scheme] = authreq
