@@ -93,7 +93,7 @@ class SectionLine(Line):
     CommentLine() or OptionLine() instances.
     """
     def __init__(self, sectname):
-        Line.__init__(self, sectname, 'section')
+        super().__init__(sectname, 'section')
         self._lines = []
 
     def _find(self, name):
@@ -155,7 +155,7 @@ class SectionLine(Line):
 class CommentLine(Line):
     """Store a commentline"""
     def __init__(self, line):
-        Line.__init__(self, line.strip('\n'), 'comment')
+        super().__init__(line.strip('\n'), 'comment')
 
     def __str__(self):
         return self.name
@@ -176,7 +176,7 @@ class OptionLine(Line):
     """
 
     def __init__(self, optname, line):
-        Line.__init__(self, optname, 'option')
+        super().__init__(optname, 'option')
         self.name = optname
         self.format(line)
 

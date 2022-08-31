@@ -30,7 +30,7 @@ if not hasattr(os, 'SEEK_SET'):
 class CpioError(Exception):
     """base class for all cpio related errors"""
     def __init__(self, fn, msg):
-        Exception.__init__(self)
+        super().__init__()
         self.file = fn
         self.msg = msg
     def __str__(self):

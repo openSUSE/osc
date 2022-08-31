@@ -8,7 +8,7 @@ import rpm
 
 class KeyError(Exception):
     def __init__(self, key, *args):
-        Exception.__init__(self)
+        super().__init__()
         self.args = args
         self.key = key
     def __str__(self):

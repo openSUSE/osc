@@ -22,7 +22,7 @@ class TestInitProject(OscTestCase):
     def tearDown(self):
         if os.path.exists(os.path.join(FIXTURES_DIR, 'osctest')):
             os.rmdir(os.path.join(FIXTURES_DIR, 'osctest'))
-        OscTestCase.tearDown(self)
+        super().tearDown()
 
     def test_simple(self):
         """initialize a project dir"""

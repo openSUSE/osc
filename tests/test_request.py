@@ -18,7 +18,7 @@ class TestRequest(OscTestCase):
         return FIXTURES_DIR
 
     def setUp(self):
-        OscTestCase.setUp(self, copytree=False)
+        super().setUp(copytree=False)
 
     def test_createsr(self):
         """create a simple submitrequest"""

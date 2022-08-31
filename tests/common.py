@@ -65,7 +65,7 @@ def xml_equal(actual, exp):
 class RequestWrongOrder(Exception):
     """raised if an unexpected request is issued to urllib2"""
     def __init__(self, url, exp_url, method, exp_method):
-        Exception.__init__(self)
+        super().__init__()
         self.url = url
         self.exp_url = exp_url
         self.method = method

@@ -12,7 +12,7 @@ def suite():
 
 class TestResults(OscTestCase):
     def setUp(self):
-        OscTestCase.setUp(self, copytree=False)
+        super().setUp(copytree=False)
 
     def _get_fixtures_name(self):
         return 'results_fixtures'

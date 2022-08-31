@@ -2569,7 +2569,7 @@ class ReviewState(AbstractState):
         if not review_node.get('state'):
             raise oscerr.APIError('invalid review node (state attr expected): %s' % \
                 ET.tostring(review_node, encoding=ET_ENCODING))
-        AbstractState.__init__(self, review_node.tag)
+        super().__init__(review_node.tag)
         self.state = review_node.get('state')
         self.by_user = review_node.get('by_user')
         self.by_group = review_node.get('by_group')
@@ -2597,7 +2597,7 @@ class RequestHistory(AbstractState):
     re_name = re.compile(r'^Request (?:got )?([^\s]+)$')
 
     def __init__(self, history_node):
-        AbstractState.__init__(self, history_node.tag)
+        super().__init__(history_node.tag)
         self.who = history_node.get('who')
         self.when = history_node.get('when')
         if not history_node.find('description') is None and \
@@ -2639,7 +2639,7 @@ class RequestState(AbstractState):
         if not state_node.get('name'):
             raise oscerr.APIError('invalid request state node (name attr expected): %s' % \
                 ET.tostring(state_node, encoding=ET_ENCODING))
-        AbstractState.__init__(self, state_node.tag)
+        super().__init__(state_node.tag)
         self.name = state_node.get('name')
         self.who = state_node.get('who')
         self.when = state_node.get('when')

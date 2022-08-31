@@ -28,7 +28,7 @@ if not hasattr(os, 'SEEK_SET'):
 class ArError(Exception):
     """Base class for all ar related errors"""
     def __init__(self, fn, msg):
-        Exception.__init__(self)
+        super().__init__()
         self.file = fn
         self.msg = msg
 
@@ -57,7 +57,7 @@ class ArHdr:
 class ArFile(BytesIO):
     """Represents a file which resides in the archive"""
     def __init__(self, fn, uid, gid, mode, buf):
-        BytesIO.__init__(self, buf)
+        super().__init__(buf)
         self.name = fn
         self.uid = uid
         self.gid = gid

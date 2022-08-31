@@ -14,7 +14,7 @@ def suite():
 
 class TestSetLinkRev(OscTestCase):
     def setUp(self):
-        OscTestCase.setUp(self, copytree=False)
+        super().setUp(copytree=False)
 
     def _get_fixtures_dir(self):
         return FIXTURES_DIR

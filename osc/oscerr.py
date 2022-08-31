@@ -7,7 +7,7 @@
 
 class OscBaseError(Exception):
     def __init__(self, args=()):
-        Exception.__init__(self)
+        super().__init__()
         self.args = args
     def __str__(self):
         return ''.join(self.args)
@@ -18,7 +18,7 @@ class UserAbort(OscBaseError):
 class ConfigError(OscBaseError):
     """Exception raised when there is an error in the config file"""
     def __init__(self, msg, fname):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.msg = msg
         self.file = fname
 
@@ -28,24 +28,24 @@ class ConfigError(OscBaseError):
 class ConfigMissingApiurl(ConfigError):
     """Exception raised when a apiurl does not exist in the config file"""
     def __init__(self, msg, fname, url):
-        ConfigError.__init__(self, msg, fname)
+        super().__init__(msg, fname)
         self.url = url
 
 class ConfigMissingCredentialsError(ConfigError):
     def __init__(self, msg, fname, url):
-        ConfigError.__init__(self, msg, fname)
+        super().__init__(msg, fname)
         self.url = url
 
 class APIError(OscBaseError):
     """Exception raised when there is an error in the output from the API"""
     def __init__(self, msg):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.msg = msg
 
 class NoConfigfile(OscBaseError):
     """Exception raised when osc's configfile cannot be found"""
     def __init__(self, fname, msg):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.file = fname
         self.msg = msg
 
@@ -55,14 +55,14 @@ class NoConfigfile(OscBaseError):
 class ExtRuntimeError(OscBaseError):
     """Exception raised when there is a runtime error of an external tool"""
     def __init__(self, msg, fname):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.msg = msg
         self.file = fname
 
 class ServiceRuntimeError(OscBaseError):
     """Exception raised when the execution of a source service failed"""
     def __init__(self, msg):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.msg = msg
 
 class WrongArgs(OscBaseError):
@@ -98,26 +98,26 @@ class WorkingCopyOutdated(OscBaseError):
 class PackageError(OscBaseError):
     """Base class for all Package related exceptions"""
     def __init__(self, prj, pac):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.prj = prj
         self.pac = pac
 
 class WorkingCopyInconsistent(PackageError):
     """Exception raised when the working copy is in an inconsistent state"""
     def __init__(self, prj, pac, dirty_files, msg):
-        PackageError.__init__(self, prj, pac)
+        super().__init__(prj, pac)
         self.dirty_files = dirty_files
         self.msg = msg
 
 class LinkExpandError(PackageError):
     """Exception raised when source link expansion fails"""
     def __init__(self, prj, pac, msg):
-        PackageError.__init__(self, prj, pac)
+        super().__init__(prj, pac)
         self.msg = msg
 
 class OscIOError(OscBaseError):
     def __init__(self, e, msg):
-        OscBaseError.__init__(self)
+        super().__init__()
         self.e = e
         self.msg = msg
 
@@ -142,7 +142,7 @@ class PackageNotInstalled(OscBaseError):
     Exception raised when a package is not installed on local system
     """
     def __init__(self, pkg):
-        OscBaseError.__init__(self, (pkg,))
+        super().__init__((pkg,))
 
     def __str__(self):
         return 'Package %s is required for this operation' % self.args
@@ -155,7 +155,7 @@ class PackageExists(PackageError):
     Exception raised when a local object already exists
     """
     def __init__(self, prj, pac, msg):
-        PackageError.__init__(self, prj, pac)
+        super().__init__(prj, pac)
         self.msg = msg
 
 class PackageMissing(PackageError):
@@ -163,7 +163,7 @@ class PackageMissing(PackageError):
     Exception raised when a local object doesn't exist
     """
     def __init__(self, prj, pac, msg):
-        PackageError.__init__(self, prj, pac)
+        super().__init__(prj, pac)
         self.msg = msg
 
 class PackageFileConflict(PackageError):
@@ -172,12 +172,12 @@ class PackageFileConflict(PackageError):
     Conflict doesn't mean an unsuccessfull merge in this context.
     """
     def __init__(self, prj, pac, file, msg):
-        PackageError.__init__(self, prj, pac)
+        super().__init__(prj, pac)
         self.file = file
         self.msg = msg
 
 class PackageInternalError(PackageError):
     def __init__(self, prj, pac, msg):
-        PackageError.__init__(self, prj, pac)
+        super().__init__(prj, pac)
         self.msg = msg
 # vim: sw=4 et
