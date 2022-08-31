@@ -69,7 +69,7 @@ class Checker:
             if line[0:12] == "-----END PGP":
                 break
             line = line.rstrip()
-            if (line[0] == '='):
+            if line[0] == '=':
                 crc = line[1:]
                 line = fd.readline()
                 break

@@ -6942,7 +6942,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         command = args[0]
 
-        if not (command in ( 'runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'mr', 'rr', 'merge', 'wait' )):
+        if command not in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'mr', 'rr', 'merge', 'wait'):
             raise oscerr.WrongArgs('Wrong command given.')
 
         if command == "remoterun" or command == "rr":
@@ -9327,7 +9327,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             or inspect.ismodule(data)):
                             setattr(self.__class__, name, data)
                 except (SyntaxError, NameError, ImportError) as e:
-                    if (os.environ.get('OSC_PLUGIN_FAIL_IGNORE')):
+                    if os.environ.get('OSC_PLUGIN_FAIL_IGNORE'):
                         print("%s: %s\n" % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                     else:
                         import traceback

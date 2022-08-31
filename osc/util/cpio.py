@@ -153,7 +153,7 @@ class CpioRead:
         if not self.format in self.sfmt.values():
             raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
-        while (len(data) != 0):
+        while len(data) != 0:
             self.__file.seek(pos, os.SEEK_SET)
             data = self.__file.read(self.hdr_len)
             if not data:

@@ -169,7 +169,7 @@ class Ar:
         if data != b'!<arch>':
             raise ArError(self.filename, 'no ar archive')
         pos = 8
-        while (len(data) != 0):
+        while len(data) != 0:
             self.__file.seek(pos, os.SEEK_SET)
             data = self.__file.read(self.hdr_len)
             if not data:

@@ -6862,7 +6862,7 @@ def owner(apiurl, search_term=None, mode="binary", attribute=None,
     """
 
     # binary is just for API backward compatibility
-    if not ((search_term is None) ^ (binary is None)):
+    if not (search_term is None) ^ (binary is None):
         raise ValueError('Either specify search_term or binary')
     elif binary is not None:
         search_term = binary

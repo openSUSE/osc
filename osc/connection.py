@@ -44,7 +44,7 @@ class MockRequest:
         return self.headers.get(header_name, default)
 
     def has_header(self, header_name):
-        return (header_name in self.headers)
+        return header_name in self.headers
 
     def add_unredirected_header(self, key, val):
         # modifies the `headers` variable that was passed to object's constructor
