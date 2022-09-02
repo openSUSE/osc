@@ -41,28 +41,28 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     )
 
     def __init__(self, fh):
-        self.__file = fh
-        self.__path = os.path.abspath(fh.name)
+        self._file = fh
+        self._path = os.path.abspath(fh.name)
         self.filename_suffix = 'deb'
         self.fields = {}
 
     def read(self, all_tags=False, self_provides=True, *extra_tags):
-        arfile = ar.Ar(fh=self.__file)
+        arfile = ar.Ar(fh=self._file)
         arfile.read()
         debbin = arfile.get_file(b'debian-binary')
         if debbin is None:
-            raise DebError(self.__path, 'no debian binary')
+            raise DebError(self._path, 'no debian binary')
         if debbin.read() != b'2.0\n':
-            raise DebError(self.__path, 'invalid debian binary format')
-        for open_func in [self.__open_tar_gz,
-                          self.__open_tar_xz,
-                          self.__open_tar_zst,
-                          self.__open_tar]:
+            raise DebError(self._path, 'invalid debian binary format')
+        for open_func in [self._open_tar_gz,
+                          self._open_tar_xz,
+                          self._open_tar_zst,
+                          self._open_tar]:
             tar = open_func(arfile)
             if tar is not None:
                 break
         if tar is None:
-            raise DebError(self.__path, 'missing control.tar')
+            raise DebError(self._path, 'missing control.tar')
         try:
             name = './control'
             # workaround for python2.4's tarfile module
@@ -70,46 +70,46 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
                 name = 'control'
             control = tar.extractfile(name)
         except KeyError:
-            raise DebError(self.__path,
+            raise DebError(self._path,
                            'missing \'control\' file in control.tar')
-        self.__parse_control(control, all_tags, self_provides, *extra_tags)
+        self._parse_control(control, all_tags, self_provides, *extra_tags)
         return self
 
-    def __open_tar(self, arfile):
+    def _open_tar(self, arfile):
         control = arfile.get_file(b'control.tar')
         if control:
             # XXX: python2.4 relies on a name
             return tarfile.open(name="control.tar", fileobj=control)
         return None
 
-    def __open_tar_gz(self, arfile):
+    def _open_tar_gz(self, arfile):
         control = arfile.get_file(b'control.tar.gz')
         if control:
             return tarfile.open(name='control.tar.gz', fileobj=control)
         return None
 
-    def __open_tar_xz(self, arfile):
+    def _open_tar_xz(self, arfile):
         control = arfile.get_file(b'control.tar.xz')
         if control:
             if not HAVE_LZMA:
-                raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
+                raise DebError(self._path, 'can\'t open control.tar.xz without python-lzma')
             decompressed = lzma.decompress(control.read())
             return tarfile.open(name="control.tar.xz",
                                 fileobj=BytesIO(decompressed))
         return None
 
-    def __open_tar_zst(self, arfile):
+    def _open_tar_zst(self, arfile):
         control = arfile.get_file(b'control.tar.zst')
         if control:
             if not HAVE_ZSTD:
-                raise DebError(self.__path, 'can\'t open control.tar.zst without python-zstandard')
+                raise DebError(self._path, 'can\'t open control.tar.zst without python-zstandard')
             with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
                 decompressed = reader.read()
             return tarfile.open(name="control.tar.zst",
                                 fileobj=BytesIO(decompressed))
         return None
 
-    def __parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
+    def _parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
         while data:
             field, val = re.split(br':\s*', data.strip(), 1)
@@ -178,7 +178,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         return self.fields[b'description']
 
     def path(self):
-        return self.__path
+        return self._path
 
     def provides(self):
         return self.fields[b'provides']
