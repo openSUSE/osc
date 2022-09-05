@@ -3420,6 +3420,10 @@ def http_request(method, url, headers={}, data=None, file=None):
 
     req.get_method = lambda: method
 
+    # Rails sends a html response if the header is not set
+    # https://github.com/openSUSE/open-build-service/pull/13019
+    req.add_header("Accept", "application/xml")
+
     # POST requests are application/x-www-form-urlencoded per default
     # but sending data requires an octet-stream type
     if method == 'PUT' or (method == 'POST' and (data or file)):
