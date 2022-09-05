@@ -2,9 +2,17 @@ name: 'unit tests'
 
 on:
   push:
-    branches: ['master']
+    branches: ['0.x-maint']
+    paths:
+      - '.github/**'
+      - '**.py'
+      - 'tests/**'
   pull_request:
-    branches: ['master']
+    branches: ['0.x-maint']
+    paths:
+      - '.github/**'
+      - '**.py'
+      - 'tests/**'
 
 jobs:
   test:
@@ -84,3 +92,36 @@ jobs:
       - name: 'Upload coverage reports to Codecov (OpenSUSE Tumbleweed)'
         if: ${{ matrix.container == 'opensuse/tumbleweed' }}
         uses: codecov/codecov-action@v3
+
+  test_python2:
+    name: 'unit tests - python 2'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        # Testing per python-version using actions/setup-python is not possible,
+        # because rpm doesn't exist on pypi and cannot be installed via pip on ubuntu.
+        # That's why we're going to test on the target distros directly.
+        container:
+
+          - 'opensuse/leap:15.3'
+
+    container:
+      image: ${{ matrix.container }}
+
+    steps:
+      - name: 'Install packages (OpenSUSE)'
+        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        run: |
+            zypper --non-interactive --gpg-auto-import-keys refresh
+            zypper --non-interactive dist-upgrade
+            zypper --non-interactive install git-lfs
+            zypper --non-interactive install diffstat diffutils python python2-M2Crypto python2-pip python2-rpm python2-setuptools
+
+      - uses: actions/checkout@v3
+
+      - name: 'Run unit tests'
+        run: |
+          mkdir -p /usr/local/lib/python2.7/site-packages/
+          pip2 install -e .
+          python2 setup.py test
