@@ -296,8 +296,9 @@ def http_request(method, url, headers=None, data=None, file=None):
         if not isinstance(e.reason, urllib3.exceptions.SSLError):
             # re-raise exceptions that are not related to SSL
             raise
-
-        if isinstance(e.reason.args[0], ssl.SSLCertVerificationError):
+        # ssl.SSLCertVerificationError doesn't exist on python 3.6
+        # ssl.CertificateError is an alias for ssl.SSLCertVerificationError on python 3.7+
+        if isinstance(e.reason.args[0], ssl.CertificateError):
             self_signed_verify_codes = (
                 oscssl.X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT,
                 oscssl.X509_V_ERR_SELF_SIGNED_CERT_IN_CHAIN,
