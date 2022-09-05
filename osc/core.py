@@ -20,6 +20,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import time
 from functools import cmp_to_key
 from http.client import IncompleteRead
 from io import StringIO
@@ -375,16 +376,23 @@ class Serviceinfo:
 
     def execute(self, dir, callmode = None, singleservice = None, verbose = None):
         old_dir = os.path.join(dir, '.old')
-        if os.path.exists(old_dir) or os.path.islink(old_dir):
-            msg = '"%s" exists, please remove it' % old_dir
-            raise oscerr.OscIOError(None, msg)
-        try:
-            os.mkdir(old_dir)
-            return self._execute(dir, old_dir, callmode, singleservice,
-                                 verbose)
-        finally:
-            if os.path.exists(old_dir):
-                shutil.rmtree(old_dir)
+
+        # if 2 osc instances are executed at a time one, of them fails on .old file existence
+        # sleep up to 10 seconds until we can create the directory
+        for i in reversed(range(10)):
+            try:
+                os.mkdir(old_dir)
+                break
+            except FileExistsError:
+                time.sleep(1)
+
+            if i == 0:
+                msg = f'"{old_dir}" exists, please remove it'
+                raise oscerr.OscIOError(None, msg)
+
+        result = self._execute(dir, old_dir, callmode, singleservice, verbose)
+        shutil.rmtree(old_dir)
+        return result
 
     def _execute(self, dir, old_dir, callmode=None, singleservice=None,
                  verbose=None):
