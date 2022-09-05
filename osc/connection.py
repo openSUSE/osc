@@ -268,6 +268,10 @@ def http_request(method, url, headers=None, data=None, file=None):
         if success:
             break
 
+    # Rails sends a html response if the header is not set
+    # https://github.com/openSUSE/open-build-service/pull/13019
+    headers.add("Accept", "application/xml")
+
     if data or file:
         # osc/obs data is usually XML
         headers.add("Content-Type", "application/xml; charset=utf-8")
