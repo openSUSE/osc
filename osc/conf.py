@@ -818,7 +818,10 @@ def get_config(override_conffile=None,
                  'http_headers': http_headers}
         api_host_options[apiurl] = APIHostOptionsEntry(entry)
 
-        optional = ('realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey', 'allow_http')
+        optional = (
+            'realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey', 'allow_http',
+            credentials.AbstractCredentialsManager.config_entry,
+        )
         for key in optional:
             if cp.has_option(url, key):
                 if key in ('sslcertck', 'allow_http'):

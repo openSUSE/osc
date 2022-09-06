@@ -508,8 +508,13 @@ class SignatureAuthHandler(AuthHandlerBase):
     def __init__(self, user, sshkey, basic_auth_password=None):
         self.user = user
         self.sshkey = sshkey
-        # value of `basic_auth_password` is only used as a hint if we should skip signature auth
-        self.basic_auth_password = bool(basic_auth_password)
+
+        apiurl = conf.config["apiurl"]
+        if conf.config["api_host_options"][apiurl].get("credentials_mgr_class", None) == "osc.credentials.TransientCredentialsManager":
+            self.basic_auth_password = False
+        else:
+            # value of `basic_auth_password` is only used as a hint if we should skip signature auth
+            self.basic_auth_password = bool(basic_auth_password)
 
     def list_ssh_agent_keys(self):
         cmd = ['ssh-add', '-l']
