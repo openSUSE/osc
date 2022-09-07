@@ -80,14 +80,14 @@ class AbstractCredentialsManager:
     def create(cls, cp, options):
         return cls(cp, options)
 
-    def _get_password(self, url, user):
+    def _get_password(self, url, user, apiurl=None):
         raise NotImplementedError()
 
-    def get_password(self, url, user, defer=True):
+    def get_password(self, url, user, defer=True, apiurl=None):
         if defer:
-            return _LazyPassword(lambda: self._get_password(url, user))
+            return _LazyPassword(lambda: self._get_password(url, user, apiurl=apiurl))
         else:
-            return self._get_password(url, user)
+            return self._get_password(url, user, apiurl=apiurl)
 
     def set_password(self, url, user, password):
         raise NotImplementedError()
@@ -103,7 +103,7 @@ class AbstractCredentialsManager:
 
 
 class PlaintextConfigFileCredentialsManager(AbstractCredentialsManager):
-    def get_password(self, url, user, defer=True):
+    def get_password(self, url, user, defer=True, apiurl=None):
         return self._cp.get(url, 'pass', raw=True)
 
     def set_password(self, url, user, password):
@@ -132,13 +132,12 @@ class PlaintextConfigFileDescriptor(AbstractCredentialsManagerDescriptor):
         return PlaintextConfigFileCredentialsManager(cp, None)
 
 
-class ObfuscatedConfigFileCredentialsManager(
-        PlaintextConfigFileCredentialsManager):
-    def get_password(self, url, user, defer=True):
+class ObfuscatedConfigFileCredentialsManager(PlaintextConfigFileCredentialsManager):
+    def get_password(self, url, user, defer=True, apiurl=None):
         if self._cp.has_option(url, 'passx', proper=True):
             passwd = self._cp.get(url, 'passx', raw=True)
         else:
-            passwd = super(self.__class__, self).get_password(url, user)
+            passwd = super(self.__class__, self).get_password(url, user, apiurl=apiurl)
         return self.decode_password(passwd)
 
     def set_password(self, url, user, password):
@@ -182,9 +181,15 @@ class TransientCredentialsManager(AbstractCredentialsManager):
         if options is not None:
             raise RuntimeError('options must be None')
 
-    def _get_password(self, url, user):
+    def _get_password(self, url, user, apiurl=None):
         if self._password is None:
-            self._password = getpass.getpass('Password: ')
+            if apiurl:
+                # strip scheme from apiurl because we don't want to display it to the user
+                apiurl_no_scheme = urlsplit(apiurl)[1]
+                msg = f'Password [{user}@{apiurl_no_scheme}]: '
+            else:
+                msg = 'Password: '
+            self._password = getpass.getpass(msg)
         return self._password
 
     def set_password(self, url, user, password):
@@ -229,7 +234,7 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
             return None
         return super(cls, cls).create(cp, options)
 
-    def _get_password(self, url, user):
+    def _get_password(self, url, user, apiurl=None):
         self._load_backend()
         return keyring.get_password(urlsplit(url)[1], user)
 

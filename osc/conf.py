@@ -794,7 +794,7 @@ def get_config(override_conffile=None,
         user = _extract_user_compat(cp, url, creds_mgr)
         if user is None:
             raise oscerr.ConfigMissingCredentialsError('No user found in section %s' % url, conffile, url)
-        password = creds_mgr.get_password(url, user, defer=True)
+        password = creds_mgr.get_password(url, user, defer=True, apiurl=apiurl)
         if password is None:
             raise oscerr.ConfigMissingCredentialsError('No password found in section %s' % url, conffile, url)
 
