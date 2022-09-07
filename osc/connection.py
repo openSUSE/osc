@@ -2,6 +2,7 @@ import base64
 import fcntl
 import os
 import re
+import shutil
 import subprocess
 import ssl
 import sys
@@ -510,6 +511,9 @@ class SignatureAuthHandler(AuthHandlerBase):
         self.user = user
         self.sshkey = sshkey
 
+        self.ssh_keygen_path = shutil.which("ssh-keygen")
+        self.ssh_add_path = shutil.which("ssh-add")
+
         apiurl = conf.config["apiurl"]
         if conf.config["api_host_options"][apiurl].get("credentials_mgr_class", None) == "osc.credentials.TransientCredentialsManager":
             self.basic_auth_password = False
@@ -520,12 +524,10 @@ class SignatureAuthHandler(AuthHandlerBase):
         self.temp_pubkey = None
 
     def list_ssh_agent_keys(self):
-        cmd = ['ssh-add', '-L']
-        try:
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        except OSError:
-            # ssh-add is not available
+        if not self.ssh_add_path:
             return []
+        cmd = [self.ssh_add_path, '-L']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, _ = proc.communicate()
         if proc.returncode == 0 and stdout.strip():
             return stdout.strip().splitlines()
@@ -569,7 +571,7 @@ class SignatureAuthHandler(AuthHandlerBase):
                 keyfile = '~/.ssh/' + keyfile
             keyfile = os.path.expanduser(keyfile)
 
-        cmd = ['ssh-keygen', '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
+        cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, _ = proc.communicate(data)
 
@@ -620,6 +622,12 @@ class SignatureAuthHandler(AuthHandlerBase):
 
         if self.basic_auth_password and "basic" in auth_schemes:
             # prefer basic auth, but only if password is set
+            return False
+
+        if not self.ssh_keygen_path:
+            if conf.config["debug"]:
+                msg = "Skipping signature auth because ssh-keygen is not available"
+                print(msg, file=sys.stderr)
             return False
 
         if not self.sshkey_known():
