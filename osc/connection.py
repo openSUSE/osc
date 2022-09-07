@@ -53,6 +53,7 @@ class MockRequest:
 
 def enable_http_debug(config):
     if not int(config["http_debug"]) and not int(config["http_full_debug"]):
+        http.client.print = lambda *args, **kwargs: None
         return
 
     # HACK: override HTTPResponse's init to increase debug level
