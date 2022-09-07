@@ -605,7 +605,12 @@ def _build_opener(apiurl):
 
         def list_ssh_agent_keys(self):
             cmd = ['ssh-add', '-l']
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except OSError:
+                # ssh-add is not available
+                return []
+
             stdout, _ = proc.communicate()
             if proc.returncode == 0 and stdout.strip():
                 return [self.get_fingerprint(line) for line in stdout.splitlines()]
@@ -699,7 +704,10 @@ def _build_opener(apiurl):
                 keyfile = os.path.expanduser(keyfile)
 
             cmd = ['ssh-keygen', '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
-            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            try:
+                proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            except OSError:
+                return None
             stdout, _ = proc.communicate(data)
             if proc.returncode:
                 raise oscerr.OscIOError(None, 'ssh-keygen signature creation failed: %d' % proc.returncode)
@@ -715,6 +723,9 @@ def _build_opener(apiurl):
             now = int(time.time())
             sigdata = "(created): %d" % now
             signature = self.ssh_sign(sigdata, realm, self.sshkey)
+            if not signature:
+                # the signing step failed due to missing ssh-keygen
+                return None
             signature = decode_it(base64.b64encode(signature))
             return 'keyId="%s",algorithm="ssh",headers="(created)",created=%d,signature="%s"' \
                 % (self.user, now, signature)
