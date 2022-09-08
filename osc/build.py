@@ -1079,7 +1079,7 @@ def main(apiurl, opts, argv):
                       http_debug = config['http_debug'],
                       modules = bi.modules,
                       enable_cpio=not opts.disable_cpio_bulk_download and bi.enable_cpio,
-                      cookiejar=connection.CookieJarAuthHandler(os.path.expanduser(conf.config["cookiejar"]))._cookiejar,
+                      cookiejar=connection.CookieJarAuthHandler(apiurl, os.path.expanduser(conf.config["cookiejar"]))._cookiejar,
                       download_api_only=opts.download_api_only)
 
     if not opts.trust_all_projects:
