@@ -1,3 +1,9 @@
+0.182.0
+  - fix build on SLE12 / python 2.7
+  - SSH auth: Fix getallmatchingheaders() output to correspond with headers.get_all()
+  - send HTTP header Accept: application/xml
+  - git_version: return version from the source code if there's no matching tag
+
 0.181.0
   - fix crash when 'pass' is not set in the config file
   - add missing attributes to Package when scm_url is set
