@@ -53,6 +53,7 @@ class MockRequest:
 
 def enable_http_debug(config):
     if not int(config["http_debug"]) and not int(config["http_full_debug"]):
+        http.client.print = lambda *args, **kwargs: None
         return
 
     # HACK: override HTTPResponse's init to increase debug level
@@ -259,9 +260,9 @@ def http_request(method, url, headers=None, data=None, file=None):
         CONNECTION_POOLS[apiurl] = pool
 
     auth_handlers = [
-        CookieJarAuthHandler(os.path.expanduser(conf.config["cookiejar"])),
-        SignatureAuthHandler(options["user"], options["sshkey"], options["pass"]),
-        BasicAuthHandler(options["user"], options["pass"]),
+        CookieJarAuthHandler(apiurl, os.path.expanduser(conf.config["cookiejar"])),
+        SignatureAuthHandler(apiurl, options["user"], options["sshkey"], options["pass"]),
+        BasicAuthHandler(apiurl, options["user"], options["pass"]),
     ]
 
     for handler in auth_handlers:
@@ -370,6 +371,9 @@ def http_DELETE(*args, **kwargs):
 
 
 class AuthHandlerBase:
+    def __init__(self, apiurl):
+        self.apiurl = apiurl
+
     def _get_auth_schemes(self, response):
         """
         Extract all `www-authenticate` headers from `response` and return them
@@ -425,7 +429,8 @@ class CookieJarAuthHandler(AuthHandlerBase):
     # Shared among instances, instantiate on first use, key equals to cookiejar path.
     COOKIEJARS = {}
 
-    def __init__(self, cookiejar_path):
+    def __init__(self, apiurl, cookiejar_path):
+        super().__init__(apiurl)
         self.cookiejar_path = cookiejar_path
         if self.cookiejar_path in self.COOKIEJARS:
             self.cookiejar_lock_path = None
@@ -486,7 +491,8 @@ class CookieJarAuthHandler(AuthHandlerBase):
 
 
 class BasicAuthHandler(AuthHandlerBase):
-    def __init__(self, user, password):
+    def __init__(self, apiurl, user, password):
+        super().__init__(apiurl)
         self.user = user
         self.password = password
 
@@ -507,15 +513,16 @@ class BasicAuthHandler(AuthHandlerBase):
 
 
 class SignatureAuthHandler(AuthHandlerBase):
-    def __init__(self, user, sshkey, basic_auth_password=None):
+    def __init__(self, apiurl, user, sshkey, basic_auth_password=None):
+        super().__init__(apiurl)
         self.user = user
         self.sshkey = sshkey
 
         self.ssh_keygen_path = shutil.which("ssh-keygen")
         self.ssh_add_path = shutil.which("ssh-add")
 
-        apiurl = conf.config["apiurl"]
-        if conf.config["api_host_options"][apiurl].get("credentials_mgr_class", None) == "osc.credentials.TransientCredentialsManager":
+        creds_mgr = conf.config["api_host_options"][self.apiurl].get("credentials_mgr_class", None)
+        if creds_mgr == "osc.credentials.TransientCredentialsManager":
             self.basic_auth_password = False
         else:
             # value of `basic_auth_password` is only used as a hint if we should skip signature auth
