@@ -1,3 +1,61 @@
+1.0.0b2
+  - Support ssh-agent forwarding
+  - ssh auth: Avoid password prompt when using TransientCredentialsManager
+  - Properly handle missing ssh-keygen and ssh-add
+  - Add ssh-keygen as a recommends for ssh MFA authentication
+  - Print user and apiurl when prompting for a password
+  - Pass apiurl to all auth handlers
+  - Do not list declined requests by default
+  - Fix 'osc up' on project level for scm packages
+  - Lock cookiejar to prevent unnecessary signature auth
+  - Process input with configurable project separators
+  - Add project_separator to config file
+  - Fix race condition in using .old directory in Serviceinfo.execute()
+  - Send HTTP header Accept: application/xml
+  - Print URLs and xpaths in debug rather than verbose mode
+  - Inject no-op print() into http.client when http debugging is off
+  - Reset "file current position" on errors in HTTP requests
+  - Create ~/.config/osc/trusted-certs if not exists
+  - conf: Convert defaults to their expected types
+  - Document `build` repo selection logic
+  - Add debug print for REPO (and desc just in case)
+  - Shortened `build` help and add debug prints
+  - Replace unmaintained cmdln.py with a custom code
+  - Allow intermixing positional and optional args
+  - Add global options to subcommands so they can be specified in any place
+  - Remove the '-A' option from the 'maintainer' command
+  - Replace the '-q/--hide-legend' option in 'prjresults' command with global '-q/--quiet' option
+  - Remove duplicated --debug and --verbose options
+  - Add version command to print the used version
+  - Remove deprecated 'plaintext_passwd' config option
+  - Remove deprecated 'GnomeKeyringCredentialsManager' and related code
+  - Remove deprecated '--skip-validation' option from the 'commit' command
+  - Remove deprecated '--oldpkg', '--oldprj' options from the 'rdiff' command
+  - Remove deprecated subcommands 'create', 'list', 'log', 'show', 'decline', 'accept', 'delete', 'revoke' from the 'submitrequest' command
+  - Remove deprecated '--seperate-requests' option from the 'submitrequest' command
+  - Remove deprecated '--raw' option from the 'develproject' command
+  - Remove deprecated '--maintained' option from the 'search' command
+  - Remove deprecated 'rlog' command
+  - Remove deprecated 'rprjresults' command
+  - Remove deprecated 'rresults' command
+  - Remove deprecated 'results_meta' command
+  - Remove deprecated 'deleteprj' command
+  - Remove deprecated 'deletepac' command
+  - Remove deprecated 'editmeta' command
+  - Remove deprecated Request.get_creator()
+  - Remove PROJ_PACK.txt file, move its content to GitHub issue #1099
+  - Remove TODO file, move its content to GitHub issue #1098
+  - Remove fuse support
+  - Remove unused run_bandit.sh
+  - Remove obsolete osc_expand_link.pl
+  - Remove unused icons
+  - Replace imp with importlib
+  - Move files from dist/ to contrib/
+  - Move osc.fish under contrib/
+  - Move python package metadata from setup.py to setup.cfg
+  - Move __version__ from osc.core to osc
+  - Fix resource warnings (unclosed files)
+
 1.0.0b1
   - drop Python 2 support
   - switch http_request() to urllib3 and cryptography (drop M2Crypto dependency)
