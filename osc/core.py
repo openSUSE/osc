@@ -5473,7 +5473,10 @@ def copy_pac(src_apiurl, src_project, src_package,
              revision = None,
              comment = None,
              force_meta_update = None,
-             keep_link = None):
+             keep_link=None,
+             make_origin_older=False,
+             with_history=False,
+             with_binaries=False):
     """
     Create a copy of a package.
 
@@ -5511,6 +5514,12 @@ def copy_pac(src_apiurl, src_project, src_package,
             query['orev'] = revision
         if comment:
             query['comment'] = comment
+        if make_origin_older:
+            query['makeoriginolder'] = '1'
+        if with_history:
+            query['withhistory'] = '1'
+        if with_binaries:
+            query['withbinaries'] = '1'
         u = makeurl(dst_apiurl, ['source', dst_project, dst_package], query=query)
         f = http_POST(u)
         return f.read()
