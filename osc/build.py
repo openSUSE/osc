@@ -3,6 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+import glob
 import os
 import re
 import shutil
@@ -22,7 +23,9 @@ from .core import get_buildinfo, store_read_project, store_read_package, meta_ex
 from .core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from .fetch import Fetcher, OscFileGrabber, verify_pacs
 from .meter import create_text_meter
-from .util import rpmquery, debquery, archquery
+from .util import cpio
+from .util import archquery, debquery, packagequery, rpmquery
+from .util import repodata
 from .util.helper import decode_it
 
 
@@ -466,8 +469,6 @@ def get_repo(path):
     return repositoryDirectory
 
 def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
-    import glob
-    from .util import repodata, packagequery
     paths = []
     repositories = []
 
@@ -888,13 +889,11 @@ def main(apiurl, opts, argv):
         else:
             print('Using local buildenv file: %s' % os.path.basename(buildenvfile))
     if buildenvfile or servicefile:
-        from .util import cpio
         if not cpiodata:
             cpiodata = cpio.CpioWrite()
 
     if opts.prefer_pkgs:
         print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
-        from .util import cpio
         if not cpiodata:
             cpiodata = cpio.CpioWrite()
         prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type, cpiodata)
@@ -1329,7 +1328,6 @@ def main(apiurl, opts, argv):
         if i.hdrmd5:
             if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
                 continue
-            from .util import packagequery
             if i.name.startswith('container:'):
                 hdrmd5 = dgst(i.fullfilename)
             else:

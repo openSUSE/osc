@@ -1,6 +1,7 @@
 import itertools
 import os
 import re
+import sys
 import tarfile
 from io import BytesIO
 
@@ -249,7 +250,6 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             return b'%s_%s_%s.deb' % (name, version, arch)
 
 if __name__ == '__main__':
-    import sys
     try:
         debq = DebQuery.query(sys.argv[1])
     except DebError as e:

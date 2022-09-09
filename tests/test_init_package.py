@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -9,7 +10,6 @@ from .common import OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_package_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestInitPackage)
 
 class TestInitPackage(OscTestCase):
@@ -89,5 +89,4 @@ class TestInitPackage(OscTestCase):
         self.assertRaises(osc.oscerr.OscIOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

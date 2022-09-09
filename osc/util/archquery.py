@@ -1,7 +1,7 @@
 import os
 import re
 import subprocess
-import tarfile
+import sys
 
 from . import packagequery
 
@@ -207,7 +207,6 @@ class ArchQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
 
 if __name__ == '__main__':
-    import sys
     archq = ArchQuery.query(sys.argv[1])
     print(archq.name(), archq.version(), archq.release(), archq.arch())
     try:

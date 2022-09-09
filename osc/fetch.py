@@ -6,14 +6,17 @@
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 from urllib.parse import quote_plus
 from urllib.request import HTTPError
 
+from . import checker as osc_checker
 from . import conf
 from . import oscerr
-from .core import makeurl, streamfile, dgst
+from .core import makeurl, dgst
 from .grabber import OscFileGrabber, OscMirrorGroup
 from .meter import create_text_meter
 from .util import packagequery, cpio
@@ -155,7 +158,6 @@ class Fetcher:
                 os.unlink(tmpfile.name)
 
     def move_package(self, tmpfile, destdir, pac_obj=None):
-        import shutil
         canonname = None
         if pac_obj and pac_obj.name.startswith('container:'):
             canonname = pac_obj.canonname
@@ -324,8 +326,6 @@ def verify_pacs_old(pac_list):
        Check all packages in one go, since this takes only 6 seconds on my Athlon 700
        instead of 20 when calling 'rpm -K' for each of them.
        """
-    import subprocess
-
     if not pac_list:
         return
 
@@ -403,9 +403,8 @@ def verify_pacs(bi):
 
     print("using keys from", ', '.join(bi.prjkeys))
 
-    from . import checker
     failed = False
-    checker = checker.Checker()
+    checker = osc_checker.Checker()
     try:
         checker.readkeys(bi.keys)
         for pkg in pac_list:

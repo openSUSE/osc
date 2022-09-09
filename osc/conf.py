@@ -36,7 +36,6 @@ The configuration dictionary could look like this:
 """
 
 
-import bz2
 import errno
 import getpass
 import os

@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -9,7 +10,6 @@ from .common import OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'project_package_status_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestProjectStatus)
 
 class TestProjectStatus(OscTestCase):
@@ -160,5 +160,4 @@ class TestProjectStatus(OscTestCase):
         self.assertTrue(isinstance(p, type(None)))
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

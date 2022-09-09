@@ -1,5 +1,6 @@
 import os
 import sys
+import unittest
 
 import osc.commandline
 
@@ -7,7 +8,6 @@ from .common import GET, OscTestCase
 
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestResults)
 
 class TestResults(OscTestCase):
@@ -51,6 +51,5 @@ class TestResults(OscTestCase):
         self.assertEqualMultiline(out, self._get_fixture('result-dirty.xml')+self._get_fixture('result.xml'))
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()
 

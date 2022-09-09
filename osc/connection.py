@@ -97,9 +97,6 @@ def get_proxy_manager(env):
     else:
         proxy_url = f"{proxy_purl.scheme}://{proxy_purl.host}"
 
-    # import osc.core here to avoid cyclic imports
-    from . import core
-
     proxy_headers = urllib3.make_headers(
         proxy_basic_auth=proxy_purl.auth,
         user_agent=f"osc/{__version__}",
@@ -166,9 +163,6 @@ def http_request(method, url, headers=None, data=None, file=None):
     :param data: Data to send in the request body (conflicts with `file`).
     :param file: Path to a file to send as data in the request body (conflicts with `data`).
     """
-
-    # import osc.core here to avoid cyclic imports
-    from . import core
 
     purl = urllib3.util.parse_url(url)
     apiurl = conf.extract_known_apiurl(url)

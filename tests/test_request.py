@@ -1,4 +1,5 @@
 import os
+import unittest
 from xml.etree import ElementTree as ET
 
 import osc.core
@@ -10,7 +11,6 @@ from .common import OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'request_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestRequest)
 
 class TestRequest(OscTestCase):
@@ -566,5 +566,4 @@ Comment: <no comment>"""
         self.assertTrue(len(r.get_actions()) == 8)
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

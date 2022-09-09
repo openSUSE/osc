@@ -1,5 +1,6 @@
 import os
 import re
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -11,7 +12,6 @@ from .common import GET, OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'difffile_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestDiffFiles)
 
 class TestDiffFiles(OscTestCase):
@@ -336,5 +336,4 @@ Binary file 'binary' has changed.
         self.assertEqualMultiline(got, exp)
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

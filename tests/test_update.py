@@ -1,5 +1,6 @@
 import os
 import sys
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -10,7 +11,6 @@ from .common import GET, OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'update_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestUpdate)
 
 class TestUpdate(OscTestCase):
@@ -286,5 +286,4 @@ class TestUpdate(OscTestCase):
         self._check_digests('testUpdateResumeDeletedFile_files')
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

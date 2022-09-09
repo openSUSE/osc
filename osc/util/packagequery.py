@@ -1,3 +1,5 @@
+import sys
+
 from .helper import decode_it
 
 
@@ -166,7 +168,6 @@ def cmp(a, b):
 
 
 if __name__ == '__main__':
-    import sys
     try:
         pkgq = PackageQuery.query(sys.argv[1])
     except PackageError as e:

@@ -1,6 +1,7 @@
 import os
 import re
 import struct
+import sys
 from . import packagequery
 
 from .helper import decode_it
@@ -385,7 +386,6 @@ def unpack_string(data, encoding=None):
     return data
 
 if __name__ == '__main__':
-    import sys
     try:
         rpmq = RpmQuery.query(sys.argv[1])
     except RpmError as e:

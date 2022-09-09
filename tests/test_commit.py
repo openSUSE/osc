@@ -1,5 +1,6 @@
 import os
 import sys
+import unittest
 from urllib.error import HTTPError
 from xml.etree import ElementTree as ET
 
@@ -12,7 +13,6 @@ from .common import GET, PUT, POST, DELETE, OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'commit_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestCommit)
 
 rev_dummy = '<revision rev="repository">\n  <srcmd5>empty</srcmd5>\n</revision>'
@@ -369,5 +369,4 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'bar', ' ')
 
 if  __name__ == '__main__':
-    import unittest
     unittest.main()

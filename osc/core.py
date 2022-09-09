@@ -10,7 +10,12 @@
 __store_version__ = '1.0'
 
 
+import codecs
+import datetime
+import difflib
 import errno
+import fnmatch
+import glob
 import hashlib
 import locale
 import os
@@ -20,6 +25,8 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
+import textwrap
 import time
 from functools import cmp_to_key
 from http.client import IncompleteRead
@@ -36,6 +43,7 @@ except ImportError:
 
 from . import __version__
 from . import conf
+from . import meter
 from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
@@ -315,8 +323,6 @@ class Serviceinfo:
                 raise e
 
     def addVerifyFile(self, serviceinfo_node, filename):
-        import hashlib
-
         f = open(filename, 'rb')
         digest = hashlib.sha256(f.read()).hexdigest()
         f.close()
@@ -396,8 +402,6 @@ class Serviceinfo:
 
     def _execute(self, dir, old_dir, callmode=None, singleservice=None,
                  verbose=None):
-        import tempfile
-
         # cleanup existing generated files
         for filename in os.listdir(dir):
             if filename.startswith('_service:') or filename.startswith('_service_'):
@@ -651,7 +655,6 @@ class Project:
 
             `wc_check` : bool
         """
-        import fnmatch
         self.dir = dir
         self.absdir = os.path.abspath(dir)
         self.progress_obj = progress_obj
@@ -839,7 +842,6 @@ class Project:
         store_write_string(self.absdir, '_packages', ET.tostring(self.pac_root, encoding=ET_ENCODING))
 
     def addPackage(self, pac):
-        import fnmatch
         for i in conf.config['exclude_glob']:
             if fnmatch.fnmatch(pac, i):
                 msg = 'invalid package name: \'%s\' (see \'exclude_glob\' config option)' % pac
@@ -1759,7 +1761,6 @@ class Package:
         file has changed (e.g. update_local_filesmeta() has been
         called).
         """
-        import fnmatch
         if self.scm_url:
             self.filenamelist = []
             self.filelist = []
@@ -1984,7 +1985,6 @@ class Package:
         return state
 
     def get_diff(self, revision=None, ignoreUnversioned=False):
-        import tempfile
         diff_hdr = b'Index: %s\n'
         diff_hdr += b'===================================================================\n'
         kept = []
@@ -2127,7 +2127,6 @@ rev: %s
 
 
     def read_meta_from_spec(self, spec = None):
-        import glob
         if spec:
             specfile = spec
         else:
@@ -2303,7 +2302,6 @@ rev: %s
         return sinfo.get('srcmd5') != self.srcmd5
 
     def update(self, rev = None, service_files = False, size_limit = None):
-        import tempfile
         rfiles = []
         # size_limit is only temporary for this update
         old_size_limit = self.size_limit
@@ -2893,8 +2891,6 @@ class Request:
 
     def accept_at_in_hours(self, hours):
         """set auto accept_at time"""
-        import datetime
-
         now = datetime.datetime.utcnow()
         now = now + datetime.timedelta(hours=hours)
         self.accept_at = now.isoformat() + '+00:00'
@@ -3005,7 +3001,6 @@ class Request:
 
     def list_view(self):
         """return "list view" format"""
-        import textwrap
         status = self.state.name
         if self.state.name == 'review' and self.state.approver:
             status += "(approved)"
@@ -3103,8 +3098,6 @@ def shorttime(t):
     or                Apr 02  2005
     depending on whether it is in the current year
     """
-    import time
-
     if time.gmtime()[0] == time.gmtime(t)[0]:
         # same year
         return time.strftime('%b %d %H:%M', time.gmtime(t))
@@ -3647,8 +3640,6 @@ class metafile:
             return self._delegate(**kwargs)
 
     def __init__(self, url, input, change_is_required=False, file_ext='.xml'):
-        import tempfile
-
         if isinstance(url, self._URLFactory):
             self._url_factory = url
         else:
@@ -3976,7 +3967,6 @@ def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=Non
 
 
 def read_meta_from_spec(specfile, *args):
-    import codecs, re
     """
     Read tags and sections from spec file. To read out
     a tag the passed argument mustn't end with a colon. To
@@ -4053,8 +4043,6 @@ def get_default_pager():
     return 'more'
 
 def run_pager(message, tmp_suffix=''):
-    import tempfile, sys
-
     if not message:
         return
 
@@ -4091,8 +4079,6 @@ def _editor_command():
     return cmd
 
 def _edit_message_open_editor(filename, data, orig_mtime):
-    # FIXME: import modules globally
-    import tempfile
     editor = _editor_command()
     mtime = os.stat(filename).st_mtime
     if isinstance(data, str):
@@ -4127,7 +4113,6 @@ def edit_message(footer='', template='', templatelen=30):
     return edit_text(data, delim, suffix='.diff', template=template)
 
 def edit_text(data='', delim=None, suffix='.txt', template=''):
-    import tempfile
     try:
         (fd, filename) = tempfile.mkstemp(prefix='osc-editor', suffix=suffix)
         os.close(fd)
@@ -4639,7 +4624,6 @@ def get_group_data(apiurl, group, *tags):
 
 
 def download(url, filename, progress_obj = None, mtime = None):
-    import tempfile, shutil
     global BUFSIZE
 
     o = None
@@ -4685,8 +4669,7 @@ def get_binary_file(apiurl, prj, repo, arch,
                     progress_meter = False):
     progress_obj = None
     if progress_meter:
-        from .meter import create_text_meter
-        progress_obj = create_text_meter()
+        progress_obj = meter.create_text_meter()
 
     target_filename = target_filename or filename
 
@@ -4711,14 +4694,7 @@ def dgst(file):
         #return None
 
     global BUFSIZE
-
-    try:
-        import hashlib
-        md5 = hashlib
-    except ImportError:
-        import md5
-        md5 = md5
-    s = md5.md5()
+    s = hashlib.md5()
     f = open(file, 'rb')
     while True:
         buf = f.read(BUFSIZE)
@@ -4760,9 +4736,6 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
     The variable origfilename is used if filename and oldfilename differ
     in their names (for instance if a tempfile is used for filename etc.)
     """
-
-    import difflib
-
     global store
 
     if not oldfilename:
@@ -5523,7 +5496,6 @@ def copy_pac(src_apiurl, src_project, src_package,
 
     else:
         # copy one file after the other
-        import tempfile
         query = {'rev': 'upload'}
         xml = show_files_meta(src_apiurl, src_project, src_package,
                               expand=expand, revision=revision)
@@ -6187,7 +6159,6 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
         sys.stdout.write(decode_it(data.translate(all_bytes, remove_bytes)))
 
     # to protect us against control characters
-    import string
     all_bytes = bytes.maketrans(b'', b'')
     remove_bytes = all_bytes[:8] + all_bytes[14:32] # accept tabs and newlines
 
@@ -6306,7 +6277,6 @@ def get_source_rev(apiurl, project, package, revision=None):
     return e
 
 def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', limit = None):
-    import time
     query = {}
     if limit is not None and int(limit) > 0:
         query['limit'] = int(limit)
@@ -6338,7 +6308,6 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format = 'text', li
     return r
 
 def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 'text', limit=20):
-    import time
     query = {}
     if current_package:
         query['package'] = current_package
@@ -6375,8 +6344,6 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format = 't
 
 
 def get_commitlog(apiurl, prj, package, revision, format = 'text', meta = False, deleted = False, revision_upper=None):
-    import time
-
     query = {}
     if deleted:
         query['deleted'] = 1
@@ -7443,8 +7410,6 @@ def print_request_list(apiurl, project, package = None, states = ('new', 'review
 def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                                ignore_reviews=False, source_buildstatus=False):
     """review the request interactively"""
-    import tempfile, re
-
     tmpfile = None
 
     def safe_change_request_state(*args, **kwargs):
@@ -7688,7 +7653,6 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
 
 def edit_submitrequest(apiurl, project, orequest, new_request=None):
     """edit a submit action from orequest/new_request"""
-    import tempfile, shutil
     actions = orequest.get_actions('submit')
     oactions = actions
     if new_request is not None:
@@ -8088,7 +8052,6 @@ class MultibuildFlavorResolver:
                 break
 
         if use_globs:
-            import fnmatch
             multibuild_xml = self.get_multibuild_data()
             all_flavors = self.parse_multibuild_data(multibuild_xml)
             flavors = set()

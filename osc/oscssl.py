@@ -1,14 +1,10 @@
 import binascii
-import datetime
-import errno
 import os
 import socket
 import ssl
-import sys
 import tempfile
 import typing
 
-import urllib3.connection
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization

@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import unittest
 
 import osc.commandline
 import osc.core
@@ -42,7 +43,6 @@ def POST_RDIFF(oldprj, newprj):
 
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestProjectDiff)
 
 class TestProjectDiff(OscTestCase):
@@ -262,5 +262,4 @@ identical: only-in-new
 
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

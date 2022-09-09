@@ -4,22 +4,32 @@
 # either version 2, or version 3 (at your option).
 
 import argparse
+import getpass
+import glob
 import importlib.util
 import inspect
 import os
+import re
+import subprocess
 import sys
+import textwrap
+import tempfile
 import time
+import traceback
 from functools import cmp_to_key
 from operator import itemgetter
 from optparse import SUPPRESS_HELP
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
+from . import build as osc_build
 from . import cmdln
 from . import conf
 from . import oscerr
 from .core import *
-from .util import safewriter
+from .grabber import OscFileGrabber
+from .meter import create_text_meter
+from .util import cpio, rpmquery, safewriter
 from .util.helper import _html_escape, format_table
 
 
@@ -188,7 +198,6 @@ class Osc(cmdln.Cmdln):
         self.options.verbose = conf.config['verbose']
         self.download_progress = None
         if conf.config.get('show_download_progress', False):
-            from .meter import create_text_meter
             self.download_progress = create_text_meter()
 
     def get_api_url(self):
@@ -2079,7 +2088,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository = opts.repository
 
         if not opts.message:
-            import textwrap
             if package is not None:
                 footer = textwrap.TextWrapper(width = 66).fill(
                          'please explain why you like to delete package %s of project %s'
@@ -2132,7 +2140,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 devel_package = args[3]
 
         if not opts.message:
-            import textwrap
             footer = textwrap.TextWrapper(width = 66).fill(
                      'please explain why you like to change the devel project of %s/%s to %s/%s'
                      % (project, package, devel_project, devel_package))
@@ -4353,8 +4360,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc repourls [PROJECT]
         """
-        import tempfile
-
         def _repo_type(apiurl, project, repo):
             if not os.path.exists('/usr/lib/build/queryconfig'):
                 return None
@@ -5480,8 +5485,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         buildlog [REPOSITORY ARCH | BUILDLOGURL]
         """
-        import osc.build
-
         project = package = repository = arch = None
 
         apiurl = self.get_api_url()
@@ -5497,7 +5500,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # no local build with this repo was done
                     print('failed to guess arch, using hostarch')
                     repository = args[0]
-                    arch = osc.build.hostarch
+                    arch = osc_build.hostarch
             elif len(args) < 2:
                 self.print_repos()
             elif len(args) > 2:
@@ -5627,7 +5630,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last, opts.lastsucceeded)
 
     def _find_last_repo_arch(self, repo=None, fatal=True):
-        import glob
         files = glob.glob(os.path.join(os.getcwd(), store, "_buildinfo-*"))
         if repo is not None:
             files = [f for f in files
@@ -5930,11 +5932,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
         elif opts.prefer_pkgs:
-            from .build import get_prefer_pkgs
-            from .util import cpio
             print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
             cpiodata = cpio.CpioWrite()
-            prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch,
+            prefer_pkgs = osc_build.get_prefer_pkgs(opts.prefer_pkgs, arch,
                                           os.path.splitext(build_descr)[1],
                                           cpiodata)
             cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
@@ -6132,16 +6132,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def parse_repoarchdescr(self, args, noinit = False, alternative_project = None, ignore_descr = False, vm_type = None, multibuild_package = None):
         """helper to parse the repo, arch and build description from args"""
-        import osc.build
-        import glob
-        import tempfile
         arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
             # some magic, works only sometimes, but people seem to like it :/
             all_archs = []
-            for mainarch in osc.build.can_also_build:
+            for mainarch in osc_build.can_also_build:
                 all_archs.append(mainarch)
-                for subarch in osc.build.can_also_build.get(mainarch):
+                for subarch in osc_build.can_also_build.get(mainarch):
                     all_archs.append(subarch)
             for arg in args:
                 if (arg.endswith('.spec') or arg.endswith('.dsc') or
@@ -6152,10 +6149,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             'fissile.yml', 'appimage.yml', '_preinstallimage')):
                     arg_descr = arg
                 else:
-                    if (arg == osc.build.hostarch or arg in all_archs) and arg_arch is None:
+                    if (arg == osc_build.hostarch or arg in all_archs) and arg_arch is None:
                         # it seems to be an architecture in general
                         arg_arch = arg
-                        if not (arg == osc.build.hostarch or arg in osc.build.can_also_build.get(osc.build.hostarch, [])):
+                        if not (arg == osc_build.hostarch or arg in osc_build.can_also_build.get(osc_build.hostarch, [])):
                             if not (vm_type == 'qemu' or vm_type == 'emulator'):
                                 print("WARNING: native compile is not possible, a emulator via binfmt misc handler must be configured!")
                     elif not arg_repository:
@@ -6168,15 +6165,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             arg_repository, arg_arch, arg_descr = args
 
-        arg_arch = arg_arch or osc.build.hostarch
-        self._debug("hostarch: ", osc.build.hostarch)
+        arg_arch = arg_arch or osc_build.hostarch
+        self._debug("hostarch: ", osc_build.hostarch)
         self._debug("arg_arch: ", arg_arch)
         self._debug("arg_repository: ", arg_repository)
         self._debug("arg_descr: ", arg_descr)
 
         repositories = []
         # store list of repos for potential offline use
-        repolistfile = os.path.join(os.getcwd(), osc.core.store, "_build_repositories")
+        repolistfile = os.path.join(os.getcwd(), store, "_build_repositories")
         if noinit:
             repositories = Repo.fromfile(repolistfile)
         else:
@@ -6239,7 +6236,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if noinit:
                     bc_filename = '_buildconfig-%s-%s' % (arg_repository, arg_arch)
                     if is_package_dir('.'):
-                        bc_filename = os.path.join(os.getcwd(), osc.core.store, bc_filename)
+                        bc_filename = os.path.join(os.getcwd(), store, bc_filename)
                     else:
                         bc_filename = os.path.abspath(bc_filename)
                     if not os.path.isfile(bc_filename):
@@ -6475,9 +6472,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # OSC_BUILD_ROOT overrides the setting of build-root.
         # OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
         """
-
-        import osc.build
-
         if which(conf.config['build-cmd']) is None:
             print('Error: build (\'%s\') command not found' % conf.config['build-cmd'], file=sys.stderr)
             print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
@@ -6519,9 +6513,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
                 repo, arch, build_descr = args
-                prj, pac = osc.build.calculate_prj_pac(opts, build_descr)
+                prj, pac = osc_build.calculate_prj_pac(opts, build_descr)
                 apihost = urlsplit(self.get_api_url())[1]
-                build_root = osc.build.calculate_build_root(apihost, prj, pac, repo,
+                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo,
                                                     arch)
             if opts.wipe and not opts.force:
                 # Confirm delete
@@ -6533,7 +6527,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             build_args = ['--root=' + build_root, '--noinit', '--shell']
             if opts.wipe:
                 build_args.append('--wipe')
-            sys.exit(osc.build.run_build(opts, *build_args))
+            sys.exit(osc_build.run_build(opts, *build_args))
         elif subcmd in ('shell', 'chroot') or opts.shell:
             print('--shell in combination with build-type %s is experimental.' % vm_chroot)
             print('The semantics may change at any time!')
@@ -6577,7 +6571,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print('Building %s for %s/%s' % (args[2], args[0], args[1]))
         if not opts.host:
-            return osc.build.main(self.get_api_url(), opts, args)
+            return osc_build.main(self.get_api_url(), opts, args)
         else:
             return self._do_rbuild(subcmd, opts, *args)
 
@@ -7902,9 +7896,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         SRPM is the path of the src.rpm in the local filesystem,
         or an URL.
         """
-        import glob
-        from .util import rpmquery
-
         if opts.delete_old_files and conf.config['do_package_tracking']:
             # IMHO the --delete-old-files option doesn't really fit into our
             # package tracking strategy
@@ -7917,7 +7908,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print('%s is not a valid link. It must not end with /' % srpm)
                 sys.exit(1)
             print('trying to fetch', srpm)
-            from .grabber import OscFileGrabber
             OscFileGrabber().urlgrab(srpm)
             srpm = os.path.basename(srpm)
 
@@ -8922,8 +8912,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         or can be specified via mailaddr environment variable.
         """
-
-        from subprocess import Popen
         if opts.message and opts.file:
             raise oscerr.WrongOptions('\'--message\' and \'--file\' are mutually exclusive')
         elif opts.message and opts.just_edit:
@@ -8932,7 +8920,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('\'--file\' and \'--just-edit\' are mutually exclusive')
         meego_style = False
         if not args:
-            import glob, re
             try:
                 fn_changelog = glob.glob('*.changes')[0]
                 fp = open(fn_changelog)
@@ -8982,7 +8969,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             cmd_list.extend(args)
 
         vc_export_env(apiurl)
-        vc = Popen(cmd_list)
+        vc = subprocess.Popen(cmd_list)
         vc.wait()
         sys.exit(vc.returncode)
 
@@ -9088,7 +9075,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('error: read empty value from stdin')
         elif opts.no_echo or opts.prompt:
             if opts.no_echo:
-                import getpass
                 inp = getpass.getpass(prompt_value).strip()
             else:
                 inp = raw_input(prompt_value).strip()
@@ -9330,7 +9316,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if os.environ.get('OSC_PLUGIN_FAIL_IGNORE'):
                         print("%s: %s\n" % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                     else:
-                        import traceback
                         traceback.print_exc(file=sys.stderr)
                         print('\n%s: %s' % (os.path.join(plugin_dir, extfile), e), file=sys.stderr)
                         print("\n Try 'env OSC_PLUGIN_FAIL_IGNORE=1 osc ...'", file=sys.stderr)

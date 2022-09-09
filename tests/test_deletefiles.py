@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -9,7 +10,6 @@ from .common import OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'deletefile_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestDeleteFiles)
 
 class TestDeleteFiles(OscTestCase):
@@ -206,5 +206,4 @@ class TestDeleteFiles(OscTestCase):
         self.assertTrue(ret[1] == exp2)
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

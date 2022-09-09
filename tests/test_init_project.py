@@ -1,5 +1,7 @@
 import os
+import unittest
 
+import osc.conf
 import osc.core
 import osc.oscerr
 
@@ -9,7 +11,6 @@ from .common import GET, OscTestCase
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_project_fixtures')
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestInitProject)
 
 class TestInitProject(OscTestCase):
@@ -58,7 +59,6 @@ class TestInitProject(OscTestCase):
         disable wc_check (because we didn't disable the package tracking before the Project class
         was imported therefore REQ_STOREFILES contains '_packages')
         """
-        import osc.conf
         # disable package tracking
         osc.conf.config['do_package_tracking'] = False
         prj_dir = os.path.join(self.tmpdir, 'testprj')
@@ -71,5 +71,4 @@ class TestInitProject(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join(storedir, '_packages')))
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()
