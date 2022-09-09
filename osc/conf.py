@@ -618,8 +618,12 @@ def _build_opener(apiurl):
             return parts[1]
 
         def list_ssh_dir_keys(self):
-            sshdir = os.path.expanduser('~/.ssh')
             keys_in_home_ssh = {}
+
+            sshdir = os.path.expanduser('~/.ssh')
+            if not os.path.isdir(sshdir):
+                return keys_in_home_ssh
+
             for keyfile in os.listdir(sshdir):
                 if keyfile.startswith(("agent-", "authorized_keys", "config", "known_hosts")):
                     # skip files that definitely don't contain keys
