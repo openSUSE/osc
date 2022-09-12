@@ -2653,7 +2653,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         print(details, file=sys.stderr)
                     root = ET.fromstring(e.read())
                     summary = root.find('summary')
-                    if not summary is None:
+                    if summary is not None:
                         print(summary.text)
                     if opts.or_revoke:
                         if e.code in [400, 403, 404, 500]:
@@ -5880,7 +5880,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         build_descr_data = None
-        if not build_descr is None:
+        if build_descr is not None:
             build_descr_data = open(build_descr, 'rb').read()
         if opts.prefer_pkgs and build_descr_data is None:
             raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
@@ -7732,7 +7732,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         package = node.get('name')
 
                 result.append(project)
-                if not package is None:
+                if package is not None:
                     result.append(package)
 
                 if opts.version and package is not None:

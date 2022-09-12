@@ -1676,7 +1676,7 @@ class Package:
         shutil.copyfile(storefilename, filename)
         if mtime:
             utime(filename, (-1, mtime))
-        if not origfile is None:
+        if origfile is not None:
             os.unlink(origfile)
 
     def mergefile(self, n, revision, mtime=None):
@@ -2321,7 +2321,7 @@ rev: %s
         rfiles = []
         # size_limit is only temporary for this update
         old_size_limit = self.size_limit
-        if not size_limit is None:
+        if size_limit is not None:
             self.size_limit = int(size_limit)
         if os.path.isfile(os.path.join(self.storedir, '_in_update', '_files')):
             print('resuming broken update...')
@@ -2563,7 +2563,7 @@ class AbstractState:
         root = ET.Element(self.get_node_name())
         for attr in self.get_node_attrs():
             val = getattr(self, attr)
-            if not val is None:
+            if val is not None:
                 root.set(attr, val)
         if self.get_description():
             ET.SubElement(root, 'description').text = self.get_description()
@@ -2886,7 +2886,7 @@ class Request:
             root.set('creator', self.creator)
         for action in self.actions:
             root.append(action.to_xml())
-        if not self.state is None:
+        if self.state is not None:
             root.append(self.state.to_xml())
         for review in self.reviews:
             root.append(review.to_xml())
@@ -4152,7 +4152,7 @@ def edit_message(footer='', template='', templatelen=30):
     delim = '--This line, and those below, will be ignored--\n'
     data = ''
     if template != '':
-        if not templatelen is None:
+        if templatelen is not None:
             lines = template.splitlines()
             data = '\n'.join(lines[:templatelen])
             if lines[templatelen:]:
@@ -4947,7 +4947,7 @@ def server_diff_noex(apiurl,
             except:
                 elm = ET.fromstring(body).find('summary')
                 summary = ''
-                if not elm is None:
+                if elm is not None:
                     summary = elm.text
                 return b'error: diffing failed: %s' % summary.encode()
             return rdiff
@@ -6228,7 +6228,7 @@ def streamfile(url, http_meth=http_GET, bufsize=8192, data=None, progress_obj=No
         progress_obj.end()
     f.close()
 
-    if not cl is None and read != cl:
+    if cl is not None and read != cl:
         raise oscerr.OscIOError(None, 'Content-Length is not matching file size for %s: %i vs %i file size' % (url, cl, read))
 
 
@@ -7668,7 +7668,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             if repl == 'i' and src_actions:
                 req_summary = str(request) + '\n'
                 issues = '\n\n' + get_formatted_issues(apiurl, request.reqid)
-                if not orequest is None and tmpfile:
+                if orequest is not None and tmpfile:
                     tmpfile.close()
                     tmpfile = None
                 if tmpfile is None:
@@ -7747,7 +7747,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                         continue
                 else:
                     msg = msg.strip('\'').strip('"')
-                if not orequest is None:
+                if orequest is not None:
                     request.create(apiurl)
                     if not safe_change_request_state(apiurl, request.reqid, 'accepted', msg, force=force):
                         # an error occured
