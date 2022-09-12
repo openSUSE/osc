@@ -664,7 +664,7 @@ class Osc(cmdln.Cmdln):
             except HTTPError:
                 pass
 
-        if opts.force or not filelist or not '_patchinfo' in filelist:
+        if opts.force or not filelist or '_patchinfo' not in filelist:
             print("Creating new patchinfo...")
             query = 'cmd=createpatchinfo&name=' + patchinfo
             if opts.force:
@@ -2005,7 +2005,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             role = 'bugowner'
         if opts.role:
             role = opts.role
-        if not role in ('maintainer', 'bugowner'):
+        if role not in ('maintainer', 'bugowner'):
             raise oscerr.WrongOptions('invalid \'--role\': either specify \'maintainer\' or \'bugowner\'')
         if not opts.message:
             opts.message = edit_message()
@@ -2423,7 +2423,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     state_list = ['all']
                 else:
                     for s in state_list:
-                        if not s in states and not s == 'all':
+                        if s not in states and not s == 'all':
                             raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
                 if opts.mine:
                     who = conf.get_apiurl_usr(apiurl)
@@ -4681,7 +4681,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # Do some magic here, when adding a url. We want that the server to download the tar ball and to verify it
         for arg in parseargs(args):
             if arg.endswith('.git') or arg.startswith('git://') or \
-               arg.startswith('git@') or (arg.startswith('https://github.com') and not '/releases/' in arg) or \
+               arg.startswith('git@') or (arg.startswith('https://github.com') and '/releases/' not in arg) or \
                arg.startswith('https://gitlab.com'):
                 addGitSource(arg)
             elif arg.startswith('http://') or arg.startswith('https://') or arg.startswith('ftp://'):
@@ -5199,7 +5199,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         if len(files) == 0:
-            if not '/' in project:
+            if '/' not in project:
                 raise oscerr.WrongArgs("Missing operand, type osc help rremove for help")
             else:
                 files = (package, )
@@ -6152,10 +6152,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not arg_repository:
             raise oscerr.WrongArgs('please specify a repository')
         if not noinit:
-            if not arg_repository in repo_names:
+            if arg_repository not in repo_names:
                 raise oscerr.WrongArgs('%s is not a valid repository, use one of: %s' % (arg_repository, ', '.join(repo_names)))
             arches = [r.arch for r in repositories if r.name == arg_repository and r.arch]
-            if arches and not arg_arch in arches:
+            if arches and arg_arch not in arches:
                 raise oscerr.WrongArgs('%s is not a valid arch for the repository %s, use one of: %s' % (arg_arch, arg_repository, ', '.join(arches)))
 
         # can be implemented using
@@ -6569,7 +6569,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         cwd = os.getcwd()
         basename = os.path.basename(cwd)
-        if not ':' in opts.host:
+        if ':' not in opts.host:
             hostname = opts.host
             hostpath = "~/"
         else:
@@ -7411,7 +7411,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for r in sorted(requests, key=lambda x: x.reqid):
                 print(r.list_view(), '\n')
             return
-        elif not type in args_pkg:
+        elif type not in args_pkg:
             raise oscerr.WrongArgs("invalid type %s" % type)
 
         role_filter = ''
@@ -7528,7 +7528,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for i in res.get('package_id', res.get('package', dummy_elm)).findall('package'):
                 prj = i.get('project')
                 roles['/'.join([prj, i.get('name')])] = [p.get('role') for p in i.findall('person') if p.get('userid') == user]
-                if not prj in request_todo or request_todo[prj] != []:
+                if prj not in request_todo or request_todo[prj] != []:
                     request_todo.setdefault(prj, []).append(i.get('name'))
         else:
             for i in res.get('project_id', res.get('project', dummy_elm)).findall('project'):
@@ -7972,7 +7972,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        if not opts.method in ['GET', 'PUT', 'POST', 'DELETE']:
+        if opts.method not in ['GET', 'PUT', 'POST', 'DELETE']:
             sys.exit('unknown method %s' % opts.method)
 
         # default is PUT when uploading files
@@ -8989,7 +8989,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print('[%s]' % sect)
                 for opt in sorted(cp.options(sect)):
                     if sect == 'general' and opt in conf.api_host_options or \
-                            sect != 'general' and not opt in conf.api_host_options:
+                            sect != 'general' and opt not in conf.api_host_options:
                         continue
                     if opt in ('pass', 'passx') and not opts.dump_full:
                         continue

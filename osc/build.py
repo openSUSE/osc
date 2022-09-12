@@ -550,7 +550,7 @@ def check_trusted_projects(apiurl, projects):
     trusted = config['api_host_options'][apiurl]['trusted_prj']
     tlen = len(trusted)
     for prj in projects:
-        if not prj in trusted:
+        if prj not in trusted:
             print("\nThe build root needs packages from project '%s'." % prj)
             print("Note that malicious packages can compromise the build result or even your system.")
             r = raw_input(trustprompt % {'project': prj})
@@ -1044,11 +1044,11 @@ def main(apiurl, opts, argv):
     # arch we are supposed to build for
     if vm_type != "emulator" and vm_type != "qemu":
         if bi.hostarch is not None:
-            if hostarch != bi.hostarch and not bi.hostarch in can_also_build.get(hostarch, []):
+            if hostarch != bi.hostarch and bi.hostarch not in can_also_build.get(hostarch, []):
                 print('Error: hostarch \'%s\' is required.' % (bi.hostarch), file=sys.stderr)
                 return 1
         elif hostarch != bi.buildarch:
-            if not bi.buildarch in can_also_build.get(hostarch, []):
+            if bi.buildarch not in can_also_build.get(hostarch, []):
                 print('WARNING: It is guessed to build on hostarch \'%s\' for \'%s\' via QEMU user emulation.' % (hostarch, bi.buildarch), file=sys.stderr)
 
     rpmlist_prefers = []

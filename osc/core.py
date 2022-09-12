@@ -778,9 +778,9 @@ class Project:
         res = []
         for pac in self.pacs_have:
             st = self.status(pac)
-            if not st in exclude_states:
+            if st not in exclude_states:
                 res.append((st, pac))
-        if not '?' in exclude_states:
+        if '?' not in exclude_states:
             res.extend([('?', pac) for pac in self.pacs_unvers])
         return res
 
@@ -918,8 +918,8 @@ class Project:
             try:
                 # update complete project
                 # packages which no longer exists upstream
-                upstream_del = [pac for pac in self.pacs_have if not pac in self.pacs_available and self.get_state(pac) != 'A']
-                sinfo_pacs = [pac for pac in self.pacs_have if self.get_state(pac) in (' ', 'D') and not pac in self.pacs_broken]
+                upstream_del = [pac for pac in self.pacs_have if pac not in self.pacs_available and self.get_state(pac) != 'A']
+                sinfo_pacs = [pac for pac in self.pacs_have if self.get_state(pac) in (' ', 'D') and pac not in self.pacs_broken]
                 sinfo_pacs.extend(self.pacs_missing)
                 sinfos = get_project_sourceinfo(self.apiurl, self.name, True, *sinfo_pacs)
 
@@ -1200,7 +1200,7 @@ class Package:
         if self.scm_url:
             return dirty_files
         for fname in self.filenamelist:
-            if not os.path.exists(os.path.join(self.storedir, fname)) and not fname in self.skipped:
+            if not os.path.exists(os.path.join(self.storedir, fname)) and fname not in self.skipped:
                 dirty_files.append(fname)
         for fname in Package.REQ_STOREFILES:
             if not os.path.isfile(os.path.join(self.storedir, fname)):
@@ -1211,13 +1211,13 @@ class Package:
                 continue
             elif fname in self.filenamelist and fname in self.skipped:
                 dirty_files.append(fname)
-            elif not fname in self.filenamelist:
+            elif fname not in self.filenamelist:
                 dirty_files.append(fname)
         for fname in self.to_be_deleted[:]:
-            if not fname in self.filenamelist:
+            if fname not in self.filenamelist:
                 dirty_files.append(fname)
         for fname in self.in_conflict[:]:
-            if not fname in self.filenamelist:
+            if fname not in self.filenamelist:
                 dirty_files.append(fname)
         return dirty_files
 
@@ -1235,7 +1235,7 @@ class Package:
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
             # XXX: should we also check the md5?
-            if not os.path.exists(os.path.join(self.storedir, f.name)) and not f.name in self.skipped:
+            if not os.path.exists(os.path.join(self.storedir, f.name)) and f.name not in self.skipped:
                 # if get_source_file fails we're screwed up...
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
                                 targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
@@ -1244,15 +1244,15 @@ class Package:
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
                     fname.startswith('_build'):
                 continue
-            elif not fname in self.filenamelist or fname in self.skipped:
+            elif fname not in self.filenamelist or fname in self.skipped:
                 # this file does not belong to the storedir so remove it
                 os.unlink(os.path.join(self.storedir, fname))
         for fname in self.to_be_deleted[:]:
-            if not fname in self.filenamelist:
+            if fname not in self.filenamelist:
                 self.to_be_deleted.remove(fname)
                 self.write_deletelist()
         for fname in self.in_conflict[:]:
-            if not fname in self.filenamelist:
+            if fname not in self.filenamelist:
                 self.in_conflict.remove(fname)
                 self.write_conflictlist()
 
@@ -1305,7 +1305,7 @@ class Package:
             # that's why we don't use clear_from_conflictlist
             self.in_conflict.remove(n)
             self.write_conflictlist()
-        if not state in ('A', '?') and not (state == '!' and was_added):
+        if state not in ('A', '?') and not (state == '!' and was_added):
             self.put_on_deletelist(n)
             self.write_deletelist()
         return (True, state)
@@ -1489,7 +1489,7 @@ class Package:
                 return 1
 
         if not self.todo:
-            self.todo = [i for i in self.to_be_added if not i in self.filenamelist] + self.filenamelist
+            self.todo = [i for i in self.to_be_added if i not in self.filenamelist] + self.filenamelist
 
         pathn = getTransActPath(self.dir)
 
@@ -1497,7 +1497,7 @@ class Package:
         todo_delete = []
         real_send = []
         sha256sums = {}
-        for filename in self.filenamelist + [i for i in self.to_be_added if not i in self.filenamelist]:
+        for filename in self.filenamelist + [i for i in self.to_be_added if i not in self.filenamelist]:
             if filename.startswith('_service:') or filename.startswith('_service_'):
                 continue
             st = self.status(filename)
@@ -1566,7 +1566,7 @@ class Package:
                 fileelem.set('hash', 'sha256:%s' % sha256sums[filename])
             sfilelist = self.__send_commitlog(msg, filelist)
         send = self.commit_get_missing(sfilelist)
-        real_send = [i for i in real_send if not i in send]
+        real_send = [i for i in real_send if i not in send]
         # abort after 3 tries
         tries = 3
         tdir = None
@@ -1924,7 +1924,7 @@ class Package:
         res = []
         for fname in sorted(todo):
             st = self.status(fname)
-            if not st in exclude_states:
+            if st not in exclude_states:
                 res.append((st, fname))
         return res
 
@@ -1979,7 +1979,7 @@ class Package:
                 state = 'M'
         elif n in self.to_be_added and not exists:
             state = '!'
-        elif not exists and exists_in_store and known_by_meta and not n in self.to_be_deleted:
+        elif not exists and exists_in_store and known_by_meta and n not in self.to_be_deleted:
             state = '!'
         elif exists and not exists_in_store and not known_by_meta:
             state = '?'
@@ -2016,7 +2016,7 @@ class Package:
             if add:
                 diff.append(b'--- %s\t(revision 0)\n' % fname.encode())
                 rev = 'revision 0'
-                if revision and not fname in self.to_be_added:
+                if revision and fname not in self.to_be_added:
                     rev = 'working copy'
                 diff.append(b'+++ %s\t(%s)\n' % (fname.encode(), rev.encode()))
                 fname = os.path.join(self.absdir, fname)
@@ -2063,7 +2063,7 @@ class Package:
             return diff
 
         if revision is None:
-            todo = self.todo or [i for i in self.filenamelist if not i in self.to_be_added] + self.to_be_added
+            todo = self.todo or [i for i in self.filenamelist if i not in self.to_be_added] + self.to_be_added
             for fname in todo:
                 if fname in self.to_be_added and self.status(fname) == 'A':
                     added.append(fname)
@@ -2083,7 +2083,7 @@ class Package:
             # swap added and deleted
             kept, deleted, added, services = self.__get_rev_changes(rfiles)
             added = [f.name for f in added]
-            added.extend([f for f in self.to_be_added if not f in kept])
+            added.extend([f for f in self.to_be_added if f not in kept])
             deleted = [f.name for f in deleted]
             deleted.extend(self.to_be_deleted)
             for f in added[:]:
@@ -2271,12 +2271,12 @@ rev: %s
             # treat skipped like added files
             # problem: this overwrites existing files during the update
             # (because skipped files aren't in self.filenamelist_unvers)
-            if f.name in self.filenamelist and not f.name in self.skipped:
+            if f.name in self.filenamelist and f.name not in self.skipped:
                 kept.append(f)
             else:
                 added.append(f)
         for f in self.filelist:
-            if not f.name in revfilenames:
+            if f.name not in revfilenames:
                 deleted.append(f)
 
         return kept, added, deleted, services
@@ -2489,7 +2489,7 @@ rev: %s
         return r
 
     def revert(self, filename):
-        if not filename in self.filenamelist and not filename in self.to_be_added:
+        if filename not in self.filenamelist and filename not in self.to_be_added:
             raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % filename)
         elif filename in self.skipped:
             raise oscerr.OscIOError(None, 'file \'%s\' is marked as skipped and cannot be reverted' % filename)
@@ -2728,11 +2728,11 @@ class Action:
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
 
     def __init__(self, type, **kwargs):
-        if not type in Action.type_args.keys():
+        if type not in Action.type_args.keys():
             raise oscerr.WrongArgs('invalid action type: \'%s\'' % type)
         self.type = type
         for i in kwargs.keys():
-            if not i in Action.type_args[type]:
+            if i not in Action.type_args[type]:
                 raise oscerr.WrongArgs('invalid argument: \'%s\'' % i)
         # set all type specific attributes
         for i in Action.type_args[type]:
@@ -2787,8 +2787,8 @@ class Action:
     def from_xml(action_node):
         """create action from XML"""
         if action_node is None or \
-                not action_node.get('type') in Action.type_args.keys() or \
-                not action_node.tag in ('action', 'submit'):
+                action_node.get('type') not in Action.type_args.keys() or \
+                action_node.tag not in ('action', 'submit'):
             raise oscerr.WrongArgs('invalid argument')
         elm_to_prefix = {i[1]: i[0] for i in Action.prefix_to_elm.items()}
         kwargs = {}
@@ -4453,7 +4453,7 @@ def get_request_collection(apiurl, role=None, req_who=None, req_states=('new', '
 
 def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new', 'review', 'declined'), req_type=None):
     xpath = ''
-    if not 'all' in req_state:
+    if 'all' not in req_state:
         for state in req_state:
             xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, op='or', inner=True)
         xpath = '(%s)' % xpath
@@ -4487,7 +4487,7 @@ def get_request_list(apiurl, project='', package='', req_who='', req_state=('new
                      withfullhistory=False):
     exclude_target_projects = exclude_target_projects or []
     xpath = ''
-    if not 'all' in req_state:
+    if 'all' not in req_state:
         for state in req_state:
             xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, inner=True)
     if req_who:
@@ -4556,7 +4556,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), 
             xpath = xpath_join(xpath, xp, inner=True)
     if req_type:
         xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
-    if not 'all' in req_state:
+    if 'all' not in req_state:
         xp = ''
         for state in req_state:
             xp = xpath_join(xp, 'state/@name=\'%s\'' % state, inner=True)
@@ -4932,7 +4932,7 @@ def server_diff_noex(apiurl,
         body = None
         try:
             body = e.read()
-            if not b'bad link' in body:
+            if b'bad link' not in body:
                 return b'# diff failed: ' + body
         except:
             return b'# diff failed with unknown error'

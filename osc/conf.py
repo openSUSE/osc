@@ -559,7 +559,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     """
     cp = get_configParser(config['conffile'])
     # don't allow "internal" options
-    general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
+    general_opts = [i for i in DEFAULTS.keys() if i not in ['user', 'pass', 'passx']]
     if section != 'general':
         section = config['apiurl_aliases'].get(section, section)
         scheme, host, path = \
@@ -577,10 +577,10 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
             sections[apiurl] = url
 
     section = sections.get(section.rstrip('/'), section)
-    if not section in cp.sections():
+    if section not in cp.sections():
         raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
-    if section == 'general' and not opt in general_opts or \
-       section != 'general' and not opt in api_host_options:
+    if section == 'general' and opt not in general_opts or \
+       section != 'general' and opt not in api_host_options:
         raise oscerr.ConfigError('unknown config option \'%s\'' % opt, config['conffile'])
 
     if not val and not delete and opt == 'pass' and creds_mgr_descr is not None:
@@ -833,7 +833,7 @@ def get_config(override_conffile=None,
         if cp.has_option(url, 'build-root', proper=True):
             api_host_options[apiurl]['build-root'] = cp.get(url, 'build-root', raw=True)
 
-        if not 'sslcertck' in api_host_options[apiurl]:
+        if 'sslcertck' not in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
         if 'allow_http' not in api_host_options[apiurl]:
