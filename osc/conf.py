@@ -36,7 +36,6 @@ The configuration dictionary could look like this:
 """
 
 
-import bz2
 import errno
 import getpass
 import os
@@ -83,6 +82,7 @@ def _identify_osccookiejar():
 
     return os.path.join(osc_state_dir, 'cookiejar')
 
+
 DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'user': None,
             'pass': None,
@@ -106,7 +106,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-vm-user': '',                # optional for VM builds
             'build-kernel': '',                 # optional for VM builds
             'build-initrd': '',                 # optional for VM builds
-            'download-assets-cmd': '/usr/lib/build/download_assets', # optional for scm/git based builds
+            'download-assets-cmd': '/usr/lib/build/download_assets',  # optional for scm/git based builds
 
             'build-jobs': str(_get_processors()),
             'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
@@ -178,7 +178,7 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
 
             # heuristic to speedup Package.status
             'status_mtime_heuristic': '0'
-}
+            }
 
 # some distros like Debian rename and move build to obs-build
 if not os.path.isfile('/usr/bin/build') and os.path.isfile('/usr/bin/obs-build'):
@@ -187,17 +187,17 @@ if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-buil
     DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
-    'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
-    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-    'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
+                'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
+                'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
+                'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
+                'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
 integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
-    'downloadurl', 'sshkey']
+                    'downloadurl', 'sshkey']
 
 
-def apply_option_types(config):
+def apply_option_types(config, conffile=""):
     """
     Return a copy of `config` dictionary with values converted to their expected types
     according to the enumerated option types (boolean_opts, integer_opts).
@@ -431,7 +431,7 @@ your credentials for this apiurl.
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         url = apisrv
-    elif scheme != None:
+    elif scheme is not None:
         url = scheme + apisrv
     else:
         url = "https://" + apisrv
@@ -493,8 +493,8 @@ def get_apiurl_usr(apiurl):
     try:
         return get_apiurl_api_host_options(apiurl)['user']
     except KeyError:
-        print('no specific section found in config file for host of [\'%s\'] - using default user: \'%s\'' \
-            % (apiurl, config['user']), file=sys.stderr)
+        print('no specific section found in config file for host of [\'%s\'] - using default user: \'%s\''
+              % (apiurl, config['user']), file=sys.stderr)
         return config['user']
 
 
@@ -559,7 +559,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     """
     cp = get_configParser(config['conffile'])
     # don't allow "internal" options
-    general_opts = [i for i in DEFAULTS.keys() if not i in ['user', 'pass', 'passx']]
+    general_opts = [i for i in DEFAULTS.keys() if i not in ['user', 'pass', 'passx']]
     if section != 'general':
         section = config['apiurl_aliases'].get(section, section)
         scheme, host, path = \
@@ -577,10 +577,10 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
             sections[apiurl] = url
 
     section = sections.get(section.rstrip('/'), section)
-    if not section in cp.sections():
+    if section not in cp.sections():
         raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
-    if section == 'general' and not opt in general_opts or \
-       section != 'general' and not opt in api_host_options:
+    if section == 'general' and opt not in general_opts or \
+       section != 'general' and opt not in api_host_options:
         raise oscerr.ConfigError('unknown config option \'%s\'' % opt, config['conffile'])
 
     if not val and not delete and opt == 'pass' and creds_mgr_descr is not None:
@@ -635,6 +635,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
         return (opt, cp.get(section, opt, raw=True))
     return (opt, None)
 
+
 def _extract_user_compat(cp, section, creds_mgr):
     """
     This extracts the user either from the ConfigParser or
@@ -644,6 +645,7 @@ def _extract_user_compat(cp, section, creds_mgr):
     if user is None and hasattr(creds_mgr, 'get_user'):
         user = creds_mgr.get_user(section)
     return user
+
 
 def write_initial_config(conffile, entries, custom_template='', creds_mgr_descriptor=None):
     """
@@ -705,7 +707,7 @@ def _get_credentials_manager(url, cp):
 
 class APIHostOptionsEntry(dict):
     def __getitem__(self, key, *args, **kwargs):
-        value = super(self.__class__, self).__getitem__(key, *args, **kwargs)
+        value = super().__getitem__(key, *args, **kwargs)
         if key == 'pass' and callable(value):
             print('Warning: use of a deprecated credentials manager API.',
                   file=sys.stderr)
@@ -732,7 +734,7 @@ def get_config(override_conffile=None,
 
     conffile = os.path.expanduser(conffile)
     if not os.path.exists(conffile):
-        raise oscerr.NoConfigfile(conffile, \
+        raise oscerr.NoConfigfile(conffile,
                                   account_not_configured_text % conffile)
 
     # okay, we made sure that oscrc exists
@@ -759,7 +761,7 @@ def get_config(override_conffile=None,
     config = dict(cp.items('general', raw=1))
     config['conffile'] = conffile
 
-    config = apply_option_types(config)
+    config = apply_option_types(config, conffile)
 
     config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
     config['exclude_glob'] = config['exclude_glob'].split()
@@ -831,7 +833,7 @@ def get_config(override_conffile=None,
         if cp.has_option(url, 'build-root', proper=True):
             api_host_options[apiurl]['build-root'] = cp.get(url, 'build-root', raw=True)
 
-        if not 'sslcertck' in api_host_options[apiurl]:
+        if 'sslcertck' not in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
         if 'allow_http' not in api_host_options[apiurl]:
@@ -868,8 +870,8 @@ def get_config(override_conffile=None,
         scheme = config.get('scheme', 'https')
         config['apiurl'] = urljoin(scheme, apisrv)
     if 'apisrc' in config or 'scheme' in config:
-        print('Warning: Use of the \'scheme\' or \'apisrv\' in oscrc is deprecated!\n' \
-                            'Warning: See README for migration details.', file=sys.stderr)
+        print('Warning: Use of the \'scheme\' or \'apisrv\' in oscrc is deprecated!\n'
+              'Warning: See README for migration details.', file=sys.stderr)
     if 'build_platform' in config:
         print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
         config['build_repository'] = config['build_platform']
@@ -933,6 +935,7 @@ def identify_conf():
 
     return conffile
 
+
 def interactive_config_setup(conffile, apiurl, initial=True):
     scheme = urlsplit(apiurl)[0]
     http = scheme == "http"
@@ -958,6 +961,7 @@ def interactive_config_setup(conffile, apiurl, initial=True):
         write_initial_config(conffile, config, creds_mgr_descriptor=creds_mgr_descr)
     else:
         add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr, allow_http=http)
+
 
 def select_credentials_manager_descr():
     if not credentials.has_keyring_support():

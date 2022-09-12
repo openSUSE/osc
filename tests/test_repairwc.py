@@ -1,5 +1,7 @@
 import os
+import shutil
 import sys
+import unittest
 from xml.etree import ElementTree as ET
 
 import osc.core
@@ -10,9 +12,10 @@ from .common import GET, PUT, POST, DELETE, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'repairwc_fixtures')
 
+
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestRepairWC)
+
 
 class TestRepairWC(OscTestCase):
     def _get_fixtures_dir(self):
@@ -214,7 +217,6 @@ class TestRepairWC(OscTestCase):
 
     def test_project_noapiurl(self):
         """the project wc has no _apiurl file"""
-        import shutil
         prj_dir = os.path.join(self.tmpdir, 'prj_noapiurl')
         shutil.copytree(os.path.join(self._get_fixtures_dir(), 'prj_noapiurl'), prj_dir)
         storedir = os.path.join(prj_dir, osc.core.store)
@@ -227,5 +229,4 @@ class TestRepairWC(OscTestCase):
 
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

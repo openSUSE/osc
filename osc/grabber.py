@@ -5,7 +5,6 @@
 
 
 import os
-import sys
 from urllib.request import HTTPError
 from urllib.parse import urlparse
 from urllib.parse import unquote

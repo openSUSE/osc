@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import unittest
 
 import osc.commandline
 import osc.core
@@ -11,11 +12,13 @@ from .common import GET, POST, OscTestCase, EXPECTED_REQUESTS
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'prdiff_fixtures')
 UPSTREAM = 'some:project'
-BRANCH   = 'home:user:branches:' + UPSTREAM
+BRANCH = 'home:user:branches:' + UPSTREAM
+
 
 def rdiff_url(pkg, oldprj, newprj):
     return 'http://localhost/source/%s/%s?unified=1&opackage=%s&oproject=%s&cmd=diff&expand=1&tarlimit=0&filelimit=0' % \
         (newprj, pkg, pkg, oldprj.replace(':', '%3A'))
+
 
 def request_url(prj):
     return 'http://localhost/search/request?match=%%28state%%2F%%40name%%3D%%27new%%27+or+state%%2F%%40name%%3D%%27review%%27%%29+and+%%28action%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+action%%2Fsource%%2F%%40project%%3D%%27%s%%27%%29' % \
@@ -42,11 +45,12 @@ def POST_RDIFF(oldprj, newprj):
 
 
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestProjectDiff)
+
 
 class TestProjectDiff(OscTestCase):
     diff_hdr = 'Index: %s\n==================================================================='
+
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
 
@@ -61,12 +65,10 @@ class TestProjectDiff(OscTestCase):
         cli.main(argv=argv)
         return sys.stdout.getvalue()
 
-
     def testPrdiffTooManyArgs(self):
         def runner():
             self._run_prdiff('one', 'two', 'superfluous-arg')
         self.assertRaises(osc.oscerr.WrongArgs, runner)
-
 
     @GET_PROJECT_PACKAGES(UPSTREAM, BRANCH)
     @POST_RDIFF(UPSTREAM, BRANCH)
@@ -77,6 +79,7 @@ differs:   common-two
 identical: common-three
 identical: only-in-new
 """
+
         def runner():
             self._run_prdiff()
 
@@ -89,7 +92,6 @@ identical: only-in-new
         self._change_to_tmpdir(FIXTURES_DIR, BRANCH)
         out = self._run_prdiff()
         self.assertEqualMultiline(out, exp)
-
 
     @GET_PROJECT_PACKAGES(UPSTREAM, BRANCH)
     @POST_RDIFF(UPSTREAM, BRANCH)
@@ -104,7 +106,6 @@ identical: only-in-new
         out = self._run_prdiff('home:user:branches:some:project')
         self.assertEqualMultiline(out, exp)
 
-
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
     @POST_RDIFF('old:prj', 'new:prj')
     def testPrdiffTwoArgs(self):
@@ -115,7 +116,6 @@ identical: common-three
 """
         out = self._run_prdiff('old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
-
 
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
     @POST_RDIFF('old:prj', 'new:prj')
@@ -129,7 +129,6 @@ old only:  only-in-old
         out = self._run_prdiff('--show-not-in-new', 'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
 
-
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
     @POST_RDIFF('old:prj', 'new:prj')
     def testPrdiffNewOnly(self):
@@ -141,7 +140,6 @@ new only:  only-in-new
 """
         out = self._run_prdiff('--show-not-in-old', 'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
-
 
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
     @POST_RDIFF('old:prj', 'new:prj')
@@ -157,7 +155,6 @@ identical: common-three
 """
         out = self._run_prdiff('--diffstat', 'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
-
 
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
     @POST_RDIFF('old:prj', 'new:prj')
@@ -182,9 +179,8 @@ identical: common-three
         out = self._run_prdiff('--unified', 'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
 
-
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
-    @POST(rdiff_url('common-two',   'old:prj', 'new:prj'), exp='', file='common-two-diff')
+    @POST(rdiff_url('common-two', 'old:prj', 'new:prj'), exp='', file='common-two-diff')
     @POST(rdiff_url('common-three', 'old:prj', 'new:prj'), exp='', text='')
     def testPrdiffInclude(self):
         self._change_to_tmpdir()
@@ -195,9 +191,8 @@ identical: common-three
                                'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
 
-
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
-    @POST(rdiff_url('common-two',   'old:prj', 'new:prj'), exp='', file='common-two-diff')
+    @POST(rdiff_url('common-two', 'old:prj', 'new:prj'), exp='', file='common-two-diff')
     @POST(rdiff_url('common-three', 'old:prj', 'new:prj'), exp='', text='')
     def testPrdiffExclude(self):
         self._change_to_tmpdir()
@@ -207,9 +202,8 @@ identical: common-three
         out = self._run_prdiff('--exclude', 'one', 'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
 
-
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
-    @POST(rdiff_url('common-two',   'old:prj', 'new:prj'), exp='', file='common-two-diff')
+    @POST(rdiff_url('common-two', 'old:prj', 'new:prj'), exp='', file='common-two-diff')
     def testPrdiffIncludeExclude(self):
         self._change_to_tmpdir()
         exp = """differs:   common-two
@@ -219,13 +213,12 @@ identical: common-three
                                'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
 
-
     @GET_PROJECT_PACKAGES(UPSTREAM, BRANCH)
     @GET(request_url(UPSTREAM), exp='', file='request')
-    @POST(rdiff_url('common-one',   UPSTREAM, BRANCH), exp='', text='')
-    @POST(rdiff_url('common-two',   UPSTREAM, BRANCH), exp='', file='common-two-diff')
+    @POST(rdiff_url('common-one', UPSTREAM, BRANCH), exp='', text='')
+    @POST(rdiff_url('common-two', UPSTREAM, BRANCH), exp='', file='common-two-diff')
     @POST(rdiff_url('common-three', UPSTREAM, BRANCH), exp='', file='common-two-diff')
-    @POST(rdiff_url('only-in-new',  UPSTREAM, BRANCH), exp='', text='')
+    @POST(rdiff_url('only-in-new', UPSTREAM, BRANCH), exp='', text='')
     def testPrdiffRequestsMatching(self):
         self._change_to_tmpdir()
         exp = """identical: common-one
@@ -241,14 +234,14 @@ identical: only-in-new
         out = self._run_prdiff('--requests', UPSTREAM, BRANCH)
         self.assertEqualMultiline(out, exp)
 
-
     # Reverse the direction of the diff.
+
     @GET_PROJECT_PACKAGES(BRANCH, UPSTREAM)
     @GET(request_url(BRANCH), exp='', file='no-requests')
-    @POST(rdiff_url('common-one',   BRANCH, UPSTREAM), exp='', text='')
-    @POST(rdiff_url('common-two',   BRANCH, UPSTREAM), exp='', file='common-two-diff')
+    @POST(rdiff_url('common-one', BRANCH, UPSTREAM), exp='', text='')
+    @POST(rdiff_url('common-two', BRANCH, UPSTREAM), exp='', file='common-two-diff')
     @POST(rdiff_url('common-three', BRANCH, UPSTREAM), exp='', file='common-two-diff')
-    @POST(rdiff_url('only-in-new',  BRANCH, UPSTREAM), exp='', text='')
+    @POST(rdiff_url('only-in-new', BRANCH, UPSTREAM), exp='', text='')
     def testPrdiffRequestsSwitched(self):
         self._change_to_tmpdir()
         exp = """identical: common-one
@@ -260,7 +253,5 @@ identical: only-in-new
         self.assertEqualMultiline(out, exp)
 
 
-
 if __name__ == '__main__':
-    import unittest
     unittest.main()

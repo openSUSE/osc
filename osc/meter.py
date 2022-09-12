@@ -62,6 +62,7 @@ def create_text_meter(*args, **kwargs):
         return TextMeter(*args, **kwargs)
     return None
 
+
 if have_pb_module:
     TextMeter = PBTextMeter
 else:

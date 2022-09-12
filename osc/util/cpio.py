@@ -14,7 +14,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 
 
-import mmap
 import os
 import stat
 import struct
@@ -30,7 +29,7 @@ if not hasattr(os, 'SEEK_SET'):
 class CpioError(Exception):
     """base class for all cpio related errors"""
     def __init__(self, fn, msg):
-        Exception.__init__(self)
+        super().__init__()
         self.file = fn
         self.msg = msg
     def __str__(self):
@@ -153,7 +152,7 @@ class CpioRead:
         if not self.format in self.sfmt.values():
             raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
-        while (len(data) != 0):
+        while len(data) != 0:
             self.__file.seek(pos, os.SEEK_SET)
             data = self.__file.read(self.hdr_len)
             if not data:

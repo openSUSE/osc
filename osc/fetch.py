@@ -6,14 +6,17 @@
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 from urllib.parse import quote_plus
 from urllib.request import HTTPError
 
+from . import checker as osc_checker
 from . import conf
 from . import oscerr
-from .core import makeurl, streamfile, dgst
+from .core import makeurl, dgst
 from .grabber import OscFileGrabber, OscMirrorGroup
 from .meter import create_text_meter
 from .util import packagequery, cpio
@@ -21,9 +24,9 @@ from .util.helper import decode_it
 
 
 class Fetcher:
-    def __init__(self, cachedir='/tmp', api_host_options={}, urllist=[],
+    def __init__(self, cachedir='/tmp', urllist=None,
                  http_debug=False, cookiejar=None, offline=False,
-                 enable_cpio=True, modules=[], download_api_only=False):
+                 enable_cpio=True, modules=None, download_api_only=False):
         # set up progress bar callback
         self.progress_obj = None
         if sys.stdout.isatty():
@@ -31,8 +34,8 @@ class Fetcher:
 
         self.cachedir = cachedir
         # generic download URL lists
-        self.urllist = urllist
-        self.modules = modules
+        self.urllist = urllist or []
+        self.modules = modules or []
         self.http_debug = http_debug
         self.offline = offline
         self.cpio = {}
@@ -135,7 +138,7 @@ class Fetcher:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
                 mg_stat = mg.urlgrab(pac.filename, filename=tmpfile.name,
-                           text='%s(%s) %s' % (prefix, pac.project, pac.filename))
+                                     text='%s(%s) %s' % (prefix, pac.project, pac.filename))
                 if mg_stat:
                     self.move_package(tmpfile.name, pac.localdir, pac)
 
@@ -155,7 +158,6 @@ class Fetcher:
                 os.unlink(tmpfile.name)
 
     def move_package(self, tmpfile, destdir, pac_obj=None):
-        import shutil
         canonname = None
         if pac_obj and pac_obj.name.startswith('container:'):
             canonname = pac_obj.canonname
@@ -258,7 +260,7 @@ class Fetcher:
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                         if not hdrmd5 or hdrmd5 != i.hdrmd5:
                             print('%s/%s: attempting download from api, since the hdrmd5 did not match - %s != %s'
-                                % (i.project, i.name, hdrmd5, i.hdrmd5))
+                                  % (i.project, i.name, hdrmd5, i.hdrmd5))
                             os.unlink(i.fullfilename)
                             self.__add_cpio(i)
 
@@ -324,8 +326,6 @@ def verify_pacs_old(pac_list):
        Check all packages in one go, since this takes only 6 seconds on my Athlon 700
        instead of 20 when calling 'rpm -K' for each of them.
        """
-    import subprocess
-
     if not pac_list:
         return
 
@@ -374,7 +374,7 @@ def verify_pacs_old(pac_list):
 
 - You may use --no-verify to skip the verification (which is a risk for your system).
 """ % {'name': missing_key,
-       'dir': os.path.expanduser('~')}, file=sys.stderr)
+                    'dir': os.path.expanduser('~')}, file=sys.stderr)
 
             else:
                 print("""
@@ -403,9 +403,8 @@ def verify_pacs(bi):
 
     print("using keys from", ', '.join(bi.prjkeys))
 
-    from . import checker
     failed = False
-    checker = checker.Checker()
+    checker = osc_checker.Checker()
     try:
         checker.readkeys(bi.keys)
         for pkg in pac_list:

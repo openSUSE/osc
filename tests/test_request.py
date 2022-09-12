@@ -1,4 +1,5 @@
 import os
+import unittest
 from xml.etree import ElementTree as ET
 
 import osc.core
@@ -9,22 +10,23 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'request_fixtures')
 
+
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestRequest)
+
 
 class TestRequest(OscTestCase):
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
 
     def setUp(self):
-        OscTestCase.setUp(self, copytree=False)
+        super().setUp(copytree=False)
 
     def test_createsr(self):
         """create a simple submitrequest"""
         r = osc.core.Request()
         r.add_action('submit', src_project='foo', src_package='bar', src_rev='42',
-            tgt_project='foobar', tgt_package='bar')
+                     tgt_project='foobar', tgt_package='bar')
         self.assertEqual(r.actions[0].type, 'submit')
         self.assertEqual(r.actions[0].src_project, 'foo')
         self.assertEqual(r.actions[0].src_package, 'bar')
@@ -49,7 +51,7 @@ class TestRequest(OscTestCase):
         """create a simple submitrequest"""
         r = osc.core.Request()
         r.add_action('submit', src_project='foo', src_package='bar',
-            tgt_project='foobar', tgt_package='bar', opt_sourceupdate='cleanup', opt_updatelink='1')
+                     tgt_project='foobar', tgt_package='bar', opt_sourceupdate='cleanup', opt_updatelink='1')
         self.assertEqual(r.actions[0].type, 'submit')
         self.assertEqual(r.actions[0].src_project, 'foo')
         self.assertEqual(r.actions[0].src_package, 'bar')
@@ -77,7 +79,7 @@ class TestRequest(OscTestCase):
         """create a submitrequest with missing target package"""
         r = osc.core.Request()
         r.add_action('submit', src_project='foo', src_package='bar',
-            tgt_project='foobar')
+                     tgt_project='foobar')
         self.assertEqual(r.actions[0].type, 'submit')
         self.assertEqual(r.actions[0].src_project, 'foo')
         self.assertEqual(r.actions[0].src_package, 'bar')
@@ -148,7 +150,7 @@ class TestRequest(OscTestCase):
         """create an add_role request (person+group element)"""
         r = osc.core.Request()
         r.add_action('add_role', tgt_project='foo', tgt_package='bar', person_name='user', person_role='reader',
-            group_name='group', group_role='reviewer')
+                     group_name='group', group_role='reviewer')
         self.assertEqual(r.actions[0].type, 'add_role')
         self.assertEqual(r.actions[0].tgt_project, 'foo')
         self.assertEqual(r.actions[0].tgt_package, 'bar')
@@ -565,6 +567,6 @@ Comment: <no comment>"""
         self.assertTrue(len(r.get_actions('submit', 'delete', 'change_devel')) == 5)
         self.assertTrue(len(r.get_actions()) == 8)
 
+
 if __name__ == '__main__':
-    import unittest
     unittest.main()

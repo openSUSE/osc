@@ -1,5 +1,6 @@
 import os
 import sys
+import unittest
 from urllib.error import HTTPError
 from xml.etree import ElementTree as ET
 
@@ -11,11 +12,13 @@ from .common import GET, PUT, POST, DELETE, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'commit_fixtures')
 
+
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestCommit)
 
+
 rev_dummy = '<revision rev="repository">\n  <srcmd5>empty</srcmd5>\n</revision>'
+
 
 class TestCommit(OscTestCase):
     def _get_fixtures_dir(self):
@@ -27,7 +30,7 @@ class TestCommit(OscTestCase):
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin&withvalidate=1',
           file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository',
-          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
+         exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_cfilesremote', expfile='testSimple_lfilelist')
     @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27simple%27+or+action%2Fsource%2F%40package%3D%27simple%27%29', file='testOpenRequests')
@@ -183,7 +186,7 @@ class TestCommit(OscTestCase):
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin&withvalidate=1',
           file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository', exp='This file didn\'t change but\nis modified.\n',
-        exception=IOError('test exception'), text=rev_dummy)
+         exception=IOError('test exception'), text=rev_dummy)
     def test_interrupt(self):
         """interrupt a commit"""
         self._change_to_pkg('simple')
@@ -307,7 +310,7 @@ class TestCommit(OscTestCase):
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin&withvalidate=1',
           file='testSimple_missingfilelist', expfile='testSimple_lfilelist')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository',
-          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
+         exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           expfile='testSimple_lfilelist', text='an error occured', code=500)
     def test_commitfilelist_error(self):
@@ -328,7 +331,7 @@ class TestCommit(OscTestCase):
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_missingfilelistwithSHAsum', expfile='testSimple_lfilelistwithSHA')
     @PUT('http://localhost/source/osctest/simple/nochange?rev=repository',
-          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
+         exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_cfilesremote', expfile='testSimple_lfilelistwithSHA')
     @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27simple%27+or+action%2Fsource%2F%40package%3D%27simple%27%29', file='testOpenRequests')
@@ -368,6 +371,6 @@ class TestCommit(OscTestCase):
         self._check_status(p, 'add', '!')
         self._check_status(p, 'bar', ' ')
 
-if  __name__ == '__main__':
-    import unittest
+
+if __name__ == '__main__':
     unittest.main()

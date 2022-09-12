@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -8,9 +9,10 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_package_fixtures')
 
+
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestInitPackage)
+
 
 class TestInitPackage(OscTestCase):
     def _get_fixtures_dir(self):
@@ -22,7 +24,7 @@ class TestInitPackage(OscTestCase):
     def tearDown(self):
         if os.path.exists(os.path.join(FIXTURES_DIR, 'osctest')):
             os.rmdir(os.path.join(FIXTURES_DIR, 'osctest'))
-        OscTestCase.tearDown(self)
+        super().tearDown()
 
     def test_simple(self):
         """initialize a package dir"""
@@ -88,6 +90,6 @@ class TestInitPackage(OscTestCase):
             f.write('foo\n')
         self.assertRaises(osc.oscerr.OscIOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
 
+
 if __name__ == '__main__':
-    import unittest
     unittest.main()

@@ -28,7 +28,7 @@ if not hasattr(os, 'SEEK_SET'):
 class ArError(Exception):
     """Base class for all ar related errors"""
     def __init__(self, fn, msg):
-        Exception.__init__(self)
+        super().__init__()
         self.file = fn
         self.msg = msg
 
@@ -57,7 +57,7 @@ class ArHdr:
 class ArFile(BytesIO):
     """Represents a file which resides in the archive"""
     def __init__(self, fn, uid, gid, mode, buf):
-        BytesIO.__init__(self, buf)
+        super().__init__(buf)
         self.name = fn
         self.uid = uid
         self.gid = gid
@@ -97,9 +97,9 @@ class Ar:
                          re.DOTALL)
 
     def __init__(self, fn = None, fh = None):
-        if fn == None and fh == None:
-            raise ValueError('either \'fn\' or \'fh\' must be != None')
-        if fh != None:
+        if fn is None and fh is None:
+            raise ValueError('either \'fn\' or \'fh\' must be is not None')
+        if fh is not None:
             self.__file = fh
             self.__closefile = False
             self.filename = fh.name
@@ -169,7 +169,7 @@ class Ar:
         if data != b'!<arch>':
             raise ArError(self.filename, 'no ar archive')
         pos = 8
-        while (len(data) != 0):
+        while len(data) != 0:
             self.__file.seek(pos, os.SEEK_SET)
             data = self.__file.read(self.hdr_len)
             if not data:

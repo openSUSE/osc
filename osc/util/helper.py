@@ -4,6 +4,7 @@
 # either version 2, or (at your option) any later version.
 
 
+import builtins
 import html
 
 from .. import oscerr
@@ -39,7 +40,6 @@ def decode_it(obj):
 
 
 def raw_input(*args):
-    import builtins
     func = builtins.input
 
     try:

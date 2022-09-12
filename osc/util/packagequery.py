@@ -1,10 +1,12 @@
+import sys
+
 from .helper import decode_it
 
 
 class PackageError(Exception):
     """base class for all package related errors"""
     def __init__(self, fname, msg):
-        Exception.__init__(self)
+        super().__init__()
         self.fname = fname
         self.msg = msg
 
@@ -166,7 +168,6 @@ def cmp(a, b):
 
 
 if __name__ == '__main__':
-    import sys
     try:
         pkgq = PackageQuery.query(sys.argv[1])
     except PackageError as e:

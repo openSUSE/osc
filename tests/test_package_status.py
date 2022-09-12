@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -8,9 +9,10 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'project_package_status_fixtures')
 
+
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestPackageStatus)
+
 
 class TestPackageStatus(OscTestCase):
     def _get_fixtures_dir(self):
@@ -21,7 +23,7 @@ class TestPackageStatus(OscTestCase):
         self._change_to_pkg('simple')
         p = osc.core.Package('.')
         exp_st = [('A', 'add'), ('?', 'exists'), ('D', 'foo'), ('!', 'merge'), ('R', 'missing'),
-            ('!', 'missing_added'), ('M', 'nochange'), ('S', 'skipped'), (' ', 'test')]
+                  ('!', 'missing_added'), ('M', 'nochange'), ('S', 'skipped'), (' ', 'test')]
         st = p.get_status()
         self.assertEqual(exp_st, st)
 
@@ -84,6 +86,6 @@ class TestPackageStatus(OscTestCase):
         st = p.get_status(True)
         self.assertEqual(exp_st, st)
 
+
 if __name__ == '__main__':
-    import unittest
     unittest.main()

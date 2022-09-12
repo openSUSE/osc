@@ -1,4 +1,5 @@
 import os
+import unittest
 
 import osc.core
 import osc.oscerr
@@ -8,13 +9,14 @@ from .common import GET, PUT, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'setlinkrev_fixtures')
 
+
 def suite():
-    import unittest
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestSetLinkRev)
+
 
 class TestSetLinkRev(OscTestCase):
     def setUp(self):
-        OscTestCase.setUp(self, copytree=False)
+        super().setUp(copytree=False)
 
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
@@ -89,6 +91,6 @@ class TestSetLinkRev(OscTestCase):
         """delete non existent rev attribute from link xml"""
         osc.core.set_link_rev('http://localhost', 'osctest', 'simple', revision=None)
 
+
 if __name__ == '__main__':
-    import unittest
     unittest.main()

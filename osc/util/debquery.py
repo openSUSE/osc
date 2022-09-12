@@ -1,6 +1,7 @@
 import itertools
 import os
 import re
+import sys
 import tarfile
 from io import BytesIO
 
@@ -58,11 +59,11 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         else:
             control = arfile.get_file(b'control.tar.xz')
             if control:
-               if not HAVE_LZMA:
-                   raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
-               decompressed = lzma.decompress(control.read())
-               tar = tarfile.open(name="control.tar.xz",
-                                  fileobj=BytesIO(decompressed))
+                if not HAVE_LZMA:
+                    raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
+                decompressed = lzma.decompress(control.read())
+                tar = tarfile.open(name="control.tar.xz",
+                                   fileobj=BytesIO(decompressed))
             else:
                 control = arfile.get_file(b'control.tar.zst')
                 if control:
@@ -249,7 +250,6 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             return b'%s_%s_%s.deb' % (name, version, arch)
 
 if __name__ == '__main__':
-    import sys
     try:
         debq = DebQuery.query(sys.argv[1])
     except DebError as e:

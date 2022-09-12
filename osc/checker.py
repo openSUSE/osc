@@ -8,11 +8,13 @@ import rpm
 
 class KeyError(Exception):
     def __init__(self, key, *args):
-        Exception.__init__(self)
+        super().__init__()
         self.args = args
         self.key = key
+
     def __str__(self):
-        return ''+self.key+' :'+' '.join(self.args)
+        return '' + self.key + ' :' + ' '.join(self.args)
+
 
 class Checker:
     def __init__(self):
@@ -23,9 +25,10 @@ class Checker:
         self.ts.initDB()
         self.ts.openDB()
         self.ts.setVSFlags(0)
-        #self.ts.Debug(1)
+        # self.ts.Debug(1)
 
-    def readkeys(self, keys=[]):
+    def readkeys(self, keys=None):
+        keys = keys or []
         rpm.addMacro('_dbpath', self.dbdir)
         for key in keys:
             try:
@@ -33,7 +36,7 @@ class Checker:
             except KeyError as e:
                 print(e)
 
-        if not len(self.imported):
+        if not self.imported:
             raise KeyError('', "no key imported")
 
         rpm.delMacro("_dbpath")
@@ -68,7 +71,7 @@ class Checker:
             if line[0:12] == "-----END PGP":
                 break
             line = line.rstrip()
-            if (line[0] == '='):
+            if line[0] == '=':
                 crc = line[1:]
                 line = fd.readline()
                 break
@@ -99,6 +102,7 @@ class Checker:
         finally:
             if fd is not None:
                 os.close(fd)
+
 
 if __name__ == "__main__":
     import sys

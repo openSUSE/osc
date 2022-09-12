@@ -26,6 +26,7 @@ class ConfigLineOrder:
     It keeps track of all lines (including comments) in the _lines list. This list
     either contains SectionLine() instances or CommentLine() instances.
     """
+
     def __init__(self):
         self._lines = []
 
@@ -56,7 +57,7 @@ class ConfigLineOrder:
             self._append(CommentLine(line))
 
     def keys(self):
-        return [ i.name for i in self._lines if i.type == 'section' ]
+        return [i.name for i in self._lines if i.type == 'section']
 
     def __setitem__(self, key, value):
         section = SectionLine(key)
@@ -75,16 +76,19 @@ class ConfigLineOrder:
         self._lines.remove(line)
 
     def __iter__(self):
-        #return self._lines.__iter__()
+        # return self._lines.__iter__()
         for line in self._lines:
             if line.type == 'section':
                 yield line.name
 
+
 class Line:
     """Base class for all line objects"""
+
     def __init__(self, name, type):
         self.name = name
         self.type = type
+
 
 class SectionLine(Line):
     """
@@ -92,10 +96,10 @@ class SectionLine(Line):
     this certain section in the _lines list. The _lines list either contains
     CommentLine() or OptionLine() instances.
     """
-    def __init__(self, sectname, dict = {}):
-        Line.__init__(self, sectname, 'section')
+
+    def __init__(self, sectname):
+        super().__init__(sectname, 'section')
         self._lines = []
-        self._dict = dict
 
     def _find(self, name):
         for line in self._lines:
@@ -103,7 +107,7 @@ class SectionLine(Line):
                 return line
         return None
 
-    def _add_option(self, optname, value = None, line = None, sep = '='):
+    def _add_option(self, optname, value=None, line=None, sep='='):
         if value is None and line is None:
             raise configparser.Error('Either value or line must be passed in')
         elif value and line:
@@ -124,10 +128,10 @@ class SectionLine(Line):
         return dict(self.items())
 
     def items(self):
-        return [ (i.name, i.value) for i in self._lines if i.type == 'option' ]
+        return [(i.name, i.value) for i in self._lines if i.type == 'option']
 
     def keys(self):
-        return [ i.name for i in self._lines ]
+        return [i.name for i in self._lines]
 
     def __setitem__(self, key, val):
         self._add_option(key, val)
@@ -155,11 +159,13 @@ class SectionLine(Line):
 
 class CommentLine(Line):
     """Store a commentline"""
+
     def __init__(self, line):
-        Line.__init__(self, line.strip('\n'), 'comment')
+        super().__init__(line.strip('\n'), 'comment')
 
     def __str__(self):
         return self.name
+
 
 class OptionLine(Line):
     """
@@ -177,7 +183,7 @@ class OptionLine(Line):
     """
 
     def __init__(self, optname, line):
-        Line.__init__(self, optname, 'option')
+        super().__init__(optname, 'option')
         self.name = optname
         self.format(line)
 
@@ -203,8 +209,9 @@ class OscConfigParser(configparser.ConfigParser):
     In order to keep the order and the format it makes use of the ConfigLineOrder()
     class.
     """
-    def __init__(self, defaults={}):
-        super().__init__(defaults)
+
+    def __init__(self, defaults=None):
+        super().__init__(defaults or {})
         self._sections = ConfigLineOrder()
 
     # XXX: unfortunately we have to override the _read() method from the ConfigParser()
@@ -280,7 +287,7 @@ class OscConfigParser(configparser.ConfigParser):
                             # ';' is a comment delimiter only if it follows
                             # a spacing character
                             pos = optval.find(';')
-                            if pos != -1 and optval[pos-1].isspace():
+                            if pos != -1 and optval[pos - 1].isspace():
                                 optval = optval[:pos]
                         optval = optval.strip()
                         # allow empty values
@@ -301,9 +308,9 @@ class OscConfigParser(configparser.ConfigParser):
                         e.append(lineno, repr(line))
         # if any parsing errors occurred, raise an exception
         if e:
-            raise e # pylint: disable-msg=E0702
+            raise e  # pylint: disable-msg=E0702
 
-    def write(self, fp, comments = False):
+    def write(self, fp, comments=False):
         """
         write the configuration file. If comments is True all comments etc.
         will be written to fp otherwise the ConfigParsers' default write method
