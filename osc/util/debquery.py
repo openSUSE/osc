@@ -23,8 +23,7 @@ except ImportError:
     HAVE_ZSTD = False
 
 
-if (not hasattr(itertools, 'zip_longest')
-    and hasattr(itertools, 'izip_longest')):
+if (not hasattr(itertools, 'zip_longest') and hasattr(itertools, 'izip_longest')):
     # python2 case
     itertools.zip_longest = itertools.izip_longest
 
@@ -32,11 +31,14 @@ if (not hasattr(itertools, 'zip_longest')
 class DebError(packagequery.PackageError):
     pass
 
+
 class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
-    default_tags = (b'package', b'version', b'release', b'epoch',
+    default_tags = (
+        b'package', b'version', b'release', b'epoch',
         b'architecture', b'description', b'provides', b'depends',
-        b'pre_depends', b'conflicts', b'breaks')
+        b'pre_depends', b'conflicts', b'breaks'
+    )
 
     def __init__(self, fh):
         self.__file = fh
@@ -45,7 +47,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         self.fields = {}
 
     def read(self, all_tags=False, self_provides=True, *extra_tags):
-        arfile = ar.Ar(fh = self.__file)
+        arfile = ar.Ar(fh=self.__file)
         arfile.read()
         debbin = arfile.get_file(b'debian-binary')
         if debbin is None:
@@ -190,7 +192,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         return DebQuery.filename(self.name(), self.epoch(), self.version(), self.release(), self.arch())
 
     @staticmethod
-    def query(filename, all_tags = False, *extra_tags):
+    def query(filename, all_tags=False, *extra_tags):
         f = open(filename, 'rb')
         debq = DebQuery(f)
         debq.read(all_tags, *extra_tags)
@@ -248,6 +250,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
             return b'%s_%s-%s_%s.deb' % (name, version, release, arch)
         else:
             return b'%s_%s_%s.deb' % (name, version, arch)
+
 
 if __name__ == '__main__':
     try:

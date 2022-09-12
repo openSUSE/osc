@@ -6,6 +6,7 @@ class SafeWriter:
     the str is encoded with the "encoding" encoding.
     All getattr, setattr calls are passed through to the "writer" instance.
     """
+
     def __init__(self, writer, encoding='unicode_escape'):
         self._writer = writer
         self._encoding = encoding

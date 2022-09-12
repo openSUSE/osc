@@ -10,14 +10,18 @@ from .helper import decode_it
 def cmp(a, b):
     return (a > b) - (a < b)
 
+
 class RpmError(packagequery.PackageError):
     pass
+
 
 class RpmHeaderError(RpmError):
     pass
 
+
 class RpmHeader:
     """corresponds more or less to the indexEntry_s struct"""
+
     def __init__(self, offset, length):
         self.offset = offset
         # length of the data section (without length of indexEntries)
@@ -39,17 +43,20 @@ class RpmHeader:
     def __len__(self):
         return len(self.entries)
 
+
 class RpmHeaderEntry:
     """corresponds to the entryInfo_s struct (except the data attribute)"""
 
     # each element represents an int
     ENTRY_SIZE = 16
+
     def __init__(self, tag, type, offset, count):
         self.tag = tag
         self.type = type
         self.offset = offset
         self.count = count
         self.data = None
+
 
 class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     LEAD_SIZE = 96
@@ -63,15 +70,16 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     SENSE_STRONG = 1 << 27
 
-    default_tags = (1000, 1001, 1002, 1003, 1004, 1022, 1005, 1020,
-        1047, 1112, 1113, # provides
-        1049, 1048, 1050, # requires
-        1054, 1053, 1055, # conflicts
-        1090, 1114, 1115, # obsoletes
-        1156, 1158, 1157, # oldsuggests
-        5046, 5047, 5048, # recommends
-        5049, 5051, 5050, # suggests
-        5052, 5053, 5054, # supplements
+    default_tags = (
+        1000, 1001, 1002, 1003, 1004, 1022, 1005, 1020,
+        1047, 1112, 1113,  # provides
+        1049, 1048, 1050,  # requires
+        1054, 1053, 1055,  # conflicts
+        1090, 1114, 1115,  # obsoletes
+        1156, 1158, 1157,  # oldsuggests
+        5046, 5047, 5048,  # recommends
+        5049, 5051, 5050,  # suggests
+        5052, 5053, 5054,  # supplements
         5055, 5056, 5057  # enhances
     )
 
@@ -108,9 +116,10 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         data = self.__file.read(self.header.length)
         for i in self.header:
             if i.tag in self.default_tags + extra_tags or all_tags:
-                try: # this may fail for -debug* packages
+                try:  # this may fail for -debug* packages
                     self.__read_data(i, data)
-                except: pass
+                except:
+                    pass
         return self
 
     def __read_lead(self):
@@ -310,7 +319,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         entry = rpmq.gettag(1004)
         if entry is None:
             return None
-        return ''.join([ "%02x" % x for x in struct.unpack('16B', entry.data) ])
+        return ''.join(["%02x" % x for x in struct.unpack('16B', entry.data)])
 
     @staticmethod
     def rpmvercmp(ver1, ver2):
@@ -375,6 +384,7 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     def filename(name, epoch, version, release, arch):
         return b'%s-%s-%s.%s.rpm' % (name, version, release, arch)
 
+
 def unpack_string(data, encoding=None):
     """unpack a '\\0' terminated string from data"""
     idx = data.find(b'\0')
@@ -384,6 +394,7 @@ def unpack_string(data, encoding=None):
     if encoding is not None:
         data = data.decode(encoding)
     return data
+
 
 if __name__ == '__main__':
     try:

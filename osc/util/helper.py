@@ -66,7 +66,7 @@ def format_table(rows, headers):
     templ = '  '.join(tpltpl) + '\n'
 
     out = templ.format(*headers)
-    out += templ.format(*['-'*m for m in maxlens])
+    out += templ.format(*['-' * m for m in maxlens])
     for r in rows:
         out += templ.format(*r)
     return out

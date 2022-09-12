@@ -13,6 +13,7 @@ from . import packagequery
 def namespace(name):
     return "{http://linux.duke.edu/metadata/%s}" % name
 
+
 OPERATOR_BY_FLAGS = {
     "EQ": "=",
     "LE": "<=",
@@ -20,6 +21,7 @@ OPERATOR_BY_FLAGS = {
     "LT": "<",
     "GT": ">"
 }
+
 
 def primaryPath(directory):
     """Returns path to the primary repository data file.
@@ -44,6 +46,7 @@ def primaryPath(directory):
         raise OSError("'%s' contains no primary location" % metaDataPath)
 
     return primaryPath
+
 
 def queries(directory):
     """Returns a list of RepoDataQueries constructed from the repodata under
@@ -122,8 +125,7 @@ class RepoDataQueryResult(packagequery.PackageQueryResult):
 
         entries = []
         if collectionElement is not None:
-            for entryElement in collectionElement.findall(namespace("rpm") +
-                                                          "entry"):
+            for entryElement in collectionElement.findall(namespace("rpm") + "entry"):
                 entry = self.__parseEntry(entryElement)
                 entries.append(entry)
 
@@ -199,8 +201,7 @@ class RepoDataQueryResult(packagequery.PackageQueryResult):
             release = None
         else:
             release = self.release()
-        return rpmquery.RpmQuery.filename(self.name(), None,
-            self.version(), release, self.arch())
+        return rpmquery.RpmQuery.filename(self.name(), None, self.version(), release, self.arch())
 
     def gettag(self, tag):
         # implement me, if needed
