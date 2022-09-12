@@ -12,8 +12,10 @@ from .common import GET, PUT, POST, DELETE, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'repairwc_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestRepairWC)
+
 
 class TestRepairWC(OscTestCase):
     def _get_fixtures_dir(self):

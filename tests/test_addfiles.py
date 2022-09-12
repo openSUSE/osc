@@ -10,8 +10,10 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'addfile_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestAddFiles)
+
 
 class TestAddFiles(OscTestCase):
     def _get_fixtures_dir(self):
@@ -82,6 +84,7 @@ class TestAddFiles(OscTestCase):
         p = osc.core.Package('.')
         self.assertRaises(osc.oscerr.OscIOError, p.addfile, 'doesnotexist')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
+
 
 if __name__ == '__main__':
     unittest.main()

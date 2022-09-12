@@ -10,8 +10,10 @@ from .common import GET, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_project_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestInitProject)
+
 
 class TestInitProject(OscTestCase):
     def _get_fixtures_dir(self):
@@ -69,6 +71,7 @@ class TestInitProject(OscTestCase):
         self._check_list(os.path.join(storedir, '_project'), 'testprj\n')
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
         self.assertFalse(os.path.exists(os.path.join(storedir, '_packages')))
+
 
 if __name__ == '__main__':
     unittest.main()

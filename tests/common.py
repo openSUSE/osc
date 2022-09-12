@@ -32,8 +32,8 @@ def urlcompare(url, *args):
         query_args2 = parse_qs(components2.query)
         components2 = components2._replace(query=None)
 
-        if  components != components2 or \
-            query_args != query_args2:
+        if components != components2 or \
+                query_args != query_args2:
             return False
 
     return True
@@ -64,6 +64,7 @@ def xml_equal(actual, exp):
 
 class RequestWrongOrder(Exception):
     """raised if an unexpected request is issued to urllib2"""
+
     def __init__(self, url, exp_url, method, exp_method):
         super().__init__()
         self.url = url
@@ -74,8 +75,10 @@ class RequestWrongOrder(Exception):
     def __str__(self):
         return '%s, %s, %s, %s' % (self.url, self.exp_url, self.method, self.exp_method)
 
+
 class RequestDataMismatch(Exception):
     """raised if POSTed or PUTed data doesn't match with the expected data"""
+
     def __init__(self, url, got, exp):
         self.url = url
         self.got = got
@@ -91,7 +94,7 @@ EXPECTED_REQUESTS = []
 # HACK: Fix "ValueError: I/O operation on closed file." error in tests on openSUSE Leap 15.2.
 #       The problem seems to appear only in the tests, possibly some interaction with MockHTTPConnectionPool.
 #       Porting 753fbc03 to urllib3 in openSUSE Leap 15.2 would fix the problem.
-urllib3.response.HTTPResponse.__iter__ = lambda self : iter(self._fp)
+urllib3.response.HTTPResponse.__iter__ = lambda self: iter(self._fp)
 
 
 class MockHTTPConnectionPool:
@@ -290,7 +293,7 @@ class OscTestCase(unittest.TestCase):
             self.assertEqual(got, exp)
         else:
             start_delim = "\n" + (" 8< ".join(["-----"] * 8)) + "\n"
-            end_delim   = "\n" + (" >8 ".join(["-----"] * 8)) + "\n\n"
+            end_delim = "\n" + (" >8 ".join(["-----"] * 8)) + "\n\n"
             self.assertEqual(got, exp,
-                             "got:"      + start_delim + got + end_delim +
+                             "got:" + start_delim + got + end_delim +
                              "expected:" + start_delim + exp + end_delim)

@@ -6,6 +6,7 @@ from osc.util.helper import decode_it, decode_list
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestResults)
 
+
 class TestResults(unittest.TestCase):
     def testDecodeList(self):
         strlist = ['Test1', 'Test2', 'Test3']
@@ -21,7 +22,6 @@ class TestResults(unittest.TestCase):
         out = decode_list(byteslist)
         self.assertListEqual(out, strlist)
 
-
     def testDecodeIt(self):
         bytes_obj = b'Test the decoding'
         string_obj = 'Test the decoding'
@@ -32,6 +32,6 @@ class TestResults(unittest.TestCase):
         out = decode_it(string_obj)
         self.assertEqual(out, string_obj)
 
+
 if __name__ == '__main__':
     unittest.main()
-

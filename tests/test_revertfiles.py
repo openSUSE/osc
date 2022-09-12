@@ -9,8 +9,10 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'revertfile_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestRevertFiles)
+
 
 class TestRevertFiles(OscTestCase):
     def _get_fixtures_dir(self):
@@ -94,6 +96,7 @@ class TestRevertFiles(OscTestCase):
         self.assertTrue(os.path.exists(fname))
         self.assertTrue(os.path.exists(storefile))
         self.assertFilesEqual(fname, storefile)
+
 
 if __name__ == '__main__':
     unittest.main()

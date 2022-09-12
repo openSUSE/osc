@@ -9,8 +9,10 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'project_package_status_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestProjectStatus)
+
 
 class TestProjectStatus(OscTestCase):
     def _get_fixtures_dir(self):
@@ -93,7 +95,7 @@ class TestProjectStatus(OscTestCase):
         self._change_to_pkg('.')
         prj = osc.core.Project('.', getPackageList=False)
         exp_st = [(' ', 'conflict'), (' ', 'simple'), ('A', 'added'), ('D', 'deleted'),
-            ('!', 'missing'), ('!', 'added_deleted'), ('D', 'deleted_deleted'), ('?', 'excluded')]
+                  ('!', 'missing'), ('!', 'added_deleted'), ('D', 'deleted_deleted'), ('?', 'excluded')]
         st = prj.get_status()
         self.assertEqual(exp_st, st)
 
@@ -158,6 +160,7 @@ class TestProjectStatus(OscTestCase):
         prj = osc.core.Project('.', getPackageList=False)
         p = prj.get_pacobj('doesnotexist')
         self.assertTrue(isinstance(p, type(None)))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -11,8 +11,10 @@ class KeyError(Exception):
         super().__init__()
         self.args = args
         self.key = key
+
     def __str__(self):
-        return ''+self.key+' :'+' '.join(self.args)
+        return '' + self.key + ' :' + ' '.join(self.args)
+
 
 class Checker:
     def __init__(self):
@@ -23,7 +25,7 @@ class Checker:
         self.ts.initDB()
         self.ts.openDB()
         self.ts.setVSFlags(0)
-        #self.ts.Debug(1)
+        # self.ts.Debug(1)
 
     def readkeys(self, keys=None):
         keys = keys or []
@@ -100,6 +102,7 @@ class Checker:
         finally:
             if fd is not None:
                 os.close(fd)
+
 
 if __name__ == "__main__":
     import sys

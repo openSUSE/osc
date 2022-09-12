@@ -138,7 +138,7 @@ class Fetcher:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
                 mg_stat = mg.urlgrab(pac.filename, filename=tmpfile.name,
-                           text='%s(%s) %s' % (prefix, pac.project, pac.filename))
+                                     text='%s(%s) %s' % (prefix, pac.project, pac.filename))
                 if mg_stat:
                     self.move_package(tmpfile.name, pac.localdir, pac)
 
@@ -260,7 +260,7 @@ class Fetcher:
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                         if not hdrmd5 or hdrmd5 != i.hdrmd5:
                             print('%s/%s: attempting download from api, since the hdrmd5 did not match - %s != %s'
-                                % (i.project, i.name, hdrmd5, i.hdrmd5))
+                                  % (i.project, i.name, hdrmd5, i.hdrmd5))
                             os.unlink(i.fullfilename)
                             self.__add_cpio(i)
 
@@ -374,7 +374,7 @@ def verify_pacs_old(pac_list):
 
 - You may use --no-verify to skip the verification (which is a risk for your system).
 """ % {'name': missing_key,
-       'dir': os.path.expanduser('~')}, file=sys.stderr)
+                    'dir': os.path.expanduser('~')}, file=sys.stderr)
 
             else:
                 print("""

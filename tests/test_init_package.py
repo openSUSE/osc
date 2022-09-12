@@ -9,8 +9,10 @@ from .common import OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'init_package_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestInitPackage)
+
 
 class TestInitPackage(OscTestCase):
     def _get_fixtures_dir(self):
@@ -87,6 +89,7 @@ class TestInitPackage(OscTestCase):
         with open(os.path.join(pac_dir, osc.core.store), 'w') as f:
             f.write('foo\n')
         self.assertRaises(osc.oscerr.OscIOError, osc.core.Package.init_package, 'http://localhost', 'osctest', 'testpkg', pac_dir)
+
 
 if __name__ == '__main__':
     unittest.main()

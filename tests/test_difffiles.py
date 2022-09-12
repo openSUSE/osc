@@ -11,11 +11,14 @@ from .common import GET, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'difffile_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestDiffFiles)
 
+
 class TestDiffFiles(OscTestCase):
     diff_hdr = 'Index: %s\n==================================================================='
+
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
 
@@ -334,6 +337,7 @@ Binary file 'binary' has changed.
         got = __canonise_diff(got)
         exp = __canonise_diff(exp)
         self.assertEqualMultiline(got, exp)
+
 
 if __name__ == '__main__':
     unittest.main()

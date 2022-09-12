@@ -10,8 +10,10 @@ from .common import GET, OscTestCase
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), 'update_fixtures')
 
+
 def suite():
     return unittest.defaultTestLoader.loadTestsFromTestCase(TestUpdate)
+
 
 class TestUpdate(OscTestCase):
     def _get_fixtures_dir(self):
@@ -62,7 +64,7 @@ class TestUpdate(OscTestCase):
     @GET('http://localhost/source/osctest/simple/_meta', file='meta.xml')
     def testUpdateUpstreamModifiedFile(self):
         """a file was modified in the remote package (local file isn't modified)"""
-        
+
         self._change_to_pkg('simple')
         osc.core.Package('.').update(rev=2)
         exp = 'U    foo\nAt revision 2.\n'
@@ -284,6 +286,7 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists('added'))
         self.assertFalse(os.path.exists(os.path.join('.osc', 'added')))
         self._check_digests('testUpdateResumeDeletedFile_files')
+
 
 if __name__ == '__main__':
     unittest.main()

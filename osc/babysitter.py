@@ -111,7 +111,7 @@ def run(prg, argv=None):
             if b'<summary>' in body:
                 msg = body.split(b'<summary>')[1]
                 msg = msg.split(b'</summary>')[0]
-                msg = msg.replace(b'&lt;', b'<').replace(b'&gt;' , b'>').replace(b'&amp;', b'&')
+                msg = msg.replace(b'&lt;', b'<').replace(b'&gt;', b'>').replace(b'&amp;', b'&')
                 print(decode_it(msg), file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
             print('\nRequest: %s' % e.filename)
@@ -164,9 +164,9 @@ def run(prg, argv=None):
     except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent) as e:
         print(e.msg, file=sys.stderr)
     except oscerr.PackageInternalError as e:
-        print('a package internal error occured\n' \
-            'please file a bug and attach your current package working copy ' \
-            'and the following traceback to it:', file=sys.stderr)
+        print('a package internal error occured\n'
+              'please file a bug and attach your current package working copy '
+              'and the following traceback to it:', file=sys.stderr)
         print(e.msg, file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
     except oscerr.PackageError as e:
