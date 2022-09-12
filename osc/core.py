@@ -28,7 +28,7 @@ import sys
 import tempfile
 import textwrap
 import time
-from functools import cmp_to_key
+from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
 from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
@@ -1155,6 +1155,7 @@ class Project:
         return Project(dir, getPackageList, progress_obj, wc_check)
 
 
+@total_ordering
 class Package:
     """represent a package (its directory) and read/keep/write its metadata"""
 
@@ -1194,6 +1195,18 @@ class Package:
             raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, dirty_files, msg)
 
         self.todo = []
+
+    def __repr__(self):
+        return super().__repr__() + f"({self.prjname}/{self.name})"
+
+    def __hash__(self):
+        return hash((self.name, self.prjname, self.apiurl))
+
+    def __eq__(self, other):
+        return (self.name, self.prjname, self.apiurl) == (other.name, other.prjname, other.apiurl)
+
+    def __lt__(self, other):
+        return (self.name, self.prjname, self.apiurl) < (other.name, other.prjname, other.apiurl)
 
     def wc_check(self):
         dirty_files = []
