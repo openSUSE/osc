@@ -5,10 +5,12 @@ from .helper import decode_it
 
 class PackageError(Exception):
     """base class for all package related errors"""
+
     def __init__(self, fname, msg):
         super().__init__()
         self.fname = fname
         self.msg = msg
+
 
 class PackageQueries(dict):
     """Dict of package name keys and package query values.  When assigning a
@@ -40,16 +42,18 @@ class PackageQueries(dict):
 
         if (architecture in [self.wanted_architecture, 'noarch', 'all', 'any']
             or self.wanted_architecture in self.architectureMap.get(architecture,
-                                                                [])):
+                                                                    [])):
             current_query = self.get(name)
 
             # if current query does not exist or is older than this new query
             if current_query is None or current_query.vercmp(query) <= 0:
                 super().__setitem__(name, query)
 
+
 class PackageQuery:
     """abstract base class for all package types"""
-    def read(self, all_tags = False, *extra_tags):
+
+    def read(self, all_tags=False, *extra_tags):
         """Returns a PackageQueryResult instance"""
         raise NotImplementedError
 
@@ -97,6 +101,7 @@ class PackageQuery:
 
 class PackageQueryResult:
     """abstract base class that represents the result of a package query"""
+
     def name(self):
         raise NotImplementedError
 

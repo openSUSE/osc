@@ -26,19 +26,24 @@ if not hasattr(os, 'SEEK_SET'):
 
 # format implementation is based on src/copyin.c and src/util.c (see cpio sources)
 
+
 class CpioError(Exception):
     """base class for all cpio related errors"""
+
     def __init__(self, fn, msg):
         super().__init__()
         self.file = fn
         self.msg = msg
+
     def __str__(self):
         return '%s: %s' % (self.file, self.msg)
+
 
 class CpioHdr:
     """
     Represents a cpio header ("New" portable format and CRC format).
     """
+
     def __init__(self, mgc, ino, mode, uid, gid, nlink, mtime, filesize,
                  dev_maj, dev_min, rdev_maj, rdev_min, namesize, checksum,
                  off=-1, filename=b''):
@@ -72,6 +77,7 @@ class CpioHdr:
     def __str__(self):
         return "%s %s %s %s" % (self.filename, self.filesize, self.namesize, self.dataoff)
 
+
 class CpioRead:
     """
     Represents a cpio archive.
@@ -81,8 +87,8 @@ class CpioRead:
 
     # supported formats - use name -> mgc mapping to increase readabilty
     sfmt = {
-             'newascii': b'070701',
-           }
+        'newascii': b'070701',
+    }
 
     # header format
     hdr_fmt = '6s8s8s8s8s8s8s8s8s8s8s8s8s8s'
@@ -131,7 +137,7 @@ class CpioRead:
         if uid != os.geteuid() or os.geteuid() != 1:
             uid = -1
         gid = hdr.gid
-        if not gid in os.getgroups() or os.getegid() != -1:
+        if gid not in os.getgroups() or os.getegid() != -1:
             gid = -1
         os.chown(fn, uid, gid)
 
@@ -149,7 +155,7 @@ class CpioRead:
         self._init_datastructs()
         data = self.__file.read(6)
         self.format = data
-        if not self.format in self.sfmt.values():
+        if self.format not in self.sfmt.values():
             raise CpioError(self.filename, '\'%s\' is not a supported cpio format' % self.format)
         pos = 0
         while len(data) != 0:
@@ -170,7 +176,7 @@ class CpioRead:
             self.hdrs.append(hdr)
             pos += hdr.filesize + self._calc_padding(hdr.filesize)
 
-    def copyin_file(self, filename, dest = None, new_fn = None):
+    def copyin_file(self, filename, dest=None, new_fn=None):
         """
         copies filename to dest.
         If dest is None the file will be stored in $PWD/filename. If dest points
@@ -184,7 +190,7 @@ class CpioRead:
         fn = new_fn or filename
         self._copyin_file(hdr, dest, fn)
 
-    def copyin(self, dest = None):
+    def copyin(self, dest=None):
         """
         extracts the cpio archive to dest.
         If dest is None $PWD will be used.
@@ -192,6 +198,7 @@ class CpioRead:
         dest = dest or os.getcwdb()
         for h in self.hdrs:
             self._copyin_file(h, dest, h.filename)
+
 
 class CpioWrite:
     """cpio archive small files in memory, using new style portable header format"""
@@ -207,20 +214,20 @@ class CpioWrite:
         mode = perms | type
 
         c = bytearray()
-        c.extend(b'070701') # magic
-        c.extend(b'%08X' % 0) # inode
-        c.extend(b'%08X' % mode) # mode
-        c.extend(b'%08X' % 0) # uid
-        c.extend(b'%08X' % 0) # gid
-        c.extend(b'%08X' % 0) # nlink
-        c.extend(b'%08X' % 0) # mtime
+        c.extend(b'070701')  # magic
+        c.extend(b'%08X' % 0)  # inode
+        c.extend(b'%08X' % mode)  # mode
+        c.extend(b'%08X' % 0)  # uid
+        c.extend(b'%08X' % 0)  # gid
+        c.extend(b'%08X' % 0)  # nlink
+        c.extend(b'%08X' % 0)  # mtime
         c.extend(b'%08X' % filesize)
-        c.extend(b'%08X' % 0) # major
-        c.extend(b'%08X' % 0) # minor
-        c.extend(b'%08X' % 0) # rmajor
-        c.extend(b'%08X' % 0) # rminor
+        c.extend(b'%08X' % 0)  # major
+        c.extend(b'%08X' % 0)  # minor
+        c.extend(b'%08X' % 0)  # rmajor
+        c.extend(b'%08X' % 0)  # rminor
         c.extend(b'%08X' % namesize)
-        c.extend(b'%08X' % 0) # checksum
+        c.extend(b'%08X' % 0)  # checksum
 
         c.extend(name + b'\0')
         c.extend(b'\0' * (len(c) % 4))
