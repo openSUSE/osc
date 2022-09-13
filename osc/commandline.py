@@ -1395,7 +1395,7 @@ class Osc(cmdln.Cmdln):
 
         elif len(args) <= 2:
             # try using the working copy at hand
-            p = findpacs([os.curdir])[0]
+            p = core.Package(os.curdir)
             src_project = p.prjname
             src_package = p.name
             if self.options.apiurl and self.options.apiurl != p.apiurl:
@@ -1627,7 +1627,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         elif len(args) <= 2:
             # try using the working copy at hand
-            p = findpacs([os.curdir])[0]
+            p = core.Package(os.curdir)
             src_project = p.prjname
             src_package = p.name
             if len(args) == 0 and p.islink():
@@ -2742,7 +2742,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             rev = None
 
         if len(args) == 0:
-            p = findpacs([os.curdir])[0]
+            p = core.Package(os.curdir)
             project = p.prjname
             package = p.name
             apiurl = p.apiurl
@@ -3834,7 +3834,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             specfile = opts.specfile
         else:
             specfile = None
-        pacs = findpacs(args)
+        pacs = Package.from_paths(args)
         for p in pacs:
             p.read_meta_from_spec(specfile)
             p.update_package_meta()
@@ -3886,7 +3886,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs = None
         if not opts.link or not len(args) == 2:
-            pacs = findpacs(args)
+            pacs = Package.from_paths(args)
 
         if opts.link:
             query = {'rev': 'latest'}
@@ -4663,7 +4663,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     for st, filename in sorted(states, key=cmp_to_key(compare)):
                         lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
             else:
-                p = findpacs([arg])[0]
+                p = Package(arg)
                 for st, filename in sorted(p.get_status(opts.show_excluded, *excl_states), key=cmp_to_key(compare)):
                     lines.append(statfrmt(st, os.path.normpath(os.path.join(p.dir, filename))))
         if lines:
@@ -4754,7 +4754,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       '\'do_package_tracking\' is enabled in the configuration file', file=sys.stderr)
                 sys.exit(1)
 
-        pacs = findpacs(args)
+        pacs = Package.from_paths(args)
         for p in pacs:
             todo = list(set(p.filenamelist + p.filenamelist_unvers + p.to_be_added))
             for filename in todo:
@@ -4857,7 +4857,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj.commit(msg=msg, skip_local_service_run=skip_local_service_run, verbose=opts.verbose, can_branch=can_branch)
                 args.remove(arg)
 
-        pacs, no_pacs = findpacs(args, fatal=False)
+        pacs, no_pacs = Package.from_paths_nofail(args)
 
         for pac in pacs.copy():
             if pac.scm_url:
@@ -5009,7 +5009,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print_request_list(prj.apiurl, prj.name)
 
         args.sort()
-        pacs = findpacs(args, progress_obj=self.download_progress)
+        pacs = Package.from_paths(args, progress_obj=self.download_progress)
 
         if opts.revision and len(args) == 1:
             rev, dummy = parseRevisionOption(opts.revision)
@@ -5123,7 +5123,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         print(statfrmt('D', getTransActPath(i)))
                         args.remove(i)
                         prj.write_packages()
-        pacs = findpacs(args)
+        pacs = Package.from_paths(args)
 
         for p in pacs:
             if not p.todo:
@@ -5172,7 +5172,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             self.argparse_error("Incorrect number of arguments.")
 
         args = parseargs(args)
-        pacs = findpacs(args)
+        pacs = Package.from_paths(args)
 
         for p in pacs:
             for filename in p.todo:
@@ -7012,7 +7012,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = parseargs(args)
-        pacs = findpacs(args)
+        pacs = Package.from_paths(args)
 
         for p in pacs:
             print(p.info())
@@ -8957,8 +8957,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs("Dest file '%s' already exists" % dest)
         if os.path.isdir(dest):
             dest = os.path.join(dest, os.path.basename(source))
-        src_pkg = findpacs([source])
-        tgt_pkg = findpacs([dest])
+        src_pkg = Package(source)
+        tgt_pkg = Package(dest)
         if not src_pkg:
             raise oscerr.NoWorkingCopy("Error: \"%s\" is not located in an osc working copy." % os.path.abspath(source))
         if not tgt_pkg:
@@ -9081,7 +9081,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Note: this only works for package working copies
         """
         files = opts.file
-        pacs = findpacs(files)
+        pacs = Package.from_paths(files)
         for p in pacs:
             if not p.todo:
                 p.todo = p.filenamelist + p.to_be_added

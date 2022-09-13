@@ -1,0 +1,7 @@
+[general]
+apiurl = http://localhost
+
+[http://localhost]
+user=Admin
+pass=opensuse
+allow_http=1

@@ -1,6 +1,13 @@
+import os
 import unittest
 
 import osc.core
+import osc.oscerr
+
+from .common import OscTestCase
+
+
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures", "packages")
 
 
 class PackageMock(osc.core.Package):
@@ -56,6 +63,119 @@ class TestPackage(unittest.TestCase):
         # the second instance appears to be there because it has the same hash
         # it is ok, because we consider such packages equal
         self.assertIn(p2, packages)
+
+
+class TestPackageFromPaths(OscTestCase):
+    def _get_fixtures_dir(self):
+        return FIXTURES_DIR
+
+    def test_single_package(self):
+        paths = ["projectA/pkgA"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs = osc.core.Package.from_paths(paths)
+        self.assertEqual(len(pacs), 1)
+
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+    def test_duplicates(self):
+        paths = ["projectA/pkgA", "projectA/pkgA"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        self.assertRaises(osc.oscerr.PackageExists, osc.core.Package.from_paths, paths)
+
+    def test_two_packages(self):
+        paths = ["projectA/pkgA", "projectA/pkgB"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs = osc.core.Package.from_paths(paths)
+        self.assertEqual(len(pacs), 2)
+
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        pac = pacs[1]
+        self.assertEqual(pac.name, "pkgB")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+    def test_two_projects(self):
+        paths = ["projectA/pkgA", "projectA/pkgB", "projectB/pkgA", "projectB/pkgB"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs = osc.core.Package.from_paths(paths)
+        self.assertEqual(len(pacs), 4)
+
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        pac = pacs[1]
+        self.assertEqual(pac.name, "pkgB")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        pac = pacs[2]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectB")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        pac = pacs[3]
+        self.assertEqual(pac.name, "pkgB")
+        self.assertEqual(pac.prjname, "projectB")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+    def test_two_apiurls(self):
+        paths = ["projectA/pkgA", "projectA/pkgB", "projectA-different-apiurl/pkgA", "projectA-different-apiurl/pkgB"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs = osc.core.Package.from_paths(paths)
+        self.assertEqual(len(pacs), 4)
+
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        pac = pacs[1]
+        self.assertEqual(pac.name, "pkgB")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        pac = pacs[2]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://example.com")
+
+        pac = pacs[3]
+        self.assertEqual(pac.name, "pkgB")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://example.com")
+
+    def test_invalid_package(self):
+        paths = ["projectA/pkgA", "projectA"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        self.assertRaises(osc.oscerr.NoWorkingCopy, osc.core.Package.from_paths, paths)
+
+    def test_nofail(self):
+        # valid package, invalid package, nonexistent package
+        paths = ["projectA/pkgA", "projectA", "does-not-exist"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs, nopacs = osc.core.Package.from_paths_nofail(paths)
+
+        self.assertEqual(len(pacs), 1)
+
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        expected = [
+            os.path.join(self.tmpdir, "osctest", "projectA"),
+            os.path.join(self.tmpdir, "osctest", "does-not-exist"),
+        ]
+        self.assertEqual(nopacs, expected)
 
 
 if __name__ == "__main__":

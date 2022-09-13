@@ -1208,6 +1208,37 @@ class Package:
     def __lt__(self, other):
         return (self.name, self.prjname, self.apiurl) < (other.name, other.prjname, other.apiurl)
 
+    @classmethod
+    def from_paths(cls, paths, progress_obj=None):
+        """
+        Return a list of Package objects from working copies in given paths.
+        """
+        packages = []
+        for path in paths:
+            package = cls(path, progress_obj)
+            if package in packages:
+                raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
+            packages.append(package)
+        return packages
+
+    @classmethod
+    def from_paths_nofail(cls, paths, progress_obj=None):
+        """
+        Return a list of Package objects from working copies in given paths
+        and a list of strings with paths that do not contain Package working copies.
+        """
+        packages = []
+        failed_to_load = []
+        for path in paths:
+            try:
+                package = cls(path, progress_obj)
+                if package in packages:
+                    raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
+                packages.append(package)
+            except oscerr.NoWorkingCopy:
+                failed_to_load.append(path)
+        return packages, failed_to_load
+
     def wc_check(self):
         dirty_files = []
         if self.scm_url:
@@ -3208,7 +3239,7 @@ def expand_proj_pack(args, idx=0, howmany=0):
     If args[idx] does not exist, an implicit '.' is assumed.
     If not enough elements up to idx exist, an error is raised.
 
-    See also parseargs(args), slash_split(args), findpacs(args)
+    See also parseargs(args), slash_split(args), Package.from_paths(args)
     All these need unification, somehow.
     """
 
@@ -3246,44 +3277,15 @@ def expand_proj_pack(args, idx=0, howmany=0):
 def findpacs(files, progress_obj=None, fatal=True):
     """collect Package objects belonging to the given files
     and make sure each Package is returned only once"""
-    pacs = []
-    no_pacs = []
-    for f in files:
-        try:
-            p = filedir_to_pac(f, progress_obj)
-        except oscerr.OscBaseError as e:
-            if fatal:
-                raise e
-            no_pacs.append(f)
-            continue
-        known = None
-        for i in pacs:
-            if i.name == p.name and i.prjname == p.prjname:
-                known = i
-                break
-        if known:
-            i.merge(p)
-        else:
-            pacs.append(p)
-    if not fatal:
-        return pacs, no_pacs
-    return pacs
-
-
-def filedir_to_pac(f, progress_obj=None):
-    """Takes a working copy path, or a path to a file inside a working copy,
-    and returns a Package object instance
-
-    If the argument was a filename, add it onto the "todo" list of the Package """
-
-    if os.path.isdir(f):
-        wd = f
-        p = Package(wd, progress_obj=progress_obj)
-    else:
-        wd = os.path.dirname(f) or os.curdir
-        p = Package(wd, progress_obj=progress_obj)
-        p.todo = [os.path.basename(f)]
-    return p
+    import warnings
+    warnings.warn(
+        "osc.core.findpacs() is deprecated. "
+        "Use osc.core.Package.from_paths() or osc.core.Package.from_paths_nofail() instead.",
+        DeprecationWarning
+    )
+    if fatal:
+        return Package.from_paths(files, progress_obj)
+    return Package.from_paths_nofail(files, progress_obj)
 
 
 def read_filemeta(dir):
