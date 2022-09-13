@@ -1395,7 +1395,7 @@ class Osc(cmdln.Cmdln):
 
         elif len(args) <= 2:
             # try using the working copy at hand
-            p = findpacs(os.curdir)[0]
+            p = findpacs([os.curdir])[0]
             src_project = p.prjname
             src_package = p.name
             if self.options.apiurl and self.options.apiurl != p.apiurl:
@@ -1627,7 +1627,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         elif len(args) <= 2:
             # try using the working copy at hand
-            p = findpacs(os.curdir)[0]
+            p = findpacs([os.curdir])[0]
             src_project = p.prjname
             src_package = p.name
             if len(args) == 0 and p.islink():
@@ -2742,7 +2742,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             rev = None
 
         if len(args) == 0:
-            p = findpacs(os.curdir)[0]
+            p = findpacs([os.curdir])[0]
             project = p.prjname
             package = p.name
             apiurl = p.apiurl

@@ -1130,7 +1130,7 @@ def main(apiurl, opts, argv):
         if not old_pkg_dir.startswith('/') and not opts.offline:
             data = [prj, pacname, repo, arch]
             if old_pkg_dir == '_link':
-                p = core.findpacs(os.curdir)[0]
+                p = core.findpacs([os.curdir])[0]
                 if not p.islink():
                     raise oscerr.WrongOptions('package is not a link')
                 data[0] = p.linkinfo.project
