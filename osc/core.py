@@ -4429,7 +4429,7 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
 # this function uses the logic in the api which is faster and more exact then the xpath search
 
 
-def get_request_collection(apiurl, role=None, req_who=None, req_states=('new', 'review', 'declined')):
+def get_request_collection(apiurl, role=None, req_who=None, req_states=('new', 'review')):
 
     query = {"view": "collection"}
     if role:
@@ -7530,7 +7530,7 @@ def get_commit_msg(wc_dir, pacs):
     return msg
 
 
-def print_request_list(apiurl, project, package=None, states=('new', 'review', ), force=False):
+def print_request_list(apiurl, project, package=None, states=('new', 'review'), force=False):
     """
     prints list of pending requests for the specified project/package if "check_for_request_on_action"
     is enabled in the config or if "force" is set to True
