@@ -2157,8 +2157,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-f', '--force', action='store_true',
                         help='enforce state change, can be used to ignore open reviews')
-    @cmdln.option('-s', '--state', default='',  # default is 'all' if no args given, 'new,review' otherwise
-                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review", or "all", if no args given]')
+    @cmdln.option('-s', '--state', default='new,review',
+                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review"]')
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests in state "new" or changed in the last DAYS.')
     @cmdln.option('-U', '--user', metavar='USER',
@@ -2291,11 +2291,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not args:
             args = ['list']
             opts.mine = 1
-            if opts.state == '':
-                opts.state = 'all'
-
-        if opts.state == '' and subcmd != 'review':
-            opts.state = 'new,review'
 
         if opts.incoming:
             conf.config['include_request_from_project'] = False
