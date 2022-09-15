@@ -3031,6 +3031,7 @@ class Request:
         if self.state.name == 'review' and self.state.approver:
             status += "(approved)"
         lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, status, self.state.who, self.state.when)]
+        lines += [f"        Created by: {self.creator}"]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
             lines.append(tmpl % self.format_action(action))
@@ -3049,58 +3050,58 @@ class Request:
 
     def __str__(self):
         """return "detailed" format"""
-        lines = ['Request: #%s\n' % self.reqid]
+        lines = [
+            f"Request:    {self.reqid}",
+            f"Created by: {self.creator}",
+        ]
+
         if self.accept_at and self.state.name in ['new', 'review']:
             lines.append('    *** This request will get automatically accepted after ' + self.accept_at + ' ! ***\n')
+
         if self.priority in ['critical', 'important'] and self.state.name in ['new', 'review']:
             lines.append('    *** This request has classified as ' + self.priority + ' ! ***\n')
+
         if self.state and self.state.approver and self.state.name == 'review':
             lines.append('    *** This request got approved by ' + self.state.approver + '. It will get automatically accepted after last review got accepted! ***\n')
 
+        lines += ["", "Actions:"]
         for action in self.actions:
-            tmpl = '  %(type)-13s %(source)s %(target)s'
+            fmt_action = self.format_action(action, show_srcupdate=True)
             if action.type == 'delete':
-                # remove 1 whitespace because source is empty
-                tmpl = '  %(type)-12s %(source)s %(target)s'
-            lines.append(tmpl % self.format_action(action, show_srcupdate=True))
-        lines.append('\n\nMessage:')
-        if self.description:
-            lines.append(self.description)
-        else:
-            lines.append('<no message>')
+                lines += [f"  {fmt_action['type']:13} {fmt_action['target']}"]
+            else:
+                lines += [f"  {fmt_action['type']:13} {fmt_action['source']} {fmt_action['target']}"]
+
+        lines += ["", "Message:", textwrap.indent(self.description or "<no message>", prefix="  ")]
+
         if self.state:
-            lines.append('\nState:   %-10s %-12s %s' % (self.state.name, self.state.when, self.state.who))
-            lines.append('Comment: %s' % (self.state.comment or '<no comment>'))
+            lines += ["", "State:", f"  {self.state.name:61} {self.state.when:12} {self.state.who}"]
+            if self.state.comment:
+                lines += [textwrap.indent(self.state.comment, prefix="    | ", predicate=lambda line: True)]
 
-        indent = '\n         '
-        tmpl = '%(state)-10s %(by)-50s %(when)-12s %(who)-20s  %(comment)s'
-        reviews = []
-        for review in reversed(self.reviews):
-            d = {'state': review.state}
-            if review.by_user:
-                d['by'] = "User: " + review.by_user
-            if review.by_group:
-                d['by'] = "Group: " + review.by_group
-            if review.by_package:
-                d['by'] = "Package: " + review.by_project + "/" + review.by_package
-            elif review.by_project:
-                d['by'] = "Project: " + review.by_project
-            d['when'] = review.when or ''
-            d['who'] = review.who or ''
-            d['comment'] = ''
-            if review.comment:
-                d['comment'] = '\n  ' + review.comment
-            reviews.append(tmpl % d)
-        if reviews:
-            lines.append('\nReview:  %s' % indent.join(reviews))
+        if self.reviews:
+            lines += [""]
+            lines += ["Review:"]
+            for review in reversed(self.reviews):
+                d = {'state': review.state}
+                if review.by_user:
+                    d['by'] = "User: " + review.by_user
+                if review.by_group:
+                    d['by'] = "Group: " + review.by_group
+                if review.by_package:
+                    d['by'] = "Package: " + review.by_project + "/" + review.by_package
+                elif review.by_project:
+                    d['by'] = "Project: " + review.by_project
+                d['when'] = review.when or ''
+                d['who'] = review.who or ''
+                lines += [f"  {d['state']:10} {d['by']:50} {d['when']:12} {d['who']}"]
+                if review.comment:
+                    lines += [textwrap.indent(review.comment, prefix="    | ", predicate=lambda line: True)]
 
-        tmpl = '%(when)-10s %(who)-12s %(desc)s'
-        histories = []
-        for hist in reversed(self.statehistory):
-            d = {'when': hist.when, 'who': hist.who, 'desc': hist.description}
-            histories.append(tmpl % d)
-        if histories:
-            lines.append('\nHistory: %s' % indent.join(histories))
+        if self.statehistory:
+            lines += ["", "History:"]
+            for hist in reversed(self.statehistory):
+                lines += [f"  {hist.when:10} {hist.who:30} {hist.description}"]
 
         return '\n'.join(lines)
 
