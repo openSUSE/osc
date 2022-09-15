@@ -28,7 +28,7 @@ import sys
 import tempfile
 import textwrap
 import time
-from functools import cmp_to_key
+from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
 from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
@@ -2812,6 +2812,7 @@ class Action:
         return Action(action_node.get('type'), **kwargs)
 
 
+@total_ordering
 class Request:
     """Represents a request (``<request />``)"""
 
@@ -2830,6 +2831,12 @@ class Request:
         self.actions = []
         self.statehistory = []
         self.reviews = []
+
+    def __eq__(self, other):
+        return int(self.reqid) == int(other.reqid)
+
+    def __lt__(self, other):
+        return int(self.reqid) < int(other.reqid)
 
     def read(self, root):
         """read in a request"""
@@ -3096,9 +3103,6 @@ class Request:
             lines.append('\nHistory: %s' % indent.join(histories))
 
         return '\n'.join(lines)
-
-    def __cmp__(self, other):
-        return cmp(int(self.reqid), int(other.reqid))
 
     def create(self, apiurl, addrevision=False, enforce_branching=False):
         """create a new request"""
