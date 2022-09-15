@@ -21,8 +21,7 @@ def rdiff_url(pkg, oldprj, newprj):
 
 
 def request_url(prj):
-    return 'http://localhost/search/request?match=%%28state%%2F%%40name%%3D%%27new%%27+or+state%%2F%%40name%%3D%%27review%%27%%29+and+%%28action%%2Ftarget%%2F%%40project%%3D%%27%s%%27+or+action%%2Fsource%%2F%%40project%%3D%%27%s%%27%%29' % \
-        tuple([prj.replace(':', '%3A')] * 2)
+    return "http://localhost/request" + f"?view=collection&project={prj}&states=new,review".replace(":", "%3A").replace(",", "%2C")
 
 
 def GET_PROJECT_PACKAGES(*projects):

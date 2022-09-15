@@ -1673,7 +1673,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                       % (devloc, dst_package))
                 sys.exit(1)
 
-        reqs = get_request_list(apiurl, dst_project, dst_package, req_type='submit', req_state=['new', 'review'])
+        reqs = get_request_collection(apiurl, project=dst_project, package=dst_package, types=['submit'], states=['new', 'review'])
         user = conf.get_apiurl_usr(apiurl)
         myreqs = [i for i in reqs if i.state.who == user and i.reqid != opts.supersede]
         myreq_ids = [r.reqid for r in myreqs]
@@ -2409,7 +2409,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             who = ''
             if cmd == 'approvenew':
                 states = ('new')
-                results = get_request_list(apiurl, project, package, '', ['new'])
+                results = get_request_collection(apiurl, project=project, package=package, states=['new'])
             else:
                 state_list = opts.state.split(',')
                 if state_list == ['']:
@@ -2439,8 +2439,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
                                                                  req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
                     else:
-                        results = get_request_list(apiurl, project, package, who,
-                                                   state_list, opts.type, opts.exclude_target_project or [])
+                        results = get_request_collection(
+                            apiurl, project=project, package=package, user=who,
+                            states=state_list, types=opts.type, roles=roles)
 
             # Check if project actually exists if result list is empty
             if not results:
@@ -3717,7 +3718,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('Package argument is empty')
 
             # FIXME: core.py:commitDelPackage() should have something similar
-            rlist = get_request_list(apiurl, prj, pkg)
+            rlist = get_request_collection(apiurl, project=prj, package=pkg)
             for rq in rlist:
                 print(rq)
             if len(rlist) >= 1 and not opts.force:
@@ -4275,8 +4276,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         new_packages = meta_get_packagelist(apiurl, newprj)
 
         if opts.requests:
-            requests = get_request_list(apiurl, project=oldprj,
-                                        req_state=('new', 'review'))
+            requests = get_request_collection(apiurl, project=oldprj, states=('new', 'review'))
 
         for pkg in old_packages:
             if self._prdiff_skip_package(opts, pkg):
@@ -4299,8 +4299,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 self._prdiff_output_diff(opts, rdiff)
 
                 if opts.requests:
-                    self._prdiff_output_matching_requests(opts, requests,
-                                                          newprj, pkg)
+                    self._prdiff_output_matching_requests(opts, requests, newprj, pkg)
             else:
                 print("identical: %s" % pkg)
 
@@ -7402,7 +7401,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif type in args_prj:
             what = {'project': ''}
         elif type in args_sr:
-            requests = get_request_collection(apiurl, 'creator', req_who=user)
+            requests = get_request_collection(apiurl, roles=['creator'], user=user)
             for r in sorted(requests, key=lambda x: x.reqid):
                 print(r.list_view(), '\n')
             return
