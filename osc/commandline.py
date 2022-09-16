@@ -8849,6 +8849,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         email = user@defined.email
 
         or can be specified via mailaddr environment variable.
+
+        By default, osc vc opens the program specified by the EDITOR
+        environment variable (and it uses Vim if that variable is not set) with
+        a temporary file that should replace the *.changes file when saved by
+        the editor, or discarded otherwise.
         """
         if opts.message and opts.file:
             raise oscerr.WrongOptions('\'--message\' and \'--file\' are mutually exclusive')
