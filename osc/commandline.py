@@ -2439,6 +2439,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         results = get_user_projpkgs_request_list(apiurl, who, req_state=state_list,
                                                                  req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
                     else:
+                        roles = ["creator"] if opts.mine else None
                         results = get_request_collection(
                             apiurl, project=project, package=package, user=who,
                             states=state_list, types=opts.type, roles=roles)
