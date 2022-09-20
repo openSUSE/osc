@@ -33,7 +33,7 @@ class TestCommit(OscTestCase):
          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_cfilesremote', expfile='testSimple_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27simple%27+or+action%2Fsource%2F%40package%3D%27simple%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=simple&states=new%2Creview', file='testOpenRequests')
     def test_simple(self):
         """a simple commit (only one modified file)"""
         self._change_to_pkg('simple')
@@ -57,7 +57,7 @@ class TestCommit(OscTestCase):
          exp='added file\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/add?comment=&cmd=commitfilelist&user=Admin',
           file='testAddfile_cfilesremote', expfile='testAddfile_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27add%27+or+action%2Fsource%2F%40package%3D%27add%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=add&states=new%2Creview', file='testOpenRequests')
     def test_addfile(self):
         """commit a new file"""
         self._change_to_pkg('add')
@@ -79,7 +79,7 @@ class TestCommit(OscTestCase):
           exp='', text='<services />')
     @POST('http://localhost/source/osctest/delete?comment=&cmd=commitfilelist&user=Admin&withvalidate=1',
           file='testDeletefile_cfilesremote', expfile='testDeletefile_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27delete%27+or+action%2Fsource%2F%40package%3D%27delete%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=delete&states=new%2Creview', file='testOpenRequests')
     def test_deletefile(self):
         """delete a file"""
         self._change_to_pkg('delete')
@@ -132,7 +132,7 @@ class TestCommit(OscTestCase):
     @PUT('http://localhost/source/osctest/multiple/add2?rev=repository', exp='add2\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/multiple?comment=&cmd=commitfilelist&user=Admin',
           file='testMultiple_cfilesremote', expfile='testMultiple_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27multiple%27+or+action%2Fsource%2F%40package%3D%27multiple%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=multiple&states=new%2Creview', file='testOpenRequests')
     def test_multiple(self):
         """a simple commit (only one modified file)"""
         self._change_to_pkg('multiple')
@@ -161,7 +161,7 @@ class TestCommit(OscTestCase):
     @PUT('http://localhost/source/osctest/multiple/nochange?rev=repository', exp='This file did change.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/multiple?comment=&cmd=commitfilelist&user=Admin',
           file='testPartial_cfilesremote', expfile='testPartial_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27multiple%27+or+action%2Fsource%2F%40package%3D%27multiple%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=multiple&states=new%2Creview', file='testOpenRequests')
     def test_partial(self):
         """commit only some files"""
         self._change_to_pkg('multiple')
@@ -208,7 +208,7 @@ class TestCommit(OscTestCase):
     @PUT('http://localhost/source/osctest/allstates/nochange?rev=repository', exp='This file did change.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/allstates?comment=&cmd=commitfilelist&user=Admin',
           file='testAllStates_cfilesremote', expfile='testAllStates_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27allstates%27+or+action%2Fsource%2F%40package%3D%27allstates%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=allstates&states=new%2Creview', file='testOpenRequests')
     def test_allstates(self):
         """commit all files (all states are available except 'C')"""
         self._change_to_pkg('allstates')
@@ -234,7 +234,7 @@ class TestCommit(OscTestCase):
           exp='', text='<services />')
     @POST('http://localhost/source/osctest/add?comment=&cmd=commitfilelist&user=Admin&withvalidate=1',
           file='testAddfile_cfilesremote', expfile='testAddfile_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27add%27+or+action%2Fsource%2F%40package%3D%27add%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=add&states=new%2Creview', file='testOpenRequests')
     def test_remoteexists(self):
         """file 'add' should be committed but already exists on the server"""
         self._change_to_pkg('add')
@@ -260,7 +260,7 @@ class TestCommit(OscTestCase):
     @POST('http://localhost/source/osctest/branch?comment=&cmd=commitfilelist&user=Admin&keeplink=1',
           file='testExpand_cfilesremote', expfile='testExpand_lfilelist')
     @GET('http://localhost/source/osctest/branch?rev=87ea02aede261b0267aabaa97c756e7a', file='testExpand_expandedfilesremote')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27branch%27+or+action%2Fsource%2F%40package%3D%27branch%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=branch&states=new%2Creview', file='testOpenRequests')
     def test_expand(self):
         """commit an expanded package"""
         self._change_to_pkg('branch')
@@ -292,7 +292,7 @@ class TestCommit(OscTestCase):
     @PUT('http://localhost/source/osctest/added_missing/bar?rev=repository', exp='foobar\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/added_missing?comment=&cmd=commitfilelist&user=Admin',
           file='testAddedMissing_cfilesremote', expfile='testAddedMissing_lfilelist')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27added_missing%27+or+action%2Fsource%2F%40package%3D%27added_missing%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=added_missing&states=new%2Creview', file='testOpenRequests')
     def test_added_missing2(self):
         """commit an added file, another added file missing (but it's not part of the commit)"""
         self._change_to_pkg('added_missing')
@@ -334,7 +334,7 @@ class TestCommit(OscTestCase):
          exp='This file didn\'t change but\nis modified.\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/simple?comment=&cmd=commitfilelist&user=Admin',
           file='testSimple_cfilesremote', expfile='testSimple_lfilelistwithSHA')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27simple%27+or+action%2Fsource%2F%40package%3D%27simple%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=simple&states=new%2Creview', file='testOpenRequests')
     def test_simple_sha256(self):
         """a simple commit (only one modified file)"""
         self._change_to_pkg('simple')
@@ -359,7 +359,7 @@ class TestCommit(OscTestCase):
     @PUT('http://localhost/source/osctest/added_missing/bar?rev=repository', exp='foobar\n', text=rev_dummy)
     @POST('http://localhost/source/osctest/added_missing?comment=&cmd=commitfilelist&user=Admin',
           file='testAddedMissing_cfilesremote', expfile='testAddedMissing_lfilelistwithSHA')
-    @GET('http://localhost/search/request?match=%28state%2F%40name%3D%27new%27+or+state%2F%40name%3D%27review%27%29+and+%28action%2Ftarget%2F%40project%3D%27osctest%27+or+action%2Fsource%2F%40project%3D%27osctest%27%29+and+%28action%2Ftarget%2F%40package%3D%27added_missing%27+or+action%2Fsource%2F%40package%3D%27added_missing%27%29', file='testOpenRequests')
+    @GET('http://localhost/request?view=collection&project=osctest&package=added_missing&states=new%2Creview', file='testOpenRequests')
     def test_added_missing2_sha256(self):
         """commit an added file, another added file missing (but it's not part of the commit)"""
         self._change_to_pkg('added_missing')

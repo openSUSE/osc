@@ -432,6 +432,7 @@ class TestRequest(OscTestCase):
         xml = self._get_fixture('test_request_list_view1.xml')
         exp = """\
     62  State:new        By:Admin        When:2010-12-29T14:57:25
+        Created by: Admin
         set_bugowner:    buguser                                            foo
         add_role:        person: xyz as maintainer, group: group1 as reader foobar
         add_role:        person: abc as reviewer                            foo/bar
@@ -451,6 +452,7 @@ class TestRequest(OscTestCase):
         r.read(ET.fromstring(xml))
         exp = """\
     21  State:accepted   By:foobar       When:2010-12-29T16:37:45
+        Created by: foobar
         set_bugowner:    buguser                                            foo
         From: Created Request: user -> Review Approved: foobar
         Descr: This is a simple request with a lot of ... ... text and other
@@ -466,28 +468,32 @@ class TestRequest(OscTestCase):
         r.read(ET.fromstring(xml))
         self.assertEqual(r.creator, 'creator')
         exp = """\
-Request: #123
+Request:    123
+Created by: creator
 
+Actions:
   submit:       xyz/abc(cleanup) -> foo ***update link***
   add_role:     person: bar as maintainer, group: groupxyz as reader home:foo
 
-
 Message:
-just a samll description
-in order to describe this
-request - blablabla
-test.
+  just a samll description
+  in order to describe this
+  request - blablabla
+  test.
 
-State:   review     2010-12-27T01:36:29 abc
-Comment: currently in review
+State:
+  review                                                        2010-12-27T01:36:29 abc
+    | currently in review
 
-Review:  accepted   Group: group1                                      2010-12-29T00:11:22 abc                   
-  accepted
-         new        Group: group1                                      2010-12-28T00:11:22 abc                   
-  review start
+Review:
+  accepted   Group: group1                                      2010-12-29T00:11:22 abc
+    | accepted
+  new        Group: group1                                      2010-12-28T00:11:22 abc
+    | review start
 
-History: 2010-12-12T00:00:00 creator      revoked
-         2010-12-11T00:00:00 creator      new"""
+History:
+  2010-12-12T00:00:00 creator                        revoked
+  2010-12-11T00:00:00 creator                        new"""
         self.assertEqual(exp, str(r))
 
     def test_request_str2(self):
@@ -507,17 +513,18 @@ History: 2010-12-12T00:00:00 creator      revoked
         r.read(ET.fromstring(xml))
         self.assertEqual(r.creator, 'creator')
         exp = """\
-Request: #98765
+Request:    98765
+Created by: creator
 
+Actions:
   change_devel: foo/bar developed in devprj/devpkg
   delete:       deleteme
 
-
 Message:
-<no message>
+  <no message>
 
-State:   new        2010-12-29T00:11:22 creator
-Comment: <no comment>"""
+State:
+  new                                                           2010-12-29T00:11:22 creator"""
         self.assertEqual(exp, str(r))
 
     def test_legacy_request(self):

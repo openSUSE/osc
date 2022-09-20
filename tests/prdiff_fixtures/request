@@ -1,5 +1,5 @@
 <collection matches="1">
-  <request id="148023">
+  <request creator="creator" id="148023">
     <action type="submit">
       <source project="home:user:branches:some:project" package="common-two" rev="7"/>
       <target project="some:project" package="common-two"/>

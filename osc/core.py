@@ -2856,6 +2856,7 @@ class Action:
         return Action(action_node.get('type'), **kwargs)
 
 
+@total_ordering
 class Request:
     """Represents a request (``<request />``)"""
 
@@ -2874,6 +2875,12 @@ class Request:
         self.actions = []
         self.statehistory = []
         self.reviews = []
+
+    def __eq__(self, other):
+        return int(self.reqid) == int(other.reqid)
+
+    def __lt__(self, other):
+        return int(self.reqid) < int(other.reqid)
 
     def read(self, root):
         """read in a request"""
@@ -3068,6 +3075,7 @@ class Request:
         if self.state.name == 'review' and self.state.approver:
             status += "(approved)"
         lines = ['%6s  State:%-10s By:%-12s When:%-19s' % (self.reqid, status, self.state.who, self.state.when)]
+        lines += [f"        Created by: {self.creator}"]
         tmpl = '        %(type)-16s %(source)-50s %(target)s'
         for action in self.actions:
             lines.append(tmpl % self.format_action(action))
@@ -3086,63 +3094,60 @@ class Request:
 
     def __str__(self):
         """return "detailed" format"""
-        lines = ['Request: #%s\n' % self.reqid]
+        lines = [
+            f"Request:    {self.reqid}",
+            f"Created by: {self.creator}",
+        ]
+
         if self.accept_at and self.state.name in ['new', 'review']:
             lines.append('    *** This request will get automatically accepted after ' + self.accept_at + ' ! ***\n')
+
         if self.priority in ['critical', 'important'] and self.state.name in ['new', 'review']:
             lines.append('    *** This request has classified as ' + self.priority + ' ! ***\n')
+
         if self.state and self.state.approver and self.state.name == 'review':
             lines.append('    *** This request got approved by ' + self.state.approver + '. It will get automatically accepted after last review got accepted! ***\n')
 
+        lines += ["", "Actions:"]
         for action in self.actions:
-            tmpl = '  %(type)-13s %(source)s %(target)s'
+            fmt_action = self.format_action(action, show_srcupdate=True)
             if action.type == 'delete':
-                # remove 1 whitespace because source is empty
-                tmpl = '  %(type)-12s %(source)s %(target)s'
-            lines.append(tmpl % self.format_action(action, show_srcupdate=True))
-        lines.append('\n\nMessage:')
-        if self.description:
-            lines.append(self.description)
-        else:
-            lines.append('<no message>')
+                lines += [f"  {fmt_action['type']:13} {fmt_action['target']}"]
+            else:
+                lines += [f"  {fmt_action['type']:13} {fmt_action['source']} {fmt_action['target']}"]
+
+        lines += ["", "Message:", textwrap.indent(self.description or "<no message>", prefix="  ")]
+
         if self.state:
-            lines.append('\nState:   %-10s %-12s %s' % (self.state.name, self.state.when, self.state.who))
-            lines.append('Comment: %s' % (self.state.comment or '<no comment>'))
+            lines += ["", "State:", f"  {self.state.name:61} {self.state.when:12} {self.state.who}"]
+            if self.state.comment:
+                lines += [textwrap.indent(self.state.comment, prefix="    | ", predicate=lambda line: True)]
 
-        indent = '\n         '
-        tmpl = '%(state)-10s %(by)-50s %(when)-12s %(who)-20s  %(comment)s'
-        reviews = []
-        for review in reversed(self.reviews):
-            d = {'state': review.state}
-            if review.by_user:
-                d['by'] = "User: " + review.by_user
-            if review.by_group:
-                d['by'] = "Group: " + review.by_group
-            if review.by_package:
-                d['by'] = "Package: " + review.by_project + "/" + review.by_package
-            elif review.by_project:
-                d['by'] = "Project: " + review.by_project
-            d['when'] = review.when or ''
-            d['who'] = review.who or ''
-            d['comment'] = ''
-            if review.comment:
-                d['comment'] = '\n  ' + review.comment
-            reviews.append(tmpl % d)
-        if reviews:
-            lines.append('\nReview:  %s' % indent.join(reviews))
+        if self.reviews:
+            lines += [""]
+            lines += ["Review:"]
+            for review in reversed(self.reviews):
+                d = {'state': review.state}
+                if review.by_user:
+                    d['by'] = "User: " + review.by_user
+                if review.by_group:
+                    d['by'] = "Group: " + review.by_group
+                if review.by_package:
+                    d['by'] = "Package: " + review.by_project + "/" + review.by_package
+                elif review.by_project:
+                    d['by'] = "Project: " + review.by_project
+                d['when'] = review.when or ''
+                d['who'] = review.who or ''
+                lines += [f"  {d['state']:10} {d['by']:50} {d['when']:12} {d['who']}"]
+                if review.comment:
+                    lines += [textwrap.indent(review.comment, prefix="    | ", predicate=lambda line: True)]
 
-        tmpl = '%(when)-10s %(who)-12s %(desc)s'
-        histories = []
-        for hist in reversed(self.statehistory):
-            d = {'when': hist.when, 'who': hist.who, 'desc': hist.description}
-            histories.append(tmpl % d)
-        if histories:
-            lines.append('\nHistory: %s' % indent.join(histories))
+        if self.statehistory:
+            lines += ["", "History:"]
+            for hist in reversed(self.statehistory):
+                lines += [f"  {hist.when:10} {hist.who:30} {hist.description}"]
 
         return '\n'.join(lines)
-
-    def __cmp__(self, other):
-        return cmp(int(self.reqid), int(other.reqid))
 
     def create(self, apiurl, addrevision=False, enforce_branching=False):
         """create a new request"""
@@ -4441,18 +4446,53 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         requests.append(r)
     return requests
 
+
 # this function uses the logic in the api which is faster and more exact then the xpath search
+def get_request_collection(
+        apiurl,
+        user=None, group=None, roles=None,
+        project=None, package=None,
+        states=None, review_states=None,
+        types=None, ids=None):
 
-
-def get_request_collection(apiurl, role=None, req_who=None, req_states=('new', 'review', 'declined')):
+    # We don't want to overload server by requesting everything.
+    # Let's enforce specifying at least some search criteria.
+    if not any([user, group, project, package, ids]):
+        raise ValueError("Please specify search criteria")
 
     query = {"view": "collection"}
-    if role:
-        query["roles"] = role
-    if req_who:
-        query["user"] = req_who
 
-    query["states"] = ",".join(req_states)
+    if user:
+        query["user"] = user
+
+    if group:
+        query["group"] = group
+
+    if roles:
+        query["roles"] = ",".join(roles)
+
+    if project:
+        query["project"] = project
+
+    if package:
+        if not project:
+            raise ValueError("Project must be set to query a package; see https://github.com/openSUSE/open-build-service/issues/13075")
+        query["package"] = package
+
+    states = states or ("new", "review")
+    if states:
+        if "all" not in states:
+            query["states"] = ",".join(states)
+
+    if review_states:
+        if "all" not in review_states:
+            query["review_states"] = ",".join(review_states)
+
+    if types:
+        query["types"] = ",".join(types)
+
+    if ids:
+        query["ids"] = ",".join(ids)
 
     u = makeurl(apiurl, ['request'], query)
     f = http_GET(u)
@@ -4498,51 +4538,33 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
     return requests
 
 
-def get_request_list(apiurl, project='', package='', req_who='', req_state=('new', 'review', 'declined'), req_type=None, exclude_target_projects=None,
-                     withfullhistory=False):
-    exclude_target_projects = exclude_target_projects or []
-    xpath = ''
-    if 'all' not in req_state:
-        for state in req_state:
-            xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, inner=True)
-    if req_who:
-        xpath = xpath_join(xpath, '(state/@who=\'%(who)s\' or history/@who=\'%(who)s\')' % {'who': req_who}, op='and')
+def get_request_list(apiurl, project='', package='', req_who='',
+                     req_state=('new', 'review', 'declined'), req_type=None,
+                     exclude_target_projects=None, withfullhistory=False, roles=None):
 
-    # XXX: we cannot use the '|' in the xpath expression because it is not supported
-    #      in the backend
-    todo = {}
-    if project:
-        todo['project'] = project
-    if package:
-        todo['package'] = package
-    for kind, val in todo.items():
-        xpath_base = 'action/target/@%(kind)s=\'%(val)s\''
-        if conf.config['include_request_from_project']:
-            xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
-        xpath = xpath_join(xpath, xpath_base % {'kind': kind, 'val': val}, op='and', nexpr_parentheses=True)
+    import warnings
+    warnings.warn(
+        "osc.core.get_request_list() is deprecated. "
+        "Use osc.core.get_request_collection() instead.",
+        DeprecationWarning
+    )
 
-    if req_type:
-        xpath = xpath_join(xpath, 'action/@type=\'%s\'' % req_type, op='and')
-    for i in exclude_target_projects:
-        xpath = xpath_join(xpath, '(not(action/target/@project=\'%(prj)s\'))' % {'prj': i}, op='and')
+    kwargs = {
+        "apiurl": apiurl,
+        "user": req_who,
+        "roles": roles,
+        "project": project,
+        "package": package,
+        "states": req_state,
+    }
 
-    if conf.config['debug']:
-        print('[ %s ]' % xpath)
-    queries = {}
-    if withfullhistory:
-        queries['request'] = {'withfullhistory': '1'}
-    res = search(apiurl, queries=queries, request=xpath)
-    collection = res['request']
-    requests = []
-    for root in collection.findall('request'):
-        r = Request()
-        r.read(root)
-        requests.append(r)
-    return requests
+    assert not exclude_target_projects, "unsupported"
+    assert not withfullhistory, "unsupported"
+
+    return get_request_collection(**kwargs)
+
 
 # old style search, this is to be removed
-
-
 def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), req_type=None, exclude_projects=None, projpkgs=None):
     """OBSOLETE: user involved request search is supported by OBS 2.2 server side in a better way
        Return all running requests for all projects/packages where is user is involved"""
@@ -7545,14 +7567,14 @@ def get_commit_msg(wc_dir, pacs):
     return msg
 
 
-def print_request_list(apiurl, project, package=None, states=('new', 'review', ), force=False):
+def print_request_list(apiurl, project, package=None, states=('new', 'review'), force=False):
     """
     prints list of pending requests for the specified project/package if "check_for_request_on_action"
     is enabled in the config or if "force" is set to True
     """
     if not conf.config['check_for_request_on_action'] and not force:
         return
-    requests = get_request_list(apiurl, project, package, req_state=states)
+    requests = get_request_collection(apiurl, project=project, package=package, states=states)
     msg = '\nPending requests for %s: %s (%s)'
     if sys.stdout.isatty():
         msg = f'\033[1m{msg}\033[0m'
