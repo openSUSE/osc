@@ -5202,10 +5202,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-f', '--force', action='store_true', default=False,
                         help="Don't ask and delete files")
-    def do_rremove(self, subcmd, opts, project, package, *files):
+    @cmdln.option('project')
+    @cmdln.option('package')
+    @cmdln.option('files', metavar="file", nargs='+')
+    def do_rremove(self, subcmd, opts):
         """
         Remove source files from selected package
         """
+        project = opts.project
+        package = opts.package
+        files = opts.files
         apiurl = self.get_api_url()
 
         if len(files) == 0:
