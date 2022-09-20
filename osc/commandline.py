@@ -5960,7 +5960,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print(decode_it(get_buildconfig(apiurl, project, repository)))
 
-    def do_workerinfo(self, subcmd, opts, worker):
+    @cmdln.option('worker', metavar='<hostarch>:<workerid>')
+    def do_workerinfo(self, subcmd, opts):
         """
         Gets the information to a worker from the server
 
@@ -5970,6 +5971,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc workerinfo <hostarch>:<workerid>
         """
+        worker = opts.worker
         apiurl = self.get_api_url()
         print(''.join(get_worker_info(apiurl, worker)))
 
