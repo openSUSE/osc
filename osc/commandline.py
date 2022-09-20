@@ -8942,10 +8942,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='forces removal of entire package and its files')
-    def do_mv(self, subcmd, opts, source, dest):
+    @cmdln.option('source')
+    @cmdln.option('dest')
+    def do_mv(self, subcmd, opts):
         """
         Move SOURCE file to DEST and keep it under version control
         """
+        source = opts.source
+        dest = opts.dest
 
         if not os.path.isfile(source):
             raise oscerr.WrongArgs("Source file '%s' does not exist or is not a file" % source)
