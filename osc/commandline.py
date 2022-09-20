@@ -9070,7 +9070,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print('\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval))
 
-    def do_revert(self, subcmd, opts, *files):
+    @cmdln.option('file', nargs='+')
+    def do_revert(self, subcmd, opts):
         """
         Restore changed files or the entire working copy
 
@@ -9079,6 +9080,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc revert .
         Note: this only works for package working copies
         """
+        files = opts.file
         pacs = findpacs(files)
         for p in pacs:
             if not p.todo:
