@@ -7838,7 +7838,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='delete existing files from the server')
     @cmdln.option('-c', '--commit', action='store_true',
                   help='commit the new files')
-    def do_importsrcpkg(self, subcmd, opts, srpm):
+    @cmdln.option('srpm')
+    def do_importsrcpkg(self, subcmd, opts):
         """
         Import a new package from a src.rpm
 
@@ -7854,6 +7855,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         SRPM is the path of the src.rpm in the local filesystem,
         or an URL.
         """
+        srpm = opts.srpm
+
         if opts.delete_old_files and conf.config['do_package_tracking']:
             # IMHO the --delete-old-files option doesn't really fit into our
             # package tracking strategy
