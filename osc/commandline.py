@@ -3749,13 +3749,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
-    def do_lock(self, subcmd, opts, project, package=None):
+    @cmdln.option('project')
+    @cmdln.option('package', nargs='?')
+    def do_lock(self, subcmd, opts):
         """
         Locks a project or package
 
         usage:
            osc lock PROJECT [PACKAGE]
         """
+        project = opts.project
+        package = opts.package
         apiurl = self.get_api_url()
         kind = 'prj'
         path_args = (project,)
