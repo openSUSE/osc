@@ -227,7 +227,10 @@ class Osc(cmdln.Cmdln):
 
         print(get_osc_version())
 
-    def do_init(self, subcmd, opts, project, package=None, scm_url=None):
+    @cmdln.option('project')
+    @cmdln.option('package', nargs='?')
+    @cmdln.option('scm_url', nargs='?')
+    def do_init(self, subcmd, opts):
         """
         Initialize a directory as working copy
 
@@ -250,6 +253,9 @@ class Osc(cmdln.Cmdln):
             osc init PRJ PAC SCM_URL
         """
 
+        project = opts.project
+        package = opts.package
+        scm_url = opts.scm_url
         apiurl = self.get_api_url()
 
         if not scm_url:
