@@ -120,27 +120,29 @@ class WorkingCopyOutdated(OscBaseError):
 class PackageError(OscBaseError):
     """Base class for all Package related exceptions"""
 
-    def __init__(self, prj, pac):
+    def __init__(self, prj, pac, msg=None):
         super().__init__()
         self.prj = prj
         self.pac = pac
+        self.msg = msg
+
+    def __str__(self):
+        result = f"{self.__class__.__name__}: {self.prj}/{self.pac}"
+        if self.msg:
+            result += f": {self.msg}"
+        return result
 
 
 class WorkingCopyInconsistent(PackageError):
     """Exception raised when the working copy is in an inconsistent state"""
 
     def __init__(self, prj, pac, dirty_files, msg):
-        super().__init__(prj, pac)
+        super().__init__(prj, pac, msg)
         self.dirty_files = dirty_files
-        self.msg = msg
 
 
 class LinkExpandError(PackageError):
     """Exception raised when source link expansion fails"""
-
-    def __init__(self, prj, pac, msg):
-        super().__init__(prj, pac)
-        self.msg = msg
 
 
 class OscIOError(OscBaseError):
@@ -187,19 +189,11 @@ class PackageExists(PackageError):
     Exception raised when a local object already exists
     """
 
-    def __init__(self, prj, pac, msg):
-        super().__init__(prj, pac)
-        self.msg = msg
-
 
 class PackageMissing(PackageError):
     """
     Exception raised when a local object doesn't exist
     """
-
-    def __init__(self, prj, pac, msg):
-        super().__init__(prj, pac)
-        self.msg = msg
 
 
 class PackageFileConflict(PackageError):
@@ -209,13 +203,12 @@ class PackageFileConflict(PackageError):
     """
 
     def __init__(self, prj, pac, file, msg):
-        super().__init__(prj, pac)
+        super().__init__(prj, pac, msg)
         self.file = file
-        self.msg = msg
 
 
 class PackageInternalError(PackageError):
-    def __init__(self, prj, pac, msg):
-        super().__init__(prj, pac)
-        self.msg = msg
+    pass
+
+
 # vim: sw=4 et
