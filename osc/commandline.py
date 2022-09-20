@@ -8331,10 +8331,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('who')
     @cmdln.alias('user')
-    def do_whois(self, subcmd, opts, *usernames):
+    @cmdln.option('user', nargs='*')
+    def do_whois(self, subcmd, opts):
         """
         Show fullname and email of a buildservice user
         """
+        usernames = opts.user
         apiurl = self.get_api_url()
         if len(usernames) < 1:
             if 'user' not in conf.config['api_host_options'][apiurl]:
