@@ -4,6 +4,7 @@ A modern, lightweight alternative to cmdln.py from https://github.com/trentm/cmd
 
 
 import argparse
+import inspect
 import sys
 
 
@@ -21,7 +22,7 @@ def option(*args, **kwargs):
         if not hasattr(f, "options"):
             f.options = []
         new_args = [i for i in args if i]
-        f.options.append((new_args, kwargs))
+        f.options.insert(0, (new_args, kwargs))
         return f
     return decorate
 
@@ -227,7 +228,33 @@ class Cmdln:
         # find the `do_*` function to call by its name
         cmd = self.cmd_map[self.options.command]
         # run the command with parsed args
-        cmd(self.options.command, self.options, *self.args)
+
+        sig = inspect.signature(cmd)
+        arg_names = list(sig.parameters.keys())
+        if arg_names == ["subcmd", "opts"]:
+            # positional args specified manually via @cmdln.option
+            if self.args:
+                self.argparser.error(f"unrecognized arguments: " + " ".join(self.args))
+            cmd(self.options.command, self.options)
+        elif arg_names == ["subcmd", "opts", "args"]:
+            # positional args are the remaining (unrecognized) args
+            cmd(self.options.command, self.options, *self.args)
+        else:
+            # positional args are the remaining (unrecongnized) args
+            # and the do_* handler takes other arguments than "subcmd", "opts", "args"
+            import warnings
+            warnings.warn(
+                f"do_{self.options.command}() handler has deprecated signature. "
+                f"It takes the following args: {arg_names}, while it should be taking ['subcmd', 'opts'] "
+                f"and handling positional arguments explicitly via @cmdln.option.",
+                FutureWarning
+            )
+            try:
+                cmd(self.options.command, self.options, *self.args)
+            except TypeError as e:
+                if e.args[0].startswith("do_"):
+                    sys.exit(str(e))
+                raise
 
     @alias("?")
     def do_help(self, subcmd, opts, *args):

@@ -227,7 +227,10 @@ class Osc(cmdln.Cmdln):
 
         print(get_osc_version())
 
-    def do_init(self, subcmd, opts, project, package=None, scm_url=None):
+    @cmdln.option('project')
+    @cmdln.option('package', nargs='?')
+    @cmdln.option('scm_url', nargs='?')
+    def do_init(self, subcmd, opts):
         """
         Initialize a directory as working copy
 
@@ -250,6 +253,9 @@ class Osc(cmdln.Cmdln):
             osc init PRJ PAC SCM_URL
         """
 
+        project = opts.project
+        package = opts.package
+        scm_url = opts.scm_url
         apiurl = self.get_api_url()
 
         if not scm_url:
@@ -3743,13 +3749,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
-    def do_lock(self, subcmd, opts, project, package=None):
+    @cmdln.option('project')
+    @cmdln.option('package', nargs='?')
+    def do_lock(self, subcmd, opts):
         """
         Locks a project or package
 
         usage:
            osc lock PROJECT [PACKAGE]
         """
+        project = opts.project
+        package = opts.package
         apiurl = self.get_api_url()
         kind = 'prj'
         path_args = (project,)
@@ -5192,10 +5202,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-f', '--force', action='store_true', default=False,
                         help="Don't ask and delete files")
-    def do_rremove(self, subcmd, opts, project, package, *files):
+    @cmdln.option('project')
+    @cmdln.option('package')
+    @cmdln.option('files', metavar="file", nargs='+')
+    def do_rremove(self, subcmd, opts):
         """
         Remove source files from selected package
         """
+        project = opts.project
+        package = opts.package
+        files = opts.files
         apiurl = self.get_api_url()
 
         if len(files) == 0:
@@ -5944,7 +5960,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print(decode_it(get_buildconfig(apiurl, project, repository)))
 
-    def do_workerinfo(self, subcmd, opts, worker):
+    @cmdln.option('worker', metavar='<hostarch>:<workerid>')
+    def do_workerinfo(self, subcmd, opts):
         """
         Gets the information to a worker from the server
 
@@ -5954,6 +5971,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc workerinfo <hostarch>:<workerid>
         """
+        worker = opts.worker
         apiurl = self.get_api_url()
         print(''.join(get_worker_info(apiurl, worker)))
 
@@ -7820,7 +7838,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='delete existing files from the server')
     @cmdln.option('-c', '--commit', action='store_true',
                   help='commit the new files')
-    def do_importsrcpkg(self, subcmd, opts, srpm):
+    @cmdln.option('srpm')
+    def do_importsrcpkg(self, subcmd, opts):
         """
         Import a new package from a src.rpm
 
@@ -7836,6 +7855,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         SRPM is the path of the src.rpm in the local filesystem,
         or an URL.
         """
+        srpm = opts.srpm
+
         if opts.delete_old_files and conf.config['do_package_tracking']:
             # IMHO the --delete-old-files option doesn't really fit into our
             # package tracking strategy
@@ -7943,6 +7964,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print('Package \'%s\' imported successfully' % pac)
 
     @cmdln.option('-X', '-m', '--method', default='GET', metavar='HTTP_METHOD',
+                        choices=('GET', 'PUT', 'POST', 'DELETE'),
                         help='specify HTTP method to use (GET|PUT|DELETE|POST)')
     @cmdln.option('-e', '--edit', default=None, action='store_true',
                         help='GET, edit and PUT the location')
@@ -7953,7 +7975,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING',
                         nargs=2, action='append', dest='headers',
                         help='add the specified header to the request')
-    def do_api(self, subcmd, opts, url):
+    @cmdln.option('url',
+                        help="either URL '/path' or full URL with 'scheme://hostname/path'")
+    def do_api(self, subcmd, opts):
         """
         Issue an arbitrary request to the API
 
@@ -7970,10 +7994,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           osc api -e /configuration
         """
 
+        url = opts.url
         apiurl = self.get_api_url()
-
-        if opts.method not in ['GET', 'PUT', 'POST', 'DELETE']:
-            sys.exit('unknown method %s' % opts.method)
 
         # default is PUT when uploading files
         if opts.file and opts.method == 'GET':
@@ -8309,10 +8331,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('who')
     @cmdln.alias('user')
-    def do_whois(self, subcmd, opts, *usernames):
+    @cmdln.option('user', nargs='*')
+    def do_whois(self, subcmd, opts):
         """
         Show fullname and email of a buildservice user
         """
+        usernames = opts.user
         apiurl = self.get_api_url()
         if len(usernames) < 1:
             if 'user' not in conf.config['api_host_options'][apiurl]:
@@ -8918,10 +8942,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='forces removal of entire package and its files')
-    def do_mv(self, subcmd, opts, source, dest):
+    @cmdln.option('source')
+    @cmdln.option('dest')
+    def do_mv(self, subcmd, opts):
         """
         Move SOURCE file to DEST and keep it under version control
         """
+        source = opts.source
+        dest = opts.dest
 
         if not os.path.isfile(source):
             raise oscerr.WrongArgs("Source file '%s' does not exist or is not a file" % source)
@@ -9042,7 +9070,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 print('\'%s\': \'%s\' is set to \'%s\'' % (section, opt, newval))
 
-    def do_revert(self, subcmd, opts, *files):
+    @cmdln.option('file', nargs='+')
+    def do_revert(self, subcmd, opts):
         """
         Restore changed files or the entire working copy
 
@@ -9051,6 +9080,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc revert .
         Note: this only works for package working copies
         """
+        files = opts.file
         pacs = findpacs(files)
         for p in pacs:
             if not p.todo:
