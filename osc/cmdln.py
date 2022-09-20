@@ -21,7 +21,7 @@ def option(*args, **kwargs):
         if not hasattr(f, "options"):
             f.options = []
         new_args = [i for i in args if i]
-        f.options.append((new_args, kwargs))
+        f.options.insert(0, (new_args, kwargs))
         return f
     return decorate
 
