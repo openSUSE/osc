@@ -7943,6 +7943,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print('Package \'%s\' imported successfully' % pac)
 
     @cmdln.option('-X', '-m', '--method', default='GET', metavar='HTTP_METHOD',
+                        choices=('GET', 'PUT', 'POST', 'DELETE'),
                         help='specify HTTP method to use (GET|PUT|DELETE|POST)')
     @cmdln.option('-e', '--edit', default=None, action='store_true',
                         help='GET, edit and PUT the location')
@@ -7953,7 +7954,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-a', '--add-header', default=None, metavar='NAME STRING',
                         nargs=2, action='append', dest='headers',
                         help='add the specified header to the request')
-    def do_api(self, subcmd, opts, url):
+    @cmdln.option('url',
+                        help="either URL '/path' or full URL with 'scheme://hostname/path'")
+    def do_api(self, subcmd, opts):
         """
         Issue an arbitrary request to the API
 
@@ -7970,10 +7973,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           osc api -e /configuration
         """
 
+        url = opts.url
         apiurl = self.get_api_url()
-
-        if opts.method not in ['GET', 'PUT', 'POST', 'DELETE']:
-            sys.exit('unknown method %s' % opts.method)
 
         # default is PUT when uploading files
         if opts.file and opts.method == 'GET':
