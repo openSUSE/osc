@@ -1215,7 +1215,15 @@ class Package:
         """
         packages = []
         for path in paths:
+            # TODO: match only dirs, remove the code for resolving files into Package objects
+            orig_path = path
+            path_is_file = os.path.isfile(path)
+            if path_is_file:
+                path = os.path.dirname(path) or "."
             package = cls(path, progress_obj)
+            if path_is_file:
+                # XXX: modifying 'todo' is an unexpected side-effect
+                package.todo = [os.path.basename(orig_path)]
             if package in packages:
                 raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
             packages.append(package)
@@ -1230,13 +1238,21 @@ class Package:
         packages = []
         failed_to_load = []
         for path in paths:
+            # TODO: match only dirs, remove the code for resolving files into Package objects
+            orig_path = path
+            path_is_file = os.path.isfile(path)
+            if path_is_file:
+                path = os.path.dirname(path) or "."
             try:
                 package = cls(path, progress_obj)
+                if path_is_file:
+                    # XXX: modifying 'todo' is an unexpected side-effect
+                    package.todo = [os.path.basename(orig_path)]
                 if package in packages:
                     raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
                 packages.append(package)
             except oscerr.NoWorkingCopy:
-                failed_to_load.append(path)
+                failed_to_load.append(orig_path)
         return packages, failed_to_load
 
     def wc_check(self):
@@ -7387,8 +7403,11 @@ def addFiles(filenames, prj_obj=None, force=False):
         if not os.path.exists(filename):
             raise oscerr.OscIOError(None, 'file \'%s\' does not exist' % filename)
 
+    # TODO: this function needs improvement
+    #       it should check if we're in a project or a package working copy and behave accordingly
+
     # init a package dir if we have a normal dir in the "filenames"-list
-    # so that it will be find by findpacs() later
+    # so that it will be find by Package.from_paths_nofail() later
     pacs = list(filenames)
     for filename in filenames:
         prj_dir, pac_dir = getPrjPacPaths(filename)
@@ -7404,7 +7423,7 @@ def addFiles(filenames, prj_obj=None, force=False):
             raise oscerr.WrongArgs('osc: cannot add a directory to a project unless '
                                    '\'do_package_tracking\' is enabled in the configuration file')
 
-    pacs, no_pacs = findpacs(pacs, fatal=False)
+    pacs, no_pacs = Package.from_paths_nofail(pacs)
     for filename in no_pacs:
         filename = os.path.normpath(filename)
         directory = os.path.join(filename, os.pardir)
@@ -7423,7 +7442,7 @@ def addFiles(filenames, prj_obj=None, force=False):
             cpio_proc = subprocess.Popen(['cpio', '-o', '-H', 'newc', '-0'],
                                          stdin=subprocess.PIPE, stdout=f)
             cpio_proc.communicate(b'\0'.join(enc_todo))
-        pacs.extend(findpacs([archive]))
+        pacs.extend(Package.from_paths([archive]))
 
     for pac in pacs:
         if conf.config['do_package_tracking'] and not pac.todo:
