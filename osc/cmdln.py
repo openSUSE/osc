@@ -174,7 +174,10 @@ class Cmdln:
             # add hidden copy of global options so they can be used in any place
             self.add_global_options(subparser, suppress=True)
             for option_args, option_kwargs in options:
-                subparser.add_argument(*option_args, **option_kwargs)
+                try:
+                    subparser.add_argument(*option_args, **option_kwargs)
+                except argparse.ArgumentError as e:
+                    print(f"WARNING: Could not add argument '{e.argument_name}' to the '{cmd_name}' sub-command: {e}", file=sys.stderr)
 
     def argparse_error(self, *args, **kwargs):
         """
