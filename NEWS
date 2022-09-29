@@ -1,3 +1,7 @@
+1.0.0b3
+  - add create-pbuild-config(cpc) command which allows to create a working
+    config for pbuild tool based on OBS server side data
+
 1.0.0b2
   - Support ssh-agent forwarding
   - ssh auth: Avoid password prompt when using TransientCredentialsManager

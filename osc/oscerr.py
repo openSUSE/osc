@@ -50,6 +50,15 @@ class APIError(OscBaseError):
         super().__init__()
         self.msg = msg
 
+    def __str__(self):
+        return f"{self.__class__.__name__}: {self.msg}"
+
+
+class NotFoundAPIError(APIError):
+    """
+    Requested data was not found.
+    """
+
 
 class NoConfigfile(OscBaseError):
     """Exception raised when osc's configfile cannot be found"""
