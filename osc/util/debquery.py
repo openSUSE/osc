@@ -69,34 +69,38 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
 
     def _open_tar(self, arfile):
         control = arfile.get_file(b'control.tar')
-        if control:
-            return tarfile.open(fileobj=control)
-        return None
+        if not control:
+            return None
+
+        return tarfile.open(fileobj=control)
 
     def _open_tar_gz(self, arfile):
         control = arfile.get_file(b'control.tar.gz')
-        if control:
-            return tarfile.open(fileobj=control)
-        return None
+        if not control:
+            return None
+
+        return tarfile.open(fileobj=control)
 
     def _open_tar_xz(self, arfile):
         control = arfile.get_file(b'control.tar.xz')
-        if control:
-            if not HAVE_LZMA:
-                raise DebError(self._path, 'can\'t open control.tar.xz without python-lzma')
-            decompressed = lzma.decompress(control.read())
-            return tarfile.open(fileobj=BytesIO(decompressed))
-        return None
+        if not control:
+            return None
+
+        if not HAVE_LZMA:
+            raise DebError(self._path, 'can\'t open control.tar.xz without python-lzma')
+        decompressed = lzma.decompress(control.read())
+        return tarfile.open(fileobj=BytesIO(decompressed))
 
     def _open_tar_zst(self, arfile):
         control = arfile.get_file(b'control.tar.zst')
-        if control:
-            if not HAVE_ZSTD:
-                raise DebError(self._path, 'can\'t open control.tar.zst without python-zstandard')
-            with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
-                decompressed = reader.read()
-            return tarfile.open(fileobj=BytesIO(decompressed))
-        return None
+        if not control:
+            return None
+
+        if not HAVE_ZSTD:
+            raise DebError(self._path, 'can\'t open control.tar.zst without python-zstandard')
+        with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
+            decompressed = reader.read()
+        return tarfile.open(fileobj=BytesIO(decompressed))
 
     def _parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
