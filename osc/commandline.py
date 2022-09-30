@@ -5825,6 +5825,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
+    @cmdln.option('-d', '--debug', action='store_true', dest="debug_dependencies",
+                  help='verbose output of build dependencies')
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
                   help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
@@ -5910,7 +5912,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print(decode_it(get_buildinfo(apiurl,
                                       project, package, repository, arch,
                                       specfile=build_descr_data,
-                                      debug=opts.debug,
+                                      debug=opts.debug_dependencies,
                                       addlist=opts.extra_pkgs)))
 
     def do_buildconfig(self, subcmd, opts, *args):
