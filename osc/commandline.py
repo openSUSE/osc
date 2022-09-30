@@ -3199,7 +3199,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         Create a maintenance incident
 
-        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
+        [See https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
         This command is asking to open an empty maintenance incident. This can usually only be done by a responsible
@@ -3272,7 +3272,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         Create a request for starting a maintenance incident
 
-        [See http://openbuildservice.org/help/manuals/obs-reference-guide/cha.obs.maintenance_setup.html
+        [See https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.maintenance_setup.html
         for information on this topic.]
 
         This command is asking the maintenance team to start a maintenance incident based on a
