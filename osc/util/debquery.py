@@ -23,11 +23,6 @@ except ImportError:
     HAVE_ZSTD = False
 
 
-if (not hasattr(itertools, 'zip_longest') and hasattr(itertools, 'izip_longest')):
-    # python2 case
-    itertools.zip_longest = itertools.izip_longest
-
-
 class DebError(packagequery.PackageError):
     pass
 
@@ -41,55 +36,73 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     )
 
     def __init__(self, fh):
-        self.__file = fh
-        self.__path = os.path.abspath(fh.name)
+        self._file = fh
+        self._path = os.path.abspath(fh.name)
         self.filename_suffix = 'deb'
         self.fields = {}
 
     def read(self, all_tags=False, self_provides=True, *extra_tags):
-        arfile = ar.Ar(fh=self.__file)
+        arfile = ar.Ar(fh=self._file)
         arfile.read()
         debbin = arfile.get_file(b'debian-binary')
         if debbin is None:
-            raise DebError(self.__path, 'no debian binary')
+            raise DebError(self._path, 'no debian binary')
         if debbin.read() != b'2.0\n':
-            raise DebError(self.__path, 'invalid debian binary format')
-        control = arfile.get_file(b'control.tar.gz')
-        if control is not None:
-            # XXX: python2.4 relies on a name
-            tar = tarfile.open(name='control.tar.gz', fileobj=control)
-        else:
-            control = arfile.get_file(b'control.tar.xz')
-            if control:
-                if not HAVE_LZMA:
-                    raise DebError(self.__path, 'can\'t open control.tar.xz without python-lzma')
-                decompressed = lzma.decompress(control.read())
-                tar = tarfile.open(name="control.tar.xz",
-                                   fileobj=BytesIO(decompressed))
-            else:
-                control = arfile.get_file(b'control.tar.zst')
-                if control:
-                    if not HAVE_ZSTD:
-                        raise DebError(self.__path, 'can\'t open control.tar.zst without python-zstandard')
-                    with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
-                        decompressed = reader.read()
-                    tar = tarfile.open(name="control.tar.zst",
-                                       fileobj=BytesIO(decompressed))
-            if control is None:
-                raise DebError(self.__path, 'missing control.tar')
+            raise DebError(self._path, 'invalid debian binary format')
+        for open_func in [self._open_tar_gz,
+                          self._open_tar_xz,
+                          self._open_tar_zst,
+                          self._open_tar]:
+            tar = open_func(arfile)
+            if tar is not None:
+                break
+        if tar is None:
+            raise DebError(self._path, 'missing control.tar')
         try:
             name = './control'
-            # workaround for python2.4's tarfile module
-            if 'control' in tar.getnames():
-                name = 'control'
             control = tar.extractfile(name)
         except KeyError:
-            raise DebError(self.__path,
+            raise DebError(self._path,
                            'missing \'control\' file in control.tar')
-        self.__parse_control(control, all_tags, self_provides, *extra_tags)
+        self._parse_control(control, all_tags, self_provides, *extra_tags)
         return self
 
-    def __parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
+    def _open_tar(self, arfile):
+        control = arfile.get_file(b'control.tar')
+        if not control:
+            return None
+
+        return tarfile.open(fileobj=control)
+
+    def _open_tar_gz(self, arfile):
+        control = arfile.get_file(b'control.tar.gz')
+        if not control:
+            return None
+
+        return tarfile.open(fileobj=control)
+
+    def _open_tar_xz(self, arfile):
+        control = arfile.get_file(b'control.tar.xz')
+        if not control:
+            return None
+
+        if not HAVE_LZMA:
+            raise DebError(self._path, 'can\'t open control.tar.xz without python-lzma')
+        decompressed = lzma.decompress(control.read())
+        return tarfile.open(fileobj=BytesIO(decompressed))
+
+    def _open_tar_zst(self, arfile):
+        control = arfile.get_file(b'control.tar.zst')
+        if not control:
+            return None
+
+        if not HAVE_ZSTD:
+            raise DebError(self._path, 'can\'t open control.tar.zst without python-zstandard')
+        with zstandard.ZstdDecompressor().stream_reader(BytesIO(control.read())) as reader:
+            decompressed = reader.read()
+        return tarfile.open(fileobj=BytesIO(decompressed))
+
+    def _parse_control(self, control, all_tags=False, self_provides=True, *extra_tags):
         data = control.readline().strip()
         while data:
             field, val = re.split(br':\s*', data.strip(), 1)
@@ -158,7 +171,7 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         return self.fields[b'description']
 
     def path(self):
-        return self.__path
+        return self._path
 
     def provides(self):
         return self.fields[b'provides']
