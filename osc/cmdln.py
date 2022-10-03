@@ -45,6 +45,22 @@ def alias(*aliases):
     return decorate
 
 
+def name(name):
+    """
+    Decorator to explicitly name a Cmdln subcommand.
+
+    Example:
+        class MyShell(cmdln.Cmdln):
+            @cmdln.name("cmd-with-dashes")
+            def do_cmd_with_dashes(self, subcmd, opts):
+                #...
+    """
+    def decorate(f):
+        f.name = name
+        return f
+    return decorate
+
+
 def hide():
     """
     For obsolete calls, hide them in help listings.
@@ -134,6 +150,7 @@ class Cmdln:
             cmd_func = getattr(self, attr)
 
             # extract data from the function
+            cmd_name = getattr(cmd_func, "name", cmd_name)
             options = getattr(cmd_func, "options", [])
             aliases = getattr(cmd_func, "aliases", [])
             hidden = getattr(cmd_func, "hidden", False)
