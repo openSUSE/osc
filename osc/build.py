@@ -107,7 +107,7 @@ class Buildinfo:
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        if self.buildtype == 'dsc' or self.buildtype == 'collax' or self.binarytype == 'deb':
+        if self.buildtype  in ('dsc', 'collax', 'deb'):
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
@@ -390,7 +390,7 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
-    elif buildtype == 'dsc' or buildtype == 'collax':
+    elif buildtype in ('dsc', 'collax'):
         b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
                                     '-name', '*.deb'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
@@ -476,7 +476,7 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     repositories = []
 
     suffix = '*.rpm'
-    if type == 'dsc' or type == 'collax' or type == 'livebuild':
+    if type in ('dsc', 'collax', 'livebuild'):
         suffix = '*.deb'
     elif type == 'arch':
         suffix = '*.pkg.tar.*'
@@ -1196,7 +1196,7 @@ def main(apiurl, opts, argv):
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile
-    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman' or build_type == 'fissile':
+    if build_type in ('kiwi', 'docker', 'podman', 'fissile'):
         if os.path.exists('repos'):
             shutil.rmtree('repos')
         if os.path.exists('containers'):
@@ -1326,7 +1326,7 @@ def main(apiurl, opts, argv):
                         buildargs.append('--kiwi-parameter')
                         buildargs.append('--add-repopriority=' + xml.get('priority'))
 
-    if vm_type == "xen" or vm_type == "kvm" or vm_type == "lxc" or vm_type == "nspawn":
+    if vm_type in ('xen', 'kvm', 'lxc', 'nspawn'):
         print('Skipping verification of package signatures due to secure VM build')
     elif bi.pacsuffix == 'rpm':
         if opts.no_verify:
@@ -1359,7 +1359,7 @@ def main(apiurl, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type == 'kiwi' or build_type == 'docker' or build_type == 'podman' or build_type == 'fissile':
+    if build_type in ('kiwi', 'docker', 'podman', 'fissile'):
         rpmlist = ['%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall]
     else:
         rpmlist = []

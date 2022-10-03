@@ -3548,12 +3548,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc bco ...
         """
 
-        if subcmd == 'getpac' or subcmd == 'branchco' or subcmd == 'bco':
+        if subcmd in ('getpac', 'branchco', 'bco'):
             opts.checkout = True
         args = slash_split(args)
         tproject = tpackage = None
 
-        if (subcmd == 'getpac' or subcmd == 'bco') and len(args) == 1:
+        if subcmd in ('getpac', 'bco') and len(args) == 1:
             def_p = find_default_project(self.get_api_url(), args[0])
             print('defaulting to %s/%s' % (def_p, args[0]), file=sys.stderr)
             # python has no args.unshift ???
@@ -3876,7 +3876,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 Compare a package against the link base (ignoring working copy changes).
         """
 
-        if (subcmd == 'ldiff' or subcmd == 'linkdiff'):
+        if (subcmd in ('ldiff', 'linkdiff')):
             opts.link = True
         args = parseargs(args)
 
@@ -5138,7 +5138,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         continue
                     if state == '?':
                         sys.exit('\'%s\' is not under version control' % filename)
-                    elif state in ['A', 'M'] and not opts.force:
+                    elif state in ('A', 'M') and not opts.force:
                         sys.exit('\'%s\' has local modifications (use --force to remove this file)' % filename)
                     elif state == 'S':
                         sys.exit('\'%s\' is marked as skipped and no local file with this name exists' % filename)
@@ -5480,7 +5480,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = package + ":" + opts.multibuild_package
 
         offset = 0
-        if subcmd == "blt" or subcmd == "buildlogtail":
+        if subcmd in ("blt", "buildlogtail"):
             query = {'view': 'entry'}
             if opts.last:
                 query['last'] = 1
@@ -5574,7 +5574,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = package + ":" + opts.multibuild_package
 
         offset = 0
-        if subcmd == "rblt" or subcmd == "rbuildlogtail" or subcmd == "remotebuildlogtail":
+        if subcmd in ("rblt", "rbuildlogtail", "remotebuildlogtail"):
             query = {'view': 'entry'}
             if opts.last:
                 query['last'] = 1
@@ -6116,7 +6116,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         # it seems to be an architecture in general
                         arg_arch = arg
                         if not (arg == osc_build.hostarch or arg in osc_build.can_also_build.get(osc_build.hostarch, [])):
-                            if not (vm_type == 'qemu' or vm_type == 'emulator'):
+                            if vm_type not in ('qemu', 'emulator'):
                                 print("WARNING: native compile is not possible, a emulator via binfmt misc handler must be configured!")
                     elif not arg_repository:
                         arg_repository = arg
@@ -6901,7 +6901,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if command not in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'mr', 'rr', 'merge', 'wait'):
             raise oscerr.WrongArgs('Wrong command given.')
 
-        if command == "remoterun" or command == "rr":
+        if command in ('remoterun', 'rr'):
             print(runservice(apiurl, project, package))
             return
 
@@ -6917,13 +6917,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not is_package_dir(os.curdir):
                 raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
-            if command == "localrun" or command == "lr":
+            if command  in ("localrun", "lr"):
                 mode = "local"
-            elif command == "manualrun" or command == "mr":
+            elif command in ("manualrun", "mr"):
                 mode = "manual"
-            elif command == "disabledrun" or command == "dr":
+            elif command in ("disabledrun", "dr"):
                 mode = "disabled"
-            elif command == "runall" or command == "ra":
+            elif command in ("runall", "ra"):
                 mode = "all"
 
         return p.run_source_services(mode, singleservice)
@@ -7799,7 +7799,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 new.extend(i)
             results = new
             headline = []
-            if kind == 'package' or kind == 'published/binary/id':
+            if kind in ('package', 'published/binary/id'):
                 headline = ['# Project', '# Package']
             else:
                 headline = ['# Project']
