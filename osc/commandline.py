@@ -18,7 +18,6 @@ import time
 import traceback
 from functools import cmp_to_key
 from operator import itemgetter
-from optparse import SUPPRESS_HELP
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -5825,6 +5824,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
+    @cmdln.option('-d', '--debug', action='store_true', dest="debug_dependencies",
+                  help='verbose output of build dependencies')
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
                   help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
@@ -5910,7 +5911,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print(decode_it(get_buildinfo(apiurl,
                                       project, package, repository, arch,
                                       specfile=build_descr_data,
-                                      debug=opts.debug,
+                                      debug=opts.debug_dependencies,
                                       addlist=opts.extra_pkgs)))
 
     def do_buildconfig(self, subcmd, opts, *args):
@@ -6343,15 +6344,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--disable-cpio-bulk-download', action='store_true',
                   help='disable downloading packages as cpio archive from api')
     @cmdln.option('--cpio-bulk-download', action='store_false',
-                  dest='disable_cpio_bulk_download', help=SUPPRESS_HELP)
+                  dest='disable_cpio_bulk_download', help=argparse.SUPPRESS)
     @cmdln.option('--download-api-only', action='store_true',
                   help='only fetch packages from the api')
     @cmdln.option('--oldpackages', metavar='DIR',
                   help='take previous build from DIR (special values: _self, _link)')
+    @cmdln.option('--verbose-mode', metavar='MODE',
+                  help='set verbose mode of the "build" program, arguments can be "all" or "vm"')
     @cmdln.option('--wipe', action='store_true',
-                  help=SUPPRESS_HELP)
+                  help=argparse.SUPPRESS)
     @cmdln.option('--shell', action='store_true',
-                  help=SUPPRESS_HELP)
+                  help=argparse.SUPPRESS)
     @cmdln.option('--shell-after-fail', action='store_true',
                   help="run a shell if the build tool fails")
     @cmdln.option('--shell-cmd', metavar='COMMAND',

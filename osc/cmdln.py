@@ -169,15 +169,16 @@ class Cmdln:
                 help=help_text,
                 description=help_desc,
                 prog=self.get_subcommand_prog(cmd_name),
-                formatter_class=HelpFormatter
+                formatter_class=HelpFormatter,
+                conflict_handler="resolve",
             )
+
             # add hidden copy of global options so they can be used in any place
             self.add_global_options(subparser, suppress=True)
+
+            # add sub-command options, overriding hidden copies of global options if needed (due to conflict_handler="resolve")
             for option_args, option_kwargs in options:
-                try:
-                    subparser.add_argument(*option_args, **option_kwargs)
-                except argparse.ArgumentError as e:
-                    print(f"WARNING: Could not add argument '{e.argument_name}' to the '{cmd_name}' sub-command: {e}", file=sys.stderr)
+                subparser.add_argument(*option_args, **option_kwargs)
 
     def argparse_error(self, *args, **kwargs):
         """
