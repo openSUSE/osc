@@ -211,7 +211,7 @@ class OscConfigParser(configparser.ConfigParser):
     """
 
     def __init__(self, defaults=None):
-        super().__init__(defaults or {})
+        super().__init__(defaults or {}, interpolation=None)
         self._sections = ConfigLineOrder()
 
     # XXX: unfortunately we have to override the _read() method from the ConfigParser()
