@@ -8345,6 +8345,35 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if len(user) == 3:
                 print("%s: \"%s\" <%s>" % (user[0], user[1], user[2]))
 
+    @cmdln.name("create-pbuild-config")
+    @cmdln.alias('cpc')
+    @cmdln.option("repository")
+    @cmdln.option("arch")
+    def do_create_pbuild_config(self, subcmd, opts):
+        """
+        This command is creating the necessary files to build using pbuild tool.
+        It basically creates _config and _pbuild file in the project directory.
+        Changes from there can not get submitted back, except the project is managed
+        in git.
+
+        Examples:
+            osc cpc REPOSITORY ARCH
+        """
+
+        apiurl = self.get_api_url()
+        project = None
+        project_dir = os.curdir
+        if is_project_dir(project_dir):
+            project = store_read_project(project_dir)
+        elif is_package_dir(project_dir):
+            project_dir += '/..'
+            project = store_read_project(project_dir)
+        else:
+            raise oscerr.WrongArgs('Creating pbuild only works in a checked out project or package')
+
+        create_pbuild_config(apiurl, project, opts.repository, opts.arch, project_dir)
+
+
     @cmdln.option('-r', '--revision', metavar='rev',
                   help='print out the specified revision')
     @cmdln.option('-e', '--expand', action='store_true',

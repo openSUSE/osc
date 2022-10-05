@@ -6379,6 +6379,39 @@ def get_buildconfig(apiurl, prj, repository, path=None):
     return f.read()
 
 
+def create_pbuild_config(apiurl, project, repository, arch, project_dir):
+    """
+    This is always replacing a possible exiting config for now
+    we could extend the _pbuild file easily, but what should we do with multiple instances of the _config?
+    """
+    # get expanded buildconfig for given project and repository
+    bc = get_buildconfig(apiurl, project, repository)
+    if not bc:
+        msg = "Failed to get build config for project '{project}', repository '{repository}'"
+        raise oscerr.NotFoundAPIError(msg)
+
+    with open(os.path.join(project_dir, '_config'), "w") as f:
+        f.write(decode_it(bc))
+
+    # create the _pbuild file based on expanded repository path informations
+    pb = ET.fromstring('<pbuild></pbuild>')
+    tree = ET.ElementTree(pb)
+    preset = ET.SubElement(pb, 'preset', name=repository, default="")  # default should be empty, but ET crashes
+    bi_text = decode_it(get_buildinfo(apiurl, project, '_repository', repository, arch, specfile="Name: dummy"))
+    root = ET.fromstring(bi_text)
+
+# cross compile setups are not yet supported
+#    for path in root.findall('hostsystem'):
+#        ET.SubElement(preset, 'hostrepo').text = path.get('url')
+
+    for path in root.findall('path'):
+        ET.SubElement(preset, 'repo').text = path.get('url')
+
+    ET.SubElement(preset, 'arch').text = arch
+    xmlindent(tree)
+    tree.write(os.path.join(project_dir,'_pbuild'), encoding="utf-8", xml_declaration=True)
+
+
 def get_worker_info(apiurl, worker):
     u = makeurl(apiurl, ['worker', worker])
     f = http_GET(u)
