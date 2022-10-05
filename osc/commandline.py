@@ -1397,7 +1397,7 @@ class Osc(cmdln.Cmdln):
             p = core.Package(os.curdir)
             src_project = p.prjname
             src_package = p.name
-            if self.options.apiurl and self.options.apiurl != p.apiurl:
+            if p.apiurl != apiurl:
                 print('The apiurl for the working copy of this package is %s' % p.apiurl)
                 print('You cannot use this command with the -A %s option.' % self.options.apiurl)
                 sys.exit(1)
