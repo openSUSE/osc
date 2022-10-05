@@ -1,0 +1,15 @@
+<project name="openSUSE:Factory">
+
+  <title>The next openSUSE distribution</title>
+  <description/>
+
+  <person userid="Admin" role="maintainer"/>
+
+  <repository name="standard">
+    <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+
+</project>
+
