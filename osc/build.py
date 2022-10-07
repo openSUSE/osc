@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import sys
+
 from tempfile import NamedTemporaryFile, mkdtemp
 from urllib.parse import urlsplit
 from urllib.request import URLError, HTTPError
@@ -640,6 +641,7 @@ def main(apiurl, opts, argv):
     vm_disk_size = config['build-vmdisk-rootsize']
     vm_type = config['build-type']
     vm_telnet = None
+    config["api_host_options"] = conf.config["api_host_options"]
 
     build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
@@ -859,7 +861,7 @@ def main(apiurl, opts, argv):
 
     extra_pkgs = []
     if not opts.extra_pkgs:
-        extra_pkgs = config['extra-pkgs']
+        extra_pkgs = getattr(config, 'extra-pkgs', extra_pkgs)
     elif opts.extra_pkgs != ['']:
         extra_pkgs = opts.extra_pkgs
 
@@ -963,7 +965,7 @@ def main(apiurl, opts, argv):
             if os.path.exists('/usr/lib/build/queryconfig') and not opts.nodebugpackages:
                 debug_pkgs = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
                 if len(debug_pkgs) > 0:
-                    extra_pkgs += debug_pkgs.strip().split(" ")
+                    extra_pkgs.extend(debug_pkgs.strip().split(" "))
 
             print('Getting buildinfo from server and store to %s' % bi_filename)
             bi_text = decode_it(get_buildinfo(apiurl,
