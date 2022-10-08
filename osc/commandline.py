@@ -971,13 +971,13 @@ class Osc(cmdln.Cmdln):
         cmd = args[0]
         del args[0]
 
-        if cmd in ['pkg']:
+        if cmd == 'pkg':
             min_args, max_args = 0, 2
-        elif cmd in ['pattern']:
+        elif cmd == 'pattern':
             min_args, max_args = 1, 2
-        elif cmd in ['attribute']:
+        elif cmd == 'attribute':
             min_args, max_args = 1, 3
-        elif cmd in ['prj', 'prjconf']:
+        elif cmd in ('prj', 'prjconf'):
             min_args, max_args = 0, 1
         else:
             min_args, max_args = 1, 1
@@ -2324,9 +2324,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        if cmd in ['list']:
+        if cmd == 'list':
             min_args, max_args = 0, 2
-        elif cmd in ['supersede', 'setincident', 'prioritize', 'priorize']:
+        elif cmd in ('supersede', 'setincident', 'prioritize', 'priorize'):
             min_args, max_args = 2, 2
         else:
             min_args, max_args = 1, 1
@@ -2591,7 +2591,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 run_pager(diff, tmp_suffix='')
 
         # checkout
-        elif cmd == 'checkout' or cmd == 'co':
+        elif cmd in ('checkout', 'co'):
             r = get_request(apiurl, reqid)
             sr_actions = r.get_actions('submit', 'maintenance_release')
             if not sr_actions:
@@ -2606,14 +2606,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if subcmd == 'review':
                 if not opts.message:
                     opts.message = edit_message()
-                if cmd in ['accept', 'decline', 'reopen', 'supersede']:
+                if cmd in ('accept', 'decline', 'reopen', 'supersede'):
                     if opts.user or opts.group or opts.project or opts.package:
                         r = change_review_state(apiurl, reqid, state_map[cmd], opts.user, opts.group, opts.project,
                                                 opts.package, opts.message or '', supersed=supersedid)
                         print(r)
                     else:
                         rq = get_request(apiurl, reqid)
-                        if rq.state.name in ['new', 'review']:
+                        if rq.state.name in ('new', 'review'):
                             for review in rq.reviews:  # try all, but do not fail on error
                                 try:
                                     r = change_review_state(apiurl, reqid, state_map[cmd], review.by_user, review.by_group,
@@ -3450,7 +3450,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) >= 2:
             tproject = self._process_project_name(args[1])
 
-        if subcmd == 'sm' or subcmd == 'maintained':
+        if subcmd in ('maintained', 'sm'):
             opts.dryrun = 1
 
         result = attribute_branch_pkg(apiurl, maintained_attribute, maintained_update_project_attribute,
@@ -5235,7 +5235,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if opts.force:
                     print(e, file=sys.stderr)
                     body = e.read()
-                    if e.code in [400, 403, 404, 500]:
+                    if e.code in (400, 403, 404, 500):
                         if '<summary>' in body:
                             msg = body.split('<summary>')[1]
                             msg = msg.split('</summary>')[0]
