@@ -2,6 +2,8 @@ import binascii
 import os
 import socket
 import ssl
+import subprocess
+import sys
 import tempfile
 import typing
 
@@ -159,4 +161,11 @@ Would you like to
                     self.trust_permanently(cert)
                     return
                 elif r == "9":
-                    print(cert.to_txt())
+                    # TODO: avoid calling openssl to convert pem to text
+                    pem = cert.public_bytes(encoding=serialization.Encoding.PEM).decode("utf-8")
+                    cmd = ["openssl", "x509", "-text"]
+                    try:
+                        cert_text = subprocess.check_output(cmd, input=pem, encoding="utf-8")
+                        print(cert_text)
+                    except FileNotFoundError:
+                        print("ERROR: Unable to display certificate because the 'openssl' executable is not available", file=sys.stderr)
