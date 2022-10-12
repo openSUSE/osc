@@ -18,6 +18,7 @@ import time
 import traceback
 from functools import cmp_to_key
 from operator import itemgetter
+from pathlib import Path
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -73,6 +74,14 @@ class Osc(cmdln.Cmdln):
 
     def get_version(self):
         return get_osc_version()
+
+    def _expand_as_project_name(self, arg):
+        if arg == '.':
+            if is_package_dir(Path.cwd()) or is_project_dir(Path.cwd()):
+                arg = store_read_project(Path.cwd())
+            else:
+                raise oscerr.WrongArgs('No working directory')
+        return arg
 
     def _process_project_name(self, project):
         if isinstance(project, str):
@@ -354,11 +363,9 @@ class Osc(cmdln.Cmdln):
             if project == '/':
                 project = None
             if project == '.':
+                project = self._expand_as_project_name(project)
                 cwd = os.getcwd()
-                if is_project_dir(cwd):
-                    project = store_read_project(cwd)
-                elif is_package_dir(cwd):
-                    project = store_read_project(cwd)
+                if is_package_dir(cwd):
                     package = store_read_package(cwd)
             project = self._process_project_name(project)
         if len(args) > 1:
@@ -3001,6 +3008,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         The DESTPAC name is optional; the source packages' name will be used if
         DESTPAC is omitted.
 
+        If SOURCEPRJ or DESTPRJ is '.' it will be expanded to the PRJ of the current
+        directory.
+
         usage:
             osc copypac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         """
@@ -3010,14 +3020,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not args or len(args) < 3:
             self.argparse_error("Incorrect number of arguments.")
 
-        src_project = self._process_project_name(args[0])
+        src_project = self._process_project_name(self._expand_as_project_name(args[0]))
         src_package = args[1]
-        dst_project = self._process_project_name(args[2])
+        dst_project = self._process_project_name(self._expand_as_project_name(args[2]))
         if len(args) > 3:
             dst_package = args[3]
         else:
             dst_package = src_package
-
         src_apiurl = conf.config['apiurl']
         if opts.to_apiurl:
             dst_apiurl = conf.config['apiurl_aliases'].get(opts.to_apiurl, opts.to_apiurl)
@@ -3697,7 +3706,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         well use \'--force\' switch.
 
         usage:
-           osc rdelete [-r] [-f] PROJECT [PACKAGE]
+           osc rdelete [-r] [-f] PROJECT|. [PACKAGE]
         """
 
         args = slash_split(args)
@@ -3705,7 +3714,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments')
 
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
+        prj = self._process_project_name(self._expand_as_project_name(args[0]))
 
         msg = ''
         if opts.message:
