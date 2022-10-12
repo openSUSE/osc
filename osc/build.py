@@ -868,6 +868,12 @@ def main(apiurl, opts, argv):
     elif opts.extra_pkgs != ['']:
         extra_pkgs = opts.extra_pkgs
 
+    if opts.extra_pkgs_from:
+        for filename in opts.extra_pkgs_from:
+            with open(filename, encoding="utf-8") as f:
+                for line in f:
+                    extra_pkgs.append(line.rstrip('\n'))
+
     if xp:
         extra_pkgs += xp
 
