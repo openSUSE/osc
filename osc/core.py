@@ -264,6 +264,18 @@ class File:
     def __str__(self):
         return self.name
 
+    @classmethod
+    def from_xml_node(cls, node):
+        assert node.tag == "entry"
+        kwargs = {
+            "name": node.get("name"),
+            "md5": node.get("md5"),
+            "size": int(node.get("size")),
+            "mtime": int(node.get("mtime")),
+            "skipped": "skipped" in node,
+        }
+        return cls(**kwargs)
+
 
 class Serviceinfo:
     """Source service content
