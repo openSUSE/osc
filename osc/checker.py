@@ -3,8 +3,6 @@ import os
 from tempfile import mkdtemp
 from shutil import rmtree
 
-import rpm
-
 
 class KeyError(Exception):
     def __init__(self, key, *args):
@@ -18,6 +16,7 @@ class KeyError(Exception):
 
 class Checker:
     def __init__(self):
+        import rpm
         self.dbdir = mkdtemp(prefix='oscrpmdb')
         self.imported = {}
         rpm.addMacro('_dbpath', self.dbdir)
@@ -28,6 +27,7 @@ class Checker:
         # self.ts.Debug(1)
 
     def readkeys(self, keys=None):
+        import rpm
         keys = keys or []
         rpm.addMacro('_dbpath', self.dbdir)
         for key in keys:
@@ -39,6 +39,7 @@ class Checker:
         if not self.imported:
             raise KeyError('', "no key imported")
 
+        import rpm
         rpm.delMacro("_dbpath")
 
 # python is an idiot
