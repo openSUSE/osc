@@ -7766,6 +7766,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 initial_cmd = ''
             else:
                 repl = raw_input(prompt).strip()
+
+            # remember if we're accepting so we can decide whether to forward request to the parent project later on
+            accept = repl == "a"
+
             if repl == 'i' and src_actions:
                 req_summary = str(request) + '\n'
                 issues = '\n\n' + get_formatted_issues(apiurl, request.reqid)
@@ -7863,6 +7867,9 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     reviews = [r for r in request.reviews if r.state == 'new']
                     if not reviews or ignore_reviews:
                         if safe_change_request_state(apiurl, request.reqid, state, msg, force=force):
+                            if accept:
+                                from . import _private
+                                _private.forward_request(apiurl, request, interactive=True)
                             break
                         else:
                             # an error occured
