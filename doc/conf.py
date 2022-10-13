@@ -49,6 +49,8 @@ rst_epilog = """
 .. |obs| replace:: open build service
 """
 
+master_doc = 'index'
+
 
 # -- Options for HTML output -------------------------------------------------
 
