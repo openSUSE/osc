@@ -1,4 +1,5 @@
 [![unit tests](https://github.com/openSUSE/osc/actions/workflows/unittests.yaml/badge.svg)](https://github.com/openSUSE/osc/actions/workflows/unittests.yaml)
+[![docs](https://readthedocs.org/projects/opensuse-commander/badge/?version=latest)](https://opensuse-commander.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/openSUSE/osc/branch/master/graph/badge.svg)](https://codecov.io/gh/openSUSE/osc)
 [![code climate](https://codeclimate.com/github/openSUSE/osc.png)](https://codeclimate.com/github/openSUSE/osc)
 [![contributors](https://img.shields.io/github/contributors/openSUSE/osc.svg)](https://github.com/openSUSE/osc/graphs/contributors)
