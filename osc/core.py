@@ -4486,7 +4486,7 @@ def get_request_collection(
     # We don't want to overload server by requesting everything.
     # Let's enforce specifying at least some search criteria.
     if not any([user, group, project, package, ids]):
-        raise ValueError("Please specify search criteria")
+        raise oscerr.OscValueError("Please specify search criteria")
 
     query = {"view": "collection"}
 
