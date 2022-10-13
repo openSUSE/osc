@@ -6290,6 +6290,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help=HELP_MULTIBUILD_ONE)
     @cmdln.option('-x', '--extra-pkgs', metavar='PAC', action='append',
                   help='Add this package when installing the build-root')
+    @cmdln.option('-X', '--extra-pkgs-from', metavar='FILE', action='append',
+                  help='Add packages listed in this file when installing the build-root')
     @cmdln.option('--root', metavar='ROOT',
                   help='Build in specified directory')
     @cmdln.option('-j', '--jobs', metavar='N',
