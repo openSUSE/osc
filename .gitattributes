@@ -1,5 +1,6 @@
 .gitattributes export-ignore
 .github export-ignore
+.readthedocs.yaml export-ignore
 behave export-ignore
 contrib/build_rpm.py export-ignore
 contrib/osc.spec export-ignore
