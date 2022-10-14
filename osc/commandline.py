@@ -27,6 +27,7 @@ from . import build as osc_build
 from . import cmdln
 from . import conf
 from . import oscerr
+from . import store as osc_store
 from .core import *
 from .grabber import OscFileGrabber
 from .meter import create_text_meter
@@ -219,7 +220,7 @@ class Osc(cmdln.Cmdln):
             sys.exit(1)
 
         if (is_package_dir(localdir) or is_project_dir(localdir)) and not self.options.apiurl:
-            return store_read_apiurl(Path.cwd())
+            return osc_store.Store(Path.cwd()).apiurl
         else:
             return conf.config['apiurl']
 
@@ -994,14 +995,14 @@ class Osc(cmdln.Cmdln):
         attributepath = []
         if cmd in ['prj', 'prjconf']:
             if len(args) < 1:
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
                 project = store_read_project(Path.cwd())
             else:
                 project = self._process_project_name(args[0])
 
         elif cmd == 'pkg':
             if len(args) < 2:
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
                 project = store_read_project(Path.cwd())
                 if len(args) < 1:
                     package = store_read_package(Path.cwd())
@@ -4903,7 +4904,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             for pac in no_pacs:
                 if os.path.exists(pac):
                     # fail with an appropriate error message
-                    store_read_apiurl(pac, defaulturl=False)
+                    Package(pac)
                 path = os.path.normpath(os.path.join(pac, os.pardir))
                 if is_project_dir(path):
                     pac_name = os.path.basename(os.path.normpath(os.path.abspath(pac)))
@@ -4914,7 +4915,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     files.setdefault(path, {})[pac_name] = []
                 else:
                     # fail with an appropriate error message
-                    store_read_apiurl(pac, defaulturl=False)
+                    Package(pac)
             for prj_path, packages in prj_paths.items():
                 prj = Project(prj_path)
                 if not msg and not opts.no_message:
@@ -4939,7 +4940,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 store_unlink_file(p.absdir, '_commit_msg')
         elif no_pacs:
             # fail with an appropriate error message
-            store_read_apiurl(no_pacs[0], defaulturl=False)
+            Package.from_paths(no_pacs)
         else:
             for p in pacs:
                 if not p.todo:
@@ -6990,10 +6991,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_package_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
                 package = store_read_package(Path.cwd())
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
             elif is_project_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
@@ -7058,7 +7059,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_package_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
                 package = store_read_package(Path.cwd())
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
                 repo = args[0]
                 arch = args[1]
                 sysrq = args[2]
@@ -7113,10 +7114,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_package_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
                 package = store_read_package(Path.cwd())
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
             elif is_project_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
-                apiurl = store_read_apiurl(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
@@ -7931,7 +7932,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             createPackageDir(os.path.join(project.dir, pac), project)
         else:
             if not os.path.exists(os.path.join(project_dir, pac)):
-                apiurl = store_read_apiurl(project_dir)
+                apiurl = osc_store.Store(project_dir).apiurl
                 user = conf.get_apiurl_usr(apiurl)
                 data = meta_exists(metatype='pkg',
                                    path_args=(quote_plus(project), quote_plus(pac)),
@@ -8956,7 +8957,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if args and is_package_dir(args[0]):
-            apiurl = store_read_apiurl(args[0])
+            apiurl = osc_store.Store(args[0]).apiurl
         else:
             apiurl = self.get_api_url()
 

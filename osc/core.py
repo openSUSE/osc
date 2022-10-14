@@ -708,11 +708,12 @@ class Project:
         """
         self.dir = dir
         self.absdir = os.path.abspath(dir)
+        self.store = Store(dir)
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
         self.scm_url = store_read_scmurl(self.dir)
-        self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
+        self.apiurl = self.store.apiurl
 
         dirty_files = []
         if wc_check:
@@ -1147,9 +1148,10 @@ class Project:
         else:
             pac_path = os.path.join(self.dir, pac)
 
+        store = Store(pac_path)
         project = store_read_project(pac_path)
         package = store_read_package(pac_path)
-        apiurl = store_read_apiurl(pac_path, defaulturl=False)
+        apiurl = store.apiurl
         if not meta_exists(metatype='pkg',
                            path_args=(quote_plus(project), quote_plus(package)),
                            template_args=None, create_new=False, apiurl=apiurl):
@@ -1209,6 +1211,7 @@ class Package:
 
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
+        self.store = Store(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
         self.size_limit = size_limit
@@ -1220,7 +1223,7 @@ class Package:
 
         self.prjname = store_read_project(self.dir)
         self.name = store_read_package(self.dir)
-        self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
+        self.apiurl = self.store.apiurl
 
         self.update_datastructs()
         dirty_files = []
@@ -6757,33 +6760,13 @@ def store_read_scmurl(dir):
 
 
 def store_read_apiurl(dir, defaulturl=True):
-    global store
-
-    fname = os.path.join(dir, store, '_apiurl')
-    try:
-        with open(fname) as f:
-            url = f.readlines()[0].strip()
-        # this is needed to get a proper apiurl
-        # (former osc versions may stored an apiurl with a trailing slash etc.)
-        apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
-    except:
-        if not defaulturl:
-            if is_project_dir(dir):
-                project = store_read_project(dir)
-                package = None
-            elif is_package_dir(dir):
-                project = store_read_project(dir)
-                package = None
-            else:
-                msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
-                raise oscerr.NoWorkingCopy(msg)
-            msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
-                'Please run \'osc repairwc %s\' (Note this might _remove_\n' \
-                'files from the .osc/ dir). Please check the state\n' \
-                'of the working copy afterwards (via \'osc status %s\')' % (dir, dir, dir)
-            raise oscerr.WorkingCopyInconsistent(project, package, ['_apiurl'], msg)
-        apiurl = conf.config['apiurl']
-    return apiurl
+    import warnings
+    warnings.warn(
+        "osc.core.store_read_apiurl() is deprecated. "
+        "You should be using high-level classes such as Store, Project or Package instead.",
+        DeprecationWarning
+    )
+    return Store(dir).apiurl
 
 
 def store_read_last_buildroot(dir):
@@ -7491,8 +7474,9 @@ def addFiles(filenames, prj_obj=None, force=False):
         prj_dir, pac_dir = getPrjPacPaths(filename)
         if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
            and conf.config['do_package_tracking']:
+            store = Store(prj_dir)
             prj_name = store_read_project(prj_dir)
-            prj_apiurl = store_read_apiurl(prj_dir, defaulturl=False)
+            prj_apiurl = store.apiurl
             Package.init_package(prj_apiurl, prj_name, pac_dir, filename)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
             print('osc: warning: \'%s\' is already under version control' % filename)
