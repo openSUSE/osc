@@ -1321,7 +1321,9 @@ class Package:
         return dirty_files
 
     def wc_repair(self, apiurl=None):
-        if not os.path.exists(os.path.join(self.storedir, '_apiurl')) or apiurl:
+        store = Store(self.dir)
+        store.assert_is_package()
+        if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'
@@ -1329,8 +1331,9 @@ class Package:
                 raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
             # sanity check
             conf.parse_apisrv_url(None, apiurl)
-            store_write_apiurl(self.dir, apiurl)
-            self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
+            store.apiurl = apiurl
+            self.apiurl = apiurl
+
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
             # XXX: should we also check the md5?
@@ -1339,17 +1342,20 @@ class Package:
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
                                 targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
                                 mtime=f.mtime)
-        for fname in os.listdir(self.storedir):
+
+        for fname in store:
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
                     fname.startswith('_build'):
                 continue
             elif fname not in self.filenamelist or fname in self.skipped:
                 # this file does not belong to the storedir so remove it
-                os.unlink(os.path.join(self.storedir, fname))
+                store.unlink(fname)
+
         for fname in self.to_be_deleted[:]:
             if fname not in self.filenamelist:
                 self.to_be_deleted.remove(fname)
                 self.write_deletelist()
+
         for fname in self.in_conflict[:]:
             if fname not in self.filenamelist:
                 self.in_conflict.remove(fname)
