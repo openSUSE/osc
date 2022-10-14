@@ -1189,7 +1189,7 @@ class Project:
         store_write_project(dir, project)
         Store(dir).apiurl = apiurl
         if scm_url:
-            store_write_string(dir, '_scm', scm_url + '\n')
+            Store(dir).scmurl = scm_url
             package_tracking = None
         if package_tracking:
             store_write_initial_packages(dir, project, [])
@@ -2635,7 +2635,7 @@ rev: %s
         if size_limit:
             store_write_string(dir, '_size_limit', str(size_limit) + '\n')
         if scm_url:
-            store_write_string(dir, '_scm', scm_url + '\n')
+            Store(dir).scmurl = scm_url
         else:
             store_write_string(dir, '_files', '<directory />' + '\n')
         store_write_string(dir, '_osclib_version', __store_version__ + '\n')
