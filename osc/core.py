@@ -1187,7 +1187,7 @@ class Project:
             os.mkdir(os.path.join(dir, store))
 
         store_write_project(dir, project)
-        store_write_apiurl(dir, apiurl)
+        Store(dir).apiurl = apiurl
         if scm_url:
             store_write_string(dir, '_scm', scm_url + '\n')
             package_tracking = None
@@ -2629,7 +2629,7 @@ rev: %s
             os.mkdir(os.path.join(dir, store))
         store_write_project(dir, project)
         store_write_string(dir, '_package', package + '\n')
-        store_write_apiurl(dir, apiurl)
+        Store(dir).apiurl = apiurl
         if meta:
             store_write_string(dir, '_meta_mode', '')
         if size_limit:
@@ -6750,7 +6750,7 @@ def store_read_scmurl(dir):
         "You should be using high-level classes such as Store, Project or Package instead.",
         DeprecationWarning
     )
-    return _private.Store(dir).scmurl
+    return Store(dir).scmurl
 
 
 def store_read_apiurl(dir, defaulturl=True):
@@ -6799,7 +6799,13 @@ def store_write_project(dir, project):
 
 
 def store_write_apiurl(dir, apiurl):
-    store_write_string(dir, '_apiurl', apiurl + '\n')
+    import warnings
+    warnings.warn(
+        "osc.core.store_write_apiurl() is deprecated. "
+        "You should be using high-level classes such as Store, Project or Package instead.",
+        DeprecationWarning
+    )
+    Store(dir).apiurl = apiurl
 
 
 def store_write_last_buildroot(dir, repo, arch, vm_type):
