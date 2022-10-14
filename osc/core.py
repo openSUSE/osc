@@ -760,8 +760,9 @@ class Project:
         return dirty_files
 
     def wc_repair(self, apiurl=None):
-        global store
-        if not os.path.exists(os.path.join(self.dir, store, '_apiurl')) or apiurl:
+        store = Store(self.dir)
+        store.assert_is_project()
+        if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'
@@ -769,8 +770,8 @@ class Project:
                 raise oscerr.WorkingCopyInconsistent(self.name, None, [], msg)
             # sanity check
             conf.parse_apisrv_url(None, apiurl)
-            store_write_apiurl(self.dir, apiurl)
-            self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
+            store.apiurl = apiurl
+            self.apiurl = apiurl
 
     def checkout_missing_pacs(self, sinfos, expand_link=False, unexpand_link=False):
         for pac in self.pacs_missing:

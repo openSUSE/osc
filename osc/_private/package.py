@@ -1,8 +1,8 @@
 import functools
 
 from .. import core as osc_core
+from .. import store as osc_store
 from . import api
-from . import store
 
 
 @functools.total_ordering
@@ -79,7 +79,7 @@ class ApiPackage(PackageBase):
 class LocalPackage(PackageBase):
     def __init__(self, path):
         self.dir = path
-        self.store = store.Store(self.dir)
+        self.store = osc_store.Store(self.dir)
         super().__init__(self.store.apiurl, self.store.project, self.store.package)
 
     def _get_directory_node(self):
