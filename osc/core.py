@@ -712,7 +712,7 @@ class Project:
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
-        self.scm_url = store_read_scmurl(self.dir)
+        self.scm_url = self.store.scmurl
         self.apiurl = self.store.apiurl
 
         dirty_files = []
@@ -1215,7 +1215,7 @@ class Package:
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
         self.size_limit = size_limit
-        self.scm_url = store_read_scmurl(self.dir)
+        self.scm_url = self.store.scmurl
         if size_limit and size_limit == 0:
             self.size_limit = None
 
@@ -6744,19 +6744,13 @@ def store_read_package(dir):
 
 
 def store_read_scmurl(dir):
-    global store
-
-    url_file = os.path.join(dir, store, '_scm')
-    if not os.path.exists(url_file):
-        return
-    try:
-        p = open(url_file).readlines()[0].strip()
-    except OSError:
-        msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
-        if os.path.exists(os.path.join(dir, '.svn')):
-            msg += '\nTry svn instead of osc.'
-        raise oscerr.NoWorkingCopy(msg)
-    return p
+    import warnings
+    warnings.warn(
+        "osc.core.store_read_scmurl() is deprecated. "
+        "You should be using high-level classes such as Store, Project or Package instead.",
+        DeprecationWarning
+    )
+    return _private.Store(dir).scmurl
 
 
 def store_read_apiurl(dir, defaulturl=True):
