@@ -343,7 +343,7 @@ class Osc(cmdln.Cmdln):
         args = slash_split(args)
         if subcmd == 'll':
             opts.verbose = True
-        if subcmd == 'lL' or subcmd == 'LL':
+        if subcmd in ('lL', 'LL'):
             opts.verbose = True
             opts.expand = True
 
@@ -4671,6 +4671,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if lines:
             print('\n'.join(lines))
 
+
     @cmdln.option('-f', '--force', action='store_true',
                   help='add files even if they are excluded by the exclude_glob config option')
     def do_add(self, subcmd, opts, *args):
@@ -4701,6 +4702,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 addFiles([arg], force=opts.force)
 
+
     def do_mkpac(self, subcmd, opts, *args):
         """
         Create a new package under version control
@@ -4717,6 +4719,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
         createPackageDir(args[0])
+
 
     @cmdln.option('-r', '--recursive', action='store_true',
                         help='If CWD is a project dir then scan all package dirs as well')
