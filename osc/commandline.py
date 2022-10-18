@@ -75,16 +75,13 @@ class Osc(cmdln.Cmdln):
     def get_version(self):
         return get_osc_version()
 
-    def _expand_as_project_name(self, arg):
-        if arg == '.':
-            if is_package_dir(Path.cwd()) or is_project_dir(Path.cwd()):
-                arg = store_read_project(Path.cwd())
-            else:
-                raise oscerr.WrongArgs('No working directory')
-        return arg
-
     def _process_project_name(self, project):
         if isinstance(project, str):
+            if project == '.':
+                if is_package_dir(Path.cwd()) or is_project_dir(Path.cwd()):
+                    project = store_read_project(Path.cwd())
+                else:
+                    raise oscerr.WrongArgs('No working directory')
             return project.replace(conf.config['project_separator'], ':')
         return project
 
@@ -363,7 +360,7 @@ class Osc(cmdln.Cmdln):
             if project == '/':
                 project = None
             if project == '.':
-                project = self._expand_as_project_name(project)
+                project = self._process_project_name(project)
                 cwd = os.getcwd()
                 if is_package_dir(cwd):
                     package = store_read_package(cwd)
@@ -1438,6 +1435,7 @@ class Osc(cmdln.Cmdln):
                 dst_package = args[3]
             else:
                 dst_package = src_package
+            src_project = self._process_project_name(src_project)
             dst_project = self._process_project_name(dst_project)
         else:
             self.argparse_error("Incorrect number of arguments.")
@@ -1662,6 +1660,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 dst_package = args[3]
             else:
                 dst_package = src_package
+            src_project = self._process_project_name(src_project)
             dst_project = self._process_project_name(dst_project)
         else:
             self.argparse_error("Incorrect number of arguments.")
@@ -3020,9 +3019,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not args or len(args) < 3:
             self.argparse_error("Incorrect number of arguments.")
 
-        src_project = self._process_project_name(self._expand_as_project_name(args[0]))
+        src_project = self._process_project_name(args[0])
         src_package = args[1]
-        dst_project = self._process_project_name(self._expand_as_project_name(args[2]))
+        dst_project = self._process_project_name(args[2])
         if len(args) > 3:
             dst_package = args[3]
         else:
@@ -3551,8 +3550,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc branch
             osc branch SOURCEPROJECT SOURCEPACKAGE
-            osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT
-            osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT TARGETPACKAGE
+            osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT|.
+            osc branch SOURCEPROJECT SOURCEPACKAGE TARGETPROJECT|. TARGETPACKAGE
             osc getpac SOURCEPACKAGE
             osc bco ...
         """
@@ -3714,7 +3713,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments')
 
         apiurl = self.get_api_url()
-        prj = self._process_project_name(self._expand_as_project_name(args[0]))
+        prj = self._process_project_name(args[0])
 
         msg = ''
         if opts.message:
@@ -4504,7 +4503,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) == 1 and is_project_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
-                project_dir = Path.cwd()
+                project_dir = str(Path.cwd())
                 package = args[0]
 
         if opts.deleted and package:
@@ -7889,7 +7888,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.project:
             project_dir = opts.project
         else:
-            project_dir = Path.cwd()
+            project_dir = str(Path.cwd())
 
         if not is_project_dir(project_dir):
             raise oscerr.WrongArgs("'%s' is no project working copy" % project_dir)
@@ -8373,7 +8372,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
         project = None
-        project_dir = Path.cwd()
+        project_dir = str(Path.cwd())
         if is_project_dir(project_dir):
             project = store_read_project(project_dir)
         elif is_package_dir(project_dir):
