@@ -5123,9 +5123,9 @@ def checkout_package(apiurl, project, package,
     if not prj_dir:
         prj_dir = olddir
     elif conf.config['checkout_no_colon']:
-        prj_dir = prj_dir.replace(':', '/')
-    else:
-        prj_dir = prj_dir.replace(':', conf.config['project_separator'])
+        prj_dir = str(prj_dir).replace(':', '/')
+    elif conf.config['project_separator']:
+        prj_dir = str(prj_dir).replace(':', conf.config['project_separator'])
 
     root_dots = '.'
     if conf.config['checkout_rooted']:
