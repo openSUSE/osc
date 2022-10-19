@@ -8,6 +8,7 @@ import ssl
 import sys
 import tempfile
 import time
+import warnings
 
 import http.client
 import http.cookiejar
@@ -23,6 +24,10 @@ from . import conf
 from . import oscerr
 from . import oscssl
 from .util.helper import decode_it
+
+
+# print only the first occurrence of matching warnings, regardless of location
+warnings.filterwarnings("once", category=urllib3.exceptions.InsecureRequestWarning)
 
 
 class MockRequest:

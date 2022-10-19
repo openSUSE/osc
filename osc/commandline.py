@@ -22,6 +22,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
+from . import _private
 from . import build as osc_build
 from . import cmdln
 from . import conf
@@ -2672,6 +2673,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 # check for devel instances after accepted requests
                 if cmd in ['accept']:
+                    print(rq)
+                    if opts.interactive:
+                        _private.forward_request(apiurl, rq, interactive=True)
+
                     sr_actions = rq.get_actions('submit')
                     for action in sr_actions:
                         u = makeurl(apiurl, ['/search/package'], {

@@ -1,0 +1,87 @@
+import functools
+
+from .. import core as osc_core
+from . import api
+
+
+@functools.total_ordering
+class PackageBase:
+    def __init__(self, apiurl, project, package):
+        self.apiurl = apiurl
+        self.project = project
+        self.name = package
+
+        self.rev = None
+        self.vrev = None
+        self.srcmd5 = None
+
+        self.linkinfo = None
+        self.files = []
+        directory_node = self._get_directory_node()
+        self._load_from_directory_node(directory_node)
+
+    def __str__(self):
+        return f"{self.project}/{self.name}"
+
+    def __repr__(self):
+        return super().__repr__() + f"({self})"
+
+    def __hash__(self):
+        return hash((self.name, self.project, self.apiurl))
+
+    def __eq__(self, other):
+        return (self.name, self.project, self.apiurl) == (other.name, other.project, other.apiurl)
+
+    def __lt__(self, other):
+        return (self.name, self.project, self.apiurl) < (other.name, other.project, other.apiurl)
+
+    def _get_directory_node(self):
+        raise NotImplementedError
+
+    def _load_from_directory_node(self, directory_node):
+        # attributes
+        self.rev = directory_node.get("rev")
+        self.vrev = directory_node.get("vrev")
+        self.srcmd5 = directory_node.get("srcmd5")
+
+        # files
+        file_nodes = api.find_nodes(directory_node, "directory", "entry")
+        for file_node in file_nodes:
+            self.files.append(osc_core.File.from_xml_node(file_node))
+
+        # linkinfo
+        linkinfo_node = api.find_node(directory_node, "directory", "linkinfo")
+        if linkinfo_node is not None:
+            self.linkinfo = osc_core.Linkinfo()
+            self.linkinfo.read(linkinfo_node)
+            if self.linkinfo.project and not self.linkinfo.package:
+                # if the link points to a package with the same name,
+                # the name is omitted and we want it present for overall sanity
+                self.linkinfo.package = self.name
+
+
+class ApiPackage(PackageBase):
+    def __init__(self, apiurl, project, package, rev=None):
+        # for loading the directory node from the API
+        # the actual revision is loaded from the directory node
+        self.__rev = rev
+        super().__init__(apiurl, project, package)
+
+    def _get_directory_node(self):
+        url_path = ["source", self.project, self.name]
+        url_query = {}
+        if self.__rev:
+            url_query["rev"] = self.__rev
+        return api.get(self.apiurl, url_path, url_query)
+
+
+class LocalPackage(PackageBase):
+    def __init__(self, path):
+        self.dir = path
+        apiurl = osc_core.store_read_apiurl(self.dir)
+        project = osc_core.store_read_project(self.dir)
+        package = osc_core.store_read_package(self.dir)
+        super().__init__(apiurl, project, package)
+
+    def _get_directory_node(self):
+        return osc_core.read_filemeta(self.dir).getroot()

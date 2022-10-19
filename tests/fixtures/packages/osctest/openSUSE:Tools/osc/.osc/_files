@@ -1,0 +1,7 @@
+<directory name="osc" rev="373" vrev="339" srcmd5="30ccce6c3a1a4322e79c2935a52af18b">
+  <linkinfo project="openSUSE:Factory" package="osc" srcmd5="1ccbcd1b0b531a37ad75b34b5a1e2e3e" baserev="2c3ae65909d69e0f63113ccfe0e5f3f8" xsrcmd5="6a31b956f9431b0644ad6cf8e845c4e5" lsrcmd5="30ccce6c3a1a4322e79c2935a52af18b"/>
+  <serviceinfo code="succeeded" xsrcmd5="f4a02ee746c0f1d92ecef1d0f04a13b9"/>
+  <entry name="osc-0.182.0.tar.gz" md5="87f040c76f3da86fd7218c972b9df1dc" size="381596" mtime="1662638726"/>
+  <entry name="osc.changes" md5="8262e8219ed149bd15be1891fd38d7d1" size="125625" mtime="1662638727"/>
+  <entry name="osc.spec" md5="6fbfa2d1f451c0e3c5e5927ca5b0a2c5" size="6930" mtime="1662639059"/>
+</directory>

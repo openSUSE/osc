@@ -264,6 +264,18 @@ class File:
     def __str__(self):
         return self.name
 
+    @classmethod
+    def from_xml_node(cls, node):
+        assert node.tag == "entry"
+        kwargs = {
+            "name": node.get("name"),
+            "md5": node.get("md5"),
+            "size": int(node.get("size")),
+            "mtime": int(node.get("mtime")),
+            "skipped": "skipped" in node,
+        }
+        return cls(**kwargs)
+
 
 class Serviceinfo:
     """Source service content
@@ -4474,7 +4486,7 @@ def get_request_collection(
     # We don't want to overload server by requesting everything.
     # Let's enforce specifying at least some search criteria.
     if not any([user, group, project, package, ids]):
-        raise ValueError("Please specify search criteria")
+        raise oscerr.OscValueError("Please specify search criteria")
 
     query = {"view": "collection"}
 
@@ -7754,6 +7766,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 initial_cmd = ''
             else:
                 repl = raw_input(prompt).strip()
+
+            # remember if we're accepting so we can decide whether to forward request to the parent project later on
+            accept = repl == "a"
+
             if repl == 'i' and src_actions:
                 req_summary = str(request) + '\n'
                 issues = '\n\n' + get_formatted_issues(apiurl, request.reqid)
@@ -7851,6 +7867,9 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     reviews = [r for r in request.reviews if r.state == 'new']
                     if not reviews or ignore_reviews:
                         if safe_change_request_state(apiurl, request.reqid, state, msg, force=force):
+                            if accept:
+                                from . import _private
+                                _private.forward_request(apiurl, request, interactive=True)
                             break
                         else:
                             # an error occured
