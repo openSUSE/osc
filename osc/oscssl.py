@@ -28,10 +28,15 @@ def create_ssl_context():
     but we restrict crypto even more.
     """
     ssl_context = create_urllib3_context()
-    ssl_context.options |= ssl.OP_NO_SSLv2
-    ssl_context.options |= ssl.OP_NO_SSLv3
-    ssl_context.options |= ssl.OP_NO_TLSv1
-    ssl_context.options |= ssl.OP_NO_TLSv1_1
+    # we consider anything older than TLSv1_2 insecure
+    if sys.version_info <= (3, 6):
+        # deprecated since py3.7
+        ssl_context.options |= ssl.OP_NO_TLSv1
+        ssl_context.options |= ssl.OP_NO_TLSv1_1
+    else:
+        # raise minimum version if too low
+        if ssl_context.minimum_version < ssl.TLSVersion.TLSv1_2:
+            ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
     return ssl_context
 
 
