@@ -60,7 +60,7 @@ jobs:
             zypper -n install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - name: 'Install packages (Fedora/CentOS)'
-        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:')  }}
+        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:') }}
         run: |
             dnf -y makecache
             dnf -y distro-sync
@@ -68,7 +68,7 @@ jobs:
             dnf -y install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - name: 'Install packages (Debian/Ubuntu)'
-        if: ${{ startsWith(matrix.container, 'debian:') || startsWith(matrix.container, 'ubuntu:')  }}
+        if: ${{ startsWith(matrix.container, 'debian:') || startsWith(matrix.container, 'ubuntu:') }}
         run: |
             apt-get -y update
             apt-get -y upgrade

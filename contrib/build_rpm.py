@@ -100,6 +100,7 @@ class Spec:
             self.path,
             "--define", f"_sourcedir {self.topdir}",
             "--define", f"_srcrpmdir {self.topdir}",
+            "--define", f"_rpmdir {self.topdir}",
         ]
         if srpm and rpm:
             cmd.append("-ba")
