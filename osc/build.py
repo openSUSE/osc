@@ -1376,12 +1376,12 @@ def main(apiurl, opts, argv):
         for dep in bi.deps:
             if dep.sysroot:
                 # packages installed in sysroot subdirectory need to get a prefix for init_buildsystem
-                rpmlist.append('sysroot: %s %s\n' % (dep.name, dep.fullfilename))
+                rpmlist.append("sysroot: %s %s\n" % (dep.name, dep.fullfilename))
             else:
-                rpmlist.append('%s %s\n' % (dep.name, dep.fullfilename))
+                rpmlist.append("%s %s\n" % (dep.name, dep.fullfilename))
     for i in imagebins:
-        rpmlist.append('%s preinstallimage\n' % i)
-    rpmlist += ['%s %s\n' % (i[0], i[1]) for i in rpmlist_prefers]
+        rpmlist.append("%s preinstallimage\n" % i)
+    rpmlist += ["%s %s\n" % (i[0], i[1]) for i in rpmlist_prefers]
 
     if imagefile:
         rpmlist.append('preinstallimage: %s\n' % imagefile)
@@ -1474,11 +1474,11 @@ def main(apiurl, opts, argv):
             print()
             print('The buildroot was:', build_root)
             sys.exit(rc)
-    except KeyboardInterrupt as i:
+    except KeyboardInterrupt as keyboard_interrupt_exception:
         print("keyboard interrupt, killing build ...")
         cmd.append('--kill')
         run_external(cmd[0], *cmd[1:])
-        raise i
+        raise keyboard_interrupt_exception
 
     pacdir = os.path.join(build_root, '.build.packages')
     if os.path.islink(pacdir):
