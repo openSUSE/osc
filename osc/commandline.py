@@ -2169,7 +2169,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-f', '--force', action='store_true',
                         help='enforce state change, can be used to ignore open reviews')
-    @cmdln.option('-s', '--state', default='new,review',
+    @cmdln.option('-s', '--state',
                         help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review"]')
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests in state "new" or changed in the last DAYS.')
@@ -2300,6 +2300,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('Sorry, the options \'--interactive\' and '
                                       '\'--non-interactive\' are mutually exclusive')
 
+        if opts.all:
+            state_list = ["all"]
+        else:
+            if not opts.state:
+                opts.state = "new,review"
+            state_list = opts.state.split(",")
+            state_list = [i for i in state_list if i.strip()]
+
         if not args:
             args = ['list']
             opts.mine = 1
@@ -2420,18 +2428,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             states = ('new', 'accepted', 'revoked', 'declined', 'review', 'superseded')
             who = ''
             if cmd == 'approvenew':
-                states = ('new')
+                states = ('new',)
                 results = get_request_collection(apiurl, project=project, package=package, states=['new'])
             else:
-                state_list = opts.state.split(',')
-                if state_list == ['']:
-                    state_list = ()
-                if opts.all:
-                    state_list = ['all']
-                else:
-                    for s in state_list:
-                        if s not in states and not s == 'all':
-                            raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
+                for s in state_list:
+                    if s != 'all' and s not in states:
+                        raise oscerr.WrongArgs('Unknown state \'%s\', try one of %s' % (s, ','.join(states)))
                 if opts.mine:
                     who = conf.get_apiurl_usr(apiurl)
                 if opts.user:
