@@ -13,6 +13,29 @@ on:
       - '**.py'
 
 jobs:
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+      - run: pip install mypy
+      - run: pip install types-cryptography types-urllib3
+      - run: pip install distro keyring progressbar zstandard
+      - run: mypy osc
+
+  darker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+      - uses: akaihola/darker@1.5.1
+        with:
+          options: "--check --diff --color --line-length=120"
+          src: "."
+          version: "1.5.1"
+
   pylint_plugins:
     name: 'Diff pylint runs on osc plugin'
     runs-on: 'ubuntu-latest'
