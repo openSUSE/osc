@@ -266,6 +266,8 @@ class File:
         return self.name
 
     def __eq__(self, other):
+        if isinstance(other, str):
+            return self.name == other
         self_data = (self.name, self.md5, self.size, self.mtime, self.skipped)
         other_data = (other.name, other.md5, other.size, other.mtime, other.skipped)
         return self_data == other_data
