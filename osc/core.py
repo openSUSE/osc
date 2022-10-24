@@ -46,6 +46,7 @@ from . import conf
 from . import meter
 from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
+from .store import Store
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
 
 
