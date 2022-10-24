@@ -276,6 +276,18 @@ class File:
         }
         return cls(**kwargs)
 
+    def to_xml_node(self, parent_node):
+        attributes = {
+            "name": self.name,
+            "md5": self.md5,
+            "size": str(int(self.size)),
+            "mtime": str(int(self.mtime)),
+        }
+        if self.skipped:
+            attributes["skipped"] = "true"
+        new_node = ET.SubElement(parent_node, "entry", attributes)
+        return new_node
+
 
 class Serviceinfo:
     """Source service content
