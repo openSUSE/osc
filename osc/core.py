@@ -248,6 +248,7 @@ def os_path_samefile(path1, path2):
         return os.path.realpath(path1) == os.path.realpath(path2)
 
 
+@total_ordering
 class File:
     """represent a file, including its metadata"""
 
@@ -263,6 +264,16 @@ class File:
 
     def __str__(self):
         return self.name
+
+    def __eq__(self, other):
+        self_data = (self.name, self.md5, self.size, self.mtime, self.skipped)
+        other_data = (other.name, other.md5, other.size, other.mtime, other.skipped)
+        return self_data == other_data
+
+    def __lt__(self, other):
+        self_data = (self.name, self.md5, self.size, self.mtime, self.skipped)
+        other_data = (other.name, other.md5, other.size, other.mtime, other.skipped)
+        return self_data < other_data
 
     @classmethod
     def from_xml_node(cls, node):
