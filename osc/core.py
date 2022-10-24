@@ -272,7 +272,7 @@ class File:
             "md5": node.get("md5"),
             "size": int(node.get("size")),
             "mtime": int(node.get("mtime")),
-            "skipped": "skipped" in node,
+            "skipped": "skipped" in node.attrib,
         }
         return cls(**kwargs)
 
