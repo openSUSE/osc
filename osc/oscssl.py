@@ -29,7 +29,7 @@ def create_ssl_context():
     """
     ssl_context = create_urllib3_context()
     # we consider anything older than TLSv1_2 insecure
-    if sys.version_info <= (3, 6):
+    if sys.version_info[:2] <= (3, 6):
         # deprecated since py3.7
         ssl_context.options |= ssl.OP_NO_TLSv1
         ssl_context.options |= ssl.OP_NO_TLSv1_1
