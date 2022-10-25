@@ -72,3 +72,19 @@ def find_node(root, root_name, node_name=None):
     if node_name:
         return root.find(node_name)
     return root
+
+
+def write_xml_node_to_file(node, path, indent=True):
+    """
+    Write a XML node to a file.
+
+    :param node: Node to write.
+    :type  node: xml.etree.ElementTree.Element
+    :param path: Path to a file that will be written to.
+    :type  path: str
+    :param indent: Whether to indent (pretty-print) the written XML.
+    :type  indent: bool
+    """
+    if indent:
+        osc_core.xmlindent(node)
+    osc_core.ET.ElementTree(node).write(path)

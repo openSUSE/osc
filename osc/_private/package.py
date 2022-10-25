@@ -1,6 +1,7 @@
 import functools
 
 from .. import core as osc_core
+from .. import store as osc_store
 from . import api
 
 
@@ -78,10 +79,8 @@ class ApiPackage(PackageBase):
 class LocalPackage(PackageBase):
     def __init__(self, path):
         self.dir = path
-        apiurl = osc_core.store_read_apiurl(self.dir)
-        project = osc_core.store_read_project(self.dir)
-        package = osc_core.store_read_package(self.dir)
-        super().__init__(apiurl, project, package)
+        self.store = osc_store.Store(self.dir)
+        super().__init__(self.store.apiurl, self.store.project, self.store.package)
 
     def _get_directory_node(self):
-        return osc_core.read_filemeta(self.dir).getroot()
+        return self.store.read_xml_node("_files", "directory").getroot()

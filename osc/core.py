@@ -46,6 +46,7 @@ from . import conf
 from . import meter
 from . import oscerr
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
+from .store import Store
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
 
 
@@ -248,6 +249,7 @@ def os_path_samefile(path1, path2):
         return os.path.realpath(path1) == os.path.realpath(path2)
 
 
+@total_ordering
 class File:
     """represent a file, including its metadata"""
 
@@ -264,6 +266,18 @@ class File:
     def __str__(self):
         return self.name
 
+    def __eq__(self, other):
+        if isinstance(other, str):
+            return self.name == other
+        self_data = (self.name, self.md5, self.size, self.mtime, self.skipped)
+        other_data = (other.name, other.md5, other.size, other.mtime, other.skipped)
+        return self_data == other_data
+
+    def __lt__(self, other):
+        self_data = (self.name, self.md5, self.size, self.mtime, self.skipped)
+        other_data = (other.name, other.md5, other.size, other.mtime, other.skipped)
+        return self_data < other_data
+
     @classmethod
     def from_xml_node(cls, node):
         assert node.tag == "entry"
@@ -272,9 +286,21 @@ class File:
             "md5": node.get("md5"),
             "size": int(node.get("size")),
             "mtime": int(node.get("mtime")),
-            "skipped": "skipped" in node,
+            "skipped": "skipped" in node.attrib,
         }
         return cls(**kwargs)
+
+    def to_xml_node(self, parent_node):
+        attributes = {
+            "name": self.name,
+            "md5": self.md5,
+            "size": str(int(self.size)),
+            "mtime": str(int(self.mtime)),
+        }
+        if self.skipped:
+            attributes["skipped"] = "true"
+        new_node = ET.SubElement(parent_node, "entry", attributes)
+        return new_node
 
 
 class Serviceinfo:
@@ -682,11 +708,12 @@ class Project:
         """
         self.dir = dir
         self.absdir = os.path.abspath(dir)
+        self.store = Store(dir)
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
-        self.scm_url = store_read_scmurl(self.dir)
-        self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
+        self.scm_url = self.store.scmurl
+        self.apiurl = self.store.apiurl
 
         dirty_files = []
         if wc_check:
@@ -734,8 +761,9 @@ class Project:
         return dirty_files
 
     def wc_repair(self, apiurl=None):
-        global store
-        if not os.path.exists(os.path.join(self.dir, store, '_apiurl')) or apiurl:
+        store = Store(self.dir)
+        store.assert_is_project()
+        if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'
@@ -743,8 +771,8 @@ class Project:
                 raise oscerr.WorkingCopyInconsistent(self.name, None, [], msg)
             # sanity check
             conf.parse_apisrv_url(None, apiurl)
-            store_write_apiurl(self.dir, apiurl)
-            self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
+            store.apiurl = apiurl
+            self.apiurl = apiurl
 
     def checkout_missing_pacs(self, sinfos, expand_link=False, unexpand_link=False):
         for pac in self.pacs_missing:
@@ -1120,9 +1148,10 @@ class Project:
         else:
             pac_path = os.path.join(self.dir, pac)
 
+        store = Store(pac_path)
         project = store_read_project(pac_path)
         package = store_read_package(pac_path)
-        apiurl = store_read_apiurl(pac_path, defaulturl=False)
+        apiurl = store.apiurl
         if not meta_exists(metatype='pkg',
                            path_args=(quote_plus(project), quote_plus(package)),
                            template_args=None, create_new=False, apiurl=apiurl):
@@ -1158,9 +1187,9 @@ class Project:
             os.mkdir(os.path.join(dir, store))
 
         store_write_project(dir, project)
-        store_write_apiurl(dir, apiurl)
+        Store(dir).apiurl = apiurl
         if scm_url:
-            store_write_string(dir, '_scm', scm_url + '\n')
+            Store(dir).scmurl = scm_url
             package_tracking = None
         if package_tracking:
             store_write_initial_packages(dir, project, [])
@@ -1182,10 +1211,11 @@ class Package:
 
         self.dir = workingdir
         self.absdir = os.path.abspath(self.dir)
+        self.store = Store(self.dir)
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
         self.size_limit = size_limit
-        self.scm_url = store_read_scmurl(self.dir)
+        self.scm_url = self.store.scmurl
         if size_limit and size_limit == 0:
             self.size_limit = None
 
@@ -1193,7 +1223,7 @@ class Package:
 
         self.prjname = store_read_project(self.dir)
         self.name = store_read_package(self.dir)
-        self.apiurl = store_read_apiurl(self.dir, defaulturl=not wc_check)
+        self.apiurl = self.store.apiurl
 
         self.update_datastructs()
         dirty_files = []
@@ -1294,7 +1324,9 @@ class Package:
         return dirty_files
 
     def wc_repair(self, apiurl=None):
-        if not os.path.exists(os.path.join(self.storedir, '_apiurl')) or apiurl:
+        store = Store(self.dir)
+        store.assert_is_package()
+        if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
                     'no \'apiurl\' was passed to wc_repair'
@@ -1302,8 +1334,9 @@ class Package:
                 raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, [], msg)
             # sanity check
             conf.parse_apisrv_url(None, apiurl)
-            store_write_apiurl(self.dir, apiurl)
-            self.apiurl = store_read_apiurl(self.dir, defaulturl=False)
+            store.apiurl = apiurl
+            self.apiurl = apiurl
+
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
             # XXX: should we also check the md5?
@@ -1312,17 +1345,20 @@ class Package:
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
                                 targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
                                 mtime=f.mtime)
-        for fname in os.listdir(self.storedir):
+
+        for fname in store:
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
                     fname.startswith('_build'):
                 continue
             elif fname not in self.filenamelist or fname in self.skipped:
                 # this file does not belong to the storedir so remove it
-                os.unlink(os.path.join(self.storedir, fname))
+                store.unlink(fname)
+
         for fname in self.to_be_deleted[:]:
             if fname not in self.filenamelist:
                 self.to_be_deleted.remove(fname)
                 self.write_deletelist()
+
         for fname in self.in_conflict[:]:
             if fname not in self.filenamelist:
                 self.in_conflict.remove(fname)
@@ -2593,13 +2629,13 @@ rev: %s
             os.mkdir(os.path.join(dir, store))
         store_write_project(dir, project)
         store_write_string(dir, '_package', package + '\n')
-        store_write_apiurl(dir, apiurl)
+        Store(dir).apiurl = apiurl
         if meta:
             store_write_string(dir, '_meta_mode', '')
         if size_limit:
             store_write_string(dir, '_size_limit', str(size_limit) + '\n')
         if scm_url:
-            store_write_string(dir, '_scm', scm_url + '\n')
+            Store(dir).scmurl = scm_url
         else:
             store_write_string(dir, '_files', '<directory />' + '\n')
         store_write_string(dir, '_osclib_version', __store_version__ + '\n')
@@ -6708,49 +6744,23 @@ def store_read_package(dir):
 
 
 def store_read_scmurl(dir):
-    global store
-
-    url_file = os.path.join(dir, store, '_scm')
-    if not os.path.exists(url_file):
-        return
-    try:
-        p = open(url_file).readlines()[0].strip()
-    except OSError:
-        msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
-        if os.path.exists(os.path.join(dir, '.svn')):
-            msg += '\nTry svn instead of osc.'
-        raise oscerr.NoWorkingCopy(msg)
-    return p
+    import warnings
+    warnings.warn(
+        "osc.core.store_read_scmurl() is deprecated. "
+        "You should be using high-level classes such as Store, Project or Package instead.",
+        DeprecationWarning
+    )
+    return Store(dir).scmurl
 
 
 def store_read_apiurl(dir, defaulturl=True):
-    global store
-
-    fname = os.path.join(dir, store, '_apiurl')
-    try:
-        with open(fname) as f:
-            url = f.readlines()[0].strip()
-        # this is needed to get a proper apiurl
-        # (former osc versions may stored an apiurl with a trailing slash etc.)
-        apiurl = conf.urljoin(*conf.parse_apisrv_url(None, url))
-    except:
-        if not defaulturl:
-            if is_project_dir(dir):
-                project = store_read_project(dir)
-                package = None
-            elif is_package_dir(dir):
-                project = store_read_project(dir)
-                package = None
-            else:
-                msg = 'Error: \'%s\' is not an osc package working copy' % os.path.abspath(dir)
-                raise oscerr.NoWorkingCopy(msg)
-            msg = 'Your working copy \'%s\' is in an inconsistent state.\n' \
-                'Please run \'osc repairwc %s\' (Note this might _remove_\n' \
-                'files from the .osc/ dir). Please check the state\n' \
-                'of the working copy afterwards (via \'osc status %s\')' % (dir, dir, dir)
-            raise oscerr.WorkingCopyInconsistent(project, package, ['_apiurl'], msg)
-        apiurl = conf.config['apiurl']
-    return apiurl
+    import warnings
+    warnings.warn(
+        "osc.core.store_read_apiurl() is deprecated. "
+        "You should be using high-level classes such as Store, Project or Package instead.",
+        DeprecationWarning
+    )
+    return Store(dir).apiurl
 
 
 def store_read_last_buildroot(dir):
@@ -6789,7 +6799,13 @@ def store_write_project(dir, project):
 
 
 def store_write_apiurl(dir, apiurl):
-    store_write_string(dir, '_apiurl', apiurl + '\n')
+    import warnings
+    warnings.warn(
+        "osc.core.store_write_apiurl() is deprecated. "
+        "You should be using high-level classes such as Store, Project or Package instead.",
+        DeprecationWarning
+    )
+    Store(dir).apiurl = apiurl
 
 
 def store_write_last_buildroot(dir, repo, arch, vm_type):
@@ -7458,8 +7474,9 @@ def addFiles(filenames, prj_obj=None, force=False):
         prj_dir, pac_dir = getPrjPacPaths(filename)
         if not is_package_dir(filename) and os.path.isdir(filename) and is_project_dir(prj_dir) \
            and conf.config['do_package_tracking']:
+            store = Store(prj_dir)
             prj_name = store_read_project(prj_dir)
-            prj_apiurl = store_read_apiurl(prj_dir, defaulturl=False)
+            prj_apiurl = store.apiurl
             Package.init_package(prj_apiurl, prj_name, pac_dir, filename)
         elif is_package_dir(filename) and conf.config['do_package_tracking']:
             print('osc: warning: \'%s\' is already under version control' % filename)
