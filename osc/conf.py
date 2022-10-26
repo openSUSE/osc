@@ -186,28 +186,29 @@ if not os.path.isfile('/usr/bin/build') and os.path.isfile('/usr/bin/obs-build')
 if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-build/vc'):
     DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
 
-boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
-                'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-                'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
-                'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-                'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
-integer_opts = ['build-jobs']
-
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
                     'downloadurl', 'sshkey']
+
+_integer_opts = ('build-jobs',)
+_boolean_opts = (
+    'debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
+    'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
+    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
+    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
+    'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail')
 
 
 def apply_option_types(config, conffile=""):
     """
     Return a copy of `config` dictionary with values converted to their expected types
-    according to the enumerated option types (boolean_opts, integer_opts).
+    according to the enumerated option types (_boolean_opts, _integer_opts).
     """
     config = config.copy()
 
     cp = OscConfigParser.OscConfigParser(config)
     cp.add_section("general")
 
-    typed_opts = ((boolean_opts, cp.getboolean), (integer_opts, cp.getint))
+    typed_opts = ((_boolean_opts, cp.getboolean), (_integer_opts, cp.getint))
     for opts, meth in typed_opts:
         for opt in opts:
             try:

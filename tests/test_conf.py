@@ -14,29 +14,25 @@ class TestConf(unittest.TestCase):
         importlib.reload(osc.conf)
 
     def test_bool_opts_defaults(self):
-        opts = osc.conf.boolean_opts
         config = osc.conf.config
-        for opt in opts:
+        for opt in osc.conf._boolean_opts:
             self.assertIsInstance(config[opt], bool, msg=f"option: '{opt}'")
 
     def test_int_opts_defaults(self):
-        opts = osc.conf.integer_opts
         config = osc.conf.config
-        for opt in opts:
+        for opt in osc.conf._integer_opts:
             self.assertIsInstance(config[opt], int, msg=f"option: '{opt}'")
 
     def test_bool_opts(self):
         osc.conf.get_config()
-        opts = osc.conf.boolean_opts
         config = osc.conf.config
-        for opt in opts:
+        for opt in osc.conf._boolean_opts:
             self.assertIsInstance(config[opt], bool, msg=f"option: '{opt}'")
 
     def test_int_opts(self):
         osc.conf.get_config()
-        opts = osc.conf.integer_opts
         config = osc.conf.config
-        for opt in opts:
+        for opt in osc.conf._integer_opts:
             self.assertIsInstance(config[opt], int, msg=f"option: '{opt}'")
 
 
