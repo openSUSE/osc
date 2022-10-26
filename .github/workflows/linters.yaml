@@ -1,0 +1,56 @@
+name: 'linters'
+
+on:
+  push:
+    branches: ['master']
+    paths:
+      - '.github/**'
+      - '**.py'
+  pull_request:
+    branches: ['master']
+    paths:
+      - '.github/**'
+      - '**.py'
+
+jobs:
+  pylint_plugins:
+    name: 'Diff pylint runs on osc plugin'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin_repository:
+          - openSUSE/openSUSE-release-tools
+          - openSUSE/osc-plugin-collab
+          - openSUSE/osc-plugin-install
+          - openSUSE/osc-plugin-overview
+          - openSUSE/osc-plugin-qam
+
+    steps:
+      - name: 'Install packages'
+        run: |
+            sudo apt-get -y update
+            sudo apt-get -y --no-install-recommends install diffutils pylint
+
+      - uses: actions/checkout@v3
+        with:
+          path: osc-pr
+
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: osc-master
+
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ matrix.plugin_repository }}
+          path: plugin
+
+      - name: 'Diff pylint runs'
+        run: |
+            cd plugin
+            find -maxdepth 2 -name __init__.py | while read i; do dirname $i; done | sort > .pylint-args
+            find -maxdepth 1 -name '*.py' | sort >> .pylint-args
+            PYTHONPATH="../osc-master" pylint --errors-only $(cat .pylint-args) | sort > pylint-osc-master.log || :
+            PYTHONPATH="../osc-pr" pylint --errors-only $(cat .pylint-args) | sort > pylint-osc-pr.log || :
+            diff -u pylint-osc-master.log pylint-osc-pr.log
