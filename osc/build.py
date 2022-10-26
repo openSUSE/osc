@@ -78,7 +78,7 @@ class Buildinfo:
         localpkgs = localpkgs or []
         try:
             tree = ET.parse(filename)
-        except:
+        except ET.ParseError:
             print('could not parse the buildinfo:', file=sys.stderr)
             print(open(filename).read(), file=sys.stderr)
             sys.exit(1)
@@ -802,7 +802,7 @@ def main(apiurl, opts, argv):
         try:
             build_root = build_root % {'repo': repo, 'arch': arch,
                                        'project': prj, 'package': pacname, 'apihost': apihost}
-        except:
+        except KeyError:
             pass
 
     # We configure sccache after pacname, so that in default cases we can have an sccache for each
