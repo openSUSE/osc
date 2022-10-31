@@ -6478,8 +6478,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 opts.alternative_project = None
         except oscerr.NoWorkingCopy:
             # This may be a project managed entirely via git?
-            if os.path.isdir(Path.cwd() + "/../.osc") and os.path.isdir(Path.cwd() + "/../.git"):
-                project = store_read_project(Path.cwd() + "/..")
+            if os.path.isdir(Path.cwd().parent / '.osc') and os.path.isdir(Path.cwd().parent / '.git'):
+                project = store_read_project(Path.cwd())
                 opts.alternative_project = project
             pass
 
@@ -8387,7 +8387,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if is_project_dir(project_dir):
             project = store_read_project(project_dir)
         elif is_package_dir(project_dir):
-            project_dir += '/..'
+            project_dir = str(Path.cwd().parent)
             project = store_read_project(project_dir)
         else:
             raise oscerr.WrongArgs('Creating pbuild only works in a checked out project or package')
