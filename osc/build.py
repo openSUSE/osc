@@ -19,7 +19,6 @@ from . import conf
 from . import connection
 from . import core
 from . import oscerr
-from .conf import config
 from .core import get_buildinfo, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
 from .core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from .fetch import Fetcher, OscFileGrabber, verify_pacs
@@ -108,7 +107,7 @@ class Buildinfo:
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        if self.buildtype  in ('dsc', 'collax', 'deb'):
+        if self.buildtype in ('dsc', 'collax', 'deb'):
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
@@ -137,14 +136,14 @@ class Buildinfo:
             self.release = root.find('release').text
         else:
             self.release = None
-        if config['api_host_options'][apiurl]['downloadurl']:
+        if conf.config['api_host_options'][apiurl]['downloadurl']:
             # Formerly, this was set to False, but we have to set it to True, because a large
             # number of repos in OBS are misconfigured and don't actually have repos setup - they
             # are API only.
             self.enable_cpio = True
-            self.downloadurl = config['api_host_options'][apiurl]['downloadurl'] + "/repositories"
-            if config['http_debug']:
-                print("⚠️   setting dl_url to %s" % config['api_host_options'][apiurl]['downloadurl'])
+            self.downloadurl = conf.config['api_host_options'][apiurl]['downloadurl'] + "/repositories"
+            if conf.config['http_debug']:
+                print("⚠️   setting dl_url to %s" % conf.config['api_host_options'][apiurl]['downloadurl'])
         else:
             self.enable_cpio = True
             self.downloadurl = root.get('downloadurl')
@@ -185,9 +184,9 @@ class Buildinfo:
             # a hash providing the matching URL for specific repos for newer OBS instances
             if node.get('url'):
                 baseurl = node.get('url').replace('%', '%%')
-                if config['api_host_options'][apiurl]['downloadurl']:
+                if conf.config['api_host_options'][apiurl]['downloadurl']:
                     # Add the path element to the download url override.
-                    baseurl = config['api_host_options'][apiurl]['downloadurl'] + urlsplit(node.get('url'))[2]
+                    baseurl = conf.config['api_host_options'][apiurl]['downloadurl'] + urlsplit(node.get('url'))[2]
                 self.urls[node.get('project') + "/" + node.get('repository')] = baseurl + '/%(arch)s/%(filename)s'
 
         self.vminstall_list = [dep.name for dep in self.deps if dep.vminstall]
@@ -551,7 +550,7 @@ trustprompt = """Would you like to ...
 
 
 def check_trusted_projects(apiurl, projects):
-    trusted = config['api_host_options'][apiurl]['trusted_prj']
+    trusted = conf.config['api_host_options'][apiurl]['trusted_prj']
     tlen = len(trusted)
     for prj in projects:
         if prj not in trusted:
@@ -566,7 +565,7 @@ def check_trusted_projects(apiurl, projects):
                 raise oscerr.UserAbort()
 
     if tlen != len(trusted):
-        config['api_host_options'][apiurl]['trusted_prj'] = trusted
+        conf.config['api_host_options'][apiurl]['trusted_prj'] = trusted
         conf.config_set_option(apiurl, 'trusted_prj', ' '.join(trusted))
 
 
@@ -596,19 +595,19 @@ def calculate_prj_pac(opts, descr):
 
 
 def calculate_build_root(apihost, prj, pac, repo, arch):
-    buildroot = os.environ.get('OSC_BUILD_ROOT', config['build-root']) \
+    buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
         % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
     return buildroot
 
 
 def build_as_user():
-    if os.environ.get('OSC_SU_WRAPPER', config['su-wrapper']).split():
+    if os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split():
         return False
     return True
 
 
 def su_wrapper(cmd):
-    sucmd = os.environ.get('OSC_SU_WRAPPER', config['su-wrapper']).split()
+    sucmd = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split()
     if sucmd:
         if sucmd[0] == 'su':
             if sucmd[-1] == '-c':
@@ -620,7 +619,7 @@ def su_wrapper(cmd):
 
 
 def run_build(opts, *args):
-    cmd = [config['build-cmd']]
+    cmd = [conf.config['build-cmd']]
     cmd += args
 
     cmd = su_wrapper(cmd)
@@ -639,12 +638,12 @@ def main(apiurl, opts, argv):
     build_root = None
     cache_dir = None
     build_uid = ''
+    config = conf.config
     build_shell_after_fail = config['build-shell-after-fail']
     vm_memory = config['build-memory']
     vm_disk_size = config['build-vmdisk-rootsize']
     vm_type = config['build-type']
     vm_telnet = None
-    config["api_host_options"] = conf.config["api_host_options"]
 
     build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
@@ -1102,7 +1101,7 @@ def main(apiurl, opts, argv):
                       http_debug=config['http_debug'],
                       modules=bi.modules,
                       enable_cpio=not opts.disable_cpio_bulk_download and bi.enable_cpio,
-                      cookiejar=connection.CookieJarAuthHandler(apiurl, os.path.expanduser(conf.config["cookiejar"]))._cookiejar,
+                      cookiejar=connection.CookieJarAuthHandler(apiurl, os.path.expanduser(config["cookiejar"]))._cookiejar,
                       download_api_only=opts.download_api_only)
 
     if not opts.trust_all_projects:
