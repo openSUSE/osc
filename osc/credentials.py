@@ -246,7 +246,11 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
 
     def delete_password(self, url, user):
         self._load_backend()
-        keyring.delete_password(urlsplit(url)[1], user)
+        service = urlsplit(url)[1]
+        data = keyring.get_password(service, user)
+        if data is None:
+            return
+        keyring.delete_password(service, user)
 
 
 class KeyringCredentialsDescriptor(AbstractCredentialsManagerDescriptor):
