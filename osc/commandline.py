@@ -629,36 +629,19 @@ class Osc(cmdln.Cmdln):
         Examples:
             osc addchannels [PROJECT [PACKAGE]]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        channel = None
-        if not args:
-            if is_project_dir(localdir) or is_package_dir(localdir):
-                project = store_read_project(localdir)
-            elif is_package_dir(localdir):
-                project = store_read_project(localdir)
-                channel = store_read_package(localdir)
-            else:
-                raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
-        else:
-            project = self._process_project_name(args[0])
 
-        query = {'cmd': 'addchannels'}
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
         if opts.enable_all and opts.skip_disabled:
-            raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
-        elif opts.enable_all:
-            query['mode'] = 'enable_all'
-        elif opts.skip_disabled:
-            query['mode'] = 'skip_disabled'
+            self.argparse_error("Options '--enable-all' and '--skip-disabled' are mutually exclusive")
 
-        print("Looking for channels...")
-        url = makeurl(apiurl, ['source', project], query=query)
-        if channel:
-            url = makeurl(apiurl, ['source', project, channel], query=query)
-        f = http_POST(url)
+        _private.add_channels(
+            apiurl, project, package, enable_all=opts.enable_all, skip_disabled=opts.skip_disabled, print_to="stdout"
+        )
 
     @cmdln.alias('enablechannel')
     def do_enablechannels(self, subcmd, opts, *args):
