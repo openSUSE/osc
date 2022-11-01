@@ -48,6 +48,81 @@ def get_parser():
     return osc.argparser
 
 
+def pop_project_package_from_args(args, default_project=None, default_package=None, package_is_optional=False):
+    """
+    Get project and package from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :param default_project: Used if project cannot be retrieved from `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param default_package: Used if package cannot be retrieved from `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :param package_is_optional: Whether to error out when package name cannot be retrieved.
+    :type  package_is_optional: bool
+    :returns: Project name and package name.
+    :rtype:   tuple(str)
+    """
+    assert isinstance(args, list)
+    path = Path.cwd()
+
+    try:
+        project = args.pop(0)
+    except IndexError:
+        if not default_project:
+            raise oscerr.OscValueError("Please specify a project")
+        project = default_project
+
+    if not isinstance(project, str):
+        raise TypeError(f"Project should be 'str', found: {type(project).__name__}")
+
+    package = None
+
+    if project == "/":
+        # no project name (to support listing all projects via `osc ls /`)
+        project = None
+    elif project and "/" in project:
+        # project/package
+        if project.count("/") != 1:
+            raise oscerr.OscValueError(f"Argument doesn't match the '<project>/<package>' pattern: {project}")
+        project, package = project.split("/")
+
+    if project == ".":
+        # project name taken from the working copy
+        store = osc_store.Store(path)
+        project = store.project
+
+    if package is None:
+        try:
+            package = args.pop(0)
+        except IndexError:
+            if default_package:
+                package = default_package
+            else:
+                if package_is_optional:
+                    return project, None
+                raise oscerr.OscValueError("Please specify a package")
+
+        if not isinstance(package, str):
+            raise TypeError(f"Package should be 'str', found: {type(package).__name__}")
+
+    if package == ".":
+        # package name taken from the working copy
+        try:
+            store = osc_store.Store(path)
+            store.assert_is_package()
+            package = store.package
+        except oscerr.NoWorkingCopy:
+            if not package_is_optional:
+                raise
+            package = None
+
+    return project, package
+
+
 class Osc(cmdln.Cmdln):
     """
     openSUSE commander is a command-line interface to the Open Build Service.
