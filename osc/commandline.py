@@ -653,37 +653,16 @@ class Osc(cmdln.Cmdln):
         The command can be used to enable a specific one or all channels of a project.
 
         Examples:
-            osc enablechannels [PROJECT [CHANNEL_PACKAGE]]
+            osc enablechannels [PROJECT [PACKAGE]]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        channel = None
-        if not args:
-            if is_project_dir(localdir):
-                project = store_read_project(localdir)
-            elif is_package_dir(localdir):
-                project = store_read_project(localdir)
-                channel = store_read_package(localdir)
-            else:
-                raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
-        else:
-            project = self._process_project_name(args[0])
-            if len(args) > 1:
-                channel = args[1]
 
-        query = {}
-        if channel:
-            query['cmd'] = 'enablechannel'
-        else:
-            query = {'cmd': 'modifychannels', 'mode': 'enable_all'}
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
-        print("Enable channel(s)...")
-        url = makeurl(apiurl, ['source', project], query=query)
-        if channel:
-            url = makeurl(apiurl, ['source', project, channel], query=query)
-        f = http_POST(url)
+        _private.enable_channels(apiurl, project, package, print_to="stdout")
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='force generation of new patchinfo file, do not update existing one.')

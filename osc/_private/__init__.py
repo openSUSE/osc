@@ -4,6 +4,7 @@
 # The cherry-picked imports will be the supported API.
 
 from .api_source import add_channels
+from .api_source import enable_channels
 from .common import print_msg
 from .common import format_msg_project_package_options
 from .package import ApiPackage
