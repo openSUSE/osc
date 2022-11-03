@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -54,6 +55,8 @@ def step_impl(context, args):
     cmd = context.osc.get_cmd() + [args]
     cmd = " ".join(cmd)
     run_in_context(context, cmd, can_fail=True)
+    # remove InsecureRequestWarning that is irrelevant to the tests
+    context.cmd_stderr = re.sub(r"^.*InsecureRequestWarning.*\n  warnings.warn\(\n", "", context.cmd_stderr)
 
 
 @behave.step('I wait for osc results for "{project}" "{package}"')
