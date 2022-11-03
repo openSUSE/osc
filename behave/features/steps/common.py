@@ -93,8 +93,8 @@ def step_impl(context, text):
 
 @behave.step("stdout is")
 def step_impl(context):
-    expected = context.text.format(context=context).rstrip().split('\n')
-    found = context.cmd_stdout.rstrip().split('\n')
+    expected = context.text.format(context=context).rstrip().split("\n")
+    found = context.cmd_stdout.rstrip().split("\n")
 
     if found == expected:
         return
@@ -102,6 +102,19 @@ def step_impl(context):
     expected_str = "\n".join(expected)
     found_str = "\n".join(found)
     raise AssertionError(f"Stdout is not:\n{expected_str}\n\nActual stdout:\n{found_str}")
+
+
+@behave.step("stderr is")
+def step_impl(context):
+    expected = context.text.format(context=context).rstrip().split("\n")
+    found = context.cmd_stderr.rstrip().split("\n")
+
+    if found == expected:
+        return
+
+    expected_str = "\n".join(expected)
+    found_str = "\n".join(found)
+    raise AssertionError(f"Stderr is not:\n{expected_str}\n\nActual stderr:\n{found_str}")
 
 
 @behave.step('I set working directory to "{path}"')
@@ -183,7 +196,15 @@ def step_impl(context, path, mode):
 @behave.step("the exit code is {exitcode}")
 def the_exit_code_is(context, exitcode):
     if context.cmd_exitcode != int(exitcode):
-        raise AssertionError(f"Command has exited with code {context.cmd_exitcode}: {context.cmd}")
+        lines = [
+            f"Command has exited with code {context.cmd_exitcode}: {context.cmd}",
+            "> stdout:",
+            context.cmd_stdout.strip(),
+            "",
+            "> stderr:",
+            context.cmd_stderr.strip(),
+        ]
+        raise AssertionError("\n".join(lines))
     context.cmd_exitcode_checked = True
 
 
