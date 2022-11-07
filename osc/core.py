@@ -7249,7 +7249,7 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
     if data and get_user_meta(apiurl, user) is not None:
         root = ET.fromstring(parse_meta_to_string(data))
         found = False
-        for person in root.getiterator('person'):
+        for person in root.iter('person'):
             if person.get('userid') == user and person.get('role') == role:
                 found = True
                 print("user already exists")
@@ -7284,7 +7284,7 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
     if data and get_user_meta(apiurl, user) is not None:
         root = ET.fromstring(parse_meta_to_string(data))
         found = False
-        for person in root.getiterator('person'):
+        for person in root.iter('person'):
             if person.get('userid') == user and person.get('role') == role:
                 root.remove(person)
                 found = True
@@ -7315,10 +7315,10 @@ def setBugowner(apiurl, prj, pac, user=None, group=None):
         user = None
     if data:
         root = ET.fromstring(parse_meta_to_string(data))
-        for group_element in root.getiterator('group'):
+        for group_element in root.iter('group'):
             if group_element.get('role') == "bugowner":
                 root.remove(group_element)
-        for person_element in root.getiterator('person'):
+        for person_element in root.iter('person'):
             if person_element.get('role') == "bugowner":
                 root.remove(person_element)
         if user:
