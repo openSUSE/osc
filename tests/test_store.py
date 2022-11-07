@@ -98,6 +98,14 @@ class TestStore(unittest.TestCase):
         store2 = Store(self.tmpdir)
         self.assertEqual(store2.apiurl, "https://example.com")
 
+    def test_apiurl_no_trailing_slash(self):
+        self.store.apiurl = "https://example.com/"
+        self.fileEquals("_apiurl", "https://example.com\n")
+
+        self.store.write_string("_apiurl", "https://example.com/")
+        self.fileEquals("_apiurl", "https://example.com/\n")
+        self.assertEqual(self.store.apiurl, "https://example.com")
+
     def test_package(self):
         self.fileEquals("_package", "package name\n")
 

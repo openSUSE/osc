@@ -174,13 +174,22 @@ class Store:
         assert node.tag == node_name
         api.write_xml_node_to_file(node, path)
 
+    def _sanitize_apiurl(self, value):
+        # apiurl shouldn't end with a slash, strip it so we can use apiurl without modifications
+        # in config['api_host_options'][apiurl] and other places
+        if isinstance(value, str):
+            value = value.strip("/")
+        elif isinstance(value, bytes):
+            value = value.strip(b"/")
+        return value
+
     @property
     def apiurl(self):
-        return self.read_string("_apiurl")
+        return self._sanitize_apiurl(self.read_string("_apiurl"))
 
     @apiurl.setter
     def apiurl(self, value):
-        self.write_string("_apiurl", value)
+        self.write_string("_apiurl", self._sanitize_apiurl(value))
 
     @property
     def project(self):
