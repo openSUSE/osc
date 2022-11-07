@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 from osc.commandline import pop_project_package_from_args
-from osc.oscerr import NoWorkingCopy
+from osc.oscerr import NoWorkingCopy, OscValueError
 from osc.store import Store
 
 
@@ -38,10 +38,7 @@ class TestPopProjectPackageFromArgs(unittest.TestCase):
 
     def test_defaults(self):
         args = ["project"]
-        project, package = pop_project_package_from_args(args, default_package="default-package")
-        self.assertEqual(project, "project")
-        self.assertEqual(package, "default-package")
-        self.assertEqual(args, [])
+        self.assertRaises(OscValueError, pop_project_package_from_args, args, default_package="default-package")
 
         args = ["project"]
         project, package = pop_project_package_from_args(

@@ -69,12 +69,14 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
     assert isinstance(args, list)
     path = Path.cwd()
 
+    used_default_project = False
     try:
         project = args.pop(0)
     except IndexError:
         if not default_project:
             raise oscerr.OscValueError("Please specify a project")
         project = default_project
+        used_default_project = True
 
     if not isinstance(project, str):
         raise TypeError(f"Project should be 'str', found: {type(project).__name__}")
@@ -99,6 +101,10 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
         try:
             package = args.pop(0)
         except IndexError:
+            if not package_is_optional and not used_default_project:
+                # package is not optional and it wasn't specified together with the project
+                raise oscerr.OscValueError("Please specify a package")
+
             if default_package:
                 package = default_package
             else:
@@ -748,28 +754,22 @@ class Osc(cmdln.Cmdln):
         Print the devel project / package of a package
 
         Examples:
-            osc develproject PRJ PKG
-            osc develproject
+            osc develproject [PROJECT PACKAGE]
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) == 0:
-            project = store_read_project(Path.cwd())
-            package = store_read_package(Path.cwd())
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        else:
-            raise oscerr.WrongArgs('need Project and Package')
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
 
-        devprj, devpkg = show_devel_project(apiurl, project, package)
-        if devprj is None:
-            print('%s / %s has no devel project' % (project, package))
-        elif devpkg and devpkg != package:
-            print("%s %s" % (devprj, devpkg))
-        else:
-            print(devprj)
+        devel_project, devel_package = show_devel_project(apiurl, project, package)
+
+        if not devel_project:
+            print(f"Package {project}/{package} has no devel project", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"{devel_project}/{devel_package}")
 
     @cmdln.alias('ca')
     def do_cleanassets(self, subcmd, opts, *args):
@@ -794,29 +794,41 @@ class Osc(cmdln.Cmdln):
         """Set the devel project / package of a package
 
         Examples:
-            osc setdevelproject [PRJ PKG] DEVPRJ [DEVPKG]
+            osc setdevelproject [PROJECT PACKAGE] DEVEL_PROJECT [DEVEL_PACKAGE]
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        devprj, devpkg = None, None
-        if len(args) == 3 or len(args) == 4:
-            project, package = self._process_project_name(args[0]), args[1]
-            devprj = self._process_project_name(args[2])
-            if len(args) == 4:
-                devpkg = args[3]
-        elif len(args) >= 1 and len(args) <= 2:
-            project, package = store_read_project(Path.cwd()), store_read_package(Path.cwd())
-            devprj = self._process_project_name(args[0])
-            if len(args) == 2:
-                devpkg = args[1]
+        args = list(args)
+        if opts.unset:
+            project, package = pop_project_package_from_args(
+                args, default_project=".", default_package=".", package_is_optional=False
+            )
+            devel_project = None
+            devel_package = None
         else:
-            if opts.unset:
-                project, package = store_read_project(Path.cwd()), store_read_package(Path.cwd())
-            else:
-                raise oscerr.WrongArgs('need at least DEVPRJ (and possibly DEVPKG)')
+            args_backup = args.copy()
 
-        set_devel_project(apiurl, project, package, devprj, devpkg)
+            try:
+                # try this sequence first: project package devel_project [devel_package]
+                project, package = pop_project_package_from_args(args, package_is_optional=False)
+                devel_project, devel_package = pop_project_package_from_args(
+                    args, default_package=package, package_is_optional=True
+                )
+            except oscerr.OscValueError:
+                # then read project and package from working copy and try devel_project [devel_package]
+                args = args_backup.copy()
+                project, package = pop_project_package_from_args(
+                    [], default_project=".", default_package=".", package_is_optional=False
+                )
+                devel_project, devel_package = pop_project_package_from_args(
+                    args, default_package=package, package_is_optional=True
+                )
+
+        if args:
+            args_str = ", ".join(args)
+            self.argparse_error(f"Unknown arguments: {args_str}")
+
+        set_devel_project(apiurl, project, package, devel_project, devel_package, print_to="stdout")
 
     def do_showlinked(self, subcmd, opts, *args):
         """

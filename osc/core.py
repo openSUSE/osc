@@ -43,6 +43,7 @@ except ImportError:
     distro = None
 
 from . import __version__
+from . import _private
 from . import conf
 from . import meter
 from . import oscerr
@@ -3688,7 +3689,21 @@ def show_devel_project(apiurl, prj, pac):
         return node.get('project'), node.get('package', None)
 
 
-def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None):
+def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debug"):
+    if devprj:
+        msg = "Setting devel project of"
+    else:
+        msg = "Unsetting devel project from"
+
+    msg = _private.format_msg_project_package_options(
+        msg,
+        prj,
+        pac,
+        devprj,
+        devpac,
+    )
+    _private.print_msg(msg, print_to=print_to)
+
     meta = show_package_meta(apiurl, prj, pac)
     root = ET.fromstring(b''.join(meta))
     node = root.find('devel')
