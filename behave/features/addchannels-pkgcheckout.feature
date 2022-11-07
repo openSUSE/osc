@@ -12,7 +12,7 @@ Scenario: Run `osc addchannels`
     When I execute osc with args "addchannels"
     Then stdout is
         """
-        Adding channels to project: 'test:factory' package: 'test-pkgA'
+        Adding channels to package 'test:factory/test-pkgA'
         """
 
 
@@ -20,7 +20,7 @@ Scenario: Run `osc addchannels --enable-all`
     When I execute osc with args "addchannels --enable-all"
     Then stdout is
         """
-        Adding channels to project: 'test:factory' package: 'test-pkgA' options: enable-all
+        Adding channels to package 'test:factory/test-pkgA' options: enable-all
         """
 
 
@@ -28,5 +28,5 @@ Scenario: Run `osc addchannels --skip-disabled`
     When I execute osc with args "addchannels --skip-disabled"
     Then stdout is
         """
-        Adding channels to project: 'test:factory' package: 'test-pkgA' options: skip-disabled
+        Adding channels to package 'test:factory/test-pkgA' options: skip-disabled
         """

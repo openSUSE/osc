@@ -12,5 +12,5 @@ Scenario: Run `osc enablechannels`
     When I execute osc with args "enablechannels"
     Then stdout is
         """
-        Enabling channels in project: 'test:factory' package: 'test-pkgA'
+        Enabling channels in package 'test:factory/test-pkgA'
         """

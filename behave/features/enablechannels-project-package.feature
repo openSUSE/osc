@@ -10,7 +10,7 @@ Scenario: Run `osc enablechannels <project> <package>`
     When I execute osc with args "enablechannels test:factory test-pkgA"
     Then stdout is
         """
-        Enabling channels in project: 'test:factory' package: 'test-pkgA'
+        Enabling channels in package 'test:factory/test-pkgA'
         """
 
 
@@ -18,5 +18,5 @@ Scenario: Run `osc enablechannels <project>/<package>`
     When I execute osc with args "enablechannels test:factory/test-pkgA"
     Then stdout is
         """
-        Enabling channels in project: 'test:factory' package: 'test-pkgA'
+        Enabling channels in package 'test:factory/test-pkgA'
         """
