@@ -3539,6 +3539,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='specify the used block strategy for new repositories')
     @cmdln.option('--add-repositories-rebuild', metavar='add_repositories_rebuild',
                   help='specify the used rebuild strategy for new repositories')
+    @cmdln.option('--disable-build', action='store_true',
+                  help='disable building of the branched package')
     def do_branch(self, subcmd, opts, *args):
         """
         Branch a package
@@ -3608,7 +3610,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            add_repositories_rebuild=opts.add_repositories_rebuild,
                            extend_package_names=opts.extend_package_names,
                            missingok=opts.new_package,
-                           maintenance=opts.maintenance)
+                           maintenance=opts.maintenance,
+                           disable_build=opts.disable_build)
         except oscerr.NotMissing as e:
             print('NOTE: Package target exists already via project links, link will point to given project.')
             print('      A submission will initialize a new instance.')
@@ -3625,7 +3628,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                            extend_package_names=opts.extend_package_names,
                            missingok=False,
                            maintenance=opts.maintenance,
-                           newinstance=opts.new_package)
+                           newinstance=opts.new_package,
+                           disable_build=opts.disable_build)
 
         if exists:
             print('Using existing branch project: %s' % targetprj, file=sys.stderr)

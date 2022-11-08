@@ -5576,7 +5576,7 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, linkrev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, add_repositories_block=None, add_repositories_rebuild=None, extend_package_names=False, missingok=False, maintenance=False, newinstance=False):
+def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, linkrev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, add_repositories_block=None, add_repositories_rebuild=None, extend_package_names=False, missingok=False, maintenance=False, newinstance=False, disable_build=False):
     """
     Branch a package (via API call)
     """
@@ -5636,6 +5636,20 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
     data = {}
     for i in root.findall('data'):
         data[i.get('name')] = i.text
+
+    if disable_build:
+        target_meta = show_package_meta(apiurl, data["targetproject"], data["targetpackage"])
+        root = ET.fromstring(b''.join(target_meta))
+
+        elm = root.find('build')
+        if not elm:
+            elm = ET.SubElement(root, 'build')
+        elm.clear()
+        ET.SubElement(elm, 'disable')
+
+        target_meta = ET.tostring(root, encoding=ET_ENCODING)
+        edit_meta('pkg', path_args=(data["targetproject"], data["targetpackage"]), data=target_meta)
+
     return (False, data.get('targetproject', None), data.get('targetpackage', None),
             data.get('sourceproject', None), data.get('sourcepackage', None))
 
