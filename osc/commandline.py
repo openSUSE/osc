@@ -2867,6 +2867,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='link the specified revision.')
     @cmdln.option('-f', '--force', action='store_true',
                   help='overwrite an existing link file if it is there.')
+    @cmdln.option('--disable-build', action='store_true',
+                  help='disable building of the linked package')
     @cmdln.option('-d', '--disable-publish', action='store_true',
                   help='disable publishing of the linked package')
     @cmdln.option('-N', '--new-package', action='store_true',
@@ -2931,7 +2933,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
-        link_pac(src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount, opts.disable_publish, opts.new_package, vrev)
+        link_pac(
+            src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount,
+            opts.disable_publish, opts.new_package, vrev,
+            disable_build=opts.disable_build,
+        )
 
     @cmdln.option('--nosources', action='store_true',
                   help='ignore source packages when copying build results to destination project')

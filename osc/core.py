@@ -5303,7 +5303,7 @@ def link_to_branch(apiurl, project, package):
         raise oscerr.OscIOError(None, 'no _link file inside project \'%s\' package \'%s\'' % (project, package))
 
 
-def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish=False, missing_target=False, vrev=''):
+def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish=False, missing_target=False, vrev='', disable_build=False):
     """
     create a linked package
      - "src" is the original package
@@ -5332,14 +5332,24 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
             src_meta = show_package_meta(apiurl, src_project, src_package)
             dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
 
-    if disable_publish:
+    if disable_build or disable_publish:
         meta_change = True
         root = ET.fromstring(''.join(dst_meta))
-        elm = root.find('publish')
-        if not elm:
-            elm = ET.SubElement(root, 'publish')
-        elm.clear()
-        ET.SubElement(elm, 'disable')
+
+        if disable_build:
+            elm = root.find('build')
+            if not elm:
+                elm = ET.SubElement(root, 'build')
+            elm.clear()
+            ET.SubElement(elm, 'disable')
+
+        if disable_publish:
+            elm = root.find('publish')
+            if not elm:
+                elm = ET.SubElement(root, 'publish')
+            elm.clear()
+            ET.SubElement(elm, 'disable')
+
         dst_meta = ET.tostring(root, encoding=ET_ENCODING)
 
     if meta_change:
