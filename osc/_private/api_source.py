@@ -66,3 +66,19 @@ def enable_channels(apiurl, project, package=None, print_to="debug"):
         url_query = {"cmd": "modifychannels", "mode": "enable_all"}
 
     return api.post(apiurl, url_path, url_query)
+
+
+def get_linked_packages(apiurl, project, package):
+    url_path = ["source", project, package]
+    url_query = {"cmd": "showlinked"}
+    root = api.post(apiurl, url_path, url_query)
+
+    result = []
+    nodes = api.find_nodes(root, "collection", "package")
+    for node in nodes:
+        item = {
+            "project": node.get("project"),
+            "name": node.get("name"),
+        }
+        result.append(item)
+    return result

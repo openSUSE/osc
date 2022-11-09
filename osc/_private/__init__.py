@@ -6,6 +6,7 @@
 from .api_source import add_channels
 from .api_source import add_containers
 from .api_source import enable_channels
+from .api_source import get_linked_packages
 from .common import print_msg
 from .common import format_msg_project_package_options
 from .package import ApiPackage

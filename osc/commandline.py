@@ -826,24 +826,16 @@ class Osc(cmdln.Cmdln):
             osc showlinked [PROJECT PACKAGE]
         """
 
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        project = package = None
-        if len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif is_package_dir(localdir):
-            project = store_read_project(localdir)
-            package = store_read_package(localdir)
-        else:
-            raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
 
-        url = makeurl(apiurl, ['source', project, package], query={'cmd': 'showlinked'})
-        f = http_POST(url)
-        root = ET.parse(f).getroot()
-        for node in root.findall('package'):
-            print(node.get('project') + " " + node.get('name'))
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
+
+        linked_packages = _private.get_linked_packages(apiurl, project, package)
+        for pkg in linked_packages:
+            print(f"{pkg['project']}/{pkg['name']}")
 
     @cmdln.option('-c', '--create', action='store_true',
                         help='Create a new token')
