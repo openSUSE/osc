@@ -595,28 +595,16 @@ class Osc(cmdln.Cmdln):
             osc addcontainers [PROJECT PACKAGE]
         """
 
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        project = package = None
-        if not args:
-            if is_package_dir(localdir):
-                project = store_read_project(localdir)
-                package = store_read_package(localdir)
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
 
-        if project is None or package is None:
-            raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
 
-        query = {'cmd': 'addcontainers'}
-        if opts.extend_package_names:
-            query['extend_package_names'] = '1'
-
-        print("Add containers...")
-        url = makeurl(apiurl, ['source', project, package], query=query)
-        f = http_POST(url)
+        _private.add_containers(
+            apiurl, project, package, extend_package_names=opts.extend_package_names, print_to="stdout"
+        )
 
     @cmdln.option('-s', '--skip-disabled', action='store_true',
                         help='Skip disabled channels. Otherwise the source gets added, but not the repositories.')

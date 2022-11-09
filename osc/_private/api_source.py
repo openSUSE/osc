@@ -30,6 +30,24 @@ def add_channels(apiurl, project, package=None, enable_all=False, skip_disabled=
     return api.post(apiurl, url_path, url_query)
 
 
+def add_containers(apiurl, project, package, extend_package_names=False, print_to="debug"):
+    msg = format_msg_project_package_options(
+        "Adding containers to",
+        project,
+        package,
+        extend_package_names=extend_package_names,
+    )
+    print_msg(msg, print_to=print_to)
+
+    url_path = ["source", project, package]
+
+    url_query = {"cmd": "addcontainers"}
+    if extend_package_names:
+        url_query["extend_package_names"] = "1"
+
+    return api.post(apiurl, url_path, url_query)
+
+
 def enable_channels(apiurl, project, package=None, print_to="debug"):
     msg = format_msg_project_package_options(
         "Enabling channels in",
