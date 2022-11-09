@@ -2773,27 +2773,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc setlinkrev PROJECT [PACKAGE]
         """
 
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        package = None
+
         rev = parseRevisionOption(opts.revision)[0] or ''
         if opts.unset:
             rev = None
 
+        args = list(args)
         if not args:
             p = Package(Path.cwd())
             project = p.prjname
             package = p.name
-            apiurl = p.apiurl
+            assert apiurl == p.apiurl
             if not p.islink():
                 sys.exit('Local directory is no checked out source link package, aborting')
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif len(args) == 1:
-            project = self._process_project_name(args[0])
         else:
-            self.argparse_error("Incorrect number of arguments.")
+            project, package = pop_project_package_from_args(
+                args, default_project=".", default_package=".", package_is_optional=True
+            )
+
+        if opts.revision and not package:
+            # It is highly unlikely that all links for all packages in a project should be set to the same revision.
+            self.argparse_error("The --revision option requires to specify a package")
 
         if package:
             packages = [package]
@@ -2801,12 +2802,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = meta_get_packagelist(apiurl, project)
 
         for p in packages:
-            rev = set_link_rev(apiurl, project, p, revision=rev,
-                               expand=not opts.use_plain_revision)
+            try:
+                rev = set_link_rev(apiurl, project, p, revision=rev, expand=not opts.use_plain_revision)
+            except HTTPError as e:
+                if e.code != 404:
+                    raise
+                print(f"WARNING: Package {project}/{p} has no link", file=sys.stderr)
+                continue
+
             if rev is None:
-                print('removed revision from link')
+                print(f"Removed link revision from package {project}/{p}")
             else:
-                print('set revision to %s for package %s' % (rev, p))
+                print(f"Set link revision of package {project}/{p} to {rev}")
 
     def do_linktobranch(self, subcmd, opts, *args):
         """
