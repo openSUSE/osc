@@ -6856,30 +6856,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc log (inside working copy)
             osc log remote_project [remote_package]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) == 0:
-            wd = Path.cwd()
-            if is_project_dir(wd) or is_package_dir(wd):
-                project = store_read_project(wd)
-                if is_project_dir(wd):
-                    package = "_project"
-                else:
-                    package = store_read_package(wd)
-            else:
-                raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath(wd))
-        elif len(args) < 1:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
-        elif len(args) == 1:
-            project = self._process_project_name(args[0])
-            package = "_project"
-        else:
-            project = self._process_project_name(args[0])
-            package = args[1]
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
         rev, rev_upper = parseRevisionOption(opts.revision)
         if rev and not checkRevision(project, package, rev, apiurl, opts.meta):

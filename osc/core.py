@@ -6881,6 +6881,9 @@ def print_jobhistory(apiurl: str, prj: str, current_package: str, repository: st
 def get_commitlog(
     apiurl: str, prj: str, package: str, revision, format="text", meta=False, deleted=False, revision_upper=None
 ):
+    if package is None:
+        package = "_project"
+
     query = {}
     if deleted:
         query['deleted'] = 1
