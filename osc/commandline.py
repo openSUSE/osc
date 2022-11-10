@@ -3136,51 +3136,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         It requires defined release targets set to trigger="manual".
 
         usage:
-            osc release [ SOURCEPROJECT [ SOURCEPACKAGE ] ]
+            osc release [PROJECT [PACKAGE]]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        source_project = source_package = None
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
-        if len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
-
-        if len(args) == 0:
-            if is_package_dir(Path.cwd()):
-                source_project = store_read_project(Path.cwd())
-                source_package = store_read_package(Path.cwd())
-            elif is_project_dir(Path.cwd()):
-                source_project = store_read_project(Path.cwd())
-            else:
-                raise oscerr.WrongArgs('Too few arguments.')
-        if len(args) > 0:
-            source_project = self._process_project_name(args[0])
-        if len(args) > 1:
-            source_package = args[1]
-
-        query = {'cmd': 'release'}
-        if opts.target_project:
-            query["target_project"] = opts.target_project
-        if opts.target_repository:
-            query["target_repository"] = opts.target_repository
-        if opts.repo:
-            query["repository"] = opts.repo
-        if opts.set_release:
-            query["setrelease"] = opts.set_release
-        if opts.no_delay:
-            query["nodelay"] = "1"
-        baseurl = ['source', source_project]
-        if source_package:
-            baseurl.append(source_package)
-        url = makeurl(apiurl, baseurl, query=query)
-        f = http_POST(url)
-        while True:
-            buf = f.read(16384)
-            if not buf:
-                break
-            sys.stdout.write(decode_it(buf))
+        _private.release(
+            apiurl,
+            project=project,
+            package=package,
+            repository=opts.repo,
+            target_project=opts.target_project,
+            target_repository=opts.target_repository,
+            set_release_to=opts.set_release,
+            delayed=not opts.no_delay,
+            print_to="stdout",
+        )
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')

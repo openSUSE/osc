@@ -82,3 +82,45 @@ def get_linked_packages(apiurl, project, package):
         }
         result.append(item)
     return result
+
+
+def release(
+    apiurl,
+    project,
+    package,
+    repository,
+    target_project,
+    target_repository,
+    set_release_to=None,
+    delayed=False,
+    print_to="debug",
+):
+    msg = format_msg_project_package_options(
+        "Releasing",
+        project,
+        package,
+        target_project,
+        target_package=None,
+        repository=repository,
+        dest_repository=target_repository,
+        delayed=delayed,
+    )
+    print_msg(msg, print_to=print_to)
+
+    url_path = ["source", project]
+    if package:
+        url_path += [package]
+
+    url_query = {"cmd": "release"}
+    if repository:
+        url_query["repository"] = repository
+    if target_project:
+        url_query["target_project"] = target_project
+    if target_repository:
+        url_query["target_repository"] = target_repository
+    if set_release_to:
+        url_query["setrelease"] = set_release_to
+    if not delayed:
+        url_query["nodelay"] = "1"
+
+    return api.post(apiurl, url_path, url_query)
