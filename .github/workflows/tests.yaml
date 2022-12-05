@@ -1,4 +1,4 @@
-name: 'unit tests'
+name: 'tests'
 
 on:
   push:
@@ -15,8 +15,8 @@ on:
       - 'tests/**'
 
 jobs:
-  test:
-    name: 'unit tests'
+  unit:
+    name: "unit"
     runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false
@@ -91,3 +91,26 @@ jobs:
       - name: 'Upload coverage reports to Codecov (openSUSE Tumbleweed)'
         if: ${{ matrix.container == 'opensuse/tumbleweed' }}
         uses: codecov/codecov-action@v3
+
+  behave:
+    name: "behave"
+    # to save resources, run only after unit tests have passed
+    needs: unit
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Install packages"
+        run: |
+            sudo apt-get -y update
+            sudo apt-get -y --no-install-recommends install python3-behave diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
+
+      - name: "Checkout sources"
+        uses: actions/checkout@v3
+
+      - name: "Pull container image"
+        run: |
+          podman pull ghcr.io/suse-autobuild/obs-server:latest
+
+      - name: "Run tests"
+        run: |
+          cd behave
+          behave -Dosc=../osc-wrapper.py

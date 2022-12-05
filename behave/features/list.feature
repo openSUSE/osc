@@ -1,4 +1,3 @@
-@no-snapshot
 Feature: `osc list` command
 
 
@@ -6,9 +5,11 @@ Scenario: Run `osc list` with no arguments to display all projects
    When I execute osc with args "list"
    Then stdout is
         """
+        devel
         home:Admin
         openSUSE.org
         openSUSE:Factory
+        release
         """
 
 

@@ -1,8 +1,8 @@
 import os
 
-from steps import kanku
-from steps import osc
 from steps import common
+from steps import osc
+from steps import podman
 
 
 def before_step(context, step):
@@ -14,18 +14,20 @@ def after_step(context, step):
 
 
 def before_scenario(context, scenario):
-    context.osc = osc.Osc(context)
+    pass
 
 
 def after_scenario(context, scenario):
+    if "destructive" in scenario.tags:
+        # start a new container after a destructive test
+        context.podman.kill()
+        context.podman = podman.Podman()
+    context.osc.clear()
     common.check_exit_code(context)
-    del context.osc
 
 
 def before_feature(context, feature):
-    # decorate Feature with @no-snapshot to avoid doing a snapshot rollback
-    if "no-snapshot" not in feature.tags:
-        context.kanku.revert_to_snapshot()
+    pass
 
 
 def after_feature(context, feature):
@@ -44,14 +46,12 @@ def before_all(context):
     # absolute path to .../behave/fixtures
     context.fixtures = os.path.join(os.path.dirname(__file__), "..", "fixtures")
 
-    kankufile = os.path.join(os.path.dirname(__file__), "..", "KankuFile")
-    context.kanku = kanku.Kanku(context, kankufile)
-
-    # This fails if the snapshot exists already.
-    # It's ok in most cases, because it's the same snapshot we'd normally create.
-    context.kanku.create_snapshot()
+    context.podman = podman.Podman()
+    context.osc = osc.Osc(context)
 
 
 def after_all(context):
-    del context.kanku
+    del context.osc
+    context.podman.kill()
+    del context.podman
     del context.fixtures

@@ -1,6 +1,6 @@
-<project name="openSUSE:Factory">
+<project name="devel">
 
-  <title>The next openSUSE distribution</title>
+  <title>Devel project</title>
   <description/>
 
   <person userid="Admin" role="maintainer"/>
@@ -24,4 +24,3 @@
   </repository>
 
 </project>
-

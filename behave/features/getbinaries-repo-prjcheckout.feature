@@ -1,4 +1,3 @@
-@no-snapshot
 Feature: `osc getbinaries <repo>` command from a project checkout
 
 
@@ -13,14 +12,14 @@ Scenario: Run `osc getbinaries <repo>` from a project checkout
     When I execute osc with args "getbinaries standard"
     Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
         """
-        multibuild-pkg-1-1.1.i586.rpm
-        multibuild-pkg-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor1-1-1.1.i586.rpm
-        multibuild-pkg-flavor1-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor2-1-1.1.i586.rpm
-        multibuild-pkg-flavor2-1-1.1.x86_64.rpm
-        test-pkgA-3-1.1.noarch.rpm
-        test-pkgB-2-1.1.noarch.rpm
+        multibuild-pkg-1-1.i586.rpm
+        multibuild-pkg-1-1.x86_64.rpm
+        multibuild-pkg-flavor1-1-1.i586.rpm
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        multibuild-pkg-flavor2-1-1.i586.rpm
+        multibuild-pkg-flavor2-1-1.x86_64.rpm
+        test-pkgA-3-1.noarch.rpm
+        test-pkgB-2-1.noarch.rpm
         multibuild-pkg/_buildenv
         multibuild-pkg/_statistics
         multibuild-pkg/rpmlint.log
@@ -49,19 +48,19 @@ Scenario: Run `osc getbinaries <repo> --sources` from a project checkout
     When I execute osc with args "getbinaries standard --sources"
     Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
         """
-        multibuild-pkg-1-1.1.i586.rpm
-        multibuild-pkg-1-1.1.src.rpm
-        multibuild-pkg-1-1.1.x86_64.rpm
-        multibuild-pkg-1-1.1.src.rpm
-        multibuild-pkg-flavor1-1-1.1.i586.rpm
-        multibuild-pkg-flavor1-1-1.1.x86_64.rpm
-        multibuild-pkg-1-1.1.src.rpm
-        multibuild-pkg-flavor2-1-1.1.i586.rpm
-        multibuild-pkg-flavor2-1-1.1.x86_64.rpm
-        test-pkgA-3-1.1.noarch.rpm
-        test-pkgA-3-1.1.src.rpm
-        test-pkgB-2-1.1.noarch.rpm
-        test-pkgB-2-1.1.src.rpm
+        multibuild-pkg-1-1.i586.rpm
+        multibuild-pkg-1-1.src.rpm
+        multibuild-pkg-1-1.x86_64.rpm
+        multibuild-pkg-1-1.src.rpm
+        multibuild-pkg-flavor1-1-1.i586.rpm
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        multibuild-pkg-1-1.src.rpm
+        multibuild-pkg-flavor2-1-1.i586.rpm
+        multibuild-pkg-flavor2-1-1.x86_64.rpm
+        test-pkgA-3-1.noarch.rpm
+        test-pkgA-3-1.src.rpm
+        test-pkgB-2-1.noarch.rpm
+        test-pkgB-2-1.src.rpm
         multibuild-pkg/_buildenv
         multibuild-pkg/_statistics
         multibuild-pkg/rpmlint.log
@@ -84,22 +83,22 @@ Scenario: Run `osc getbinaries <repo> --debuginfo` from a project checkout
     When I execute osc with args "getbinaries standard --debuginfo"
     Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
         """
-        multibuild-pkg-1-1.1.i586.rpm
-        multibuild-pkg-1-1.1.x86_64.rpm
-        multibuild-pkg-debuginfo-1-1.1.i586.rpm
-        multibuild-pkg-debuginfo-1-1.1.x86_64.rpm
-        multibuild-pkg-debugsource-1-1.1.i586.rpm
-        multibuild-pkg-debugsource-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor1-1-1.1.i586.rpm
-        multibuild-pkg-flavor1-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor1-debuginfo-1-1.1.i586.rpm
-        multibuild-pkg-flavor1-debuginfo-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor2-1-1.1.i586.rpm
-        multibuild-pkg-flavor2-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor2-debuginfo-1-1.1.i586.rpm
-        multibuild-pkg-flavor2-debuginfo-1-1.1.x86_64.rpm
-        test-pkgA-3-1.1.noarch.rpm
-        test-pkgB-2-1.1.noarch.rpm
+        multibuild-pkg-1-1.i586.rpm
+        multibuild-pkg-1-1.x86_64.rpm
+        multibuild-pkg-debuginfo-1-1.i586.rpm
+        multibuild-pkg-debuginfo-1-1.x86_64.rpm
+        multibuild-pkg-debugsource-1-1.i586.rpm
+        multibuild-pkg-debugsource-1-1.x86_64.rpm
+        multibuild-pkg-flavor1-1-1.i586.rpm
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        multibuild-pkg-flavor1-debuginfo-1-1.i586.rpm
+        multibuild-pkg-flavor1-debuginfo-1-1.x86_64.rpm
+        multibuild-pkg-flavor2-1-1.i586.rpm
+        multibuild-pkg-flavor2-1-1.x86_64.rpm
+        multibuild-pkg-flavor2-debuginfo-1-1.i586.rpm
+        multibuild-pkg-flavor2-debuginfo-1-1.x86_64.rpm
+        test-pkgA-3-1.noarch.rpm
+        test-pkgB-2-1.noarch.rpm
         multibuild-pkg/_buildenv
         multibuild-pkg/_statistics
         multibuild-pkg/rpmlint.log

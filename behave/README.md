@@ -1,49 +1,66 @@
-Prerequisities
---------------
-First of all, we need to install requirements:
-```
-# optional step in case we want to use the latest kanku packages
-$ zypper ar obs://devel:kanku:staging devel:kanku:staging
+Install requirements
+--------------------
 
+On openSUSE:
+```
+$ zypper install osc podman python3-behave
+```
+
+On Fedora:
+```
+$ dnf install osc podman python3-behave
+```
+
+
+Build a container with OBS
+--------------------------
+
+```
 $ cd behave
-$ rpmbuild -bs --define='_srcrpmdir .' requirements.spec
-$ sudo zypper source-install --build-deps-only ./osc-behave-requirements-1-0.src.rpm
+
+# optional: refresh the base image
+$ podman pull opensuse/leap:15.4
+
+# build the container image
+$ ./container-build.sh [--no-cache]
 ```
 
-Then we need to build 'obs-server' VM using kanku:
+We can also use the built container outside the test suite
 ```
-# necessary if the 'obs-server' domain exists already
-$ kanku destroy
+$ cd behave
 
-$ kanku up [--skip_all_checks]
+# run 'obs-server' container on port 1443
+$ ./container-run.sh
+
+# shell into the started container
+$ ./container-shell.sh
+
+# stop the started container
+$ podman stop|kill obs-server
+
+# remove container image
+$ podman rmi obs-server
 ```
 
-
-Running tests
--------------
+Run tests
+---------
 
 Run all tests
 ```
 $ cd behave
-$ behave
+$ behave -Dosc=../osc-wrapper.py
 ```
 
 Run selected tests
 ```
 $ cd behave
-$ behave features/<file>.feature
+$ behave -Dosc=../osc-wrapper.py features/<file>.feature
 ```
 
 Run tests being worked on (decorated with `@wip`)
 ```
 $ cd behave
-behave --wip -k
-```
-
-Run tests with the selected `osc` executable
-```
-$ cd behave
-behave -Dosc=../osc-wrapper.py
+behave -Dosc=../osc-wrapper.py --wip -k
 ```
 
 

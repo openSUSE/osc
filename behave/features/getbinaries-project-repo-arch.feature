@@ -1,4 +1,3 @@
-@no-snapshot
 Feature: `osc getbinaries <project> <repo> <arch>` command
 
 
@@ -11,11 +10,11 @@ Scenario: Run `osc getbinaries <project> <repo> <arch>`
     When I execute osc with args "getbinaries openSUSE:Factory standard x86_64"
     Then directory tree in "{context.osc.temp}/binaries/" is
         """
-        multibuild-pkg-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor1-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor2-1-1.1.x86_64.rpm
-        test-pkgA-3-1.1.noarch.rpm
-        test-pkgB-2-1.1.noarch.rpm
+        multibuild-pkg-1-1.x86_64.rpm
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        multibuild-pkg-flavor2-1-1.x86_64.rpm
+        test-pkgA-3-1.noarch.rpm
+        test-pkgB-2-1.noarch.rpm
         multibuild-pkg/_buildenv
         multibuild-pkg/_statistics
         multibuild-pkg/rpmlint.log
@@ -44,15 +43,15 @@ Scenario: Run `osc getbinaries <project> <repo> <arch> --debuginfo`
     When I execute osc with args "getbinaries openSUSE:Factory standard x86_64 --debuginfo"
     Then directory tree in "{context.osc.temp}/binaries/" is
         """
-        multibuild-pkg-1-1.1.x86_64.rpm
-        multibuild-pkg-debuginfo-1-1.1.x86_64.rpm
-        multibuild-pkg-debugsource-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor1-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor1-debuginfo-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor2-1-1.1.x86_64.rpm
-        multibuild-pkg-flavor2-debuginfo-1-1.1.x86_64.rpm
-        test-pkgA-3-1.1.noarch.rpm
-        test-pkgB-2-1.1.noarch.rpm
+        multibuild-pkg-1-1.x86_64.rpm
+        multibuild-pkg-debuginfo-1-1.x86_64.rpm
+        multibuild-pkg-debugsource-1-1.x86_64.rpm
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        multibuild-pkg-flavor1-debuginfo-1-1.x86_64.rpm
+        multibuild-pkg-flavor2-1-1.x86_64.rpm
+        multibuild-pkg-flavor2-debuginfo-1-1.x86_64.rpm
+        test-pkgA-3-1.noarch.rpm
+        test-pkgB-2-1.noarch.rpm
         multibuild-pkg/_buildenv
         multibuild-pkg/_statistics
         multibuild-pkg/rpmlint.log
