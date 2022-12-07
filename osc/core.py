@@ -4197,7 +4197,8 @@ def run_pager(message, tmp_suffix=''):
         else:
             tmpfile.write(message)
         tmpfile.flush()
-        pager = os.getenv('PAGER', default=get_default_pager())
+        pager = os.getenv("PAGER", default="").strip()
+        pager = pager or get_default_pager()
         cmd = shlex.split(pager) + [tmpfile.name]
         try:
             run_external(*cmd)
@@ -4212,7 +4213,8 @@ def run_editor(filename):
 
 
 def _editor_command():
-    editor = os.getenv('EDITOR', default=get_default_editor())
+    editor = os.getenv("EDITOR", default="").strip()
+    editor = editor or get_default_editor()
     try:
         cmd = shlex.split(editor)
     except SyntaxError:
