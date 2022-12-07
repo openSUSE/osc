@@ -1,4 +1,6 @@
+%if %undefined flavor
 %define flavor @BUILD_FLAVOR@%{nil}
+%endif
 
 # create own debug packages, because the auto-generated would get removed due to being empty
 %undefine _debuginfo_subpackages
@@ -6,7 +8,7 @@
 
 Name:           multibuild-pkg
 Version:        1
-Release:        0
+Release:        1
 License:        GPL-2.0
 Summary:        Test package
 URL:            https://example.com/test-package/

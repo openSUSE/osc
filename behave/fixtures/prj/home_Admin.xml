@@ -5,6 +5,18 @@
 
   <person userid="Admin" role="maintainer"/>
 
+  <build>
+    <disable/>
+  </build>
+
+  <publish>
+    <disable/>
+  </publish>
+
+  <useforbuild>
+    <disable/>
+  </useforbuild>
+
   <repository name="openSUSE_Tumbleweed">
     <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
     <arch>x86_64</arch>

@@ -1,4 +1,3 @@
-@no-snapshot
 Feature: `osc add` command
 
 
