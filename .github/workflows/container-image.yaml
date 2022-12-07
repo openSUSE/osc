@@ -1,0 +1,42 @@
+name: "Container image build for behave testing"
+on:
+  schedule:
+    - cron:  "0 2 * * 1"  # every Monday at 2am UTC
+
+  # allow manual execution from the GitHub web interface
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: "Build obs-server:latest container image"
+    if: ${{ github.repository == 'openSUSE/osc' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Login to ghcr.io"
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          echo "$GHCR_TOKEN" | podman login ghcr.io -u "$GHCR_USER" --password-stdin
+
+      - name: "Checkout sources"
+        uses: actions/checkout@v3
+
+      # This step is necessary to avoid the following error during podman build:
+      # (13)Permission denied: AH00072: make_sock: could not bind to address 0.0.0.0:80
+      - name: "Allow binding privileged ports"
+        run: |
+          sudo sysctl net.ipv4.ip_unprivileged_port_start=0
+
+      - name: "Build image"
+        env:
+          REPO: ${{ github.repository }}
+        run: |
+          cd behave
+          ./container-build.sh --squash  --label="org.opencontainers.image.source=https://github.com/$REPO"
+
+      - name: "Push image to ghcr.io"
+        env:
+          GHCR_USER: ${{ secrets.GHCR_USER }}
+        run: |
+          podman push obs-server:latest "ghcr.io/$GHCR_USER/obs-server:latest"
