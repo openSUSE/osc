@@ -147,7 +147,7 @@ def http_request_wrap_file(func):
 
 
 @http_request_wrap_file
-def http_request(method, url, headers=None, data=None, file=None):
+def http_request(method: str, url: str, headers=None, data=None, file=None):
     """
     Send a HTTP request to a server.
 
