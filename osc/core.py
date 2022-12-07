@@ -31,7 +31,7 @@ import time
 from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
-from typing import Optional, Dict, Union, List
+from typing import Optional, Dict, Union, List, Iterable
 from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
 from urllib.error import HTTPError
 from urllib.request import pathname2url
@@ -2994,7 +2994,7 @@ class Request:
         """add a new action to the request"""
         self.actions.append(Action(type, **kwargs))
 
-    def get_actions(self, *types):
+    def get_actions(self, *types) -> List[Action]:
         """
         get all actions with a specific type
         (if types is empty return all actions)
@@ -3064,7 +3064,7 @@ class Request:
             d['by'] += '(%s)' % review.who
         return d
 
-    def format_action(self, action, show_srcupdate=False):
+    def format_action(self, action: Action, show_srcupdate=False):
         """
         format an action depending on the action's type.
         A dict which contains the formatted str's is returned.
@@ -3263,7 +3263,7 @@ def is_package_dir(d):
         os.path.exists(os.path.join(d, store, '_package'))
 
 
-def parse_disturl(disturl):
+def parse_disturl(disturl: str):
     """Parse a disturl, returns tuple (apiurl, project, source, repository,
     revision), else raises an oscerr.WrongArgs exception
     """
@@ -3280,7 +3280,7 @@ def parse_disturl(disturl):
     return (apiurl, m.group('project'), m.group('source'), m.group('repository'), m.group('revision'))
 
 
-def parse_buildlogurl(buildlogurl):
+def parse_buildlogurl(buildlogurl: str):
     """Parse a build log url, returns a tuple (apiurl, project, package,
     repository, arch), else raises oscerr.WrongArgs exception"""
 
@@ -3516,7 +3516,9 @@ def meta_get_packagelist(apiurl: str, prj, deleted=None, expand=False):
     return [node.get('name') for node in root.findall('entry')]
 
 
-def meta_get_filelist(apiurl: str, prj, package, verbose=False, expand=False, revision=None, meta=False, deleted=False):
+def meta_get_filelist(
+    apiurl: str, prj: str, package: str, verbose=False, expand=False, revision=None, meta=False, deleted=False
+):
     """return a list of file names,
     or a list File() instances if verbose=True"""
 
@@ -3709,7 +3711,7 @@ def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None):
     mf.sync()
 
 
-def show_package_disabled_repos(apiurl, prj, pac):
+def show_package_disabled_repos(apiurl: str, prj: str, pac: str):
     m = show_package_meta(apiurl, prj, pac)
     # FIXME: don't work if all repos of a project are disabled and only some are enabled since <disable/> is empty
     try:
@@ -3726,7 +3728,7 @@ def show_package_disabled_repos(apiurl, prj, pac):
         return None
 
 
-def show_pattern_metalist(apiurl, prj):
+def show_pattern_metalist(apiurl: str, prj: str):
     url = makeurl(apiurl, ['source', prj, '_pattern'])
     try:
         f = http_GET(url)
@@ -3738,7 +3740,7 @@ def show_pattern_metalist(apiurl, prj):
     return r
 
 
-def show_pattern_meta(apiurl, prj, pattern):
+def show_pattern_meta(apiurl: str, prj: str, pattern: str):
     url = makeurl(apiurl, ['source', prj, '_pattern', pattern])
     try:
         f = http_GET(url)
@@ -3884,11 +3886,7 @@ metatypes = {'prj': {'path': 'source/%s/_meta',
              }
 
 
-def meta_exists(metatype,
-                path_args=None,
-                template_args=None,
-                create_new=True,
-                apiurl=None):
+def meta_exists(metatype: str, path_args=None, template_args=None, create_new=True, apiurl=None):
 
     global metatypes
 
@@ -3908,7 +3906,14 @@ def meta_exists(metatype,
     return data
 
 
-def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_linking_repositories=False, msg=None):
+def make_meta_url(
+    metatype: str,
+    path_args=None,
+    apiurl: Optional[str] = None,
+    force=False,
+    remove_linking_repositories=False,
+    msg=None,
+):
     global metatypes
 
     if not apiurl:
@@ -3931,7 +3936,7 @@ def make_meta_url(metatype, path_args=None, apiurl=None, force=False, remove_lin
     return makeurl(apiurl, [path], query)
 
 
-def parse_meta_to_string(data):
+def parse_meta_to_string(data: Union[bytes, list, Iterable]) -> str:
     """
     Converts the output of meta_exists into a string value
     """
@@ -3944,16 +3949,18 @@ def parse_meta_to_string(data):
     return ''.join(data)
 
 
-def edit_meta(metatype,
-              path_args=None,
-              data=None,
-              template_args=None,
-              edit=False,
-              force=False,
-              remove_linking_repositories=False,
-              change_is_required=False,
-              apiurl=None,
-              msg=None):
+def edit_meta(
+    metatype,
+    path_args=None,
+    data: Optional[List[str]] = None,
+    template_args=None,
+    edit=False,
+    force=False,
+    remove_linking_repositories=False,
+    change_is_required=False,
+    apiurl: Optional[str] = None,
+    msg=None,
+):
 
     global metatypes
 
@@ -3993,7 +4000,17 @@ def edit_meta(metatype,
         f.sync()
 
 
-def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None, linkrepair=False, meta=False, deleted=False):
+def show_files_meta(
+    apiurl: str,
+    prj: str,
+    pac: str,
+    revision=None,
+    expand=False,
+    linkrev=None,
+    linkrepair=False,
+    meta=False,
+    deleted=False,
+):
     query = {}
     if revision:
         query['rev'] = revision
@@ -4015,7 +4032,9 @@ def show_files_meta(apiurl, prj, pac, revision=None, expand=False, linkrev=None,
     return f.read()
 
 
-def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=False, include_service_files=False, deleted=False):
+def show_upstream_srcmd5(
+    apiurl: str, prj: str, pac: str, expand=False, revision=None, meta=False, include_service_files=False, deleted=False
+):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
     et = ET.fromstring(m)
     if include_service_files:
@@ -4028,8 +4047,19 @@ def show_upstream_srcmd5(apiurl, prj, pac, expand=False, revision=None, meta=Fal
     return et.get('srcmd5')
 
 
-def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False):
-    m = show_files_meta(apiurl, prj, pac, revision=revision, linkrev=linkrev, linkrepair=linkrepair, meta=meta, expand=include_service_files)
+def show_upstream_xsrcmd5(
+    apiurl: str, prj, pac, revision=None, linkrev=None, linkrepair=False, meta=False, include_service_files=False
+):
+    m = show_files_meta(
+        apiurl,
+        prj,
+        pac,
+        revision=revision,
+        linkrev=linkrev,
+        linkrepair=linkrepair,
+        meta=meta,
+        expand=include_service_files,
+    )
     et = ET.fromstring(m)
     if include_service_files:
         return et.get('srcmd5')
@@ -4046,7 +4076,7 @@ def show_upstream_xsrcmd5(apiurl, prj, pac, revision=None, linkrev=None, linkrep
     return li.xsrcmd5
 
 
-def show_project_sourceinfo(apiurl, project, nofilename, *packages):
+def show_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages):
     query = ['view=info']
     if packages:
         query.extend(['package=%s' % quote_plus(p) for p in packages])
@@ -4056,7 +4086,7 @@ def show_project_sourceinfo(apiurl, project, nofilename, *packages):
     return f.read()
 
 
-def get_project_sourceinfo(apiurl, project, nofilename, *packages):
+def get_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages):
     try:
         si = show_project_sourceinfo(apiurl, project, nofilename, *packages)
     except HTTPError as e:
@@ -4082,13 +4112,15 @@ def get_project_sourceinfo(apiurl, project, nofilename, *packages):
     return res
 
 
-def show_upstream_rev_vrev(apiurl, prj, pac, revision=None, expand=False, meta=False):
+def show_upstream_rev_vrev(apiurl: str, prj, pac, revision=None, expand=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, meta=meta)
     et = ET.fromstring(m)
     return et.get('rev'), et.get('vrev')
 
 
-def show_upstream_rev(apiurl, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False):
+def show_upstream_rev(
+    apiurl: str, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False
+):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
     et = ET.fromstring(m)
     if include_service_files:
@@ -4291,7 +4323,7 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
     return msg
 
 
-def clone_request(apiurl, reqid, msg=None):
+def clone_request(apiurl: str, reqid, msg=None):
     query = {'cmd': 'branch', 'request': reqid}
     url = makeurl(apiurl, ['source'], query)
     r = http_POST(url, data=msg)
@@ -4307,7 +4339,7 @@ def clone_request(apiurl, reqid, msg=None):
 # create a maintenance release request
 
 
-def create_release_request(apiurl, src_project, message=''):
+def create_release_request(apiurl: str, src_project, message=""):
     r = Request()
     # api will complete the request
     r.add_action('maintenance_release', src_project=src_project)
@@ -4318,7 +4350,17 @@ def create_release_request(apiurl, src_project, message=''):
 # create a maintenance incident per request
 
 
-def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, tgt_releaseproject, opt_sourceupdate, message='', enforce_branching=False, rev=None):
+def create_maintenance_request(
+    apiurl: str,
+    src_project,
+    src_packages,
+    tgt_project,
+    tgt_releaseproject,
+    opt_sourceupdate,
+    message="",
+    enforce_branching=False,
+    rev=None,
+):
     r = Request()
     if src_packages:
         for p in src_packages:
@@ -4330,10 +4372,17 @@ def create_maintenance_request(apiurl, src_project, src_packages, tgt_project, t
     return r
 
 
-def create_submit_request(apiurl,
-                          src_project, src_package=None,
-                          dst_project=None, dst_package=None,
-                          message="", orev=None, src_update=None, dst_updatelink=None):
+def create_submit_request(
+    apiurl: str,
+    src_project: str,
+    src_package: Optional[str] = None,
+    dst_project: Optional[str] = None,
+    dst_package: Optional[str] = None,
+    message="",
+    orev=None,
+    src_update=None,
+    dst_updatelink=None,
+):
     options_block = ""
     package = ""
     if src_package:
@@ -4402,7 +4451,7 @@ def create_submit_request(apiurl,
     return r
 
 
-def get_request(apiurl, reqid):
+def get_request(apiurl: str, reqid):
     u = makeurl(apiurl, ['request', reqid], {'withfullhistory': '1'})
     f = http_GET(u)
     root = ET.parse(f).getroot()
@@ -4412,8 +4461,10 @@ def get_request(apiurl, reqid):
     return r
 
 
-def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_project='', by_package='', message='', supersed=None):
-    query = {'cmd': 'changereviewstate', 'newstate': newstate}
+def change_review_state(
+    apiurl: str, reqid, newstate, by_user="", by_group="", by_project="", by_package="", message="", supersed=None
+):
+    query = {"cmd": "changereviewstate", "newstate": newstate}
     if by_user:
         query['by_user'] = by_user
     if by_group:
@@ -4430,8 +4481,8 @@ def change_review_state(apiurl, reqid, newstate, by_user='', by_group='', by_pro
     return root.get('code')
 
 
-def change_request_state(apiurl, reqid, newstate, message='', supersed=None, force=False):
-    query = {'cmd': 'changestate', 'newstate': newstate}
+def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None, force=False):
+    query = {"cmd": "changestate", "newstate": newstate}
     if supersed:
         query['superseded_by'] = supersed
     if force:
@@ -4464,8 +4515,9 @@ def change_request_state_template(req, newstate):
         return ''
 
 
-def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=(),
-                    req_type=''):
+def get_review_list(
+    apiurl: str, project="", package="", byuser="", bygroup="", byproject="", bypackage="", states=(), req_type=""
+):
     # this is so ugly...
     def build_by(xpath, val):
         if 'all' in states:
@@ -4526,11 +4578,17 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
 
 # this function uses the logic in the api which is faster and more exact then the xpath search
 def get_request_collection(
-        apiurl,
-        user=None, group=None, roles=None,
-        project=None, package=None,
-        states=None, review_states=None,
-        types=None, ids=None):
+    apiurl: str,
+    user=None,
+    group=None,
+    roles=None,
+    project=None,
+    package=None,
+    states=None,
+    review_states=None,
+    types=None,
+    ids=None,
+):
 
     # We don't want to overload server by requesting everything.
     # Let's enforce specifying at least some search criteria.
@@ -4583,9 +4641,18 @@ def get_request_collection(
     return requests
 
 
-def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, dst_package=None, req_who=None, req_state=('new', 'review', 'declined'), req_type=None):
-    xpath = ''
-    if 'all' not in req_state:
+def get_exact_request_list(
+    apiurl: str,
+    src_project: str,
+    dst_project: str,
+    src_package: Optional[str] = None,
+    dst_package: Optional[str] = None,
+    req_who: Optional[str] = None,
+    req_state=("new", "review", "declined"),
+    req_type: Optional[str] = None,
+):
+    xpath = ""
+    if "all" not in req_state:
         for state in req_state:
             xpath = xpath_join(xpath, 'state/@name=\'%s\'' % state, op='or', inner=True)
         xpath = '(%s)' % xpath
@@ -4615,9 +4682,17 @@ def get_exact_request_list(apiurl, src_project, dst_project, src_package=None, d
     return requests
 
 
-def get_request_list(apiurl, project='', package='', req_who='',
-                     req_state=('new', 'review', 'declined'), req_type=None,
-                     exclude_target_projects=None, withfullhistory=False, roles=None):
+def get_request_list(
+    apiurl: str,
+    project="",
+    package="",
+    req_who="",
+    req_state=("new", "review", "declined"),
+    req_type=None,
+    exclude_target_projects=None,
+    withfullhistory=False,
+    roles=None,
+):
 
     import warnings
     warnings.warn(
@@ -4642,7 +4717,17 @@ def get_request_list(apiurl, project='', package='', req_who='',
 
 
 # old style search, this is to be removed
-def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), req_type=None, exclude_projects=None, projpkgs=None):
+def get_user_projpkgs_request_list(
+    apiurl: str,
+    user,
+    req_state=(
+        "new",
+        "review",
+    ),
+    req_type=None,
+    exclude_projects=None,
+    projpkgs=None,
+):
     """OBSOLETE: user involved request search is supported by OBS 2.2 server side in a better way
        Return all running requests for all projects/packages where is user is involved"""
     exclude_projects = exclude_projects or []
@@ -4684,7 +4769,7 @@ def get_user_projpkgs_request_list(apiurl, user, req_state=('new', 'review', ), 
     return result
 
 
-def get_request_log(apiurl, reqid):
+def get_request_log(apiurl: str, reqid):
     r = get_request(apiurl, reqid)
     data = []
     frmt = '-' * 76 + '\n%s | %s | %s\n\n%s'
@@ -4701,12 +4786,18 @@ def get_request_log(apiurl, reqid):
     return data
 
 
-def check_existing_requests(apiurl, src_project, src_package, dst_project,
-                            dst_package, ask=True):
-    reqs = get_exact_request_list(apiurl, src_project, dst_project,
-                                  src_package, dst_package,
-                                  req_type='submit',
-                                  req_state=['new', 'review', 'declined'])
+def check_existing_requests(
+    apiurl: str, src_project: str, src_package: str, dst_project: str, dst_package: str, ask=True
+):
+    reqs = get_exact_request_list(
+        apiurl,
+        src_project,
+        dst_project,
+        src_package,
+        dst_package,
+        req_type="submit",
+        req_state=["new", "review", "declined"],
+    )
     if not ask:
         return True, reqs
     repl = ''
@@ -4728,14 +4819,20 @@ def check_existing_requests(apiurl, src_project, src_package, dst_project,
     return repl == 'y', reqs
 
 
-def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_project,
-                                        release_project, ask=True):
+def check_existing_maintenance_requests(
+    apiurl: str, src_project: str, src_packages: List[str], dst_project: str, release_project, ask=True
+):
     reqs = []
     for src_package in src_packages:
-        reqs += get_exact_request_list(apiurl, src_project, dst_project,
-                                       src_package, None,
-                                       req_type='maintenance_incident',
-                                       req_state=['new', 'review', 'declined'])
+        reqs += get_exact_request_list(
+            apiurl,
+            src_project,
+            dst_project,
+            src_package,
+            None,
+            req_type="maintenance_incident",
+            req_state=["new", "review", "declined"],
+        )
     if not ask:
         return True, reqs
     repl = ''
@@ -4760,11 +4857,11 @@ def check_existing_maintenance_requests(apiurl, src_project, src_packages, dst_p
 # and we do not want to break the plugins.
 
 
-def get_group(apiurl, group):
+def get_group(apiurl: str, group: str):
     return get_group_meta(apiurl, group)
 
 
-def get_group_meta(apiurl, group):
+def get_group_meta(apiurl: str, group: str):
     u = makeurl(apiurl, ['group', quote_plus(group)])
     try:
         f = http_GET(u)
@@ -4774,7 +4871,7 @@ def get_group_meta(apiurl, group):
         return None
 
 
-def get_user_meta(apiurl, user):
+def get_user_meta(apiurl: str, user: str):
     u = makeurl(apiurl, ['person', quote_plus(user)])
     try:
         f = http_GET(u)
@@ -4797,18 +4894,18 @@ def _get_xml_data(meta, *tags):
     return data
 
 
-def get_user_data(apiurl, user, *tags):
+def get_user_data(apiurl: str, user: str, *tags):
     """get specified tags from the user meta"""
     meta = get_user_meta(apiurl, user)
     return _get_xml_data(meta, *tags)
 
 
-def get_group_data(apiurl, group, *tags):
+def get_group_data(apiurl: str, group: str, *tags):
     meta = get_group_meta(apiurl, group)
     return _get_xml_data(meta, *tags)
 
 
-def download(url, filename, progress_obj=None, mtime=None):
+def download(url: str, filename, progress_obj=None, mtime=None):
     global BUFSIZE
 
     o = None
@@ -4837,23 +4934,42 @@ def download(url, filename, progress_obj=None, mtime=None):
         utime(filename, (-1, mtime))
 
 
-def get_source_file(apiurl, prj, package, filename, targetfilename=None, revision=None, progress_obj=None, mtime=None, meta=False):
+def get_source_file(
+    apiurl: str,
+    prj: str,
+    package: str,
+    filename,
+    targetfilename=None,
+    revision=None,
+    progress_obj=None,
+    mtime=None,
+    meta=False,
+):
     targetfilename = targetfilename or filename
     query = {}
     if meta:
         query['meta'] = 1
     if revision:
         query['rev'] = revision
-    u = makeurl(apiurl, ['source', prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), 'replace'))], query=query)
+    u = makeurl(
+        apiurl,
+        ["source", prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), "replace"))],
+        query=query,
+    )
     download(u, targetfilename, progress_obj, mtime)
 
 
-def get_binary_file(apiurl, prj, repo, arch,
-                    filename,
-                    package=None,
-                    target_filename=None,
-                    target_mtime=None,
-                    progress_meter=False):
+def get_binary_file(
+    apiurl: str,
+    prj: str,
+    repo: str,
+    arch: str,
+    filename,
+    package: Optional[str] = None,
+    target_filename=None,
+    target_mtime=None,
+    progress_meter=False,
+):
     progress_obj = None
     if progress_meter:
         progress_obj = meter.create_text_meter()
@@ -5090,7 +5206,7 @@ def server_diff_noex(
             return rdiff
 
 
-def request_diff(apiurl, reqid, superseded_reqid=None):
+def request_diff(apiurl: str, reqid, superseded_reqid=None):
     query = {'cmd': 'diff'}
     if superseded_reqid:
         query['diff_to_superseded'] = superseded_reqid
@@ -5100,7 +5216,7 @@ def request_diff(apiurl, reqid, superseded_reqid=None):
     return f.read()
 
 
-def get_request_issues(apiurl, reqid):
+def get_request_issues(apiurl: str, reqid):
     """
     gets a request xml with the issues for the request inside and creates
     a list 'issue_list' with a dict of the relevant information for the issues.
@@ -5125,7 +5241,7 @@ def get_request_issues(apiurl, reqid):
     return issue_list
 
 
-def submit_action_diff(apiurl, action):
+def submit_action_diff(apiurl: str, action: Action):
     """diff a single submit action"""
     # backward compatiblity: only a recent api/backend supports the missingok parameter
     try:
@@ -5319,8 +5435,9 @@ def checkout_package(
         p.run_source_services()
 
 
-def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers=False,
-                     dst_userid=None, keep_develproject=False):
+def replace_pkg_meta(
+    pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False
+):
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
     only maintainer (unless keep_maintainers is set). Additionally remove the
@@ -5343,7 +5460,7 @@ def replace_pkg_meta(pkgmeta, new_name, new_prj, keep_maintainers=False,
     return ET.tostring(root, encoding=ET_ENCODING)
 
 
-def link_to_branch(apiurl, project, package):
+def link_to_branch(apiurl: str, project: str, package: str):
     """
      convert a package with a _link + project.diff to a branch
     """
@@ -5355,7 +5472,19 @@ def link_to_branch(apiurl, project, package):
         raise oscerr.OscIOError(None, 'no _link file inside project \'%s\' package \'%s\'' % (project, package))
 
 
-def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', cicount='', disable_publish=False, missing_target=False, vrev='', disable_build=False):
+def link_pac(
+    src_project: str,
+    src_package: str,
+    dst_project: str,
+    dst_package: str,
+    force: bool,
+    rev="",
+    cicount="",
+    disable_publish=False,
+    missing_target=False,
+    vrev="",
+    disable_build=False,
+):
     """
     create a linked package
      - "src" is the original package
@@ -5460,8 +5589,16 @@ def link_pac(src_project, src_package, dst_project, dst_package, force, rev='', 
     print('Done.')
 
 
-def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map=None,
-                  disable_publish=False, nosources=False, repo_check=True):
+def aggregate_pac(
+    src_project: str,
+    src_package: str,
+    dst_project: str,
+    dst_package: str,
+    repo_map: Optional[dict] = None,
+    disable_publish=False,
+    nosources=False,
+    repo_check=True,
+):
     """
     aggregate package
      - "src" is the original package
@@ -5575,7 +5712,20 @@ def aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map=N
     print('Done.')
 
 
-def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute, package, targetproject, return_existing=False, force=False, noaccess=False, add_repositories=False, dryrun=False, nodevelproject=False, maintenance=False):
+def attribute_branch_pkg(
+    apiurl: str,
+    attribute: str,
+    maintained_update_project_attribute,
+    package: str,
+    targetproject: str,
+    return_existing=False,
+    force=False,
+    noaccess=False,
+    add_repositories=False,
+    dryrun=False,
+    nodevelproject=False,
+    maintenance=False,
+):
     """
     Branch packages defined via attributes (via API call)
     """
@@ -5628,7 +5778,28 @@ def attribute_branch_pkg(apiurl, attribute, maintained_update_project_attribute,
     return r
 
 
-def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None, linkrev=None, target_project=None, target_package=None, return_existing=False, msg='', force=False, noaccess=False, add_repositories=False, add_repositories_block=None, add_repositories_rebuild=None, extend_package_names=False, missingok=False, maintenance=False, newinstance=False, disable_build=False):
+def branch_pkg(
+    apiurl: str,
+    src_project: str,
+    src_package: str,
+    nodevelproject=False,
+    rev=None,
+    linkrev=None,
+    target_project: Optional[str] = None,
+    target_package=None,
+    return_existing=False,
+    msg="",
+    force=False,
+    noaccess=False,
+    add_repositories=False,
+    add_repositories_block=None,
+    add_repositories_rebuild=None,
+    extend_package_names=False,
+    missingok=False,
+    maintenance=False,
+    newinstance=False,
+    disable_build=False,
+):
     """
     Branch a package (via API call)
     """
@@ -5706,16 +5877,22 @@ def branch_pkg(apiurl, src_project, src_package, nodevelproject=False, rev=None,
             data.get('sourceproject', None), data.get('sourcepackage', None))
 
 
-def copy_pac(src_apiurl, src_project, src_package,
-             dst_apiurl, dst_project, dst_package,
-             client_side_copy=False,
-             keep_maintainers=False,
-             keep_develproject=False,
-             expand=False,
-             revision=None,
-             comment=None,
-             force_meta_update=None,
-             keep_link=None):
+def copy_pac(
+    src_apiurl: str,
+    src_project: str,
+    src_package: str,
+    dst_apiurl: str,
+    dst_project: str,
+    dst_package: str,
+    client_side_copy=False,
+    keep_maintainers=False,
+    keep_develproject=False,
+    expand=False,
+    revision=None,
+    comment=None,
+    force_meta_update=None,
+    keep_link=None,
+):
     """
     Create a copy of a package.
 
@@ -5791,19 +5968,19 @@ def copy_pac(src_apiurl, src_project, src_package,
         return 'Done.'
 
 
-def unlock_package(apiurl, prj, pac, msg):
+def unlock_package(apiurl: str, prj: str, pac: str, msg):
     query = {'cmd': 'unlock', 'comment': msg}
     u = makeurl(apiurl, ['source', prj, pac], query)
     http_POST(u)
 
 
-def unlock_project(apiurl, prj, msg=None):
+def unlock_project(apiurl: str, prj: str, msg=None):
     query = {'cmd': 'unlock', 'comment': msg}
     u = makeurl(apiurl, ['source', prj], query)
     http_POST(u)
 
 
-def undelete_package(apiurl, prj, pac, msg=None):
+def undelete_package(apiurl: str, prj: str, pac: str, msg=None):
     query = {'cmd': 'undelete'}
     if msg:
         query['comment'] = msg
@@ -5813,7 +5990,7 @@ def undelete_package(apiurl, prj, pac, msg=None):
     http_POST(u)
 
 
-def undelete_project(apiurl, prj, msg=None):
+def undelete_project(apiurl: str, prj: str, msg=None):
     query = {'cmd': 'undelete'}
     if msg:
         query['comment'] = msg
@@ -5823,7 +6000,7 @@ def undelete_project(apiurl, prj, msg=None):
     http_POST(u)
 
 
-def delete_package(apiurl, prj, pac, force=False, msg=None):
+def delete_package(apiurl: str, prj: str, pac: str, force=False, msg=None):
     query = {}
     if force:
         query['force'] = "1"
@@ -5833,7 +6010,7 @@ def delete_package(apiurl, prj, pac, force=False, msg=None):
     http_DELETE(u)
 
 
-def delete_project(apiurl, prj, force=False, msg=None):
+def delete_project(apiurl: str, prj: str, force=False, msg=None):
     query = {}
     if force:
         query['force'] = "1"
@@ -5843,25 +6020,25 @@ def delete_project(apiurl, prj, force=False, msg=None):
     http_DELETE(u)
 
 
-def delete_files(apiurl, prj, pac, files):
+def delete_files(apiurl: str, prj: str, pac: str, files):
     for filename in files:
         u = makeurl(apiurl, ['source', prj, pac, filename], query={'comment': 'removed %s' % (filename, )})
         http_DELETE(u)
 
 
 # old compat lib call
-def get_platforms(apiurl):
+def get_platforms(apiurl: str):
     return get_repositories(apiurl)
 
 
-def get_repositories(apiurl):
+def get_repositories(apiurl: str):
     f = http_GET(makeurl(apiurl, ['platform']))
     tree = ET.parse(f)
     r = sorted(node.get('name') for node in tree.getroot())
     return r
 
 
-def get_distributions(apiurl):
+def get_distributions(apiurl: str):
     """Returns list of dicts with headers
       'distribution', 'project', 'repository', 'reponame'"""
 
@@ -5881,11 +6058,11 @@ def get_distributions(apiurl):
 
 
 # old compat lib call
-def get_platforms_of_project(apiurl, prj):
+def get_platforms_of_project(apiurl: str, prj: str):
     return get_repositories_of_project(apiurl, prj)
 
 
-def get_repositories_of_project(apiurl, prj):
+def get_repositories_of_project(apiurl: str, prj: str):
     f = show_project_meta(apiurl, prj)
     root = ET.fromstring(b''.join(f))
 
@@ -5896,7 +6073,7 @@ def get_repositories_of_project(apiurl, prj):
 class Repo:
     repo_line_templ = '%-15s %-10s'
 
-    def __init__(self, name, arch):
+    def __init__(self, name: str, arch: str):
         self.name = name
         self.arch = arch
 
@@ -5960,7 +6137,7 @@ def get_binarylist(
         return l
 
 
-def get_binarylist_published(apiurl, prj, repo, arch):
+def get_binarylist_published(apiurl: str, prj: str, repo: str, arch: str):
     u = makeurl(apiurl, ['published', prj, repo, arch])
     f = http_GET(u)
     tree = ET.parse(f)
@@ -6004,7 +6181,9 @@ def show_results_meta(
     return f.readlines()
 
 
-def show_prj_results_meta(apiurl, prj, repositories=None, arches=None):
+def show_prj_results_meta(
+    apiurl: str, prj: str, repositories: Optional[List[str]] = None, arches: Optional[List[str]] = None
+):
     # this function is only needed for backward/api compatibility
     if repositories is None:
         repositories = []
@@ -6060,7 +6239,7 @@ def format_results(results, format):
     return [format % r for r in results]
 
 
-def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **kwargs):
+def get_results(apiurl: str, project: str, package: str, verbose=False, printJoin="", *args, **kwargs):
     """returns list of/or prints a human readable status for the specified package"""
     # hmm the function name is a bit too generic - something like
     # get_package_results_human would be better, but this would break the existing
@@ -6123,7 +6302,7 @@ def get_results(apiurl, project, package, verbose=False, printJoin='', *args, **
     return r
 
 
-def get_package_results(apiurl, project, package=None, wait=False, *args, **kwargs):
+def get_package_results(apiurl: str, project: str, package: Optional[str] = None, wait=False, *args, **kwargs):
     """generator that returns a the package results as an xml structure"""
     xml = ''
     waiting_states = ('blocked', 'scheduled', 'dispatching', 'building',
@@ -6165,7 +6344,19 @@ def get_package_results(apiurl, project, package=None, wait=False, *args, **kwar
     yield xml
 
 
-def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=None, name_filter=None, arch=None, repo=None, vertical=None, show_excluded=None, brief=False):
+def get_prj_results(
+    apiurl: str,
+    prj: str,
+    hide_legend=False,
+    csv=False,
+    status_filter=None,
+    name_filter=None,
+    arch=None,
+    repo=None,
+    vertical=None,
+    show_excluded=None,
+    brief=False,
+):
     # print '----------------------------------------'
     global buildstatus_symbols
 
@@ -6365,7 +6556,7 @@ def get_prj_results(apiurl, prj, hide_legend=False, csv=False, status_filter=Non
     return r
 
 
-def streamfile(url, http_meth=http_GET, bufsize=8192, data=None, progress_obj=None, text=None):
+def streamfile(url: str, http_meth=http_GET, bufsize=8192, data=None, progress_obj=None, text=None):
     """
     performs http_meth on url and read bufsize bytes from the response
     until EOF is reached. After each read bufsize bytes are yielded to the
@@ -6432,7 +6623,17 @@ def buildlog_strip_time(data):
         return time_regex.sub(b'', data)
 
 
-def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=False, last=False, lastsucceeded=False):
+def print_buildlog(
+    apiurl: str,
+    prj: str,
+    package: str,
+    repository: str,
+    arch: str,
+    offset=0,
+    strip_time=False,
+    last=False,
+    lastsucceeded=False,
+):
     """prints out the buildlog on stdout"""
 
     def print_data(data, strip_time=False):
@@ -6473,7 +6674,7 @@ def print_buildlog(apiurl, prj, package, repository, arch, offset=0, strip_time=
             break
 
 
-def get_dependson(apiurl, project, repository, arch, packages=None, reverse=None):
+def get_dependson(apiurl: str, project: str, repository: str, arch: str, packages=None, reverse=None):
     query = []
     if packages:
         for i in packages:
@@ -6489,7 +6690,9 @@ def get_dependson(apiurl, project, repository, arch, packages=None, reverse=None
     return f.read()
 
 
-def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist=None, debug=None):
+def get_buildinfo(
+    apiurl: str, prj: str, package: str, repository: str, arch: str, specfile=None, addlist=None, debug=None
+):
     query = []
     if addlist:
         for i in addlist:
@@ -6506,7 +6709,7 @@ def get_buildinfo(apiurl, prj, package, repository, arch, specfile=None, addlist
     return f.read()
 
 
-def get_buildconfig(apiurl, prj, repository, path=None):
+def get_buildconfig(apiurl: str, prj: str, repository: str, path=None):
     query = []
     if path:
         for prp in path:
@@ -6516,7 +6719,7 @@ def get_buildconfig(apiurl, prj, repository, path=None):
     return f.read()
 
 
-def create_pbuild_config(apiurl, project, repository, arch, project_dir):
+def create_pbuild_config(apiurl: str, project: str, repository: str, arch: str, project_dir):
     """
     This is always replacing a possible exiting config for now
     we could extend the _pbuild file easily, but what should we do with multiple instances of the _config?
@@ -6549,26 +6752,22 @@ def create_pbuild_config(apiurl, project, repository, arch, project_dir):
     tree.write(os.path.join(project_dir,'_pbuild'), encoding="utf-8", xml_declaration=True)
 
 
-def get_worker_info(apiurl, worker):
+def get_worker_info(apiurl: str, worker: str):
     u = makeurl(apiurl, ['worker', worker])
     f = http_GET(u)
 
     return decode_it(f.read())
 
 
-def check_constraints(apiurl, prj, repository, arch, package, constraintsfile=None):
-    query = {'cmd': 'checkconstraints'}
-    query['project'] = prj
-    query['package'] = package
-    query['repository'] = repository
-    query['arch'] = arch
-    u = makeurl(apiurl, ['worker'], query)
+def check_constraints(apiurl: str, prj: str, repository: str, arch: str, package: str, constraintsfile=None):
+    query = {"cmd": "checkconstraints", "project": prj, "package": package, "repository": repository, "arch": arch}
+    u = makeurl(apiurl, ["worker"], query)
     f = http_POST(u, data=constraintsfile)
     root = ET.fromstring(b''.join(f))
     return [node.get('name') for node in root.findall('entry')]
 
 
-def get_source_rev(apiurl, project, package, revision=None):
+def get_source_rev(apiurl: str, project: str, package: str, revision=None):
     # API supports ?deleted=1&meta=1&rev=4
     # but not rev=current,rev=latest,rev=top, or anything like this.
     # CAUTION: We have to loop through all rev and find the highest one, if none given.
@@ -6596,7 +6795,7 @@ def get_source_rev(apiurl, project, package, revision=None):
     return e
 
 
-def get_buildhistory(apiurl, prj, package, repository, arch, format='text', limit=None):
+def get_buildhistory(apiurl: str, prj: str, package: str, repository: str, arch: str, format="text", limit=None):
     query = {}
     if limit is not None and int(limit) > 0:
         query['limit'] = int(limit)
@@ -6628,7 +6827,7 @@ def get_buildhistory(apiurl, prj, package, repository, arch, format='text', limi
     return r
 
 
-def print_jobhistory(apiurl, prj, current_package, repository, arch, format='text', limit=20):
+def print_jobhistory(apiurl: str, prj: str, current_package: str, repository: str, arch: str, format="text", limit=20):
     query = {}
     if current_package:
         query['package'] = current_package
@@ -6664,7 +6863,9 @@ def print_jobhistory(apiurl, prj, current_package, repository, arch, format='tex
             print('%s  %-50s %-16s %-16s %-16s %-16s' % (endtime, package[0:49], reason[0:15], code[0:15], waitbuild, worker))
 
 
-def get_commitlog(apiurl, prj, package, revision, format='text', meta=False, deleted=False, revision_upper=None):
+def get_commitlog(
+    apiurl: str, prj: str, package: str, revision, format="text", meta=False, deleted=False, revision_upper=None
+):
     query = {}
     if deleted:
         query['deleted'] = 1
@@ -6739,7 +6940,7 @@ def get_commitlog(apiurl, prj, package, revision, format='text', meta=False, del
     return r
 
 
-def runservice(apiurl, prj, package):
+def runservice(apiurl: str, prj: str, package: str):
     u = makeurl(apiurl, ['source', prj, package], query={'cmd': 'runservice'})
 
     try:
@@ -6752,7 +6953,7 @@ def runservice(apiurl, prj, package):
     return root.get('code')
 
 
-def waitservice(apiurl, prj, package):
+def waitservice(apiurl: str, prj: str, package: str):
     u = makeurl(apiurl, ['source', prj, package], query={'cmd': 'waitservice'})
 
     try:
@@ -6765,7 +6966,7 @@ def waitservice(apiurl, prj, package):
     return root.get('code')
 
 
-def mergeservice(apiurl, prj, package):
+def mergeservice(apiurl: str, prj: str, package: str):
     # first waiting that the service finishes and that it did not fail
     waitservice(apiurl, prj, package)
 
@@ -6782,7 +6983,7 @@ def mergeservice(apiurl, prj, package):
     return root.get('code')
 
 
-def rebuild(apiurl, prj, package, repo, arch, code=None):
+def rebuild(apiurl: str, prj: str, package: str, repo: str, arch: str, code=None):
     query = {'cmd': 'rebuild'}
     if package:
         query['package'] = package
@@ -6934,24 +7135,26 @@ def get_osc_version():
     return __version__
 
 
-def abortbuild(apiurl, project, package=None, arch=None, repo=None):
+def abortbuild(apiurl: str, project: str, package=None, arch=None, repo=None):
     return cmdbuild(apiurl, 'abortbuild', project, package, arch, repo)
 
 
-def restartbuild(apiurl, project, package=None, arch=None, repo=None):
+def restartbuild(apiurl: str, project: str, package=None, arch=None, repo=None):
     return cmdbuild(apiurl, 'restartbuild', project, package, arch, repo)
 
 
-def unpublish(apiurl, project, package=None, arch=None, repo=None, code=None):
-    return cmdbuild(apiurl, 'unpublish', project, package, arch, repo, code)
+def unpublish(apiurl: str, project: str, package: Optional[str] = None, arch=None, repo=None, code=None):
+    return cmdbuild(apiurl, "unpublish", project, package, arch, repo, code)
 
 
-def wipebinaries(apiurl, project, package=None, arch=None, repo=None, code=None):
-    return cmdbuild(apiurl, 'wipe', project, package, arch, repo, code)
+def wipebinaries(apiurl: str, project: str, package: Optional[str] = None, arch=None, repo=None, code=None):
+    return cmdbuild(apiurl, "wipe", project, package, arch, repo, code)
 
 
-def cmdbuild(apiurl, cmd, project, package=None, arch=None, repo=None, code=None, sysrq=None):
-    query = {'cmd': cmd}
+def cmdbuild(
+    apiurl: str, cmd: str, project: str, package: Optional[str] = None, arch=None, repo=None, code=None, sysrq=None
+):
+    query = {"cmd": cmd}
     if package:
         query['package'] = package
     if arch:
@@ -7005,7 +7208,7 @@ def parseRevisionOption(string, allow_md5=True):
     return tuple(revisions)
 
 
-def checkRevision(prj, pac, revision, apiurl=None, meta=False):
+def checkRevision(prj: str, pac: str, revision, apiurl: Optional[str] = None, meta=False):
     """
     check if revision is valid revision, i.e. it is not
     larger than the upstream revision id
@@ -7119,7 +7322,7 @@ def xpath_join(expr, new_expr, op='or', inner=False, nexpr_parentheses=False):
     return '%s %s %s' % (expr, op, new_expr)
 
 
-def search(apiurl, queries=None, **kwargs):
+def search(apiurl: str, queries=None, **kwargs):
     """
     Perform a search request. The requests are constructed as follows:
     kwargs = {'kind1' => xpath1, 'kind2' => xpath2, ..., 'kindN' => xpathN}
@@ -7146,8 +7349,17 @@ def search(apiurl, queries=None, **kwargs):
     return res
 
 
-def owner(apiurl, search_term=None, mode="binary", attribute=None,
-          project=None, usefilter=None, devel=None, limit=None, binary=None):
+def owner(
+    apiurl: str,
+    search_term=None,
+    mode="binary",
+    attribute=None,
+    project=None,
+    usefilter=None,
+    devel=None,
+    limit=None,
+    binary=None,
+):
     """
     Perform a binary package owner search. This is supported since OBS 2.4.
     """
@@ -7182,8 +7394,8 @@ def owner(apiurl, search_term=None, mode="binary", attribute=None,
     return res
 
 
-def set_link_rev(apiurl, project, package, revision='', expand=False):
-    url = makeurl(apiurl, ['source', project, package, '_link'])
+def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False):
+    url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
         root = ET.parse(f).getroot()
@@ -7196,7 +7408,7 @@ def set_link_rev(apiurl, project, package, revision='', expand=False):
     return revision
 
 
-def _set_link_rev(apiurl, project, package, root, revision='', expand=False):
+def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", expand=False):
     """
     Updates the rev attribute of the _link xml. If revision is set to None
     the rev and vrev attributes are removed from the _link xml.
@@ -7318,12 +7530,12 @@ def is_srcrpm(f):
         return False
 
 
-def addMaintainer(apiurl, prj, pac, user):
+def addMaintainer(apiurl: str, prj: str, pac: str, user: str):
     # for backward compatibility only
     addPerson(apiurl, prj, pac, user)
 
 
-def addPerson(apiurl, prj, pac, user, role="maintainer"):
+def addPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
     """ add a new person to a package or project """
     path = quote_plus(prj),
     kind = 'prj'
@@ -7354,12 +7566,12 @@ def addPerson(apiurl, prj, pac, user, role="maintainer"):
         print("osc: an error occured")
 
 
-def delMaintainer(apiurl, prj, pac, user):
+def delMaintainer(apiurl: str, prj: str, pac: str, user: str):
     # for backward compatibility only
     delPerson(apiurl, prj, pac, user)
 
 
-def delPerson(apiurl, prj, pac, user, role="maintainer"):
+def delPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
     """ delete a person from a package or project """
     path = quote_plus(prj),
     kind = 'prj'
@@ -7388,7 +7600,7 @@ def delPerson(apiurl, prj, pac, user, role="maintainer"):
         print("an error occured")
 
 
-def setBugowner(apiurl, prj, pac, user=None, group=None):
+def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
     """ delete all bugowners (user and group entries) and set one new one in a package or project """
     path = quote_plus(prj),
     kind = 'prj'
@@ -8394,7 +8606,7 @@ class MultibuildFlavorResolver:
         return f.read()
 
     @staticmethod
-    def parse_multibuild_data(s):
+    def parse_multibuild_data(s: str):
         """
         Return set of flavors from a string with multibuild xml.
         """
@@ -8409,7 +8621,7 @@ class MultibuildFlavorResolver:
             result.add(node.text)
         return result
 
-    def resolve(self, patterns):
+    def resolve(self, patterns: List[str]):
         """
         Return list of flavors based on given flavor `patterns`.
         If `patterns` contain a glob, it's resolved according to _multibuild file,
@@ -8445,7 +8657,7 @@ class MultibuildFlavorResolver:
 
         return sorted(flavors)
 
-    def resolve_as_packages(self, patterns):
+    def resolve_as_packages(self, patterns: List[str]):
         """
         Return list of package:flavor based on given flavor `patterns`.
         If a value from `patterns` contains a glob, it is resolved according to the _multibuild
