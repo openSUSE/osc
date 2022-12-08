@@ -1,11 +1,6 @@
 name: 'linters'
 
 on:
-  push:
-    branches: ['master']
-    paths:
-      - '.github/**'
-      - '**.py'
   pull_request:
     branches: ['master']
     paths:
