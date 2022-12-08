@@ -5,16 +5,16 @@ Scenario: Run `osc list` with no arguments to display all projects
    When I execute osc with args "list"
    Then stdout is
         """
-        devel
         home:Admin
         openSUSE.org
-        openSUSE:Factory
-        release
+        test:devel
+        test:factory
+        test:release
         """
 
 
 Scenario: Run `osc list` on a project to display project packages
-   When I execute osc with args "list openSUSE:Factory"
+   When I execute osc with args "list test:factory"
    Then stdout is
         """
         multibuild-pkg
@@ -26,7 +26,7 @@ Scenario: Run `osc list` on a project to display project packages
 
 
 Scenario: Run `osc list` on a project package to display package files
-   When I execute osc with args "list openSUSE:Factory test-pkgA"
+   When I execute osc with args "list test:factory test-pkgA"
    Then stdout is
         """
         test-pkgA.changes

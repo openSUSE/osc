@@ -1,6 +1,6 @@
-<project name="devel">
+<project name="test:release">
 
-  <title>Devel project</title>
+  <title>Released packages</title>
   <description/>
 
   <person userid="Admin" role="maintainer"/>
@@ -17,8 +17,12 @@
     <disable/>
   </useforbuild>
 
-  <repository name="standard">
-    <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
+  <repository name="distro-1-ga">
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+
+  <repository name="distro-1-updates">
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>

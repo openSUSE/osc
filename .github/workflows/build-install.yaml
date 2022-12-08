@@ -1,14 +1,6 @@
 name: 'build and installation tests'
 
 on:
-  push:
-    branches: ['master']
-    paths-ignore:
-      - 'AUTHORS'
-      - 'COPYING'
-      - 'NEWS'
-      - 'README.md'
-      - 'doc/**'
   pull_request:
     branches: ['master']
     paths-ignore:

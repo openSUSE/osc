@@ -1,17 +1,12 @@
 name: 'tests'
 
 on:
-  push:
-    branches: ['master']
-    paths:
-      - '.github/**'
-      - '**.py'
-      - 'tests/**'
   pull_request:
     branches: ['master']
     paths:
       - '.github/**'
       - '**.py'
+      - 'behave/**'
       - 'tests/**'
 
 jobs:
