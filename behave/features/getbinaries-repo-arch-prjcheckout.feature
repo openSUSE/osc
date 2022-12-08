@@ -4,13 +4,13 @@ Feature: `osc getbinaries <repo> <arch>` command from a project checkout
 # common steps for all scenarios
 Background:
    Given I set working directory to "{context.osc.temp}"
-     And I execute osc with args "checkout openSUSE:Factory"
-     And I set working directory to "{context.osc.temp}/openSUSE:Factory"
+     And I execute osc with args "checkout test:factory"
+     And I set working directory to "{context.osc.temp}/test:factory"
 
 
 Scenario: Run `osc getbinaries <repo> <arch>` from a project checkout
     When I execute osc with args "getbinaries standard x86_64"
-    Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
         """
         multibuild-pkg-1-1.x86_64.rpm
         multibuild-pkg-flavor1-1-1.x86_64.rpm
@@ -43,7 +43,7 @@ Scenario: Run `osc getbinaries <repo> <arch> --multibuild-package=<flavor>` from
 
 Scenario: Run `osc getbinaries <repo> <arch> --sources` from a project checkout
     When I execute osc with args "getbinaries standard x86_64 --sources"
-    Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
         """
         multibuild-pkg-1-1.src.rpm
         multibuild-pkg-1-1.x86_64.rpm
@@ -75,7 +75,7 @@ Scenario: Run `osc getbinaries <repo> <arch> --sources` from a project checkout
 
 Scenario: Run `osc getbinaries <repo> <arch> --debuginfo` from a project checkout
     When I execute osc with args "getbinaries standard x86_64 --debuginfo"
-    Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
         """
         multibuild-pkg-1-1.x86_64.rpm
         multibuild-pkg-debuginfo-1-1.x86_64.rpm

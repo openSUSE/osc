@@ -1,6 +1,6 @@
-<project name="release">
+<project name="test:devel">
 
-  <title>Release project</title>
+  <title>Packages in development</title>
   <description/>
 
   <person userid="Admin" role="maintainer"/>
@@ -17,10 +17,8 @@
     <disable/>
   </useforbuild>
 
-  <repository name="openSUSE_Tumbleweed">
-    <!--
+  <repository name="standard">
     <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
-    -->
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>

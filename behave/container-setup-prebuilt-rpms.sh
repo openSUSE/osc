@@ -39,43 +39,43 @@ function upload_rpms() {
 }
 
 
-# build package 'openSUSE:Factory/test-pkgA'
+# build package 'test:factory/test-pkgA'
 TMP_DIR=$(mktemp -d)
 rpmbuild -ba "$FIXTURES_DIR/pac/test-pkgA-3.spec" --define "_topdir $TMP_DIR"
-upload_rpms "$TMP_DIR" openSUSE:Factory standard i586 test-pkgA
-upload_rpms "$TMP_DIR" openSUSE:Factory standard x86_64 test-pkgA
+upload_rpms "$TMP_DIR" test:factory standard i586 test-pkgA
+upload_rpms "$TMP_DIR" test:factory standard x86_64 test-pkgA
 rm -rf "$TMP_DIR"
 
 
-# build package 'openSUSE:Factory/test-pkgB'
+# build package 'test:factory/test-pkgB'
 TMP_DIR=$(mktemp -d)
 rpmbuild -ba "$FIXTURES_DIR/pac/test-pkgB-2.spec" --define "_topdir $TMP_DIR"
-upload_rpms "$TMP_DIR" openSUSE:Factory standard i586 test-pkgB
-upload_rpms "$TMP_DIR" openSUSE:Factory standard x86_64 test-pkgB
+upload_rpms "$TMP_DIR" test:factory standard i586 test-pkgB
+upload_rpms "$TMP_DIR" test:factory standard x86_64 test-pkgB
 rm -rf "$TMP_DIR"
 
 
-# build package 'openSUSE:Factory/multibuild-pkg'
+# build package 'test:factory/multibuild-pkg'
 TMP_DIR=$(mktemp -d)
 rpmbuild -ba "$FIXTURES_DIR/pac/multibuild-pkg-1.spec" --define "_topdir $TMP_DIR" --target=x86_64,i586 --define "flavor %{nil}"
-upload_rpms "$TMP_DIR" openSUSE:Factory standard i586 multibuild-pkg
-upload_rpms "$TMP_DIR" openSUSE:Factory standard x86_64 multibuild-pkg
+upload_rpms "$TMP_DIR" test:factory standard i586 multibuild-pkg
+upload_rpms "$TMP_DIR" test:factory standard x86_64 multibuild-pkg
 rm -rf "$TMP_DIR"
 
 
-# build package 'openSUSE:Factory/multibuild-pkg:flavor1'
+# build package 'test:factory/multibuild-pkg:flavor1'
 TMP_DIR=$(mktemp -d)
 rpmbuild -ba "$FIXTURES_DIR/pac/multibuild-pkg-1.spec" --define "_topdir $TMP_DIR" --target=x86_64,i586 --define "flavor flavor1"
-upload_rpms "$TMP_DIR" openSUSE:Factory standard i586 multibuild-pkg:flavor1
-upload_rpms "$TMP_DIR" openSUSE:Factory standard x86_64 multibuild-pkg:flavor1
+upload_rpms "$TMP_DIR" test:factory standard i586 multibuild-pkg:flavor1
+upload_rpms "$TMP_DIR" test:factory standard x86_64 multibuild-pkg:flavor1
 rm -rf "$TMP_DIR"
 
 
-# build package 'openSUSE:Factory/multibuild-pkg:flavor2'
+# build package 'test:factory/multibuild-pkg:flavor2'
 TMP_DIR=$(mktemp -d)
 rpmbuild -ba "$FIXTURES_DIR/pac/multibuild-pkg-1.spec" --define "_topdir $TMP_DIR" --target=x86_64,i586 --define "flavor flavor2"
-upload_rpms "$TMP_DIR" openSUSE:Factory standard i586 multibuild-pkg:flavor2
-upload_rpms "$TMP_DIR" openSUSE:Factory standard x86_64 multibuild-pkg:flavor2
+upload_rpms "$TMP_DIR" test:factory standard i586 multibuild-pkg:flavor2
+upload_rpms "$TMP_DIR" test:factory standard x86_64 multibuild-pkg:flavor2
 rm -rf "$TMP_DIR"
 
 
@@ -91,7 +91,7 @@ FILES="_buildenv _statistics rpmlint.log"
 for ARCH in $ARCHES; do
     for PACKAGE in $PACKAGES; do
         for FILE in $FILES; do
-            touch /srv/obs/build/openSUSE:Factory/standard/$ARCH/$PACKAGE/$FILE
+            touch /srv/obs/build/test:factory/standard/$ARCH/$PACKAGE/$FILE
         done
     done
 done

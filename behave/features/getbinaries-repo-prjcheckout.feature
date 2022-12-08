@@ -4,13 +4,13 @@ Feature: `osc getbinaries <repo>` command from a project checkout
 # common steps for all scenarios
 Background:
    Given I set working directory to "{context.osc.temp}"
-     And I execute osc with args "checkout openSUSE:Factory"
-     And I set working directory to "{context.osc.temp}/openSUSE:Factory"
+     And I execute osc with args "checkout test:factory"
+     And I set working directory to "{context.osc.temp}/test:factory"
 
 
 Scenario: Run `osc getbinaries <repo>` from a project checkout
     When I execute osc with args "getbinaries standard"
-    Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
         """
         multibuild-pkg-1-1.i586.rpm
         multibuild-pkg-1-1.x86_64.rpm
@@ -46,7 +46,7 @@ Scenario: Run `osc getbinaries <repo> --multibuild-package=<flavor>` from a proj
 
 Scenario: Run `osc getbinaries <repo> --sources` from a project checkout
     When I execute osc with args "getbinaries standard --sources"
-    Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
         """
         multibuild-pkg-1-1.i586.rpm
         multibuild-pkg-1-1.src.rpm
@@ -81,7 +81,7 @@ Scenario: Run `osc getbinaries <repo> --sources` from a project checkout
 
 Scenario: Run `osc getbinaries <repo> --debuginfo` from a project checkout
     When I execute osc with args "getbinaries standard --debuginfo"
-    Then directory tree in "{context.osc.temp}/openSUSE:Factory/binaries/" is
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
         """
         multibuild-pkg-1-1.i586.rpm
         multibuild-pkg-1-1.x86_64.rpm

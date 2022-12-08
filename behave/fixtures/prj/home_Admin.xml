@@ -17,8 +17,7 @@
     <disable/>
   </useforbuild>
 
-  <repository name="openSUSE_Tumbleweed">
-    <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
+  <repository name="standard">
     <arch>x86_64</arch>
     <arch>i586</arch>
   </repository>

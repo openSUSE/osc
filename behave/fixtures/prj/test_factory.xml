@@ -1,6 +1,6 @@
-<project name="openSUSE:Factory">
+<project name="test:factory">
 
-  <title>The next openSUSE distribution</title>
+  <title>The next version of distribution</title>
   <description/>
 
   <person userid="Admin" role="maintainer"/>

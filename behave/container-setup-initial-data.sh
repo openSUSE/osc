@@ -18,17 +18,17 @@ OSC="osc -A https://localhost"
 
 # create projects
 $OSC api -X PUT '/source/openSUSE.org/_meta' --file "$FIXTURES_DIR/prj/openSUSE.org.xml"
-$OSC api -X PUT '/source/devel/_meta' --file "$FIXTURES_DIR/prj/devel.xml"
-$OSC api -X PUT '/source/release/_meta' --file "$FIXTURES_DIR/prj/release.xml"
-$OSC api -X PUT '/source/openSUSE:Factory/_meta' --file "$FIXTURES_DIR/prj/openSUSE_Factory.xml"
+$OSC api -X PUT '/source/test:devel/_meta' --file "$FIXTURES_DIR/prj/test_devel.xml"
+$OSC api -X PUT '/source/test:factory/_meta' --file "$FIXTURES_DIR/prj/test_factory.xml"
+$OSC api -X PUT '/source/test:release/_meta' --file "$FIXTURES_DIR/prj/test_release.xml"
 $OSC api -X PUT '/source/home:Admin/_meta' --file "$FIXTURES_DIR/prj/home_Admin.xml"
 
 
-# create package 'openSUSE:Factory/test-pkgA'
+# create package 'test:factory/test-pkgA'
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
-$OSC checkout openSUSE:Factory
+$OSC checkout test:factory
 cd "$_"
 
 $OSC mkpac test-pkgA
@@ -50,11 +50,11 @@ $OSC commit -m 'Version 3'
 rm -rf "$TMP_DIR"
 
 
-# create package 'openSUSE:Factory/test-pkgB'
+# create package 'test:factory/test-pkgB'
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
-$OSC checkout openSUSE:Factory
+$OSC checkout test:factory
 cd "$_"
 
 $OSC mkpac test-pkgB
@@ -72,11 +72,11 @@ $OSC commit -m 'Version 2'
 rm -rf "$TMP_DIR"
 
 
-# create package 'openSUSE:Factory/multibuild-pkg'
+# create package 'test:factory/multibuild-pkg'
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
-$OSC checkout openSUSE:Factory
+$OSC checkout test:factory
 cd "$_"
 
 $OSC mkpac multibuild-pkg
@@ -92,11 +92,11 @@ $OSC commit -m 'Initial commit'
 rm -rf "$TMP_DIR"
 
 
-# create package 'devel/test-pkgA'
+# create package 'test:devel/test-pkgA'
 TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
-$OSC checkout devel
+$OSC checkout test:devel
 cd "$_"
 
 $OSC mkpac test-pkgA
@@ -106,4 +106,4 @@ cd "$_"
 $OSC commit -m 'Initial commit'
 
 # set the devel project
-$OSC setdevelproject openSUSE:Factory/test-pkgA devel/test-pkgA
+$OSC setdevelproject test:factory/test-pkgA test:devel/test-pkgA

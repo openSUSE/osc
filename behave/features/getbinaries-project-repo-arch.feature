@@ -7,7 +7,7 @@ Background:
 
 
 Scenario: Run `osc getbinaries <project> <repo> <arch>`
-    When I execute osc with args "getbinaries openSUSE:Factory standard x86_64"
+    When I execute osc with args "getbinaries test:factory standard x86_64"
     Then directory tree in "{context.osc.temp}/binaries/" is
         """
         multibuild-pkg-1-1.x86_64.rpm
@@ -34,13 +34,13 @@ Scenario: Run `osc getbinaries <project> <repo> <arch>`
 
 
 Scenario: Run `osc getbinaries <project> <repo> <arch> --multibuild-package=<flavor>`
-    When I execute osc with args "getbinaries openSUSE:Factory standard x86_64 --multibuild-package=flavor1"
+    When I execute osc with args "getbinaries test:factory standard x86_64 --multibuild-package=flavor1"
     # the option is allowed only in a package checkout
     Then the exit code is 2
 
 
 Scenario: Run `osc getbinaries <project> <repo> <arch> --debuginfo`
-    When I execute osc with args "getbinaries openSUSE:Factory standard x86_64 --debuginfo"
+    When I execute osc with args "getbinaries test:factory standard x86_64 --debuginfo"
     Then directory tree in "{context.osc.temp}/binaries/" is
         """
         multibuild-pkg-1-1.x86_64.rpm
