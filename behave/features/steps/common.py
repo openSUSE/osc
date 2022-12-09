@@ -6,6 +6,13 @@ import subprocess
 import behave
 
 
+def debug(context, *args):
+    if not context.config.userdata.get("DEBUG", False):
+        return
+    msg = " ".join((str(i).strip() for i in args))
+    print(f"DEBUG: {msg}")
+
+
 def makedirs(path):
     try:
         os.makedirs(path)
@@ -62,16 +69,14 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
         env["PATH"] = path.replace("$PATH", env["PATH"])
         run_args["env"] = env
 
-    if context.config.userdata.get("DEBUG", False):
-        print(f"DEBUG: command: {cmd}")
+    debug(context, "Running command:", cmd)
 
     context.cmd_exitcode, context.cmd_stdout, context.cmd_stderr = run(cmd, **run_args)
     context.cmd_exitcode_checked = False
 
-    if context.config.userdata.get("DEBUG", False):
-        print(f"DEBUG: exit code: {context.cmd_exitcode}")
-        print(f"DEBUG: stdout: {context.cmd_stdout}")
-        print(f"DEBUG: stderr: {context.cmd_stderr}")
+    debug(context, "> return code:", context.cmd_exitcode)
+    debug(context, "> stdout:", context.cmd_stdout)
+    debug(context, "> stderr:", context.cmd_stderr)
 
     if not can_fail and context.cmd_exitcode != 0:
         raise AssertionError('Running command "%s" failed: %s' % (cmd, context.cmd_exitcode))

@@ -21,7 +21,7 @@ def after_scenario(context, scenario):
     if "destructive" in scenario.tags:
         # start a new container after a destructive test
         context.podman.kill()
-        context.podman = podman.Podman()
+        context.podman = podman.Podman(context)
     context.osc.clear()
     common.check_exit_code(context)
 
@@ -46,7 +46,7 @@ def before_all(context):
     # absolute path to .../behave/fixtures
     context.fixtures = os.path.join(os.path.dirname(__file__), "..", "fixtures")
 
-    context.podman = podman.Podman()
+    context.podman = podman.Podman(context)
     context.osc = osc.Osc(context)
 
 

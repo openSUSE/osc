@@ -6,6 +6,7 @@ import time
 
 import behave
 
+from steps.common import debug
 from steps.common import run_in_context
 
 
@@ -15,6 +16,7 @@ class Osc:
             raise RuntimeError("context doesn't have 'podman' object set")
 
         self.context = context
+        debug(self.context, "Osc.__init__()")
         self.temp = None
         self.clear()
 
@@ -25,6 +27,7 @@ class Osc:
             pass
 
     def clear(self):
+        debug(self.context, "Osc.clear()")
         if self.temp:
             shutil.rmtree(self.temp)
         self.temp = tempfile.mkdtemp(prefix="osc_behave_")
