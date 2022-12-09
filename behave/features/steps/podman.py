@@ -8,9 +8,7 @@ class Podman:
         self.context = context
         debug(context, "Podman.__init__()")
         self.container_id = None
-        self.run()
-        self.wait_on_systemd()
-        self.port = self.get_port()
+        self.start()
 
     def __del__(self):
         try:
@@ -33,8 +31,8 @@ class Podman:
         debug(self.context, "> stderr:", proc.stderr)
         return proc
 
-    def run(self):
-        debug(self.context, "Podman.run()")
+    def start(self):
+        debug(self.context, "Podman.start()")
         args = [
             "run",
             "--name", "obs-server-behave",
@@ -50,6 +48,8 @@ class Podman:
         proc = self._run(args)
         lines = proc.stdout.strip().splitlines()
         self.container_id = lines[-1]
+        self.wait_on_systemd()
+        self.port = self.get_port()
 
     def kill(self):
         if not self.container_id:
@@ -58,6 +58,11 @@ class Podman:
         args = ["kill", self.container_id]
         self._run(args)
         self.container_id = None
+
+    def restart(self):
+        debug(self.context, "Podman.restart()")
+        self.kill()
+        self.start()
 
     def wait_on_systemd(self):
         args = [

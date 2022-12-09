@@ -20,8 +20,9 @@ def before_scenario(context, scenario):
 def after_scenario(context, scenario):
     if "destructive" in scenario.tags:
         # start a new container after a destructive test
-        context.podman.kill()
-        context.podman = podman.Podman(context)
+        # we must use an existing podman instance defined in `before_all` due to context attribute life-cycle:
+        # https://behave.readthedocs.io/en/stable/context_attributes.html
+        context.podman.restart()
     context.osc.clear()
     common.check_exit_code(context)
 
