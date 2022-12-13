@@ -48,6 +48,87 @@ def get_parser():
     return osc.argparser
 
 
+def pop_project_package_from_args(args, default_project=None, default_package=None, package_is_optional=False):
+    """
+    Get project and package from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :param default_project: Used if project cannot be retrieved from `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param default_package: Used if package cannot be retrieved from `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :param package_is_optional: Whether to error out when package name cannot be retrieved.
+    :type  package_is_optional: bool
+    :returns: Project name and package name.
+    :rtype:   tuple(str)
+    """
+    assert isinstance(args, list)
+    path = Path.cwd()
+
+    used_default_project = False
+    try:
+        project = args.pop(0)
+    except IndexError:
+        if not default_project:
+            raise oscerr.OscValueError("Please specify a project")
+        project = default_project
+        used_default_project = True
+
+    if not isinstance(project, str):
+        raise TypeError(f"Project should be 'str', found: {type(project).__name__}")
+
+    package = None
+
+    if project == "/":
+        # no project name (to support listing all projects via `osc ls /`)
+        project = None
+    elif project and "/" in project:
+        # project/package
+        if project.count("/") != 1:
+            raise oscerr.OscValueError(f"Argument doesn't match the '<project>/<package>' pattern: {project}")
+        project, package = project.split("/")
+
+    if project == ".":
+        # project name taken from the working copy
+        store = osc_store.Store(path)
+        project = store.project
+
+    if package is None:
+        try:
+            package = args.pop(0)
+        except IndexError:
+            if not package_is_optional and not used_default_project:
+                # package is not optional and it wasn't specified together with the project
+                raise oscerr.OscValueError("Please specify a package")
+
+            if default_package:
+                package = default_package
+            else:
+                if package_is_optional:
+                    return project, None
+                raise oscerr.OscValueError("Please specify a package")
+
+        if not isinstance(package, str):
+            raise TypeError(f"Package should be 'str', found: {type(package).__name__}")
+
+    if package == ".":
+        # package name taken from the working copy
+        try:
+            store = osc_store.Store(path)
+            store.assert_is_package()
+            package = store.package
+        except oscerr.NoWorkingCopy:
+            if not package_is_optional:
+                raise
+            package = None
+
+    return project, package
+
+
 class Osc(cmdln.Cmdln):
     """
     openSUSE commander is a command-line interface to the Open Build Service.
@@ -514,28 +595,16 @@ class Osc(cmdln.Cmdln):
             osc addcontainers [PROJECT PACKAGE]
         """
 
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        project = package = None
-        if not args:
-            if is_package_dir(localdir):
-                project = store_read_project(localdir)
-                package = store_read_package(localdir)
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
 
-        if project is None or package is None:
-            raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
 
-        query = {'cmd': 'addcontainers'}
-        if opts.extend_package_names:
-            query['extend_package_names'] = '1'
-
-        print("Add containers...")
-        url = makeurl(apiurl, ['source', project, package], query=query)
-        f = http_POST(url)
+        _private.add_containers(
+            apiurl, project, package, extend_package_names=opts.extend_package_names, print_to="stdout"
+        )
 
     @cmdln.option('-s', '--skip-disabled', action='store_true',
                         help='Skip disabled channels. Otherwise the source gets added, but not the repositories.')
@@ -554,36 +623,19 @@ class Osc(cmdln.Cmdln):
         Examples:
             osc addchannels [PROJECT [PACKAGE]]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        channel = None
-        if not args:
-            if is_project_dir(localdir) or is_package_dir(localdir):
-                project = store_read_project(localdir)
-            elif is_package_dir(localdir):
-                project = store_read_project(localdir)
-                channel = store_read_package(localdir)
-            else:
-                raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
-        else:
-            project = self._process_project_name(args[0])
 
-        query = {'cmd': 'addchannels'}
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
         if opts.enable_all and opts.skip_disabled:
-            raise oscerr.WrongOptions('--enable-all and --skip-disabled options are mutually exclusive')
-        elif opts.enable_all:
-            query['mode'] = 'enable_all'
-        elif opts.skip_disabled:
-            query['mode'] = 'skip_disabled'
+            self.argparse_error("Options '--enable-all' and '--skip-disabled' are mutually exclusive")
 
-        print("Looking for channels...")
-        url = makeurl(apiurl, ['source', project], query=query)
-        if channel:
-            url = makeurl(apiurl, ['source', project, channel], query=query)
-        f = http_POST(url)
+        _private.add_channels(
+            apiurl, project, package, enable_all=opts.enable_all, skip_disabled=opts.skip_disabled, print_to="stdout"
+        )
 
     @cmdln.alias('enablechannel')
     def do_enablechannels(self, subcmd, opts, *args):
@@ -595,37 +647,16 @@ class Osc(cmdln.Cmdln):
         The command can be used to enable a specific one or all channels of a project.
 
         Examples:
-            osc enablechannels [PROJECT [CHANNEL_PACKAGE]]
+            osc enablechannels [PROJECT [PACKAGE]]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        channel = None
-        if not args:
-            if is_project_dir(localdir):
-                project = store_read_project(localdir)
-            elif is_package_dir(localdir):
-                project = store_read_project(localdir)
-                channel = store_read_package(localdir)
-            else:
-                raise oscerr.WrongArgs('Either specify project [package] or call it from a project/package working copy')
-        else:
-            project = self._process_project_name(args[0])
-            if len(args) > 1:
-                channel = args[1]
 
-        query = {}
-        if channel:
-            query['cmd'] = 'enablechannel'
-        else:
-            query = {'cmd': 'modifychannels', 'mode': 'enable_all'}
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
-        print("Enable channel(s)...")
-        url = makeurl(apiurl, ['source', project], query=query)
-        if channel:
-            url = makeurl(apiurl, ['source', project, channel], query=query)
-        f = http_POST(url)
+        _private.enable_channels(apiurl, project, package, print_to="stdout")
 
     @cmdln.option('-f', '--force', action='store_true',
                         help='force generation of new patchinfo file, do not update existing one.')
@@ -711,28 +742,22 @@ class Osc(cmdln.Cmdln):
         Print the devel project / package of a package
 
         Examples:
-            osc develproject PRJ PKG
-            osc develproject
+            osc develproject [PROJECT PACKAGE]
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) == 0:
-            project = store_read_project(Path.cwd())
-            package = store_read_package(Path.cwd())
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        else:
-            raise oscerr.WrongArgs('need Project and Package')
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
 
-        devprj, devpkg = show_devel_project(apiurl, project, package)
-        if devprj is None:
-            print('%s / %s has no devel project' % (project, package))
-        elif devpkg and devpkg != package:
-            print("%s %s" % (devprj, devpkg))
-        else:
-            print(devprj)
+        devel_project, devel_package = show_devel_project(apiurl, project, package)
+
+        if not devel_project:
+            print(f"Package {project}/{package} has no devel project", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"{devel_project}/{devel_package}")
 
     @cmdln.alias('ca')
     def do_cleanassets(self, subcmd, opts, *args):
@@ -757,29 +782,41 @@ class Osc(cmdln.Cmdln):
         """Set the devel project / package of a package
 
         Examples:
-            osc setdevelproject [PRJ PKG] DEVPRJ [DEVPKG]
+            osc setdevelproject [PROJECT PACKAGE] DEVEL_PROJECT [DEVEL_PACKAGE]
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        devprj, devpkg = None, None
-        if len(args) == 3 or len(args) == 4:
-            project, package = self._process_project_name(args[0]), args[1]
-            devprj = self._process_project_name(args[2])
-            if len(args) == 4:
-                devpkg = args[3]
-        elif len(args) >= 1 and len(args) <= 2:
-            project, package = store_read_project(Path.cwd()), store_read_package(Path.cwd())
-            devprj = self._process_project_name(args[0])
-            if len(args) == 2:
-                devpkg = args[1]
+        args = list(args)
+        if opts.unset:
+            project, package = pop_project_package_from_args(
+                args, default_project=".", default_package=".", package_is_optional=False
+            )
+            devel_project = None
+            devel_package = None
         else:
-            if opts.unset:
-                project, package = store_read_project(Path.cwd()), store_read_package(Path.cwd())
-            else:
-                raise oscerr.WrongArgs('need at least DEVPRJ (and possibly DEVPKG)')
+            args_backup = args.copy()
 
-        set_devel_project(apiurl, project, package, devprj, devpkg)
+            try:
+                # try this sequence first: project package devel_project [devel_package]
+                project, package = pop_project_package_from_args(args, package_is_optional=False)
+                devel_project, devel_package = pop_project_package_from_args(
+                    args, default_package=package, package_is_optional=True
+                )
+            except oscerr.OscValueError:
+                # then read project and package from working copy and try devel_project [devel_package]
+                args = args_backup.copy()
+                project, package = pop_project_package_from_args(
+                    [], default_project=".", default_package=".", package_is_optional=False
+                )
+                devel_project, devel_package = pop_project_package_from_args(
+                    args, default_package=package, package_is_optional=True
+                )
+
+        if args:
+            args_str = ", ".join(args)
+            self.argparse_error(f"Unknown arguments: {args_str}")
+
+        set_devel_project(apiurl, project, package, devel_project, devel_package, print_to="stdout")
 
     def do_showlinked(self, subcmd, opts, *args):
         """
@@ -789,24 +826,16 @@ class Osc(cmdln.Cmdln):
             osc showlinked [PROJECT PACKAGE]
         """
 
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        localdir = Path.cwd()
-        project = package = None
-        if len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif is_package_dir(localdir):
-            project = store_read_project(localdir)
-            package = store_read_package(localdir)
-        else:
-            raise oscerr.WrongArgs('Either specify project and package or call it from a package working copy')
 
-        url = makeurl(apiurl, ['source', project, package], query={'cmd': 'showlinked'})
-        f = http_POST(url)
-        root = ET.parse(f).getroot()
-        for node in root.findall('package'):
-            print(node.get('project') + " " + node.get('name'))
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
+
+        linked_packages = _private.get_linked_packages(apiurl, project, package)
+        for pkg in linked_packages:
+            print(f"{pkg['project']}/{pkg['name']}")
 
     @cmdln.option('-c', '--create', action='store_true',
                         help='Create a new token')
@@ -2744,27 +2773,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc setlinkrev PROJECT [PACKAGE]
         """
 
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        package = None
+
         rev = parseRevisionOption(opts.revision)[0] or ''
         if opts.unset:
             rev = None
 
+        args = list(args)
         if not args:
             p = Package(Path.cwd())
             project = p.prjname
             package = p.name
-            apiurl = p.apiurl
+            assert apiurl == p.apiurl
             if not p.islink():
                 sys.exit('Local directory is no checked out source link package, aborting')
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif len(args) == 1:
-            project = self._process_project_name(args[0])
         else:
-            self.argparse_error("Incorrect number of arguments.")
+            project, package = pop_project_package_from_args(
+                args, default_project=".", default_package=".", package_is_optional=True
+            )
+
+        if opts.revision and not package:
+            # It is highly unlikely that all links for all packages in a project should be set to the same revision.
+            self.argparse_error("The --revision option requires to specify a package")
 
         if package:
             packages = [package]
@@ -2772,12 +2802,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = meta_get_packagelist(apiurl, project)
 
         for p in packages:
-            rev = set_link_rev(apiurl, project, p, revision=rev,
-                               expand=not opts.use_plain_revision)
+            try:
+                rev = set_link_rev(apiurl, project, p, revision=rev, expand=not opts.use_plain_revision)
+            except HTTPError as e:
+                if e.code != 404:
+                    raise
+                print(f"WARNING: Package {project}/{p} has no link", file=sys.stderr)
+                continue
+
             if rev is None:
-                print('removed revision from link')
+                print(f"Removed link revision from package {project}/{p}")
             else:
-                print('set revision to %s for package %s' % (rev, p))
+                print(f"Set link revision of package {project}/{p} to {rev}")
 
     def do_linktobranch(self, subcmd, opts, *args):
         """
@@ -3100,51 +3136,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         It requires defined release targets set to trigger="manual".
 
         usage:
-            osc release [ SOURCEPROJECT [ SOURCEPACKAGE ] ]
+            osc release [PROJECT [PACKAGE]]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        source_project = source_package = None
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
-        if len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments.')
-
-        if len(args) == 0:
-            if is_package_dir(Path.cwd()):
-                source_project = store_read_project(Path.cwd())
-                source_package = store_read_package(Path.cwd())
-            elif is_project_dir(Path.cwd()):
-                source_project = store_read_project(Path.cwd())
-            else:
-                raise oscerr.WrongArgs('Too few arguments.')
-        if len(args) > 0:
-            source_project = self._process_project_name(args[0])
-        if len(args) > 1:
-            source_package = args[1]
-
-        query = {'cmd': 'release'}
-        if opts.target_project:
-            query["target_project"] = opts.target_project
-        if opts.target_repository:
-            query["target_repository"] = opts.target_repository
-        if opts.repo:
-            query["repository"] = opts.repo
-        if opts.set_release:
-            query["setrelease"] = opts.set_release
-        if opts.no_delay:
-            query["nodelay"] = "1"
-        baseurl = ['source', source_project]
-        if source_package:
-            baseurl.append(source_package)
-        url = makeurl(apiurl, baseurl, query=query)
-        f = http_POST(url)
-        while True:
-            buf = f.read(16384)
-            if not buf:
-                break
-            sys.stdout.write(decode_it(buf))
+        _private.release(
+            apiurl,
+            project=project,
+            package=package,
+            repository=opts.repo,
+            target_project=opts.target_project,
+            target_repository=opts.target_repository,
+            set_release_to=opts.set_release,
+            delayed=not opts.no_delay,
+            print_to="stdout",
+        )
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
@@ -6827,30 +6838,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc log (inside working copy)
             osc log remote_project [remote_package]
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) == 0:
-            wd = Path.cwd()
-            if is_project_dir(wd) or is_package_dir(wd):
-                project = store_read_project(wd)
-                if is_project_dir(wd):
-                    package = "_project"
-                else:
-                    package = store_read_package(wd)
-            else:
-                raise oscerr.NoWorkingCopy("Error: \"%s\" is not an osc working copy." % os.path.abspath(wd))
-        elif len(args) < 1:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
-        elif len(args) == 1:
-            project = self._process_project_name(args[0])
-            package = "_project"
-        else:
-            project = self._process_project_name(args[0])
-            package = args[1]
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
 
         rev, rev_upper = parseRevisionOption(opts.revision)
         if rev and not checkRevision(project, package, rev, apiurl, opts.meta):

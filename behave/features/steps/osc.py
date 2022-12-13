@@ -1,10 +1,12 @@
 import os
+import re
 import shutil
 import tempfile
 import time
 
 import behave
 
+from steps.common import debug
 from steps.common import run_in_context
 
 
@@ -14,6 +16,7 @@ class Osc:
             raise RuntimeError("context doesn't have 'podman' object set")
 
         self.context = context
+        debug(self.context, "Osc.__init__()")
         self.temp = None
         self.clear()
 
@@ -24,6 +27,7 @@ class Osc:
             pass
 
     def clear(self):
+        debug(self.context, "Osc.clear()")
         if self.temp:
             shutil.rmtree(self.temp)
         self.temp = tempfile.mkdtemp(prefix="osc_behave_")
@@ -54,6 +58,8 @@ def step_impl(context, args):
     cmd = context.osc.get_cmd() + [args]
     cmd = " ".join(cmd)
     run_in_context(context, cmd, can_fail=True)
+    # remove InsecureRequestWarning that is irrelevant to the tests
+    context.cmd_stderr = re.sub(r"^.*InsecureRequestWarning.*\n  warnings.warn\(\n", "", context.cmd_stderr)
 
 
 @behave.step('I wait for osc results for "{project}" "{package}"')

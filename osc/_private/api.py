@@ -33,6 +33,31 @@ def get(apiurl, path, query=None):
     return root
 
 
+def post(apiurl, path, query=None):
+    """
+    Send a POST request to OBS.
+
+    :param apiurl: OBS apiurl.
+    :type  apiurl: str
+    :param path: URL path segments.
+    :type  path: list(str)
+    :param query: URL query values.
+    :type  query: dict(str, str)
+    :returns: Parsed XML root.
+    :rtype:   xml.etree.ElementTree.Element
+    """
+    assert apiurl
+    assert path
+
+    if not isinstance(path, (list, tuple)):
+        raise TypeError("Argument `path` expects a list of strings")
+
+    url = osc_core.makeurl(apiurl, path, query)
+    with osc_connection.http_POST(url) as f:
+        root = osc_core.ET.parse(f).getroot()
+    return root
+
+
 def find_nodes(root, root_name, node_name):
     """
     Find nodes with given `node_name`.
