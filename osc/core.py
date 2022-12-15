@@ -6810,38 +6810,6 @@ def get_source_rev(apiurl: str, project: str, package: str, revision=None):
     return e
 
 
-def get_buildhistory(apiurl: str, prj: str, package: str, repository: str, arch: str, format="text", limit=None):
-    query = {}
-    if limit is not None and int(limit) > 0:
-        query['limit'] = int(limit)
-    u = makeurl(apiurl, ['build', prj, repository, arch, package, '_history'], query)
-    f = http_GET(u)
-    root = ET.parse(f).getroot()
-
-    r = []
-    for node in root.findall('entry'):
-        rev = node.get('rev')
-        srcmd5 = node.get('srcmd5')
-        versrel = node.get('versrel')
-        bcnt = int(node.get('bcnt'))
-        duration = node.get('duration')
-        t = time.gmtime(int(node.get('time')))
-        t = time.strftime('%Y-%m-%d %H:%M:%S', t)
-        if duration is None:
-            duration = ""
-
-        if format == 'csv':
-            r.append('%s|%s|%s|%s.%d|%s' % (t, srcmd5, rev, versrel, bcnt, duration))
-        else:
-            bversrel = '%s.%d' % (versrel, bcnt)
-            r.append('%s   %s    %s %s %s' % (t, srcmd5, bversrel.ljust(16)[:16], rev, duration.rjust(10)))
-
-    if format == 'text':
-        r.insert(0, 'time                  srcmd5                              vers-rel.bcnt    rev   duration')
-
-    return r
-
-
 def print_jobhistory(apiurl: str, prj: str, current_package: str, repository: str, arch: str, format="text", limit=20):
     query = {}
     if current_package:

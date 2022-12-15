@@ -6814,36 +6814,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc buildhist REPOSITORY ARCHITECTURE
            osc buildhist PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCHITECTURE
         """
-
-        args = slash_split(args)
-
-        if len(args) < 2 and is_package_dir('.'):
-            self.print_repos()
-
         apiurl = self.get_api_url()
 
-        if len(args) == 4:
-            project = self._process_project_name(args[0])
-            package = args[1]
-            repository = args[2]
-            arch = args[3]
-        elif len(args) == 2:
-            wd = Path.cwd()
-            package = store_read_package(wd)
-            project = store_read_project(wd)
-            repository = args[0]
-            arch = args[1]
-        else:
-            raise oscerr.WrongArgs('Wrong number of arguments')
+        args = list(args)
+        project, package, repository, arch = pop_project_package_repository_arch_from_args(args)
+        ensure_no_remaining_args(args)
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        format = 'text'
+        history = _private.BuildHistory(apiurl, project, package, repository, arch, limit=opts.limit)
         if opts.csv:
-            format = 'csv'
-
-        print('\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format, opts.limit)))
+            print(history.to_csv(), end="")
+        else:
+            print(history.to_text_table())
 
     @cmdln.option('', '--csv', action='store_true',
                   help='generate output in CSV (separated by |)')
