@@ -129,6 +129,88 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
     return project, package
 
 
+def pop_repository_arch_from_args(args):
+    """
+    Get repository and arch from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :returns: Repository name and arch name.
+    :rtype:   tuple(str)
+    """
+    assert isinstance(args, list)
+
+    try:
+        repository = args.pop(0)
+    except IndexError:
+        raise oscerr.OscValueError("Please specify a repository")
+
+    if not isinstance(repository, str):
+        raise TypeError(f"Repository should be 'str', found: {type(repository).__name__}")
+
+    arch = None
+
+    if "/" in repository:
+        # repository/arch
+        if repository.count("/") != 1:
+            raise oscerr.OscValueError(f"Argument doesn't match the '<repository>/<arch>' pattern: {repository}")
+        repository, arch = repository.split("/")
+
+    if arch is None:
+        try:
+            arch = args.pop(0)
+        except IndexError:
+            raise oscerr.OscValueError("Please specify an arch")
+
+        if not isinstance(arch, str):
+            raise TypeError(f"Arch should be 'str', found: {type(arch).__name__}")
+
+    return repository, arch
+
+
+def pop_project_package_repository_arch_from_args(args):
+    """
+    Get project, package, repository and arch from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :returns: Project name, package name, repository name and arch name.
+    :rtype:   tuple(str)
+    """
+
+    args_backup = args.copy()
+
+    try_working_copy = True
+    try:
+        # try this sequence first: project package repository arch
+        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        if args:
+            # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
+            try_working_copy = False
+        repository, arch = pop_repository_arch_from_args(args)
+    except oscerr.OscValueError as ex:
+        if not try_working_copy:
+            raise ex from None
+
+        # then read project and package from working copy and try repository arch
+        args[:] = args_backup.copy()
+        project, package = pop_project_package_from_args(
+            [], default_project=".", default_package=".", package_is_optional=False
+        )
+        repository, arch = pop_repository_arch_from_args(args)
+
+    return project, package, repository, arch
+
+
+def ensure_no_remaining_args(args):
+    if not args:
+        return
+    args_str = " ".join(args)
+    raise oscerr.WrongArgs(f"Unexpected args: {args_str}")
+
+
 class Osc(cmdln.Cmdln):
     """
     openSUSE commander is a command-line interface to the Open Build Service.
