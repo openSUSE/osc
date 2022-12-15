@@ -7266,6 +7266,9 @@ def build_table(col_num, data=None, headline=None, width=1, csv=False):
         longest_col.append(0)
     if headline and not csv:
         data[0:0] = headline
+
+    data = [str(i) for i in data]
+
     # find longest entry in each column
     i = 0
     for itm in data:
