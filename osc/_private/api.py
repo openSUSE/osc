@@ -4,10 +4,6 @@ and work with related XML data.
 """
 
 
-from .. import connection as osc_connection
-from .. import core as osc_core
-
-
 def get(apiurl, path, query=None):
     """
     Send a GET request to OBS.
@@ -21,6 +17,9 @@ def get(apiurl, path, query=None):
     :returns: Parsed XML root.
     :rtype:   xml.etree.ElementTree.Element
     """
+    from .. import connection as osc_connection
+    from .. import core as osc_core
+
     assert apiurl
     assert path
 
@@ -46,6 +45,9 @@ def post(apiurl, path, query=None):
     :returns: Parsed XML root.
     :rtype:   xml.etree.ElementTree.Element
     """
+    from .. import connection as osc_connection
+    from .. import core as osc_core
+
     assert apiurl
     assert path
 
@@ -110,6 +112,8 @@ def write_xml_node_to_file(node, path, indent=True):
     :param indent: Whether to indent (pretty-print) the written XML.
     :type  indent: bool
     """
+    from .. import core as osc_core
+
     if indent:
         osc_core.xmlindent(node)
     osc_core.ET.ElementTree(node).write(path)

@@ -1,4 +1,3 @@
-from .. import core as osc_core
 from . import package as osc_package
 
 
@@ -6,6 +5,8 @@ def forward_request(apiurl, request, interactive=True):
     """
     Forward the specified `request` to the projects the packages were branched from.
     """
+    from .. import core as osc_core
+
     for action in request.get_actions("submit"):
         package = osc_package.ApiPackage(apiurl, action.tgt_project, action.tgt_package)
 
