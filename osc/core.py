@@ -7383,7 +7383,7 @@ def owner(
     return res
 
 
-def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False):
+def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: str=None):
     url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
@@ -7393,6 +7393,13 @@ def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=Fa
         raise
     revision = _set_link_rev(apiurl, project, package, root, revision, expand=expand)
     l = ET.tostring(root, encoding=ET_ENCODING)
+
+    if not msg:
+        if revision:
+            msg = f"Set link revision to {revision}"
+        else:
+            msg = "Unset link revision"
+    url = makeurl(apiurl, ["source", project, package, "_link"], {"comment": msg})
     http_PUT(url, data=l)
     return revision
 
