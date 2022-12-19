@@ -129,6 +129,88 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
     return project, package
 
 
+def pop_repository_arch_from_args(args):
+    """
+    Get repository and arch from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :returns: Repository name and arch name.
+    :rtype:   tuple(str)
+    """
+    assert isinstance(args, list)
+
+    try:
+        repository = args.pop(0)
+    except IndexError:
+        raise oscerr.OscValueError("Please specify a repository")
+
+    if not isinstance(repository, str):
+        raise TypeError(f"Repository should be 'str', found: {type(repository).__name__}")
+
+    arch = None
+
+    if "/" in repository:
+        # repository/arch
+        if repository.count("/") != 1:
+            raise oscerr.OscValueError(f"Argument doesn't match the '<repository>/<arch>' pattern: {repository}")
+        repository, arch = repository.split("/")
+
+    if arch is None:
+        try:
+            arch = args.pop(0)
+        except IndexError:
+            raise oscerr.OscValueError("Please specify an arch")
+
+        if not isinstance(arch, str):
+            raise TypeError(f"Arch should be 'str', found: {type(arch).__name__}")
+
+    return repository, arch
+
+
+def pop_project_package_repository_arch_from_args(args):
+    """
+    Get project, package, repository and arch from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :returns: Project name, package name, repository name and arch name.
+    :rtype:   tuple(str)
+    """
+
+    args_backup = args.copy()
+
+    try_working_copy = True
+    try:
+        # try this sequence first: project package repository arch
+        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        if args:
+            # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
+            try_working_copy = False
+        repository, arch = pop_repository_arch_from_args(args)
+    except oscerr.OscValueError as ex:
+        if not try_working_copy:
+            raise ex from None
+
+        # then read project and package from working copy and try repository arch
+        args[:] = args_backup.copy()
+        project, package = pop_project_package_from_args(
+            [], default_project=".", default_package=".", package_is_optional=False
+        )
+        repository, arch = pop_repository_arch_from_args(args)
+
+    return project, package, repository, arch
+
+
+def ensure_no_remaining_args(args):
+    if not args:
+        return
+    args_str = " ".join(args)
+    raise oscerr.WrongArgs(f"Unexpected args: {args_str}")
+
+
 class Osc(cmdln.Cmdln):
     """
     openSUSE commander is a command-line interface to the Open Build Service.
@@ -6732,36 +6814,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc buildhist REPOSITORY ARCHITECTURE
            osc buildhist PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCHITECTURE
         """
-
-        args = slash_split(args)
-
-        if len(args) < 2 and is_package_dir('.'):
-            self.print_repos()
-
         apiurl = self.get_api_url()
 
-        if len(args) == 4:
-            project = self._process_project_name(args[0])
-            package = args[1]
-            repository = args[2]
-            arch = args[3]
-        elif len(args) == 2:
-            wd = Path.cwd()
-            package = store_read_package(wd)
-            project = store_read_project(wd)
-            repository = args[0]
-            arch = args[1]
-        else:
-            raise oscerr.WrongArgs('Wrong number of arguments')
+        args = list(args)
+        project, package, repository, arch = pop_project_package_repository_arch_from_args(args)
+        ensure_no_remaining_args(args)
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        format = 'text'
+        history = _private.BuildHistory(apiurl, project, package, repository, arch, limit=opts.limit)
         if opts.csv:
-            format = 'csv'
-
-        print('\n'.join(get_buildhistory(apiurl, project, package, repository, arch, format, opts.limit)))
+            print(history.to_csv(), end="")
+        else:
+            print(history.to_text_table())
 
     @cmdln.option('', '--csv', action='store_true',
                   help='generate output in CSV (separated by |)')
