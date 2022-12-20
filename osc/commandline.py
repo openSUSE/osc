@@ -204,6 +204,45 @@ def pop_project_package_repository_arch_from_args(args):
     return project, package, repository, arch
 
 
+def pop_project_package_targetproject_targetpackage_from_args(args, target_package_is_optional=False):
+    """
+    Get project, package, target_project and target_package from given `args`.
+
+    :param args: List of command-line arguments.
+                 WARNING: `args` gets modified in this function call!
+    :type  args: list(str)
+    :param target_package_is_optional: Whether to error out when target package name cannot be retrieved.
+    :type  target_package_is_optional: bool
+    :returns: Project name, package name, target project name and target package name.
+    :rtype:   tuple(str)
+    """
+    args_backup = args.copy()
+    #try_working_copy = True
+
+    try_working_copy = True
+    try:
+        # try this sequence first: project package target_project target_package
+        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        if args:
+            # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
+            try_working_copy = False
+        target_project, target_package = pop_project_package_from_args(
+            args, package_is_optional=target_package_is_optional
+        )
+    except oscerr.OscValueError as ex:
+        if not try_working_copy:
+            raise ex from None
+        # then read project and package from working copy and target_project target_package
+        args[:] = args_backup.copy()
+        project, package = pop_project_package_from_args(
+            [], default_project=".", default_package=".", package_is_optional=False
+        )
+        target_project, target_package = pop_project_package_from_args(
+            args, package_is_optional=target_package_is_optional
+        )
+    return project, package, target_project, target_package
+
+
 def ensure_no_remaining_args(args):
     if not args:
         return
