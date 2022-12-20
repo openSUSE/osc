@@ -5451,7 +5451,8 @@ def checkout_package(
 
 
 def replace_pkg_meta(
-    pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False
+    pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False,
+    keep_lock: bool = False,
 ):
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
@@ -5472,6 +5473,9 @@ def replace_pkg_meta(
     if not keep_develproject:
         for dp in root.findall('devel'):
             root.remove(dp)
+    if not keep_lock:
+        for node in root.findall("lock"):
+            root.remove(node)
     return ET.tostring(root, encoding=ET_ENCODING)
 
 
