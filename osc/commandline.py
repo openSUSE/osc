@@ -3037,10 +3037,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         A linked package is a clone of another package, but plus local
         modifications. It can be cross-project.
 
-        The DESTPAC name is optional; the source packages' name will be used if
-        DESTPAC is omitted.
+        The TARGET_PACKAGE name is optional; the source packages' name will be used if
+        TARGET_PACKAGE is omitted.
 
-        Afterwards, you will want to 'checkout DESTPRJ DESTPAC'.
+        Afterwards, you will want to 'checkout TARGET_PROJECT TARGET_PACKAGE'.
 
         To add a patch, add the patch as file and add it to the _link file.
         You can also specify text which will be inserted at the top of the spec file.
@@ -3052,30 +3052,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
               will be cleaned up automatically after it was submitted back.
 
         usage:
-            osc linkpac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
+            osc linkpac PROJECT PACKAGE TARGET_PROJECT [TARGET_PACKAGE]
+            osc linkpac TARGET_PROJECT [TARGET_PACKAGE]  # from a package checkout
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if not args or len(args) < 3:
-            self.argparse_error("Incorrect number of arguments.")
+        args = list(args)
+        src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
+
+        if not tgt_package:
+            tgt_package = src_package
 
         rev, dummy = parseRevisionOption(opts.revision)
         vrev = None
 
-        src_project = self._process_project_name(args[0])
-        src_package = args[1]
-        dst_project = self._process_project_name(args[2])
-        if len(args) > 3:
-            dst_package = args[3]
-        else:
-            dst_package = src_package
-
-        if src_project == dst_project and src_package == dst_package:
-            raise oscerr.WrongArgs('Error: source and destination are the same.')
-
-        if src_project == dst_project and not opts.cicount:
+        if src_project == tgt_project and not opts.cicount:
             # in this case, the user usually wants to build different spec
             # files from the same source
             opts.cicount = "copy"
@@ -3086,12 +3080,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # vrev is only needed for srcmd5 and OBS instances < 2.1.17 do not support it
                 vrev = None
 
-        if rev and not checkRevision(src_project, src_package, rev):
-            print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
-            sys.exit(1)
-
         link_pac(
-            src_project, src_package, dst_project, dst_package, opts.force, rev, opts.cicount,
+            src_project, src_package, tgt_project, tgt_package, opts.force, rev, opts.cicount,
             opts.disable_publish, opts.new_package, vrev,
             disable_build=opts.disable_build,
         )

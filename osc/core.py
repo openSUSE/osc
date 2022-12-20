@@ -5497,11 +5497,11 @@ def link_pac(
     dst_project: str,
     dst_package: str,
     force: bool,
-    rev="",
-    cicount="",
+    rev=None,
+    cicount=None,
     disable_publish=False,
     missing_target=False,
-    vrev="",
+    vrev=None,
     disable_build=False,
 ):
     """
@@ -5509,6 +5509,12 @@ def link_pac(
      - "src" is the original package
      - "dst" is the "link" package that we are creating here
     """
+    if src_project == dst_project and src_package == dst_package:
+        raise oscerr.OscValueError("Cannot link package. Source and target are the same.")
+
+    if rev and not checkRevision(src_project, src_package, rev):
+        raise oscerr.OscValueError(f"Revision doesn't exist: {rev}")
+
     meta_change = False
     dst_meta = ''
     apiurl = conf.config['apiurl']
