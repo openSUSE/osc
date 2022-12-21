@@ -5451,7 +5451,8 @@ def checkout_package(
 
 
 def replace_pkg_meta(
-    pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False
+    pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False,
+    keep_lock: bool = False,
 ):
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
@@ -5472,6 +5473,9 @@ def replace_pkg_meta(
     if not keep_develproject:
         for dp in root.findall('devel'):
             root.remove(dp)
+    if not keep_lock:
+        for node in root.findall("lock"):
+            root.remove(node)
     return ET.tostring(root, encoding=ET_ENCODING)
 
 
@@ -5493,11 +5497,11 @@ def link_pac(
     dst_project: str,
     dst_package: str,
     force: bool,
-    rev="",
-    cicount="",
+    rev=None,
+    cicount=None,
     disable_publish=False,
     missing_target=False,
-    vrev="",
+    vrev=None,
     disable_build=False,
 ):
     """
@@ -5505,6 +5509,12 @@ def link_pac(
      - "src" is the original package
      - "dst" is the "link" package that we are creating here
     """
+    if src_project == dst_project and src_package == dst_package:
+        raise oscerr.OscValueError("Cannot link package. Source and target are the same.")
+
+    if rev and not checkRevision(src_project, src_package, rev):
+        raise oscerr.OscValueError(f"Revision doesn't exist: {rev}")
+
     meta_change = False
     dst_meta = ''
     apiurl = conf.config['apiurl']
