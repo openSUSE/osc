@@ -3156,30 +3156,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc copypac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         """
+        args = list(args)
+        src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
-        args = slash_split(args)
+        if not tgt_package:
+            tgt_package = src_package
 
-        if not args or len(args) < 3:
-            self.argparse_error("Incorrect number of arguments.")
-
-        src_project = self._process_project_name(args[0])
-        src_package = args[1]
-        dst_project = self._process_project_name(args[2])
-        if len(args) > 3:
-            dst_package = args[3]
-        else:
-            dst_package = src_package
         src_apiurl = conf.config['apiurl']
         if opts.to_apiurl:
-            dst_apiurl = conf.config['apiurl_aliases'].get(opts.to_apiurl, opts.to_apiurl)
+            tgt_apiurl = conf.config['apiurl_aliases'].get(opts.to_apiurl, opts.to_apiurl)
         else:
-            dst_apiurl = src_apiurl
+            tgt_apiurl = src_apiurl
 
-        if src_apiurl != dst_apiurl:
+        if src_apiurl != tgt_apiurl:
             opts.client_side_copy = True
             opts.expand = True
 
-        rev, dummy = parseRevisionOption(opts.revision)
+        rev, _ = parseRevisionOption(opts.revision)
 
         if opts.message:
             comment = opts.message
@@ -3194,14 +3190,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.client_side_copy:
                 comment += ", using client side copy"
 
-        if src_project == dst_project and \
-           src_package == dst_package and \
-           not rev and \
-           src_apiurl == dst_apiurl:
-            raise oscerr.WrongArgs('Source and destination are the same.')
-
         r = copy_pac(src_apiurl, src_project, src_package,
-                     dst_apiurl, dst_project, dst_package,
+                     tgt_apiurl, tgt_project, tgt_package,
                      client_side_copy=opts.client_side_copy,
                      keep_maintainers=opts.keep_maintainers,
                      keep_develproject=opts.keep_develproject,
