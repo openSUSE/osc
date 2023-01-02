@@ -3775,28 +3775,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc undelete PROJECT
-           osc undelete PROJECT PACKAGE [PACKAGE ...]
+           osc undelete PROJECT PACKAGE
         """
-
-        args = slash_split(args)
-        if len(args) < 1:
-            raise oscerr.WrongArgs('Missing argument.')
-
-        msg = ''
-        if opts.message:
-            msg = opts.message
-        else:
-            msg = edit_message()
-
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
-        pkgs = args[1:]
 
-        if pkgs:
-            for pkg in pkgs:
-                undelete_package(apiurl, prj, pkg, msg)
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        msg = opts.message or edit_message()
+
+        if package:
+            undelete_package(apiurl, project, package, msg)
         else:
-            undelete_project(apiurl, prj, msg)
+            undelete_project(apiurl, project, msg)
 
     @cmdln.option('-r', '--recursive', action='store_true',
                         help='deletes a project with packages inside')
