@@ -2974,21 +2974,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         does not exist anymore.
 
         usage:
-            osc detachbranch                    # can be used in package working copy
+            osc detachbranch                    # from a package working copy
             osc detachbranch PROJECT PACKAGE
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        if len(args) == 0:
-            project = store_read_project(Path.cwd())
-            package = store_read_package(Path.cwd())
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
-        else:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
+
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
+        ensure_no_remaining_args(args)
 
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
