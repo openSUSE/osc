@@ -3811,51 +3811,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         well use \'--force\' switch.
 
         usage:
-           osc rdelete [-r] [-f] PROJECT|. [PACKAGE]
+           osc rdelete [-r] [-f] PROJECT [PACKAGE]
         """
-
-        args = slash_split(args)
-        if len(args) < 1 or len(args) > 2:
-            raise oscerr.WrongArgs('Wrong number of arguments')
-
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
 
-        msg = ''
-        if opts.message:
-            msg = opts.message
-        else:
-            msg = edit_message()
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        msg = opts.message or edit_message()
 
         # empty arguments result in recursive project delete ...
-        if not prj:
+        if not project:
             raise oscerr.WrongArgs('Project argument is empty')
 
-        if len(args) > 1:
-            pkg = args[1]
-
-            if not pkg:
-                raise oscerr.WrongArgs('Package argument is empty')
-
-            # FIXME: core.py:commitDelPackage() should have something similar
-            rlist = get_request_collection(apiurl, project=prj, package=pkg)
-            for rq in rlist:
-                print(rq)
-            if len(rlist) >= 1 and not opts.force:
-                print('Package has pending requests. Deleting the package will break them. '
-                      'They should be accepted/declined/revoked before deleting the package. '
-                      'Or just use \'--force\'.', file=sys.stderr)
-                sys.exit(1)
-
-            delete_package(apiurl, prj, pkg, opts.force, msg)
-
-        elif (not opts.recursive) and len(meta_get_packagelist(apiurl, prj)) >= 1:
-            print('Project contains packages. It must be empty before deleting it. '
-                  'If you are sure that you want to remove this project and all its '
-                  'packages use the \'--recursive\' switch.', file=sys.stderr)
-            sys.exit(1)
+        if package:
+            delete_package(apiurl, project, package, opts.force, msg)
         else:
-            delete_project(apiurl, prj, opts.force, msg)
+            delete_project(apiurl, project, opts.force, msg, recursive=opts.recursive)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
