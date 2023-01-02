@@ -5631,6 +5631,9 @@ def aggregate_pac(
      - "map" is a dictionary SRC => TARGET repository mappings
      - "repo_check" determines if presence of repos in the source and destination repos is checked
     """
+    if (src_project, src_package) == (dst_project, dst_package):
+        raise oscerr.OscValueError("Cannot aggregate package. Source and target are the same.")
+
     meta_change = False
     dst_meta = ''
     apiurl = conf.config['apiurl']

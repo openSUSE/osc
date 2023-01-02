@@ -3100,21 +3100,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc aggregatepac SOURCEPRJ SOURCEPAC[:FLAVOR] DESTPRJ [DESTPAC]
         """
 
-        args = slash_split(args)
+        args = list(args)
+        src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
-        if not args or len(args) < 3:
-            self.argparse_error("Incorrect number of arguments.")
-
-        src_project = self._process_project_name(args[0])
-        src_package = args[1]
-        dst_project = self._process_project_name(args[2])
-        if len(args) > 3:
-            dst_package = args[3]
-        else:
-            dst_package = src_package
-
-        if src_project == dst_project and src_package == dst_package:
-            raise oscerr.WrongArgs('Error: source and destination are the same.')
+        if not tgt_package:
+            tgt_package = src_package
 
         repo_map = {}
         if opts.map_repo:
@@ -3124,7 +3117,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.WrongOptions('map "%s" must be SRC=TARGET[,SRC=TARGET]' % opts.map_repo)
                 repo_map[src_tgt[0]] = src_tgt[1]
 
-        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map, opts.disable_publish, opts.nosources)
+        aggregate_pac(src_project, src_package, tgt_project, tgt_package, repo_map, opts.disable_publish, opts.nosources)
 
     @cmdln.option('-c', '--client-side-copy', action='store_true',
                         help='do a (slower) client-side copy')
