@@ -2944,30 +2944,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         to a branch. This is a full copy with a _link file pointing to the branched place.
 
         usage:
-            osc linktobranch                    # can be used in checked out package
+            osc linktobranch                    # from a package working copy
             osc linktobranch PROJECT PACKAGE
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) == 0:
-            wd = Path.cwd()
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-            update_local_dir = True
-        elif len(args) < 2:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
-        else:
-            project = self._process_project_name(args[0])
-            package = args[1]
-            update_local_dir = False
+        # assume we're in a working copy if no args were specfied
+        update_working_copy = not args
 
-        # execute
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
+        ensure_no_remaining_args(args)
+
         link_to_branch(apiurl, project, package)
-        if update_local_dir:
-            pac = Package(wd)
+
+        if update_working_copy:
+            pac = Package(Path.cwd())
             pac.update(rev=pac.latest_rev())
 
     @cmdln.option('-m', '--message', metavar='TEXT',
