@@ -6000,6 +6000,23 @@ def copy_pac(
         return 'Done.'
 
 
+def lock(apiurl: str, project: str, package: str, msg: str = None):
+    url_path = ["source", project]
+    if package:
+        url_path += [package]
+
+    url_query = {
+        "cmd": "set_flag",
+        "flag": "lock",
+        "status": "enable",
+    }
+
+    if msg:
+        url_query["comment"] = msg
+
+    _private.api.post(apiurl, url_path, url_query)
+
+
 def unlock_package(apiurl: str, prj: str, pac: str, msg):
     query = {'cmd': 'unlock', 'comment': msg}
     u = makeurl(apiurl, ['source', prj, pac], query)

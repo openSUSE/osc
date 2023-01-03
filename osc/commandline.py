@@ -3834,34 +3834,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
-    @cmdln.option('project')
-    @cmdln.option('package', nargs='?')
-    def do_lock(self, subcmd, opts):
+    def do_lock(self, subcmd, opts, *args):
         """
         Locks a project or package
 
         usage:
            osc lock PROJECT [PACKAGE]
         """
-        project = opts.project
-        package = opts.package
         apiurl = self.get_api_url()
-        kind = 'prj'
-        path_args = (project,)
-        if package is not None:
-            kind = 'pkg'
-            path_args = (project, package)
-        meta = meta_exists(kind, path_args, create_new=False, apiurl=apiurl)
-        root = ET.fromstring(b''.join(meta))
-        if root.find('lock') is not None:
-            print('Already locked', file=sys.stderr)
-            sys.exit(1)
-        # alternatively, we could also use the set_flag api call
-        # instead of manually manipulating the xml
-        lock = ET.SubElement(root, 'lock')
-        ET.SubElement(lock, 'enable')
-        meta = ET.tostring(root)
-        edit_meta(kind, path_args=path_args, data=meta, msg=opts.message)
+
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        # TODO: make consistent with unlock and require a message?
+        lock(apiurl, project, package, opts.message)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
