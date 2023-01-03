@@ -3863,34 +3863,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc unlock PROJECT [PACKAGE]
         """
-
-        args = slash_split(args)
-        if len(args) < 1 or len(args) > 2:
-            raise oscerr.WrongArgs('Wrong number of arguments')
-
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
 
-        msg = ''
-        if opts.message:
-            msg = opts.message
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        msg = opts.message or edit_message()
+
+        if package:
+            unlock_package(apiurl, project, package, msg)
         else:
-            msg = edit_message()
-
-        # empty arguments result in recursive project delete ...
-        if not prj:
-            raise oscerr.WrongArgs('Project argument is empty')
-
-        if len(args) > 1:
-            pkg = args[1]
-
-            if not pkg:
-                raise oscerr.WrongArgs('Package argument is empty')
-
-            unlock_package(apiurl, prj, pkg, msg)
-
-        else:
-            unlock_project(apiurl, prj, msg)
+            unlock_project(apiurl, project, msg)
 
     @cmdln.alias('metafromspec')
     @cmdln.alias('updatepkgmetafromspec')
