@@ -1686,12 +1686,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print('created request id', result)
         if conf.config['print_web_links']:
-            root = ET.fromstring(b''.join(show_configuration(apiurl)))
-            node = root.find('obs_url')
-            if node is None or not node.text:
-                raise oscerr.APIError('obs_url configuration element expected')
-            obs_url = node.text
-            print('%s/request/show/%s' % (obs_url, result))
+            obs_url = _private.get_configuration_option(apiurl, "obs_url")
+            print(f"{obs_url}/request/show/{result}")
 
         if supersede_existing:
             for req in reqs:
@@ -3481,12 +3477,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message, opts.enforce_branching)
         print(r.reqid)
         if conf.config['print_web_links']:
-            root = ET.fromstring(b''.join(show_configuration(apiurl)))
-            node = root.find('obs_url')
-            if node is None or not node.text:
-                raise oscerr.APIError('obs_url configuration element expected')
-            obs_url = node.text
-            print('%s/request/show/%s' % (obs_url, r.reqid))
+            obs_url = _private.get_configuration_option(apiurl, "obs_url")
+            print(f"{obs_url}/request/show/{r.reqid}")
 
         if supersede_existing:
             for req in reqs:
@@ -4416,14 +4408,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        root = ET.fromstring(b''.join(show_configuration(apiurl)))
-        elm = root.find('download_url')
-        if elm is None or not elm.text:
-            raise oscerr.APIError('download_url configuration element expected')
+        download_url = _private.get_configuration_option(apiurl, "download_url")
 
-        url_deb_tmpl = 'deb ' + elm.text + '/%s/%s/ /'
-        url_arch_tmpl = 'Server=' + elm.text + '/%s/%s/$arch'
-        url_tmpl = elm.text + '/%s/%s/%s.repo'
+        url_deb_tmpl = 'deb ' + download_url + '/%s/%s/ /'
+        url_arch_tmpl = 'Server=' + download_url + '/%s/%s/$arch'
+        url_tmpl = download_url + '/%s/%s/%s.repo'
         repos = get_repositories_of_project(apiurl, project)
         for repo in repos:
             repo_type = _repo_type(apiurl, project, repo)
