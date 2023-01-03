@@ -4442,33 +4442,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc browse [PROJECT [PACKAGE]]
         """
-
         apiurl = self.get_api_url()
-        args = slash_split(args)
 
-        package = None
-        if len(args) == 1:
-            project = self._process_project_name(args[0])
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif len(args) == 0:
-            project = store_read_project('.')
-            if is_package_dir('.'):
-                package = store_read_package('.')
-        else:
-            raise oscerr.WrongArgs('Wrong number of arguments')
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
 
-        root = ET.fromstring(b''.join(show_configuration(apiurl)))
-        node = root.find('obs_url')
-        if node is None or not node.text:
-            raise oscerr.APIError('obs_url configuration element expected')
-        obs_url = node.text
-
-        if package is None:
-            url = f"{obs_url}/project/show/{project}"
-        else:
+        obs_url = _private.get_configuration_value(apiurl, "obs_url")
+        if package:
             url = f"{obs_url}/package/show/{project}/{package}"
+        else:
+            url = f"{obs_url}/project/show/{project}"
 
         run_external('xdg-open', url)
 
