@@ -8682,8 +8682,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Merge the changes of the link target into your working copy
         """
 
-        if not is_package_dir('.'):
-            raise oscerr.NoWorkingCopy('Error: \'%s\' is not an osc working copy.' % os.path.abspath('.'))
         p = Package('.')
         # check if everything is committed
         for filename in p.filenamelist:
