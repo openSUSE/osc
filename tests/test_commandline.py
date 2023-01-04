@@ -58,6 +58,22 @@ class TestPopProjectPackageFromArgs(unittest.TestCase):
 
         args = []
         project, package = pop_project_package_from_args(
+            args, project_is_optional=True
+        )
+        self.assertEqual(project, None)
+        self.assertEqual(package, None)
+        self.assertEqual(args, [])
+
+        args = []
+        project, package = pop_project_package_from_args(
+            args, default_project="default-project", project_is_optional=True
+        )
+        self.assertEqual(project, "default-project")
+        self.assertEqual(package, None)
+        self.assertEqual(args, [])
+
+        args = []
+        project, package = pop_project_package_from_args(
             args, default_project="default-project", default_package="default-package"
         )
         self.assertEqual(project, "default-project")
@@ -300,6 +316,17 @@ class TestPopProjectPackageTargetProjectTargetPackageFromArgs(unittest.TestCase)
         self.assertEqual(target_project, "target-project")
         self.assertEqual(target_package, "target-package")
         self.assertEqual(args, ["another-arg"])
+
+    def test_missing_target_project(self):
+        args = ["project", "package"]
+        project, package, target_project, target_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, target_project_is_optional=True, target_package_is_optional=True
+        )
+        self.assertEqual(project, "project")
+        self.assertEqual(package, "package")
+        self.assertEqual(target_project, None)
+        self.assertEqual(target_package, None)
+        self.assertEqual(args, [])
 
     def test_missing_target_package(self):
         args = ["project", "package", "target-project"]

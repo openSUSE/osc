@@ -48,7 +48,7 @@ def get_parser():
     return osc.argparser
 
 
-def pop_project_package_from_args(args, default_project=None, default_package=None, package_is_optional=False):
+def pop_project_package_from_args(args, default_project=None, default_package=None, project_is_optional=False, package_is_optional=False):
     """
     Get project and package from given `args`.
 
@@ -61,6 +61,8 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
     :param default_package: Used if package cannot be retrieved from `args`.
                             Resolved from the current working copy if set to '.'.
     :type  default_package: str
+    :param project_is_optional: Whether to error out when project name cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
     :param package_is_optional: Whether to error out when package name cannot be retrieved.
     :type  package_is_optional: bool
     :returns: Project name and package name.
@@ -69,11 +71,16 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
     assert isinstance(args, list)
     path = Path.cwd()
 
+    if project_is_optional:
+        package_is_optional = True
+
     used_default_project = False
     try:
         project = args.pop(0)
     except IndexError:
         if not default_project:
+            if project_is_optional:
+                return None, None
             raise oscerr.OscValueError("Please specify a project")
         project = default_project
         used_default_project = True
@@ -204,13 +211,15 @@ def pop_project_package_repository_arch_from_args(args):
     return project, package, repository, arch
 
 
-def pop_project_package_targetproject_targetpackage_from_args(args, target_package_is_optional=False):
+def pop_project_package_targetproject_targetpackage_from_args(args, package_is_optional=False, target_project_is_optional=False, target_package_is_optional=False):
     """
     Get project, package, target_project and target_package from given `args`.
 
     :param args: List of command-line arguments.
                  WARNING: `args` gets modified in this function call!
     :type  args: list(str)
+    :param target_project_is_optional: Whether to error out when target project name cannot be retrieved.
+    :type  target_project_is_optional: bool
     :param target_package_is_optional: Whether to error out when target package name cannot be retrieved.
     :type  target_package_is_optional: bool
     :returns: Project name, package name, target project name and target package name.
@@ -222,12 +231,12 @@ def pop_project_package_targetproject_targetpackage_from_args(args, target_packa
     try_working_copy = True
     try:
         # try this sequence first: project package target_project target_package
-        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        project, package = pop_project_package_from_args(args, package_is_optional=package_is_optional)
         if args:
             # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
             try_working_copy = False
         target_project, target_package = pop_project_package_from_args(
-            args, package_is_optional=target_package_is_optional
+            args, project_is_optional=target_project_is_optional, package_is_optional=target_package_is_optional
         )
     except oscerr.OscValueError as ex:
         if not try_working_copy:
@@ -4018,36 +4027,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc rdiff OLDPRJ OLDPAC NEWPRJ [NEWPAC]
             osc rdiff PROJECT PACKAGE
+            osc rdiff PROJECT --meta
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        rev1 = None
-        rev2 = None
+        args = list(args)
+        old_project, old_package, new_project, new_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, package_is_optional=True, target_project_is_optional=True, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
-        old_project = None
-        old_package = None
-        new_project = None
-        new_package = None
+        if not new_package:
+            new_package = old_package
 
-        if len(args) == 2:
-            new_project = self._process_project_name(args[0])
-            new_package = args[1]
-        elif len(args) == 3 or len(args) == 4:
-            old_project = self._process_project_name(args[0])
-            new_package = old_package = args[1]
-            new_project = self._process_project_name(args[2])
-            if len(args) == 4:
-                new_package = args[3]
-        elif len(args) == 1 and opts.meta:
-            new_project = self._process_project_name(args[0])
-            new_package = '_project'
-        else:
-            raise oscerr.WrongArgs('Wrong number of arguments')
+        if not old_package:
+            if opts.meta:
+                new_project = old_project
+                new_package = "_project"
+                old_project = None
+                old_package = None
+            else:
+                self.argparse_error("Please specify either a package or the --meta option")
 
         if opts.meta:
             opts.unexpand = True
+
+        rev1 = None
+        rev2 = None
 
         if opts.change:
             try:
