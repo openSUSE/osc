@@ -7015,6 +7015,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta, opts.deleted, rev_upper))
         run_pager(log)
 
+    @cmdln.option('-v', '--verbose', action='store_true',
+                  help='verbose run of local services for debugging purposes')
     def do_service(self, subcmd, opts, *args):
         """
         Handle source services
@@ -7106,7 +7108,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif command in ("runall", "ra"):
                 mode = "all"
 
-        return p.run_source_services(mode, singleservice)
+        return p.run_source_services(mode, singleservice, opts.verbose)
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='trigger rebuilds for a specific architecture')
