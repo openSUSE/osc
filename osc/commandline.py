@@ -19,6 +19,7 @@ import traceback
 from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
+from typing import List
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -48,79 +49,131 @@ def get_parser():
     return osc.argparser
 
 
-def pop_project_package_from_args(args, default_project=None, default_package=None, project_is_optional=False, package_is_optional=False):
+def pop_args(
+    args,
+    arg1_name: str = None,
+    arg1_is_optional: bool = False,
+    arg1_default: str = None,
+    arg2_name: str = None,
+    arg2_is_optional: bool = False,
+    arg2_default: str = None,
+):
     """
-    Get project and package from given `args`.
+    Pop 2 arguments from `args`.
+    They may be either 2 individual entries or a single entry with values separated with "/".
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :param default_project: Used if project cannot be retrieved from `args`.
-                            Resolved from the current working copy if set to '.'.
-    :type  default_project: str
-    :param default_package: Used if package cannot be retrieved from `args`.
-                            Resolved from the current working copy if set to '.'.
-    :type  default_package: str
-    :param project_is_optional: Whether to error out when project name cannot be retrieved. Implies `package_is_optional=False`.
-    :type  project_is_optional: bool
-    :param package_is_optional: Whether to error out when package name cannot be retrieved.
-    :type  package_is_optional: bool
-    :returns: Project name and package name.
+    :param arg1_name: Name of the first argument
+    :type  arg1_name: str
+    :param arg1_is_optional: Whether to error out when arg1 cannot be retrieved.
+    :type  arg1_is_optional: bool
+    :param arg1_default: Used if arg1 is not specified in `args`.
+    :type  arg1_default: bool
+    :param arg2_name: Name of the second argument
+    :type  arg2_name: str
+    :param arg2_is_optional: Whether to error out when arg2 cannot be retrieved.
+    :type  arg2_is_optional: bool
+    :param arg2_default: Used if arg2 is not specified in `args`.
+    :type  arg2_default: bool
+    :returns: Project and package.
     :rtype:   tuple(str)
     """
     assert isinstance(args, list)
-    path = Path.cwd()
+    assert isinstance(arg1_name, str)
+    assert isinstance(arg2_name, str)
 
-    if project_is_optional:
-        package_is_optional = True
+    if arg1_is_optional:
+        arg2_is_optional = True
 
-    used_default_project = False
+    used_arg1_default = False
     try:
-        project = args.pop(0)
+        arg1 = args.pop(0)
     except IndexError:
-        if not default_project:
-            if project_is_optional:
-                return None, None
-            raise oscerr.OscValueError("Please specify a project")
-        project = default_project
-        used_default_project = True
+        if not arg1_is_optional and not arg1_default:
+            raise oscerr.OscValueError(f"Please specify a {arg1_name}") from None
+        arg1 = arg1_default
+        used_arg1_default = True
 
-    if not isinstance(project, str):
-        raise TypeError(f"Project should be 'str', found: {type(project).__name__}")
+    if not isinstance(arg1, (str, type(None))):
+        raise TypeError(f"{arg1_name.capitalize()} should be 'str', found: {type(arg1).__name__}")
 
-    package = None
+    arg2 = None
 
-    if project == "/":
-        # no project name (to support listing all projects via `osc ls /`)
-        project = None
-    elif project and "/" in project:
-        # project/package
-        if project.count("/") != 1:
-            raise oscerr.OscValueError(f"Argument doesn't match the '<project>/<package>' pattern: {project}")
-        project, package = project.split("/")
+    if arg1 and "/" in arg1:
+        # project/package, repo/arch, etc.
+        if arg1.count("/") != 1:
+            raise oscerr.OscValueError(f"Argument doesn't match the '<{arg1_name}>/<{arg2_name}>' pattern: {arg1}")
+        arg1, arg2 = arg1.split("/")
 
+    if arg2 is None:
+        try:
+            arg2  = args.pop(0)
+        except IndexError:
+            if not arg2_is_optional and not arg2_default and not used_arg1_default:
+                # arg2 is not optional and it wasn't specified together with arg1
+                raise oscerr.OscValueError(f"Please specify a {arg2_name}") from None
+            arg2 = arg2_default
+
+        if not isinstance(arg2, (str, type(None))):
+            raise TypeError(f"{arg2_name.capitalize()} should be 'str', found: {type(arg2).__name__}")
+
+    return arg1, arg2
+
+
+def pop_project_package_from_args(
+    args: List[str],
+    project_is_optional: bool = False,
+    default_project: str = None,
+    package_is_optional: bool = False,
+    default_package: str = None,
+):
+    """
+    Pop project and package from given `args`.
+    They may be either 2 individual entries or a single entry with values separated with "/".
+
+    .. warning::
+        The `args` list gets modified in this function call!
+
+    :param args: List of command-line arguments.
+    :type  args: list(str)
+    :param project_is_optional: Whether to error out when project cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
+    :param default_project: Used if project is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param package_is_optional: Whether to error out when package cannot be retrieved.
+    :type  package_is_optional: bool
+    :param default_package: Used if package is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :returns: Project and package.
+    :rtype:   tuple(str)
+    """
+    project, package = pop_args(
+        args,
+        arg1_name="project",
+        arg1_is_optional=project_is_optional,
+        arg1_default=default_project,
+        arg2_name="package",
+        arg2_is_optional=package_is_optional,
+        arg2_default=default_package,
+    )
+
+    path = Path.cwd()
     if project == ".":
         # project name taken from the working copy
         store = osc_store.Store(path)
-        project = store.project
-
-    if package is None:
         try:
-            package = args.pop(0)
-        except IndexError:
-            if not package_is_optional and not used_default_project:
-                # package is not optional and it wasn't specified together with the project
-                raise oscerr.OscValueError("Please specify a package")
-
-            if default_package:
-                package = default_package
-            else:
-                if package_is_optional:
-                    return project, None
-                raise oscerr.OscValueError("Please specify a package")
-
-        if not isinstance(package, str):
-            raise TypeError(f"Package should be 'str', found: {type(package).__name__}")
+            store = osc_store.Store(path)
+            project = store.project
+        except oscerr.NoWorkingCopy:
+            if not project_is_optional:
+                raise
+            project = None
 
     if package == ".":
         # package name taken from the working copy
@@ -136,67 +189,111 @@ def pop_project_package_from_args(args, default_project=None, default_package=No
     return project, package
 
 
-def pop_repository_arch_from_args(args):
+def pop_repository_arch_from_args(
+    args: List[str],
+    repository_is_optional: bool = False,
+    default_repository: str = None,
+    arch_is_optional: bool = False,
+    default_arch: str = None,
+):
     """
-    Get repository and arch from given `args`.
+    Pop repository and arch from given `args`.
+    They may be either 2 individual entries or a single entry with values separated with "/".
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :returns: Repository name and arch name.
+    :param repository_is_optional: Whether to error out when project cannot be retrieved. Implies `arch_is_optional=False`.
+    :type  repository_is_optional: bool
+    :param default_repository: Used if repository is not specified in `args`.
+    :type  default_repository: str
+    :param arch_is_optional: Whether to error out when arch cannot be retrieved.
+    :type  arch_is_optional: bool
+    :param default_arch: Used if arch is not specified in `args`.
+    :type  default_arch: str
+    :returns: Repository and arch.
     :rtype:   tuple(str)
     """
-    assert isinstance(args, list)
-
-    try:
-        repository = args.pop(0)
-    except IndexError:
-        raise oscerr.OscValueError("Please specify a repository")
-
-    if not isinstance(repository, str):
-        raise TypeError(f"Repository should be 'str', found: {type(repository).__name__}")
-
-    arch = None
-
-    if "/" in repository:
-        # repository/arch
-        if repository.count("/") != 1:
-            raise oscerr.OscValueError(f"Argument doesn't match the '<repository>/<arch>' pattern: {repository}")
-        repository, arch = repository.split("/")
-
-    if arch is None:
-        try:
-            arch = args.pop(0)
-        except IndexError:
-            raise oscerr.OscValueError("Please specify an arch")
-
-        if not isinstance(arch, str):
-            raise TypeError(f"Arch should be 'str', found: {type(arch).__name__}")
-
+    repository, arch = pop_args(
+        args,
+        arg1_name="repository",
+        arg1_is_optional=repository_is_optional,
+        arg1_default=default_repository,
+        arg2_name="arch",
+        arg2_is_optional=arch_is_optional,
+        arg2_default=default_arch,
+    )
     return repository, arch
 
 
-def pop_project_package_repository_arch_from_args(args):
+def pop_project_package_repository_arch_from_args(
+    args: List[str],
+    project_is_optional: bool = False,
+    default_project: str = None,
+    package_is_optional: bool = False,
+    default_package: str = None,
+    repository_is_optional: bool = False,
+    default_repository: str = None,
+    arch_is_optional: bool = False,
+    default_arch: str = None,
+):
     """
-    Get project, package, repository and arch from given `args`.
+    Pop project, package, repository and arch from given `args`.
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :returns: Project name, package name, repository name and arch name.
+    :param project_is_optional: Whether to error out when project cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
+    :param default_project: Used if project is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param package_is_optional: Whether to error out when package cannot be retrieved.
+    :type  package_is_optional: bool
+    :param default_package: Used if package is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :param repository_is_optional: Whether to error out when project cannot be retrieved. Implies `arch_is_optional=False`.
+    :type  repository_is_optional: bool
+    :param default_repository: Used if repository is not specified in `args`.
+    :type  default_repository: str
+    :param arch_is_optional: Whether to error out when arch cannot be retrieved.
+    :type  arch_is_optional: bool
+    :param default_arch: Used if arch is not specified in `args`.
+    :type  default_arch: str
+    :returns: Project, package, repository and arch.
     :rtype:   tuple(str)
     """
-
     args_backup = args.copy()
 
-    try_working_copy = True
+    if project_is_optional or package_is_optional:
+        repository_is_optional = True
+        arch_is_optional = True
+
+    try_working_copy = default_project == "." or default_package == "."
     try:
         # try this sequence first: project package repository arch
-        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        project, package = pop_project_package_from_args(
+            args,
+            project_is_optional=project_is_optional,
+            default_project=default_project,
+            package_is_optional=package_is_optional,
+            default_package=default_package,
+        )
         if args:
             # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
             try_working_copy = False
-        repository, arch = pop_repository_arch_from_args(args)
+        repository, arch = pop_repository_arch_from_args(
+            args,
+            repository_is_optional=repository_is_optional,
+            default_repository=default_repository,
+            arch_is_optional=arch_is_optional,
+            default_arch=default_arch,
+        )
     except oscerr.OscValueError as ex:
         if not try_working_copy:
             raise ex from None
@@ -204,39 +301,86 @@ def pop_project_package_repository_arch_from_args(args):
         # then read project and package from working copy and try repository arch
         args[:] = args_backup.copy()
         project, package = pop_project_package_from_args(
-            [], default_project=".", default_package=".", package_is_optional=False
+            [], default_project=".", default_package="."
         )
-        repository, arch = pop_repository_arch_from_args(args)
+        repository, arch = pop_repository_arch_from_args(
+            args,
+            repository_is_optional=repository_is_optional,
+            default_repository=default_repository,
+            arch_is_optional=arch_is_optional,
+            default_arch=default_arch,
+        )
 
     return project, package, repository, arch
 
 
-def pop_project_package_targetproject_targetpackage_from_args(args, package_is_optional=False, target_project_is_optional=False, target_package_is_optional=False):
+def pop_project_package_targetproject_targetpackage_from_args(
+    args: List[str],
+    project_is_optional: bool = False,
+    default_project: str = None,
+    package_is_optional: bool = False,
+    default_package: str = None,
+    target_project_is_optional: bool = False,
+    default_target_project: str = None,
+    target_package_is_optional: bool = False,
+    default_target_package: str = None,
+):
     """
-    Get project, package, target_project and target_package from given `args`.
+    Pop project, package, target project and target package from given `args`.
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :param target_project_is_optional: Whether to error out when target project name cannot be retrieved.
+    :param project_is_optional: Whether to error out when project cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
+    :param default_project: Used if project is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param package_is_optional: Whether to error out when package cannot be retrieved.
+    :type  package_is_optional: bool
+    :param default_package: Used if package is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :param target_project_is_optional: Whether to error out when target project cannot be retrieved. Implies `target_package_is_optional=False`.
     :type  target_project_is_optional: bool
-    :param target_package_is_optional: Whether to error out when target package name cannot be retrieved.
+    :param default_target_project: Used if target project is not specified in `args`.
+                                   Resolved from the current working copy if set to '.'.
+    :type  default_target_project: str
+    :param target_package_is_optional: Whether to error out when target package cannot be retrieved.
     :type  target_package_is_optional: bool
-    :returns: Project name, package name, target project name and target package name.
+    :param default_target_package: Used if target package is not specified in `args`.
+                                   Resolved from the current working copy if set to '.'.
+    :type  default_target_package: str
+    :returns: Project, package, target project and target package.
     :rtype:   tuple(str)
     """
     args_backup = args.copy()
-    #try_working_copy = True
 
-    try_working_copy = True
+    if project_is_optional or package_is_optional:
+        target_project_is_optional = True
+        target_package_is_optional = True
+
+    try_working_copy = default_project == "." or default_package == "."
     try:
         # try this sequence first: project package target_project target_package
-        project, package = pop_project_package_from_args(args, package_is_optional=package_is_optional)
+        project, package = pop_project_package_from_args(
+            args,
+            project_is_optional=project_is_optional,
+            default_project=default_project,
+            package_is_optional=package_is_optional,
+            default_package=default_package,
+        )
         if args:
             # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
             try_working_copy = False
         target_project, target_package = pop_project_package_from_args(
-            args, project_is_optional=target_project_is_optional, package_is_optional=target_package_is_optional
+            args,
+            project_is_optional=target_project_is_optional,
+            default_project=default_target_project,
+            package_is_optional=target_package_is_optional,
+            default_package=default_target_package,
         )
     except oscerr.OscValueError as ex:
         if not try_working_copy:
@@ -244,15 +388,27 @@ def pop_project_package_targetproject_targetpackage_from_args(args, package_is_o
         # then read project and package from working copy and target_project target_package
         args[:] = args_backup.copy()
         project, package = pop_project_package_from_args(
-            [], default_project=".", default_package=".", package_is_optional=False
+            [],
+            default_project=".",
+            default_package=".",
+            package_is_optional=False,
         )
         target_project, target_package = pop_project_package_from_args(
-            args, package_is_optional=target_package_is_optional
+            args,
+            project_is_optional=target_project_is_optional,
+            default_project=default_target_project,
+            package_is_optional=target_package_is_optional,
+            default_package=default_target_package,
         )
     return project, package, target_project, target_package
 
 
 def ensure_no_remaining_args(args):
+    """
+    Error out when `args` still contains arguments.
+
+    :raises oscerr.WrongArgs: The `args` list still contains arguments.
+    """
     if not args:
         return
     args_str = " ".join(args)
@@ -878,7 +1034,7 @@ class Osc(cmdln.Cmdln):
 
         args = list(args)
         project, package = pop_project_package_from_args(
-            args, default_project=".", default_package=".", package_is_optional=False
+            args, package_is_optional=False
         )
 
         devel_project, devel_package = show_devel_project(apiurl, project, package)
@@ -3053,7 +3209,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = list(args)
         src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
-            args, target_package_is_optional=True,
+            args,
+            default_project=".",
+            default_package=".",
+            target_package_is_optional=True,
         )
         ensure_no_remaining_args(args)
 
