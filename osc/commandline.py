@@ -7129,11 +7129,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc rebuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         """
-
-        args = slash_split(args)
-
-        package = repo = arch = code = None
         apiurl = self.get_api_url()
+
+        args = list(args)
+        project, package, repo, arch = pop_project_package_repository_arch_from_args(
+            args,
+            package_is_optional=True,
+            repository_is_optional=True,
+            arch_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
         if opts.repo:
             repo = opts.repo
@@ -7141,26 +7146,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.arch:
             arch = opts.arch
 
-        if len(args) < 1:
-            if is_package_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                package = store_read_package(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
-            elif is_project_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
-            else:
-                raise oscerr.WrongArgs('Too few arguments.')
-        else:
-            project = self._process_project_name(args[0])
-            if len(args) > 1:
-                package = args[1]
-
-        if len(args) > 2:
-            repo = args[2]
-        if len(args) > 3:
-            arch = args[3]
-
+        code = None
         if opts.failed:
             code = 'failed'
 
