@@ -19,6 +19,7 @@ import traceback
 from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
+from typing import List
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -48,148 +49,258 @@ def get_parser():
     return osc.argparser
 
 
-def pop_project_package_from_args(args, default_project=None, default_package=None, package_is_optional=False):
+def pop_args(
+    args,
+    arg1_name: str = None,
+    arg1_is_optional: bool = False,
+    arg1_default: str = None,
+    arg2_name: str = None,
+    arg2_is_optional: bool = False,
+    arg2_default: str = None,
+):
     """
-    Get project and package from given `args`.
+    Pop 2 arguments from `args`.
+    They may be either 2 individual entries or a single entry with values separated with "/".
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :param default_project: Used if project cannot be retrieved from `args`.
-                            Resolved from the current working copy if set to '.'.
-    :type  default_project: str
-    :param default_package: Used if package cannot be retrieved from `args`.
-                            Resolved from the current working copy if set to '.'.
-    :type  default_package: str
-    :param package_is_optional: Whether to error out when package name cannot be retrieved.
-    :type  package_is_optional: bool
-    :returns: Project name and package name.
+    :param arg1_name: Name of the first argument
+    :type  arg1_name: str
+    :param arg1_is_optional: Whether to error out when arg1 cannot be retrieved.
+    :type  arg1_is_optional: bool
+    :param arg1_default: Used if arg1 is not specified in `args`.
+    :type  arg1_default: bool
+    :param arg2_name: Name of the second argument
+    :type  arg2_name: str
+    :param arg2_is_optional: Whether to error out when arg2 cannot be retrieved.
+    :type  arg2_is_optional: bool
+    :param arg2_default: Used if arg2 is not specified in `args`.
+    :type  arg2_default: bool
+    :returns: Project and package.
     :rtype:   tuple(str)
     """
     assert isinstance(args, list)
-    path = Path.cwd()
+    assert isinstance(arg1_name, str)
+    assert isinstance(arg2_name, str)
 
-    used_default_project = False
+    if arg1_is_optional:
+        arg2_is_optional = True
+
+    used_arg1_default = False
     try:
-        project = args.pop(0)
+        arg1 = args.pop(0)
     except IndexError:
-        if not default_project:
-            raise oscerr.OscValueError("Please specify a project")
-        project = default_project
-        used_default_project = True
+        if not arg1_is_optional and not arg1_default:
+            raise oscerr.OscValueError(f"Please specify a {arg1_name}") from None
+        arg1 = arg1_default
+        used_arg1_default = True
 
-    if not isinstance(project, str):
-        raise TypeError(f"Project should be 'str', found: {type(project).__name__}")
+    if not isinstance(arg1, (str, type(None))):
+        raise TypeError(f"{arg1_name.capitalize()} should be 'str', found: {type(arg1).__name__}")
 
-    package = None
+    arg2 = None
 
-    if project == "/":
-        # no project name (to support listing all projects via `osc ls /`)
-        project = None
-    elif project and "/" in project:
-        # project/package
-        if project.count("/") != 1:
-            raise oscerr.OscValueError(f"Argument doesn't match the '<project>/<package>' pattern: {project}")
-        project, package = project.split("/")
+    if arg1 and "/" in arg1:
+        # project/package, repo/arch, etc.
+        if arg1.count("/") != 1:
+            raise oscerr.OscValueError(f"Argument doesn't match the '<{arg1_name}>/<{arg2_name}>' pattern: {arg1}")
+        arg1, arg2 = arg1.split("/")
+
+    if arg2 is None:
+        try:
+            arg2  = args.pop(0)
+        except IndexError:
+            if not arg2_is_optional and not arg2_default and not used_arg1_default:
+                # arg2 is not optional and it wasn't specified together with arg1
+                raise oscerr.OscValueError(f"Please specify a {arg2_name}") from None
+            arg2 = arg2_default
+
+        if not isinstance(arg2, (str, type(None))):
+            raise TypeError(f"{arg2_name.capitalize()} should be 'str', found: {type(arg2).__name__}")
+
+    return arg1, arg2
+
+
+def pop_project_package_from_args(
+    args: List[str],
+    project_is_optional: bool = False,
+    default_project: str = None,
+    package_is_optional: bool = False,
+    default_package: str = None,
+):
+    """
+    Pop project and package from given `args`.
+    They may be either 2 individual entries or a single entry with values separated with "/".
+
+    .. warning::
+        The `args` list gets modified in this function call!
+
+    :param args: List of command-line arguments.
+    :type  args: list(str)
+    :param project_is_optional: Whether to error out when project cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
+    :param default_project: Used if project is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param package_is_optional: Whether to error out when package cannot be retrieved.
+    :type  package_is_optional: bool
+    :param default_package: Used if package is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :returns: Project and package.
+    :rtype:   tuple(str)
+    """
+    project, package = pop_args(
+        args,
+        arg1_name="project",
+        arg1_is_optional=project_is_optional,
+        arg1_default=default_project,
+        arg2_name="package",
+        arg2_is_optional=package_is_optional,
+        arg2_default=default_package,
+    )
+
+    path = Path.cwd()
+    project_store = None
+    package_store = None
 
     if project == ".":
         # project name taken from the working copy
-        store = osc_store.Store(path)
-        project = store.project
-
-    if package is None:
+        project_store = osc_store.Store(path)
         try:
-            package = args.pop(0)
-        except IndexError:
-            if not package_is_optional and not used_default_project:
-                # package is not optional and it wasn't specified together with the project
-                raise oscerr.OscValueError("Please specify a package")
-
-            if default_package:
-                package = default_package
-            else:
-                if package_is_optional:
-                    return project, None
-                raise oscerr.OscValueError("Please specify a package")
-
-        if not isinstance(package, str):
-            raise TypeError(f"Package should be 'str', found: {type(package).__name__}")
+            project_store = osc_store.Store(path)
+            project = project_store.project
+        except oscerr.NoWorkingCopy:
+            if not project_is_optional:
+                raise
+            project = None
 
     if package == ".":
         # package name taken from the working copy
         try:
-            store = osc_store.Store(path)
-            store.assert_is_package()
-            package = store.package
+            package_store = osc_store.Store(path)
+            package_store.assert_is_package()
+            package = package_store.package
         except oscerr.NoWorkingCopy:
-            if not package_is_optional:
+            if package_is_optional:
+                package = None
+            elif not project_store and default_package == ".":
+                # project wasn't retrieved from store, let's ask for specifying a package
+                raise oscerr.OscValueError("Please specify a package") from None
+            else:
                 raise
-            package = None
 
     return project, package
 
 
-def pop_repository_arch_from_args(args):
+def pop_repository_arch_from_args(
+    args: List[str],
+    repository_is_optional: bool = False,
+    default_repository: str = None,
+    arch_is_optional: bool = False,
+    default_arch: str = None,
+):
     """
-    Get repository and arch from given `args`.
+    Pop repository and arch from given `args`.
+    They may be either 2 individual entries or a single entry with values separated with "/".
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :returns: Repository name and arch name.
+    :param repository_is_optional: Whether to error out when project cannot be retrieved. Implies `arch_is_optional=False`.
+    :type  repository_is_optional: bool
+    :param default_repository: Used if repository is not specified in `args`.
+    :type  default_repository: str
+    :param arch_is_optional: Whether to error out when arch cannot be retrieved.
+    :type  arch_is_optional: bool
+    :param default_arch: Used if arch is not specified in `args`.
+    :type  default_arch: str
+    :returns: Repository and arch.
     :rtype:   tuple(str)
     """
-    assert isinstance(args, list)
-
-    try:
-        repository = args.pop(0)
-    except IndexError:
-        raise oscerr.OscValueError("Please specify a repository")
-
-    if not isinstance(repository, str):
-        raise TypeError(f"Repository should be 'str', found: {type(repository).__name__}")
-
-    arch = None
-
-    if "/" in repository:
-        # repository/arch
-        if repository.count("/") != 1:
-            raise oscerr.OscValueError(f"Argument doesn't match the '<repository>/<arch>' pattern: {repository}")
-        repository, arch = repository.split("/")
-
-    if arch is None:
-        try:
-            arch = args.pop(0)
-        except IndexError:
-            raise oscerr.OscValueError("Please specify an arch")
-
-        if not isinstance(arch, str):
-            raise TypeError(f"Arch should be 'str', found: {type(arch).__name__}")
-
+    repository, arch = pop_args(
+        args,
+        arg1_name="repository",
+        arg1_is_optional=repository_is_optional,
+        arg1_default=default_repository,
+        arg2_name="arch",
+        arg2_is_optional=arch_is_optional,
+        arg2_default=default_arch,
+    )
     return repository, arch
 
 
-def pop_project_package_repository_arch_from_args(args):
+def pop_project_package_repository_arch_from_args(
+    args: List[str],
+    project_is_optional: bool = False,
+    default_project: str = None,
+    package_is_optional: bool = False,
+    default_package: str = None,
+    repository_is_optional: bool = False,
+    default_repository: str = None,
+    arch_is_optional: bool = False,
+    default_arch: str = None,
+):
     """
-    Get project, package, repository and arch from given `args`.
+    Pop project, package, repository and arch from given `args`.
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :returns: Project name, package name, repository name and arch name.
+    :param project_is_optional: Whether to error out when project cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
+    :param default_project: Used if project is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param package_is_optional: Whether to error out when package cannot be retrieved.
+    :type  package_is_optional: bool
+    :param default_package: Used if package is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :param repository_is_optional: Whether to error out when project cannot be retrieved. Implies `arch_is_optional=False`.
+    :type  repository_is_optional: bool
+    :param default_repository: Used if repository is not specified in `args`.
+    :type  default_repository: str
+    :param arch_is_optional: Whether to error out when arch cannot be retrieved.
+    :type  arch_is_optional: bool
+    :param default_arch: Used if arch is not specified in `args`.
+    :type  default_arch: str
+    :returns: Project, package, repository and arch.
     :rtype:   tuple(str)
     """
-
     args_backup = args.copy()
 
-    try_working_copy = True
+    if project_is_optional or package_is_optional:
+        repository_is_optional = True
+        arch_is_optional = True
+
+    try_working_copy = default_project == "." or default_package == "."
     try:
         # try this sequence first: project package repository arch
-        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        project, package = pop_project_package_from_args(
+            args,
+            project_is_optional=project_is_optional,
+            default_project=default_project,
+            package_is_optional=package_is_optional,
+            default_package=default_package,
+        )
         if args:
             # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
             try_working_copy = False
-        repository, arch = pop_repository_arch_from_args(args)
+        repository, arch = pop_repository_arch_from_args(
+            args,
+            repository_is_optional=repository_is_optional,
+            default_repository=default_repository,
+            arch_is_optional=arch_is_optional,
+            default_arch=default_arch,
+        )
     except oscerr.OscValueError as ex:
         if not try_working_copy:
             raise ex from None
@@ -197,37 +308,86 @@ def pop_project_package_repository_arch_from_args(args):
         # then read project and package from working copy and try repository arch
         args[:] = args_backup.copy()
         project, package = pop_project_package_from_args(
-            [], default_project=".", default_package=".", package_is_optional=False
+            [], default_project=".", default_package="."
         )
-        repository, arch = pop_repository_arch_from_args(args)
+        repository, arch = pop_repository_arch_from_args(
+            args,
+            repository_is_optional=repository_is_optional,
+            default_repository=default_repository,
+            arch_is_optional=arch_is_optional,
+            default_arch=default_arch,
+        )
 
     return project, package, repository, arch
 
 
-def pop_project_package_targetproject_targetpackage_from_args(args, target_package_is_optional=False):
+def pop_project_package_targetproject_targetpackage_from_args(
+    args: List[str],
+    project_is_optional: bool = False,
+    default_project: str = None,
+    package_is_optional: bool = False,
+    default_package: str = None,
+    target_project_is_optional: bool = False,
+    default_target_project: str = None,
+    target_package_is_optional: bool = False,
+    default_target_package: str = None,
+):
     """
-    Get project, package, target_project and target_package from given `args`.
+    Pop project, package, target project and target package from given `args`.
+
+    .. warning::
+        The `args` list gets modified in this function call!
 
     :param args: List of command-line arguments.
-                 WARNING: `args` gets modified in this function call!
     :type  args: list(str)
-    :param target_package_is_optional: Whether to error out when target package name cannot be retrieved.
+    :param project_is_optional: Whether to error out when project cannot be retrieved. Implies `package_is_optional=False`.
+    :type  project_is_optional: bool
+    :param default_project: Used if project is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_project: str
+    :param package_is_optional: Whether to error out when package cannot be retrieved.
+    :type  package_is_optional: bool
+    :param default_package: Used if package is not specified in `args`.
+                            Resolved from the current working copy if set to '.'.
+    :type  default_package: str
+    :param target_project_is_optional: Whether to error out when target project cannot be retrieved. Implies `target_package_is_optional=False`.
+    :type  target_project_is_optional: bool
+    :param default_target_project: Used if target project is not specified in `args`.
+                                   Resolved from the current working copy if set to '.'.
+    :type  default_target_project: str
+    :param target_package_is_optional: Whether to error out when target package cannot be retrieved.
     :type  target_package_is_optional: bool
-    :returns: Project name, package name, target project name and target package name.
+    :param default_target_package: Used if target package is not specified in `args`.
+                                   Resolved from the current working copy if set to '.'.
+    :type  default_target_package: str
+    :returns: Project, package, target project and target package.
     :rtype:   tuple(str)
     """
     args_backup = args.copy()
-    #try_working_copy = True
 
-    try_working_copy = True
+    if project_is_optional or package_is_optional:
+        target_project_is_optional = True
+        target_package_is_optional = True
+
+    try_working_copy = default_project == "." or default_package == "."
     try:
         # try this sequence first: project package target_project target_package
-        project, package = pop_project_package_from_args(args, package_is_optional=False)
+        project, package = pop_project_package_from_args(
+            args,
+            project_is_optional=project_is_optional,
+            default_project=default_project,
+            package_is_optional=package_is_optional,
+            default_package=default_package,
+        )
         if args:
             # we got more than 2 arguments -> we shouldn't try to retrieve project and package from a working copy
             try_working_copy = False
         target_project, target_package = pop_project_package_from_args(
-            args, package_is_optional=target_package_is_optional
+            args,
+            project_is_optional=target_project_is_optional,
+            default_project=default_target_project,
+            package_is_optional=target_package_is_optional,
+            default_package=default_target_package,
         )
     except oscerr.OscValueError as ex:
         if not try_working_copy:
@@ -235,15 +395,27 @@ def pop_project_package_targetproject_targetpackage_from_args(args, target_packa
         # then read project and package from working copy and target_project target_package
         args[:] = args_backup.copy()
         project, package = pop_project_package_from_args(
-            [], default_project=".", default_package=".", package_is_optional=False
+            [],
+            default_project=".",
+            default_package=".",
+            package_is_optional=False,
         )
         target_project, target_package = pop_project_package_from_args(
-            args, package_is_optional=target_package_is_optional
+            args,
+            project_is_optional=target_project_is_optional,
+            default_project=default_target_project,
+            package_is_optional=target_package_is_optional,
+            default_package=default_target_package,
         )
     return project, package, target_project, target_package
 
 
 def ensure_no_remaining_args(args):
+    """
+    Error out when `args` still contains arguments.
+
+    :raises oscerr.WrongArgs: The `args` list still contains arguments.
+    """
     if not args:
         return
     args_str = " ".join(args)
@@ -868,9 +1040,7 @@ class Osc(cmdln.Cmdln):
         apiurl = self.get_api_url()
 
         args = list(args)
-        project, package = pop_project_package_from_args(
-            args, default_project=".", default_package=".", package_is_optional=False
-        )
+        project, package = pop_project_package_from_args(args, default_project=".", default_package=".")
 
         devel_project, devel_package = show_devel_project(apiurl, project, package)
 
@@ -1686,12 +1856,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print('created request id', result)
         if conf.config['print_web_links']:
-            root = ET.fromstring(b''.join(show_configuration(apiurl)))
-            node = root.find('obs_url')
-            if node is None or not node.text:
-                raise oscerr.APIError('obs_url configuration element expected')
-            obs_url = node.text
-            print('%s/request/show/%s' % (obs_url, result))
+            obs_url = _private.get_configuration_option(apiurl, "obs_url")
+            print(f"{obs_url}/request/show/{result}")
 
         if supersede_existing:
             for req in reqs:
@@ -2944,30 +3110,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         to a branch. This is a full copy with a _link file pointing to the branched place.
 
         usage:
-            osc linktobranch                    # can be used in checked out package
+            osc linktobranch                    # from a package working copy
             osc linktobranch PROJECT PACKAGE
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        if len(args) == 0:
-            wd = Path.cwd()
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-            update_local_dir = True
-        elif len(args) < 2:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
-        else:
-            project = self._process_project_name(args[0])
-            package = args[1]
-            update_local_dir = False
+        # assume we're in a working copy if no args were specfied
+        update_working_copy = not args
 
-        # execute
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
+        ensure_no_remaining_args(args)
+
         link_to_branch(apiurl, project, package)
-        if update_local_dir:
-            pac = Package(wd)
+
+        if update_working_copy:
+            pac = Package(Path.cwd())
             pac.update(rev=pac.latest_rev())
 
     @cmdln.option('-m', '--message', metavar='TEXT',
@@ -2980,21 +3140,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         does not exist anymore.
 
         usage:
-            osc detachbranch                    # can be used in package working copy
+            osc detachbranch                    # from a package working copy
             osc detachbranch PROJECT PACKAGE
         """
-        args = slash_split(args)
         apiurl = self.get_api_url()
-        if len(args) == 0:
-            project = store_read_project(Path.cwd())
-            package = store_read_package(Path.cwd())
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif len(args) > 2:
-            raise oscerr.WrongArgs('Too many arguments (required none or two)')
-        else:
-            raise oscerr.WrongArgs('Too few arguments (required none or two)')
+
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=False
+        )
+        ensure_no_remaining_args(args)
 
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
@@ -3059,7 +3214,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         args = list(args)
         src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
-            args, target_package_is_optional=True,
+            args,
+            default_project=".",
+            default_package=".",
+            target_package_is_optional=True,
         )
         ensure_no_remaining_args(args)
 
@@ -3111,21 +3269,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc aggregatepac SOURCEPRJ SOURCEPAC[:FLAVOR] DESTPRJ [DESTPAC]
         """
 
-        args = slash_split(args)
+        args = list(args)
+        src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
-        if not args or len(args) < 3:
-            self.argparse_error("Incorrect number of arguments.")
-
-        src_project = self._process_project_name(args[0])
-        src_package = args[1]
-        dst_project = self._process_project_name(args[2])
-        if len(args) > 3:
-            dst_package = args[3]
-        else:
-            dst_package = src_package
-
-        if src_project == dst_project and src_package == dst_package:
-            raise oscerr.WrongArgs('Error: source and destination are the same.')
+        if not tgt_package:
+            tgt_package = src_package
 
         repo_map = {}
         if opts.map_repo:
@@ -3135,7 +3286,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.WrongOptions('map "%s" must be SRC=TARGET[,SRC=TARGET]' % opts.map_repo)
                 repo_map[src_tgt[0]] = src_tgt[1]
 
-        aggregate_pac(src_project, src_package, dst_project, dst_package, repo_map, opts.disable_publish, opts.nosources)
+        aggregate_pac(src_project, src_package, tgt_project, tgt_package, repo_map, opts.disable_publish, opts.nosources)
 
     @cmdln.option('-c', '--client-side-copy', action='store_true',
                         help='do a (slower) client-side copy')
@@ -3174,30 +3325,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc copypac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         """
+        args = list(args)
+        src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
-        args = slash_split(args)
+        if not tgt_package:
+            tgt_package = src_package
 
-        if not args or len(args) < 3:
-            self.argparse_error("Incorrect number of arguments.")
-
-        src_project = self._process_project_name(args[0])
-        src_package = args[1]
-        dst_project = self._process_project_name(args[2])
-        if len(args) > 3:
-            dst_package = args[3]
-        else:
-            dst_package = src_package
         src_apiurl = conf.config['apiurl']
         if opts.to_apiurl:
-            dst_apiurl = conf.config['apiurl_aliases'].get(opts.to_apiurl, opts.to_apiurl)
+            tgt_apiurl = conf.config['apiurl_aliases'].get(opts.to_apiurl, opts.to_apiurl)
         else:
-            dst_apiurl = src_apiurl
+            tgt_apiurl = src_apiurl
 
-        if src_apiurl != dst_apiurl:
+        if src_apiurl != tgt_apiurl:
             opts.client_side_copy = True
             opts.expand = True
 
-        rev, dummy = parseRevisionOption(opts.revision)
+        rev, _ = parseRevisionOption(opts.revision)
 
         if opts.message:
             comment = opts.message
@@ -3212,14 +3359,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.client_side_copy:
                 comment += ", using client side copy"
 
-        if src_project == dst_project and \
-           src_package == dst_package and \
-           not rev and \
-           src_apiurl == dst_apiurl:
-            raise oscerr.WrongArgs('Source and destination are the same.')
-
         r = copy_pac(src_apiurl, src_project, src_package,
-                     dst_apiurl, dst_project, dst_package,
+                     tgt_apiurl, tgt_project, tgt_package,
                      client_side_copy=opts.client_side_copy,
                      keep_maintainers=opts.keep_maintainers,
                      keep_develproject=opts.keep_develproject,
@@ -3509,12 +3650,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         r = create_maintenance_request(apiurl, source_project, source_packages, target_project, release_project, opt_sourceupdate, opts.message, opts.enforce_branching)
         print(r.reqid)
         if conf.config['print_web_links']:
-            root = ET.fromstring(b''.join(show_configuration(apiurl)))
-            node = root.find('obs_url')
-            if node is None or not node.text:
-                raise oscerr.APIError('obs_url configuration element expected')
-            obs_url = node.text
-            print('%s/request/show/%s' % (obs_url, r.reqid))
+            obs_url = _private.get_configuration_option(apiurl, "obs_url")
+            print(f"{obs_url}/request/show/{r.reqid}")
 
         if supersede_existing:
             for req in reqs:
@@ -3803,28 +3940,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc undelete PROJECT
-           osc undelete PROJECT PACKAGE [PACKAGE ...]
+           osc undelete PROJECT PACKAGE
         """
-
-        args = slash_split(args)
-        if len(args) < 1:
-            raise oscerr.WrongArgs('Missing argument.')
-
-        msg = ''
-        if opts.message:
-            msg = opts.message
-        else:
-            msg = edit_message()
-
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
-        pkgs = args[1:]
 
-        if pkgs:
-            for pkg in pkgs:
-                undelete_package(apiurl, prj, pkg, msg)
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        msg = opts.message or edit_message()
+
+        if package:
+            undelete_package(apiurl, project, package, msg)
         else:
-            undelete_project(apiurl, prj, msg)
+            undelete_project(apiurl, project, msg)
 
     @cmdln.option('-r', '--recursive', action='store_true',
                         help='deletes a project with packages inside')
@@ -3845,82 +3976,46 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         well use \'--force\' switch.
 
         usage:
-           osc rdelete [-r] [-f] PROJECT|. [PACKAGE]
+           osc rdelete [-r] [-f] PROJECT [PACKAGE]
         """
-
-        args = slash_split(args)
-        if len(args) < 1 or len(args) > 2:
-            raise oscerr.WrongArgs('Wrong number of arguments')
-
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
 
-        msg = ''
-        if opts.message:
-            msg = opts.message
-        else:
-            msg = edit_message()
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        msg = opts.message or edit_message()
 
         # empty arguments result in recursive project delete ...
-        if not prj:
+        if not project:
             raise oscerr.WrongArgs('Project argument is empty')
 
-        if len(args) > 1:
-            pkg = args[1]
-
-            if not pkg:
-                raise oscerr.WrongArgs('Package argument is empty')
-
-            # FIXME: core.py:commitDelPackage() should have something similar
-            rlist = get_request_collection(apiurl, project=prj, package=pkg)
-            for rq in rlist:
-                print(rq)
-            if len(rlist) >= 1 and not opts.force:
-                print('Package has pending requests. Deleting the package will break them. '
-                      'They should be accepted/declined/revoked before deleting the package. '
-                      'Or just use \'--force\'.', file=sys.stderr)
-                sys.exit(1)
-
-            delete_package(apiurl, prj, pkg, opts.force, msg)
-
-        elif (not opts.recursive) and len(meta_get_packagelist(apiurl, prj)) >= 1:
-            print('Project contains packages. It must be empty before deleting it. '
-                  'If you are sure that you want to remove this project and all its '
-                  'packages use the \'--recursive\' switch.', file=sys.stderr)
-            sys.exit(1)
+        if package:
+            delete_package(apiurl, project, package, opts.force, msg)
         else:
-            delete_project(apiurl, prj, opts.force, msg)
+            delete_project(apiurl, project, opts.force, msg, recursive=opts.recursive)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
-    @cmdln.option('project')
-    @cmdln.option('package', nargs='?')
-    def do_lock(self, subcmd, opts):
+    def do_lock(self, subcmd, opts, *args):
         """
         Locks a project or package
 
         usage:
            osc lock PROJECT [PACKAGE]
         """
-        project = opts.project
-        package = opts.package
         apiurl = self.get_api_url()
-        kind = 'prj'
-        path_args = (project,)
-        if package is not None:
-            kind = 'pkg'
-            path_args = (project, package)
-        meta = meta_exists(kind, path_args, create_new=False, apiurl=apiurl)
-        root = ET.fromstring(b''.join(meta))
-        if root.find('lock') is not None:
-            print('Already locked', file=sys.stderr)
-            sys.exit(1)
-        # alternatively, we could also use the set_flag api call
-        # instead of manually manipulating the xml
-        lock = ET.SubElement(root, 'lock')
-        ET.SubElement(lock, 'enable')
-        meta = ET.tostring(root)
-        edit_meta(kind, path_args=path_args, data=meta, msg=opts.message)
+
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        # TODO: make consistent with unlock and require a message?
+        lock(apiurl, project, package, opts.message)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
@@ -3933,34 +4028,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc unlock PROJECT [PACKAGE]
         """
-
-        args = slash_split(args)
-        if len(args) < 1 or len(args) > 2:
-            raise oscerr.WrongArgs('Wrong number of arguments')
-
         apiurl = self.get_api_url()
-        prj = self._process_project_name(args[0])
 
-        msg = ''
-        if opts.message:
-            msg = opts.message
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
+
+        msg = opts.message or edit_message()
+
+        if package:
+            unlock_package(apiurl, project, package, msg)
         else:
-            msg = edit_message()
-
-        # empty arguments result in recursive project delete ...
-        if not prj:
-            raise oscerr.WrongArgs('Project argument is empty')
-
-        if len(args) > 1:
-            pkg = args[1]
-
-            if not pkg:
-                raise oscerr.WrongArgs('Package argument is empty')
-
-            unlock_package(apiurl, prj, pkg, msg)
-
-        else:
-            unlock_project(apiurl, prj, msg)
+            unlock_project(apiurl, project, msg)
 
     @cmdln.alias('metafromspec')
     @cmdln.alias('updatepkgmetafromspec')
@@ -4110,36 +4191,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc rdiff OLDPRJ OLDPAC NEWPRJ [NEWPAC]
             osc rdiff PROJECT PACKAGE
+            osc rdiff PROJECT --meta
         """
-
-        args = slash_split(args)
         apiurl = self.get_api_url()
 
-        rev1 = None
-        rev2 = None
+        args = list(args)
+        old_project, old_package, new_project, new_package = pop_project_package_targetproject_targetpackage_from_args(
+            args, package_is_optional=True, target_project_is_optional=True, target_package_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
-        old_project = None
-        old_package = None
-        new_project = None
-        new_package = None
+        if not new_package:
+            new_package = old_package
 
-        if len(args) == 2:
-            new_project = self._process_project_name(args[0])
-            new_package = args[1]
-        elif len(args) == 3 or len(args) == 4:
-            old_project = self._process_project_name(args[0])
-            new_package = old_package = args[1]
-            new_project = self._process_project_name(args[2])
-            if len(args) == 4:
-                new_package = args[3]
-        elif len(args) == 1 and opts.meta:
-            new_project = self._process_project_name(args[0])
-            new_package = '_project'
-        else:
-            raise oscerr.WrongArgs('Wrong number of arguments')
+        if not old_package:
+            if opts.meta:
+                new_project = old_project
+                new_package = "_project"
+                old_project = None
+                old_package = None
+            else:
+                self.argparse_error("Please specify either a package or the --meta option")
 
         if opts.meta:
             opts.unexpand = True
+
+        rev1 = None
+        rev2 = None
 
         if opts.change:
             try:
@@ -4500,14 +4578,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
-        root = ET.fromstring(b''.join(show_configuration(apiurl)))
-        elm = root.find('download_url')
-        if elm is None or not elm.text:
-            raise oscerr.APIError('download_url configuration element expected')
+        download_url = _private.get_configuration_option(apiurl, "download_url")
 
-        url_deb_tmpl = 'deb ' + elm.text + '/%s/%s/ /'
-        url_arch_tmpl = 'Server=' + elm.text + '/%s/%s/$arch'
-        url_tmpl = elm.text + '/%s/%s/%s.repo'
+        url_deb_tmpl = 'deb ' + download_url + '/%s/%s/ /'
+        url_arch_tmpl = 'Server=' + download_url + '/%s/%s/$arch'
+        url_tmpl = download_url + '/%s/%s/%s.repo'
         repos = get_repositories_of_project(apiurl, project)
         for repo in repos:
             repo_type = _repo_type(apiurl, project, repo)
@@ -4526,33 +4601,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc browse [PROJECT [PACKAGE]]
         """
-
         apiurl = self.get_api_url()
-        args = slash_split(args)
 
-        package = None
-        if len(args) == 1:
-            project = self._process_project_name(args[0])
-        elif len(args) == 2:
-            project = self._process_project_name(args[0])
-            package = args[1]
-        elif len(args) == 0:
-            project = store_read_project('.')
-            if is_package_dir('.'):
-                package = store_read_package('.')
-        else:
-            raise oscerr.WrongArgs('Wrong number of arguments')
+        args = list(args)
+        project, package = pop_project_package_from_args(
+            args, default_project=".", default_package=".", package_is_optional=True
+        )
+        ensure_no_remaining_args(args)
 
-        root = ET.fromstring(b''.join(show_configuration(apiurl)))
-        node = root.find('obs_url')
-        if node is None or not node.text:
-            raise oscerr.APIError('obs_url configuration element expected')
-        obs_url = node.text
-
-        if package is None:
-            url = f"{obs_url}/project/show/{project}"
-        else:
+        obs_url = _private.get_configuration_value(apiurl, "obs_url")
+        if package:
             url = f"{obs_url}/package/show/{project}/{package}"
+        else:
+            url = f"{obs_url}/project/show/{project}"
 
         run_external('xdg-open', url)
 
@@ -7073,11 +7134,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc rebuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         """
-
-        args = slash_split(args)
-
-        package = repo = arch = code = None
         apiurl = self.get_api_url()
+
+        args = list(args)
+        project, package, repo, arch = pop_project_package_repository_arch_from_args(
+            args,
+            package_is_optional=True,
+            repository_is_optional=True,
+            arch_is_optional=True,
+        )
+        ensure_no_remaining_args(args)
 
         if opts.repo:
             repo = opts.repo
@@ -7085,26 +7151,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.arch:
             arch = opts.arch
 
-        if len(args) < 1:
-            if is_package_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                package = store_read_package(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
-            elif is_project_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
-            else:
-                raise oscerr.WrongArgs('Too few arguments.')
-        else:
-            project = self._process_project_name(args[0])
-            if len(args) > 1:
-                package = args[1]
-
-        if len(args) > 2:
-            repo = args[2]
-        if len(args) > 3:
-            arch = args[3]
-
+        code = None
         if opts.failed:
             code = 'failed'
 
@@ -8785,8 +8832,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Merge the changes of the link target into your working copy
         """
 
-        if not is_package_dir('.'):
-            raise oscerr.NoWorkingCopy('Error: \'%s\' is not an osc working copy.' % os.path.abspath('.'))
         p = Package('.')
         # check if everything is committed
         for filename in p.filenamelist:

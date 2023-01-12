@@ -10,5 +10,6 @@ These are the packages in the osc package.
    osc.util
    osc.credentials
    osc.build
+   osc.commandline
    osc.conf
    osc.OscConfigParser

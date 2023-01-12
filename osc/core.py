@@ -5631,6 +5631,9 @@ def aggregate_pac(
      - "map" is a dictionary SRC => TARGET repository mappings
      - "repo_check" determines if presence of repos in the source and destination repos is checked
     """
+    if (src_project, src_package) == (dst_project, dst_package):
+        raise oscerr.OscValueError("Cannot aggregate package. Source and target are the same.")
+
     meta_change = False
     dst_meta = ''
     apiurl = conf.config['apiurl']
@@ -5925,6 +5928,10 @@ def copy_pac(
     them into the other by uploading them (client-side copy) --
     or by the server, in a single api call.
     """
+    if (src_apiurl, src_project, src_package) == (dst_apiurl, dst_project, dst_package):
+        # copypac is also used to expand sources, let's allow that
+        if not expand:
+            raise oscerr.OscValueError("Cannot copy package. Source and target are the same.")
 
     if not (src_apiurl == dst_apiurl and src_project == dst_project
             and src_package == dst_package):
@@ -5993,6 +6000,23 @@ def copy_pac(
         return 'Done.'
 
 
+def lock(apiurl: str, project: str, package: str, msg: str = None):
+    url_path = ["source", project]
+    if package:
+        url_path += [package]
+
+    url_query = {
+        "cmd": "set_flag",
+        "flag": "lock",
+        "status": "enable",
+    }
+
+    if msg:
+        url_query["comment"] = msg
+
+    _private.api.post(apiurl, url_path, url_query)
+
+
 def unlock_package(apiurl: str, prj: str, pac: str, msg):
     query = {'cmd': 'unlock', 'comment': msg}
     u = makeurl(apiurl, ['source', prj, pac], query)
@@ -6026,6 +6050,15 @@ def undelete_project(apiurl: str, prj: str, msg=None):
 
 
 def delete_package(apiurl: str, prj: str, pac: str, force=False, msg=None):
+    if not force:
+        requests = get_request_collection(apiurl, project=prj, package=pac)
+        if requests:
+            error_msg = \
+                "Package has pending requests. Deleting the package will break them. " \
+                "They should be accepted/declined/revoked before deleting the package. " \
+                "Or just use the 'force' option"
+            raise oscerr.PackageError(prj, pac, error_msg)
+
     query = {}
     if force:
         query['force'] = "1"
@@ -6035,7 +6068,16 @@ def delete_package(apiurl: str, prj: str, pac: str, force=False, msg=None):
     http_DELETE(u)
 
 
-def delete_project(apiurl: str, prj: str, force=False, msg=None):
+def delete_project(apiurl: str, prj: str, force=False, msg=None, recursive=False):
+    if not recursive:
+        packages = meta_get_packagelist(apiurl, project)
+        if packages:
+            error_msg = \
+                "Project contains packages. It must be empty before deleting it. " \
+                "If you are sure that you want to remove this project and all its " \
+                "packages use the 'recursive' option."
+            raise oscerr.ProjectError(prj, error_msg)
+
     query = {}
     if force:
         query['force'] = "1"
