@@ -192,6 +192,28 @@ class TestPopProjectPackageFromArgs(unittest.TestCase):
         self.assertEqual(package, "store_package")
         self.assertEqual(args, [])
 
+    def test_project_requires_to_specify_package(self):
+        args = ["project"]
+        self.assertRaises(
+            OscValueError,
+            pop_project_package_from_args,
+            args,
+            default_project=".",
+            default_package=".",
+        )
+
+        # The project from store is ignored because we've specified one.
+        # Specifying a package is expected.
+        self._write_store("store_project")
+        args = ["project"]
+        self.assertRaises(
+            OscValueError,
+            pop_project_package_from_args,
+            args,
+            default_project=".",
+            default_package=".",
+        )
+
 
 class TestPopRepositoryArchFromArgs(unittest.TestCase):
     def test_individial_args(self):

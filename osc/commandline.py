@@ -164,12 +164,15 @@ def pop_project_package_from_args(
     )
 
     path = Path.cwd()
+    project_store = None
+    package_store = None
+
     if project == ".":
         # project name taken from the working copy
-        store = osc_store.Store(path)
+        project_store = osc_store.Store(path)
         try:
-            store = osc_store.Store(path)
-            project = store.project
+            project_store = osc_store.Store(path)
+            project = project_store.project
         except oscerr.NoWorkingCopy:
             if not project_is_optional:
                 raise
@@ -178,13 +181,17 @@ def pop_project_package_from_args(
     if package == ".":
         # package name taken from the working copy
         try:
-            store = osc_store.Store(path)
-            store.assert_is_package()
-            package = store.package
+            package_store = osc_store.Store(path)
+            package_store.assert_is_package()
+            package = package_store.package
         except oscerr.NoWorkingCopy:
-            if not package_is_optional:
+            if package_is_optional:
+                package = None
+            elif not project_store and default_package == ".":
+                # project wasn't retrieved from store, let's ask for specifying a package
+                raise oscerr.OscValueError("Please specify a package") from None
+            else:
                 raise
-            package = None
 
     return project, package
 
@@ -1033,9 +1040,7 @@ class Osc(cmdln.Cmdln):
         apiurl = self.get_api_url()
 
         args = list(args)
-        project, package = pop_project_package_from_args(
-            args, package_is_optional=False
-        )
+        project, package = pop_project_package_from_args(args, default_project=".", default_package=".")
 
         devel_project, devel_package = show_devel_project(apiurl, project, package)
 
