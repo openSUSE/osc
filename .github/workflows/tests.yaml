@@ -108,4 +108,4 @@ jobs:
       - name: "Run tests"
         run: |
           cd behave
-          behave -Dosc=../osc-wrapper.py
+          behave -Dosc=../osc-wrapper.py -Dmax_podman_containers=2
