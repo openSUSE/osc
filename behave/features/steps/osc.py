@@ -35,7 +35,7 @@ class Osc:
         with open(self.oscrc, "w") as f:
             f.write("[general]\n")
             f.write("\n")
-            f.write(f"[https://localhost:{self.context.podman.port}]\n")
+            f.write(f"[https://localhost:{self.context.podman.container.port}]\n")
             f.write("user=Admin\n")
             f.write("pass=opensuse\n")
             f.write("credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager\n")
@@ -48,7 +48,7 @@ class Osc:
         osc_cmd = self.context.config.userdata.get("osc", "osc")
         cmd = [osc_cmd]
         cmd += ["--config", self.oscrc]
-        cmd += ["-A", f"https://localhost:{self.context.podman.port}"]
+        cmd += ["-A", f"https://localhost:{self.context.podman.container.port}"]
         return cmd
 
 

@@ -22,7 +22,7 @@ def after_scenario(context, scenario):
         # start a new container after a destructive test
         # we must use an existing podman instance defined in `before_all` due to context attribute life-cycle:
         # https://behave.readthedocs.io/en/stable/context_attributes.html
-        context.podman.restart()
+        context.podman.new_container()
     context.osc.clear()
     common.check_exit_code(context)
 
@@ -47,7 +47,12 @@ def before_all(context):
     # absolute path to .../behave/fixtures
     context.fixtures = os.path.join(os.path.dirname(__file__), "..", "fixtures")
 
-    context.podman = podman.Podman(context)
+    podman_max_containers = context.config.userdata.get("podman_max_containers", None)
+    if podman_max_containers:
+        podman_max_containers = int(podman_max_containers)
+        context.podman = podman.ThreadedPodman(context, container_name_prefix="osc-behave-", max_containers=podman_max_containers)
+    else:
+        context.podman = podman.Podman(context, container_name="osc-behave")
     context.osc = osc.Osc(context)
 
 
