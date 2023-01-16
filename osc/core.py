@@ -464,6 +464,9 @@ class Serviceinfo:
             allservices = [data]
         elif singleservice:
             allservices = [s for s in allservices if s['name'] == singleservice]
+            # set the right called mode or the service would be skipped below
+            for s in allservices:
+                s['mode'] = callmode
 
         if not allservices:
             # short-circuit to avoid a potential http request in vc_export_env
