@@ -61,7 +61,7 @@ def name(name):
     return decorate
 
 
-def hide():
+def hide(value=True):
     """
     For obsolete calls, hide them in help listings.
 
@@ -72,7 +72,7 @@ def hide():
                 #...implement 'shell' command
     """
     def decorate(f):
-        f.hidden = True
+        f.hidden = bool(value)
         return f
     return decorate
 
