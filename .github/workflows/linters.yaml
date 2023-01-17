@@ -7,6 +7,10 @@ on:
       - '.github/**'
       - '**.py'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mypy:
     runs-on: ubuntu-latest
