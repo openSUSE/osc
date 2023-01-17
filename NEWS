@@ -1,6 +1,42 @@
 1.0.0b3
-  - add create-pbuild-config(cpc) command which allows to create a working
+  - add create-pbuild-config (cpc) command which allows to create a working
     config for pbuild tool based on OBS server side data
+  - branch: Add --disable-build option
+  - linkpac: Add --disable-build option
+  - linkpac: Fix linking a locked package by not copying the lock to the target package
+  - sr: Do not error out on using an alias to apiurl
+  - rq: Fix the -M/--mine option to show only requests created by the user
+  - rq list: Avoid conflict between --all and --state options
+  - rq list: Fix traceback when there's no search criteria
+  - rq list -i: Enable forwarding requests to the parent projects
+  - rq show: Improve output
+  - sr accept: Enable forwarding requests to the parent projects
+  - setlinkrev: Write a log message on setting a revision
+  - buildhistory: Produce proper output using build_table() and a CSV writer
+  - buildinfo: Bring the -d/--debug option back
+  - build: Bring the --verbose' option back as --verbose-mode=MODE to avoid conflicts with global --verbose
+  - service: Add verbose option for running local services
+  - service: Fix manual run of source service
+  - conf: Avoid crash when deleting a password
+  - connection: Fix the '9 - review the server certificate' option in cert trust prompt
+  - Handle uncompressed Debian packages
+  - Fix osc add for github /archive/ URLs
+  - Handle empty EDITOR=/PAGER= env variable properly
+  - Mute ssl/tls deprecation warnings
+  - Add "--extra-pkgs-from" ("-X") option to osc build.
+  - Fix a scenario when OBS sends unexpected md5s
+  - Replace core.findpacs() with Package.from_paths() and Package.from_paths_nofail()
+  - Always list requests with 'new,review' states by default
+  - Change get_request_collection() not to list declined requests by default
+  - Add information about osc vc using the EDITOR envar to the help output
+  - Improve argument handling in many commands
+  - Implement Store class handling '.osc' dirs, migrate some code to it
+  - Code cleanups
+  - Deprecated:
+    - core.get_request_list() function
+    - core.store_write_apiurl() function
+    - core.store_read_scmurl() function
+    - core.store_read_apiurl() function
 
 1.0.0b2
   - Support ssh-agent forwarding
