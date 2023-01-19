@@ -7,6 +7,10 @@ on:
       - '.github/**'
       - '**.py'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   mypy:
     runs-on: ubuntu-latest
@@ -64,11 +68,28 @@ jobs:
           repository: ${{ matrix.plugin_repository }}
           path: plugin
 
+      - name: 'Run pylint with osc from master'
+        run: |
+            cd plugin
+            find . -type f -name "*.py" | sort | PYTHONPATH="../osc-master" xargs pylint --errors-only >> pylint-osc-master.log || :
+
+            echo
+            echo ">>>>> pylint-osc-master.log <<<<<"
+            cat pylint-osc-master.log
+
+      - name: 'Run pylint with osc from pull-request'
+        run: |
+            cd plugin
+            find . -type f -name "*.py" | sort | PYTHONPATH="../osc-pr" xargs pylint --errors-only >> pylint-osc-pr.log || :
+
+            echo
+            echo ">>>>> pylint-osc-pr.log <<<<<"
+            cat pylint-osc-pr.log
+
       - name: 'Diff pylint runs'
         run: |
             cd plugin
-            find -maxdepth 2 -name __init__.py | while read i; do dirname $i; done | sort > .pylint-args
-            find -maxdepth 1 -name '*.py' | sort >> .pylint-args
-            PYTHONPATH="../osc-master" pylint --errors-only $(cat .pylint-args) | sort > pylint-osc-master.log || :
-            PYTHONPATH="../osc-pr" pylint --errors-only $(cat .pylint-args) | sort > pylint-osc-pr.log || :
+
+            echo
+            echo ">>>>> diff <<<<<"
             diff -u pylint-osc-master.log pylint-osc-pr.log
