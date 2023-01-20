@@ -6073,7 +6073,7 @@ def delete_package(apiurl: str, prj: str, pac: str, force=False, msg=None):
 
 def delete_project(apiurl: str, prj: str, force=False, msg=None, recursive=False):
     if not recursive:
-        packages = meta_get_packagelist(apiurl, project)
+        packages = meta_get_packagelist(apiurl, prj)
         if packages:
             error_msg = \
                 "Project contains packages. It must be empty before deleting it. " \
