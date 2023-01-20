@@ -2621,7 +2621,8 @@ rev: %s
         elif filename in self.skipped:
             raise oscerr.OscIOError(None, 'file \'%s\' is marked as skipped and cannot be reverted' % filename)
         if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
-            raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
+            msg = f"file '{filename}' is listed in filenamelist but no storefile exists"
+            raise oscerr.PackageInternalError(self.prjname, self.name, msg)
         state = self.status(filename)
         if not (state == 'A' or state == '!' and filename in self.to_be_added):
             shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
