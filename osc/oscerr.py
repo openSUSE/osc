@@ -126,6 +126,21 @@ class WorkingCopyOutdated(OscBaseError):
                 % (self.args[0], self.args[1], self.args[2]))
 
 
+class ProjectError(OscBaseError):
+    """Base class for all Project related exceptions"""
+
+    def __init__(self, prj, msg=None):
+        super().__init__()
+        self.prj = prj
+        self.msg = msg
+
+    def __str__(self):
+        result = f"{self.__class__.__name__}: {self.prj}"
+        if self.msg:
+            result += f": {self.msg}"
+        return result
+
+
 class PackageError(OscBaseError):
     """Base class for all Package related exceptions"""
 
