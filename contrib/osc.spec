@@ -65,6 +65,9 @@ Requires:       %{use_python_pkg}-urllib3
 # needed for showing download progressbars
 Recommends:     %{use_python_pkg}-progressbar
 
+# needed for setting the default editor by distro
+Recommends:     %{use_python_pkg}-distro
+
 # needed for storing credentials in kwallet/gnome-keyring
 Recommends:     %{use_python_pkg}-keyring
 Recommends:     %{use_python_pkg}-keyring-keyutils

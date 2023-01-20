@@ -86,6 +86,8 @@ class Fetcher:
                         pac = pkgs[decode_it(hdr.filename)]
 
                     # Extract a single file from the cpio archive
+                    fd = None
+                    tmpfile = None
                     try:
                         fd, tmpfile = tempfile.mkstemp(prefix='osc_build_file')
                         archive.copyin_file(hdr.filename,
@@ -93,8 +95,9 @@ class Fetcher:
                                             decode_it(os.path.basename(tmpfile)))
                         self.move_package(tmpfile, pac.localdir, pac)
                     finally:
-                        os.close(fd)
-                        if os.path.exists(tmpfile):
+                        if fd is not None:
+                            os.close(fd)
+                        if tmpfile is not None and os.path.exists(tmpfile):
                             os.unlink(tmpfile)
 
                 for pac in pkgs.values():

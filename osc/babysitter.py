@@ -26,6 +26,7 @@ from .util.packagequery import PackageError
 
 try:
     # import as RPMError because the class "error" is too generic
+    # pylint: disable=E0611
     from rpm import error as RPMError
 except:
     # if rpm-python isn't installed (we might be on a debian system):
