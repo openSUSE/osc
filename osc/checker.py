@@ -19,6 +19,7 @@ class Checker:
         import rpm
         self.dbdir = mkdtemp(prefix='oscrpmdb')
         self.imported = {}
+        # pylint: disable=E1101
         rpm.addMacro('_dbpath', self.dbdir)
         self.ts = rpm.TransactionSet()
         self.ts.initDB()
@@ -29,6 +30,7 @@ class Checker:
     def readkeys(self, keys=None):
         import rpm
         keys = keys or []
+        # pylint: disable=E1101
         rpm.addMacro('_dbpath', self.dbdir)
         for key in keys:
             try:
@@ -40,6 +42,7 @@ class Checker:
             raise KeyError('', "no key imported")
 
         import rpm
+        # pylint: disable=E1101
         rpm.delMacro("_dbpath")
 
 # python is an idiot
