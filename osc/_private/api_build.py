@@ -34,7 +34,7 @@ class BuildHistory:
         ]
         url_query = {}
         if self._limit and self._limit > 0:
-            query["limit"] = self._limit
+            url_query["limit"] = self._limit
 
         root = api.get(self.apiurl, url_path, url_query)
 
