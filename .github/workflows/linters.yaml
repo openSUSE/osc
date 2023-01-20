@@ -35,6 +35,21 @@ jobs:
           src: "."
           version: "1.5.1"
 
+  pylint_errors:
+    name: 'Run pylint that reports only errors'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Install packages'
+        run: |
+            sudo apt-get -y update
+            sudo apt-get -y --no-install-recommends install pylint python3-rpm
+
+      - uses: actions/checkout@v3
+
+      - name: 'Run pylint --errors-only'
+        run: |
+            pylint --errors-only osc
+
   pylint_plugins:
     name: 'Diff pylint runs on osc plugin'
     runs-on: 'ubuntu-latest'
