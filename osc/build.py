@@ -221,6 +221,14 @@ class Pac:
 
     def __init__(self, node, buildarch, pacsuffix, apiurl, localpkgs=None):
         localpkgs = localpkgs or []
+
+        # set attributes to mute pylint error E1101: Instance of 'Pac' has no '<attr>' member (no-member)
+        self.project = None
+        self.name = None
+        self.canonname = None
+        self.repository = None
+        self.repoarch = None
+
         self.mp = {}
         for i in ['binary', 'package',
                   'epoch', 'version', 'release', 'hdrmd5',
@@ -292,7 +300,7 @@ class Pac:
         self.urllist = [url % self.mp for url in urllist]
 
     def __str__(self):
-        return self.name
+        return self.name or ""
 
     def __repr__(self):
         return "%s" % self.name
@@ -1181,7 +1189,7 @@ def main(apiurl, opts, argv):
                         self.cleanup()
 
                     def __str__(self):
-                        return self.name
+                        return self.name or ""
 
                 old_pkg_dir = mytmpdir(prefix='.build.oldpackages', dir=os.path.abspath(os.curdir))
                 if not os.path.exists(destdir):
