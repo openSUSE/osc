@@ -4203,10 +4203,7 @@ def read_meta_from_spec(specfile, *args):
 def _get_linux_distro():
     if distro is not None:
         return distro.id()
-    elif sys.version_info >= (3, 8):
-        return None
-    # compatibility for Python 2.6 to 3.7
-    return platform.linux_distribution()[0]
+    return None
 
 
 def get_default_editor():
