@@ -12,7 +12,7 @@ def print_msg(msg, print_to="debug"):
     elif print_to == "stdout":
         print(msg)
     else:
-        raise ValueError(f"Invalid value of the 'output' option: {output}")
+        raise ValueError(f"Invalid value of the 'print_to' option: {print_to}")
 
 
 def format_msg_project_package_options(
