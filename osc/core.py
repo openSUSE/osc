@@ -2134,7 +2134,6 @@ class Package:
         def diff_add_delete(fname, add, revision):
             diff = []
             diff.append(diff_hdr % fname.encode())
-            tmpfile = None
             origname = fname
             if add:
                 diff.append(b'--- %s\t(revision 0)\n' % fname.encode())
@@ -2155,6 +2154,8 @@ class Package:
                 diff.append(b'+++ %s\t(working copy)\n' % fname.encode())
                 fname = os.path.join(self.storedir, fname)
 
+            fd = None
+            tmpfile = None
             try:
                 if revision is not None and not add:
                     (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
@@ -2180,8 +2181,9 @@ class Package:
                         lines.append(b'\n\\ No newline at end of file\n')
                 diff.extend(lines)
             finally:
-                if tmpfile is not None:
+                if fd is not None:
                     os.close(fd)
+                if tmpfile is not None and os.path.exists(tmpfile):
                     os.unlink(tmpfile)
             return diff
 
@@ -2226,6 +2228,7 @@ class Package:
             if revision is None:
                 yield get_source_file_diff(self.absdir, f.name, self.rev)
             else:
+                fd = None
                 tmpfile = None
                 diff = []
                 try:
@@ -2234,8 +2237,9 @@ class Package:
                     diff = get_source_file_diff(self.absdir, f.name, revision,
                                                 os.path.basename(tmpfile), os.path.dirname(tmpfile), f.name)
                 finally:
-                    if tmpfile is not None:
+                    if fd is not None:
                         os.close(fd)
+                    if tmpfile is not None and os.path.exists(tmpfile):
                         os.unlink(tmpfile)
                 yield diff
 
