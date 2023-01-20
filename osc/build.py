@@ -1177,7 +1177,7 @@ def main(apiurl, opts, argv):
                     def __del__(self):
                         self.cleanup()
 
-                    def __exit__(self):
+                    def __exit__(self, exc_type, exc_value, traceback):
                         self.cleanup()
 
                     def __str__(self):
