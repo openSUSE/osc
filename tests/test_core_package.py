@@ -81,9 +81,30 @@ class TestPackageFromPaths(OscTestCase):
         self.assertEqual(pac.apiurl, "http://localhost")
 
     def test_duplicates(self):
+        # passing a path twice is ok
         paths = ["projectA/pkgA", "projectA/pkgA"]
         paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs = osc.core.Package.from_paths(paths)
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+
+        # the same package in 2 paths is an error
+        paths = ["projectA/pkgA", "projectA/pkgA-symlink"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
         self.assertRaises(osc.oscerr.PackageExists, osc.core.Package.from_paths, paths)
+
+    def test_one_package_two_files(self):
+        paths = ["projectA/pkgA/pkgA.spec", "projectA/pkgA/pkgA.changes"]
+        paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]
+        pacs = osc.core.Package.from_paths(paths)
+        self.assertEqual(len(pacs), 1)
+
+        pac = pacs[0]
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
 
     def test_two_packages(self):
         paths = ["projectA/pkgA", "projectA/pkgB"]
