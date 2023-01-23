@@ -1277,13 +1277,24 @@ class Package:
             path_is_file = os.path.isfile(path)
             if path_is_file:
                 path = os.path.dirname(path) or "."
+
             package = cls(path, progress_obj)
+            try:
+                # re-use an existing package
+                seen_package_index = packages.index(package)
+                package = packages[seen_package_index]
+                if os.path.abspath(path) != package.absdir:
+                    raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
+            except ValueError:
+                # use a new package instance
+                packages.append(package)
+
             if path_is_file:
                 # XXX: modifying 'todo' is an unexpected side-effect
-                package.todo = [os.path.basename(orig_path)]
-            if package in packages:
-                raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
-            packages.append(package)
+                todo_entry = os.path.basename(orig_path)
+                if todo_entry not in package.todo:
+                    package.todo.append(todo_entry)
+
         return packages
 
     @classmethod
