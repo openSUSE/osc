@@ -4741,6 +4741,9 @@ def get_request_list(
         "states": req_state,
     }
 
+    if req_type is not None:
+        kwargs["types"] = [req_type]
+
     assert not exclude_target_projects, "unsupported"
     assert not withfullhistory, "unsupported"
 
