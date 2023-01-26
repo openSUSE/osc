@@ -29,11 +29,10 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-python@v4
-      - uses: akaihola/darker@1.5.1
+      - uses: akaihola/darker@1.6.1
         with:
           options: "--check --diff --color --line-length=120"
           src: "."
-          version: "1.5.1"
 
   pylint_errors:
     name: 'Run pylint that reports only errors'
