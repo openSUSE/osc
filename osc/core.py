@@ -5959,8 +5959,10 @@ def copy_pac(
     or by the server, in a single api call.
     """
     if (src_apiurl, src_project, src_package) == (dst_apiurl, dst_project, dst_package):
-        # copypac is also used to expand sources, let's allow that
-        if not expand:
+        # special cases when source and target can be the same:
+        # * expanding sources
+        # * downgrading package to an old revision
+        if not any([expand, revision]):
             raise oscerr.OscValueError("Cannot copy package. Source and target are the same.")
 
     if not (src_apiurl == dst_apiurl and src_project == dst_project

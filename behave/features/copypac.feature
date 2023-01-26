@@ -18,6 +18,12 @@ Scenario: Run `osc copypac <project>/<package> <target-project>/<target-package>
     Then the exit code is 0
 
 
+@destructive
+Scenario: Run `osc copypac <project>/<package> <project>/<package> --keep-link --revision`
+    When I execute osc with args "copypac test:factory/test-pkgA test:factory/test-pkgA --keep-link --revision=1"
+    Then the exit code is 0
+
+
 Scenario: Run `osc copypac` where the source and target are the same
     When I execute osc with args "copypac test:factory/test-pkgA test:factory"
     Then the exit code is 1

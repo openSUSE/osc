@@ -3349,9 +3349,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.message:
             comment = opts.message
         else:
-            if not rev:
-                rev = show_upstream_rev(src_apiurl, src_project, src_package)
-            comment = 'osc copypac from project:%s package:%s revision:%s' % (src_project, src_package, rev)
+            src_rev = rev or show_upstream_rev(src_apiurl, src_project, src_package)
+            comment = 'osc copypac from project:%s package:%s revision:%s' % (src_project, src_package, src_rev)
             if opts.keep_link:
                 comment += ", using keep-link"
             if opts.expand:
