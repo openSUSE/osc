@@ -871,7 +871,7 @@ def main(apiurl, opts, argv):
 
     extra_pkgs = []
     if not opts.extra_pkgs:
-        extra_pkgs = getattr(config, 'extra-pkgs', extra_pkgs)
+        extra_pkgs = config.get('extra-pkgs', [])
     elif opts.extra_pkgs != ['']:
         extra_pkgs = opts.extra_pkgs
 
