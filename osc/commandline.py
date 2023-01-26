@@ -6906,8 +6906,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
 
         args = list(args)
-        project, package, repository, arch = pop_project_package_repository_arch_from_args(args)
-        ensure_no_remaining_args(args)
+        args_backup = args.copy()
+
+        try:
+            args = [".", "."] + args_backup.copy()
+            project, package, repository, arch = pop_project_package_repository_arch_from_args(args)
+            ensure_no_remaining_args(args)
+        except (oscerr.NoWorkingCopy, oscerr.WrongArgs):
+            args[:] = args_backup.copy()
+            project, package, repository, arch = pop_project_package_repository_arch_from_args(args)
+            ensure_no_remaining_args(args)
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
