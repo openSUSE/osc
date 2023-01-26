@@ -1224,7 +1224,14 @@ class Package:
     def __init__(self, workingdir, progress_obj=None, size_limit=None, wc_check=True):
         global store
 
-        self.dir = workingdir
+        self.todo = []
+        if os.path.isfile(workingdir) or not os.path.exists(workingdir):
+            # workingdir is a file
+            # workingdir doesn't exist -> it points to a non-existing file in a working dir (e.g. during mv)
+            workingdir, todo_entry = os.path.split(workingdir)
+            self.todo.append(todo_entry)
+
+        self.dir = workingdir or "."
         self.absdir = os.path.abspath(self.dir)
         self.store = Store(self.dir)
         self.storedir = os.path.join(self.absdir, store)
@@ -1251,8 +1258,6 @@ class Package:
                 'of the working copy afterwards (via \'osc status %s\')' % (self.dir, self.dir, self.dir)
             raise oscerr.WorkingCopyInconsistent(self.prjname, self.name, dirty_files, msg)
 
-        self.todo = []
-
     def __repr__(self):
         return super().__repr__() + f"({self.prjname}/{self.name})"
 
@@ -1272,28 +1277,23 @@ class Package:
         """
         packages = []
         for path in paths:
-            # TODO: match only dirs, remove the code for resolving files into Package objects
-            orig_path = path
-            path_is_file = os.path.isfile(path)
-            if path_is_file:
-                path = os.path.dirname(path) or "."
-
             package = cls(path, progress_obj)
+            seen_package = None
             try:
                 # re-use an existing package
                 seen_package_index = packages.index(package)
-                package = packages[seen_package_index]
-                if os.path.abspath(path) != package.absdir:
-                    raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
+                seen_package = packages[seen_package_index]
             except ValueError:
-                # use a new package instance
-                packages.append(package)
+                pass
 
-            if path_is_file:
-                # XXX: modifying 'todo' is an unexpected side-effect
-                todo_entry = os.path.basename(orig_path)
-                if todo_entry not in package.todo:
-                    package.todo.append(todo_entry)
+            if seen_package:
+                # merge package into seen_package
+                if seen_package.absdir != package.absdir:
+                    raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
+                seen_package.merge(package)
+            else:
+                # use the new package instance
+                packages.append(package)
 
         return packages
 
@@ -1306,21 +1306,30 @@ class Package:
         packages = []
         failed_to_load = []
         for path in paths:
-            # TODO: match only dirs, remove the code for resolving files into Package objects
-            orig_path = path
-            path_is_file = os.path.isfile(path)
-            if path_is_file:
-                path = os.path.dirname(path) or "."
             try:
                 package = cls(path, progress_obj)
-                if path_is_file:
-                    # XXX: modifying 'todo' is an unexpected side-effect
-                    package.todo = [os.path.basename(orig_path)]
-                if package in packages:
-                    raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
-                packages.append(package)
             except oscerr.NoWorkingCopy:
-                failed_to_load.append(orig_path)
+                failed_to_load.append(path)
+                continue
+
+            # the following code is identical to from_paths()
+            seen_package = None
+            try:
+                # re-use an existing package
+                seen_package_index = packages.index(package)
+                seen_package = packages[seen_package_index]
+            except ValueError:
+                pass
+
+            if seen_package:
+                # merge package into seen_package
+                if seen_package.absdir != package.absdir:
+                    raise oscerr.PackageExists(package.prjname, package.name, "Duplicate package")
+                seen_package.merge(package)
+            else:
+                # use the new package instance
+                packages.append(package)
+
         return packages, failed_to_load
 
     def wc_check(self):
@@ -2260,7 +2269,9 @@ class Package:
             yield diff_add_delete(f, False, revision)
 
     def merge(self, otherpac):
-        self.todo += otherpac.todo
+        for todo_entry in otherpac.todo:
+            if todo_entry not in self.todo:
+                self.todo.append(todo_entry)
 
     def __str__(self):
         r = """

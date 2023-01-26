@@ -69,6 +69,36 @@ class TestPackageFromPaths(OscTestCase):
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
 
+    def test_package_object_dir(self):
+        path = "projectA/pkgA"
+        path = os.path.join(self.tmpdir, 'osctest', path)
+        pac = osc.core.Package(path)
+
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+        self.assertEqual(pac.todo, [])
+
+    def test_package_object_file(self):
+        path = "projectA/pkgA/pkgA.spec"
+        path = os.path.join(self.tmpdir, 'osctest', path)
+        pac = osc.core.Package(path)
+
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+        self.assertEqual(pac.todo, ["pkgA.spec"])
+
+    def test_package_object_file_missing(self):
+        path = "projectA/pkgA/missing-file"
+        path = os.path.join(self.tmpdir, 'osctest', path)
+        pac = osc.core.Package(path)
+
+        self.assertEqual(pac.name, "pkgA")
+        self.assertEqual(pac.prjname, "projectA")
+        self.assertEqual(pac.apiurl, "http://localhost")
+        self.assertEqual(pac.todo, ["missing-file"])
+
     def test_single_package(self):
         paths = ["projectA/pkgA"]
         paths = [os.path.join(self.tmpdir, 'osctest', i) for i in paths]

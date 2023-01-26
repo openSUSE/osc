@@ -9159,11 +9159,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         os.rename(source, dest)
         try:
-            tgt_pkg[0].addfile(os.path.basename(dest))
+            tgt_pkg.addfile(os.path.basename(dest))
         except oscerr.PackageFileConflict:
             # file is already tracked
             pass
-        src_pkg[0].delete_file(os.path.basename(source), force=opts.force)
+        src_pkg.delete_file(os.path.basename(source), force=opts.force)
 
     @cmdln.option('-d', '--delete', action='store_true',
                         help='delete option from config or reset option to the default)')
