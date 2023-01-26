@@ -4630,6 +4630,7 @@ def get_request_collection(
     review_states=None,
     types=None,
     ids=None,
+    withfullhistory=False
 ):
 
     # We don't want to overload server by requesting everything.
@@ -4670,6 +4671,9 @@ def get_request_collection(
 
     if ids:
         query["ids"] = ",".join(ids)
+
+    if withfullhistory:
+        query["withfullhistory"] = "1"
 
     u = makeurl(apiurl, ['request'], query)
     f = http_GET(u)
@@ -4750,13 +4754,13 @@ def get_request_list(
         "project": project,
         "package": package,
         "states": req_state,
+        "withfullhistory": withfullhistory,
     }
 
     if req_type is not None:
         kwargs["types"] = [req_type]
 
     assert not exclude_target_projects, "unsupported"
-    assert not withfullhistory, "unsupported"
 
     return get_request_collection(**kwargs)
 
