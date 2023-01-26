@@ -47,8 +47,13 @@ class BuildHistory:
                 "ver_rel": node.get("versrel"),
                 "build_count": int(node.get("bcnt")),
                 "time": time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(int(node.get("time")))),
-                "duration": int(node.get("duration")),
             }
+
+            # duration may not always be available
+            duration = node.get("duration")
+            if duration:
+                item["duration"] = int(duration)
+
             result.append(item)
         return result
 
@@ -72,7 +77,7 @@ class BuildHistory:
                 i["srcmd5"],
                 f"{i['ver_rel']}.{i['build_count']}",
                 i["rev"],
-                i["duration"],
+                i.get("duration", ""),
             )
             data.extend(item)
 
