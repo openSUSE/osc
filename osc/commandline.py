@@ -7143,6 +7143,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package_is_optional=True,
             repository_is_optional=True,
             arch_is_optional=True,
+            default_project='.',
+            default_package='.',
         )
         ensure_no_remaining_args(args)
 
