@@ -4200,6 +4200,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         )
         ensure_no_remaining_args(args)
 
+        if not new_project:
+            new_project = old_project
+
         if not new_package:
             new_package = old_package
 
