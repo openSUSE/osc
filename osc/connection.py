@@ -451,7 +451,10 @@ class CookieJarAuthHandler(AuthHandlerBase):
                 pass
             jar = http.cookiejar.LWPCookieJar(self.cookiejar_path)
             if os.path.isfile(self.cookiejar_path):
-                jar.load()
+                try:
+                    jar.load()
+                except http.cookiejar.LoadError:
+                    pass
             self.COOKIEJARS[self.cookiejar_path] = jar
         return jar
 
@@ -484,8 +487,9 @@ class CookieJarAuthHandler(AuthHandlerBase):
         return False
 
     def process_response(self, url, request_headers, response):
-        self._cookiejar.extract_cookies(response, MockRequest(url, response.headers))
-        self._cookiejar.save()
+        if response.headers.get_all("set-cookie", None):
+            self._cookiejar.extract_cookies(response, MockRequest(url, response.headers))
+            self._cookiejar.save()
         self._unlock()
 
 
