@@ -2487,7 +2487,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-f', '--force', action='store_true',
                         help='enforce state change, can be used to ignore open reviews')
     @cmdln.option('-s', '--state',
-                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review"]')
+                        help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review,declined"]')
     @cmdln.option('-D', '--days', metavar='DAYS',
                         help='only list requests in state "new" or changed in the last DAYS.')
     @cmdln.option('-U', '--user', metavar='USER',
@@ -2621,7 +2621,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             state_list = ["all"]
         else:
             if not opts.state:
-                opts.state = "new,review"
+                opts.state = "new,review,declined"
             state_list = opts.state.split(",")
             state_list = [i for i in state_list if i.strip()]
 

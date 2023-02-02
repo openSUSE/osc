@@ -4657,7 +4657,7 @@ def get_request_collection(
             raise ValueError("Project must be set to query a package; see https://github.com/openSUSE/open-build-service/issues/13075")
         query["package"] = package
 
-    states = states or ("new", "review")
+    states = states or ("new", "review", "declined")
     if states:
         if "all" not in states:
             query["states"] = ",".join(states)
@@ -4772,6 +4772,7 @@ def get_user_projpkgs_request_list(
     req_state=(
         "new",
         "review",
+        "declined",
     ),
     req_type=None,
     exclude_projects=None,
@@ -8033,7 +8034,7 @@ def get_commit_msg(wc_dir, pacs):
     return msg
 
 
-def print_request_list(apiurl, project, package=None, states=('new', 'review'), force=False):
+def print_request_list(apiurl, project, package=None, states=("new", "review"), force=False):
     """
     prints list of pending requests for the specified project/package if "check_for_request_on_action"
     is enabled in the config or if "force" is set to True
