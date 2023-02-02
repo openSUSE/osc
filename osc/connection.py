@@ -484,8 +484,9 @@ class CookieJarAuthHandler(AuthHandlerBase):
         return False
 
     def process_response(self, url, request_headers, response):
-        self._cookiejar.extract_cookies(response, MockRequest(url, response.headers))
-        self._cookiejar.save()
+        if response.headers.get_all("set-cookie", None):
+            self._cookiejar.extract_cookies(response, MockRequest(url, response.headers))
+            self._cookiejar.save()
         self._unlock()
 
 
