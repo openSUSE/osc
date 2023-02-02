@@ -451,7 +451,10 @@ class CookieJarAuthHandler(AuthHandlerBase):
                 pass
             jar = http.cookiejar.LWPCookieJar(self.cookiejar_path)
             if os.path.isfile(self.cookiejar_path):
-                jar.load()
+                try:
+                    jar.load()
+                except http.cookiejar.LoadError:
+                    pass
             self.COOKIEJARS[self.cookiejar_path] = jar
         return jar
 
