@@ -1,3 +1,22 @@
+1.0.0b4
+ - Fix regressions to osc 0.x:
+   - mv: Fix traceback due to missing target file name
+   - rm: Fix creating a Package object by providing multiple files on the command line
+   - copypac: Fix downgrading a package to an old revision
+   - buildhist: Fix running from a package checkout
+   - rebuild: Fix running from a package checkout
+   - rdiff: Fix traceback when new project is not specified
+   - rq list: Fix passing values of the --type option
+   - build: Fix reading extra-pkgs from oscrc
+   - Support withfullhistory in osc.core.get_request_list again
+   - Fix osc.get_request_list ignoring the req_type parameter
+ - Revert "Do not list declined requests by default"
+ - connection: Mute the "Converted retries value" debug message
+ - connection: Fix traceback on loading an invalid cookiejar file
+ - connection: Save cookiejar only when there's a Set-Cookie header in the response
+ - Add oscerr.ProjectError class needed by core.delete_project()
+ - Fix all errors reported by pylint
+
 1.0.0b3
   - add create-pbuild-config (cpc) command which allows to create a working
     config for pbuild tool based on OBS server side data
