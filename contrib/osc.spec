@@ -19,7 +19,7 @@
 %endif
 
 # generate manpages on distros where argparse-manpage >= 3 is available
-%if 0%{?suse_version} > 1500 || 0%{?fedora}
+%if 0%{?suse_version} > 1500 || 0%{?fedora} >= 37
 %bcond_without man
 %else
 %bcond_with man
