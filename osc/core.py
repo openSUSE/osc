@@ -4628,7 +4628,7 @@ def get_request_collection(
     package=None,
     states=None,
     review_states=None,
-    types=None,
+    types: List[str] = None,
     ids=None,
     withfullhistory=False
 ):
@@ -4667,6 +4667,7 @@ def get_request_collection(
             query["review_states"] = ",".join(review_states)
 
     if types:
+        assert not isinstance(types, str)
         query["types"] = ",".join(types)
 
     if ids:
