@@ -1,7 +1,7 @@
-[![unit tests](https://github.com/openSUSE/osc/actions/workflows/unittests.yaml/badge.svg)](https://github.com/openSUSE/osc/actions/workflows/unittests.yaml)
+[![unit tests](https://github.com/openSUSE/osc/actions/workflows/tests.yaml/badge.svg)](https://github.com/openSUSE/osc/actions/workflows/tests.yaml)
 [![docs](https://readthedocs.org/projects/opensuse-commander/badge/?version=latest)](https://opensuse-commander.readthedocs.io/en/latest/?badge=latest)
 [![codecov](https://codecov.io/gh/openSUSE/osc/branch/master/graph/badge.svg)](https://codecov.io/gh/openSUSE/osc)
-[![code climate](https://codeclimate.com/github/openSUSE/osc.png)](https://codeclimate.com/github/openSUSE/osc)
+[![code climate](https://github.com/openSUSE/osc/actions/workflows/codeql.yml/badge.svg)](https://github.com/openSUSE/osc/actions/workflows/codeql.yml)
 [![contributors](https://img.shields.io/github/contributors/openSUSE/osc.svg)](https://github.com/openSUSE/osc/graphs/contributors)
 
 
