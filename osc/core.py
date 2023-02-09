@@ -31,6 +31,7 @@ import time
 from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
+from pathlib import Path
 from typing import Optional, Dict, Union, List, Iterable
 from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
 from urllib.error import HTTPError
@@ -712,7 +713,7 @@ class Project:
 
             `wc_check` : bool
         """
-        self.dir = dir
+        self.dir = Path(dir)
         self.absdir = os.path.abspath(dir)
         self.store = Store(dir)
         self.progress_obj = progress_obj
@@ -1181,7 +1182,7 @@ class Project:
     @staticmethod
     def init_project(
         apiurl: str,
-        dir,
+        dir: Path,
         project,
         package_tracking=True,
         getPackageList=True,
@@ -5371,7 +5372,7 @@ def checkout_package(
     pathname=None,
     prj_obj=None,
     expand_link=False,
-    prj_dir=None,
+    prj_dir: Path=None,
     server_service_files=None,
     service_files=None,
     progress_obj=None,
@@ -5382,20 +5383,19 @@ def checkout_package(
     try:
         # the project we're in might be deleted.
         # that'll throw an error then.
-        olddir = os.getcwd()
-    except:
-        olddir = os.environ.get("PWD")
+        olddir = Path.cwd()
+    except FileNotFoundError:
+        olddir = Path(os.environ.get("PWD"))
 
     if not prj_dir:
         prj_dir = olddir
-    elif conf.config['checkout_no_colon']:
-        prj_dir = prj_dir.replace(':', '/')
     else:
-        prj_dir = prj_dir.replace(':', conf.config['project_separator'])
+        sep = "/" if conf.config['checkout_no_colon'] else conf.config['project_separator']
+        prj_dir = Path(str(prj_dir).replace(':', sep))
 
-    root_dots = '.'
+    root_dots = Path('.')
     if conf.config['checkout_rooted']:
-        if prj_dir[:1] == '/':
+        if prj_dir.stem == '/':
             if conf.config['verbose']:
                 print("checkout_rooted ignored for %s" % prj_dir)
             # ?? should we complain if not is_project_dir(prj_dir) ??
@@ -5409,27 +5409,25 @@ def checkout_package(
                 # do not easily reveal the fact, that they are part of a project path.
                 # At least this test should find that the parent of 'home/username/branches'
                 #  is a project (hack alert). Also goto parent in this case.
-                root_dots = "../"
+                root_dots = Path("../")
             elif is_project_dir("../.."):
                 # testing two levels is better than one.
                 # May happen in case of checkout_no_colon, or
                 # if project roots were previously inconsistent
-                root_dots = "../../"
+                root_dots = Path("../../")
             if is_project_dir(root_dots):
                 oldproj = store_read_project(root_dots)
                 if conf.config['checkout_no_colon']:
                     n = len(oldproj.split(':'))
                 else:
                     n = 1
-                if root_dots == '.':
-                    root_dots = ''
-                root_dots = root_dots + "../" * n
+                root_dots = root_dots / ("../" * n)
 
-    if root_dots != '.':
+    if str(root_dots) != '.':
         if conf.config['verbose']:
             print("%s is project dir of %s. Root found at %s" %
                   (prj_dir, oldproj, os.path.abspath(root_dots)))
-        prj_dir = root_dots + prj_dir
+        prj_dir = root_dots / prj_dir
 
     if not pathname:
         pathname = getTransActPath(os.path.join(prj_dir, package))
@@ -7951,11 +7949,8 @@ def getTransActPath(pac_dir):
     Normally the "dir" attribute of a Package() object will be passed to
     this method.
     """
-    if pac_dir != '.':
-        pathn = os.path.normpath(pac_dir)
-    else:
-        pathn = ''
-    return pathn
+    path = str(Path(pac_dir))  # accept str and Path as pac_dir
+    return '' if path == '.' else path
 
 
 def get_commit_message_template(pac):

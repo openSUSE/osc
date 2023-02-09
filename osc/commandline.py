@@ -1024,7 +1024,7 @@ class Osc(cmdln.Cmdln):
             filename = "_patchinfo"
         else:
             checkout_package(apiurl, project, patchinfo, prj_dir=project_dir)
-            filename = project_dir + "/" + patchinfo + "/_patchinfo"
+            filename = project_dir / patchinfo / "/_patchinfo"
 
         run_editor(filename)
 
@@ -2917,8 +2917,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('\'checkout\' not possible (request has no \'submit\' actions)')
             for action in sr_actions:
                 checkout_package(apiurl, action.src_project, action.src_package,
-                                 action.src_rev, expand_link=True, prj_dir=action.src_project)
-
+                                 action.src_rev, expand_link=True, prj_dir=Path(action.src_project))
         else:
             state_map = {'reopen': 'new', 'accept': 'accepted', 'decline': 'declined', 'wipe': 'deleted', 'revoke': 'revoked', 'supersede': 'superseded'}
             # Change review state only
@@ -3759,7 +3758,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # all packages
             for package in meta_get_packagelist(apiurl, result):
                 try:
-                    checkout_package(apiurl, result, package, expand_link=True, prj_dir=result)
+                    checkout_package(apiurl, result, package, expand_link=True, prj_dir=Path(result))
                 except:
                     print('Error while checkout package:\n', package, file=sys.stderr)
 
@@ -3914,7 +3913,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         package = targetpkg or args[1]
         if opts.checkout:
             checkout_package(apiurl, targetprj, package, server_service_files=False,
-                             expand_link=True, prj_dir=targetprj)
+                             expand_link=True, prj_dir=Path(targetprj))
             if conf.config['verbose']:
                 print('Note: You can use "osc delete" or "osc submitpac" when done.\n')
         else:
@@ -4687,7 +4686,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         m = re.match(r"obs://([^/]+)/(\S+)/([^/]+)/([A-Fa-f\d]+)\-([^:]*)(:\S+)?", args[0])
         if m and len(args) == 1:
             apiurl = "https://" + m.group(1)
-            project = project_dir = m.group(2)
+            project = m.group(2)
+            project_dir = Path(project)
             # platform            = m.group(3)
             opts.revision = m.group(4)
             package = m.group(5)
@@ -4698,7 +4698,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = package = filename = None
             apiurl = self.get_api_url()
             try:
-                project = project_dir = self._process_project_name(args[0])
+                project = self._process_project_name(args[0])
+                project_dir = Path(project)
                 package = args[1]
                 filename = args[2]
             except:
@@ -4706,7 +4707,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             if len(args) == 1 and is_project_dir(Path.cwd()):
                 project = store_read_project(Path.cwd())
-                project_dir = str(Path.cwd())
+                project_dir = Path.cwd()
                 package = args[0]
 
         if opts.deleted and package:
@@ -4743,11 +4744,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print_request_list(apiurl, project, package)
 
         elif project:
-            prj_dir = opts.output_dir if opts.output_dir else project
-            if not opts.output_dir and conf.config['checkout_no_colon']:
-                prj_dir = prj_dir.replace(':', '/')
-            else:
-                prj_dir = prj_dir.replace(':', conf.config['project_separator'])
+            sep = '/' if not opts.output_dir and conf.config['checkout_no_colon'] else conf.config['project_separator']
+            chosen_output = opts.output_dir if opts.output_dir else project
+            prj_dir = Path(chosen_output.replace(':', sep))
             if os.path.exists(prj_dir):
                 sys.exit('osc: project directory \'%s\' already exists' % prj_dir)
 
@@ -4759,7 +4758,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
                     raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
                 os.putenv("OSC_VERSION", get_osc_version())
-                run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', prj_dir, '--url', scm_url])
+                run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', str(prj_dir), '--url', scm_url])
 
             Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'], scm_url=scm_url)
             print(statfrmt('A', prj_dir))
