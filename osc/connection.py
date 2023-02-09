@@ -1,5 +1,6 @@
 import base64
 import fcntl
+import inspect
 import os
 import re
 import shutil
@@ -217,7 +218,20 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     pool = CONNECTION_POOLS.get(apiurl, None)
     if not pool:
         pool_kwargs = {}
-        pool_kwargs["retries"] = urllib3.Retry(total=int(conf.config["http_retries"]), backoff_factor=2)
+
+        # urllib3.Retry() argument 'method_whitelist' got renamed to 'allowed_methods'
+        sig = inspect.signature(urllib3.Retry)
+        arg_names = list(sig.parameters.keys())
+        if "allowed_methods" in arg_names:
+            retries_kwargs = {"allowed_methods": None}
+        else:
+            retries_kwargs = {"method_whitelist": None}
+
+        pool_kwargs["retries"] = urllib3.Retry(
+            total=int(conf.config["http_retries"]),
+            backoff_factor=2,
+            **retries_kwargs,
+        )
 
         if purl.scheme == "https":
             ssl_context = oscssl.create_ssl_context()
