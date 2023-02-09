@@ -1,3 +1,9 @@
+1.0.0b5
+ - rq list: Fix a traceback when --type is not specified
+ - core.checkout_package(): Use pathlib.Path
+ - connection: Retry all, not just default allowed methods
+ - connection: Wait between retries
+
 1.0.0b4
  - Fix regressions to osc 0.x:
    - mv: Fix traceback due to missing target file name
