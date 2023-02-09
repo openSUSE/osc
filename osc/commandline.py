@@ -2771,9 +2771,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                  req_type=opts.type, exclude_projects=opts.exclude_target_project or [])
                     else:
                         roles = ["creator"] if opts.mine else None
+                        types = [opts.type] if opts.type else None
                         results = get_request_collection(
                             apiurl, project=project, package=package, user=who,
-                            states=state_list, types=[opts.type], roles=roles)
+                            states=state_list, types=types, roles=roles)
 
             # Check if project actually exists if result list is empty
             if not results:
