@@ -217,7 +217,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     pool = CONNECTION_POOLS.get(apiurl, None)
     if not pool:
         pool_kwargs = {}
-        pool_kwargs["retries"] = urllib3.Retry(total=int(conf.config["http_retries"]))
+        pool_kwargs["retries"] = urllib3.Retry(total=int(conf.config["http_retries"]), backoff_factor=2)
 
         if purl.scheme == "https":
             ssl_context = oscssl.create_ssl_context()
