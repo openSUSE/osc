@@ -4501,6 +4501,7 @@ def get_request(apiurl: str, reqid):
 
     r = Request()
     r.read(root)
+    r.apiurl = apiurl
     return r
 
 
