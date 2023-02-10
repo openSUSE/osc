@@ -2879,6 +2879,7 @@ class Action:
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
 
     def __init__(self, type, **kwargs):
+        self.apiurl = kwargs.pop("apiurl", None)
         if type not in Action.type_args.keys():
             raise oscerr.WrongArgs('invalid action type: \'%s\'' % type)
         self.type = type
@@ -2935,7 +2936,7 @@ class Action:
         return ET.tostring(root, encoding=ET_ENCODING)
 
     @staticmethod
-    def from_xml(action_node):
+    def from_xml(action_node, apiurl=None):
         """create action from XML"""
         if action_node is None or \
                 action_node.get('type') not in Action.type_args.keys() or \
@@ -2960,6 +2961,7 @@ class Action:
                     l.append(v)
                 else:
                     kwargs[k] = v
+        kwargs["apiurl"] = apiurl
         return Action(action_node.get('type'), **kwargs)
 
 
@@ -3006,9 +3008,10 @@ class Request:
             self._issues = get_request_issues(self.apiurl, self.id)
         return self._issues
 
-    def read(self, root):
+    def read(self, root, apiurl=None):
         """read in a request"""
         self._init_attributes()
+        self.apiurl = apiurl
         if not root.get('id'):
             raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.reqid = root.get('id')
@@ -3025,7 +3028,7 @@ class Request:
                 i.set('type', 'submit')
                 action_nodes.append(i)
         for action in action_nodes:
-            self.actions.append(Action.from_xml(action))
+            self.actions.append(Action.from_xml(action, self.apiurl))
         for review in root.findall('review'):
             self.reviews.append(ReviewState(review))
         for history_element in root.findall('history'):
@@ -4517,8 +4520,7 @@ def get_request(apiurl: str, reqid):
     root = ET.parse(f).getroot()
 
     r = Request()
-    r.read(root)
-    r.apiurl = apiurl
+    r.read(root, apiurl=apiurl)
     return r
 
 
