@@ -2967,6 +2967,12 @@ class Action:
 class Request:
     """Represents a request (``<request />``)"""
 
+    @classmethod
+    def from_api(cls, apiurl: str, req_id: int):
+        # TODO: deprecate get_request() or move its content here
+        req_id = str(req_id)
+        return get_request(apiurl, req_id)
+
     def __init__(self):
         self._init_attributes()
 
