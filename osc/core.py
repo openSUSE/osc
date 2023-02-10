@@ -2995,6 +2995,10 @@ class Request:
     def __lt__(self, other):
         return int(self.reqid) < int(other.reqid)
 
+    @property
+    def id(self):
+        return self.reqid
+
     def read(self, root):
         """read in a request"""
         self._init_attributes()
