@@ -2988,6 +2988,7 @@ class Request:
         self.actions = []
         self.statehistory = []
         self.reviews = []
+        self._issues = None
 
     def __eq__(self, other):
         return int(self.reqid) == int(other.reqid)
@@ -2998,6 +2999,12 @@ class Request:
     @property
     def id(self):
         return self.reqid
+
+    @property
+    def issues(self):
+        if self._issues is None:
+            self._issues = get_request_issues(self.apiurl, self.id)
+        return self._issues
 
     def read(self, root):
         """read in a request"""
