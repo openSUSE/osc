@@ -2749,6 +2749,23 @@ class ReviewState(AbstractState):
                 review_node.find('comment').text:
             self.comment = review_node.find('comment').text.strip()
 
+    def __repr__(self):
+        result = super().__repr__()
+        result += "("
+        result += f"{self.state}"
+
+        if self.who:
+            result += f" by {self.who}"
+
+        for by in ("user", "group", "project", "package"):
+            by_value = getattr(self, f"by_{by}", None)
+            if by_value:
+                result += f" [{by} {by_value}])"
+                break
+
+        result += ")"
+        return result
+
     def get_node_attrs(self):
         return ('state', 'by_user', 'by_group', 'by_project', 'by_package', 'who', 'when')
 
