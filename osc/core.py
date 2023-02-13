@@ -2892,6 +2892,26 @@ class Action:
         for i in Action.type_args[type]:
             setattr(self, i, kwargs.get(i))
 
+    def __repr__(self):
+        result = super().__repr__()
+        result += "("
+        result += f"type={self.type}"
+
+        src_pkg = self.src_pkg_object
+        if src_pkg:
+            result += f" source={src_pkg.project}/{src_pkg.name}"
+        elif getattr(self, "src_project", None):
+            result += f" source={self.src_project}"
+
+        tgt_pkg = self.tgt_pkg_object
+        if tgt_pkg:
+            result += f" target={tgt_pkg.project}/{tgt_pkg.name}"
+        elif getattr(self, "tgt_project", None):
+            result += f" target={self.tgt_project}"
+
+        result += ")"
+        return result
+
     @property
     def src_pkg_object(self):
         if not getattr(self, "src_project", None) or not getattr(self, "src_package", None):
