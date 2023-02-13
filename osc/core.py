@@ -2880,6 +2880,8 @@ class Action:
 
     def __init__(self, type, **kwargs):
         self.apiurl = kwargs.pop("apiurl", None)
+        self._src_pkg_object = None
+        self._tgt_pkg_object = None
         if type not in Action.type_args.keys():
             raise oscerr.WrongArgs('invalid action type: \'%s\'' % type)
         self.type = type
@@ -2889,6 +2891,40 @@ class Action:
         # set all type specific attributes
         for i in Action.type_args[type]:
             setattr(self, i, kwargs.get(i))
+
+    @property
+    def src_pkg_object(self):
+        if not getattr(self, "src_project", None) or not getattr(self, "src_package", None):
+            return None
+        if not self._src_pkg_object:
+            src_rev = getattr(self, "src_rev", None)
+            self._src_pkg_object = _private.ApiPackage(self.apiurl, self.src_project, self.src_package, src_rev)
+        return self._src_pkg_object
+
+    @property
+    def tgt_pkg_object(self):
+        if not self._tgt_pkg_object:
+            if self.type == "maintenance_incident":
+                # the target project for maintenance incidents is virtual and cannot be queried
+                # the actual target project is in the "releaseproject" attribute
+                #
+                # tgt_releaseproject is always set for a maintenance_incident
+                # pylint: disable=no-member
+                tgt_project = self.tgt_releaseproject
+
+                # the target package is not specified
+                # we need to extract it from source package's _meta
+                src_package_meta_releasename = self.src_pkg_object.get_meta_value("releasename")
+                tgt_package = src_package_meta_releasename.split(".")[0]
+            else:
+                if not getattr(self, "tgt_project", None) or not getattr(self, "tgt_package", None):
+                    return None
+                # tgt_project and tgt_package are checked above
+                # pylint: disable=no-member
+                tgt_project = self.tgt_project
+                tgt_package = self.tgt_package
+            self._tgt_pkg_object = _private.ApiPackage(self.apiurl, tgt_project, tgt_package)
+        return self._tgt_pkg_object
 
     def to_xml(self):
         """

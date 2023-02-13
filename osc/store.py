@@ -299,3 +299,13 @@ class Store:
         if len(value) != 3:
             raise ValueError("A list with exactly 3 items is expected: [repo, arch, vm_type]")
         self.write_list("_last_buildroot", value)
+
+    @property
+    def _meta_node(self):
+        if not self.exists("_meta"):
+            return None
+        if self.is_package:
+            root = self.read_xml_node("_meta", "package").getroot()
+        else:
+            root = self.read_xml_node("_meta", "project").getroot()
+        return root

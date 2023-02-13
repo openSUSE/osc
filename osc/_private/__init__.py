@@ -13,4 +13,5 @@ from .api_source import release
 from .common import print_msg
 from .common import format_msg_project_package_options
 from .package import ApiPackage
+from .package import LocalPackage
 from .request import forward_request
