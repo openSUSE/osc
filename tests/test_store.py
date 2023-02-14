@@ -203,6 +203,29 @@ class TestStore(unittest.TestCase):
         store2 = Store(self.tmpdir)
         self.assertEqual(store2.last_buildroot, ["repo", "arch", "vm_type"])
 
+    def test_meta_node(self):
+        self.store.write_string(
+            "_meta",
+            """<package name="test-pkgA" project="projectA">
+  <title>title</title>
+  <description>desc</description>
+  <releasename>name</releasename>
+  <build>
+    <enable repository="repo1"/>
+    <enable repository="repo2"/>
+  </build>
+</package>""",
+        )
+        node = self.store._meta_node
+        self.assertNotEqual(node, None)
+
+        # try to read the _meta via a package class
+        from osc._private import LocalPackage
+
+        self.store.files = []
+        pkg = LocalPackage(self.tmpdir)
+        self.assertEqual(pkg.get_meta_value("releasename"), "name")
+
 
 if __name__ == "__main__":
     unittest.main()

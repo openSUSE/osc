@@ -2749,6 +2749,23 @@ class ReviewState(AbstractState):
                 review_node.find('comment').text:
             self.comment = review_node.find('comment').text.strip()
 
+    def __repr__(self):
+        result = super().__repr__()
+        result += "("
+        result += f"{self.state}"
+
+        if self.who:
+            result += f" by {self.who}"
+
+        for by in ("user", "group", "project", "package"):
+            by_value = getattr(self, f"by_{by}", None)
+            if by_value:
+                result += f" [{by} {by_value}])"
+                break
+
+        result += ")"
+        return result
+
     def get_node_attrs(self):
         return ('state', 'by_user', 'by_group', 'by_project', 'by_package', 'who', 'when')
 
@@ -2879,6 +2896,9 @@ class Action:
     prefix_to_elm = {'src': 'source', 'tgt': 'target', 'opt': 'options'}
 
     def __init__(self, type, **kwargs):
+        self.apiurl = kwargs.pop("apiurl", None)
+        self._src_pkg_object = None
+        self._tgt_pkg_object = None
         if type not in Action.type_args.keys():
             raise oscerr.WrongArgs('invalid action type: \'%s\'' % type)
         self.type = type
@@ -2888,6 +2908,60 @@ class Action:
         # set all type specific attributes
         for i in Action.type_args[type]:
             setattr(self, i, kwargs.get(i))
+
+    def __repr__(self):
+        result = super().__repr__()
+        result += "("
+        result += f"type={self.type}"
+
+        src_pkg = self.src_pkg_object
+        if src_pkg:
+            result += f" source={src_pkg.project}/{src_pkg.name}"
+        elif getattr(self, "src_project", None):
+            result += f" source={self.src_project}"
+
+        tgt_pkg = self.tgt_pkg_object
+        if tgt_pkg:
+            result += f" target={tgt_pkg.project}/{tgt_pkg.name}"
+        elif getattr(self, "tgt_project", None):
+            result += f" target={self.tgt_project}"
+
+        result += ")"
+        return result
+
+    @property
+    def src_pkg_object(self):
+        if not getattr(self, "src_project", None) or not getattr(self, "src_package", None):
+            return None
+        if not self._src_pkg_object:
+            src_rev = getattr(self, "src_rev", None)
+            self._src_pkg_object = _private.ApiPackage(self.apiurl, self.src_project, self.src_package, src_rev)
+        return self._src_pkg_object
+
+    @property
+    def tgt_pkg_object(self):
+        if not self._tgt_pkg_object:
+            if self.type == "maintenance_incident":
+                # the target project for maintenance incidents is virtual and cannot be queried
+                # the actual target project is in the "releaseproject" attribute
+                #
+                # tgt_releaseproject is always set for a maintenance_incident
+                # pylint: disable=no-member
+                tgt_project = self.tgt_releaseproject
+
+                # the target package is not specified
+                # we need to extract it from source package's _meta
+                src_package_meta_releasename = self.src_pkg_object.get_meta_value("releasename")
+                tgt_package = src_package_meta_releasename.split(".")[0]
+            else:
+                if not getattr(self, "tgt_project", None) or not getattr(self, "tgt_package", None):
+                    return None
+                # tgt_project and tgt_package are checked above
+                # pylint: disable=no-member
+                tgt_project = self.tgt_project
+                tgt_package = self.tgt_package
+            self._tgt_pkg_object = _private.ApiPackage(self.apiurl, tgt_project, tgt_package)
+        return self._tgt_pkg_object
 
     def to_xml(self):
         """
@@ -2935,7 +3009,7 @@ class Action:
         return ET.tostring(root, encoding=ET_ENCODING)
 
     @staticmethod
-    def from_xml(action_node):
+    def from_xml(action_node, apiurl=None):
         """create action from XML"""
         if action_node is None or \
                 action_node.get('type') not in Action.type_args.keys() or \
@@ -2960,12 +3034,19 @@ class Action:
                     l.append(v)
                 else:
                     kwargs[k] = v
+        kwargs["apiurl"] = apiurl
         return Action(action_node.get('type'), **kwargs)
 
 
 @total_ordering
 class Request:
     """Represents a request (``<request />``)"""
+
+    @classmethod
+    def from_api(cls, apiurl: str, req_id: int):
+        # TODO: deprecate get_request() or move its content here
+        req_id = str(req_id)
+        return get_request(apiurl, req_id)
 
     def __init__(self):
         self._init_attributes()
@@ -2982,6 +3063,7 @@ class Request:
         self.actions = []
         self.statehistory = []
         self.reviews = []
+        self._issues = None
 
     def __eq__(self, other):
         return int(self.reqid) == int(other.reqid)
@@ -2989,9 +3071,20 @@ class Request:
     def __lt__(self, other):
         return int(self.reqid) < int(other.reqid)
 
-    def read(self, root):
+    @property
+    def id(self):
+        return self.reqid
+
+    @property
+    def issues(self):
+        if self._issues is None:
+            self._issues = get_request_issues(self.apiurl, self.id)
+        return self._issues
+
+    def read(self, root, apiurl=None):
         """read in a request"""
         self._init_attributes()
+        self.apiurl = apiurl
         if not root.get('id'):
             raise oscerr.APIError('invalid request: %s\n' % ET.tostring(root, encoding=ET_ENCODING))
         self.reqid = root.get('id')
@@ -3008,7 +3101,7 @@ class Request:
                 i.set('type', 'submit')
                 action_nodes.append(i)
         for action in action_nodes:
-            self.actions.append(Action.from_xml(action))
+            self.actions.append(Action.from_xml(action, self.apiurl))
         for review in root.findall('review'):
             self.reviews.append(ReviewState(review))
         for history_element in root.findall('history'):
@@ -4500,7 +4593,7 @@ def get_request(apiurl: str, reqid):
     root = ET.parse(f).getroot()
 
     r = Request()
-    r.read(root)
+    r.read(root, apiurl=apiurl)
     return r
 
 

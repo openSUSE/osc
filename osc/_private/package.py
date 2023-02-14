@@ -1,5 +1,6 @@
 import functools
 
+from .. import oscerr
 from . import api
 
 
@@ -18,6 +19,7 @@ class PackageBase:
         self.files = []
         directory_node = self._get_directory_node()
         self._load_from_directory_node(directory_node)
+        self._meta_node = None
 
     def __str__(self):
         return f"{self.project}/{self.name}"
@@ -60,6 +62,19 @@ class PackageBase:
                 # the name is omitted and we want it present for overall sanity
                 self.linkinfo.package = self.name
 
+    def _get_meta_node(self):
+        raise NotImplementedError()
+
+    def get_meta_value(self, option):
+        if not self._meta_node:
+            self._meta_node = self._get_meta_node()
+        if not self._meta_node:
+            return None
+        node = api.find_node(self._meta_node, "package", option)
+        if node is None or not node.text:
+            raise oscerr.APIError(f"Couldn't get '{option}' from package _meta")
+        return node.text
+
 
 class ApiPackage(PackageBase):
     def __init__(self, apiurl, project, package, rev=None):
@@ -75,6 +90,11 @@ class ApiPackage(PackageBase):
             url_query["rev"] = self.__rev
         return api.get(self.apiurl, url_path, url_query)
 
+    def _get_meta_node(self):
+        url_path = ["source", self.project, self.name, "_meta"]
+        url_query = {}
+        return api.get(self.apiurl, url_path, url_query)
+
 
 class LocalPackage(PackageBase):
     def __init__(self, path):
@@ -86,3 +106,6 @@ class LocalPackage(PackageBase):
 
     def _get_directory_node(self):
         return self.store.read_xml_node("_files", "directory").getroot()
+
+    def _get_meta_node(self):
+        return self.store._meta_node
