@@ -80,6 +80,7 @@ jobs:
 
       - name: 'Run unit tests'
         run: |
+          pip3 config set global.break-system-packages 1
           pip3 install -e .
           python3 setup.py test
 
@@ -123,5 +124,6 @@ jobs:
       - name: 'Run unit tests'
         run: |
           mkdir -p /usr/local/lib/python2.7/site-packages/
+          pip2 config set global.break-system-packages 1
           pip2 install -e .
           python2 setup.py test
