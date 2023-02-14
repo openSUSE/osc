@@ -111,6 +111,7 @@ jobs:
 
       - name: 'Install osc from pip'
         run: |
+            pip config set global.break-system-packages 1
             pip3 install .
 
       - name: 'Run installed osc'

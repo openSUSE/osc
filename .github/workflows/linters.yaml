@@ -17,6 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
+      - run: pip config set global.break-system-packages 1
       - run: pip install mypy
       - run: pip install types-cryptography types-urllib3
       - run: pip install distro keyring progressbar zstandard
