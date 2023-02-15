@@ -17,6 +17,14 @@ class Store:
     STORE_VERSION = "1.0"
 
     @classmethod
+    def is_working_copy(cls, path):
+        try:
+            cls(path)
+        except oscerr.NoWorkingCopy:
+            return False
+        return True
+
+    @classmethod
     def is_project_dir(cls, path):
         try:
             store = cls(path)

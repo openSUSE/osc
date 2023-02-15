@@ -4748,7 +4748,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             sep = '/' if not opts.output_dir and conf.config['checkout_no_colon'] else conf.config['project_separator']
             chosen_output = opts.output_dir if opts.output_dir else project
             prj_dir = Path(chosen_output.replace(':', sep))
-            if os.path.exists(prj_dir):
+            if sep == "/":
+                if Store.is_working_copy(prj_dir):
+                    sys.exit(f"Directory contains a working copy already: {prj_dir}")
+            elif os.path.exists(prj_dir):
                 sys.exit('osc: project directory \'%s\' already exists' % prj_dir)
 
             # check if the project does exist (show_project_meta will throw an exception)
