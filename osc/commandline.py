@@ -4989,7 +4989,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not conf.config['local_service_run'] or opts.skip_local_service_run:
             skip_local_service_run = True
 
-        for arg in args.copy():
+        for arg in args[:]:
             if conf.config['do_package_tracking'] and is_project_dir(arg):
                 prj = Project(arg)
 
@@ -5016,7 +5016,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         pacs, no_pacs = findpacs(args, fatal=False)
 
-        for pac in pacs.copy():
+        for pac in pacs[:]:
             if pac.scm_url:
                 print("WARNING: Skipping package '{}' because it is managed in scm (git): {}".format(pac.name, pac.scm_url))
                 pacs.remove(pac)
