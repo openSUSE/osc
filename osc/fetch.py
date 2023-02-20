@@ -205,6 +205,7 @@ class Fetcher:
         return urllist
 
     def run(self, buildinfo):
+        apiurl = buildinfo.apiurl
         cached = 0
         all = len(buildinfo.deps)
         for i in buildinfo.deps:
@@ -221,12 +222,24 @@ class Fetcher:
                 cached += 1
                 if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
                     continue
+
+                hdrmd5_is_valid = True
                 if i.hdrmd5:
                     if i.name.startswith('container:'):
                         hdrmd5 = dgst(i.fullfilename)
+                        if hdrmd5 != i.hdrmd5:
+                            hdrmd5_is_valid = False
                     else:
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
-                    if not hdrmd5 or hdrmd5 != i.hdrmd5:
+                        if hdrmd5 != i.hdrmd5:
+                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                                hdrmd5_is_valid = True
+                            else:
+                                print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                                hdrmd5_is_valid = False
+
+                    if not hdrmd5_is_valid:
                         os.unlink(i.fullfilename)
                         cached -= 1
 
@@ -258,19 +271,15 @@ class Fetcher:
                         # mark it for downloading from the API
                         self.__add_cpio(i)
                     else:
-                        # if the checksum of the downloaded package doesn't match,
-                        # delete it and mark it for downloading from the API
-                        #
-                        # wbrown 2022 - is there a reason to keep these md5's at all? md5 is
-                        # broken from a security POV so these aren't a trusted source for validation
-                        # of the file content. They are often incorrect forcing download via the API
-                        # which for anyone outside the EU is excruciating. And when they are ignored
-                        # builds work and progress anyway? So what do they even do? What are they
-                        # for? They should just be removed.
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
-                        if not hdrmd5 or hdrmd5 != i.hdrmd5:
-                            print('%s/%s: allowing invalid file, probably an OBS bug - hdrmd5 did not match - %s != %s'
-                                % (i.project, i.name, hdrmd5, i.hdrmd5))
+                        if hdrmd5 != i.hdrmd5:
+                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                            else:
+                                print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                                os.unlink(i.fullfilename)
+                                self.__add_cpio(i)
+
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')
                     print('Exiting.')

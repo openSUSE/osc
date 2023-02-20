@@ -9,14 +9,6 @@
     <disable/>
   </build>
 
-  <publish>
-    <disable/>
-  </publish>
-
-  <useforbuild>
-    <disable/>
-  </useforbuild>
-
   <repository name="standard">
     <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
     <arch>x86_64</arch>

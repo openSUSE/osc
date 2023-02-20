@@ -1372,8 +1372,11 @@ def main(apiurl, opts, argv):
                 print("Error: cannot get hdrmd5 for %s" % i.fullfilename)
                 sys.exit(1)
             if hdrmd5 != i.hdrmd5:
-                print("WARNING: OBS BUG hdrmd5 mismatch for %s: %s != %s" % (i.fullfilename, hdrmd5, i.hdrmd5))
-                # sys.exit(1)
+                if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                    print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                else:
+                    print(f"Error: hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                    sys.exit(1)
 
     print('Writing build configuration')
 

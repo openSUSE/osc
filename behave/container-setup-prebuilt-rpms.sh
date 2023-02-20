@@ -49,8 +49,12 @@ rm -rf "$TMP_DIR"
 
 # build package 'test:factory/test-pkgB'
 TMP_DIR=$(mktemp -d)
-rpmbuild -ba "$FIXTURES_DIR/pac/test-pkgB-2.spec" --define "_topdir $TMP_DIR"
+setarch i586 rpmbuild -ba "$FIXTURES_DIR/pac/test-pkgB-2.spec" --define "_topdir $TMP_DIR"
 upload_rpms "$TMP_DIR" test:factory standard i586 test-pkgB
+rm -rf "$TMP_DIR"
+
+TMP_DIR=$(mktemp -d)
+rpmbuild -ba "$FIXTURES_DIR/pac/test-pkgB-2.spec" --define "_topdir $TMP_DIR"
 upload_rpms "$TMP_DIR" test:factory standard x86_64 test-pkgB
 rm -rf "$TMP_DIR"
 
@@ -82,6 +86,11 @@ rm -rf "$TMP_DIR"
 # run scheduler to process all jobs
 /usr/lib/obs/server/bs_sched --testmode i586
 /usr/lib/obs/server/bs_sched --testmode x86_64
+
+
+# run publisher
+# noarch packages from x86_64 win over those from i586
+/usr/lib/obs/server/bs_publish --testmode
 
 
 # create fake empty files that usually accompany RPMs
