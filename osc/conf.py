@@ -189,13 +189,15 @@ if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-buil
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
                     'downloadurl', 'sshkey']
 
+
+# _integer_opts and _boolean_opts specify option types for both global options as well as api_host_options
 _integer_opts = ('build-jobs',)
 _boolean_opts = (
     'debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
     'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-    'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail')
+    'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail', 'allow_http', 'sslcertck', )
 
 
 def apply_option_types(config, conffile=""):
@@ -211,6 +213,8 @@ def apply_option_types(config, conffile=""):
     typed_opts = ((_boolean_opts, cp.getboolean), (_integer_opts, cp.getint))
     for opts, meth in typed_opts:
         for opt in opts:
+            if opt not in config:
+                continue
             try:
                 config[opt] = meth('general', opt)
             except ValueError as e:
@@ -826,11 +830,15 @@ def get_config(override_conffile=None,
             credentials.AbstractCredentialsManager.config_entry,
         )
         for key in optional:
-            if cp.has_option(url, key):
-                if key in ('sslcertck', 'allow_http'):
-                    api_host_options[apiurl][key] = cp.getboolean(url, key)
-                else:
-                    api_host_options[apiurl][key] = cp.get(url, key)
+            if not cp.has_option(url, key):
+                continue
+            if key in _boolean_opts:
+                api_host_options[apiurl][key] = cp.getboolean(url, key)
+            elif key in _integer_opts:
+                api_host_options[apiurl][key] = cp.getint(url, key)
+            else:
+                api_host_options[apiurl][key] = cp.get(url, key)
+
         if cp.has_option(url, 'build-root', proper=True):
             api_host_options[apiurl]['build-root'] = cp.get(url, 'build-root', raw=True)
 
