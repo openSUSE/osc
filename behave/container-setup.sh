@@ -26,6 +26,9 @@ sed -i -E 's!^(\s*)PassengerRuby .*!\1PassengerRuby "/usr/bin/ruby.ruby3.1"!' /e
 # enable apache SSL server flag
 sed -i 's!^APACHE_SERVER_FLAGS=.*!APACHE_SERVER_FLAGS="SSL"!' /etc/sysconfig/apache2
 
+# also listen on the port that is exported to an unprivileged user
+sed -i 's!^<VirtualHost \*:82>!<VirtualHost *:82 *:1082>!' /etc/apache2/vhosts.d/obs.conf
+
 
 # enable apache mods
 APACHE_MODS="passenger rewrite proxy proxy_http xforward headers ssl socache_shmcb"
@@ -94,6 +97,11 @@ start_obs_srcserver
 # initialize the OBS database
 cd /srv/www/obs/api
 RAILS_ENV=production SAFETY_ASSURED=1 bin/rails db:setup writeconfiguration data:schema:load
+
+
+# update configuration and write it to disk
+echo "update configurations set download_url='http://localhost:1082';" | su -s /bin/sh - mysql -c "mysql api_production"
+cd /srv/www/obs/api; RAILS_ENV=production SAFETY_ASSURED=1 bin/rails writeconfiguration
 
 
 # fix perms

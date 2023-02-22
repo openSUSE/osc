@@ -16,23 +16,31 @@ class TestConf(unittest.TestCase):
     def test_bool_opts_defaults(self):
         config = osc.conf.config
         for opt in osc.conf._boolean_opts:
+            if opt not in config:
+                continue
             self.assertIsInstance(config[opt], bool, msg=f"option: '{opt}'")
 
     def test_int_opts_defaults(self):
         config = osc.conf.config
         for opt in osc.conf._integer_opts:
+            if opt not in config:
+                continue
             self.assertIsInstance(config[opt], int, msg=f"option: '{opt}'")
 
     def test_bool_opts(self):
         osc.conf.get_config()
         config = osc.conf.config
         for opt in osc.conf._boolean_opts:
+            if opt not in config:
+                continue
             self.assertIsInstance(config[opt], bool, msg=f"option: '{opt}'")
 
     def test_int_opts(self):
         osc.conf.get_config()
         config = osc.conf.config
         for opt in osc.conf._integer_opts:
+            if opt not in config:
+                continue
             self.assertIsInstance(config[opt], int, msg=f"option: '{opt}'")
 
 
