@@ -64,7 +64,40 @@ def post(apiurl, path, query=None):
     return root
 
 
-def find_nodes(root, root_name, node_name):
+def _to_xpath(*args):
+    """
+    Convert strings and dictionaries to xpath:
+        string gets translated to a node name
+        dictionary gets translated to [@key='value'] predicate
+
+    All values are properly escaped.
+
+    Examples:
+        args: ["directory", "entry", {"name": "osc"}]
+        result: "directory/entry[@name='osc']"
+
+        args: ["attributes", "attribute", {"namespace": "OBS", "name": "BranchSkipRepositories"}, "value"]
+        result: "attributes/attribute[@namespace='OBS'][@name='BranchSkipRepositories']/value"
+    """
+    xpath = ""
+    for arg in args:
+        if isinstance(arg, str):
+            arg = xml.sax.saxutils.escape(arg)
+            xpath += f"/{arg}"
+        elif isinstance(arg, dict):
+            for key, value in arg.items():
+                key = xml.sax.saxutils.escape(key)
+                value = xml.sax.saxutils.escape(value)
+                xpath += f"[@{key}='{value}']"
+        else:
+            raise TypeError(f"Argument '{arg}' has invalid type '{type(arg).__name__}'. Expected types: str, dict")
+
+    # strip the leading slash because we're making a relative search
+    xpath = xpath.lstrip("/")
+    return xpath
+
+
+def find_nodes(root, root_name, *args):
     """
     Find nodes with given `node_name`.
     Also, verify that the root tag matches the `root_name`.
@@ -73,16 +106,16 @@ def find_nodes(root, root_name, node_name):
     :type  root: xml.etree.ElementTree.Element
     :param root_name: Expected (tag) name of the root node.
     :type  root_name: str
-    :param node_name: Name of the nodes we're looking for.
-    :type  node_name: str
-    :returns: List of nodes that match the given `node_name`.
+    :param *args: Simplified xpath notation: strings are node names, dictionaries translate to [@key='value'] predicates.
+    :type  *args: list[str, dict]
+    :returns: List of nodes that match xpath based on the given `args`.
     :rtype:   list(xml.etree.ElementTree.Element)
     """
     assert root.tag == root_name
-    return root.findall(node_name)
+    return root.findall(_to_xpath(*args))
 
 
-def find_node(root, root_name, node_name=None):
+def find_node(root, root_name, *args):
     """
     Find a single node with given `node_name`.
     If `node_name` is not specified, the root node is returned.
@@ -92,17 +125,18 @@ def find_node(root, root_name, node_name=None):
     :type  root: xml.etree.ElementTree.Element
     :param root_name: Expected (tag) name of the root node.
     :type  root_name: str
-    :param node_name: Name of the nodes we're looking for.
-    :type  node_name: str
-    :returns: The node that matches the given `node_name`
-              or the root node if `node_name` is not specified.
+    :param *args: Simplified xpath notation: strings are node names, dictionaries translate to [@key='value'] predicates.
+    :type  *args: list[str, dict]
+    :returns: The node that matches xpath based on the given `args`
+              or the root node if `args` are not specified.
     :rtype:   xml.etree.ElementTree.Element
     """
 
     assert root.tag == root_name
-    if node_name:
-        return root.find(node_name)
-    return root
+    if not args:
+        # only verify the root tag
+        return root
+    return root.find(_to_xpath(*args))
 
 
 def write_xml_node_to_file(node, path, indent=True):
