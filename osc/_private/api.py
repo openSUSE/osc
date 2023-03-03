@@ -115,8 +115,18 @@ def write_xml_node_to_file(node, path, indent=True):
     :param indent: Whether to indent (pretty-print) the written XML.
     :type  indent: bool
     """
-    from .. import core as osc_core
-
     if indent:
-        osc_core.xmlindent(node)
+        xml_indent(node)
     ET.ElementTree(node).write(path)
+
+
+def xml_indent(root):
+    """
+    Indent XML so it looks pretty after printing or saving to file.
+    """
+    if hasattr(ET, "indent"):
+        # ElementTree supports indent() in Python 3.9 and newer
+        ET.indent(root)
+    else:
+        from .. import core as osc_core
+        osc_core.xmlindent(root)
