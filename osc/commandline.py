@@ -1235,6 +1235,8 @@ class Osc(cmdln.Cmdln):
                         help='Try to remove also all repositories building against remove ones.')
     @cmdln.option('-s', '--set', metavar='ATTRIBUTE_VALUES',
                         help='set attribute values')
+    @cmdln.option('--add', metavar='ATTRIBUTE_VALUES',
+                        help='add to the existing attribute values')
     @cmdln.option('--delete', action='store_true',
                   help='delete a pattern or attribute')
     def do_meta(self, subcmd, opts, *args):
@@ -1306,6 +1308,9 @@ class Osc(cmdln.Cmdln):
         if len(args) > max_args:
             raise oscerr.WrongArgs('Too many arguments.')
 
+        if opts.add and opts.set:
+            self.argparse_error("Options --add and --set are mutually exclusive")
+
         apiurl = self.get_api_url()
 
         # Specific arguments
@@ -1369,7 +1374,7 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongOptions('options --revision and --message are only supported for the prj or prjconf subcommand')
 
         # show
-        if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set:
+        if not opts.edit and not opts.file and not opts.delete and not opts.create and not opts.set and not opts.add:
             if cmd == 'prj':
                 sys.stdout.write(decode_it(b''.join(show_project_meta(apiurl, project, rev=opts.revision, blame=opts.blame))))
             elif cmd == 'pkg':
@@ -1445,16 +1450,33 @@ class Osc(cmdln.Cmdln):
                           template_args=None)
 
         # create attribute entry
-        if (opts.create or opts.set) and cmd == 'attribute':
+        if (opts.create or opts.set or opts.add) and cmd == 'attribute':
             if not opts.attribute:
                 raise oscerr.WrongOptions('no attribute given to create')
-            values = ''
-            if opts.set:
-                for i in opts.set.split(','):
-                    values += '<value>%s</value>' % _private.api.xml_escape(i)
+
             aname = opts.attribute.split(":")
             if len(aname) != 2:
                 raise oscerr.WrongOptions('Given attribute is not in "NAMESPACE:NAME" style')
+
+            values = ''
+
+            if opts.add:
+                # read the existing values from server
+                root = _private.api.get(apiurl, attributepath)
+                nodes = _private.api.find_nodes(root, "attributes", "attribute", {"namespace": aname[0], "name": aname[1]}, "value")
+                for node in nodes:
+                    # append the existing values
+                    value = _private.api.xml_escape(node.text)
+                    values += f"<value>{value}</value>"
+
+                # pretend we're setting values in order to append the values we have specified on the command-line,
+                # because OBS API doesn't support extending the value list directly
+                opts.set = opts.add
+
+            if opts.set:
+                for i in opts.set.split(','):
+                    values += '<value>%s</value>' % _private.api.xml_escape(i)
+
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
             url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
