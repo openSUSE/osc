@@ -1450,9 +1450,8 @@ class Osc(cmdln.Cmdln):
                 raise oscerr.WrongOptions('no attribute given to create')
             values = ''
             if opts.set:
-                opts.set = opts.set.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
                 for i in opts.set.split(','):
-                    values += '<value>%s</value>' % i
+                    values += '<value>%s</value>' % _private.api.xml_escape(i)
             aname = opts.attribute.split(":")
             if len(aname) != 2:
                 raise oscerr.WrongOptions('Given attribute is not in "NAMESPACE:NAME" style')

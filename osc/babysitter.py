@@ -16,6 +16,7 @@ from urllib.error import URLError, HTTPError
 
 import urllib3.exceptions
 
+from . import _private
 from . import commandline
 from . import oscerr
 from .OscConfigParser import configparser
@@ -112,7 +113,7 @@ def run(prg, argv=None):
             if b'<summary>' in body:
                 msg = body.split(b'<summary>')[1]
                 msg = msg.split(b'</summary>')[0]
-                msg = msg.replace(b'&lt;', b'<').replace(b'&gt;', b'>').replace(b'&amp;', b'&')
+                msg = _private.api.xml_escape(msg)
                 print(decode_it(msg), file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
             print('\nRequest: %s' % e.filename)
