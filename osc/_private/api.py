@@ -4,6 +4,9 @@ and work with related XML data.
 """
 
 
+from xml.etree import ElementTree as ET
+
+
 def get(apiurl, path, query=None):
     """
     Send a GET request to OBS.
@@ -28,7 +31,7 @@ def get(apiurl, path, query=None):
 
     url = osc_core.makeurl(apiurl, path, query)
     with osc_connection.http_GET(url) as f:
-        root = osc_core.ET.parse(f).getroot()
+        root = ET.parse(f).getroot()
     return root
 
 
@@ -56,7 +59,7 @@ def post(apiurl, path, query=None):
 
     url = osc_core.makeurl(apiurl, path, query)
     with osc_connection.http_POST(url) as f:
-        root = osc_core.ET.parse(f).getroot()
+        root = ET.parse(f).getroot()
     return root
 
 
@@ -116,4 +119,4 @@ def write_xml_node_to_file(node, path, indent=True):
 
     if indent:
         osc_core.xmlindent(node)
-    osc_core.ET.ElementTree(node).write(path)
+    ET.ElementTree(node).write(path)
