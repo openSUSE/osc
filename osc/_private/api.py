@@ -4,6 +4,7 @@ and work with related XML data.
 """
 
 
+import xml.sax.saxutils
 from xml.etree import ElementTree as ET
 
 
@@ -118,6 +119,19 @@ def write_xml_node_to_file(node, path, indent=True):
     if indent:
         xml_indent(node)
     ET.ElementTree(node).write(path)
+
+
+def xml_escape(string):
+    """
+    Escape the string so it's safe to use in XML and xpath.
+    """
+    entities = {
+        "\"": "&quot;",
+        "'": "&apos;",
+    }
+    if isinstance(string, bytes):
+        return xml.sax.saxutils.escape(string.decode("utf-8"), entities=entities).encode("utf-8")
+    return xml.sax.saxutils.escape(string, entities=entities)
 
 
 def xml_indent(root):
