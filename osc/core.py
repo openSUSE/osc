@@ -7089,8 +7089,7 @@ def get_commitlog(
             r.append('<author>%s</author>' % user)
             r.append('<date>%s</date>' % t)
             r.append('<requestid>%s</requestid>' % requestid)
-            r.append('<msg>%s</msg>' %
-                     decode_it(comment).replace('&', '&amp;').replace('<', '&gt;').replace('>', '&lt;'))
+            r.append('<msg>%s</msg>' % _private.api.xml_escape(decode_it(comment)))
             r.append('</logentry>')
         else:
             if requestid:
