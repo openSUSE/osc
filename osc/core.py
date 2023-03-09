@@ -1061,7 +1061,7 @@ class Project:
                     if state == 'A':
                         self.commitNewPackage(pac, msg, todo, verbose=verbose, skip_local_service_run=skip_local_service_run)
                     elif state == 'D':
-                        self.commitDelPackage(pac)
+                        self.commitDelPackage(pac, force=force)
                     elif state == ' ':
                         # display the correct dir when sending the changes
                         if os_path_samefile(os.path.join(self.dir, pac), os.getcwd()):
@@ -1091,7 +1091,7 @@ class Project:
                         # do a simple commit
                         Package(os.path.join(self.dir, pac)).commit(msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
                     elif state == 'D':
-                        self.commitDelPackage(pac)
+                        self.commitDelPackage(pac, force=force)
                     elif state == 'A':
                         self.commitNewPackage(pac, msg, verbose=verbose, skip_local_service_run=skip_local_service_run)
             finally:
@@ -1123,7 +1123,7 @@ class Project:
             self.set_state(pac, ' ')
             os.chdir(olddir)
 
-    def commitDelPackage(self, pac):
+    def commitDelPackage(self, pac, force=False):
         """deletes a package on the server and in the working copy"""
         try:
             # display the correct dir when sending the changes
@@ -1144,7 +1144,7 @@ class Project:
             pass
         # print statfrmt('Deleting', getTransActPath(os.path.join(self.dir, pac)))
         print(statfrmt('Deleting', getTransActPath(pac_dir)))
-        delete_package(self.apiurl, self.name, pac)
+        delete_package(self.apiurl, self.name, pac, force=force)
         self.del_package_node(pac)
 
     def commitExtPackage(self, pac, msg, files=None, verbose=False, skip_local_service_run=False):
