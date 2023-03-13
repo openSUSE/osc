@@ -4834,14 +4834,6 @@ def get_request_list(
     withfullhistory=False,
     roles=None,
 ):
-
-    import warnings
-    warnings.warn(
-        "osc.core.get_request_list() is deprecated. "
-        "Use osc.core.get_request_collection() instead.",
-        DeprecationWarning
-    )
-
     kwargs = {
         "apiurl": apiurl,
         "user": req_who,
