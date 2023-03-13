@@ -51,21 +51,21 @@ List all the projects and packages
 This will show all the projects on the remote |obs|:
 
     >>> for prj in osc.core.meta_get_project_list(apiurl, deleted=False):
-            print prj
+            print(prj)
 
 
 A project has **repositories** associated with it (eg. linux distributions):
 
     >>> prj = 'home:cavallo71:opt-python-interpreters'
     >>> for repo in osc.core.get_repos_of_project(apiurl, prj):
-            print repo
+            print(repo)
 
 
 A project contains packages and to list them all:
     
     >>> prj = 'home:cavallo71:opt-python-interpreters'
     >>> for pkg in osc.core.meta_get_packagelist(apiurl, prj):
-            print pkg
+            print(pkg)
 
 
 Add a package to an existing project
