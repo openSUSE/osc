@@ -31,14 +31,14 @@
 %endif
 
 Name:           osc
-Version:        1.0.0~b5
+Version:        1.0.0
 Release:        0
 Summary:        Command-line client for the Open Build Service
 License:        GPL-2.0-or-later
 Group:          Development/Tools/Other
 URL:            https://github.com/openSUSE/osc
 
-Source:         %{name}-%{version}.tar.gz
+Source:         https://github.com/openSUSE/osc/archive/refs/tags/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 
 %if 0%{?debian}
 Source1:        debian.dirs
