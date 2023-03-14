@@ -8241,7 +8241,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='define the project where this package is primarily developed')
     @cmdln.option('-a', '--add', metavar='user',
                   help='add a new person for given role ("maintainer" by default)')
-    @cmdln.option('--all', action='store_true',
+    @cmdln.option('-A', '--all', action='store_true',
                   help='list all found entries not just the first one')
     @cmdln.option('-s', '--set-bugowner', metavar='user',
                   help='Set the bugowner to specified person (or group via group: prefix)')
