@@ -288,9 +288,10 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     # https://github.com/openSUSE/open-build-service/pull/13019
     headers.add("Accept", "application/xml")
 
-    if data or file:
-        # osc/obs data is usually XML
+    if method == "PUT" or (method == "POST" and (data or file)):
         headers.add("Content-Type", "application/xml; charset=utf-8")
+    elif method == "POST":
+        headers.add("Content-Type", "application/x-www-form-urlencoded")
 
     if purl.scheme == "http" and HTTP_PROXY_MANAGER:
         # HTTP proxy requires full URL with 'same host' checking off
