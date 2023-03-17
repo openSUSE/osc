@@ -1,4 +1,10 @@
-- Update to 1.0.0
+- 1.0.1
+  - Configuration:
+    - Fix a cut&paste error in setting 'disable_hdrmd5_check' config option
+  - Connection:
+    - Set Content-Type of POST requests without data to 'application/x-www-form-urlencoded'
+
+- 1.0.0
   - Command-line:
     - Use '.' as a wildcard that resolves to a project or a package name from the current working copy, for example 'osc rdiff ./. -c <num>'
     - Add 'create-pbuild-config' (cpc) command
