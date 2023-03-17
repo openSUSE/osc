@@ -890,7 +890,7 @@ def get_config(override_conffile=None,
 
         api_host_options[apiurl]["disable_hdrmd5_check"] = config["disable_hdrmd5_check"]
         if cp.has_option(url, "disable_hdrmd5_check"):
-            api_host_options[apiurl][key] = cp.getboolean(url, "disable_hdrmd5_check")
+            api_host_options[apiurl]["disable_hdrmd5_check"] = cp.getboolean(url, "disable_hdrmd5_check")
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options
