@@ -68,7 +68,7 @@ jobs:
       - name: 'Install packages'
         run: |
             sudo apt-get -y update
-            sudo apt-get -y --no-install-recommends install diffutils pylint
+            sudo apt-get -y --no-install-recommends install diffutils pylint python3-pip
 
       - uses: actions/checkout@v3
         with:
@@ -83,6 +83,16 @@ jobs:
         with:
           repository: ${{ matrix.plugin_repository }}
           path: plugin
+
+      - name: 'Install dependencies from pip'
+        run: |
+            cd plugin
+            echo "Installing pycurl from a package to avoid installing many build deps and compilation..."
+            sudo apt-get -y --no-install-recommends install python3-pycurl
+            find -name 'setup.py' | while read i; do cd $(dirname $i); pip3 install -e ".[extras_require]" || : ; done
+            find -name 'setup.py' | while read i; do cd $(dirname $i); pip3 install -e ".[lint]" || : ; done
+            find -name 'setup.py' | while read i; do cd $(dirname $i); pip3 install -e ".[test]" || : ; done
+            find -name 'requirements*.txt' | while read i; do pip3 install -r "$i" || : ; done
 
       - name: 'Run pylint with osc from master'
         run: |
