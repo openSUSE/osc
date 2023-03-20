@@ -62,6 +62,7 @@ jobs:
           - openSUSE/osc-plugin-install
           - openSUSE/osc-plugin-overview
           - openSUSE/osc-plugin-qam
+          - openSUSE/sle-prjmgr-tools
 
     steps:
       - name: 'Install packages'
