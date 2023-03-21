@@ -9481,7 +9481,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         plugin_dirs = [
             '/usr/lib/osc-plugins',
             '/usr/local/lib/osc-plugins',
-            '/var/lib/osc-plugins',  # Kept for backward compatibility
             os.path.expanduser('~/.local/lib/osc-plugins'),
             os.path.expanduser('~/.osc-plugins')]
         for plugin_dir in plugin_dirs:
