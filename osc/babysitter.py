@@ -18,6 +18,7 @@ import urllib3.exceptions
 
 from . import _private
 from . import commandline
+from . import conf as osc_conf
 from . import oscerr
 from .OscConfigParser import configparser
 from .oscssl import CertVerificationError
@@ -52,19 +53,20 @@ for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
 def run(prg, argv=None):
     try:
         try:
-            if '--debugger' in sys.argv:
+            # we haven't parsed options yet, that's why we rely on argv directly
+            if "--debugger" in (argv or sys.argv[1:]):
                 pdb.set_trace()
-            # here we actually run the program:
+            # here we actually run the program
             return prg.main(argv)
         except:
-            # look for an option in the prg.options object and in the config
-            # dict print stack trace, if desired
-            if getattr(prg.options, 'traceback', None) or getattr(prg.conf, 'config', {}).get('traceback', None) or \
-               getattr(prg.options, 'post_mortem', None) or getattr(prg.conf, 'config', {}).get('post_mortem', None):
+            # If any of these was set via the command-line options,
+            # the config values are expected to be changed accordingly.
+            # That's why we're working only with the config.
+            if osc_conf.config["traceback"] or osc_conf.config["post_mortem"]:
                 traceback.print_exc(file=sys.stderr)
                 # we could use http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52215
             # enter the debugger, if desired
-            if getattr(prg.options, 'post_mortem', None) or getattr(prg.conf, 'config', {}).get('post_mortem', None):
+            if osc_conf.config["post_mortem"]:
                 if sys.stdout.isatty() and not hasattr(sys, 'ps1'):
                     pdb.post_mortem(sys.exc_info()[2])
                 else:
@@ -104,8 +106,7 @@ def run(prg, argv=None):
         except AttributeError:
             body = ''
 
-        if getattr(prg.options, 'debug', None) or \
-           getattr(prg.conf, 'config', {}).get('debug', None):
+        if osc_conf.config["debug"]:
             print(e.hdrs, file=sys.stderr)
             print(body, file=sys.stderr)
 
@@ -151,8 +152,7 @@ def run(prg, argv=None):
         print(e.message, file=sys.stderr)
     except oscerr.OscIOError as e:
         print(e.msg, file=sys.stderr)
-        if getattr(prg.options, 'debug', None) or \
-           getattr(prg.conf, 'config', {}).get('debug', None):
+        if osc_conf.config["debug"]:
             print(e.e, file=sys.stderr)
     except (oscerr.WrongOptions, oscerr.WrongArgs) as e:
         print(e, file=sys.stderr)
