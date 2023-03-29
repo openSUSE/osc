@@ -2,7 +2,16 @@ commandline
 ===========
 
 
-The `osc.commandline` module provides argument parsing functionality to osc plugins.
+The ``osc.commandline`` module provides functionality for creating osc command-line plugins.
+
+
+.. autoclass:: osc.commandline.OscCommand
+   :inherited-members:
+   :members:
+
+
+.. autoclass:: osc.commandline.OscMainCommand
+   :members: main
 
 
 .. automodule:: osc.commandline

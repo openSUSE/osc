@@ -1,14 +1,101 @@
+import argparse
 import os
 import shutil
 import tempfile
 import unittest
 
+from osc.commandline import Command
+from osc.commandline import MainCommand
 from osc.commandline import pop_project_package_from_args
 from osc.commandline import pop_project_package_repository_arch_from_args
 from osc.commandline import pop_project_package_targetproject_targetpackage_from_args
 from osc.commandline import pop_repository_arch_from_args
 from osc.oscerr import NoWorkingCopy, OscValueError
 from osc.store import Store
+
+
+class TestMainCommand(MainCommand):
+    name = "osc-test"
+
+    def init_arguments(self, command=None):
+        self.add_argument(
+            "-A",
+            "--apiurl",
+        )
+
+
+class TestCommand(Command):
+    name = "test-cmd"
+
+
+class TestCommandClasses(unittest.TestCase):
+    def test_load_commands(self):
+        main = TestMainCommand()
+        main.load_commands()
+
+    def test_load_command(self):
+        main = TestMainCommand()
+        cmd = main.load_command(TestCommand, "test.osc.commands")
+        self.assertTrue(str(cmd).startswith("<osc plugin test.osc.commands.TestCommand"))
+
+    def test_parent(self):
+        class Parent(TestCommand):
+            name = "parent"
+
+        class Child(TestCommand):
+            name = "child"
+            parent = "Parent"
+
+        main = TestMainCommand()
+        main.load_command(Parent, "test.osc.commands")
+        main.load_command(Child, "test.osc.commands")
+
+        main.parse_args(["parent", "child"])
+
+    def test_invalid_parent(self):
+        class Parent(TestCommand):
+            name = "parent"
+
+        class Child(TestCommand):
+            name = "child"
+            parent = "DoesNotExist"
+
+        main = TestMainCommand()
+        main.load_command(Parent, "test.osc.commands")
+        main.load_command(Child, "test.osc.commands")
+
+    def test_load_twice(self):
+        class AnotherCommand(TestCommand):
+            name = "another-command"
+            aliases = ["test-cmd"]
+
+        main = TestMainCommand()
+        main.load_command(TestCommand, "test.osc.commands")
+
+        # conflict between names
+        self.assertRaises(argparse.ArgumentError, main.load_command, TestCommand, "test.osc.commands")
+
+        # conflict between a name and an alias
+        self.assertRaises(argparse.ArgumentError, main.load_command, AnotherCommand, "test.osc.commands")
+
+    def test_intermixing(self):
+        main = TestMainCommand()
+        main.load_command(TestCommand, "test.osc.commands")
+
+        args = main.parse_args(["test-cmd", "--apiurl", "https://example.com"])
+        self.assertEqual(args.apiurl, "https://example.com")
+
+        args = main.parse_args(["--apiurl", "https://example.com", "test-cmd"])
+        self.assertEqual(args.apiurl, "https://example.com")
+
+    def test_unknown_options(self):
+        main = TestMainCommand()
+        main.load_command(TestCommand, "test.osc.commands")
+
+        args = main.parse_args(["test-cmd", "unknown-arg"])
+        self.assertEqual(args.positional_args, ["unknown-arg"])
+
+        self.assertRaises(SystemExit, main.parse_args, ["test-cmd", "--unknown-option"])
 
 
 class TestPopProjectPackageFromArgs(unittest.TestCase):

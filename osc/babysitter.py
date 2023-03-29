@@ -57,7 +57,8 @@ def run(prg, argv=None):
             if "--debugger" in (argv or sys.argv[1:]):
                 pdb.set_trace()
             # here we actually run the program
-            return prg.main(argv)
+            prg.main(argv)
+            return 0
         except:
             # If any of these was set via the command-line options,
             # the config values are expected to be changed accordingly.
@@ -207,6 +208,6 @@ def main():
         sys.stdout = os.fdopen(sys.stdout.fileno(), sys.stdout.mode, 1)
         sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
 
-    sys.exit(run(commandline.Osc()))
+    sys.exit(run(commandline.OscMainCommand()))
 
 # vim: sw=4 et
