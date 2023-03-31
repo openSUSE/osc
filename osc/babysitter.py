@@ -80,7 +80,7 @@ def run(prg, argv=None):
     except oscerr.APIError as e:
         print('BuildService API error:', e.msg, file=sys.stderr)
     except oscerr.LinkExpandError as e:
-        print('Link "%s/%s" cannot be expanded:\n' % (e.prj, e.pac), e.msg, file=sys.stderr)
+        print(f'Link "{e.prj}/{e.pac}" cannot be expanded:\n', e.msg, file=sys.stderr)
         print('Use "osc repairlink" to fix merge conflicts.\n', file=sys.stderr)
     except oscerr.WorkingCopyWrongVersion as e:
         print(e, file=sys.stderr)
@@ -116,11 +116,11 @@ def run(prg, argv=None):
                 msg = _private.api.xml_escape(msg)
                 print(decode_it(msg), file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
-            print('\nRequest: %s' % e.filename)
+            print(f'\nRequest: {e.filename}')
             print('Headers:')
             for h, v in e.hdrs.items():
                 if h != 'Set-Cookie':
-                    print("%s: %s" % (h, v))
+                    print(f"{h}: {v}")
 
     except BadStatusLine as e:
         print('Server returned an invalid response:', e, file=sys.stderr)
@@ -130,7 +130,7 @@ def run(prg, argv=None):
     except URLError as e:
         msg = 'Failed to reach a server'
         if hasattr(e, '_osc_host_port'):
-            msg += ' (%s)' % e._osc_host_port
+            msg += f' ({e._osc_host_port})'
         msg += ':\n'
         print(msg, e.reason, file=sys.stderr)
     except ssl.SSLError as e:
@@ -174,7 +174,7 @@ def run(prg, argv=None):
     except oscerr.PackageError as e:
         print(e.msg, file=sys.stderr)
     except PackageError as e:
-        print('%s:' % e.fname, e.msg, file=sys.stderr)
+        print(f'{e.fname}:', e.msg, file=sys.stderr)
     except RPMError as e:
         print(e, file=sys.stderr)
     except CertVerificationError as e:
