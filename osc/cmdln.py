@@ -81,7 +81,9 @@ class HelpFormatter(argparse.RawDescriptionHelpFormatter):
     def _format_action(self, action):
         if isinstance(action, argparse._SubParsersAction):
             parts = []
-            for i in action._get_subactions():
+            subactions = action._get_subactions()
+            subactions.sort(key=lambda x: x.metavar)
+            for i in subactions:
                 if i.help == argparse.SUPPRESS:
                     # don't display commands with suppressed help
                     continue
