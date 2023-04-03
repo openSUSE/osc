@@ -1,3 +1,15 @@
+- 1.1.0
+  - Command-line:
+    - New class-based commands
+    - Sort commands before printing help
+    - No longer read plugins from /var/lib/osc-plugins
+  - Configuration:
+    - Do not error out on setting oscrc permissions if the file is owned by another user
+  - Library:
+    - Restore 'include_request_from_project' conf option functionality
+    - Simplify how babysitter works with options and config
+    - Prefer f-strings over c-style string expansion
+
 - 1.0.1
   - Configuration:
     - Fix a cut&paste error in setting 'disable_hdrmd5_check' config option
