@@ -4778,6 +4778,38 @@ def get_request_collection(
     for root in res.findall('request'):
         r = Request()
         r.read(root)
+
+        # post-process results until we switch back to the /search/request
+        # which seems to be more suitable for such queries
+        exclude = False
+        for action in r.actions:
+            src_project = getattr(action, "src_project", None)
+            src_package = getattr(action, "src_package", None)
+            tgt_project = getattr(action, "tgt_project", None)
+            tgt_package = getattr(action, "tgt_package", None)
+
+            # skip if neither of source and target project matches
+            if "project" in query and query["project"] not in (src_project, tgt_project):
+                exclude = True
+                break
+
+            # skip if neither of source and target package matches
+            if "package" in query and query["package"] not in (src_package, tgt_package):
+                exclude = True
+                break
+
+            if not conf.config["include_request_from_project"]:
+                if "project" in query and "package" in query:
+                    if (src_project, src_package) == (query["project"], query["package"]):
+                        exclude = True
+                        break
+                elif "project" in query:
+                    if src_project == query["project"]:
+                        exclude = True
+                        break
+        if exclude:
+            continue
+
         requests.append(r)
     return requests
 
