@@ -6,6 +6,7 @@ import unittest
 
 from osc.commandline import Command
 from osc.commandline import MainCommand
+from osc.commandline import OscMainCommand
 from osc.commandline import pop_project_package_from_args
 from osc.commandline import pop_project_package_repository_arch_from_args
 from osc.commandline import pop_project_package_targetproject_targetpackage_from_args
@@ -28,7 +29,35 @@ class TestCommand(Command):
     name = "test-cmd"
 
 
+OSCRC_LOCALHOST = """
+[general]
+apiurl = https://localhost
+
+[https://localhost]
+user=Admin
+pass=opensuse
+""".lstrip()
+
+
 class TestCommandClasses(unittest.TestCase):
+    def setUp(self):
+        os.environ.pop("OSC_CONFIG", None)
+        self.tmpdir = tempfile.mkdtemp(prefix="osc_test")
+        os.chdir(self.tmpdir)
+        self.oscrc = None
+
+    def tearDown(self):
+        os.environ.pop("OSC_CONFIG", None)
+        try:
+            shutil.rmtree(self.tmpdir)
+        except OSError:
+            pass
+
+    def write_oscrc_localhost(self):
+        self.oscrc = os.path.join(self.tmpdir, "oscrc")
+        with open(self.oscrc, "w") as f:
+            f.write(OSCRC_LOCALHOST)
+
     def test_load_commands(self):
         main = TestMainCommand()
         main.load_commands()
@@ -96,6 +125,19 @@ class TestCommandClasses(unittest.TestCase):
         self.assertEqual(args.positional_args, ["unknown-arg"])
 
         self.assertRaises(SystemExit, main.parse_args, ["test-cmd", "--unknown-option"])
+
+    def test_default_apiurl(self):
+        class TestMainCommand(OscMainCommand):
+            name = "osc-test"
+
+        main = TestMainCommand()
+        main.load_command(TestCommand, "test.osc.commands")
+
+        self.write_oscrc_localhost()
+        os.environ["OSC_CONFIG"] = self.oscrc
+        args = main.parse_args(["test-cmd"])
+        main.post_parse_args(args)
+        self.assertEqual(args.apiurl, "https://localhost")
 
 
 class TestPopProjectPackageFromArgs(unittest.TestCase):
