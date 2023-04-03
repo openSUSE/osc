@@ -388,11 +388,9 @@ class OscMainCommand(MainCommand):
                 # try reading the apiurl from the working copy
                 args.apiurl = osc_store.Store(Path.cwd()).apiurl
             except oscerr.NoWorkingCopy:
-                # use the default apiurl from conf (if it was configured already)
-                args.apiurl = conf.config["apiurl"]
-
-        if not args.apiurl:
-            self.parser.error("Could not determine apiurl, use -A/--apiurl to specify one")
+                # we can't use conf.config["apiurl"] because it contains the default "https://api.opensuse.org"
+                # let's leave setting the right value to conf.get_config()
+                pass
 
         conf.get_config(
             override_apiurl=args.apiurl,
@@ -414,6 +412,9 @@ class OscMainCommand(MainCommand):
 
         if conf.config["show_download_progress"]:
             self.download_progress = create_text_meter()
+
+        if not args.apiurl:
+            self.parser.error("Could not determine apiurl, use -A/--apiurl to specify one")
 
         # needed for LegacyOsc class
         self.args = args
