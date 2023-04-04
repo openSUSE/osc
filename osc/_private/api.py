@@ -168,6 +168,19 @@ def xml_escape(string):
     return xml.sax.saxutils.escape(string, entities=entities)
 
 
+def xml_unescape(string):
+    """
+    Decode XML entities in the string.
+    """
+    entities = {
+        "&quot;": "\"",
+        "&apos;": "'",
+    }
+    if isinstance(string, bytes):
+        return xml.sax.saxutils.unescape(string.decode("utf-8"), entities=entities).encode("utf-8")
+    return xml.sax.saxutils.unescape(string, entities=entities)
+
+
 def xml_indent(root):
     """
     Indent XML so it looks pretty after printing or saving to file.
