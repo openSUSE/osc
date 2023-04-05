@@ -264,7 +264,7 @@ class MainCommand(Command):
             if module_path not in sys.path:
                 sys.path.append(module_path)
 
-            for loader, module_name, _ in pkgutil.walk_packages(path=[module_path]):
+            for loader, module_name, _ in pkgutil.iter_modules(path=[module_path]):
                 full_name = f"{module_prefix}.{module_name}"
                 spec = loader.find_spec(full_name)
                 mod = importlib.util.module_from_spec(spec)
