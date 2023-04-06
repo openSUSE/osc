@@ -115,7 +115,7 @@ def run(prg, argv=None):
             if b'<summary>' in body:
                 msg = body.split(b'<summary>')[1]
                 msg = msg.split(b'</summary>')[0]
-                msg = _private.api.xml_escape(msg)
+                msg = _private.api.xml_unescape(msg)
                 print(decode_it(msg), file=sys.stderr)
         if e.code >= 500 and e.code <= 599:
             print(f'\nRequest: {e.filename}')
