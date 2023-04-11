@@ -259,7 +259,12 @@ class MainCommand(Command):
     def load_commands(self):
         for module_prefix, module_path in self.MODULES:
             module_path = os.path.expanduser(module_path)
-            for loader, module_name, _ in pkgutil.walk_packages(path=[module_path]):
+
+            # some plugins have their modules installed next to them instead of site-packages
+            if module_path not in sys.path:
+                sys.path.append(module_path)
+
+            for loader, module_name, _ in pkgutil.iter_modules(path=[module_path]):
                 full_name = f"{module_prefix}.{module_name}"
                 spec = loader.find_spec(full_name)
                 mod = importlib.util.module_from_spec(spec)
