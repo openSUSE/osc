@@ -987,8 +987,11 @@ def interactive_config_setup(conffile, apiurl, initial=True):
             raise oscerr.UserAbort()
         print()
 
-    user = raw_input('Username: ')
-    passwd = getpass.getpass()
+    apiurl_no_scheme = urlsplit(apiurl)[1]
+    user_prompt = f"Username [{apiurl_no_scheme}]: "
+    user = raw_input(user_prompt)
+    pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "
+    passwd = getpass.getpass(pass_prompt)
     creds_mgr_descr = select_credentials_manager_descr()
     if initial:
         config = {'user': user, 'pass': passwd}
