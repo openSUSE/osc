@@ -1303,7 +1303,7 @@ class Osc(cmdln.Cmdln):
 
         # list sources
         elif not opts.binaries:
-            if not args:
+            if not args or not project:
                 for prj in meta_get_project_list(apiurl, opts.deleted):
                     print(prj)
 
