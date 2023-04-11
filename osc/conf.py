@@ -972,6 +972,9 @@ def identify_conf():
 
 
 def interactive_config_setup(conffile, apiurl, initial=True):
+    if not apiurl:
+        apiurl = DEFAULTS["apiurl"]
+
     scheme = urlsplit(apiurl)[0]
     http = scheme == "http"
     if http:
