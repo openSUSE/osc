@@ -397,17 +397,33 @@ class OscMainCommand(MainCommand):
                 # let's leave setting the right value to conf.get_config()
                 pass
 
-        conf.get_config(
-            override_apiurl=args.apiurl,
-            override_conffile=args.conffile,
-            override_debug=args.debug,
-            override_http_debug=args.http_debug,
-            override_http_full_debug=args.http_full_debug,
-            override_no_keyring=args.no_keyring,
-            override_post_mortem=args.post_mortem,
-            override_traceback=args.traceback,
-            override_verbose=args.verbose,
-        )
+        try:
+            conf.get_config(
+                override_apiurl=args.apiurl,
+                override_conffile=args.conffile,
+                override_debug=args.debug,
+                override_http_debug=args.http_debug,
+                override_http_full_debug=args.http_full_debug,
+                override_no_keyring=args.no_keyring,
+                override_post_mortem=args.post_mortem,
+                override_traceback=args.traceback,
+                override_verbose=args.verbose,
+            )
+        except oscerr.NoConfigfile as e:
+            print(e.msg, file=sys.stderr)
+            print(f"Creating osc configuration file {e.file} ...", file=sys.stderr)
+            conf.interactive_config_setup(e.file, args.apiurl)
+            print("done", file=sys.stderr)
+            self.post_parse_args(args)
+        except oscerr.ConfigMissingApiurl as e:
+            print(e.msg, file=sys.stderr)
+            conf.interactive_config_setup(e.file, e.url, initial=False)
+            self.post_parse_args(args)
+        except oscerr.ConfigMissingCredentialsError as e:
+            print(e.msg, file=sys.stderr)
+            print("Please enter new credentials.", file=sys.stderr)
+            conf.interactive_config_setup(e.file, e.url, initial=False)
+            self.post_parse_args(args)
 
         # write config values back to args
         # this is crucial mainly for apiurl to resolve an alias to full url
