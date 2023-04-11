@@ -2390,27 +2390,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             change_request_state(apiurl, opts.supersede, 'superseded',
                                  opts.message or '', result)
 
-    def _actionparser(self, opt_str, value, parser):
-        value = []
-        if not hasattr(parser.values, 'actiondata'):
-            setattr(parser.values, 'actiondata', [])
-        if parser.values.actions is None:
-            parser.values.actions = []
-
-        rargs = parser.rargs
-        while rargs:
-            arg = rargs[0]
-            if ((arg[:2] == "--" and len(arg) > 2) or
-                    (arg[:1] == "-" and len(arg) > 1 and arg[1] != "-")):
-                break
-            else:
-                value.append(arg)
-                del rargs[0]
-
-        parser.values.actions.append(value[0])
-        del value[0]
-        parser.values.actiondata.append(slash_split(value))
-
     def _submit_request(self, args, opts, options_block):
         actionxml = ""
         apiurl = self.get_api_url()
@@ -2684,9 +2663,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         return actionxml
 
-# TODO: fix ValueError: unknown action "callback"
-#    @cmdln.option('-a', '--action', action='callback', callback = _actionparser, dest = 'actions',
-#                  help='specify action type of a request, can be : submit/delete/change_devel/add_role/set_bugowner')
+    @cmdln.option('-a', '--action', action='append', nargs='+', metavar=('ACTION', '[ARGS]'), dest='actions', default=[],
+                  help='specify action type of a request, can be : submit/delete/change_devel/add_role/set_bugowner')
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     @cmdln.option('-r', '--revision', metavar='REV',
@@ -2744,42 +2722,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        i = 0
         actionsxml = ""
         supersede = set()
-        for ai in opts.actions:
-            if ai == 'submit':
-                args = opts.actiondata[i]
-                i = i + 1
+        for actiondata in opts.actions:
+            action = actiondata[0]
+            args = actiondata[1:]
+            if action == 'submit':
                 actions, to_supersede = self._submit_request(args, opts, options_block)
                 actionsxml += actions
                 supersede.update(to_supersede)
-            elif ai == 'delete':
-                args = opts.actiondata[i]
+            elif action == 'delete':
                 actionsxml += self._delete_request(args, opts)
-                i = i + 1
-            elif ai == 'change_devel':
-                args = opts.actiondata[i]
+            elif action == 'change_devel':
                 actionsxml += self._changedevel_request(args, opts)
-                i = i + 1
-            elif ai == 'add_me':
-                args = opts.actiondata[i]
+            elif action == 'add_me':
                 actionsxml += self._add_me(args, opts)
-                i = i + 1
-            elif ai == 'add_group':
-                args = opts.actiondata[i]
+            elif action == 'add_group':
                 actionsxml += self._add_group(args, opts)
-                i = i + 1
-            elif ai == 'add_role':
-                args = opts.actiondata[i]
+            elif action == 'add_role':
                 actionsxml += self._add_user(args, opts)
-                i = i + 1
-            elif ai == 'set_bugowner':
-                args = opts.actiondata[i]
+            elif action == 'set_bugowner':
                 actionsxml += self._set_bugowner(args, opts)
-                i = i + 1
             else:
-                raise oscerr.WrongArgs('Unsupported action %s' % ai)
+                raise oscerr.WrongArgs(f"Unsupported action {action}")
         if actionsxml == "":
             sys.exit('No actions need to be taken.')
 
