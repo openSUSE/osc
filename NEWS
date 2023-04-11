@@ -1,3 +1,16 @@
+- 1.1.1
+  - Command-line:
+    - Fix 'creq' command that wasn't working at all
+    - Fix 'ls' command when listing all projects by setting project argument to '/'
+    - Fix regression: Run interactive config setup on missing config or credentials
+    - Append plugin dirs to sys.path to allow loading modules installed next to the plugins
+    - Do not recurse into subdirs when loading plugins
+  - Configuration:
+    - Display apiurl when asking for a username or a password
+    - If apiurl is not set in interactive_config_setup(), use apiurl from DEFAULTS
+  - Library:
+    - Decode entities in HTTPError message body
+
 - 1.1.0
   - Command-line:
     - New class-based commands
