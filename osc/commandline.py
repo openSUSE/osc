@@ -84,10 +84,14 @@ class Command:
             )
 
         # traverse the parent commands and add their options to the current command
+        commands = []
         cmd = self
         while cmd:
-            cmd.init_arguments()
+            commands.append(cmd)
             cmd = cmd.parent
+        # iterating backwards to give the command's options a priority over parent/global options
+        for cmd in reversed(commands):
+            cmd.init_arguments()
 
     def __repr__(self):
         return f"<osc plugin {self.full_name} at {self.__hash__():#x}>"
