@@ -444,8 +444,10 @@ class Serviceinfo:
                 msg = f'"{old_dir}" exists, please remove it'
                 raise oscerr.OscIOError(None, msg)
 
-        result = self._execute(dir, old_dir, callmode, singleservice, verbose)
-        shutil.rmtree(old_dir)
+        try:
+            result = self._execute(dir, old_dir, callmode, singleservice, verbose)
+        finally:
+            shutil.rmtree(old_dir)
         return result
 
     def _execute(
