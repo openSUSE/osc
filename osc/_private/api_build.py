@@ -20,7 +20,7 @@ class BuildHistory:
         self.package = package
         self.repository = repository
         self.arch = arch
-        self._limit = limit
+        self._limit = int(limit)
         self.entries = self._get_entries()
 
     def _get_entries(self):

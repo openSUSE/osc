@@ -11,6 +11,11 @@ Scenario: Run `osc buildist <project>/<package> <repository>/<arch>`
     Then the exit code is 0
 
 
+Scenario: Run `osc buildist <project>/<package> <repository>/<arch> --limit`
+    When I execute osc with args "buildhist test:factory/test-pkgA standard/x86_64 --limit=1"
+    Then the exit code is 0
+
+
 Scenario: Run `osc buildist <repository>/<arch>` from a package checkout
    Given I execute osc with args "co test:factory/test-pkgA"
      And I set working directory to "{context.osc.temp}/test:factory/test-pkgA"

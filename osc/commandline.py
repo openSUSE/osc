@@ -7381,7 +7381,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('', '--csv', action='store_true',
                   help='generate output in CSV (separated by |)')
-    @cmdln.option('-l', '--limit', metavar='limit',
+    @cmdln.option('-l', '--limit', metavar='limit', type=int, default=0,
                         help='for setting the number of results')
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
                   help=HELP_MULTIBUILD_ONE)
