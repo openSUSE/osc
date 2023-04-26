@@ -1057,6 +1057,9 @@ def main(apiurl, opts, argv):
     if opts.build_opt:
         buildargs += opts.build_opt
 
+    if opts.buildtool_opt:
+        buildargs += [f"--buildtool-opt={opt}" for opt in opts.buildtool_opt]
+
     # real arch of this machine
     # vs.
     # arch we are supposed to build for
