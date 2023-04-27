@@ -1,3 +1,7 @@
+0.182.1
+  - Fix crash due to list having no copy attribute on python2
+  - Fix crash in ssh auth when .ssh directory is missing
+
 0.182.0
   - fix build on SLE12 / python 2.7
   - SSH auth: Fix getallmatchingheaders() output to correspond with headers.get_all()
