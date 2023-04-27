@@ -5757,6 +5757,11 @@ def link_pac(
   <!-- <apply name="patch" /> apply a patch on the source directory  -->
   <!-- <topadd>%%define build_with_feature_x 1</topadd> add a line on the top (spec file only) -->
   <!-- <add name="file.patch" /> add a patch to be applied after %%setup (spec file only) -->
+  <!-- <add name="file.patch" />
+        Add a patch to be applied after %%setup (spec file only).
+        Patch path prefix stipping can be controlled with the "popt" attribute,
+        for example ``popt="1"`` that translates to %%patch -p1.
+  -->
   <!-- <delete name="filename" /> delete a file -->
 </patches>
 </link>
