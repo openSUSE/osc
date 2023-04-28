@@ -135,12 +135,12 @@ def http_request_wrap_file(func):
     Turn file path into a file object and close it automatically
     by using a context manager.
     """
-    def new_func(method, url, headers=None, data=None, file=None):
+    def new_func(method, url, headers=None, data=None, file=None, retry_on_400: bool = True):
         if file:
             with open(file, "rb") as f:
-                return func(method, url, headers, data, file=f)
+                return func(method, url, headers, data, f, retry_on_400)
         else:
-            return func(method, url, headers, data, file)
+            return func(method, url, headers, data, file, retry_on_400)
 
     new_func.__name__ = func.__name__
     new_func.__doc__ = func.__doc__
@@ -148,7 +148,7 @@ def http_request_wrap_file(func):
 
 
 @http_request_wrap_file
-def http_request(method: str, url: str, headers=None, data=None, file=None):
+def http_request(method: str, url: str, headers=None, data=None, file=None, retry_on_400: bool = True):
     """
     Send a HTTP request to a server.
 
@@ -168,6 +168,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     :param headers: Dictionary of custom headers to send.
     :param data: Data to send in the request body (conflicts with `file`).
     :param file: Path to a file to send as data in the request body (conflicts with `data`).
+    :param retry_on_400: Whether to retry on receiving HTTP status code 400.
     """
 
     purl = urllib3.util.parse_url(url)
@@ -227,16 +228,22 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         else:
             retries_kwargs = {"method_whitelist": None}
 
+
+        status_forcelist = (
+            500,  # Internal Server Error
+            502,  # Bad Gateway
+            503,  # Service Unavailable
+            504,  # Gateway Timeout
+        )
+        if retry_on_400:
+            status_forcelist = (
+                400,  # Bad Request; retry on 400: service in progress
+            ) + status_forcelist
+
         pool_kwargs["retries"] = urllib3.Retry(
             total=int(conf.config["http_retries"]),
             backoff_factor=2,
-            status_forcelist=(
-                400,  # Bad Request; retry on 400: service in progress
-                500,  # Internal Server Error
-                502,  # Bad Gateway
-                503,  # Service Unavailable
-                504,  # Gateway Timeout
-            ),
+            status_forcelist=status_forcelist,
             # don't raise because we want an actual response rather than a MaxRetryError with "too many <status_code> error responses" message
             raise_on_status=False,
             **retries_kwargs,
