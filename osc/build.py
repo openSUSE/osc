@@ -456,30 +456,21 @@ def get_built_files(pacdir, buildtype):
 
 
 def get_repo(path):
-    """Walks up path looking for any repodata directories.
+    """
+    Walks up path looking for any repodata directories.
 
     :param path: path to a directory
-    :return: path to repository directory containing repodata directory
+    :return: path to repository directory containing repodata directory with repomd.xml file
     :rtype: str
     """
-    oldDirectory = None
-    currentDirectory = os.path.abspath(path)
-    repositoryDirectory = None
 
-    # while there are still parent directories
-    while currentDirectory != oldDirectory:
-        children = os.listdir(currentDirectory)
+    for root, dirs, files in os.walk(path):
+        if not "repodata" in dirs:
+            continue
+        if "repomd.xml" in os.listdir(os.path.join(root, "repodata")):
+            return root
+    return None
 
-        if "repodata" in children:
-            repositoryDirectory = currentDirectory
-            break
-
-        # ascend
-        oldDirectory = currentDirectory
-        currentDirectory = os.path.abspath(os.path.join(oldDirectory,
-                                                        os.pardir))
-
-    return repositoryDirectory
 
 
 def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
