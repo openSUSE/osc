@@ -36,6 +36,14 @@ except:
         pass
 
 
+try:
+    from keyring.errors import KeyringLocked
+except ImportError:
+    # python-keyring is not installed
+    class KeyringLocked:
+        pass
+
+
 # the good things are stolen from Matt Mackall's mercurial
 
 
@@ -177,6 +185,8 @@ def run(prg, argv=None):
     except PackageError as e:
         print(f'{e.fname}:', e.msg, file=sys.stderr)
     except RPMError as e:
+        print(e, file=sys.stderr)
+    except KeyringLocked as e:
         print(e, file=sys.stderr)
     except CertVerificationError as e:
         print(e, file=sys.stderr)
