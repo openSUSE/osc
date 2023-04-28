@@ -10,6 +10,8 @@ from urllib.parse import urlparse
 from urllib.parse import unquote
 from urllib.error import URLError
 
+import urllib3.exceptions
+
 from .core import streamfile
 
 
@@ -37,7 +39,7 @@ class OscMirrorGroup:
             try:
                 self._grabber.urlgrab(mirror, filename, text)
                 return True
-            except (HTTPError, URLError) as e:
+            except (HTTPError, URLError, urllib3.exceptions.URLSchemeUnknown) as e:
                 # try next mirror
                 pass
 
