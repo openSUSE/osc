@@ -11,6 +11,7 @@ __store_version__ = '1.0'
 
 
 import codecs
+import copy
 import datetime
 import difflib
 import errno
@@ -3574,6 +3575,21 @@ def pathjoin(a, *p):
     return path
 
 
+def osc_urlencode(data):
+    """
+    An urlencode wrapper that encodes dictionaries in OBS compatible way:
+    {"file": ["foo", "bar"]} -> &file[]=foo&file[]=bar
+    """
+    data = copy.deepcopy(data)
+    if isinstance(data, dict):
+        for key, value in list(data.items()):
+            if isinstance(value, list):
+                del data[key]
+                data[f"{key}[]"] = value
+
+    return urlencode(data, doseq=True)
+
+
 def makeurl(baseurl: str, l, query=None):
     """Given a list of path compoments, construct a complete URL.
 
@@ -3589,7 +3605,7 @@ def makeurl(baseurl: str, l, query=None):
     if isinstance(query, list):
         query = '&'.join(query)
     elif isinstance(query, dict):
-        query = urlencode(query)
+        query = osc_urlencode(query)
 
     scheme, netloc, path = urlsplit(baseurl)[0:3]
     return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
@@ -5283,6 +5299,7 @@ def server_diff(
     onlyissues=False,
     full=True,
     xml=False,
+    files: list = None,
 ):
     query: Dict[str, Union[str, int]] = {"cmd": "diff"}
     if expand:
@@ -5308,9 +5325,11 @@ def server_diff(
         query['onlyissues'] = 1
         query['view'] = 'xml'
         query['unified'] = 0
+    if files:
+        query["file"] = files
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
-    f = http_POST(u)
+    f = http_POST(u, retry_on_400=False)
     if onlyissues and not xml:
         del_issue_list = []
         add_issue_list = []
@@ -5345,12 +5364,13 @@ def server_diff_noex(
     expand=True,
     onlyissues=False,
     xml=False,
+    files: list = None,
 ):
     try:
         return server_diff(apiurl,
                            old_project, old_package, old_revision,
                            new_project, new_package, new_revision,
-                           unified, missingok, meta, expand, onlyissues, True, xml)
+                           unified, missingok, meta, expand, onlyissues, True, xml, files=files)
     except HTTPError as e:
         msg = None
         body = None
@@ -5367,7 +5387,7 @@ def server_diff_noex(
                 rdiff += server_diff_noex(apiurl,
                                           old_project, old_package, old_revision,
                                           new_project, new_package, new_revision,
-                                          unified, missingok, meta, False)
+                                          unified, missingok, meta, False, files=files)
             except:
                 elm = ET.fromstring(body).find('summary')
                 summary = ''

@@ -4646,9 +4646,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for i in pac.get_diff(rev1):
                     diff += b''.join(i)
             else:
+                files = args
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                          pac.prjname, pac.name, rev2,
-                                         not opts.plain, opts.missingok, opts.meta, not opts.unexpand)
+                                         not opts.plain, opts.missingok, opts.meta, not opts.unexpand, files=files)
         run_pager(diff)
 
     @cmdln.option('--issues-only', action='store_true',
