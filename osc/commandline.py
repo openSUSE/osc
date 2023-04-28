@@ -6475,6 +6475,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         This is no guarantee, since the new build might have changed dependencies.
 
+        The packages marked with the [i] flag are inherited to the project.
+
         The arguments REPOSITORY and ARCH can be taken from the first two columns
         of the 'osc repos' output.
 
@@ -6519,13 +6521,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             repository = args[2]
             arch = args[3]
 
+        project_packages = meta_get_packagelist(apiurl, project, deleted=False, expand=False)
         xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
 
         root = ET.fromstring(xml)
         for package in root.findall('package'):
             print(package.get('name'), ":")
             for dep in package.findall('pkgdep'):
-                print("  ", dep.text)
+                inherited = "   " if dep.text in project_packages else "[i]"
+                print(f"  {inherited} {dep.text}")
 
     @cmdln.option('--alternative-project', metavar='PROJECT',
                   help='specify the build target project')
