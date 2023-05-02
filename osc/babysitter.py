@@ -40,7 +40,7 @@ try:
     from keyring.errors import KeyringLocked
 except ImportError:
     # python-keyring is not installed
-    class KeyringLocked:
+    class KeyringLocked(Exception):
         pass
 
 
