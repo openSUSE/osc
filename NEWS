@@ -1,3 +1,21 @@
+- 1.1.2
+  - Command-line:
+    - Add '--buildtool-opt' option passing options to underlying rpmbuild to the 'build' command
+    - Fix 'diff' command to support diffing selected files only
+    - Identify inherited packages in the 'dependson' command output
+    - Bring the '--debug' option back to the 'buildinfo' command
+    - Fix 'buildhistory' command by setting the type of the '--limit' option to int
+  - Library:
+    - Fix a traceback when failed to unlock a keyring
+    - Don't retry on 400 HTTP status code in core.server_diff()
+    - Clean-up the '.old' folder if an exception happens
+    - Document 'popt' attribute in the _link template
+    - Fix build.get_repo() to return only directory that contains 'repodata/repomd.xml'
+  - Connection:
+    - Retry on receiving the following HTTP status codes: 400, 500, 502, 503, 504
+    - Allow disabling retry on 400 HTTP status code
+    - Fix urlgrab to skip mirrors with invalid scheme
+
 - 1.1.1
   - Command-line:
     - Fix 'creq' command that wasn't working at all
