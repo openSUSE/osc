@@ -19,6 +19,7 @@ import urllib3.exceptions
 from . import _private
 from . import commandline
 from . import conf as osc_conf
+from . import core as osc_core
 from . import oscerr
 from .OscConfigParser import configparser
 from .oscssl import CertVerificationError
@@ -196,6 +197,11 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except oscerr.OscBaseError as e:
         print('*** Error:', e, file=sys.stderr)
+    if osc_core.MESSAGE_BACKUPS:
+        print()
+        print("If you lost any edited commit messages due to an error, you may find them here:")
+        for path in osc_core.MESSAGE_BACKUPS:
+            print(f"  - {path}")
     return 1
 
 

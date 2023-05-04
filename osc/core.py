@@ -4408,6 +4408,11 @@ def _editor_command():
     return cmd
 
 
+# list of files with message backups
+# we'll show this list when osc errors out
+MESSAGE_BACKUPS = []
+
+
 def _edit_message_open_editor(filename, data, orig_mtime):
     editor = _editor_command()
     mtime = os.stat(filename).st_mtime
@@ -4428,7 +4433,34 @@ def _edit_message_open_editor(filename, data, orig_mtime):
             run_editor(filename)
     else:
         run_editor(filename)
-    return os.stat(filename).st_mtime != orig_mtime
+
+    if os.stat(filename).st_mtime != orig_mtime:
+        # file has changed
+
+        cache_dir = os.path.expanduser("~/.cache/osc/edited-messages")
+        try:
+            os.makedirs(cache_dir, mode=0o700)
+        except FileExistsError:
+            pass
+
+        # remove any stored messages older than 1 day
+        now = datetime.datetime.now()
+        epoch = datetime.datetime.timestamp(now - datetime.timedelta(days=1))
+        for fn in os.listdir(cache_dir):
+            path = os.path.join(cache_dir, fn)
+            if not os.path.isfile(path):
+                continue
+            mtime = os.path.getmtime(path)
+            if mtime < epoch:
+                os.unlink(path)
+
+        # store the current message's backup to the cache dir
+        message_backup_path = os.path.join(cache_dir, str(now).replace(" ", "_"))
+        shutil.copyfile(filename, message_backup_path)
+        MESSAGE_BACKUPS.append(message_backup_path)
+        return True
+
+    return False
 
 
 def edit_message(footer='', template='', templatelen=30):
