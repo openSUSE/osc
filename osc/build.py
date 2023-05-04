@@ -3,6 +3,7 @@
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or (at your option) any later version.
 
+import fnmatch
 import glob
 import os
 import re
@@ -548,14 +549,24 @@ trustprompt = """Would you like to ...
 ? """
 
 
-def check_trusted_projects(apiurl, projects):
+def check_trusted_projects(apiurl, projects, interactive=True):
     trusted = conf.config['api_host_options'][apiurl]['trusted_prj']
     tlen = len(trusted)
     for prj in projects:
-        if prj not in trusted:
+        is_trusted = False
+        for pattern in trusted:
+            if fnmatch.fnmatch(prj, pattern):
+                is_trusted = True
+                break
+        if not is_trusted:
             print("\nThe build root needs packages from project '%s'." % prj)
             print("Note that malicious packages can compromise the build result or even your system.")
-            r = raw_input(trustprompt % {'project': prj})
+
+            if interactive:
+                r = raw_input(trustprompt % {'project': prj})
+            else:
+                r = "0"
+
             if r == '1':
                 print("adding '%s' to oscrc: ['%s']['trusted_prj']" % (prj, apiurl))
                 trusted.append(prj)
