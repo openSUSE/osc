@@ -4722,9 +4722,11 @@ def get_review_list(
         return ''
 
     xpath = ''
+
+    # we're interested only in reviews of requests that are still open
+    xpath = xpath_join(xpath, "(state/@name='new' or state/@name='review' or state/@name='declined')", op="and")
+
     if states == ():
-        # default: requests which are still open and have reviews in "new" state
-        xpath = xpath_join('', 'state/@name=\'review\'', op='and')
         xpath = xpath_join(xpath, 'review/@state=\'new\'', op='and')
     if byuser:
         xpath = build_by(xpath, '@by_user=\'%s\'' % byuser)
