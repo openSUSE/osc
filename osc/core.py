@@ -636,6 +636,8 @@ class DirectoryServiceinfo:
 
 def xmlindent(elem, level=0):
     i = "\n" + level * "  "
+    if isinstance(elem, ET.ElementTree):
+        elem = elem.getroot()
     if len(elem):
         if not elem.text or not elem.text.strip():
             elem.text = i + "  "
