@@ -1,3 +1,13 @@
+- 1.1.3
+  - Command-line:
+    - Backup edited messages and notify user about them when osc errors out
+    - Consider only open requests when listing requests with a given review state
+    - Fix 'diff' command when no files are specified
+  - Configuration:
+    - Add glob support to the 'trusted_prj' config option
+  - Library:
+    - Fix core.xmlindent() to work with ElementTree objects
+
 - 1.1.2
   - Command-line:
     - Add '--buildtool-opt' option passing options to underlying rpmbuild to the 'build' command
