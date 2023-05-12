@@ -64,6 +64,34 @@ def post(apiurl, path, query=None):
     return root
 
 
+def put(apiurl, path, query=None, data=None):
+    """
+    Send a PUT request to OBS.
+
+    :param apiurl: OBS apiurl.
+    :type  apiurl: str
+    :param path: URL path segments.
+    :type  path: list(str)
+    :param query: URL query values.
+    :type  query: dict(str, str)
+    :returns: Parsed XML root.
+    :rtype:   xml.etree.ElementTree.Element
+    """
+    from osc import connection as osc_connection
+    from osc import core as osc_core
+
+    assert apiurl
+    assert path
+
+    if not isinstance(path, (list, tuple)):
+        raise TypeError("Argument `path` expects a list of strings")
+
+    url = osc_core.makeurl(apiurl, path, query)
+    with osc_connection.http_PUT(url, data=data) as f:
+        root = osc_core.ET.parse(f).getroot()
+    return root
+
+
 def _to_xpath(*args):
     """
     Convert strings and dictionaries to xpath:
@@ -137,6 +165,30 @@ def find_node(root, root_name, *args):
         # only verify the root tag
         return root
     return root.find(_to_xpath(*args))
+
+
+def group_child_nodes(node):
+    nodes = node[:]
+    result = []
+
+    while nodes:
+        # look at the tag of the first node
+        tag = nodes[0].tag
+
+        # collect all nodes with the same tag and append them to the result
+        # then repeat the step for the next tag(s)
+        matches = []
+        others = []
+        for i in nodes:
+            if i.tag == tag:
+                matches.append(i)
+            else:
+                others.append(i)
+
+        result += matches
+        nodes = others
+
+    node[:] = result
 
 
 def write_xml_node_to_file(node, path, indent=True):
