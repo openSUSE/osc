@@ -10,7 +10,11 @@ from urllib.parse import urlparse
 from urllib.parse import unquote
 from urllib.error import URLError
 
-import urllib3.exceptions
+try:
+    from urllib3.exceptions import URLSchemeUnknown
+except ImportError:
+    class URLSchemeUnknown(Exception):
+        pass
 
 from .core import streamfile
 
@@ -39,7 +43,8 @@ class OscMirrorGroup:
             try:
                 self._grabber.urlgrab(mirror, filename, text)
                 return True
-            except (HTTPError, URLError, urllib3.exceptions.URLSchemeUnknown) as e:
+            except (HTTPError, URLError, URLSchemeUnknown, KeyError) as e:
+                # urllib3 1.25.10 throws a KeyError: pool_key_constructor = self.key_fn_by_scheme[scheme]
                 # try next mirror
                 pass
 
