@@ -193,6 +193,8 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except urllib3.exceptions.MaxRetryError as e:
         print(e.reason, file=sys.stderr)
+    except urllib3.exceptions.ProtocolError as e:
+        print(e.args[0], file=sys.stderr)
     except CpioError as e:
         print(e, file=sys.stderr)
     except oscerr.OscBaseError as e:
