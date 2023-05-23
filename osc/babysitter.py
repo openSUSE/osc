@@ -226,6 +226,13 @@ def main():
         sys.stdout = os.fdopen(sys.stdout.fileno(), sys.stdout.mode, 1)
         sys.stderr = os.fdopen(sys.stderr.fileno(), sys.stderr.mode, 1)
 
+    appimage = os.getenv("APPIMAGE", None)
+    owd = os.getenv("OWD", None)
+    if appimage and owd:
+        # OWD stands for Original Working Directory and we need to switch there when running in an AppImage
+        # https://docs.appimage.org/packaging-guide/environment-variables.html
+        os.chdir(owd)
+
     sys.exit(run(commandline.OscMainCommand()))
 
 # vim: sw=4 et
