@@ -46,9 +46,11 @@ jobs:
       - name: 'Install packages (OpenSUSE)'
         if: ${{ startsWith(matrix.container, 'opensuse/') }}
         run: |
-            zypper --non-interactive --gpg-auto-import-keys refresh
-            zypper --non-interactive dist-upgrade
-            zypper --non-interactive install git-lfs rpm-build
+            zypper -n modifyrepo --disable repo-openh264 || :
+            zypper -n --gpg-auto-import-keys refresh
+            zypper -n lr --details
+            zypper -n dist-upgrade
+            zypper -n install git-lfs rpm-build
 
       - name: 'Install packages (Fedora/CentOS)'
         if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:') }}

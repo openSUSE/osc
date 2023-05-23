@@ -52,6 +52,7 @@ jobs:
       - name: 'Install packages (openSUSE)'
         if: ${{ startsWith(matrix.container, 'opensuse/') }}
         run: |
+            zypper -n modifyrepo --disable repo-openh264 || :
             zypper -n --gpg-auto-import-keys refresh
             zypper -n lr --details
             grep -qi tumbleweed /etc/os-release && zypper -n dist-upgrade || zypper -n patch || zypper -n patch
