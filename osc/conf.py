@@ -158,6 +158,28 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'cookiejar': _identify_osccookiejar(),
             # fallback for osc build option --no-verify
             'no_verify': '0',
+
+            # Disable hdrmd5 checks of downloaded and cached packages in `osc build`
+            # Recommended value: 0
+            #
+            # OBS builds the noarch packages once per binary arch.
+            # Such noarch packages are supposed to be nearly identical across all build arches,
+            # any discrepancy in the payload and dependencies is considered a packaging bug.
+            # But to guarantee that the local builds work identically to builds in OBS,
+            # using the arch-specific copy of the noarch package is required.
+            # Unfortunatelly only one of the noarch packages gets distributed
+            # and can be downloaded from a local mirror.
+            # All other noarch packages are available through the OBS API only.
+            # Since there is currently no information about hdrmd5 checksums of published noarch packages,
+            # we download them, verify hdrmd5 and re-download the package from OBS API on mismatch.
+            #
+            # The same can also happen for architecture depend packages when someone is messing around
+            # with the source history or the release number handling in a way that it is not increasing.
+            #
+            # If you want to save some bandwidth and don't care about the exact rebuilds
+            # you can turn this option on to disable hdrmd5 checks completely.
+            'disable_hdrmd5_check': '0',
+
             # enable project tracking by default
             'do_package_tracking': '1',
             # default for osc build
@@ -221,13 +243,13 @@ config = DEFAULTS.copy()
 
 boolean_opts = ['debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist', 'plaintext_passwd',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'builtin_signature_check',
+    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'gnome_keyring', 'no_verify', 'disable_hdrmd5_check', 'builtin_signature_check',
     'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
     'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail']
 integer_opts = ['build-jobs']
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
-    'downloadurl', 'sshkey']
+    'downloadurl', 'sshkey', 'disable_hdrmd5_check']
 
 new_conf_template = """
 [general]
@@ -583,7 +605,12 @@ def _build_opener(apiurl):
 
         def list_ssh_agent_keys(self):
             cmd = ['ssh-add', '-l']
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            except OSError:
+                # ssh-add is not available
+                return []
+
             stdout, _ = proc.communicate()
             if proc.returncode == 0 and stdout.strip():
                 return [self.get_fingerprint(line) for line in stdout.splitlines()]
@@ -677,7 +704,10 @@ def _build_opener(apiurl):
                 keyfile = os.path.expanduser(keyfile)
 
             cmd = ['ssh-keygen', '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
-            proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            try:
+                proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+            except OSError:
+                return None
             stdout, _ = proc.communicate(data)
             if proc.returncode:
                 raise oscerr.OscIOError(None, 'ssh-keygen signature creation failed: %d' % proc.returncode)
@@ -693,6 +723,9 @@ def _build_opener(apiurl):
             now = int(time.time())
             sigdata = "(created): %d" % now
             signature = self.ssh_sign(sigdata, realm, self.sshkey)
+            if not signature:
+                # the signing step failed due to missing ssh-keygen
+                return None
             signature = decode_it(base64.b64encode(signature))
             return 'keyId="%s",algorithm="ssh",headers="(created)",created=%d,signature="%s"' \
                 % (self.user, now, signature)
@@ -1206,6 +1239,10 @@ def get_config(override_conffile=None,
 
         if api_host_options[apiurl]['sshkey'] is None:
             api_host_options[apiurl]['sshkey'] = config['sshkey']
+
+        api_host_options[apiurl]["disable_hdrmd5_check"] = config["disable_hdrmd5_check"]
+        if cp.has_option(url, "disable_hdrmd5_check"):
+            api_host_options[apiurl][key] = cp.getboolean(url, "disable_hdrmd5_check")
 
     # add the auth data we collected to the config dict
     config['api_host_options'] = api_host_options

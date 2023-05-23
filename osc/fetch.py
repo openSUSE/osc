@@ -206,6 +206,7 @@ class Fetcher:
         return urllist
 
     def run(self, buildinfo):
+        apiurl = buildinfo.apiurl
         cached = 0
         all = len(buildinfo.deps)
         for i in buildinfo.deps:
@@ -222,12 +223,24 @@ class Fetcher:
                 cached += 1
                 if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
                     continue
+
+                hdrmd5_is_valid = True
                 if i.hdrmd5:
                     if i.name.startswith('container:'):
                         hdrmd5 = dgst(i.fullfilename)
+                        if hdrmd5 != i.hdrmd5:
+                            hdrmd5_is_valid = False
                     else:
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
-                    if not hdrmd5 or hdrmd5 != i.hdrmd5:
+                        if hdrmd5 != i.hdrmd5:
+                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                                hdrmd5_is_valid = True
+                            else:
+                                print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                                hdrmd5_is_valid = False
+
+                    if not hdrmd5_is_valid:
                         os.unlink(i.fullfilename)
                         cached -= 1
 
@@ -259,14 +272,14 @@ class Fetcher:
                         # mark it for downloading from the API
                         self.__add_cpio(i)
                     else:
-                        # if the checksum of the downloaded package doesn't match,
-                        # delete it and mark it for downloading from the API
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
-                        if not hdrmd5 or hdrmd5 != i.hdrmd5:
-                            print('%s/%s: attempting download from api, since the hdrmd5 did not match - %s != %s'
-                                % (i.project, i.name, hdrmd5, i.hdrmd5))
-                            os.unlink(i.fullfilename)
-                            self.__add_cpio(i)
+                        if hdrmd5 != i.hdrmd5:
+                            if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                                print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                            else:
+                                print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                                os.unlink(i.fullfilename)
+                                self.__add_cpio(i)
 
                 except KeyboardInterrupt:
                     print('Cancelled by user (ctrl-c)')

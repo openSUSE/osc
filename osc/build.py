@@ -145,7 +145,10 @@ class Buildinfo:
         else:
             self.release = None
         if config['api_host_options'][apiurl]['downloadurl']:
-            self.enable_cpio = False
+            # Formerly, this was set to False, but we have to set it to True, because a large
+            # number of repos in OBS are misconfigured and don't actually have repos setup - they
+            # are API only.
+            self.enable_cpio = True
             self.downloadurl = config['api_host_options'][apiurl]['downloadurl'] + "/repositories"
             if config['http_debug']:
                 print("⚠️   setting dl_url to %s" % config['api_host_options'][apiurl]['downloadurl'])
@@ -1351,8 +1354,11 @@ def main(apiurl, opts, argv):
                 print("Error: cannot get hdrmd5 for %s" % i.fullfilename)
                 sys.exit(1)
             if hdrmd5 != i.hdrmd5:
-                print("Error: hdrmd5 mismatch for %s: %s != %s" % (i.fullfilename, hdrmd5, i.hdrmd5))
-                sys.exit(1)
+                if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
+                    print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                else:
+                    print(f"Error: hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
+                    sys.exit(1)
 
     print('Writing build configuration')
 
