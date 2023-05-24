@@ -1,3 +1,13 @@
+- 1.1.4
+  - Command-line:
+    - Change 'review list' command to display open requests (state: new, review, declined)
+    - Fix running osc in an AppImage by switching to the correct working directory
+    - Handle ProtocolError exception
+  - Library:
+    - Add 'req_states' parameter to osc.core.get_review_list()
+  - Connection:
+    - Fix grabber to work with old urllib3 versions that do not contain URLSchemeUnknown exception
+
 - 1.1.3
   - Command-line:
     - Backup edited messages and notify user about them when osc errors out
