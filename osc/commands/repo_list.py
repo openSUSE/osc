@@ -1,4 +1,5 @@
 import osc.commandline
+from ..output import KeyValueTable
 from .._private.project import ProjectMeta
 
 
@@ -19,12 +20,12 @@ class RepoListCommand(osc.commandline.OscCommand):
 
     def run(self, args):
         meta = ProjectMeta.from_api(args.apiurl, args.project)
+        table = KeyValueTable()
         for repo in meta.repository_list():
-            print(f"Repository: {repo['name']}")
-            print("Architectures:")
-            for arch in repo["archs"]:
-                print(f"    {arch}")
-            print("Paths:")
-            for path in repo["paths"]:
-                print(f"    {path['project']}/{path['repository']}")
-            print()
+            table.add("Repository", repo["name"], color="bold")
+            table.add("Architectures", ", ".join(repo["archs"]))
+            if repo["paths"]:
+                paths = [f"{path['project']}/{path['repository']}" for path in repo["paths"]]
+                table.add("Paths", paths)
+            table.newline()
+        print(str(table))
