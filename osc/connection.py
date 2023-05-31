@@ -252,9 +252,19 @@ def http_request(method: str, url: str, headers=None, data=None, file=None, retr
         if purl.scheme == "https":
             ssl_context = oscssl.create_ssl_context()
             ssl_context.load_default_certs()
-            # turn cert verification off if sslcertck = 0
-            pool_kwargs["cert_reqs"] = "CERT_REQUIRED" if options["sslcertck"] else "CERT_NONE"
             pool_kwargs["ssl_context"] = ssl_context
+            # turn cert verification off if sslcertck = 0
+
+            # urllib3 v1
+            pool_kwargs["cert_reqs"] = "CERT_REQUIRED" if options["sslcertck"] else "CERT_NONE"
+
+            # urllib3 v2
+            if options["sslcertck"]:
+                ssl_context.check_hostname = True
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+            else:
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
 
         if purl.scheme == "http" and HTTP_PROXY_MANAGER and not urllib.request.proxy_bypass(url):
             # connection through HTTP proxy
