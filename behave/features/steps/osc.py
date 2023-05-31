@@ -32,17 +32,22 @@ class Osc:
             shutil.rmtree(self.temp)
         self.temp = tempfile.mkdtemp(prefix="osc_behave_")
         self.oscrc = os.path.join(self.temp, "oscrc")
+        self.write_oscrc()
+
+    def write_oscrc(self, username=None, password=None):
         with open(self.oscrc, "w") as f:
             f.write("[general]\n")
             f.write("\n")
             f.write(f"[https://localhost:{self.context.podman.container.port}]\n")
-            f.write("user=Admin\n")
-            f.write("pass=opensuse\n")
+            f.write(f"user={username or 'Admin'}\n")
+            f.write(f"pass={password or 'opensuse'}\n")
             f.write("credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager\n")
             f.write("sslcertck=0\n")
-            f.write("http_headers =\n")
-            # avoid the initial 401 response by setting auth to Admin:opensuse directly
-            f.write("    authorization: Basic QWRtaW46b3BlbnN1c2U=\n")
+            if not any((username, password)):
+                f.write("http_headers =\n")
+                # avoid the initial 401 response by setting auth to Admin:opensuse directly
+                # write the header only when the default user/pass are used
+                f.write("    authorization: Basic QWRtaW46b3BlbnN1c2U=\n")
 
     def get_cmd(self):
         osc_cmd = self.context.config.userdata.get("osc", "osc")
@@ -60,6 +65,11 @@ def step_impl(context, args):
     run_in_context(context, cmd, can_fail=True)
     # remove InsecureRequestWarning that is irrelevant to the tests
     context.cmd_stderr = re.sub(r"^.*InsecureRequestWarning.*\n  warnings.warn\(\n", "", context.cmd_stderr)
+
+
+@behave.step("I configure osc user \"{username}\" with password \"{password}\"")
+def step_impl(context, username, password):
+    context.osc.write_oscrc(username=username, password=password)
 
 
 @behave.step('I wait for osc results for "{project}" "{package}"')

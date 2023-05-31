@@ -104,9 +104,13 @@ def get_proxy_manager(env):
         proxy_url = f"{proxy_purl.scheme}://{proxy_purl.host}"
 
     proxy_headers = urllib3.make_headers(
-        proxy_basic_auth=proxy_purl.auth,
         user_agent=f"osc/{__version__}",
     )
+
+    proxy_basic_auth = urllib.parse.unquote(proxy_purl.auth)
+    proxy_basic_auth = proxy_basic_auth.encode("utf-8")
+    proxy_basic_auth = base64.b64encode(proxy_basic_auth).decode()
+    proxy_headers["Proxy-Authorization"] = f"Basic {proxy_basic_auth:s}"
 
     manager = urllib3.ProxyManager(proxy_url, proxy_headers=proxy_headers)
     return manager
@@ -549,7 +553,12 @@ class BasicAuthHandler(AuthHandlerBase):
             return False
         if not self.user or not self.password:
             return False
-        request_headers.update(urllib3.make_headers(basic_auth=f"{self.user}:{self.password}"))
+
+        basic_auth = f"{self.user:s}:{self.password:s}"
+        basic_auth = basic_auth.encode("utf-8")
+        basic_auth = base64.b64encode(basic_auth).decode()
+        request_headers["Authorization"] = f"Basic {basic_auth:s}"
+
         return True
 
     def process_response(self, url, request_headers, response):
