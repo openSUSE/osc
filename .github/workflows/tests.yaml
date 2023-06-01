@@ -26,31 +26,31 @@ jobs:
         container:
 
           # Fedora
-          - 'fedora:36'
-          - 'fedora:rawhide'
+          - 'registry.fedoraproject.org/fedora:36'
+          - 'registry.fedoraproject.org/fedora:rawhide'
 
           # openSUSE
           # leap < 15.2 doesn't contain git-lfs which causes actions/checkout to fail
-          - 'opensuse/leap:15.3'
-          - 'opensuse/leap:15.4'
-          - 'opensuse/tumbleweed'
+          - 'registry.opensuse.org/opensuse/leap:15.3'
+          - 'registry.opensuse.org/opensuse/leap:15.4'
+          - 'registry.opensuse.org/opensuse/tumbleweed'
 
           # CentOS Stream
           - 'quay.io/centos/centos:stream9'
 
           # Debian
-          - 'debian:stable'
-          - 'debian:unstable'
+          - 'docker.io/library/debian:stable'
+          - 'docker.io/library/debian:unstable'
 
           # Ubuntu
-          - 'ubuntu:latest'
+          - 'docker.io/library/ubuntu:latest'
 
     container:
       image: ${{ matrix.container }}
 
     steps:
       - name: 'Install packages (openSUSE)'
-        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        if: ${{ contains(matrix.container, '/opensuse/') }}
         run: |
             zypper -n modifyrepo --disable repo-openh264 || :
             zypper -n --gpg-auto-import-keys refresh
@@ -60,7 +60,7 @@ jobs:
             zypper -n install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - name: 'Install packages (Fedora/CentOS)'
-        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:') }}
+        if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
         run: |
             dnf -y makecache
             dnf -y distro-sync
@@ -68,7 +68,7 @@ jobs:
             dnf -y install diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
 
       - name: 'Install packages (Debian/Ubuntu)'
-        if: ${{ startsWith(matrix.container, 'debian:') || startsWith(matrix.container, 'ubuntu:') }}
+        if: ${{ contains(matrix.container, '/debian:') || contains(matrix.container, '/ubuntu:') }}
         run: |
             apt-get -y update
             apt-get -y upgrade
@@ -84,13 +84,13 @@ jobs:
           python3 setup.py test
 
       - name: 'Generate coverage reports (openSUSE Tumbleweed)'
-        if: ${{ matrix.container == 'opensuse/tumbleweed' }}
+        if: ${{ contains(matrix.container, '/opensuse/tumbleweed') }}
         run: |
             zypper -n install python3-pytest python3-pytest-cov
             pytest --cov=osc
 
       - name: 'Upload coverage reports to Codecov (openSUSE Tumbleweed)'
-        if: ${{ matrix.container == 'opensuse/tumbleweed' }}
+        if: ${{ contains(matrix.container, '/opensuse/tumbleweed') }}
         uses: codecov/codecov-action@v3
 
   behave:

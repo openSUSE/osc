@@ -27,14 +27,14 @@ jobs:
         container:
 
           # Fedora
-          - 'fedora:36'
-          - 'fedora:rawhide'
+          - 'registry.fedoraproject.org/fedora:36'
+          - 'registry.fedoraproject.org/fedora:rawhide'
 
           # OpenSUSE
           # leap < 15.2 doesn't contain git-lfs which causes actions/checkout to fail
-          - 'opensuse/leap:15.3'
-          - 'opensuse/leap:15.4'
-          - 'opensuse/tumbleweed'
+          - 'registry.opensuse.org/opensuse/leap:15.3'
+          - 'registry.opensuse.org/opensuse/leap:15.4'
+          - 'registry.opensuse.org/opensuse/tumbleweed'
 
           # CentOS Stream
           - 'quay.io/centos/centos:stream9'
@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - name: 'Install packages (OpenSUSE)'
-        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        if: ${{ contains(matrix.container, '/opensuse/') }}
         run: |
             zypper -n modifyrepo --disable repo-openh264 || :
             zypper -n --gpg-auto-import-keys refresh
@@ -53,7 +53,7 @@ jobs:
             zypper -n install git-lfs rpm-build
 
       - name: 'Install packages (Fedora/CentOS)'
-        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:') }}
+        if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
         run: |
             dnf -y makecache
             dnf -y distro-sync
@@ -64,12 +64,12 @@ jobs:
             fetch-depth: 0
 
       - name: 'Install build dependencies (OpenSUSE)'
-        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        if: ${{ contains(matrix.container, '/opensuse/') }}
         run: |
             zypper --non-interactive install $(rpmspec -q --buildrequires contrib/osc.spec)
 
       - name: 'Install build dependencies (Fedora/CentOS)'
-        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:') }}
+        if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
         run: |
             dnf -y builddep contrib/osc.spec
 
@@ -83,12 +83,12 @@ jobs:
             ./contrib/build_rpm.py --srpm --rpm
 
       - name: 'Install built RPMs (OpenSUSE)'
-        if: ${{ startsWith(matrix.container, 'opensuse/') }}
+        if: ${{ contains(matrix.container, '/opensuse/') }}
         run: |
             zypper --non-interactive install --force --allow-vendor-change --allow-unsigned-rpm ./contrib/*/*.rpm
 
       - name: 'Install build RPMs (Fedora/CentOS)'
-        if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:') }}
+        if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
         run: |
             dnf -y install ./contrib/*/*.rpm
 
