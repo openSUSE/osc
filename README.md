@@ -7,7 +7,7 @@
 
 # openSUSE Commander
 
-OpenSUSE Commander (osc) is a command-line interface to the
+openSUSE Commander (osc) is a command-line interface to the
 [Open Build Service (OBS)](https://github.com/openSUSE/open-build-service/).
 
 
