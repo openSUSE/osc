@@ -5099,20 +5099,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
            osc browse [PROJECT [PACKAGE]]
+           osc browse [REQUEST_ID]
         """
-        apiurl = self.get_api_url()
-
         args = list(args)
-        project, package = pop_project_package_from_args(
-            args, default_project=".", default_package=".", package_is_optional=True
-        )
-        ensure_no_remaining_args(args)
-
+        apiurl = self.get_api_url()
         obs_url = _private.get_configuration_value(apiurl, "obs_url")
-        if package:
-            url = f"{obs_url}/package/show/{project}/{package}"
+
+        if len(args) == 1 and args[0].isnumeric():
+            reqid = args.pop(0)
+            url = f"{obs_url}/request/show/{reqid}"
         else:
-            url = f"{obs_url}/project/show/{project}"
+            project, package = pop_project_package_from_args(
+                args, default_project=".", default_package=".", package_is_optional=True
+            )
+            if package:
+                url = f"{obs_url}/package/show/{project}/{package}"
+            else:
+                url = f"{obs_url}/project/show/{project}"
+
+        ensure_no_remaining_args(args)
 
         run_external('xdg-open', url)
 
