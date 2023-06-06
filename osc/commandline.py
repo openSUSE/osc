@@ -8700,20 +8700,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                          data=opts.data,
                          file=opts.file,
                          headers=opts.headers)
-        out = r.read()
 
         if opts.edit:
+            # to edit the output, we need to read all of it
+            # it's going to run ouf of memory if the data is too big
+            out = r.read()
             text = edit_text(out)
             r = http_request("PUT",
                              url,
                              data=text,
                              headers=opts.headers)
-            out = r.read()
 
-        if isinstance(out, str):
-            sys.stdout.write(out)
-        else:
-            sys.stdout.buffer.write(out)
+        while True:
+            data = r.read(8192)
+            if not data:
+                break
+            sys.stdout.buffer.write(data)
 
     @cmdln.option('-b', '--bugowner-only', action='store_true',
                   help='Show only the bugowner')
