@@ -36,6 +36,11 @@ class _LazyPassword:
             self._password = password
         return self._password
 
+    def __format__(self, format_spec):
+        if format_spec.endswith("s"):
+            return f"{self.__str__():{format_spec}}"
+        return super().__format__(format_spec)
+
     def __len__(self):
         return len(str(self))
 

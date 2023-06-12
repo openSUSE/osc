@@ -1,0 +1,7 @@
+<unregisteredperson>
+  <login>unicode</login>
+  <email>unicode@example.com</email>
+  <realname>An account with unicode password</realname>
+  <state>confirmed_user</state>
+  <password>Password with unicode characters 🚀🚀🚀</password>
+</unregisteredperson>
