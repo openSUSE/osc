@@ -1683,10 +1683,10 @@ class Osc(cmdln.Cmdln):
             url = makeurl(apiurl, url_path, query)
             f = http_POST(url)
             while True:
-                buf = f.read(16384)
-                if not buf:
+                data = f.read(16384)
+                if not data:
                     break
-                sys.stdout.write(decode_it(buf))
+                sys.stdout.buffer.write(data)
 
         elif opts.delete:
             print("Delete token")
@@ -1713,7 +1713,7 @@ class Osc(cmdln.Cmdln):
             # just list token
             url = makeurl(apiurl, url_path)
             for data in streamfile(url, http_GET):
-                sys.stdout.write(decode_it(data))
+                sys.stdout.buffer.write(data)
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
@@ -1985,7 +1985,7 @@ class Osc(cmdln.Cmdln):
             d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
             url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
-                sys.stdout.write(decode_it(data))
+                sys.stdout.buffer.write(data)
 
         # upload file
         if opts.file:
@@ -2052,7 +2052,7 @@ class Osc(cmdln.Cmdln):
                 attributepath.append(opts.attribute)
                 u = makeurl(apiurl, attributepath)
                 for data in streamfile(u, http_DELETE):
-                    sys.stdout.write(decode_it(data))
+                    sys.stdout.buffer.write(data)
             else:
                 raise oscerr.WrongOptions('The --delete switch is only for pattern metadata or attributes.')
 
@@ -6382,8 +6382,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         data = decode_it(data)
         while len(data):
             if opts.strip_time or conf.config['buildlog_strip_time']:
+                # FIXME: this is not working when the time is split between 2 chunks
                 data = buildlog_strip_time(data)
-            sys.stdout.write(decode_it(data))
+            sys.stdout.buffer.write(data)
             data = f.read(BUFSIZE)
         f.close()
 
@@ -9561,10 +9562,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             raise
 
         while True:
-            buf = f.read(16384)
-            if not buf:
+            data = f.read(16384)
+            if not data:
                 break
-            sys.stdout.write(decode_it(buf))
+            sys.stdout.buffer.write(data)
 
     @cmdln.option('-m', '--message',
                   help='add MESSAGE to changes (do not open an editor)')
