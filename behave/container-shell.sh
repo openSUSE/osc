@@ -7,3 +7,5 @@ podman exec \
     --tty \
     obs-server \
     /bin/bash
+
+exit $?

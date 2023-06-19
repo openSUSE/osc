@@ -7,3 +7,5 @@ podman build "$@" \
     --volume="$TOPDIR":/opt/obs \
     $TOPDIR \
     2>&1 | tee container-build.log
+
+exit $?

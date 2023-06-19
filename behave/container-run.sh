@@ -17,3 +17,5 @@ podman run \
 
 sleep 0.5
 podman exec -it obs-server /usr/bin/systemctl is-system-running --wait
+
+exit $?
