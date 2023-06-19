@@ -39,5 +39,4 @@ jobs:
         env:
           GHCR_USER: ${{ secrets.GHCR_USER }}
         run: |
-          podman images
-          podman push "ghcr.io/$GHCR_USER/obs-server:latest" "ghcr.io/$GHCR_USER/obs-server:latest"
+          podman push obs-server:latest "ghcr.io/$GHCR_USER/obs-server:latest"
