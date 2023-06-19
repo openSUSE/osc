@@ -96,7 +96,7 @@ start_obs_srcserver
 
 # initialize the OBS database
 cd /srv/www/obs/api
-RAILS_ENV=production SAFETY_ASSURED=1 bin/rails db:setup writeconfiguration data:schema:load
+RAILS_ENV=production SAFETY_ASSURED=1 bin/rails db:setup writeconfiguration
 
 
 # update configuration and write it to disk
