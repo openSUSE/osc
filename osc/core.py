@@ -1937,8 +1937,8 @@ class Package:
             self.linkrepair = None
             self.rev = None
             self.srcmd5 = None
-            self.linkinfo = None
-            self.serviceinfo = None
+            self.linkinfo = Linkinfo()
+            self.serviceinfo = DirectoryServiceinfo()
             self.size_limit = None
             self.meta = None
             self.excluded = []
