@@ -1,6 +1,6 @@
-FROM opensuse/leap:15.4
+FROM opensuse/leap:15.5
 
-RUN zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.4/OBS:Server:Unstable.repo
+RUN zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.5/OBS:Server:Unstable.repo
 RUN zypper -n --gpg-auto-import-keys refresh
 RUN zypper -n install \
     bash \
@@ -28,5 +28,5 @@ COPY container-oscrc /root/.config/osc/oscrc
 RUN /bin/bash /opt/obs/container-setup-initial-data.sh
 RUN /bin/bash /opt/obs/container-setup-prebuilt-rpms.sh
 
-# /sbin/init doesn't exist on Leap 15.4
+# /sbin/init doesn't exist on Leap 15.5
 ENTRYPOINT ["/usr/lib/systemd/systemd"]

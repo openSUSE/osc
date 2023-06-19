@@ -19,7 +19,7 @@ Build a container with OBS
 $ cd behave
 
 # optional: refresh the base image
-$ podman pull opensuse/leap:15.4
+$ podman pull opensuse/leap:15.5
 
 # build the container image
 $ ./container-build.sh [--no-cache]
