@@ -2630,14 +2630,13 @@ rev: %s
         os.chdir(self.absdir)  # e.g. /usr/lib/obs/service/verify_file fails if not inside the project dir.
         si = Serviceinfo()
         if os.path.exists('_service'):
-            if self.filenamelist.count('_service') or self.filenamelist_unvers.count('_service'):
-                try:
-                    service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
-                except ET.ParseError as v:
-                    line, column = v.position
-                    print('XML error in _service file on line %s, column %s' % (line, column))
-                    sys.exit(1)
-                si.read(service)
+            try:
+                service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+            except ET.ParseError as v:
+                line, column = v.position
+                print('XML error in _service file on line %s, column %s' % (line, column))
+                sys.exit(1)
+            si.read(service)
         si.getProjectGlobalServices(self.apiurl, self.prjname, self.name)
         r = si.execute(self.absdir, mode, singleservice, verbose)
         os.chdir(curdir)
