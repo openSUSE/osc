@@ -13,9 +13,10 @@ Scenario: Run `osc repo list` on a project
    Then stdout is
         """
         Repository    : standard
-        Architectures : x86_64
-                        i586
+        Architectures : x86_64, i586
         Paths         : openSUSE.org:openSUSE:Tumbleweed/standard
+        Flags
+            build     : disable: x86_64, i586
         """
 
 
@@ -26,15 +27,17 @@ Scenario: Run `osc repo add` on a project
    Then stdout is
         """
         Repository    : standard
-        Architectures : x86_64
-                        i586
+        Architectures : x86_64, i586
         Paths         : openSUSE.org:openSUSE:Tumbleweed/standard
+        Flags
+            build     : disable: x86_64, i586
 
         Repository    : new-repo
-        Architectures : x86_64
-                        aarch64
+        Architectures : x86_64, aarch64
         Paths         : test:factory/standard
                         test:devel/standard
+        Flags
+            build     : disable: x86_64, aarch64
         """
 
 
