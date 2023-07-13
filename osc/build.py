@@ -1367,7 +1367,7 @@ def main(apiurl, opts, argv):
 
     for i in bi.deps:
         if i.hdrmd5:
-            if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
+            if not i.name.startswith('container:') and not i.fullfilename.endswith(".rpm"):
                 continue
             if i.name.startswith('container:'):
                 hdrmd5 = dgst(i.fullfilename)
