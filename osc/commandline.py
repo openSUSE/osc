@@ -6379,7 +6379,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         f = open(logfile, 'rb')
         f.seek(offset)
         data = f.read(BUFSIZE)
-        data = decode_it(data)
         while len(data):
             if opts.strip_time or conf.config['buildlog_strip_time']:
                 # FIXME: this is not working when the time is split between 2 chunks
