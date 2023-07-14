@@ -1,3 +1,21 @@
+- 1.2.0
+  - Command-line:
+    - Add 'repo' command and subcommands for managing repositories in project meta
+    - Extend 'browse' command to open requests in a web browser
+    - Add highlighting for 'osc diff' and similar commands
+    - Fix 'api' command to stream output to avoid running out of memory
+    - Fix printing utf-8 characters to stdout
+  - Connection:
+    - Fix ValueError: Cannot set verify_mode to CERT_NONE when check_hostname is enabled
+  - Authentication:
+    - Correctly handle passwords with utf-8 characters
+  - Library:
+    - Fix crash when submiting a SCM package which has no _link
+    - Fix local service execution of scmsync packages
+    - Detect target package by its full name, instead of assuming its origin is identical to the source package type
+  - Other:
+    - Spell openSUSE correctly
+
 - 1.1.4
   - Command-line:
     - Change 'review list' command to display open requests (state: new, review, declined)
