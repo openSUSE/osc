@@ -5257,7 +5257,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  server_service_files=opts.server_side_source_service_files,
                                  progress_obj=self.download_progress, size_limit=opts.limit_size,
                                  meta=opts.meta, outdir=opts.output_dir)
-                print_request_list(apiurl, project, package)
+                if os.isatty(sys.stdout.fileno()):
+                    print_request_list(apiurl, project, package)
 
         elif project:
             sep = '/' if not opts.output_dir and conf.config['checkout_no_colon'] else conf.config['project_separator']
@@ -5318,7 +5319,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      server_service_files=opts.server_side_source_service_files,
                                      progress_obj=self.download_progress, size_limit=opts.limit_size,
                                      meta=opts.meta)
-            print_request_list(apiurl, project)
+            if os.isatty(sys.stdout.fileno()):
+                print_request_list(apiurl, project)
 
         else:
             self.argparse_error("Incorrect number of arguments.")
