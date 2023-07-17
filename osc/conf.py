@@ -232,10 +232,12 @@ def apply_option_types(config, conffile=""):
     cp = OscConfigParser.OscConfigParser(config)
     cp.add_section("general")
 
-    typed_opts = ((_boolean_opts, cp.getboolean), (_integer_opts, cp.getint))
-    for opts, meth in typed_opts:
+    typed_opts = ((_boolean_opts, cp.getboolean, bool), (_integer_opts, cp.getint, int))
+    for opts, meth, typ in typed_opts:
         for opt in opts:
             if opt not in config:
+                continue
+            if isinstance(config[opt], typ):
                 continue
             try:
                 config[opt] = meth('general', opt)
@@ -750,7 +752,9 @@ def get_config(override_conffile=None,
                override_traceback=None,
                override_post_mortem=None,
                override_no_keyring=None,
-               override_verbose=None):
+               override_verbose=None,
+               overrides=None
+               ):
     """do the actual work (see module documentation)"""
     global config
 
@@ -786,6 +790,17 @@ def get_config(override_conffile=None,
         raise oscerr.ConfigError(msg, conffile)
 
     config = dict(cp.items('general', raw=1))
+
+    # if the overrides trigger an exception, the 'post_mortem' option
+    # must be set to the appropriate type otherwise the non-empty string gets evaluated as True
+    config = apply_option_types(config, conffile)
+
+    overrides = overrides or {}
+    for key, value in overrides.items():
+        if key not in config:
+            raise oscerr.ConfigError(f"Unknown config option '{key}'", "<command-line>")
+        config[key] = value
+
     config['conffile'] = conffile
 
     config = apply_option_types(config, conffile)
