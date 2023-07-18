@@ -1741,7 +1741,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-s', '--set', metavar='ATTRIBUTE_VALUES',
                         help='set attribute values')
     @cmdln.option('--add', metavar='ATTRIBUTE_VALUES',
-                        help='add to the existing attribute values')
+                        help='add to the existing attribute values, skip duplicates')
     @cmdln.option('--delete', action='store_true',
                   help='delete a pattern or attribute')
     def do_meta(self, subcmd, opts, *args):
@@ -1963,7 +1963,7 @@ class Osc(cmdln.Cmdln):
             if len(aname) != 2:
                 raise oscerr.WrongOptions('Given attribute is not in "NAMESPACE:NAME" style')
 
-            values = ''
+            values = []
 
             if opts.add:
                 # read the existing values from server
@@ -1971,8 +1971,7 @@ class Osc(cmdln.Cmdln):
                 nodes = _private.api.find_nodes(root, "attributes", "attribute", {"namespace": aname[0], "name": aname[1]}, "value")
                 for node in nodes:
                     # append the existing values
-                    value = _private.api.xml_escape(node.text)
-                    values += f"<value>{value}</value>"
+                    values.append(node.text)
 
                 # pretend we're setting values in order to append the values we have specified on the command-line,
                 # because OBS API doesn't support extending the value list directly
@@ -1980,9 +1979,20 @@ class Osc(cmdln.Cmdln):
 
             if opts.set:
                 for i in opts.set.split(','):
-                    values += '<value>%s</value>' % _private.api.xml_escape(i)
+                    # append the new values
+                    # we skip duplicates during --add
+                    if opts.add and i in values:
+                        continue
+                    values.append(i)
 
-            d = '<attributes><attribute namespace=\'%s\' name=\'%s\' >%s</attribute></attributes>' % (aname[0], aname[1], values)
+            values_str = ""
+            for value in values:
+                value = _private.api.xml_escape(value)
+                values_str += f"<value>{value}</value>"
+
+            ns = _private.api.xml_escape(aname[0])
+            name = _private.api.xml_escape(aname[1])
+            d = f"<attributes><attribute namespace='{ns}' name='{name}' >{values_str}</attribute></attributes>"
             url = makeurl(apiurl, attributepath)
             for data in streamfile(url, http_POST, data=d):
                 sys.stdout.buffer.write(data)
