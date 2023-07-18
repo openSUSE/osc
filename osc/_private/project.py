@@ -10,7 +10,7 @@ class APIXMLBase:
         self.apiurl = apiurl
 
     def to_bytes(self):
-        ET.indent(self.root, space="  ", level=0)
+        api.xml_indent(self.root)
         return ET.tostring(self.root, encoding="utf-8")
 
     def to_string(self):
