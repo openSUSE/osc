@@ -1816,7 +1816,16 @@ class Osc(cmdln.Cmdln):
         if opts.add and opts.set:
             self.argparse_error("Options --add and --set are mutually exclusive")
 
+        if cmd == "attribute" and opts.edit and not opts.attribute:
+            self.argparse_error("Please specify --attribute")
+
         apiurl = self.get_api_url()
+        project = None
+        package = None
+        subpackage = None
+        user = None
+        group = None
+        pattern = None
 
         # Specific arguments
         #
@@ -1953,6 +1962,16 @@ class Osc(cmdln.Cmdln):
                           path_args=(project, pattern),
                           apiurl=apiurl,
                           template_args=None)
+            elif cmd == 'attribute':
+                edit_meta(
+                    metatype='attribute',
+                    edit=True,
+                    path_args=(quote_plus(project), quote_plus(opts.attribute)),
+                    apiurl=apiurl,
+                    # PUT is not supported
+                    method="POST",
+                    template_args=None,
+                )
 
         # create attribute entry
         if (opts.create or opts.set or opts.add) and cmd == 'attribute':
