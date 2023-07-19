@@ -58,6 +58,22 @@ let count--
 test "${COMMAND_LINE:$last}" = " " && let count++
 unset last
 
+XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+for xdg_dir in "${XDG_CACHE_HOME}" "${XDG_CONFIG_HOME}"; do
+    if [ ! -d "${xdg_dir}" ]; then
+        mkdir -p "${xdg_dir}"
+    fi
+done
+
+projects="${XDG_CACHE_HOME}/osc.projects"
+if [ -f ~/.osc.projects ]; then
+    rm ~/.osc.projects -f
+fi
+oscrc="${XDG_CONFIG_HOME}/osc/oscrc"
+
+command=osc
 oscopts=(--version --help --debugger --post-mortem --traceback --http-full-debug
     --debug --apiurl -A --config -c --no-keyring --no-gnome-keyring --verbose --quiet)
 osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
@@ -96,25 +112,23 @@ if test -s "${PWD}/.osc/_files" ; then
     lnkprj=$(command sed -rn '/<linkinfo/{s@.*[[:blank:]]project="([^"]+)".*@\1@p;}' < "${PWD}/.osc/_files")
     lnkpkg=$(command sed -rn '/<linkinfo/{s@.*[[:blank:]]package="([^"]+)".*@\1@p;}' < "${PWD}/.osc/_files")
 fi
-if test -s "${PWD}/.osc/_apiurl" -a -s ~/.oscrc ; then
+if test -s "${PWD}/.osc/_apiurl" -a -s "${oscrc}" ; then
     read apiurl < "${PWD}/.osc/_apiurl"
-    alias=$(sed -rn '\@^\['${apiurl}'@,\@=@{\@^aliases=@{s@[^=]+=([^,]+),.*@\1@p};}' < ~/.oscrc 2> /dev/null)
+    alias=$(sed -rn '\@^\['${apiurl}'@,\@=@{\@^aliases=@{s@[^=]+=([^,]+),.*@\1@p};}' < "${oscrc}" 2> /dev/null)
 fi
 if test "${cmdline[0]}" = isc ; then
     alias=internal
 fi
 
-projects=~/.osc.projects
-command=osc
 
 case "${cmdline[1]}" in
 -A|--apiurl)
-    if test -n "${cmdline[2]}" -a -s ~/.oscrc ; then
-	hints=($(sed -rn '/^(aliases=|\[http)/{s/,/ /g;s/(aliases=|\[|\])//gp}' < ~/.oscrc 2> /dev/null))
+    if test -n "${cmdline[2]}" -a -s "${oscrc}" ; then
+	hints=($(sed -rn '/^(aliases=|\[http)/{s/,/ /g;s/(aliases=|\[|\])//gp}' < "${oscrc}" 2> /dev/null))
 	for h in ${hints[@]} ; do
 	    case "$h" in
 	    http*)
-		tmp=$(sed -rn '\@^\['${h}'@,\@=@{\@^aliases=@{s@[^=]+=([^,]+),.*@\1@p};}' < ~/.oscrc 2> /dev/null)
+		tmp=$(sed -rn '\@^\['${h}'@,\@=@{\@^aliases=@{s@[^=]+=([^,]+),.*@\1@p};}' < "${oscrc}" 2> /dev/null)
 		if test "${cmdline[2]}" = "$h" ; then
 		    alias=$tmp
 		    break
@@ -282,8 +296,8 @@ users ()
     update_projects_list
     if test -s ${projects} ; then
 	command sed -rn "/^home:$1/{ s/^home:([^:]*):.*/\1/p}" ${projects}|command sort -u
-    elif test -s ~/.oscrc; then
-	command sed -rn '/^(user=)/{s/(user=)//p}' ~/.oscrc|command sort -u
+    elif test -s "${oscrc}"; then
+	command sed -rn '/^(user=)/{s/(user=)//p}' "${oscrc}" | command sort -u
     else
 	command id -un
     fi
@@ -342,8 +356,8 @@ while test "${cmdline[1+remove]::1}" = "-" ; do
 	    builtin compgen -W "${oscopts[*]}" -- "${cmdline[1+remove]}"
 	    exit
 	elif ((count-remove == 2)); then
-	    if test -s ~/.oscrc ; then
-		hints=($(sed -rn '/^(aliases=|\[http)/{s/,/ /g;s/(aliases=|\[|\])//gp}' ~/.oscrc|sort -u))
+	    if test -s "${oscrc}" ; then
+		hints=($(sed -rn '/^(aliases=|\[http)/{s/,/ /g;s/(aliases=|\[|\])//gp}' "${oscrc}" | sort -u))
 		builtin compgen -W "${hints[*]}" -- "${cmdline[2+remove]}"
 	    else
 		builtin compgen -P https:// -A hostname
