@@ -18,6 +18,7 @@ import errno
 import fnmatch
 import glob
 import hashlib
+import io
 import locale
 import os
 import platform
@@ -6936,13 +6937,16 @@ def print_buildlog(
     strip_time=False,
     last=False,
     lastsucceeded=False,
+    output_buffer=None,
 ):
     """prints out the buildlog on stdout"""
+
+    output_buffer = output_buffer or sys.stdout.buffer
 
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        sys.stdout.buffer.write(data)
+        output_buffer.write(data)
 
     query = {'nostream': '1', 'start': '%s' % offset}
     if last:
@@ -8263,39 +8267,73 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             print('Try -f to force the state change', file=sys.stderr)
         return False
 
-    def safe_get_rpmlint_log(src_actions):
-        lintlogs = []
+    def get_repos(src_actions):
+        """
+        Translate src_actions to [{"proj": ..., "pkg": ..., "repo": ..., "arch": ...}]
+        """
+        result = []
         for action in src_actions:
-            print('Type %s:' % action.type)
             disabled = show_package_disabled_repos(apiurl, action.src_project, action.src_package)
             for repo in get_repos_of_project(apiurl, action.src_project):
-                if (disabled is None) or (repo.name not in [d['repo'] for d in disabled]):
-                    lintlog_entry = {
-                        'proj': action.src_project,
-                        'pkg': action.src_package,
-                        'repo': repo.name,
-                        'arch': repo.arch
+                if (disabled is None) or (repo.name not in [d["repo"] for d in disabled]):
+                    entry = {
+                        "proj": action.src_project,
+                        "pkg": action.src_package,
+                        "repo": repo.name,
+                        "arch": repo.arch
                     }
-                    lintlogs.append(lintlog_entry)
-                    print('(%i) %s/%s/%s/%s' % ((len(lintlogs) - 1), action.src_project, action.src_package, repo.name, repo.arch))
-        if not lintlogs:
-            print('No possible rpmlintlogs found')
-            return False
+                    result.append(entry)
+        return result
+
+    def select_repo(src_actions):
+        """
+        Prompt user to select a repo from a list.
+        """
+        repos = get_repos(src_actions)
+
+        for num, entry in enumerate(repos):
+            print(f"({num}) {entry['proj']}/{entry['pkg']}/{entry['repo']}/{entry['arch']}")
+
+        if not repos:
+            print('No repos')
+            return None
+
         while True:
             try:
-                lint_n = int(raw_input('Number of rpmlint log to examine (0 - %i): ' % (len(lintlogs) - 1)))
-                lintlogs[lint_n]
-                break
+                reply = raw_input(f"Number of repo to examine (0 - {len(repos)-1}): ").strip()
+                if not reply:
+                    return None
+                reply_num = int(reply)
+                return repos[reply_num]
             except (ValueError, IndexError):
-                print('Invalid rpmlintlog index. Please choose between 0 and %i' % (len(lintlogs) - 1))
+                print(f"Invalid index. Please choose between 0 and {len(repos)-1}")
+
+    def safe_get_rpmlint_log(src_actions):
+        repo = select_repo(src_actions)
+        if not repo:
+            return
         try:
-            print(decode_it(get_rpmlint_log(apiurl, **lintlogs[lint_n])))
+            run_pager(get_rpmlint_log(apiurl, **repo))
         except HTTPError as e:
             if e.code == 404:
-                print('No rpmlintlog for %s %s' % (lintlogs[lint_n]['repo'],
-                      lintlogs[lint_n]['arch']))
+                print(f"No rpmlint log for {repo['repo']}/{repo['arch']}")
             else:
-                raise e
+                raise
+
+    def get_build_log(src_actions):
+        repo = select_repo(src_actions)
+        if not repo:
+            return
+        try:
+            buffer = io.BytesIO()
+            print_buildlog(apiurl, repo["proj"], repo["pkg"], repo["repo"], repo["arch"], output_buffer=buffer)
+            buffer.seek(0)
+            run_pager(buffer.read())
+        except HTTPError as e:
+            if e.code == 404:
+                print(f"No build log for {repo['repo']}/{repo['arch']}")
+            else:
+                raise
 
     def print_request(request):
         print(request)
@@ -8344,10 +8382,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
         # actions which have sources + buildresults
         src_actions = editable_actions + request.get_actions('maintenance_release')
         if editable_actions:
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/rpm(li)ntlog/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/(bl)buildlog/rpm(li)ntlog/c(l)one/(e)dit/co(m)ment/(s)kip/(c)ancel > '
         elif src_actions:
             # no edit for maintenance release requests
-            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/rpm(li)ntlog/c(l)one/co(m)ment/(s)kip/(c)ancel > '
+            prompt = 'd(i)ff/(a)ccept/(d)ecline/(r)evoke/(b)uildstatus/(bl)buildlog/rpm(li)ntlog/c(l)one/co(m)ment/(s)kip/(c)ancel > '
         editprj = ''
         orequest = None
         if source_buildstatus and src_actions:
@@ -8406,6 +8444,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 print_source_buildstatus(src_actions)
             elif repl == 'li' and src_actions:
                 safe_get_rpmlint_log(src_actions)
+            elif repl == 'bl' and src_actions:
+                get_build_log(src_actions)
             elif repl == 'e' and editable_actions:
                 # this is only for editable actions
                 if not editprj:
