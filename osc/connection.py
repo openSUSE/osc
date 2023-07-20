@@ -107,10 +107,11 @@ def get_proxy_manager(env):
         user_agent=f"osc/{__version__}",
     )
 
-    proxy_basic_auth = urllib.parse.unquote(proxy_purl.auth)
-    proxy_basic_auth = proxy_basic_auth.encode("utf-8")
-    proxy_basic_auth = base64.b64encode(proxy_basic_auth).decode()
-    proxy_headers["Proxy-Authorization"] = f"Basic {proxy_basic_auth:s}"
+    if proxy_purl.auth:
+        proxy_basic_auth = urllib.parse.unquote(proxy_purl.auth)
+        proxy_basic_auth = proxy_basic_auth.encode("utf-8")
+        proxy_basic_auth = base64.b64encode(proxy_basic_auth).decode()
+        proxy_headers["Proxy-Authorization"] = f"Basic {proxy_basic_auth:s}"
 
     manager = urllib3.ProxyManager(proxy_url, proxy_headers=proxy_headers)
     return manager
