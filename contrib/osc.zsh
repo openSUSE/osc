@@ -37,6 +37,18 @@ _osc() {
         osc_alias=internal
     fi
 
+    if [ -s "${PWD}/.osc/_apiurl" -a -s "${osc_rc}" ]; then
+        local osc_apiurl
+        read osc_apiurl < "${PWD}/.osc/_apiurl"
+        # We prefer to match an apiurl with an alias so that the project list
+        # cache would match also when -A was passed with said alias.
+        # If there's no alias for that api url match to use the plain apiurl instead.
+        osc_alias=$(sed -rn '\@^\['${apiurl}'@,\@=@{\@^aliases=@{s@[^=]+=([^,]+),.*@\1@p};}' < "${osc_rc}" 2> /dev/null)
+        if [ -z $osc_alias ] ; then
+            osc_alias=${osc_apiurl}
+        fi
+    fi
+
     if (( CURRENT > 2 )) && [[ ${words[2]} != "help" ]]; then
         # Remember the subcommand name
 	local cmd=${words[2]}
@@ -74,8 +86,8 @@ _osc() {
     fi
 
     if [[ -n "$osc_alias" ]] ; then
-        osc_projects="${osc_projects}.${osc_alias}"
-        osc_command="$osc_command -A $osc_alias"
+        osc_projects="${osc_projects}.${osc_alias//\//_}"
+        osc_command="$osc_command -A ${osc_alias}"
     fi
 
     _osc_update_project_list
