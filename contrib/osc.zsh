@@ -82,17 +82,13 @@ _osc() {
 
     _osc_update_project_list
 
-	if [ "$cmd" = "submitreq" -o "$cmd" = "sr" ]; then
-	    _osc_cmd_submitreq
-	elif [ "$cmd" = "getbinaries" ]; then
-	    _osc_cmd_getbinaries
-	elif [ "$cmd" = "checkout" -o "$cmd" = "co" -o "$cmd" = "branch" ]; then
-	    _osc_cmd_checkout
-	elif [ "$cmd" = "buildlog" -o "$cmd" = "buildinfo" -o "$cmd" = "bl" ]; then
-	    _osc_cmd_buildlog
-	else
-	    _osc_cmd_do $cmd
-	fi
+    case $cmd in
+        submitrequest|submitreq|sr) _osc_cmd_submitreq ;;
+        getbinaries) _osc_cmd_getbinaries ;;
+        checkout|co|branch|getpac|bco|branchco) _osc_cmd_checkout ;;
+        buildlog|buildinfo|bl|blt|buildlogtail) _osc_cmd_buildlog ;;
+        *) _osc_cmd_do $cmd
+    esac
     else
 	local hline
 	local -a cmdlist
