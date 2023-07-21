@@ -160,16 +160,35 @@ _osc_project_repositories() {
     fi
 }
 
+_osc_project_repositories_arches() {
+    if [ ! -s $PWD/.osc/_build_repositories ] || \
+           _osc_call_me_maybe $PWD/.osc/_build_repositories ; then
+        osc repositories > /dev/null
+    fi
+    # Just check if file exist in case the call to the api failed
+    if [ -s $PWD/.osc/_build_repositories ] ; then
+        grep -- $1 $PWD/.osc/_build_repositories | while read build_repository ; do
+            # Only output second word of each line
+            echo ${build_repository#*\ }
+        done | sort -u
+    fi
+}
+
+
 _osc_cmd_getbinaries() {
     if [ "$words[2]" = "-" ]; then
 	    _osc_complete_help_commands 'options' 'option'
 	    return
     else
+        if [ -n "$words[2]" ] ; then
+            local osc_project_repository_arch=$(_osc_project_repositories_arches \
+                                                    "${words[2]}")
+        fi
         _arguments \
 	        '1:PROJECT:( `cat $osc_projects` )' \
 	        '2:PACKAGE:(PACKAGE)' \
 	        '3:REPOSITORY:( `_osc_project_repositories`' \
-	        '4:ARCHITECTURE:(i586 x86_64)'
+	        '4:ARCHITECTURE:(`echo $osc_project_repository_arch`)'
     fi
 }
 
@@ -189,9 +208,13 @@ _osc_cmd_buildlog() {
 	    _osc_complete_help_commands 'options' 'option'
 	    return
     else
+        if [ -n "$words[2]" ] ; then
+            local osc_project_repository_arch=$(_osc_project_repositories_arches \
+                                                    "${words[2]}")
+        fi
         _arguments \
 	        '1:REPOSITORY:( `_osc_project_repositories` )' \
-	        '2:ARCHITECTURE:(i586 x86_64)'
+	        '2:ARCHITECTURE:(`echo $osc_project_repository_arch`)'
     fi
 }
 
