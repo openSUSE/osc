@@ -85,6 +85,7 @@ _osc() {
     case $cmd in
         submitrequest|submitreq|sr) _osc_cmd_submitreq ;;
         getbinaries) _osc_cmd_getbinaries ;;
+        build) _osc_cmd_build ;;
         checkout|co|branch|getpac|bco|branchco) _osc_cmd_checkout ;;
         buildlog|buildinfo|bl|blt|buildlogtail) _osc_cmd_buildlog ;;
         *) _osc_cmd_do $cmd
@@ -215,6 +216,22 @@ _osc_cmd_buildlog() {
         _arguments \
 	        '1:REPOSITORY:( `_osc_project_repositories` )' \
 	        '2:ARCHITECTURE:(`echo $osc_project_repository_arch`)'
+    fi
+}
+
+_osc_cmd_build() {
+    if [ "$words[2]" = "-" ]; then
+	    _osc_complete_help_commands 'options' 'option'
+	    return
+    else
+        if [ -n "$words[2]" ] ; then
+            local osc_project_repository_arch=$(_osc_project_repositories_arches \
+                                                    "${words[2]}")
+        fi
+        _arguments \
+	        '1:REPOSITORY:( `_osc_project_repositories` )' \
+	        '2:ARCHITECTURE:(`echo $osc_project_repository_arch`)' \
+            '3:Build Description:_files'
     fi
 }
 
