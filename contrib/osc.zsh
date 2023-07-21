@@ -9,19 +9,9 @@
 #
 # Toggle verbose completions: zstyle ':completion:*:osc:*' verbose no
 #                             zstyle ':completion:*:osc-subcommand:*' verbose no
-# 
-# Use the variables $ZSH_OSC_BUILD_TARGETS_EXTRA and $ZSH_OSC_PROJECTS_EXTRA to
-# extend the list of possible completions in your ~/.zshrc like that:
-#  export OSC_PROJECTS_EXTRA="Base:System Base:shells"
 #
 # version 0.2
 #
-
-OSC_BUILD_TARGETS="openSUSE_13.1 openSUSE_13.2 openSUSE_Tumbleweed openSUSE_Factory SLE_11_SP3 SLE_12"
-
-# user defined variables $OSC_BUILD_TARGETS_EXTRA and
-# $OSC_PROJECTS_EXTRA can add to the project/build target list
-OSC_BUILD_TARGETS="$OSC_BUILD_TARGETS $ZSH_OSC_BUILD_TARGETS_EXTRA"
 
 # Main dispatcher
 
@@ -160,11 +150,25 @@ _osc_update_project_list() {
     fi
 }
 
+_osc_project_repositories() {
+    if [ ! -s $PWD/.osc/_build_repositories ] || \
+           _osc_call_me_maybe $PWD/.osc/_build_repositories ; then
+        osc repositories > /dev/null
+    fi
+    # Just check if file exist in case the call to the api failed
+    if [ -s $PWD/.osc/_build_repositories ] ; then
+        cat $PWD/.osc/_build_repositories | while read build_repository ; do
+            # Only output first word of each line
+            echo ${build_repository%\ *}
+        done | sort -u
+    fi
+}
+
 _osc_cmd_getbinaries() {
     _arguments \
 	'1:PROJECT:( `cat $osc_projects` )' \
 	'2:PACKAGE:(PACKAGE)' \
-	'3:REPOSITORY:( `echo $OSC_BUILD_TARGETS` )' \
+	'3:REPOSITORY:( `_osc_project_repositories`' \
 	'4:ARCHITECTURE:(i586 x86_64)'
 }
 
@@ -176,7 +180,7 @@ _osc_cmd_checkout() {
 
 _osc_cmd_buildlog() {
     _arguments \
-	'1:REPOSITORY:( `echo $OSC_BUILD_TARGETS` )' \
+	'1:REPOSITORY:( `_osc_project_repositories` )' \
 	'2:ARCHITECTURE:(i586 x86_64)'
 }
 
