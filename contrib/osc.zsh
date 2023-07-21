@@ -161,23 +161,38 @@ _osc_project_repositories() {
 }
 
 _osc_cmd_getbinaries() {
-    _arguments \
-	'1:PROJECT:( `cat $osc_projects` )' \
-	'2:PACKAGE:(PACKAGE)' \
-	'3:REPOSITORY:( `_osc_project_repositories`' \
-	'4:ARCHITECTURE:(i586 x86_64)'
+    if [ "$words[2]" = "-" ]; then
+	    _osc_complete_help_commands 'options' 'option'
+	    return
+    else
+        _arguments \
+	        '1:PROJECT:( `cat $osc_projects` )' \
+	        '2:PACKAGE:(PACKAGE)' \
+	        '3:REPOSITORY:( `_osc_project_repositories`' \
+	        '4:ARCHITECTURE:(i586 x86_64)'
+    fi
 }
 
 _osc_cmd_checkout() {
-    _arguments \
-	'1:PROJECT:( `cat $osc_projects` )' \
-	'2:PACKAGE:(PACKAGE)'
+    if [ "$words[2]" = "-" ]; then
+	    _osc_complete_help_commands 'options' 'option'
+	    return
+    else
+        _arguments \
+	        '1:PROJECT:( `cat $osc_projects` )' \
+	        '2:PACKAGE:(PACKAGE)'
+    fi
 }
 
 _osc_cmd_buildlog() {
-    _arguments \
-	'1:REPOSITORY:( `_osc_project_repositories` )' \
-	'2:ARCHITECTURE:(i586 x86_64)'
+    if [ "$words[2]" = "-" ]; then
+	    _osc_complete_help_commands 'options' 'option'
+	    return
+    else
+        _arguments \
+	        '1:REPOSITORY:( `_osc_project_repositories` )' \
+	        '2:ARCHITECTURE:(i586 x86_64)'
+    fi
 }
 
 _osc_cmd_submitreq() {
