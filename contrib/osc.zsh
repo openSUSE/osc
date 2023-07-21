@@ -181,12 +181,16 @@ _osc_cmd_buildlog() {
 }
 
 _osc_cmd_submitreq() {
+    _osc_complete_help_commands 'options' 'option'
+}
+
+_osc_complete_help_commands() {
     local hline
     local -a cmdlist
     local tag=0
     _call_program help-commands osc help $cmd | while read -A hline; do
         # start parsing from "usage:"
-	[[ $hline[1] = "usage:" ]] && tag=1
+	[[ $hline[1] = "${1}:" ]] && tag=1
 	[[ $tag = 0 ]] && continue
 
 	if [[ $hline[1] =~ ^osc ]]; then
@@ -198,40 +202,26 @@ _osc_cmd_submitreq() {
 
 	(( ${#hline} < 2 )) && continue
 
-	cmdlist=($cmdlist "${hline[1]%,}:${hline[2,-1]}")
+    cmdlist=($cmdlist "${hline[1]%,}:${hline[2,-1]}")
 
     done
-    
-    _describe -t osc-commands 'osc command' cmdlist
+
+    if [ -n "$cmdlist" ] ; then
+        _describe -t osc-commands "osc $2" cmdlist
+    else
+        return 1
+    fi
 }
 
-
 _osc_cmd_do() {
-    local hline
-    local -a cmdlist
-    local tag=0
-    
     # only start completion if there's some '-' on the line
     if ! [ "$words[2]" = "-" ]; then
-	_complete
-	return
+	    _complete
+	    return
     fi
 
-    _call_program help-commands osc help $cmd | while read -A hline; do
-	# start parsing from "Options:"
-	[[ $hline[1] = "Options:" ]] && tag=1
-	[[ $tag = 0 ]] && continue
-	# Option has to start with a '-'
-	[[ $hline[1] =~ ^- ]] || continue
-	(( ${#hline} < 2 )) && continue
-
-	cmdlist=($cmdlist "${hline[1]%,}:${hline[2,-1]}")
-    done
-
-    if [ -n "$cmdlist" ]; then
-	_describe -t osc-commands 'osc command' cmdlist
-    else
-	_complete
+    if ! _osc_complete_help_commands 'options' 'option'; then
+        _complete
     fi
 }
 
