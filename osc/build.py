@@ -20,7 +20,7 @@ from . import conf
 from . import connection
 from . import core
 from . import oscerr
-from .core import get_buildinfo, store_read_project, store_read_package, meta_exists, quote_plus, get_buildconfig, is_package_dir, dgst
+from .core import get_buildinfo, meta_exists, quote_plus, get_buildconfig, dgst
 from .core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from .fetch import Fetcher, OscFileGrabber, verify_pacs
 from .meter import create_text_meter
@@ -595,12 +595,13 @@ def get_kiwipath_from_buildinfo(bi, prj, repo):
     return kiwipath
 
 
-def calculate_prj_pac(opts, descr):
-    project = opts.alternative_project or store_read_project('.')
+def calculate_prj_pac(store, opts, descr):
+    project = opts.alternative_project or store.project
     if opts.local_package:
         package = os.path.splitext(os.path.basename(descr))[0]
     else:
-        package = store_read_package('.')
+        store.assert_is_package()
+        package = store.package
     return project, package
 
 
@@ -639,7 +640,7 @@ def run_build(opts, *args):
     return run_external(cmd[0], *cmd[1:])
 
 
-def main(apiurl, opts, argv):
+def main(apiurl, store, opts, argv):
 
     repo = argv[0]
     arch = argv[1]
@@ -768,11 +769,11 @@ def main(apiurl, opts, argv):
         prj = opts.alternative_project
         pac = '_repository'
     else:
-        prj = store_read_project(os.curdir)
+        prj = store.project
         if opts.local_package:
             pac = '_repository'
         else:
-            pac = store_read_package(os.curdir)
+            pac = store.package
     if opts.multibuild_package:
         buildargs.append('--buildflavor=%s' % opts.multibuild_package)
         pac = pac + ":" + opts.multibuild_package
@@ -797,7 +798,7 @@ def main(apiurl, opts, argv):
     if pacname == '_repository':
         if not opts.local_package:
             try:
-                pacname = store_read_package(os.curdir)
+                pacname = store.package
             except oscerr.NoWorkingCopy:
                 opts.local_package = True
         if opts.local_package:
@@ -834,7 +835,7 @@ def main(apiurl, opts, argv):
     bc_file = None
     bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
     bc_filename = '_buildconfig-%s-%s' % (repo, arch)
-    if is_package_dir('.') and os.access(core.store, os.W_OK):
+    if store.is_package and os.access(core.store, os.W_OK):
         bi_filename = os.path.join(os.getcwd(), core.store, bi_filename)
         bc_filename = os.path.join(os.getcwd(), core.store, bc_filename)
     elif not os.access('.', os.W_OK):
@@ -859,7 +860,7 @@ def main(apiurl, opts, argv):
     if opts.noinit:
         buildargs.append('--noinit')
 
-    if not is_package_dir('.'):
+    if not store.is_package:
         opts.noservice = True
 
     # check for source services
@@ -1481,8 +1482,8 @@ def main(apiurl, opts, argv):
         cmd = [change_personality[bi.buildarch]] + cmd
 
     # record our settings for later builds
-    if is_package_dir(os.curdir):
-        core.store_write_last_buildroot(os.curdir, repo, arch, vm_type)
+    if store.is_package:
+        store.last_buildroot = repo, arch, vm_type
 
     try:
         rc = run_external(cmd[0], *cmd[1:])

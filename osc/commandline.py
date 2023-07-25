@@ -7199,25 +7199,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        project = None
-        try:
-            project = store_read_project(Path.cwd())
-            if project == opts.alternative_project:
-                opts.alternative_project = None
-        except oscerr.NoWorkingCopy:
-            # This may be a project managed entirely via git?
-            if os.path.isdir(Path.cwd().parent / '.osc') and os.path.isdir(Path.cwd().parent / '.git'):
-                project = store_read_project(Path.cwd())
-                opts.alternative_project = project
-            pass
+        store = osc_store.Store(Path.cwd())
+        store.assert_is_package()
 
-        if len(args) == 0 and is_package_dir(Path.cwd()):
+        if opts.alternative_project == store.project:
+            opts.alternative_project = None
+
+        if len(args) == 0 and store.is_package and store.last_buildroot:
             # build env not specified, just read from last build attempt
-            lastbuildroot = store_read_last_buildroot(Path.cwd())
-            if lastbuildroot:
-                args = [lastbuildroot[0], lastbuildroot[1]]
-                if not opts.vm_type:
-                    opts.vm_type = lastbuildroot[2]
+            args = [store.last_buildroot[0], store.last_buildroot[1]]
+            if not opts.vm_type:
+                opts.vm_type = store.last_buildroot[2]
 
         vm_chroot = opts.vm_type or conf.config['build-type']
         if (subcmd in ('shell', 'chroot') or opts.shell or opts.wipe) and not vm_chroot:
@@ -7226,7 +7218,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
                 repo, arch, build_descr = args
-                prj, pac = osc_build.calculate_prj_pac(opts, build_descr)
+                prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
                 apihost = urlsplit(self.get_api_url())[1]
                 build_root = osc_build.calculate_build_root(apihost, prj, pac, repo,
                                                             arch)
@@ -7250,12 +7242,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.local_package:
             try:
-                package = store_read_package(Path.cwd())
                 prj = Project(os.pardir, getPackageList=False, wc_check=False)
-                if prj.status(package) == 'A':
+                if prj.status(store.package) == "A":
                     # a package with state 'A' most likely does not exist on
                     # the server - hence, treat it as a local package
                     opts.local_package = True
+                    print("INFO: Building the package as a local package.", file=sys.stderr)
             except oscerr.NoWorkingCopy:
                 pass
 
@@ -7284,7 +7276,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print('Building %s for %s/%s' % (args[2], args[0], args[1]))
         if not opts.host:
-            return osc_build.main(self.get_api_url(), opts, args)
+            return osc_build.main(self.get_api_url(), store, opts, args)
         else:
             return self._do_rbuild(subcmd, opts, *args)
 
