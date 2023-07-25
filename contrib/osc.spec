@@ -10,6 +10,7 @@
 %define completion_dir_bash %{_datadir}/bash-completion/completions
 %define completion_dir_csh %{_sysconfdir}/profile.d
 %define completion_dir_fish %{_datadir}/fish/vendor_completions.d
+%define completion_dir_zsh %{_datadir}/zsh/functions/Completion
 %define osc_plugin_dir %{_prefix}/lib/osc-plugins
 # need to override python_sitelib because it is not set as we would expect on many distros
 %define python_sitelib %(RPM_BUILD_ROOT= %{use_python} -Ic "import sysconfig; print(sysconfig.get_path('purelib'))")
@@ -150,6 +151,7 @@ install -Dm0755 contrib/osc.complete %{buildroot}%{_datadir}/osc/complete
 install -Dm0644 contrib/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
 install -Dm0644 contrib/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
 install -Dm0644 contrib/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
+install -Dm0644 contrib/osc.zsh %{buildroot}%{completion_dir_zsh}/osc.zsh
 
 # install rpm macros
 install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
@@ -191,6 +193,7 @@ install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 %{completion_dir_bash}/*
 %{completion_dir_csh}/*
 %{completion_dir_fish}/*
+%{completion_dir_zsh}/*
 
 # osc owns the dirs to avoid the "directories not owned by a package" build error
 %dir %{_datadir}/fish
