@@ -2986,7 +2986,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-a', '--all', action='store_true',
                         help='all states. Same as\'-s all\'')
     @cmdln.option('-f', '--force', action='store_true',
-                        help='enforce state change, can be used to ignore open reviews')
+                        help='enforce state change, can be used to ignore open reviews, devel-package dependencies and more')
     @cmdln.option('-s', '--state',
                         help='only list requests in one of the comma separated given states (new/review/accepted/revoked/declined) or "all" [default="new,review,declined"]')
     @cmdln.option('-D', '--days', metavar='DAYS',
