@@ -6933,7 +6933,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if no_repo:
                     raise oscerr.WrongArgs("Repository is missing. Cannot guess build description without repository")
                 apiurl = self.get_api_url()
-                project = store_read_project('.')
+                project = alternative_project or store_read_project('.')
                 # some distros like Debian rename and move build to obs-build
                 if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
                     queryconfig = '/usr/lib/obs-build/queryconfig'

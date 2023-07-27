@@ -36,6 +36,10 @@ class TestGitStore(unittest.TestCase):
         store = GitStore(self.tmpdir)
         self.assertEqual(store.last_buildroot, ("repo", "arch", "vm_type"))
 
+    def test_scmurl(self):
+        store = GitStore(self.tmpdir)
+        self.assertEqual(store.scmurl, "https://example.com/packages/my-package.git")
+
 
 if not shutil.which("git"):
     TestGitStore = unittest.skip("The 'git' executable is not available")(TestGitStore)
