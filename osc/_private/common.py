@@ -1,16 +1,22 @@
 import sys
 
 
-def print_msg(msg, print_to="debug"):
+def print_msg(*args, print_to="debug"):
     from .. import conf
 
     if print_to is None:
         return
     elif print_to == "debug":
+        # print a debug message to stderr if config["debug"] is set
         if conf.config["debug"]:
-            print(f"DEBUG: {msg}", file=sys.stderr)
+            print("DEBUG:", *args, file=sys.stderr)
+    elif print_to == "verbose":
+        # print a verbose message to stdout if config["verbose"] or config["debug"] is set
+        if conf.config["verbose"] or conf.config["debug"]:
+            print(*args)
     elif print_to == "stdout":
-        print(msg)
+        # print the message to stdout
+        print(*args)
     else:
         raise ValueError(f"Invalid value of the 'print_to' option: {print_to}")
 

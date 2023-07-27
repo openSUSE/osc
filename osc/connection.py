@@ -21,6 +21,7 @@ import urllib3.response
 import urllib3.util
 
 from . import __version__
+from . import _private
 from . import conf
 from . import oscerr
 from . import oscssl
@@ -686,9 +687,7 @@ class SignatureAuthHandler(AuthHandlerBase):
             return False
 
         if not self.ssh_keygen_path:
-            if conf.config["debug"]:
-                msg = "Skipping signature auth because ssh-keygen is not available"
-                print(msg, file=sys.stderr)
+            _private.print_msg("Skipping signature auth because ssh-keygen is not available", print_to="debug")
             return False
 
         if not self.sshkey_known():

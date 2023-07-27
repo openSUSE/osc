@@ -1,5 +1,10 @@
+import contextlib
+import importlib
+import io
 import unittest
 
+import osc.conf
+from osc._private import print_msg
 from osc.output import KeyValueTable
 
 
@@ -65,6 +70,75 @@ Key    : Value
 🚀🚀🚀 : Value
 """.strip()
         self.assertEqual(str(t), expected)
+
+
+class TestPrintMsg(unittest.TestCase):
+    def setUp(self):
+        # reset the global `config` in preparation for running the tests
+        importlib.reload(osc.conf)
+
+    def tearDown(self):
+        # reset the global `config` to avoid impacting tests from other classes
+        importlib.reload(osc.conf)
+
+    def test_debug(self):
+        osc.conf.config["debug"] = 0
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="debug")
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual("", stderr.getvalue())
+
+        osc.conf.config["debug"] = 1
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="debug")
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual("DEBUG: foo bar\n", stderr.getvalue())
+
+    def test_verbose(self):
+        osc.conf.config["verbose"] = 0
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="verbose")
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual("", stderr.getvalue())
+
+        osc.conf.config["verbose"] = 1
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="verbose")
+        self.assertEqual("foo bar\n", stdout.getvalue())
+        self.assertEqual("", stderr.getvalue())
+
+        osc.conf.config["verbose"] = 0
+        osc.conf.config["debug"] = 1
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="verbose")
+        self.assertEqual("foo bar\n", stdout.getvalue())
+        self.assertEqual("", stderr.getvalue())
+
+    def test_none(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to=None)
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual("", stderr.getvalue())
+
+    def test_stdout(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="stdout")
+        self.assertEqual("foo bar\n", stdout.getvalue())
+        self.assertEqual("", stderr.getvalue())
 
 
 if __name__ == "__main__":
