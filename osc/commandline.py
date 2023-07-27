@@ -4264,8 +4264,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 except:
                     print('Error while checkout package:\n', package, file=sys.stderr)
 
-            if conf.config['verbose']:
-                print('Note: You can use "osc delete" or "osc submitpac" when done.\n')
+            _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
 
     @cmdln.alias('branchco')
     @cmdln.alias('bco')
@@ -4416,8 +4415,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.checkout:
             checkout_package(apiurl, targetprj, package, server_service_files=False,
                              expand_link=True, prj_dir=Path(targetprj))
-            if conf.config['verbose']:
-                print('Note: You can use "osc delete" or "osc submitpac" when done.\n')
+            _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
         else:
             apiopt = ''
             if conf.get_configParser().get('general', 'apiurl') != apiurl:
