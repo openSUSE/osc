@@ -72,7 +72,7 @@ class GitStore:
             if branch == "factory":
                 self._project = "openSUSE:Factory"
             else:
-                print(f"ERROR: Couldn't map git branch '{branch}' to a project", file=sys.stderr)
+                raise RuntimeError(f"Couldn't map git branch '{branch}' to a project")
         return self._project
 
     @project.setter
