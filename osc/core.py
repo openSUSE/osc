@@ -4366,24 +4366,6 @@ def get_default_pager():
     return 'more'
 
 
-def format_diff_line(line):
-    if line.startswith(b"+++") or line.startswith(b"---") or line.startswith(b"Index:"):
-        line = b"\x1b[1m" + line + b"\x1b[0m"
-    elif line.startswith(b"+"):
-        line = b"\x1b[32m" + line + b"\x1b[0m"
-    elif line.startswith(b"-"):
-        line = b"\x1b[31m" + line + b"\x1b[0m"
-    elif line.startswith(b"@"):
-        line = b"\x1b[96m" + line + b"\x1b[0m"
-    return line
-
-
-def highlight_diff(diff):
-    if sys.stdout.isatty():
-        diff = b"\n".join((format_diff_line(line) for line in diff.split(b"\n")))
-    return diff
-
-
 def run_pager(message, tmp_suffix=''):
     if not message:
         return

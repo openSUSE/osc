@@ -2350,7 +2350,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rdiff = b''
 
         if opts.diff:
-            run_pager(highlight_diff(rdiff))
+            run_pager(rdiff)
             return
         if rdiff is not None:
             rdiff = decode_it(rdiff)
@@ -3409,7 +3409,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                action.tgt_project.encode(), action.tgt_package.encode())
                         diff += submit_action_diff(apiurl, action)
                         diff += b'\n\n'
-                run_pager(highlight_diff(diff), tmp_suffix="")
+                run_pager(diff, tmp_suffix='')
 
         # checkout
         elif cmd in ('checkout', 'co'):
@@ -4628,21 +4628,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print("diff working copy against last committed version\n")
             else:
                 print("diff committed package against linked revision %s\n" % baserev)
-                run_pager(
-                    highlight_diff(
-                        server_diff(
-                            self.get_api_url(),
-                            linkinfo.get("project"),
-                            linkinfo.get("package"),
-                            baserev,
-                            args[0],
-                            args[1],
-                            linkinfo.get("lsrcmd5"),
-                            not opts.plain,
-                            opts.missingok,
-                        )
-                    )
-                )
+                run_pager(server_diff(self.get_api_url(), linkinfo.get('project'), linkinfo.get('package'), baserev,
+                                      args[0], args[1], linkinfo.get('lsrcmd5'), not opts.plain, opts.missingok))
                 return
 
         if opts.change:
@@ -4676,7 +4663,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                          pac.prjname, pac.name, rev2,
                                          not opts.plain, opts.missingok, opts.meta, not opts.unexpand, files=files)
-        run_pager(highlight_diff(diff))
+        run_pager(diff)
 
     @cmdln.option('--issues-only', action='store_true',
                   help='show only issues in diff')
@@ -4767,7 +4754,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.issues_only:
             print(decode_it(rdiff))
         else:
-            run_pager(highlight_diff(rdiff))
+            run_pager(rdiff)
 
     def _pdiff_raise_non_existing_package(self, project, package, msg=None):
         raise oscerr.PackageMissing(project, package, msg or '%s/%s does not exist.' % (project, package))
@@ -4914,7 +4901,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rdiff = server_diff(apiurl, parent_project, parent_package, None, project,
                             package, None, unified=unified, missingok=noparentok)
 
-        run_pager(highlight_diff(rdiff))
+        run_pager(rdiff)
 
     def _get_branch_parent(self, prj):
         m = re.match('^home:[^:]+:branches:(.+)', prj)
