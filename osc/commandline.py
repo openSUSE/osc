@@ -676,9 +676,8 @@ def pop_project_package_from_args(
 
     if project == ".":
         # project name taken from the working copy
-        project_store = osc_store.Store(path)
         try:
-            project_store = osc_store.Store(path)
+            project_store = osc_store.get_store(path)
             project = project_store.project
         except oscerr.NoWorkingCopy:
             if not project_is_optional:
@@ -688,7 +687,7 @@ def pop_project_package_from_args(
     if package == ".":
         # package name taken from the working copy
         try:
-            package_store = osc_store.Store(path)
+            package_store = osc_store.get_store(path)
             package_store.assert_is_package()
             package = package_store.package
         except oscerr.NoWorkingCopy:
