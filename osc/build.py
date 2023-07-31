@@ -1269,10 +1269,24 @@ def main(apiurl, store, opts, argv):
                     if name == filename:
                         print("Using prefered package: " + path + "/" + filename)
                         os.unlink(tffn)
-                        if opts.linksources:
-                            os.link(path + "/" + filename, tffn)
-                        else:
-                            os.symlink(path + "/" + filename, tffn)
+
+        if prefer_pkgs:
+            localpkgdir = "repos/_local/"
+            os.mkdir(localpkgdir)
+            buildargs.append("--kiwi-parameter")
+            buildargs.append("--add-repo")
+            buildargs.append("--kiwi-parameter")
+            buildargs.append(f"dir://./{localpkgdir}")
+            buildargs.append("--kiwi-parameter")
+            buildargs.append("--add-repotype")
+            buildargs.append("--kiwi-parameter")
+            buildargs.append("rpm-md")
+            for name, path in prefer_pkgs.items():
+                tffn = os.path.join(localpkgdir, os.path.basename(path))
+                if opts.linksources:
+                    os.link(path, tffn)
+                else:
+                    os.symlink(path, tffn)
 
     if build_type == 'kiwi':
         # Is a obsrepositories tag used?
