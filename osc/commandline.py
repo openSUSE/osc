@@ -676,9 +676,8 @@ def pop_project_package_from_args(
 
     if project == ".":
         # project name taken from the working copy
-        project_store = osc_store.Store(path)
         try:
-            project_store = osc_store.Store(path)
+            project_store = osc_store.get_store(path)
             project = project_store.project
         except oscerr.NoWorkingCopy:
             if not project_is_optional:
@@ -688,7 +687,7 @@ def pop_project_package_from_args(
     if package == ".":
         # package name taken from the working copy
         try:
-            package_store = osc_store.Store(path)
+            package_store = osc_store.get_store(path)
             package_store.assert_is_package()
             package = package_store.package
         except oscerr.NoWorkingCopy:
@@ -7591,36 +7590,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         # disabledrun and localrun exists as well, but are considered to be obsolete
 
-        args = slash_split(args)
-        project = package = singleservice = mode = None
+        args = list(args)
         apiurl = self.get_api_url()
-        remote_commands = ('remoterun', 'rr', 'merge', 'wait')
+        project = None
+        package = None
+        singleservice = None
+        mode = None
+        remote_commands = ("remoterun", "rr", "merge", "wait")
+        obsolete_commands = ("localrun", "lr", "disabledrun", "dr")
 
         if len(args) < 1:
-            raise oscerr.WrongArgs('No command given.')
-        elif len(args) < 3:
-            if args[0] in remote_commands:
-                if not is_package_dir(Path.cwd()):
-                    msg = ('Either specify the project and package or execute '
-                           'the command in a package working copy.')
-                    raise oscerr.WrongArgs(msg)
-                package = store_read_package(Path.cwd())
-                project = store_read_project(Path.cwd())
-            else:
-                # raise an appropriate exception if Path.cwd() is no package wc
-                store_read_package(Path.cwd())
-            if len(args) == 2:
-                singleservice = args[1]
-        elif len(args) == 3 and args[0] in remote_commands:
-            project = self._process_project_name(args[1])
-            package = args[2]
-        else:
-            raise oscerr.WrongArgs('Too many arguments.')
+            self.argparse_error("Please specify a command")
 
-        command = args[0]
+        command = args.pop(0)
+        if command not in ("runall", "ra", "run", "localrun", "manualrun", "disabledrun", "remoterun", "lr", "dr", "mr", "rr", "merge", "wait"):
+            self.argparse_error(f"Invalid command: {command}")
 
-        if command not in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'remoterun', 'lr', 'dr', 'mr', 'rr', 'merge', 'wait'):
-            raise oscerr.WrongArgs('Wrong command given.')
+        if command in obsolete_commands:
+            print(f"WARNING: Command '{command}' is obsolete", file=sys.stderr)
+
+        if len(args) == 1:
+            singleservice = args.pop(0)
+        elif len(args) in (0, 2) and command in remote_commands:
+            project, package = pop_project_package_from_args(
+                args, default_project=".", default_package=".", package_is_optional=False
+            )
+
+        ensure_no_remaining_args(args)
 
         if command in ('remoterun', 'rr'):
             print(runservice(apiurl, project, package))
@@ -7634,9 +7630,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(mergeservice(apiurl, project, package))
             return
 
+        store = osc_store.get_store(Path.cwd(), print_warnings=True)
+        store.assert_is_package()
+
         if command in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'lr', 'mr', 'dr', 'r'):
-            if not is_package_dir(Path.cwd()):
-                raise oscerr.WrongArgs('Local directory is no package')
             p = Package(".")
             if command  in ("localrun", "lr"):
                 mode = "local"
