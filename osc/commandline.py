@@ -385,6 +385,13 @@ class OscMainCommand(MainCommand):
             help="specify alternate configuration file",
         )
         self.add_argument(
+            "--setopt",
+            metavar="KEY=VALUE",
+            action="append",
+            default=[],
+            help="set a config option for the current program run",
+        )
+        self.add_argument(
             "--no-keyring",
             action="store_true",
             help="disable usage of desktop keyring system",
@@ -402,6 +409,11 @@ class OscMainCommand(MainCommand):
                 # let's leave setting the right value to conf.get_config()
                 pass
 
+        overrides = {}
+        for i in args.setopt:
+            key, value = i.split("=")
+            overrides[key] = value
+
         try:
             conf.get_config(
                 override_apiurl=args.apiurl,
@@ -413,6 +425,7 @@ class OscMainCommand(MainCommand):
                 override_post_mortem=args.post_mortem,
                 override_traceback=args.traceback,
                 override_verbose=args.verbose,
+                overrides=overrides,
             )
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
