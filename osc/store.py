@@ -10,7 +10,7 @@ from xml.etree import ElementTree as ET
 
 from . import oscerr
 from ._private import api
-
+from . import git_scm
 
 class Store:
     STORE_DIR = ".osc"
@@ -309,3 +309,22 @@ class Store:
         else:
             root = self.read_xml_node("_meta", "project").getroot()
         return root
+
+
+def get_store(path, check=True, print_warnings=False):
+    """
+    Return a store object that wraps SCM in given `path`:
+     - Store for OBS SCM
+     - GitStore for Git SCM
+    """
+    try:
+        store = Store(path, check)
+    except oscerr.NoWorkingCopy as ex:
+        try:
+            store = git_scm.GitStore(path, check)
+            if print_warnings:
+                git_scm.warn_experimental()
+        except oscerr.NoWorkingCopy as ex_git:
+            # raise the original exception, do not inform that we've tried git working copy
+            raise ex from None
+    return store

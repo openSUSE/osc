@@ -57,6 +57,8 @@ BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
 BuildRequires:  %{use_python_pkg}-urllib3
 BuildRequires:  diffstat
+# needed for git scm tests
+BuildRequires:  git-core
 
 Requires:       %{use_python_pkg}-cryptography
 Requires:       %{use_python_pkg}-rpm
@@ -77,6 +79,10 @@ Recommends:     ca-certificates
 Recommends:     diffstat
 Recommends:     powerpc32
 Recommends:     sudo
+
+# needed for building from git
+Recommends:     git-core
+Recommends:     git-lfs
 
 # needed for `osc add <URL>`
 Recommends:     obs-service-recompress

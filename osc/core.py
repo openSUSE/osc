@@ -50,6 +50,7 @@ from . import _private
 from . import conf
 from . import meter
 from . import oscerr
+from . import store as osc_store
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
 from .store import Store
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
@@ -1239,7 +1240,8 @@ class Package:
 
         self.dir = workingdir or "."
         self.absdir = os.path.abspath(self.dir)
-        self.store = Store(self.dir)
+        self.store = osc_store.get_store(self.dir)
+        self.store.assert_is_package()
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
         self.size_limit = size_limit
@@ -1247,10 +1249,8 @@ class Package:
         if size_limit and size_limit == 0:
             self.size_limit = None
 
-        check_store_version(self.dir)
-
-        self.prjname = store_read_project(self.dir)
-        self.name = store_read_package(self.dir)
+        self.prjname = self.store.project
+        self.name = self.store.package
         self.apiurl = self.store.apiurl
 
         self.update_datastructs()
