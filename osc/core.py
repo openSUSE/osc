@@ -4401,11 +4401,21 @@ def run_pager(message, tmp_suffix=''):
         else:
             tmpfile.write(message)
         tmpfile.flush()
+
+        env = os.environ.copy()
+
         pager = os.getenv("PAGER", default="").strip()
         pager = pager or get_default_pager()
+
+        # LESS env is not always set and we need -R to display escape sequences properly
+        less_opts = os.getenv("LESS", default="")
+        if "-R" not in less_opts:
+            less_opts += " -R"
+        env["LESS"] = less_opts
+
         cmd = shlex.split(pager) + [tmpfile.name]
         try:
-            run_external(*cmd)
+            run_external(*cmd, env=env)
         finally:
             tmpfile.close()
 
