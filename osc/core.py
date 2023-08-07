@@ -3928,7 +3928,7 @@ class metafile:
         def __call__(self, **kwargs):
             return self._delegate(**kwargs)
 
-    def __init__(self, url, input, change_is_required=False, file_ext='.xml'):
+    def __init__(self, url, input, change_is_required=False, file_ext='.xml', method=None):
         if isinstance(url, self._URLFactory):
             self._url_factory = url
         else:
@@ -3938,6 +3938,7 @@ class metafile:
         self.url = self._url_factory()
         self.change_is_required = change_is_required
         (fd, self.filename) = tempfile.mkstemp(prefix='osc_metafile.', suffix=file_ext)
+        self._method = method
 
         open_mode = 'w'
         input_as_str = None
@@ -3963,7 +3964,10 @@ class metafile:
         print('Sending meta data...')
         # don't do any exception handling... it's up to the caller what to do in case
         # of an exception
-        http_PUT(self.url, file=self.filename)
+        if self._method == "POST":
+            http_POST(self.url, file=self.filename)
+        else:
+            http_PUT(self.url, file=self.filename)
         os.unlink(self.filename)
         print('Done.')
 
@@ -4020,7 +4024,7 @@ metatypes = {'prj': {'path': 'source/%s/_meta',
                      'template': new_package_templ,
                      'file_ext': '.xml'
                      },
-             'attribute': {'path': 'source/%s/%s/_meta',
+             'attribute': {'path': 'source/%s/_attribute/%s',
                            'template': new_attribute_templ,
                            'file_ext': '.xml'
                            },
@@ -4116,6 +4120,7 @@ def edit_meta(
     remove_linking_repositories=False,
     change_is_required=False,
     apiurl: Optional[str] = None,
+    method: Optional[str] = None,
     msg=None,
 ):
 
@@ -4149,7 +4154,7 @@ def edit_meta(
         return make_meta_url(metatype, path_args, apiurl, force, remove_linking_repositories, msg)
 
     url_factory = metafile._URLFactory(delegate)
-    f = metafile(url_factory, data, change_is_required, metatypes[metatype]['file_ext'])
+    f = metafile(url_factory, data, change_is_required, metatypes[metatype]['file_ext'], method=method)
 
     if edit:
         f.edit()
