@@ -36,6 +36,7 @@ The configuration dictionary could look like this:
 """
 
 
+import copy
 import errno
 import getpass
 import os
@@ -969,6 +970,65 @@ def get_config(override_conffile=None,
     # enable connection debugging after all config options are set
     from .connection import enable_http_debug
     enable_http_debug(config)
+
+
+def configure_apiurl(apiurl, user, **kwargs):
+    """
+    Configure osc settings for a given `apiurl` without reading anything from a config file.
+    Can be called multiple times to configure multiple apiurls.
+    The `apiurl` that is configured the last becomes the default.
+    """
+    api_host_options = APIHostOptionsEntry()
+    api_host_options["user"] = user
+
+    # TODO: should be moved to APIHostOptionsEntry as properties
+    all_api_host_options = {
+        "user": {"type": "str", "default": ""},
+        # we can't type 'pass="..." in python because 'pass' is a reserved keyword; let's use 'password' instead
+        "pass": {"type": "str", "default": "", "kwarg": "password"},
+        "aliases": {"type": "string-list", "default": []},
+        "http_headers": {"type": "string-list", "default": []},
+        "realname": {"type": "str", "default": ""},
+        "email": {"type": "str", "default": ""},
+        "sslcertck": {"type": "bool", "default": True},
+        "cafile": {"type": "str", "default": ""},
+        "capath": {"type": "str", "default": ""},
+        "trusted_prj": {"type": "string-list", "default": []},
+        "downloadurl": {"type": "str", "default": ""},
+        "sshkey": {"type": "str", "default": ""},
+        "allow_http": {"type": "bool", "default": False},
+        "disable_hdrmd5_check": {"type": "bool", "default": False},
+    }
+
+    for key, data in all_api_host_options.items():
+        kwarg = data.get("kwarg", key)
+        if kwarg not in kwargs:
+            api_host_options[key] = copy.deepcopy(data["default"])
+            continue
+
+        value = kwargs.pop(kwarg)
+        typ = data.get("type")
+        if typ == "str":
+            assert isinstance(value, str)
+        elif typ == "bool":
+            assert isinstance(value, bool)
+        elif typ == "int":
+            assert isinstance(value, int)
+        elif typ == "string-list":
+            assert isinstance(value, (str, list, tuple))
+            if isinstance(value, str):
+                value = [i.strip() for i in value.split(",")]
+            value = [i for i in value if i]
+        else:
+            raise TypeError(f"The api host option '{key}' has unsupported type '{typ}'")
+        api_host_options[key] = value
+
+    if kwargs:
+        unexpected = ", ".join([f"'{i}'" for i in kwargs])
+        raise TypeError(f"configure_apiurl() got unexpected keyword argument(s): {unexpected}")
+
+    config.setdefault("api_host_options", {})[apiurl] = api_host_options
+    config["apiurl"] = apiurl
 
 
 def identify_conf():

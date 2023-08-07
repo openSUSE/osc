@@ -12,7 +12,7 @@ class TestMirrorGroup(unittest.TestCase):
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
         # reset the global `config` in preparation for running the tests
         importlib.reload(osc.conf)
-        osc.conf.get_config()
+        osc.conf.configure_apiurl("http://example.com", "Admin", password="opensuse")
 
     def tearDown(self):
         # reset the global `config` to avoid impacting tests from other classes
