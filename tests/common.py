@@ -220,6 +220,7 @@ class OscTestCase(unittest.TestCase):
             shutil.rmtree(self.tmpdir)
         except:
             pass
+        os.environ.pop("OSC_CONFIG", "")
         self.assertTrue(len(EXPECTED_REQUESTS) == 0)
 
     def _get_fixtures_dir(self):
