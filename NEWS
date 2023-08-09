@@ -1,3 +1,25 @@
+- 1.3.0
+  - Command-line:
+    - Add experimental support of Git SCM to the 'build' command
+    - Add experimental support of Git SCM to the 'service' command
+    - Make 'meta' command capable of editing attributes
+    - Change '--add' option in 'meta attribute' command to skip duplicate values
+    - Add an interactive option to display build log in 'request list -i' command
+    - Add '--setopt' option for setting config options from the command-line
+    - Fix '--prefer-pkgs' option for noinstall="1" packages in kiwi builds
+    - Change 'checkout' command to print open requests only when running in an interactive terminal
+    - Enhance '--force' option description in the 'request' command
+  - Connection:
+    - Fix crash when HTTP_PROXY env contains no auth
+  - Library:
+    - Add 'git_scm' module for handling packages that live in git scm rather than usual obs scm
+    - Change pop_project_package_from_args() to use get_store() to support Git SCM
+    - Change osc.build module to use 'store' object instead of calling core.store_*() functions
+    - Use alternative project if specified in parse_repoarchdescr()
+    - Fix xml indent() on Python 3.6
+    - Fix less pager by adding '-R' to LESS env
+    - Improve print_msg() and migrate some arbitrary prints to it
+
 - 1.2.0
   - Command-line:
     - Add 'repo' command and subcommands for managing repositories in project meta
