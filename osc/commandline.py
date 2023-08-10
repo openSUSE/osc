@@ -7599,8 +7599,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc service run [SOURCE_SERVICE]
             osc service runall
             osc service manualrun [SOURCE_SERVICE]
-            osc service localrun [SOURCE_SERVICE]
-            osc service disabledrun [SOURCE_SERVICE]
             osc service remoterun [PROJECT PACKAGE]
             osc service merge [PROJECT PACKAGE]
             osc service wait [PROJECT PACKAGE]
@@ -7629,7 +7627,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         singleservice = None
         mode = None
         remote_commands = ("remoterun", "rr", "merge", "wait")
-        obsolete_commands = ("localrun", "lr", "disabledrun", "dr")
 
         if len(args) < 1:
             self.argparse_error("Please specify a command")
@@ -7638,8 +7635,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if command not in ("runall", "ra", "run", "localrun", "manualrun", "disabledrun", "remoterun", "lr", "dr", "mr", "rr", "merge", "wait"):
             self.argparse_error(f"Invalid command: {command}")
 
-        if command in obsolete_commands:
-            print(f"WARNING: Command '{command}' is obsolete", file=sys.stderr)
+        if command in ("localrun", "lr"):
+            print(f"WARNING: Command '{command}' is obsolete, please use 'run' instead.", file=sys.stderr)
+
+        if command in ("disabledrun", "dr"):
+            print(f"WARNING: Command '{command}' is obsolete,\n"
+                   "please convert your _service to use 'manual' and then 'manualrun/mr' instead.", file=sys.stderr)
 
         if len(args) == 1:
             singleservice = args.pop(0)
