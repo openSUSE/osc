@@ -12,6 +12,10 @@
 %define use_python_pkg python36
 %endif
 
+%if 0%{?suse_version} && 0%{?suse_version} < 1600
+%define require_typing_extensions 1
+%endif
+
 %define completion_dir_bash %{_datadir}/bash-completion/completions
 %define completion_dir_csh %{_sysconfdir}/profile.d
 %define completion_dir_fish %{_datadir}/fish/vendor_completions.d
@@ -101,6 +105,10 @@ BuildRequires:  git-core
 Requires:       %{use_python_pkg}-cryptography
 Requires:       %{use_python_pkg}-rpm
 Requires:       %{use_python_pkg}-urllib3
+%if 0%{?require_typing_extensions}
+Requires:       %{use_python_pkg}-typing_extensions
+BuildRequires:  %{use_python_pkg}-typing_extensions
+%endif
 Requires:       %{yaml_pkg}
 
 # needed for git-obs completion
