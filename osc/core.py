@@ -6955,8 +6955,11 @@ def print_buildlog(
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        output_buffer.write(data)
+        output_buffer.write(data.translate(all_bytes, remove_bytes))
 
+    # to protect us against control characters (CVE-2012-1095)
+    all_bytes = bytes.maketrans(b'', b'')
+    remove_bytes = all_bytes[:8] + all_bytes[14:32]  # accept tabs and newlines
     query = {'nostream': '1', 'start': '%s' % offset}
     if last:
         query['last'] = 1
