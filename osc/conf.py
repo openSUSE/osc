@@ -97,12 +97,12 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'build-root': '/var/tmp/build-root/%(repo)s-%(arch)s',
             'build-uid': '',                    # use the default provided by build
             'build-device': '',                 # required for VM builds
-            'build-memory': '',                 # required for VM builds
+            'build-memory': '0',                # required for VM builds
             'build-shell-after-fail': '0',      # optional for VM builds
             'build-swap': '',                   # optional for VM builds
-            'build-vmdisk-rootsize': '',        # optional for VM builds
-            'build-vmdisk-swapsize': '',        # optional for VM builds
-            'build-vmdisk-filesystem': '',        # optional for VM builds
+            'build-vmdisk-rootsize': '0',       # optional for VM builds
+            'build-vmdisk-swapsize': '0',       # optional for VM builds
+            'build-vmdisk-filesystem': '',      # optional for VM builds
             'build-vm-user': '',                # optional for VM builds
             'build-kernel': '',                 # optional for VM builds
             'build-initrd': '',                 # optional for VM builds
@@ -213,7 +213,8 @@ api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realnam
 
 
 # _integer_opts and _boolean_opts specify option types for both global options as well as api_host_options
-_integer_opts = ('build-jobs',)
+_integer_opts = ("build-jobs", "build-memory", "build-vmdisk-rootsize", "build-vmdisk-swapsize", "http_retries", "icecream", "request_list_days")
+
 _boolean_opts = (
     'debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
     'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
