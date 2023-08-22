@@ -19,41 +19,6 @@ from . import conf
 from . import oscerr
 
 
-class _LazyPassword:
-    def __init__(self, pwfunc):
-        self._pwfunc = pwfunc
-        self._password = None
-
-    def __str__(self):
-        if self._password is None:
-            password = self._pwfunc()
-            if callable(password):
-                print('Warning: use of a deprecated credentials manager API.',
-                      file=sys.stderr)
-                password = password()
-            if password is None:
-                raise oscerr.OscIOError(None, 'Unable to retrieve password')
-            self._password = password
-        return self._password
-
-    def __format__(self, format_spec):
-        if format_spec.endswith("s"):
-            return f"{self.__str__():{format_spec}}"
-        return super().__format__(format_spec)
-
-    def __len__(self):
-        return len(str(self))
-
-    def __add__(self, other):
-        return str(self) + other
-
-    def __radd__(self, other):
-        return other + str(self)
-
-    def __getattr__(self, name):
-        return getattr(str(self), name)
-
-
 class AbstractCredentialsManagerDescriptor:
     def name(self):
         raise NotImplementedError()
@@ -90,9 +55,9 @@ class AbstractCredentialsManager:
 
     def get_password(self, url, user, defer=True, apiurl=None):
         if defer:
-            return _LazyPassword(lambda: self._get_password(url, user, apiurl=apiurl))
+            return conf.Password(lambda: self._get_password(url, user, apiurl=apiurl))
         else:
-            return self._get_password(url, user, apiurl=apiurl)
+            return conf.Password(self._get_password(url, user, apiurl=apiurl))
 
     def set_password(self, url, user, password):
         raise NotImplementedError()

@@ -21,6 +21,7 @@ API:
 
    api/modules
    plugins/index
+   oscrc
 
 
 

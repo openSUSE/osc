@@ -70,6 +70,8 @@ submitrequest_declined_template = bla bla
 linkcontrol = 0
 include_request_from_project = 1
 local_service_run = 1
+include_files = incl *.incl
+exclude_files = excl *.excl
 maintained_attribute = OBS:Maintained
 maintenance_attribute = OBS:MaintenanceProject
 maintained_update_project_attribute = OBS:UpdateProject
@@ -84,12 +86,13 @@ pass = opensuse
 passx = unused
 aliases = osc
 http_headers = 
-    authorization: Basic QWRtaW46b3BlbnN1c2U=
+    Authorization: Basic QWRtaW46b3BlbnN1c2U=
+    X-Foo: Bar
 realname = The Administrator
 email = admin@example.com
-sslcertck = 1
 cafile = /path/to/custom_cacert.pem
 capath = /path/to/custom_cacert.d/
+sslcertck = 1
 trusted_prj = openSUSE:* SUSE:*
 downloadurl = http://example.com/
 sshkey = ~/.ssh/id_rsa.pub
@@ -309,6 +312,12 @@ class TestExampleConfig(unittest.TestCase):
     def test_local_service_run(self):
         self.assertEqual(self.config["local_service_run"], True)
 
+    def test_exclude_files(self):
+        self.assertEqual(self.config["exclude_files"], ["excl", "*.excl"])
+
+    def test_include_files(self):
+        self.assertEqual(self.config["include_files"], ["incl", "*.incl"])
+
     def test_maintained_attribute(self):
         self.assertEqual(self.config["maintained_attribute"], "OBS:Maintained")
 
@@ -339,7 +348,10 @@ class TestExampleConfig(unittest.TestCase):
         host_options = self.config["api_host_options"][self.config["apiurl"]]
         self.assertEqual(
             host_options["http_headers"],
-            [("authorization", "Basic QWRtaW46b3BlbnN1c2U=")],
+            [
+                ("Authorization", "Basic QWRtaW46b3BlbnN1c2U="),
+                ("X-Foo", "Bar"),
+            ],
         )
 
     def test_host_option_realname(self):
@@ -388,6 +400,41 @@ class TestExampleConfig(unittest.TestCase):
     def test_host_option_disable_hdrmd5_check(self):
         host_options = self.config["api_host_options"][self.config["apiurl"]]
         self.assertEqual(host_options["disable_hdrmd5_check"], False)
+
+
+class TestFromParent(unittest.TestCase):
+    def setUp(self):
+        self.options = osc.conf.Options()
+        self.host_options = osc.conf.HostOptions(apiurl="https://example.com", username="Admin", _parent=self.options)
+        self.options.api_host_options[self.host_options.apiurl] = self.host_options
+
+    def test_disable_hdrmd5_check(self):
+        self.assertEqual(self.options.disable_hdrmd5_check, False)
+        self.assertEqual(self.host_options.disable_hdrmd5_check, False)
+
+        self.options.disable_hdrmd5_check = True
+
+        self.assertEqual(self.options.disable_hdrmd5_check, True)
+        self.assertEqual(self.host_options.disable_hdrmd5_check, True)
+
+        self.host_options.disable_hdrmd5_check = False
+
+        self.assertEqual(self.options.disable_hdrmd5_check, True)
+        self.assertEqual(self.host_options.disable_hdrmd5_check, False)
+
+    def test_email(self):
+        self.assertEqual(self.options.email, None)
+        self.assertEqual(self.host_options.email, None)
+
+        self.options.email = "user@example.com"
+
+        self.assertEqual(self.options.email, "user@example.com")
+        self.assertEqual(self.host_options.email, "user@example.com")
+
+        self.host_options.email = "another-user@example.com"
+
+        self.assertEqual(self.options.email, "user@example.com")
+        self.assertEqual(self.host_options.email, "another-user@example.com")
 
 
 if __name__ == "__main__":
