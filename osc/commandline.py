@@ -7232,8 +7232,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         store = osc_store.get_store(Path.cwd(), print_warnings=True)
         store.assert_is_package()
 
-        if opts.alternative_project == store.project:
-            opts.alternative_project = None
+        try:
+            if opts.alternative_project and opts.alternative_project == store.project:
+                opts.alternative_project = None
+        except RuntimeError:
+            # ignore the following exception: Couldn't map git branch '<BRANCH>' to a project
+            pass
 
         # HACK: avoid calling some underlying store_*() functions from parse_repoarchdescr() method
         # We'll fix parse_repoarchdescr() later because it requires a larger change
