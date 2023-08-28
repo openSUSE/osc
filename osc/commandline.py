@@ -7735,7 +7735,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not (opts.all or package or repo or arch or code):
             raise oscerr.WrongOptions('No option has been provided. If you want to rebuild all packages of the entire project, use --all option.')
 
-        if opts.multibuild_package:
+        if opts.all:
+            # ignore the package name which can come from a working copy
+            packages = [None]
+        elif opts.multibuild_package:
             resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
             packages = resolver.resolve_as_packages(opts.multibuild_package)
         else:
