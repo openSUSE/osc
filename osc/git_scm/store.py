@@ -38,7 +38,11 @@ class GitStore:
         self._project = None
 
         if check and not any([self.is_project, self.is_package]):
-            msg = f"Directory '{self.path}' is not a GIT working copy"
+            msg = f"Directory '{self.path}' is not a Git SCM working copy"
+            raise oscerr.NoWorkingCopy(msg)
+
+        if check and not self.scmurl:
+            msg = f"Directory '{self.path}' is a Git SCM repo that lacks the 'origin' remote"
             raise oscerr.NoWorkingCopy(msg)
 
         # TODO: decide if we need explicit 'git lfs pull' or not
@@ -46,12 +50,12 @@ class GitStore:
 
     def assert_is_project(self):
         if not self.is_project:
-            msg = f"Directory '{self.path}' is not a GIT working copy of a project"
+            msg = f"Directory '{self.path}' is not a Git SCM working copy of a project"
             raise oscerr.NoWorkingCopy(msg)
 
     def assert_is_package(self):
         if not self.is_package:
-            msg = f"Directory '{self.path}' is not a GIT working copy of a package"
+            msg = f"Directory '{self.path}' is not a Git SCM working copy of a package"
             raise oscerr.NoWorkingCopy(msg)
 
     def _run_git(self, args):
@@ -148,4 +152,7 @@ class GitStore:
 
     @property
     def scmurl(self):
-        return self._run_git(["remote", "get-url", "origin"])
+        try:
+            return self._run_git(["remote", "get-url", "origin"])
+        except subprocess.CalledProcessError:
+            return None

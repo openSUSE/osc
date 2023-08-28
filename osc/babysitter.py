@@ -98,14 +98,6 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except oscerr.NoWorkingCopy as e:
         print(e, file=sys.stderr)
-        if os.path.isdir('.git'):
-            print("Current directory looks like git.", file=sys.stderr)
-        if os.path.isdir('.hg'):
-            print("Current directory looks like mercurial.", file=sys.stderr)
-        if os.path.isdir('.svn'):
-            print("Current directory looks like svn.", file=sys.stderr)
-        if os.path.isdir('CVS'):
-            print("Current directory looks like cvs.", file=sys.stderr)
     except HTTPError as e:
         print('Server returned an error:', e, file=sys.stderr)
         if hasattr(e, 'osc_msg'):

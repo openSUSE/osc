@@ -13,5 +13,5 @@ Scenario: Run `osc addcontainers`
     Then the exit code is 1
      And stderr is
         """
-        Directory '{context.osc.temp}/test:factory' is not a working copy of a package
+        Directory '{context.osc.temp}/test:factory' is not an OBS SCM working copy of a package
         """
