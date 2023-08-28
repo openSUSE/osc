@@ -1451,41 +1451,44 @@ def main(apiurl, store, opts, argv):
         else:
             my_build_swap = build_root + '/swap'
 
-        vm_options = ['--vm-type=%s' % vm_type]
+        vm_options = [f"--vm-type={vm_type}"]
         if vm_telnet:
-            vm_options += ['--vm-telnet=' + vm_telnet]
+            vm_options += [f"--vm-telnet={vm_telnet}"]
         if vm_memory:
-            vm_options += ['--memory=' + vm_memory]
+            vm_options += [f"--memory={vm_memory}"]
         if vm_type != 'lxc' and vm_type != 'nspawn':
-            vm_options += ['--vm-disk=' + my_build_device]
-            vm_options += ['--vm-swap=' + my_build_swap]
-            vm_options += ['--logfile=%s/.build.log' % build_root]
+            vm_options += [f"--vm-disk={my_build_device}"]
+            vm_options += [f"--vm-swap={my_build_swap}"]
+            vm_options += [f"--logfile={build_root}/.build.log"]
             if vm_type == 'kvm':
                 if config['build-kernel']:
-                    vm_options += ['--vm-kernel=' + config['build-kernel']]
+                    vm_options += [f"--vm-kernel={config['build-kernel']}"]
                 if config['build-initrd']:
-                    vm_options += ['--vm-initrd=' + config['build-initrd']]
+                    vm_options += [f"--vm-initrd={config['build-initrd']}"]
 
             build_root += '/.mount'
         if vm_disk_size:
-            vm_options += ['--vmdisk-rootsize=' + vm_disk_size]
+            vm_options += [f"--vmdisk-rootsize={vm_disk_size}"]
 
         if config['build-vmdisk-swapsize']:
-            vm_options += ['--vmdisk-swapsize=' + config['build-vmdisk-swapsize']]
+            vm_options += [f"--vmdisk-swapsize={config['build-vmdisk-swapsize']}"]
         if config['build-vmdisk-filesystem']:
-            vm_options += ['--vmdisk-filesystem=' + config['build-vmdisk-filesystem']]
+            vm_options += [f"--vmdisk-filesystem={config['build-vmdisk-filesystem']}"]
         if config['build-vm-user']:
-            vm_options += ['--vm-user=' + config['build-vm-user']]
+            vm_options += [f"--vm-user={config['build-vm-user']}"]
 
     if opts.preload:
         print("Preload done for selected repo/arch.")
         sys.exit(0)
 
     print('Running build')
-    cmd = [config['build-cmd'], '--root=' + build_root,
-           '--rpmlist=' + rpmlist_filename,
-           '--dist=' + bc_filename,
-           '--arch=' + bi.buildarch]
+    cmd = [
+        config['build-cmd'],
+        f"--root={build_root}",
+        f"--rpmlist={rpmlist_filename}",
+        f"--dist={bc_filename}",
+        f"--arch={bi.buildarch}",
+    ]
     cmd += specialcmdopts + vm_options + buildargs
     cmd += [build_descr]
 
