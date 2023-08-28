@@ -40,7 +40,7 @@ class Store:
         self.is_package = self.exists("_project") and self.exists("_package")
 
         if check and not any([self.is_project, self.is_package]):
-            msg = f"Directory '{self.path}' is not a working copy"
+            msg = f"Directory '{self.path}' is not an OBS SCM working copy"
             raise oscerr.NoWorkingCopy(msg)
 
     def __contains__(self, fn):
@@ -52,12 +52,12 @@ class Store:
 
     def assert_is_project(self):
         if not self.is_project:
-            msg = f"Directory '{self.path}' is not a working copy of a project"
+            msg = f"Directory '{self.path}' is not an OBS SCM working copy of a project"
             raise oscerr.NoWorkingCopy(msg)
 
     def assert_is_package(self):
         if not self.is_package:
-            msg = f"Directory '{self.path}' is not a working copy of a package"
+            msg = f"Directory '{self.path}' is not an OBS SCM working copy of a package"
             raise oscerr.NoWorkingCopy(msg)
 
     def get_path(self, fn, subdir=None):
@@ -317,14 +317,19 @@ def get_store(path, check=True, print_warnings=False):
      - Store for OBS SCM
      - GitStore for Git SCM
     """
-    try:
+
+    # if there are '.osc' and '.git' directories next to each other, '.osc' takes preference
+    if os.path.exists(os.path.join(path, ".osc")):
         store = Store(path, check)
-    except oscerr.NoWorkingCopy as ex:
-        try:
-            store = git_scm.GitStore(path, check)
-            if print_warnings:
-                git_scm.warn_experimental()
-        except oscerr.NoWorkingCopy as ex_git:
-            # raise the original exception, do not inform that we've tried git working copy
-            raise ex from None
+    elif os.path.exists(os.path.join(path, ".git")):
+        store = git_scm.GitStore(path, check)
+        if print_warnings:
+            git_scm.warn_experimental()
+    else:
+        store = None
+
+    if not store:
+        msg = f"Directory '{path}' is not a working copy"
+        raise oscerr.NoWorkingCopy(msg)
+
     return store
