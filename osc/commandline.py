@@ -6748,6 +6748,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('', '--ignore-file', action='store_true',
                   help='ignore _constraints file and only check project constraints')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     def do_checkconstraints(self, subcmd, opts, *args):
         """
         Check the constraints and view compliant workers
@@ -6780,6 +6782,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             project = store_read_project('.')
             package = store_read_package('.')
+
+        if opts.multibuild_package:
+            package = package + ":" + opts.multibuild_package
 
         if len(args) == 1:
             constraintsfile = args[0]
