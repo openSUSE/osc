@@ -189,6 +189,8 @@ DEFAULTS = {'apiurl': 'https://api.opensuse.org',
             'linkcontrol': '0',
             'include_request_from_project': '1',
             'local_service_run': '1',
+            "exclude_files": "",
+            "include_files": "",
 
             # Maintenance defaults to OBS instance defaults
             'maintained_attribute': 'OBS:Maintained',
@@ -811,6 +813,8 @@ def get_config(override_conffile=None,
 
     re_clist = re.compile('[, ]+')
     config['extra-pkgs'] = [i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i]
+    config["exclude_files"] = [i.strip() for i in re_clist.split(config["exclude_files"].strip()) if i]
+    config["include_files"] = [i.strip() for i in re_clist.split(config["include_files"].strip()) if i]
 
     # collect the usernames, passwords and additional options for each api host
     api_host_options = {}

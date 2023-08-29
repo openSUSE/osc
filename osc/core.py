@@ -1896,6 +1896,28 @@ class Package:
             if size and self.size_limit and int(size) > self.size_limit \
                     or skip_service and (e.get('name').startswith('_service:') or e.get('name').startswith('_service_')):
                 e.set('skipped', 'true')
+                continue
+
+            if conf.config["exclude_files"]:
+                exclude = False
+                for pattern in conf.config["exclude_files"]:
+                    if fnmatch.fnmatch(e.get("name"), pattern):
+                        exclude = True
+                        break
+                if exclude:
+                    e.set("skipped", "true")
+                    continue
+
+            if conf.config["include_files"]:
+                include = False
+                for pattern in conf.config["include_files"]:
+                    if fnmatch.fnmatch(e.get("name"), pattern):
+                        include = True
+                        break
+                if not include:
+                    e.set("skipped", "true")
+                    continue
+
         return ET.tostring(root, encoding=ET_ENCODING)
 
     def get_local_meta(self):
