@@ -45,6 +45,27 @@ Scenario: Run `osc checkout` on a package, use a file size limit
      And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.changes" exists
 
 
+Scenario: Run `osc checkout` on a package, exclude files
+   Given I set working directory to "{context.osc.temp}"
+    When I execute osc with args "checkout test:factory test-pkgA --setopt=exclude_files=*.changes"
+     And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.spec" exists
+     And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.changes" does not exist
+
+
+Scenario: Run `osc checkout` on a package, include files
+   Given I set working directory to "{context.osc.temp}"
+    When I execute osc with args "checkout test:factory test-pkgA --setopt=include_files=*.changes"
+     And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.spec" does not exist
+     And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.changes" exists
+
+
+Scenario: Run `osc checkout` on a package, exclude and include files
+   Given I set working directory to "{context.osc.temp}"
+    When I execute osc with args "checkout test:factory test-pkgA --setopt=exclude_files=*.changes --setopt=include_files=*.changes"
+     And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.spec" does not exist
+     And file "{context.osc.temp}/test:factory/test-pkgA/test-pkgA.changes" does not exist
+
+
 Scenario: Run `osc checkout` on a package in a specified revision
    Given I set working directory to "{context.osc.temp}"
     When I execute osc with args "checkout test:factory test-pkgA --revision=2"
