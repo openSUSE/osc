@@ -6756,22 +6756,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         usage:
             remote request:
-                osc checkconstraints [OPTS] PROJECT PACKAGE REPOSITORY ARCH
+                osc checkconstraints [OPTS] PROJECT PACKAGE REPOSITORY ARCH [CONSTRAINTSFILE]
 
             in a package working copy:
-                osc checkconstraints [OPTS] REPOSITORY ARCH CONSTRAINTSFILE
+                osc checkconstraints [OPTS] REPOSITORY ARCH [CONSTRAINTSFILE]
                 osc checkconstraints [OPTS] CONSTRAINTSFILE
                 osc checkconstraints [OPTS]
         """
         repository = arch = constraintsfile = None
         args = slash_split(args)
 
-        if len(args) == 4:
+        if len(args) > 5:
+            raise oscerr.WrongArgs('Too many arguments')
+
+        if len(args) == 4 or len(args) == 5:
             project = self._process_project_name(args[0])
             package = args[1]
             repository = args[2]
             arch = args[3]
             opts.ignore_file = True
+            if len(args) == 5:
+                constraintsfile = args[4];
         else:
             project = store_read_project('.')
             package = store_read_package('.')
