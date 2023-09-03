@@ -34,7 +34,8 @@ from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
-from typing import Optional, Dict, Union, List, Iterable
+from typing import Optional, Dict, Union, List, Iterable, Tuple, overload
+from typing_extensions import Literal, TypedDict
 from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
 from urllib.error import HTTPError
 from urllib.request import pathname2url
@@ -3782,7 +3783,7 @@ def show_package_trigger_reason(apiurl: str, prj: str, pac: str, repo: str, arch
         raise
 
 
-def show_package_meta(apiurl: str, prj: str, pac: str, meta=False, blame=None):
+def show_package_meta(apiurl: str, prj: str, pac: str, meta: bool=False, blame=None) -> List[bytes]:
     query: Dict[str, Union[str, int]] = {}
     if meta:
         query['meta'] = 1
@@ -3844,7 +3845,7 @@ def show_scmsync(apiurl, prj, pac=None):
         return node.text
 
 
-def show_devel_project(apiurl, prj, pac):
+def show_devel_project(apiurl: str, prj: str, pac: str) -> Tuple[Optional[str], Optional[str]]:
     m = show_package_meta(apiurl, prj, pac)
     node = ET.fromstring(b''.join(m)).find('devel')
     if node is None:
@@ -3950,7 +3951,7 @@ class metafile:
         def __call__(self, **kwargs):
             return self._delegate(**kwargs)
 
-    def __init__(self, url, input, change_is_required=False, file_ext='.xml', method=None):
+    def __init__(self, url, input: Union[List[str], str, bytes, List[bytes]], change_is_required=False, file_ext='.xml', method=None):
         if isinstance(url, self._URLFactory):
             self._url_factory = url
         else:
@@ -4037,8 +4038,17 @@ class metafile:
             os.unlink(self.filename)
 
 
+MetaType = Literal['prj', 'pkg', 'attribute', 'prjconf', 'user', 'group', 'pattern']
+
+class _MetaType(TypedDict):
+    path: str
+    template: str
+    file_ext: str
+
+
 # different types of metadata
-metatypes = {'prj': {'path': 'source/%s/_meta',
+metatypes: Dict[MetaType, _MetaType] = {
+             'prj': {'path': 'source/%s/_meta',
                      'template': new_project_templ,
                      'file_ext': '.xml'
                      },
@@ -4069,7 +4079,7 @@ metatypes = {'prj': {'path': 'source/%s/_meta',
              }
 
 
-def meta_exists(metatype: str, path_args=None, template_args=None, create_new=True, apiurl=None):
+def meta_exists(metatype: MetaType, path_args=None, template_args=None, create_new=True, apiurl=None):
 
     global metatypes
 
@@ -4090,7 +4100,7 @@ def meta_exists(metatype: str, path_args=None, template_args=None, create_new=Tr
 
 
 def make_meta_url(
-    metatype: str,
+    metatype: MetaType,
     path_args=None,
     apiurl: Optional[str] = None,
     force=False,
@@ -4133,7 +4143,7 @@ def parse_meta_to_string(data: Union[bytes, list, Iterable]) -> str:
 
 
 def edit_meta(
-    metatype,
+    metatype: MetaType,
     path_args=None,
     data: Optional[List[str]] = None,
     template_args=None,
@@ -6072,6 +6082,7 @@ def attribute_branch_pkg(
     return r
 
 
+@overload
 def branch_pkg(
     apiurl: str,
     src_project: str,
@@ -6093,7 +6104,54 @@ def branch_pkg(
     maintenance=False,
     newinstance=False,
     disable_build=False,
-):
+) -> Tuple[False, Optional[str], Optional[str], Optional[str], Optional[str]]: ...
+
+@overload
+def branch_pkg(
+    apiurl: str,
+    src_project: str,
+    src_package: str,
+    nodevelproject=False,
+    rev=None,
+    linkrev=None,
+    target_project: Optional[str] = None,
+    target_package=None,
+    return_existing=True,
+    msg="",
+    force=False,
+    noaccess=False,
+    add_repositories=False,
+    add_repositories_block=None,
+    add_repositories_rebuild=None,
+    extend_package_names=False,
+    missingok=False,
+    maintenance=False,
+    newinstance=False,
+    disable_build=False,
+) -> Union[Tuple[True, str, str, None, None], Tuple[False, Optional[str], Optional[str], Optional[str], Optional[str]]]: ...
+
+def branch_pkg(
+    apiurl: str,
+    src_project: str,
+    src_package: str,
+    nodevelproject=False,
+    rev=None,
+    linkrev=None,
+    target_project: Optional[str] = None,
+    target_package=None,
+    return_existing=False,
+    msg="",
+    force=False,
+    noaccess=False,
+    add_repositories=False,
+    add_repositories_block=None,
+    add_repositories_rebuild=None,
+    extend_package_names=False,
+    missingok=False,
+    maintenance=False,
+    newinstance=False,
+    disable_build=False,
+) -> Union[Tuple[True, str, str, None, None], Tuple[False, Optional[str], Optional[str], Optional[str], Optional[str]]]:
     """
     Branch a package (via API call)
     """
