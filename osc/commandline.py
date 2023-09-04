@@ -8453,7 +8453,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.limit_to_attribute:
             xpath = xpath_join(xpath, 'attribute/@name=\'%s\'' % opts.limit_to_attribute, op='and')
         if opts.baseproject:
-            xpath = xpath_join(xpath, 'path/@project=\'%s\'' % opts.baseproject, op='and')
+            xpath = xpath_join(xpath, 'path/@project=\'%s\'' % self._process_project_name(opts.baseproject), op='and')
         if opts.binaryversion:
             m = re.match(r'(.+)-(.*?)$', opts.binaryversion)
             if m:
