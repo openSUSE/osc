@@ -7156,6 +7156,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='trust packages from all projects')
     @cmdln.option('--nopreinstallimage', '--no-preinstallimage', action='store_true',
                   help='Do not use preinstall images for creating the build root.')
+    @cmdln.option("--just-print-buildroot", action="store_true",
+                  help="Print build root path and exit.")
     @cmdln.alias('chroot')
     @cmdln.alias('shell')
     @cmdln.alias('wipe')
@@ -7259,6 +7261,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             args = [store.last_buildroot[0], store.last_buildroot[1]]
             if not opts.vm_type:
                 opts.vm_type = store.last_buildroot[2]
+
+        if opts.just_print_buildroot:
+            if opts.root:
+                build_root = opts.root
+            else:
+                args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
+                repo, arch, build_descr = args
+                prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
+                apihost = urlsplit(self.get_api_url())[1]
+                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch)
+            print(build_root)
+            return
 
         vm_chroot = opts.vm_type or conf.config['build-type']
         if (subcmd in ('shell', 'chroot') or opts.shell or opts.wipe) and not vm_chroot:
