@@ -90,6 +90,7 @@ email = admin@example.com
 sslcertck = 1
 cafile = unused
 capath = unused
+cacert = /path/to/custom_cacert
 trusted_prj = openSUSE:* SUSE:*
 downloadurl = http://example.com/
 sshkey = ~/.ssh/id_rsa.pub
@@ -361,6 +362,10 @@ class TestExampleConfig(unittest.TestCase):
     def test_host_option_capath(self):
         host_options = self.config["api_host_options"][self.config["apiurl"]]
         self.assertEqual(host_options["capath"], "unused")
+
+    def test_host_option_cacert(self):
+        host_options = self.config["api_host_options"][self.config["apiurl"]]
+        self.assertEqual(host_options["cacert"], "/path/to/custom_cacert")
 
     def test_host_option_sshkey(self):
         host_options = self.config["api_host_options"][self.config["apiurl"]]

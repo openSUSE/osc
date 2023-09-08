@@ -261,6 +261,9 @@ def http_request(method: str, url: str, headers=None, data=None, file=None, retr
             pool_kwargs["ssl_context"] = ssl_context
             # turn cert verification off if sslcertck = 0
 
+            if options["cacert"]:
+                ssl_context.load_verify_locations(cafile=options["cacert"])
+
             # urllib3 v1
             pool_kwargs["cert_reqs"] = "CERT_REQUIRED" if options["sslcertck"] else "CERT_NONE"
 
