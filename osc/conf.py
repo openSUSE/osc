@@ -211,7 +211,7 @@ if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-buil
     DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
 
 api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
-                    'downloadurl', 'sshkey', 'disable_hdrmd5_check', 'cacert']
+                    'downloadurl', 'sshkey', 'disable_hdrmd5_check']
 
 
 # _integer_opts and _boolean_opts specify option types for both global options as well as api_host_options
@@ -868,7 +868,7 @@ def get_config(override_conffile=None,
         api_host_options[apiurl] = APIHostOptionsEntry(entry)
 
         optional = (
-            'realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey', 'allow_http', 'cacert',
+            'realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey', 'allow_http',
             credentials.AbstractCredentialsManager.config_entry,
         )
         for key in optional:
@@ -887,8 +887,11 @@ def get_config(override_conffile=None,
         if 'sslcertck' not in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
-        if 'cacert' not in api_host_options[apiurl]:
-            api_host_options[apiurl]['cacert'] = False
+        if 'cafile' not in api_host_options[apiurl]:
+            api_host_options[apiurl]['cafile'] = None
+
+        if 'capath' not in api_host_options[apiurl]:
+            api_host_options[apiurl]['capath'] = None
 
         if 'allow_http' not in api_host_options[apiurl]:
             api_host_options[apiurl]['allow_http'] = False
