@@ -887,6 +887,12 @@ def get_config(override_conffile=None,
         if 'sslcertck' not in api_host_options[apiurl]:
             api_host_options[apiurl]['sslcertck'] = True
 
+        if 'cafile' not in api_host_options[apiurl]:
+            api_host_options[apiurl]['cafile'] = None
+
+        if 'capath' not in api_host_options[apiurl]:
+            api_host_options[apiurl]['capath'] = None
+
         if 'allow_http' not in api_host_options[apiurl]:
             api_host_options[apiurl]['allow_http'] = False
 
