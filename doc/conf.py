@@ -12,7 +12,12 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+import textwrap
+
+TOPDIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(TOPDIR, ".."))
+
+import osc.conf
 
 
 # -- Project information -----------------------------------------------------
@@ -51,6 +56,29 @@ rst_epilog = """
 
 master_doc = 'index'
 
+# order members by __all__ or their order in the source code
+autodoc_default_options = {
+    'member-order': 'bysource',
+}
+
+autodoc_typehints = "both"
+
+# -- Generate documents -------------------------------------------------
+
+osc.conf._model_to_rst(
+    cls=osc.conf.Options,
+    title="Configuration file",
+    description=textwrap.dedent(
+        """
+        The configuration file path is ``$XDG_CONFIG_HOME/osc/oscrc``, which usually translates into ``~/.config/osc/oscrc``.
+        """
+    ),
+    sections={
+        "Host options": osc.conf.HostOptions,
+    },
+    output_file=os.path.join(TOPDIR, "oscrc.rst"),
+)
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -64,3 +92,16 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_css_files = [
+    # fixes https://github.com/readthedocs/sphinx_rtd_theme/issues/1301
+    'css/custom.css',
+]
+
+
+# -- Options for MAN output -------------------------------------------------
+
+# (source start file, name, description, authors, manual section).
+man_pages = [
+    ("oscrc", "oscrc", "openSUSE Commander configuration file", "openSUSE project <opensuse-buildservice@opensuse.org>", 5),
+]

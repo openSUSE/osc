@@ -1078,10 +1078,7 @@ class Osc(cmdln.Cmdln):
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
             print('Creating osc configuration file %s ...' % e.file, file=sys.stderr)
-            apiurl = conf.DEFAULTS['apiurl']
-            if self.options.apiurl:
-                apiurl = self.options.apiurl
-            conf.interactive_config_setup(e.file, apiurl)
+            conf.interactive_config_setup(e.file, self.options.apiurl)
             print('done', file=sys.stderr)
             self.post_argparse()
         except oscerr.ConfigMissingApiurl as e:

@@ -82,7 +82,7 @@ class TestPrintMsg(unittest.TestCase):
         importlib.reload(osc.conf)
 
     def test_debug(self):
-        osc.conf.config["debug"] = 0
+        osc.conf.config["debug"] = False
         stdout = io.StringIO()
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
@@ -90,7 +90,7 @@ class TestPrintMsg(unittest.TestCase):
         self.assertEqual("", stdout.getvalue())
         self.assertEqual("", stderr.getvalue())
 
-        osc.conf.config["debug"] = 1
+        osc.conf.config["debug"] = True
         stdout = io.StringIO()
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
@@ -99,7 +99,7 @@ class TestPrintMsg(unittest.TestCase):
         self.assertEqual("DEBUG: foo bar\n", stderr.getvalue())
 
     def test_verbose(self):
-        osc.conf.config["verbose"] = 0
+        osc.conf.config["verbose"] = False
         stdout = io.StringIO()
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
@@ -107,7 +107,7 @@ class TestPrintMsg(unittest.TestCase):
         self.assertEqual("", stdout.getvalue())
         self.assertEqual("", stderr.getvalue())
 
-        osc.conf.config["verbose"] = 1
+        osc.conf.config["verbose"] = True
         stdout = io.StringIO()
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
@@ -115,8 +115,8 @@ class TestPrintMsg(unittest.TestCase):
         self.assertEqual("foo bar\n", stdout.getvalue())
         self.assertEqual("", stderr.getvalue())
 
-        osc.conf.config["verbose"] = 0
-        osc.conf.config["debug"] = 1
+        osc.conf.config["verbose"] = False
+        osc.conf.config["debug"] = True
         stdout = io.StringIO()
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):

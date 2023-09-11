@@ -26,8 +26,11 @@
 %endif
 
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
+%define sphinx_pkg %{use_python_pkg}-Sphinx
+
 %if 0%{?fedora}
 %define argparse_manpage_pkg argparse-manpage
+%define sphinx_pkg %{use_python_pkg}-sphinx
 %endif
 
 Name:           osc
@@ -50,6 +53,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
 %if %{with man}
 BuildRequires:  %{argparse_manpage_pkg}
+BuildRequires:  %{sphinx_pkg}
 %endif
 BuildRequires:  %{use_python_pkg}-cryptography
 BuildRequires:  %{use_python_pkg}-devel >= 3.6
@@ -124,7 +128,7 @@ cat << EOF > macros.osc
 %%osc_plugin_dir %{osc_plugin_dir}
 EOF
 
-# build man page
+# build man pages
 %if %{with man}
 PYTHONPATH=. argparse-manpage \
     --output=osc.1 \
@@ -136,6 +140,8 @@ PYTHONPATH=. argparse-manpage \
     --description="openSUSE Commander" \
     --author="Contributors to the osc project. See the project's GIT history for the complete list." \
     --url="https://github.com/openSUSE/osc/"
+
+sphinx-build -b man doc .
 %endif
 
 %install
@@ -157,6 +163,7 @@ install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
 # install man page
 %if %{with man}
 install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
+install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %endif
 
 %check
@@ -169,7 +176,7 @@ install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 %license COPYING
 %doc AUTHORS README.md NEWS
 %if %{with man}
-%{_mandir}/man1/osc.*
+%{_mandir}/man*/osc*
 %endif
 
 # executables

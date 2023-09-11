@@ -1,53 +1,73 @@
-# Copyright (C) 2006-2009 Novell Inc.  All rights reserved.
-# This program is free software; it may be used, copied, modified
-# and distributed under the terms of the GNU General Public Licence,
-# either version 2, or version 3 (at your option).
+# Copyright Contributors to the osc project.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 
 
-"""Read osc configuration and store it in a dictionary
+"""
+This module handles configuration of osc.
 
-This module reads and parses oscrc. The resulting configuration is stored
-for later usage in a dictionary named 'config'.
-The oscrc is kept mode 0600, so that it is not publically readable.
-This gives no real security for storing passwords.
-If in doubt, use your favourite keyring.
-Password is stored on ~/.config/osc/oscrc as bz2 compressed and base64 encoded, so that is fairly
-large and not to be recognized or remembered easily by an occasional spectator.
 
-If information is missing, it asks the user questions.
+Configuring osc from oscrc
+--------------------------
 
-After reading the config, urllib2 is initialized.
+To configure osc from oscrc, do following::
 
-The configuration dictionary could look like this:
+    import osc.conf
 
-{'apisrv': 'https://api.opensuse.org/',
- 'user': 'joe',
- 'api_host_options': {'api.opensuse.org': {'user': 'joe', 'pass': 'secret'},
-                      'apitest.opensuse.org': {'user': 'joe', 'pass': 'secret',
-                                               'http_headers':(('Host','api.suse.de'),
-                                                               ('User','faye'))},
-                      'foo.opensuse.org': {'user': 'foo', 'pass': 'foo'}},
- 'build-cmd': '/usr/bin/build',
- 'build-root': '/abuild/oscbuild-%(repo)s-%(arch)s',
- 'packagecachedir': '/var/cache/osbuild',
- 'su-wrapper': 'sudo',
- }
+    # see ``get_config()`` documentation for available function arguments
+    # see ``oscrc(5)`` man page for oscrc configuration options
+    osc.conf.get_config()
 
+
+Configuring osc from API
+------------------------
+
+To configure osc purely from the API (without reading oscrc), do following::
+
+    import osc.conf
+
+    # initialize the main config object
+    config = osc.conf.Options()
+
+    # configure host options for an apiurl
+    apiurl = osc.conf.sanitize_apiurl(apiurl)
+    host_options = HostOptions(apiurl=apiurl, username=..., _parent=config)
+    config.api_host_options[apiurl] = host_options
+
+    # set the default ``apiurl``
+    config.apiurl = ...
+
+    # place the config object in `osc.conf`
+    osc.conf.config = config
+
+    # optional: enable http debugging according to the ``http_debug`` and ``http_full_debug`` options
+    from osc.connection import enable_http_debug
+    enable_http_debug(osc.conf.config)
 """
 
 
+import collections
 import errno
 import getpass
+import http.client
 import os
 import re
+import shutil
 import sys
+import textwrap
+from io import BytesIO
 from io import StringIO
 from urllib.parse import urlsplit
 
 from . import credentials
 from . import OscConfigParser
 from . import oscerr
+from .util import xdg
 from .util.helper import raw_input
+from .util.models import *
 
 
 GENERIC_KEYRING = False
@@ -59,384 +79,1351 @@ except:
     pass
 
 
-def _get_processors():
+__all__ = [
+    "get_config",
+    "Options",
+    "HostOptions",
+    "Password",
+    "config",
+]
+
+
+class Password(collections.UserString):
     """
-    get number of processors (online) based on
-    SC_NPROCESSORS_ONLN (returns 1 if config name/os.sysconf does not exist).
+    Lazy password that wraps either a string or a function.
+    The result of the function gets returned any time the object is used as a string.
     """
-    try:
-        return os.sysconf('SC_NPROCESSORS_ONLN')
-    except (AttributeError, ValueError):
-        return 1
+
+    def __init__(self, data):
+        self._data = data
+
+    @property
+    def data(self):
+        if callable(self._data):
+            # if ``data`` is a function, call it every time the string gets evaluated
+            # we use the password only from time to time to make a session cookie
+            # and there's no need to keep the password in program memory longer than necessary
+            result = self._data()
+            if result is None:
+                raise oscerr.OscIOError(None, "Unable to retrieve password")
+            return result
+        return self._data
+
+    def __format__(self, format_spec):
+        if format_spec.endswith("s"):
+            return f"{self.__str__():{format_spec}}"
+        return super().__format__(format_spec)
 
 
-def _identify_osccookiejar():
-    if os.path.isfile(os.path.join(os.path.expanduser("~"), '.osc_cookiejar')):
-        # For backwards compatibility, use the old location if it exists
-        return '~/.osc_cookiejar'
-
-    if os.getenv('XDG_STATE_HOME', '') != '':
-        osc_state_dir = os.path.join(os.getenv('XDG_STATE_HOME'), 'osc')
-    else:
-        osc_state_dir = os.path.join(os.path.expanduser("~"), '.local', 'state', 'osc')
-
-    return os.path.join(osc_state_dir, 'cookiejar')
+HttpHeader = NewType("HttpHeader", Tuple[str, str])
 
 
-DEFAULTS = {'apiurl': 'https://api.opensuse.org',
-            'user': None,
-            'pass': None,
-            'passx': None,
-            'sshkey': None,
-            'packagecachedir': '/var/tmp/osbuild-packagecache',
-            'su-wrapper': 'sudo',
+class OscOptions(BaseModel):
+    # compat function with the config dict
+    def _get_field_name(self, name):
+        if name in self.__fields__:
+            return name
 
-            # build type settings
-            'build-cmd': '/usr/bin/build',
-            'build-type': '',                   # may be empty for chroot, kvm or xen
-            'build-root': '/var/tmp/build-root/%(repo)s-%(arch)s',
-            'build-uid': '',                    # use the default provided by build
-            'build-device': '',                 # required for VM builds
-            'build-memory': '0',                # required for VM builds
-            'build-shell-after-fail': '0',      # optional for VM builds
-            'build-swap': '',                   # optional for VM builds
-            'build-vmdisk-rootsize': '0',       # optional for VM builds
-            'build-vmdisk-swapsize': '0',       # optional for VM builds
-            'build-vmdisk-filesystem': '',      # optional for VM builds
-            'build-vm-user': '',                # optional for VM builds
-            'build-kernel': '',                 # optional for VM builds
-            'build-initrd': '',                 # optional for VM builds
-            'download-assets-cmd': '/usr/lib/build/download_assets',  # optional for scm/git based builds
+        for field_name, field in self.__fields__.items():
+            ini_key = field.extra.get("ini_key", None)
+            if ini_key == name:
+                return field_name
 
-            'build-jobs': str(_get_processors()),
-            'builtin_signature_check': '1',     # by default use builtin check for verify pkgs
-            'icecream': '0',
-            'ccache': '0',
-            'sccache': '0',
-            'sccache_uri': '',
+        return None
 
-            'buildlog_strip_time': '0',  # strips the build time from the build log
+    # compat function with the config dict
+    def __getitem__(self, name):
+        field_name = self._get_field_name(name)
+        if field_name is None:
+            field_name = name
+        try:
+            return getattr(self, field_name)
+        except AttributeError:
+            raise KeyError(name)
 
-            'debug': '0',
-            'http_debug': '0',
-            'http_full_debug': '0',
-            'http_retries': '3',
-            'verbose': '0',
-            'no_preinstallimage': '0',
-            'traceback': '0',
-            'post_mortem': '0',
-            'use_keyring': '0',
-            'cookiejar': _identify_osccookiejar(),
-            # fallback for osc build option --no-verify
-            'no_verify': '0',
+    # compat function with the config dict
+    def __setitem__(self, name, value):
+        field_name = self._get_field_name(name)
+        if field_name is None:
+            field_name = name
+        setattr(self, field_name, value)
 
-            # Disable hdrmd5 checks of downloaded and cached packages in `osc build`
-            # Recommended value: 0
-            #
-            # OBS builds the noarch packages once per binary arch.
-            # Such noarch packages are supposed to be nearly identical across all build arches,
-            # any discrepancy in the payload and dependencies is considered a packaging bug.
-            # But to guarantee that the local builds work identically to builds in OBS,
-            # using the arch-specific copy of the noarch package is required.
-            # Unfortunatelly only one of the noarch packages gets distributed
-            # and can be downloaded from a local mirror.
-            # All other noarch packages are available through the OBS API only.
-            # Since there is currently no information about hdrmd5 checksums of published noarch packages,
-            # we download them, verify hdrmd5 and re-download the package from OBS API on mismatch.
-            #
-            # The same can also happen for architecture depend packages when someone is messing around
-            # with the source history or the release number handling in a way that it is not increasing.
-            #
-            # If you want to save some bandwidth and don't care about the exact rebuilds
-            # you can turn this option on to disable hdrmd5 checks completely.
-            'disable_hdrmd5_check': '0',
+    # compat function with the config dict
+    def __contains__(self, name):
+        try:
+            self[name]
+        except KeyError:
+            return False
+        return True
 
-            # enable project tracking by default
-            'do_package_tracking': '1',
-            # default for osc build
-            'extra-pkgs': '',
-            # default repository
-            'build_repository': 'openSUSE_Factory',
-            # default project for branch or bco
-            'getpac_default_project': 'openSUSE:Factory',
-            # alternate filesystem layout: have multiple subdirs, where colons were.
-            'checkout_no_colon': '0',
-            # project separator
-            'project_separator': ':',
-            # change filesystem layout: avoid checkout from within a proj or package dir.
-            'checkout_rooted': '0',
-            # local files to ignore with status, addremove, ....
-            'exclude_glob': '.osc CVS .svn .* _linkerror *~ #*# *.orig *.bak *.changes.vctmp.*',
-            # whether to print Web UI links to directly insert in browser (where possible)
-            'print_web_links': '0',
-            # limit the age of requests shown with 'osc req list'.
-            # this is a default only, can be overridden by 'osc req list -D NNN'
-            # Use 0 for unlimted.
-            'request_list_days': 0,
-            # check for unversioned/removed files before commit
-            'check_filelist': '1',
-            # check for pending requests after executing an action (e.g. checkout, update, commit)
-            'check_for_request_on_action': '1',
-            # what to do with the source package if the submitrequest has been accepted
-            'submitrequest_on_accept_action': '',
-            'request_show_interactive': '0',
-            'request_show_source_buildstatus': '0',
-            # if a review is accepted in interactive mode and a group
-            # was specified the review will be accepted for this group
-            'review_inherit_group': '0',
-            'submitrequest_accepted_template': '',
-            'submitrequest_declined_template': '',
-            'linkcontrol': '0',
-            'include_request_from_project': '1',
-            'local_service_run': '1',
-            "exclude_files": "",
-            "include_files": "",
+    # compat function with the config dict
+    def setdefault(self, name, default=None):
+        field_name = self._get_field_name(name)
+        # we're ignoring ``default`` because the field always exists
+        return getattr(self, field_name, None)
 
-            # Maintenance defaults to OBS instance defaults
-            'maintained_attribute': 'OBS:Maintained',
-            'maintenance_attribute': 'OBS:MaintenanceProject',
-            'maintained_update_project_attribute': 'OBS:UpdateProject',
-            'show_download_progress': '0',
-            # path to the vc script
-            'vc-cmd': '/usr/lib/build/vc',
+    # compat function with the config dict
+    def get(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
 
-            # heuristic to speedup Package.status
-            'status_mtime_heuristic': '0'
-            }
+    def set_value_from_string(self, name, value):
+        field_name = self._get_field_name(name)
+        field = self.__fields__[field_name]
 
-# some distros like Debian rename and move build to obs-build
-if not os.path.isfile('/usr/bin/build') and os.path.isfile('/usr/bin/obs-build'):
-    DEFAULTS['build-cmd'] = '/usr/bin/obs-build'
-if not os.path.isfile('/usr/lib/build/vc') and os.path.isfile('/usr/lib/obs-build/vc'):
-    DEFAULTS['vc-cmd'] = '/usr/lib/obs-build/vc'
+        if not isinstance(value, str):
+            setattr(self, field_name, value)
+            return
 
-api_host_options = ['user', 'pass', 'passx', 'aliases', 'http_headers', 'realname', 'email', 'sslcertck', 'cafile', 'capath', 'trusted_prj',
-                    'downloadurl', 'sshkey', 'disable_hdrmd5_check']
+        if not value.strip():
+            if field.is_optional:
+                setattr(self, field_name, value)
+                return
+
+        if field.origin_type is Password:
+            value = Password(value)
+            setattr(self, field_name, value)
+            return
+
+        if field.type is List[HttpHeader]:
+            value = http.client.parse_headers(BytesIO(value.strip().encode("utf-8"))).items()
+            setattr(self, field_name, value)
+            return
+
+        if field.origin_type is list:
+            # split list options into actual lists
+            value = re.split(r"[, ]+", value)
+            setattr(self, field_name, value)
+            return
+
+        if field.origin_type is bool:
+            if value.lower() in ["1", "yes", "true", "on"]:
+                value = True
+                setattr(self, field_name, value)
+                return
+            if value.lower() in ["0", "no", "false", "off"]:
+                value = False
+                setattr(self, field_name, value)
+                return
+
+        if field.origin_type is int:
+            value = int(value)
+            setattr(self, field_name, value)
+            return
+
+        setattr(self, field_name, value)
 
 
-# _integer_opts and _boolean_opts specify option types for both global options as well as api_host_options
-_integer_opts = ("build-jobs", "build-memory", "build-vmdisk-rootsize", "build-vmdisk-swapsize", "http_retries", "icecream", "request_list_days")
-
-_boolean_opts = (
-    'debug', 'do_package_tracking', 'http_debug', 'post_mortem', 'traceback', 'check_filelist',
-    'checkout_no_colon', 'checkout_rooted', 'check_for_request_on_action', 'linkcontrol', 'show_download_progress', 'request_show_interactive',
-    'request_show_source_buildstatus', 'review_inherit_group', 'use_keyring', 'no_verify', 'disable_hdrmd5_check', 'builtin_signature_check',
-    'http_full_debug', 'include_request_from_project', 'local_service_run', 'buildlog_strip_time', 'no_preinstallimage',
-    'status_mtime_heuristic', 'print_web_links', 'ccache', 'sccache', 'build-shell-after-fail', 'allow_http', 'sslcertck', )
-
-
-def apply_option_types(config, conffile=""):
+class HostOptions(OscOptions):
     """
-    Return a copy of `config` dictionary with values converted to their expected types
-    according to the enumerated option types (_boolean_opts, _integer_opts).
+    Configuration options for individual apiurls.
     """
-    config = config.copy()
 
-    cp = OscConfigParser.OscConfigParser(config)
-    cp.add_section("general")
+    def __init__(self, _parent, **kwargs):
+        super().__init__(_parent=_parent, **kwargs)
 
-    typed_opts = ((_boolean_opts, cp.getboolean, bool), (_integer_opts, cp.getint, int))
-    for opts, meth, typ in typed_opts:
-        for opt in opts:
-            if opt not in config:
-                continue
-            if isinstance(config[opt], typ):
-                continue
-            try:
-                config[opt] = meth('general', opt)
-            except ValueError as e:
-                msg = 'cannot parse \'%s\' setting: %s' % (opt, str(e))
-                raise oscerr.ConfigError(msg, conffile)
+    apiurl: str = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            URL to the API server.
+            """
+        ),
+    )  # type: ignore[assignment]
 
-    return config
+    aliases: List[str] = Field(
+        default=[],
+        description=textwrap.dedent(
+            """
+            Aliases of the apiurl.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    username: str = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Username for the apiurl.
+            """
+        ),
+        ini_key="user",
+    )  # type: ignore[assignment]
+
+    credentials_mgr_class: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Fully qualified name of a class used to fetch a password.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    password: Optional[Password] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Password for the apiurl.
+            May be empty if the credentials manager fetches the password from a keyring or ``sshkey`` is used.
+            """
+        ),
+        ini_key="pass",
+    )  # type: ignore[assignment]
+
+    sshkey: Optional[str] = Field(
+        default=FromParent("sshkey"),
+        description=textwrap.dedent(
+            """
+            A pointer to public SSH key that corresponds with a private SSH used for authentication:
+
+             - path to the public SSH key
+             - public SSH key filename (must be placed in ~/.ssh)
+
+            NOTE: The private key may not be available on disk because it could be in a GPG keyring, on YubiKey or forwarded through SSH agent.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    downloadurl: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Redirect downloads of packages used during build to an alternative location.
+            This allows specifying a local mirror or a proxy, which can greatly improve download performance, latency and more.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    cafile: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The path to a file of concatenated CA certificates in PEM format.
+            If specified, the CA certificates from the path will be used to validate other peers' certificates instead of the system-wide certificates.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    capath: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The path to a directory containing several CA certificates in PEM format.
+            If specified, the CA certificates from the path will be used to validate other peers' certificates instead of the system-wide certificates.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    sslcertck: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Whether to validate SSL certificate of the server.
+            It is highly recommended to keep this option enabled.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    allow_http: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Whether to allow plain HTTP connections.
+            Using HTTP is insecure because it sends passwords and session cookies in plain text.
+            It is highly recommended to keep this option disabled.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    http_headers: List[HttpHeader] = Field(
+        default=[],
+        description=textwrap.dedent(
+            """
+            Additional HTTP headers attached to each HTTP or HTTPS request.
+            The format is [(header-name, header-value)].
+            """
+        ),
+        ini_description=textwrap.dedent(
+            """
+            Additional HTTP headers attached to each request.
+            The format is HTTP headers separated with newlines.
+
+            Example::
+
+                http_headers =
+                    X-Header1: Value1
+                    X-Header2: Value2
+            """
+        ),
+        ini_type="newline-separated-list",
+    )  # type: ignore[assignment]
+
+    trusted_prj: List[str] = Field(
+        default=[],
+        description=textwrap.dedent(
+            """
+            List of names of the trusted projects.
+            The names can contain globs.
+            Please note that some repos may contain malicious packages that can compromise the build result or even your system!
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    disable_hdrmd5_check: bool = Field(
+        default=FromParent("disable_hdrmd5_check"),
+        description=textwrap.dedent(
+            """
+            Disable hdrmd5 checks of downloaded and cached packages in ``osc build``.
+            It is recommended to keep the check enabled.
+
+            OBS builds the noarch packages once per binary arch.
+            Such noarch packages are supposed to be nearly identical across all build arches,
+            any discrepancy in the payload and dependencies is considered a packaging bug.
+            But to guarantee that the local builds work identically to builds in OBS,
+            using the arch-specific copy of the noarch package is required.
+            Unfortunatelly only one of the noarch packages gets distributed
+            and can be downloaded from a local mirror.
+            All other noarch packages are available through the OBS API only.
+            Since there is currently no information about hdrmd5 checksums of published noarch packages,
+            we download them, verify hdrmd5 and re-download the package from OBS API on mismatch.
+
+            The same can also happen for architecture depend packages when someone is messing around
+            with the source history or the release number handling in a way that it is not increasing.
+
+            If you want to save some bandwidth and don't care about the exact rebuilds
+            you can turn this option on to disable hdrmd5 checks completely.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    passx: Optional[str] = Field(
+        default=None,
+        deprecated_text=textwrap.dedent(
+            """
+            Option 'passx' (oscrc option [$apiurl]/passx) is deprecated.
+            You should be using the 'password' option with 'credentials_mgr_class' set to 'osc.credentials.ObfuscatedConfigFileCredentialsManager' instead.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    realname: Optional[str] = Field(
+        default=FromParent("realname"),
+        description=textwrap.dedent(
+            """
+            Name of the user passed to the ``vc`` tool via ``VC_REALNAME`` env variable.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    email: Optional[str] = Field(
+        default=FromParent("email"),
+        description=textwrap.dedent(
+            """
+            Email of the user passed to the ``vc`` tool via ``VC_MAILADDR`` env variable.
+            """
+        ),
+    )  # type: ignore[assignment]
 
 
-# being global to this module, this dict can be accessed from outside
+class Options(OscOptions):
+    """
+    Main configuration options.
+    """
+
+    # for internal use
+    conffile: Optional[str] = Field(
+        default=None,
+        exclude=True,
+    )  # type: ignore[assignment]
+
+    api_host_options: Dict[str, HostOptions] = Field(
+        default={},
+        description=textwrap.dedent(
+            """
+            A dictionary that maps ``apiurl`` to ``HostOptions``.
+            """
+        ),
+        ini_exclude=True,
+    )  # type: ignore[assignment]
+
+    @property
+    def apiurl_aliases(self):
+        """
+        Compute and return a dictionary that maps ``alias`` to ``apiurl``.
+        """
+        result = {}
+        for apiurl, opts in self.api_host_options.items():
+            result[apiurl] = apiurl
+            for alias in opts.aliases:
+                result[alias] = apiurl
+        return result
+
+    section_generic: str = Field(
+        default="Generic options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    apiurl: str = Field(
+        default="https://api.opensuse.org",
+        description=textwrap.dedent(
+            """
+            Default URL to the API server.
+            Credentials and other ``apiurl`` specific settings must be configured
+            in a ``[$apiurl]`` config section or via API in an ``api_host_options`` entry.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    section_auth: str = Field(
+        default="Authentication options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    username: Optional[str] = Field(
+        default=None,
+        ini_key="user",
+        deprecated_text=textwrap.dedent(
+            """
+            Option 'username' (oscrc option [global]/user) is deprecated.
+            You should be using username for each apiurl instead.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    password: Optional[Password] = Field(
+        default=None,
+        ini_key="pass",
+        deprecated_text=textwrap.dedent(
+            """
+            Option 'password' (oscrc option [global]/pass) is deprecated.
+            You should be using password for each apiurl instead.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    passx: Optional[str] = Field(
+        default=None,
+        deprecated_text=textwrap.dedent(
+            """
+            Option 'passx' (oscrc option [global]/passx) is deprecated.
+            You should be using password for each apiurl instead.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    sshkey: Optional[str] = Field(
+        default=None,
+        description=HostOptions.__fields__["sshkey"].description,
+    )  # type: ignore[assignment]
+
+    use_keyring: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Enable keyring as an option for storing passwords.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    section_verbosity: str = Field(
+        default="Verbosity options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    verbose: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Increase amount of printed information to stdout.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    debug: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Print debug information to stderr.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    http_debug: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Print HTTP traffic to stderr.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    http_full_debug: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            [CAUTION!] Print HTTP traffic incl. authentication data to stderr.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    post_mortem: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Jump into a debugger when an unandled exception occurs.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    traceback: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Print full traceback to stderr when an unandled exception occurs.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    show_download_progress: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Show download progressbar.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    section_connection: str = Field(
+        default="Connection options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    http_retries: int = Field(
+        default=3,
+        description=textwrap.dedent(
+            """
+            Number of retries on HTTP error.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    cookiejar: str = Field(
+        default=os.path.join(xdg.XDG_STATE_HOME, "osc", "cookiejar"),
+        description=textwrap.dedent(
+            """
+            Path to a cookie jar that stores session cookies.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    section_scm: str = Field(
+        default="SCM options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    realname: Optional[str] = Field(
+        default=None,
+        description=HostOptions.__fields__["realname"].description,
+    )  # type: ignore[assignment]
+
+    email: Optional[str] = Field(
+        default=None,
+        description=HostOptions.__fields__["email"].description,
+    )  # type: ignore[assignment]
+
+    local_service_run: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Run local services during commit.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    getpac_default_project: str = Field(
+        default="openSUSE:Factory",
+        description=textwrap.dedent(
+            """
+            The default project for ``osc getpac`` and ``osc bco``.
+            The value is a space separated list of strings.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    exclude_glob: List[str] = Field(
+        default=[".osc", "CVS", ".svn", ".*", "_linkerror", "*~", "#*#", "*.orig", "*.bak", "*.changes.vctmp.*"],
+        description=textwrap.dedent(
+            """
+            Space separated list of files ignored by SCM.
+            The files can contain globs.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    exclude_files: List[str] = Field(
+        default=[],
+        description=textwrap.dedent(
+            """
+            Files that match the listed glob patterns get skipped during checkout.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    include_files: List[str] = Field(
+        default=[],
+        description=textwrap.dedent(
+            """
+            Files that do not match the listed glob patterns get skipped during checkout.
+            The ``exclude_files`` option takes priority over ``include_files``.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    checkout_no_colon: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Use '/' as project separator instead the default ':' and create corresponding subdirs.
+            If enabled, it takes priority over the ``project_separator`` option.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    project_separator: str = Field(
+        default=":",
+        description=textwrap.dedent(
+            """
+            Use the specified string to separate projects.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    check_filelist: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Check for untracked files and removed files before commit.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    do_package_tracking: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Track packages in parent project's .osc/_packages.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    checkout_rooted: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Prevent checking out projects inside other projects or packages.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    status_mtime_heuristic: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Consider a file with a modified mtime as modified.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    linkcontrol: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            # TODO: explain what linkcontrol does
+            """
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    section_build: str = Field(
+        default="Build options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    build_repository: str = Field(
+        default="openSUSE_Factory",
+        description=textwrap.dedent(
+            """
+            The default repository used when the ``repository`` argument is omitted from ``osc build``.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    buildlog_strip_time: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Strip the build time from the build logs.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    package_cache_dir: str = Field(
+        default="/var/tmp/osbuild-packagecache",
+        description=textwrap.dedent(
+            """
+            The directory where downloaded packages are stored. Must be writable by you.
+            """
+        ),
+        ini_key="packagecachedir",
+    )  # type: ignore[assignment]
+
+    no_verify: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Disable signature verification of packages used for build.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    builtin_signature_check: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Use the RPM's built-in package signature verification.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    disable_hdrmd5_check: bool = Field(
+        default=False,
+        description=HostOptions.__fields__["disable_hdrmd5_check"].description,
+    )  # type: ignore[assignment]
+
+    section_request: str = Field(
+        default="Request options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    include_request_from_project: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            When querying requests, show also those that originate in the specified projects.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    request_list_days: int = Field(
+        default=0,
+        description=textwrap.dedent(
+            """
+            Limit the age of requests shown with ``osc req list`` to the given number of days.
+
+            This is only the default that can be overridden with ``osc request list -D <VALUE>``.
+            Use ``0`` for unlimited.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    check_for_request_on_action: bool = Field(
+        default=True,
+        description=textwrap.dedent(
+            """
+            Check for pending requests after executing an action (e.g. checkout, update, commit).
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    request_show_interactive: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Show requests in the interactive mode by default.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    print_web_links: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Print links to Web UI that can be directly pasted to a web browser where possible.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    request_show_source_buildstatus: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Print the buildstatus of the source package.
+            Works only with ``osc request show`` and the interactive review.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    submitrequest_accepted_template: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Template message for accepting a request.
+
+            Supported substitutions: ``%(reqid)s``, ``%(type)s``, ``%(who)s``, ``%(src_project)s``, ``%(src_package)s``, ``%(src_rev)s``, ``%(tgt_project)s``, ``%(tgt_package)s``
+
+            Example::
+
+                Hi %(who)s, your request %(reqid)s (type: %(type)s) for %(tgt_project)s/%(tgt_package)s has been accepted. Thank you for your contribution.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    submitrequest_declined_template: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Template message for declining a request.
+
+            Supported substitutions: ``%(reqid)s``, ``%(type)s``, ``%(who)s``, ``%(src_project)s``, ``%(src_package)s``, ``%(src_rev)s``, ``%(tgt_project)s``, ``%(tgt_package)s``
+
+            Example::
+
+                Hi %(who)s, your request %(reqid)s (type: %(type)s) for %(tgt_project)s/%(tgt_package)s has been declined because ...
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    request_show_review: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Review requests interactively.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    review_inherit_group: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            If a review was accepted in interactive mode and a group was specified,
+            the review will be accepted for this group.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    submitrequest_on_accept_action: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            What to do with the source package if the request has been accepted.
+            If nothing is specified the API default is used.
+
+            Choices: cleanup, update, noupdate
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    # XXX: let's hide attributes from documentation as it is not clear if anyone uses them and should them change from their defaults
+    # section_obs_attributes: str = Field(
+    #     default="OBS attributes",
+    #     exclude=True,
+    #     section=True,
+    # )  # type: ignore[assignment]
+
+    maintained_attribute: str = Field(
+        default="OBS:Maintained",
+    )  # type: ignore[assignment]
+
+    maintenance_attribute: str = Field(
+        default="OBS:MaintenanceProject",
+    )  # type: ignore[assignment]
+
+    maintained_update_project_attribute: str = Field(
+        default="OBS:UpdateProject",
+    )  # type: ignore[assignment]
+
+    section_build_tool: str = Field(
+        default="Build tool options",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    build_jobs: Optional[int] = Field(
+        default=os.cpu_count,
+        description=textwrap.dedent(
+            """
+            The number of parallel processes during the build.
+            Defaults to the number of available CPU threads.
+
+            Passed as ``--jobs`` to the build tool.
+            """
+        ),
+        ini_key="build-jobs",
+    )  # type: ignore[assignment]
+
+    build_type: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Type of the build environment passed the build tool as the ``--vm-type`` option:
+
+             - <empty>: chroot build
+             - kvm:     KVM VM build (needs build-device, build-swap, build-memory)
+             - xen:     XEN VM build (needs build-device, build-swap, build-memory)
+             - qemu:    [EXPERIMENTAL] QEMU VM build
+             - lxc:     [EXPERIMENTAL] LXC build
+            """
+        ),
+        ini_key="build-type",
+    )  # type: ignore[assignment]
+
+    build_memory: Optional[int] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The amount of RAM (in MiB) assigned to a build VM.
+            """
+        ),
+        ini_key="build-memory",
+    )  # type: ignore[assignment]
+
+    build_root: str = Field(
+        default="/var/tmp/build-root/%(repo)s-%(arch)s",
+        description=textwrap.dedent(
+            """
+            Path to the build root directory.
+
+            Supported substitutions: ``%(repo)s``, ``%(arch)s``, ``%(project)s``, ``%(package)s`` and ``%(apihost)s``
+            where ``apihost`` is the hostname extracted from the currently used ``apiurl``.
+
+            Passed as ``--root <VALUE>`` to the build tool.
+            """
+        ),
+        ini_key="build-root",
+    )  # type: ignore[assignment]
+
+    build_shell_after_fail: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Start a shell prompt in the build environment if a build fails.
+
+            Passed as ``--shell-after-fail`` to the build tool.
+            """
+        ),
+        ini_key="build-shell-after-fail",
+    )  # type: ignore[assignment]
+
+    build_uid: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Numeric uid:gid to use for the abuild user.
+            Neither of the values should be 0.
+            This is useful if you are hacking in the buildroot.
+            This must be set to the same value if the buildroot is re-used.
+
+            Passed as ``--uid <VALUE>`` to the build tool.
+            """
+        ),
+        ini_key="build-uid",
+    )  # type: ignore[assignment]
+
+    build_vm_kernel: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The kernel used in a VM build.
+            """
+        ),
+        ini_key="build-kernel",
+    )  # type: ignore[assignment]
+
+    build_vm_initrd: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The initrd used in a VM build.
+            """
+        ),
+        ini_key="build-initrd",
+    )  # type: ignore[assignment]
+
+    build_vm_disk: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The disk image used as rootfs in a VM build.
+
+            Passed as ``--vm-disk <VALUE>`` to the build tool.
+            """
+        ),
+        ini_key="build-device",
+    )  # type: ignore[assignment]
+
+    build_vm_disk_filesystem: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The file system type of the disk image used as rootfs in a VM build.
+            Supported values: ext3 (default), ext4, xfs, reiserfs, btrfs.
+
+            Passed as ``--vm-disk-filesystem <VALUE>`` to the build tool.
+            """
+        ),
+        ini_key="build-vmdisk-filesystem",
+    )  # type: ignore[assignment]
+
+    build_vm_disk_size: Optional[int] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The size of the disk image (in MiB) used as rootfs in a VM build.
+
+            Passed as ``--vm-disk-size`` to the build tool.
+            """
+        ),
+        ini_key="build-vmdisk-rootsize",
+    )  # type: ignore[assignment]
+
+    build_vm_swap: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Path to the disk image used as a swap for VM builds.
+
+            Passed as ``--swap`` to the build tool.
+            """
+        ),
+        ini_key="build-swap",
+    )  # type: ignore[assignment]
+
+    build_vm_swap_size: Optional[int] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The size of the disk image (in MiB) used as swap in a VM build.
+
+            Passed as ``--vm-swap-size`` to the build tool.
+            """
+        ),
+        ini_key="build-vmdisk-swapsize",
+    )  # type: ignore[assignment]
+
+    build_vm_user: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            The username of a user used to run QEMU/KVM process.
+            """
+        ),
+        ini_key="build-vm-user",
+    )  # type: ignore[assignment]
+
+    icecream: int = Field(
+        default=0,
+        description=textwrap.dedent(
+            """
+            Use Icecream distributed compiler.
+            The value represents the number of parallel build jobs.
+
+            Passed as ``--icecream <VALUE>`` to the build tool.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    ccache: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Enable compiler cache (ccache) in build roots.
+
+            Passed as ``--ccache`` to the build tool.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    sccache: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Enable shared compilation cache (sccache) in build roots. Conflicts with ``ccache``.
+
+            Passed as ``--sccache`` to the build tool.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    sccache_uri: Optional[str] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            Optional URI for sccache storage.
+
+            Supported URIs depend on the sccache configuration.
+            The URI allows the following substitutions:
+
+             - ``{pkgname}``: name of the package to be build
+
+            Examples:
+
+             - file:///var/tmp/osbuild-sccache-{pkgname}.tar.lzop
+             - file:///var/tmp/osbuild-sccache-{pkgname}.tar
+             - redis://127.0.0.1:6379
+
+            Passed as ``--sccache-uri <VALUE>`` to the build tool.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    no_preinstallimage: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Do not use preinstall images to initialize build roots.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    extra_pkgs: List[str] = Field(
+        default=[],
+        description=textwrap.dedent(
+            """
+            Extra packages to install into the build root when building packages locally with ``osc build``.
+
+            This corresponds to ``osc build -x pkg1 -x pkg2 ...``.
+            The configured values can be overriden from the command-line with ``-x ''``.
+
+            This global setting may leads to dependency problems when the base distro is not providing the package.
+            Therefore using server-side ``cli_debug_packages`` option instead is recommended.
+
+            Passed as ``--extra-packs <VALUE>`` to the build tool.
+            """
+        ),
+        ini_key="extra-pkgs",
+    )  # type: ignore[assignment]
+
+    section_programs: str = Field(
+        default="Paths to programs",
+        exclude=True,
+        section=True,
+    )  # type: ignore[assignment]
+
+    build_cmd: str = Field(
+        default=
+            shutil.which("build", path="/usr/bin:/usr/lib/build:/usr/lib/obs-build")
+            or shutil.which("obs-build", path="/usr/bin:/usr/lib/build:/usr/lib/obs-build")
+            or "/usr/bin/build",
+        description=textwrap.dedent(
+            """
+            Path to the 'build' tool.
+            """
+        ),
+        ini_key="build-cmd",
+    )  # type: ignore[assignment]
+
+    download_assets_cmd: str = Field(
+        default=
+            shutil.which("download_assets", path="/usr/lib/build:/usr/lib/obs-build")
+            or "/usr/lib/build/download_assets",
+        description=textwrap.dedent(
+            """
+            Path to the 'download_assets' tool used for downloading assets in SCM/Git based builds.
+            """
+        ),
+        ini_key="download-assets-cmd",
+    )  # type: ignore[assignment]
+
+    vc_cmd: str = Field(
+        default=shutil.which("vc", path="/usr/lib/build:/usr/lib/obs-build") or "/usr/lib/build/vc",
+        description=textwrap.dedent(
+            """
+            Path to the 'vc' tool.
+            """
+        ),
+        ini_key="vc-cmd",
+    )  # type: ignore[assignment]
+
+    su_wrapper: str = Field(
+        default="sudo",
+        description=textwrap.dedent(
+            """
+            The wrapper to call build tool as root (sudo, su -, ...).
+            If empty, the build tool runs under the current user wich works only with KVM at this moment.
+            """
+        ),
+        ini_key="su-wrapper",
+    )  # type: ignore[assignment]
+
+
+# Generate rst from a model. Use it to generate man page in sphinx.
+# This IS NOT a public API.
+def _model_to_rst(cls, title=None, description=None, sections=None, output_file=None):
+    def header(text, char="-"):
+        result = f"{text}\n"
+        result += f"{'':{char}^{len(text)}}"
+        return result
+
+    def bold(text):
+        text = text.replace(r"*", r"\*")
+        return f"**{text}**"
+
+    def italic(text):
+        text = text.replace(r"*", r"\*")
+        return f"*{text}*"
+
+    def get_type(name, field):
+        ini_type = field.extra.get("ini_type", None)
+        if ini_type:
+            return ini_type
+        if field.origin_type.__name__ == "list":
+            return "space-separated-list"
+        return field.origin_type.__name__
+
+    def get_default(name, field):
+        if field.default is None:
+            return None
+
+        ini_type = field.extra.get("ini_type", None)
+        if ini_type:
+            return None
+
+        if isinstance(field.default, FromParent):
+            return None
+
+        origin_type = field.origin_type
+
+        if origin_type == bool:
+            return str(int(field.default))
+
+        if origin_type == int:
+            return str(field.default)
+
+        if origin_type == list:
+            if not field.default:
+                return None
+            default_str = " ".join(field.default)
+            return f'"{default_str}"'
+
+        if origin_type == str:
+            return f'"{field.default}"'
+
+        # TODO:
+        raise Exception(f"{name} {field}, {origin_type}")
+
+    result = []
+
+    if title:
+        result.append(header(title, char="="))
+        result.append("")
+
+    if description:
+        result.append(description)
+        result.append("")
+
+    for name, field in cls.__fields__.items():
+        extra = field.extra
+
+        is_section_header = extra.get("section", False)
+        if is_section_header:
+            result.append(header(field.default))
+            result.append("")
+            continue
+
+        exclude = extra.get("ini_exclude", False) or field.exclude
+        exclude |= field.description is None
+        if exclude:
+            continue
+
+        ini_key = extra.get("ini_key", name)
+
+        x = bold(ini_key) + " : " + get_type(name, field)
+        default = get_default(name, field)
+        if default:
+            x += " = " + italic(default)
+        result.append(x)
+        result.append("")
+        desc = extra.get("ini_description", None) or field.description or ""
+        for line in desc.splitlines():
+            result.append(f"    {line}")
+        result.append("")
+
+    sections = sections or {}
+    for section_name, section_class in sections.items():
+        result.append(header(section_name))
+        result.append(_model_to_rst(section_class))
+
+    if output_file:
+        with open(output_file, "w", encoding="utf-8") as f:
+            f.write("\n".join(result))
+
+    return "\n".join(result)
+
+
+# being global to this module, this object can be accessed from outside
 # it will hold the parsed configuration
-config = DEFAULTS.copy()
-config = apply_option_types(config)
+config = Options()
+
+
+general_opts = [field.extra.get("ini_key", field.name) for field in Options.__fields__.values() if not field.exclude]
+api_host_options = [field.extra.get("ini_key", field.name) for field in HostOptions.__fields__.values() if not field.exclude]
+
+
+# HACK: Proxy object that modifies field defaults in the Options class; needed for compatibility with the old DEFAULTS dict; prevents breaking osc-plugin-collab
+# This IS NOT a public API.
+class Defaults:
+    def _get_field(self, name):
+        if hasattr(Options, name):
+            return getattr(Options, name)
+
+        for i in dir(Options):
+            field = getattr(Options, i)
+            if field.extra.get("ini_key", None) == name:
+                return field
+
+        return None
+
+    def __getitem__(self, name):
+        field = self._get_field(name)
+        result = field.default
+        if field.type is List[str]:
+            # return list as a string so we can append another string to it
+            return ", ".join(result)
+        return result
+
+    def __setitem__(self, name, value):
+        obj = Options()
+        obj.set_value_from_string(name, value)
+        field = self._get_field(name)
+        field.default = obj[name]
+
+
+DEFAULTS = Defaults()
 
 
 new_conf_template = """
+# see oscrc(5) man page for the full list of available options
+
 [general]
 
-# URL to access API server, e.g. %(apiurl)s
-# you also need a section [%(apiurl)s] with the credentials
-apiurl = %(apiurl)s
-
-# Downloaded packages are cached here. Must be writable by you.
-#packagecachedir = %(packagecachedir)s
-
-# Wrapper to call build as root (sudo, su -, ...)
-#su-wrapper = %(su-wrapper)s
-# set it empty to run build script as user (works only with KVM atm):
-#su-wrapper =
-
-# rootdir to setup the chroot environment
-# can contain %%(repo)s, %%(arch)s, %%(project)s, %%(package)s and %%(apihost)s (apihost is the hostname
-# extracted from currently used apiurl) for replacement, e.g.
-# /srv/oscbuild/%%(repo)s-%%(arch)s or
-# /srv/oscbuild/%%(repo)s-%%(arch)s-%%(project)s-%%(package)s
-#build-root = %(build-root)s
-
-# compile with N jobs (default: "getconf _NPROCESSORS_ONLN")
-#build-jobs = N
-
-# build-type to use - values can be (depending on the capabilities of the 'build' script)
-# empty    -  chroot build
-# kvm      -  kvm VM build  (needs build-device, build-swap, build-memory)
-# xen      -  xen VM build  (needs build-device, build-swap, build-memory)
-#   experimental:
-#     qemu -  qemu VM build
-#     lxc  -  lxc build
-#build-type =
-
-# Execute always a shell prompt on build failure inside of the build environment
-#build-shell-after-fail = 1
-
-# build-device is the disk-image file to use as root for VM builds
-# e.g. /var/tmp/FILE.root
-#build-device = /var/tmp/FILE.root
-
-# build-swap is the disk-image to use as swap for VM builds
-# e.g. /var/tmp/FILE.swap
-#build-swap = /var/tmp/FILE.swap
-
-# build-kernel is the boot kernel used for VM builds
-#build-kernel = /boot/vmlinuz
-
-# build-initrd is the boot initrd used for VM builds
-#build-initrd = /boot/initrd
-
-# build-memory is the amount of memory used in the VM
-# value in MB - e.g. 512
-#build-memory = 512
-
-# build-vmdisk-rootsize is the size of the disk-image used as root in a VM build
-# values in MB - e.g. 4096
-#build-vmdisk-rootsize = 4096
-
-# build-vmdisk-swapsize is the size of the disk-image used as swap in a VM build
-# values in MB - e.g. 1024
-#build-vmdisk-swapsize = 1024
-
-# build-vmdisk-filesystem is the file system type of the disk-image used in a VM build
-# values are ext3(default) ext4 xfs reiserfs btrfs
-#build-vmdisk-filesystem = ext4
-
-# Numeric uid:gid to assign to the "abuild" user in the build-root
-# or "caller" to use the current users uid:gid
-# This is convenient when sharing the buildroot with ordinary userids
-# on the host.
-# This should not be 0
-# build-uid =
-
-# strip leading build time information from the build log
-# buildlog_strip_time = 1
-
-# Enable ccache in build roots.
-# ccache = 1
-
-# Enable sccache in build roots. Conflicts with ccache.
-# Equivalent to sccache_uri = file:///var/tmp/osbuild-sccache-{pkgname}.tar
-# sccache = 1
-
-# Optional URI for sccache storage. Maybe a file://, redis:// or other URI supported
-# by the configured sccache install. This uri MAY take {pkgname} as a special parameter
-# which will be replaced with the name of the package to be built.
-# sccache_uri = file:///var/tmp/osbuild-sccache-{pkgname}.tar.lzop
-# sccache_uri = file:///var/tmp/osbuild-sccache-{pkgname}.tar
-# sccache_uri = redis://127.0.0.1:6379
-
-# extra packages to install when building packages locally (osc build)
-# this corresponds to osc build's -x option and can be overridden with that
-# -x '' can also be given on the command line to override this setting, or
-# you can have an empty setting here. This global setting may leads to
-# dependency problems when the base distro is not providing the package.
-# => using server side definition via cli_debug_packages substitute rule is
-#    recommended therefore.
-#extra-pkgs =
-
-# build platform is used if the platform argument is omitted to osc build
-#build_repository = %(build_repository)s
-
-# default project for getpac or bco
-#getpac_default_project = %(getpac_default_project)s
-
-# alternate filesystem layout: have multiple subdirs, where colons were.
-#checkout_no_colon = %(checkout_no_colon)s
-
-# instead of colons, use the specified as separator
-#project_separator = %(project_separator)s
-
-# change filesystem layout: avoid checkout within a project or package dir.
-#checkout_rooted = %(checkout_rooted)s
-
-# local files to ignore with status, addremove, ....
-#exclude_glob = %(exclude_glob)s
-
-# limit the age of requests shown with 'osc req list'.
-# this is a default only, can be overridden by 'osc req list -D NNN'
-# Use 0 for unlimted.
-#request_list_days = %(request_list_days)s
-
-# show info useful for debugging
-#debug = 1
-
-# show HTTP traffic useful for debugging
-#http_debug = 1
-
-# number of retries on HTTP transfer
-#http_retries = 3
-
-# Skip signature verification of packages used for build.
-#no_verify = 1
-
-# jump into the debugger in case of errors
-#post_mortem = 1
-
-# print call traces in case of errors
-#traceback = 1
-
-# check for unversioned/removed files before commit
-#check_filelist = 1
-
-# check for pending requests after executing an action (e.g. checkout, update, commit)
-#check_for_request_on_action = 1
-
-# what to do with the source package if the submitrequest has been accepted. If
-# nothing is specified the API default is used
-#submitrequest_on_accept_action = cleanup|update|noupdate
-
-# template for an accepted submitrequest
-#submitrequest_accepted_template = Hi %%(who)s,\\n
-# thanks for working on:\\t%%(tgt_project)s/%%(tgt_package)s.
-# SR %%(reqid)s has been accepted.\\n\\nYour maintainers
-
-# template for a declined submitrequest
-#submitrequest_declined_template = Hi %%(who)s,\\n
-# sorry your SR %%(reqid)s (request type: %%(type)s) for
-# %%(tgt_project)s/%%(tgt_package)s has been declined because...
-
-#review requests interactively (default: off)
-#request_show_review = 1
-
-# if a review is accepted in interactive mode and a group
-# was specified the review will be accepted for this group (default: off)
-#review_inherit_group = 1
+# Default URL to the API server.
+# Credentials and other `apiurl` specific settings must be configured in a `[$apiurl]` config section.
+apiurl=%(apiurl)s
 
 [%(apiurl)s]
-# set aliases for this apiurl
-# aliases = foo, bar
-# real name used in .changes, unless the one from osc meta prj <user> will be used
-# realname =
-# email used in .changes, unless the one from osc meta prj <user> will be used
-# email =
-# additional headers to pass to a request, e.g. for special authentication
-#http_headers = Host: foofoobar,
-#       User: mumblegack
-# Plain text password
-#pass =
+# aliases=
+# user=
+# pass=
+# credentials_mgr_class=osc.credentials...
 """
 
 
@@ -460,6 +1447,15 @@ your credentials for this apiurl.
 """
 
 
+def sanitize_apiurl(apiurl):
+    """
+    Sanitize apiurl:
+    - add https:// schema if apiurl contains none
+    - strip trailing slashes
+    """
+    return urljoin(*parse_apisrv_url(None, apiurl))
+
+
 def parse_apisrv_url(scheme, apisrv):
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         url = apisrv
@@ -477,7 +1473,7 @@ def urljoin(scheme, apisrv, path=''):
 
 def is_known_apiurl(url):
     """returns ``True`` if url is a known apiurl"""
-    apiurl = urljoin(*parse_apisrv_url(None, url))
+    apiurl = sanitize_apiurl(url)
     return apiurl in config['api_host_options']
 
 
@@ -505,7 +1501,7 @@ def get_apiurl_api_host_options(apiurl):
     # knows this instead of having to extract it from a url where it
     # had been mingled into before.  But this works fine for now.
 
-    apiurl = urljoin(*parse_apisrv_url(None, apiurl))
+    apiurl = sanitize_apiurl(apiurl)
     if is_known_apiurl(apiurl):
         return config['api_host_options'][apiurl]
     raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
@@ -543,7 +1539,7 @@ def get_configParser(conffile=None, force_read=False):
     if 'conffile' not in get_configParser.__dict__:
         get_configParser.conffile = conffile
     if force_read or 'cp' not in get_configParser.__dict__ or conffile != get_configParser.conffile:
-        get_configParser.cp = OscConfigParser.OscConfigParser(DEFAULTS)
+        get_configParser.cp = OscConfigParser.OscConfigParser()
         get_configParser.cp.read(conffile)
         get_configParser.conffile = conffile
     return get_configParser.cp
@@ -590,8 +1586,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     config/reset to the default value.
     """
     cp = get_configParser(config['conffile'])
-    # don't allow "internal" options
-    general_opts = [i for i in DEFAULTS.keys() if i not in ['user', 'pass', 'passx']]
+
     if section != 'general':
         section = config['apiurl_aliases'].get(section, section)
         scheme, host, path = \
@@ -686,10 +1681,10 @@ def write_initial_config(conffile, entries, custom_template='', creds_mgr_descri
     custom_template is an optional configuration template.
     """
     conf_template = custom_template or new_conf_template
-    config = DEFAULTS.copy()
+    config = globals()["config"].dict()
     config.update(entries)
     sio = StringIO(conf_template.strip() % config)
-    cp = OscConfigParser.OscConfigParser(DEFAULTS)
+    cp = OscConfigParser.OscConfigParser()
     cp.readfp(sio)
     cp.set(config['apiurl'], 'user', config['user'])
     if creds_mgr_descriptor:
@@ -732,19 +1727,7 @@ def _get_credentials_manager(url, cp):
         return creds_mgr
     if config['use_keyring'] and GENERIC_KEYRING:
         return credentials.get_keyring_credentials_manager(cp)
-    elif cp.get(url, 'passx') is not None:
-        return credentials.ObfuscatedConfigFileCredentialsManager(cp, None)
     return credentials.PlaintextConfigFileCredentialsManager(cp, None)
-
-
-class APIHostOptionsEntry(dict):
-    def __getitem__(self, key, *args, **kwargs):
-        value = super().__getitem__(key, *args, **kwargs)
-        if key == 'pass' and callable(value):
-            print('Warning: use of a deprecated credentials manager API.',
-                  file=sys.stderr)
-            value = value()
-        return value
 
 
 def get_config(override_conffile=None,
@@ -758,22 +1741,55 @@ def get_config(override_conffile=None,
                override_verbose=None,
                overrides=None
                ):
-    """do the actual work (see module documentation)"""
-    global config
+    """
+    Configure osc.
 
-    if not override_conffile:
-        conffile = identify_conf()
+    The configuration options are loaded with the following priority:
+        1. environment variables: OSC_<uppercase-option>
+        2. override arguments provided to get_config()
+        3. oscrc config file
+    """
+
+    if overrides:
+        overrides = overrides.copy()
     else:
+        overrides = {}
+
+    if override_apiurl is not None:
+        overrides["apiurl"] = override_apiurl
+
+    if override_debug is not None:
+        overrides["debug"] = override_debug
+
+    if override_http_debug is not None:
+        overrides["http_debug"] = override_http_debug
+
+    if override_http_full_debug is not None:
+        overrides["http_debug"] = override_http_full_debug or overrides["http_debug"]
+        overrides["http_full_debug"] = override_http_full_debug
+
+    if override_traceback is not None:
+        overrides["traceback"] = override_traceback
+
+    if override_post_mortem is not None:
+        overrides["post_mortem"] = override_post_mortem
+
+    if override_no_keyring is not None:
+        overrides["use_keyring"] = not override_no_keyring
+
+    if override_verbose is not None:
+        overrides["verbose"] = override_verbose
+
+    if override_conffile is not None:
         conffile = override_conffile
+    else:
+        conffile = identify_conf()
 
     conffile = os.path.expanduser(conffile)
     if not os.path.exists(conffile):
-        raise oscerr.NoConfigfile(conffile,
-                                  account_not_configured_text % conffile)
+        raise oscerr.NoConfigfile(conffile, account_not_configured_text % conffile)
 
-    # okay, we made sure that oscrc exists
-
-    # make sure it is not world readable, it may contain a password.
+    # make sure oscrc is not world readable, it may contain a password
     conffile_stat = os.stat(conffile)
     if conffile_stat.st_mode != 0o600:
         try:
@@ -789,176 +1805,79 @@ def get_config(override_conffile=None,
     if not cp.has_section('general'):
         # FIXME: it might be sufficient to just assume defaults?
         msg = config_incomplete_text % conffile
-        msg += new_conf_template % DEFAULTS
+        defaults = Options().dict()
+        msg += new_conf_template % defaults
         raise oscerr.ConfigError(msg, conffile)
 
-    config = dict(cp.items('general', raw=1))
+    global config
 
-    # if the overrides trigger an exception, the 'post_mortem' option
-    # must be set to the appropriate type otherwise the non-empty string gets evaluated as True
-    config = apply_option_types(config, conffile)
+    config = Options()
+    config.conffile = conffile
 
-    overrides = overrides or {}
-    for key, value in overrides.items():
-        if key not in config:
-            raise oscerr.ConfigError(f"Unknown config option '{key}'", "<command-line>")
-        config[key] = value
+    # read host options first in order to populate apiurl aliases
+    urls = [i for i in cp.sections() if i != "general"]
+    for url in urls:
+        apiurl = sanitize_apiurl(url)
+        username = cp[url]["user"]
 
-    config['conffile'] = conffile
+        host_options = HostOptions(apiurl=apiurl, username=username, _parent=config)
+        for name, field in host_options.__fields__.items():
+            ini_key = field.extra.get("ini_key", name)
 
-    config = apply_option_types(config, conffile)
-
-    config['packagecachedir'] = os.path.expanduser(config['packagecachedir'])
-    config['exclude_glob'] = config['exclude_glob'].split()
-
-    re_clist = re.compile('[, ]+')
-    config['extra-pkgs'] = [i.strip() for i in re_clist.split(config['extra-pkgs'].strip()) if i]
-    config["exclude_files"] = [i.strip() for i in re_clist.split(config["exclude_files"].strip()) if i]
-    config["include_files"] = [i.strip() for i in re_clist.split(config["include_files"].strip()) if i]
-
-    # collect the usernames, passwords and additional options for each api host
-    api_host_options = {}
-
-    # Regexp to split extra http headers into a dictionary
-    # the text to be matched looks essentially looks this:
-    # "Attribute1: value1, Attribute2: value2, ..."
-    # there may be arbitray leading and intermitting whitespace.
-    # the following regexp does _not_ support quoted commas within the value.
-    http_header_regexp = re.compile(r"\s*(.*?)\s*:\s*(.*?)\s*(?:,\s*|\Z)")
-
-    # override values which we were called with
-    # This needs to be done before processing API sections as it might be already used there
-    if override_no_keyring:
-        config['use_keyring'] = False
-
-    aliases = {}
-    for url in [x for x in cp.sections() if x != 'general']:
-        # backward compatiblity
-        scheme, host, path = parse_apisrv_url(config.get('scheme', 'https'), url)
-        apiurl = urljoin(scheme, host, path)
-        creds_mgr = _get_credentials_manager(url, cp)
-        # if the deprecated gnomekeyring is used we should use the apiurl instead of url
-        # (that's what the old code did), but this makes things more complex
-        # (also, it is very unlikely that url and apiurl differ)
-        user = _extract_user_compat(cp, url, creds_mgr)
-        if user is None:
-            raise oscerr.ConfigMissingCredentialsError('No user found in section %s' % url, conffile, url)
-        password = creds_mgr.get_password(url, user, defer=True, apiurl=apiurl)
-        if password is None:
-            raise oscerr.ConfigMissingCredentialsError('No password found in section %s' % url, conffile, url)
-
-        if cp.has_option(url, 'http_headers'):
-            http_headers = cp.get(url, 'http_headers')
-            http_headers = http_header_regexp.findall(http_headers)
-        else:
-            http_headers = []
-        if cp.has_option(url, 'aliases'):
-            for i in cp.get(url, 'aliases').split(','):
-                key = i.strip()
-                if key == '':
-                    continue
-                if key in aliases:
-                    msg = 'duplicate alias entry: \'%s\' is already used for another apiurl' % key
-                    raise oscerr.ConfigError(msg, conffile)
-                aliases[key] = url
-
-        entry = {'user': user,
-                 'pass': password,
-                 'http_headers': http_headers}
-        api_host_options[apiurl] = APIHostOptionsEntry(entry)
-
-        optional = (
-            'realname', 'email', 'sslcertck', 'cafile', 'capath', 'sshkey', 'allow_http',
-            credentials.AbstractCredentialsManager.config_entry,
-        )
-        for key in optional:
-            if not cp.has_option(url, key):
-                continue
-            if key in _boolean_opts:
-                api_host_options[apiurl][key] = cp.getboolean(url, key)
-            elif key in _integer_opts:
-                api_host_options[apiurl][key] = cp.getint(url, key)
+            if ini_key in cp[url]:
+                value = cp[url][ini_key]
             else:
-                api_host_options[apiurl][key] = cp.get(url, key)
+                continue
 
-        if cp.has_option(url, 'build-root', proper=True):
-            api_host_options[apiurl]['build-root'] = cp.get(url, 'build-root', raw=True)
+            if name == "password":
+                creds_mgr = _get_credentials_manager(url, cp)
+                value = creds_mgr.get_password(url, host_options.username, defer=True, apiurl=host_options.apiurl)
+                if value is None:
+                    raise oscerr.ConfigMissingCredentialsError("No password found in section {url}", conffile, url)
 
-        if 'sslcertck' not in api_host_options[apiurl]:
-            api_host_options[apiurl]['sslcertck'] = True
+            host_options.set_value_from_string(name, value)
 
-        if 'cafile' not in api_host_options[apiurl]:
-            api_host_options[apiurl]['cafile'] = None
+        scheme = urlsplit(apiurl)[0]
+        if scheme == "http" and not host_options.allow_http:
+            msg = "The apiurl '{apiurl}' uses HTTP protocol without any encryption.\n"
+            msg += "All communication incl. sending your password IS NOT ENCRYPTED!\n"
+            msg += "Add 'allow_http=1' to the [{apiurl}] config file section to mute this message.\n"
+            print(msg.format(apiurl=apiurl), file=sys.stderr)
 
-        if 'capath' not in api_host_options[apiurl]:
-            api_host_options[apiurl]['capath'] = None
+        config.api_host_options[apiurl] = host_options
 
-        if 'allow_http' not in api_host_options[apiurl]:
-            api_host_options[apiurl]['allow_http'] = False
+    # read the main options
+    for name, field in config.__fields__.items():
+        ini_key = field.extra.get("ini_key", name)
+        env_key = f"OSC_{name.upper()}"
 
-        if cp.has_option(url, 'trusted_prj'):
-            api_host_options[apiurl]['trusted_prj'] = cp.get(url, 'trusted_prj').split(' ')
+        # priority: env, overrides, config
+        if env_key in os.environ:
+            value = os.environ["env_key"]
+        elif name in overrides:
+            value = overrides.pop(name)
+        elif ini_key in overrides:
+            value = overrides.pop(ini_key)
+        elif ini_key in cp["general"]:
+            value = cp["general"][ini_key]
         else:
-            api_host_options[apiurl]['trusted_prj'] = []
+            continue
 
-        # This option is experimental and may be removed at any time in the future!
-        # This allows overriding the download url for an OBS instance to specify a closer mirror
-        # or proxy system, which can greatly improve download performance, latency and more.
-        # For example, this can use https://github.com/Firstyear/opensuse-proxy-cache in a local
-        # geo to improve performance.
-        if cp.has_option(url, 'downloadurl'):
-            api_host_options[apiurl]['downloadurl'] = cp.get(url, 'downloadurl')
-        else:
-            api_host_options[apiurl]['downloadurl'] = None
+        if name == "apiurl":
+            # resolve an apiurl alias to an actual apiurl
+            apiurl = config.apiurl_aliases.get(value, None)
+            if not apiurl:
+                # no alias matched, try again with a sanitized apiurl (with https:// prefix)
+                # and if there's no match again, just use the sanitized apiurl
+                apiurl = sanitize_apiurl(value)
+                apiurl = config.apiurl_aliases.get(apiurl, apiurl)
+            value = apiurl
 
-        if api_host_options[apiurl]['sshkey'] is None:
-            api_host_options[apiurl]['sshkey'] = config['sshkey']
+        config.set_value_from_string(name, value)
 
-        api_host_options[apiurl]["disable_hdrmd5_check"] = config["disable_hdrmd5_check"]
-        if cp.has_option(url, "disable_hdrmd5_check"):
-            api_host_options[apiurl]["disable_hdrmd5_check"] = cp.getboolean(url, "disable_hdrmd5_check")
-
-    # add the auth data we collected to the config dict
-    config['api_host_options'] = api_host_options
-    config['apiurl_aliases'] = aliases
-
-    apiurl = aliases.get(config['apiurl'], config['apiurl'])
-    config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
-    # backward compatibility
-    if 'apisrv' in config:
-        apisrv = config['apisrv'].lstrip('http://')
-        apisrv = apisrv.lstrip('https://')
-        scheme = config.get('scheme', 'https')
-        config['apiurl'] = urljoin(scheme, apisrv)
-    if 'apisrc' in config or 'scheme' in config:
-        print('Warning: Use of the \'scheme\' or \'apisrv\' in oscrc is deprecated!\n'
-              'Warning: See README for migration details.', file=sys.stderr)
-    if 'build_platform' in config:
-        print('Warning: Use of \'build_platform\' config option is deprecated! (use \'build_repository\' instead)', file=sys.stderr)
-        config['build_repository'] = config['build_platform']
-
-    config['verbose'] = bool(int(config['verbose']))
-    # override values which we were called with
-    if override_verbose is not None:
-        config['verbose'] = bool(override_verbose)
-
-    config['debug'] = bool(int(config['debug']))
-    if override_debug is not None:
-        config['debug'] = bool(override_debug)
-
-    if override_http_debug:
-        config['http_debug'] = override_http_debug
-    if override_http_full_debug:
-        config['http_debug'] = override_http_full_debug or config['http_debug']
-        config['http_full_debug'] = override_http_full_debug
-    if override_traceback:
-        config['traceback'] = override_traceback
-    if override_post_mortem:
-        config['post_mortem'] = override_post_mortem
-    if override_apiurl:
-        apiurl = aliases.get(override_apiurl, override_apiurl)
-        # check if apiurl is a valid url
-        config['apiurl'] = urljoin(*parse_apisrv_url(None, apiurl))
+    if overrides:
+        unused_overrides_str = ", ".join((f"'{i}'" for i in overrides))
+        raise oscerr.ConfigError(f"Unknown config options: {unused_overrides_str}", "<command-line>")
 
     # XXX unless config['user'] goes away (and is replaced with a handy function, or
     # config becomes an object, even better), set the global 'user' here as well,
@@ -969,13 +1888,6 @@ def get_config(override_conffile=None,
         e.msg = config_missing_apiurl_text % config['apiurl']
         e.file = conffile
         raise e
-
-    scheme = urlsplit(apiurl)[0]
-    if scheme == "http" and not api_host_options[apiurl]['allow_http']:
-        msg = "The apiurl '{apiurl}' uses HTTP protocol without any encryption.\n"
-        msg += "All communication incl. sending your password IS NOT ENCRYPTED!\n"
-        msg += "Add 'allow_http=1' to the [{apiurl}] config file section to mute this message.\n"
-        print(msg.format(apiurl=apiurl), file=sys.stderr)
 
     # enable connection debugging after all config options are set
     from .connection import enable_http_debug
@@ -999,7 +1911,7 @@ def identify_conf():
 
 def interactive_config_setup(conffile, apiurl, initial=True):
     if not apiurl:
-        apiurl = DEFAULTS["apiurl"]
+        apiurl = Options()["apiurl"]
 
     scheme = urlsplit(apiurl)[0]
     http = scheme == "http"

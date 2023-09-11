@@ -1,13 +1,10 @@
 .. py:module:: osc.conf
 
-conf
-====
 
-This is the osc conf module.
-It handles the configuration of osc
+osc.conf
+========
 
-basic structures
-----------------
 
 .. automodule:: osc.conf
    :members:
+   :exclude-members: maintained_attribute, maintenance_attribute, maintained_update_project_attribute
