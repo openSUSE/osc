@@ -1834,6 +1834,7 @@ def get_config(override_conffile=None,
                 value = creds_mgr.get_password(url, host_options.username, defer=True, apiurl=host_options.apiurl)
                 if value is None:
                     raise oscerr.ConfigMissingCredentialsError("No password found in section {url}", conffile, url)
+                value = Password(value)
 
             host_options.set_value_from_string(name, value)
 
