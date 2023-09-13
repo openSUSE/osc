@@ -8913,7 +8913,8 @@ def vc_export_env(apiurl: str, quiet=False):
 
     for (tag, val) in tag2val.items():
         for env in tag2envs[tag]:
-            os.environ[env] = val
+            if val:
+                os.environ[env] = val
 
 
 class MultibuildFlavorResolver:
