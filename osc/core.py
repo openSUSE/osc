@@ -2855,6 +2855,7 @@ class RequestState(AbstractState):
         self.who = state_node.get('who')
         self.when = state_node.get('when')
         self.approver = state_node.get('approver')
+        self.superseded_by = state_node.get("superseded_by", None)
         if state_node.find('description') is None:
             # OBS 2.6 has it always, before it did not exist
             self.description = state_node.get('description')
@@ -3345,7 +3346,10 @@ class Request:
         lines += ["", "Message:", textwrap.indent(self.description or "<no message>", prefix="  ")]
 
         if self.state:
-            lines += ["", "State:", f"  {self.state.name:61} {self.state.when:12} {self.state.who}"]
+            state_name = self.state.name
+            if self.state.superseded_by:
+                state_name += f" by {self.state.superseded_by}"
+            lines += ["", "State:", f"  {state_name:61} {self.state.when:12} {self.state.who}"]
             if self.state.comment:
                 lines += [textwrap.indent(self.state.comment, prefix="    | ", predicate=lambda line: True)]
 
