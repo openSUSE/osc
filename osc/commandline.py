@@ -5547,8 +5547,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
                   help='Allow empty commit with no changes. When commiting a project, allow removing packages even if other packages depend on them.')
-    @cmdln.option('--skip-local-service-run', '--noservice', default=False, action="store_true",
-                  help='Skip service run of configured source services for local run')
+    @cmdln.option("--skip-local-service-run", "--noservice", "--no-service", default=False, action="store_true",
+                  help="Skip run of local source services as specified in _service file.")
     def do_commit(self, subcmd, opts, *args):
         """
         Upload content to the repository server
@@ -5590,6 +5590,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     msg = open(opts.file).read()
                 except:
                     sys.exit('could not open file \'%s\'.' % opts.file)
+
         skip_local_service_run = False
         if not conf.config['local_service_run'] or opts.skip_local_service_run:
             skip_local_service_run = True
@@ -7053,8 +7054,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Skip signature verification (via pgp keys) of packages used for build. (Global config in oscrc: no_verify)')
     @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
                   help='Skip installation of additional debug packages for CLI builds')
-    @cmdln.option('--noservice', '--no-service', action='store_true',
-                  help='Skip run of local source services as specified in _service file.')
+    @cmdln.option("--skip-local-service-run", "--noservice", "--no-service", default=False, action="store_true",
+                  help="Skip run of local source services as specified in _service file.")
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
     @cmdln.option('-k', '--keep-pkgs', metavar='DIR',
@@ -7328,8 +7329,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.offline and opts.preload:
             raise oscerr.WrongOptions('--offline and --preload are mutually exclusive')
 
+        if not opts.skip_local_service_run:
+            # if the option is not set by the user read the default from config
+            if not conf.config['local_service_run']:
+                opts.skip_local_service_run = True
+
         if opts.shell or opts.wipe:
-            opts.noservice = True
+            opts.skip_local_service_run = True
 
         if opts.preload:
             opts.nopreinstallimage = True

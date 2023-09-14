@@ -861,10 +861,10 @@ def main(apiurl, store, opts, argv):
         buildargs.append('--noinit')
 
     if not store.is_package:
-        opts.noservice = True
+        opts.skip_local_service_run = True
 
     # check for source services
-    if not opts.offline and not opts.noservice:
+    if not opts.offline and not opts.skip_local_service_run:
         p = core.Package(os.curdir)
         r = p.run_source_services(verbose=True)
         if r:
