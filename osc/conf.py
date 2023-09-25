@@ -997,13 +997,16 @@ class Options(OscOptions):
     )  # type: ignore[assignment]
 
     build_root: str = Field(
-        default="/var/tmp/build-root/%(repo)s-%(arch)s",
+        default="/var/tmp/build-root%(dash_user)s/%(repo)s-%(arch)s",
         description=textwrap.dedent(
             """
             Path to the build root directory.
 
-            Supported substitutions: ``%(repo)s``, ``%(arch)s``, ``%(project)s``, ``%(package)s`` and ``%(apihost)s``
-            where ``apihost`` is the hostname extracted from the currently used ``apiurl``.
+            Supported substitutions: ``%(repo)s``, ``%(arch)s``, ``%(project)s``, ``%(package)s``, ``%(apihost)s``, ``%(user)s``, ``%(dash_user)s``
+            where::
+
+                - ``apihost`` is the hostname extracted from the currently used ``apiurl``.
+                - ``dash_user`` is the username prefixed with a dash. If ``user`` is empty, ``dash_user`` is also empty.
 
             NOTE: The configuration holds the original unexpanded string. Call ``osc.build.get_build_root()`` with proper arguments to retrieve an actual path.
 

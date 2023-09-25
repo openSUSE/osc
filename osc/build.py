@@ -4,6 +4,7 @@
 # either version 2, or (at your option) any later version.
 
 import fnmatch
+import getpass
 import glob
 import os
 import re
@@ -605,9 +606,24 @@ def calculate_prj_pac(store, opts, descr):
     return project, package
 
 
-def calculate_build_root(apihost, prj, pac, repo, arch):
-    buildroot = conf.config["build-root"] \
-        % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
+def calculate_build_root_user(vm_type):
+    if vm_type in ("kvm", "podman"):
+        return getpass.getuser()
+    return None
+
+
+def calculate_build_root(apihost, prj, pac, repo, arch, user=None):
+    user = user or ""
+    dash_user = f"-{user:s}" if user else ""
+    buildroot = conf.config["build-root"] % {
+        'apihost': apihost,
+        'project': prj,
+        'package': pac,
+        'repo': repo,
+        'arch': arch,
+        "user": user,
+        "dash_user": dash_user,
+    }
     return buildroot
 
 
@@ -632,8 +648,11 @@ def su_wrapper(cmd):
 def run_build(opts, *args):
     cmd = [conf.config['build-cmd']]
     cmd += args
-
     cmd = su_wrapper(cmd)
+
+    user = calculate_build_root_user(opts.vm_type)
+    if not user:
+        cmd = su_wrapper(cmd)
 
     if not opts.userootforbuild:
         cmd.append('--norootforbuild')
@@ -793,7 +812,8 @@ def main(apiurl, store, opts, argv):
             pacname = os.path.splitext(os.path.basename(build_descr))[0]
     apihost = urlsplit(apiurl)[1]
     if not build_root:
-        build_root = calculate_build_root(apihost, prj, pacname, repo, arch)
+        user = calculate_build_root_user(vm_type)
+        build_root = calculate_build_root(apihost, prj, pacname, repo, arch, user)
 
     # We configure sccache after pacname, so that in default cases we can have an sccache for each
     # package to prevent cross-cache polutions. It helps to make the local-use case a bit nicer.
@@ -1472,7 +1492,9 @@ def main(apiurl, store, opts, argv):
     cmd += specialcmdopts + vm_options + buildargs
     cmd += [build_descr]
 
-    cmd = su_wrapper(cmd)
+    # determine if we're building under root (user == None) and use su_wrapper accordingly
+    if calculate_build_root_user(vm_type) is None:
+        cmd = su_wrapper(cmd)
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:

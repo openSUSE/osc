@@ -7267,7 +7267,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repo, arch, build_descr = args
                 prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
                 apihost = urlsplit(self.get_api_url())[1]
-                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch)
+                user = osc_build.calculate_build_root_user(opts.vm_type)
+                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
             print(build_root)
             return
 
@@ -7280,8 +7281,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repo, arch, build_descr = args
                 prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
                 apihost = urlsplit(self.get_api_url())[1]
-                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo,
-                                                            arch)
+                user = osc_build.calculate_build_root_user(opts.vm_type)
+                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
             if opts.wipe and not opts.force:
                 # Confirm delete
                 print("Really wipe '%s'? [y/N]: " % build_root)
