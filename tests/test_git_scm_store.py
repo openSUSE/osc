@@ -36,6 +36,14 @@ class TestGitStore(unittest.TestCase):
         store = GitStore(self.tmpdir)
         self.assertEqual(store.last_buildroot, ("repo", "arch", "vm_type"))
 
+    def test_last_buildroot_empty_vm_type(self):
+        store = GitStore(self.tmpdir)
+        self.assertEqual(store.last_buildroot, None)
+        store.last_buildroot = ("repo", "arch", None)
+
+        store = GitStore(self.tmpdir)
+        self.assertEqual(store.last_buildroot, ("repo", "arch", None))
+
     def test_scmurl(self):
         store = GitStore(self.tmpdir)
         self.assertEqual(store.scmurl, "https://example.com/packages/my-package.git")

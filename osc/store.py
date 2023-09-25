@@ -119,7 +119,7 @@ class Store:
         if not isinstance(value, (list, tuple)):
             msg = f"The argument `value` should be list, not {type(value).__name__}"
             raise TypeError(msg)
-        value = "".join((f"{line}\n" for line in value))
+        value = "".join((f"{line or ''}\n" for line in value))
         self.write_file(fn, value, subdir=subdir)
 
     def read_string(self, fn, subdir=None):
@@ -291,6 +291,8 @@ class Store:
         if items is not None and len(items) != 3:
             msg = f"Package '{self.path}' contains _last_buildroot metadata that doesn't contain 3 lines: [repo, arch, vm_type]"
             raise oscerr.NoWorkingCopy(msg)
+        if items[2] in ("", "None"):
+            items[2] = None
         return items
 
     @last_buildroot.setter

@@ -203,6 +203,12 @@ class TestStore(unittest.TestCase):
         store2 = Store(self.tmpdir)
         self.assertEqual(store2.last_buildroot, ["repo", "arch", "vm_type"])
 
+        self.store.last_buildroot = "repo", "arch", None
+        self.fileEquals("_last_buildroot", "repo\narch\n\n")
+
+        store2 = Store(self.tmpdir)
+        self.assertEqual(store2.last_buildroot, ["repo", "arch", None])
+
     def test_meta_node(self):
         self.store.write_string(
             "_meta",
