@@ -193,6 +193,8 @@ class TestStore(unittest.TestCase):
         self.assertTrue(files2[1] == files[0])
 
     def test_last_buildroot(self):
+        self.assertEqual(self.store.last_buildroot, None)
+
         self.store.last_buildroot = "repo", "arch", "vm_type"
         self.fileEquals("_last_buildroot", "repo\narch\nvm_type\n")
 
