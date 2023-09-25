@@ -7663,7 +7663,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             self.argparse_error("Please specify a command")
 
         command = args.pop(0)
-        if command not in ("runall", "ra", "run", "localrun", "manualrun", "disabledrun", "remoterun", "lr", "dr", "mr", "rr", "merge", "wait"):
+        if command not in ("runall", "ra", "run", "localrun", "manualrun", "disabledrun", "remoterun", "lr", "dr", "mr", "r", "rr", "merge", "wait"):
             self.argparse_error(f"Invalid command: {command}")
 
         if command in ("localrun", "lr"):
