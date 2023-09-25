@@ -1005,6 +1005,8 @@ class Options(OscOptions):
             Supported substitutions: ``%(repo)s``, ``%(arch)s``, ``%(project)s``, ``%(package)s`` and ``%(apihost)s``
             where ``apihost`` is the hostname extracted from the currently used ``apiurl``.
 
+            NOTE: The configuration holds the original unexpanded string. Call ``osc.build.get_build_root()`` with proper arguments to retrieve an actual path.
+
             Passed as ``--root <VALUE>`` to the build tool.
             """
         ),
@@ -1745,7 +1747,7 @@ def get_config(override_conffile=None,
     Configure osc.
 
     The configuration options are loaded with the following priority:
-        1. environment variables: OSC_<uppercase-option>
+        1. environment variables: OSC_<uppercase_option>
         2. override arguments provided to get_config()
         3. oscrc config file
     """

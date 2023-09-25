@@ -606,19 +606,19 @@ def calculate_prj_pac(store, opts, descr):
 
 
 def calculate_build_root(apihost, prj, pac, repo, arch):
-    buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
+    buildroot = conf.config["build-root"] \
         % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
     return buildroot
 
 
 def build_as_user():
-    if os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split():
+    if conf.config["su-wrapper"]:
         return False
     return True
 
 
 def su_wrapper(cmd):
-    sucmd = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split()
+    sucmd = conf.config['su-wrapper'].split()
     if sucmd:
         if sucmd[0] == 'su':
             if sucmd[-1] == '-c':
@@ -782,18 +782,6 @@ def main(apiurl, store, opts, argv):
     if opts.wipe:
         buildargs.append("--wipe")
 
-    orig_build_root = config['build-root']
-    # make it possible to override configuration of the rc file
-    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
-        val = os.getenv(var)
-        if val:
-            if var.startswith('OSC_'):
-                var = var[4:]
-            var = var.lower().replace('_', '-')
-            if var in config:
-                print('Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val))
-            config[var] = val
-
     pacname = pac
     if pacname == '_repository':
         if not opts.local_package:
@@ -805,15 +793,7 @@ def main(apiurl, store, opts, argv):
             pacname = os.path.splitext(os.path.basename(build_descr))[0]
     apihost = urlsplit(apiurl)[1]
     if not build_root:
-        build_root = config['build-root']
-        if build_root == orig_build_root:
-            # ENV var was not set
-            build_root = config['api_host_options'][apiurl].get('build-root', build_root)
-        try:
-            build_root = build_root % {'repo': repo, 'arch': arch,
-                                       'project': prj, 'package': pacname, 'apihost': apihost}
-        except KeyError:
-            pass
+        build_root = calculate_build_root(apihost, prj, pacname, repo, arch)
 
     # We configure sccache after pacname, so that in default cases we can have an sccache for each
     # package to prevent cross-cache polutions. It helps to make the local-use case a bit nicer.
