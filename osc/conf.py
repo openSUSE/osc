@@ -179,7 +179,7 @@ class OscOptions(BaseModel):
 
         if not value.strip():
             if field.is_optional:
-                setattr(self, field_name, value)
+                setattr(self, field_name, None)
                 return
 
         if field.origin_type is Password:
