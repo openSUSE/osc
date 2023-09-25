@@ -288,11 +288,16 @@ class Store:
     def last_buildroot(self):
         self.assert_is_package()
         items = self.read_list("_last_buildroot")
-        if items is not None and len(items) != 3:
+        if items is None:
+            return items
+
+        if len(items) != 3:
             msg = f"Package '{self.path}' contains _last_buildroot metadata that doesn't contain 3 lines: [repo, arch, vm_type]"
             raise oscerr.NoWorkingCopy(msg)
+
         if items[2] in ("", "None"):
             items[2] = None
+
         return items
 
     @last_buildroot.setter
