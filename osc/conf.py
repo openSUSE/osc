@@ -976,11 +976,21 @@ class Options(OscOptions):
             """
             Type of the build environment passed the build tool as the ``--vm-type`` option:
 
-             - <empty>: chroot build
-             - kvm:     KVM VM build (needs build-device, build-swap, build-memory)
-             - xen:     XEN VM build (needs build-device, build-swap, build-memory)
-             - qemu:    [EXPERIMENTAL] QEMU VM build
-             - lxc:     [EXPERIMENTAL] LXC build
+             - <empty>   chroot build
+             - kvm       KVM VM build (rootless, needs build-device, build-swap, build-memory)
+             - xen       XEN VM build (needs build-device, build-swap, build-memory)
+             - qemu      [EXPERIMENTAL] QEMU VM build
+             - lxc       [EXPERIMENTAL] LXC build
+             - uml
+             - zvm
+             - openstack
+             - ec2
+             - docker
+             - podman    (rootless)
+             - pvm
+             - nspawn
+
+            See ``build --help`` for more details about supported options.
             """
         ),
         ini_key="build-type",
