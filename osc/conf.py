@@ -970,7 +970,7 @@ class Options(OscOptions):
         ini_key="build-jobs",
     )  # type: ignore[assignment]
 
-    build_type: Optional[str] = Field(
+    vm_type: Optional[str] = Field(
         default=None,
         description=textwrap.dedent(
             """
