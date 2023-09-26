@@ -7285,7 +7285,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
             if opts.wipe and not opts.force:
                 # Confirm delete
-                print("Really wipe '%s'? [y/N]: " % build_root)
+                print("Really wipe '%s'? [y/N]: " % build_root, end="")
                 choice = raw_input().lower()
                 if choice != 'y':
                     print('Aborting')
