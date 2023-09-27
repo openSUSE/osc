@@ -648,7 +648,9 @@ def su_wrapper(cmd):
 def run_build(opts, *args):
     cmd = [conf.config['build-cmd']]
     cmd += args
-    cmd = su_wrapper(cmd)
+
+    if opts.vm_type:
+        cmd.extend(["--vm-type", opts.vm_type])
 
     user = calculate_build_root_user(opts.vm_type)
     if not user:
