@@ -4726,12 +4726,14 @@ def change_review_state(
     return root.get('code')
 
 
-def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None, force=False):
+def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None, force=False, keep_packages_locked=False):
     query = {"cmd": "changestate", "newstate": newstate}
     if supersed:
         query['superseded_by'] = supersed
     if force:
         query['force'] = "1"
+    if keep_packages_locked:
+        query['keep_packages_locked'] = "1"
     u = makeurl(apiurl,
                 ['request', reqid], query=query)
     f = http_POST(u, data=message)

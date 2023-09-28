@@ -3044,6 +3044,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
                   help='exclude target project from request list')
+    @cmdln.option('--keep-packages-locked', action='store_true',
+                  help='Avoid unlocking of packages in maintenance incident when revoking release requests')
     @cmdln.option('--incoming', action='store_true',
                   help='Show only requests where the project is target')
     @cmdln.option('--involved-projects', action='store_true',
@@ -3502,7 +3504,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     opts.message = edit_message(template=tmpl)
                 try:
                     r = change_request_state(apiurl,
-                                             reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force)
+                                             reqid, state_map[cmd], opts.message or '', supersed=supersedid, force=opts.force, keep_packages_locked=opts.keep_packages_locked)
                     print('Result of change request state: %s' % r)
                 except HTTPError as e:
                     print(e, file=sys.stderr)
