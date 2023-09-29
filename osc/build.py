@@ -1510,7 +1510,12 @@ def main(apiurl, store, opts, argv):
         rc = run_external(cmd[0], *cmd[1:])
         if rc:
             print()
-            print('The buildroot was:', build_root)
+            print(f"Build failed with exit code {rc}")
+            print(f"The buildroot was: {build_root}")
+            print()
+            print("Cleaning the build root may fix the problem or allow you to start debugging from a well-defined state:")
+            print("  - add '--clean' option to your 'osc build' command")
+            print("  - run 'osc wipe [--vm-type=...]' prior running your 'osc build' command again")
             sys.exit(rc)
     except KeyboardInterrupt as keyboard_interrupt_exception:
         print("keyboard interrupt, killing build ...")
