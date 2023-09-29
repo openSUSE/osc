@@ -3084,6 +3084,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         "supersede" will supersede one request with another existing one.
 
         "revoke" will set the request state to "revoked"
+        WARNING: Revoking a maitenance release request unlocks packages in the source project.
+                 To avoid unlocking, use the --keep-packages-locked option.
 
         "accept" will change the request state to "accepted" and will trigger
         the actual submit process. That would normally be a server-side copy of
