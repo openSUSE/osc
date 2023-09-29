@@ -1869,7 +1869,7 @@ def get_config(override_conffile=None,
 
         # priority: env, overrides, config
         if env_key in os.environ:
-            value = os.environ["env_key"]
+            value = os.environ[env_key]
         elif name in overrides:
             value = overrides.pop(name)
         elif ini_key in overrides:
