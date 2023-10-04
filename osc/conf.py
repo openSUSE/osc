@@ -1824,17 +1824,17 @@ def get_config(override_conffile=None,
         for name, field in host_options.__fields__.items():
             ini_key = field.extra.get("ini_key", name)
 
-            if ini_key in cp[url]:
-                value = cp[url][ini_key]
-            else:
-                continue
-
             if name == "password":
+                # we need to handle the password first because it may be stored in a keyring instead of a config file
                 creds_mgr = _get_credentials_manager(url, cp)
                 value = creds_mgr.get_password(url, host_options.username, defer=True, apiurl=host_options.apiurl)
                 if value is None:
                     raise oscerr.ConfigMissingCredentialsError("No password found in section {url}", conffile, url)
                 value = Password(value)
+            elif ini_key in cp[url]:
+                value = cp[url][ini_key]
+            else:
+                continue
 
             host_options.set_value_from_string(name, value)
 
