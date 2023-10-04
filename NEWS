@@ -1,3 +1,34 @@
+- 1.4.0
+  - Command-line:
+    - Add rootless build support to 'build' command for 'kvm' and 'podman' vm types
+    - Print a hint to clean the build root after a failed build
+    - Avoid adding a newline to prompt in 'wipe' command
+    - Fix 'build' command to pass '--vm-type' option to the underlying build tool
+    - Add '--just-print-buildroot' option to print build root path and exit to 'build' command
+    - Add support for keep_packages_locked on request revoke
+    - Import zsh completition made by Holger Macht and improve it
+    - Use XDG locations in completion
+    - Fix 'search' command to resolve '-B .' to the current project
+    - Add '-M/--multibuild-package' option to 'checkconstraints' command
+    - Allow constraints file with remote request in 'checkconstraints' command
+    - Unify how the 'commit' and 'build' commands work with '--noservice' option
+    - Fix 'request show' command to print superseded_by information
+    - Fix 'service' command to support already documented 'r' abbreviation for 'run'
+  - Configuration:
+    - Implement 'exclude_files' and 'include_files' config options that allow skipping files in the 'checkout' command
+    - Fix api_host_options for custom CAs (cafile and capath options work again)
+    - Switch 'osc.conf.config' from dict to Options class with type checking
+    - Rename conf.Options.build_type to vm_type to be consistent with obs build and osc --vm-type option
+    - Update list of supported vm_type values in conf.Options.vm_type
+    - Remove any duplicated code loading configuration from ENV
+  - Library:
+    - Add 'osc.util.models' module implementing an alternative pydantic-like data validation
+    - Add 'osc.util.xdg' module for handling XDG paths
+    - Fix handling empty vm_type in Store.last_buildroot
+  - Spec:
+    - Install zsh completion
+    - Bulild and install oscrc man page
+
 - 1.3.1
   - Command-line:
     - Fix string + int concatenation errors in 'build' command by using f-strings instead
