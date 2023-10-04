@@ -970,17 +970,27 @@ class Options(OscOptions):
         ini_key="build-jobs",
     )  # type: ignore[assignment]
 
-    build_type: Optional[str] = Field(
+    vm_type: Optional[str] = Field(
         default=None,
         description=textwrap.dedent(
             """
             Type of the build environment passed the build tool as the ``--vm-type`` option:
 
-             - <empty>: chroot build
-             - kvm:     KVM VM build (needs build-device, build-swap, build-memory)
-             - xen:     XEN VM build (needs build-device, build-swap, build-memory)
-             - qemu:    [EXPERIMENTAL] QEMU VM build
-             - lxc:     [EXPERIMENTAL] LXC build
+             - <empty>   chroot build
+             - kvm       KVM VM build (rootless, needs build-device, build-swap, build-memory)
+             - xen       XEN VM build (needs build-device, build-swap, build-memory)
+             - qemu      [EXPERIMENTAL] QEMU VM build
+             - lxc       [EXPERIMENTAL] LXC build
+             - uml
+             - zvm
+             - openstack
+             - ec2
+             - docker
+             - podman    (rootless)
+             - pvm
+             - nspawn
+
+            See ``build --help`` for more details about supported options.
             """
         ),
         ini_key="build-type",
@@ -997,13 +1007,18 @@ class Options(OscOptions):
     )  # type: ignore[assignment]
 
     build_root: str = Field(
-        default="/var/tmp/build-root/%(repo)s-%(arch)s",
+        default="/var/tmp/build-root%(dash_user)s/%(repo)s-%(arch)s",
         description=textwrap.dedent(
             """
             Path to the build root directory.
 
-            Supported substitutions: ``%(repo)s``, ``%(arch)s``, ``%(project)s``, ``%(package)s`` and ``%(apihost)s``
-            where ``apihost`` is the hostname extracted from the currently used ``apiurl``.
+            Supported substitutions: ``%(repo)s``, ``%(arch)s``, ``%(project)s``, ``%(package)s``, ``%(apihost)s``, ``%(user)s``, ``%(dash_user)s``
+            where::
+
+                - ``apihost`` is the hostname extracted from the currently used ``apiurl``.
+                - ``dash_user`` is the username prefixed with a dash. If ``user`` is empty, ``dash_user`` is also empty.
+
+            NOTE: The configuration holds the original unexpanded string. Call ``osc.build.get_build_root()`` with proper arguments to retrieve an actual path.
 
             Passed as ``--root <VALUE>`` to the build tool.
             """
@@ -1745,7 +1760,7 @@ def get_config(override_conffile=None,
     Configure osc.
 
     The configuration options are loaded with the following priority:
-        1. environment variables: OSC_<uppercase-option>
+        1. environment variables: OSC_<uppercase_option>
         2. override arguments provided to get_config()
         3. oscrc config file
     """
@@ -1854,7 +1869,7 @@ def get_config(override_conffile=None,
 
         # priority: env, overrides, config
         if env_key in os.environ:
-            value = os.environ["env_key"]
+            value = os.environ[env_key]
         elif name in overrides:
             value = overrides.pop(name)
         elif ini_key in overrides:

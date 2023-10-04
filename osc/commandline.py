@@ -6423,10 +6423,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
         # TODO: refactor/unify buildroot calculation and move it to core.py
-        buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root'])
         apihost = urlsplit(self.get_api_url())[1]
-        buildroot = buildroot % {'project': project, 'package': package,
-                                 'repo': repo, 'arch': arch, 'apihost': apihost}
+        buildroot = osc_build.calculate_build_root(apihost, project, package, repo, arch)
+
         offset = 0
         if opts.offset:
             offset = int(opts.offset)
@@ -7272,7 +7271,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repo, arch, build_descr = args
                 prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
                 apihost = urlsplit(self.get_api_url())[1]
-                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch)
+                user = osc_build.calculate_build_root_user(opts.vm_type)
+                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
             print(build_root)
             return
 
@@ -7285,11 +7285,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 repo, arch, build_descr = args
                 prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
                 apihost = urlsplit(self.get_api_url())[1]
-                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo,
-                                                            arch)
+                user = osc_build.calculate_build_root_user(opts.vm_type)
+                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
             if opts.wipe and not opts.force:
                 # Confirm delete
-                print("Really wipe '%s'? [y/N]: " % build_root)
+                print("Really wipe '%s'? [y/N]: " % build_root, end="")
                 choice = raw_input().lower()
                 if choice != 'y':
                     print('Aborting')

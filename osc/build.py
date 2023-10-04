@@ -4,6 +4,7 @@
 # either version 2, or (at your option) any later version.
 
 import fnmatch
+import getpass
 import glob
 import os
 import re
@@ -605,20 +606,35 @@ def calculate_prj_pac(store, opts, descr):
     return project, package
 
 
-def calculate_build_root(apihost, prj, pac, repo, arch):
-    buildroot = os.environ.get('OSC_BUILD_ROOT', conf.config['build-root']) \
-        % {'repo': repo, 'arch': arch, 'project': prj, 'package': pac, 'apihost': apihost}
+def calculate_build_root_user(vm_type):
+    if vm_type in ("kvm", "podman"):
+        return getpass.getuser()
+    return None
+
+
+def calculate_build_root(apihost, prj, pac, repo, arch, user=None):
+    user = user or ""
+    dash_user = f"-{user:s}" if user else ""
+    buildroot = conf.config["build-root"] % {
+        'apihost': apihost,
+        'project': prj,
+        'package': pac,
+        'repo': repo,
+        'arch': arch,
+        "user": user,
+        "dash_user": dash_user,
+    }
     return buildroot
 
 
 def build_as_user():
-    if os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split():
+    if conf.config["su-wrapper"]:
         return False
     return True
 
 
 def su_wrapper(cmd):
-    sucmd = os.environ.get('OSC_SU_WRAPPER', conf.config['su-wrapper']).split()
+    sucmd = conf.config['su-wrapper'].split()
     if sucmd:
         if sucmd[0] == 'su':
             if sucmd[-1] == '-c':
@@ -633,7 +649,12 @@ def run_build(opts, *args):
     cmd = [conf.config['build-cmd']]
     cmd += args
 
-    cmd = su_wrapper(cmd)
+    if opts.vm_type:
+        cmd.extend(["--vm-type", opts.vm_type])
+
+    user = calculate_build_root_user(opts.vm_type)
+    if not user:
+        cmd = su_wrapper(cmd)
 
     if not opts.userootforbuild:
         cmd.append('--norootforbuild')
@@ -782,18 +803,6 @@ def main(apiurl, store, opts, argv):
     if opts.wipe:
         buildargs.append("--wipe")
 
-    orig_build_root = config['build-root']
-    # make it possible to override configuration of the rc file
-    for var in ['OSC_PACKAGECACHEDIR', 'OSC_SU_WRAPPER', 'OSC_BUILD_ROOT']:
-        val = os.getenv(var)
-        if val:
-            if var.startswith('OSC_'):
-                var = var[4:]
-            var = var.lower().replace('_', '-')
-            if var in config:
-                print('Overriding config value for %s=\'%s\' with \'%s\'' % (var, config[var], val))
-            config[var] = val
-
     pacname = pac
     if pacname == '_repository':
         if not opts.local_package:
@@ -805,15 +814,8 @@ def main(apiurl, store, opts, argv):
             pacname = os.path.splitext(os.path.basename(build_descr))[0]
     apihost = urlsplit(apiurl)[1]
     if not build_root:
-        build_root = config['build-root']
-        if build_root == orig_build_root:
-            # ENV var was not set
-            build_root = config['api_host_options'][apiurl].get('build-root', build_root)
-        try:
-            build_root = build_root % {'repo': repo, 'arch': arch,
-                                       'project': prj, 'package': pacname, 'apihost': apihost}
-        except KeyError:
-            pass
+        user = calculate_build_root_user(vm_type)
+        build_root = calculate_build_root(apihost, prj, pacname, repo, arch, user)
 
     # We configure sccache after pacname, so that in default cases we can have an sccache for each
     # package to prevent cross-cache polutions. It helps to make the local-use case a bit nicer.
@@ -1492,7 +1494,9 @@ def main(apiurl, store, opts, argv):
     cmd += specialcmdopts + vm_options + buildargs
     cmd += [build_descr]
 
-    cmd = su_wrapper(cmd)
+    # determine if we're building under root (user == None) and use su_wrapper accordingly
+    if calculate_build_root_user(vm_type) is None:
+        cmd = su_wrapper(cmd)
 
     # change personality, if needed
     if hostarch != bi.buildarch and bi.buildarch in change_personality:
@@ -1506,7 +1510,12 @@ def main(apiurl, store, opts, argv):
         rc = run_external(cmd[0], *cmd[1:])
         if rc:
             print()
-            print('The buildroot was:', build_root)
+            print(f"Build failed with exit code {rc}")
+            print(f"The buildroot was: {build_root}")
+            print()
+            print("Cleaning the build root may fix the problem or allow you to start debugging from a well-defined state:")
+            print("  - add '--clean' option to your 'osc build' command")
+            print("  - run 'osc wipe [--vm-type=...]' prior running your 'osc build' command again")
             sys.exit(rc)
     except KeyboardInterrupt as keyboard_interrupt_exception:
         print("keyboard interrupt, killing build ...")
