@@ -4758,13 +4758,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             new_package = old_package
 
         if not old_package:
-            if opts.meta:
-                new_project = old_project
-                new_package = "_project"
-                old_project = None
-                old_package = None
-            else:
-                self.argparse_error("Please specify either a package or the --meta option")
+            new_project = old_project
+            new_package = "_project"
+            old_project = None
+            old_package = None
 
         if opts.meta:
             opts.unexpand = True
