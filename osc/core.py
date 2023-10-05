@@ -1192,7 +1192,7 @@ class Project:
     @staticmethod
     def init_project(
         apiurl: str,
-        dir: Path,
+        dir: str,
         project,
         package_tracking=True,
         getPackageList=True,
@@ -2176,7 +2176,7 @@ class Package:
 
         return state
 
-    def get_diff(self, revision=None, ignoreUnversioned=False):
+    def get_diff(self, revision: Optional[int] = None, ignoreUnversioned=False):
         diff_hdr = b'Index: %s\n'
         diff_hdr += b'===================================================================\n'
         kept = []
@@ -2274,7 +2274,7 @@ class Package:
                 continue
             elif state == ' ' and revision is None:
                 continue
-            elif not revision_is_empty(revision) and self.findfilebyname(f.name).md5 == f.md5 and state != 'M':
+            elif not revision_is_empty(revision) and self.findfilebyname(f.name).md5 == f.md5 and state != "M":
                 continue
             yield [diff_hdr % f.name.encode()]
             if revision is None:
@@ -3739,7 +3739,7 @@ def meta_get_project_list(apiurl: str, deleted=False):
     return sorted(node.get('name') for node in root if node.get('name'))
 
 
-def show_project_meta(apiurl: str, prj: str, rev=None, blame=None):
+def show_project_meta(apiurl: str, prj: str, rev: Optional[int] = None, blame=None):
     query = {}
     if blame:
         query['view'] = "blame"
@@ -3766,7 +3766,7 @@ def show_project_meta(apiurl: str, prj: str, rev=None, blame=None):
     return f.readlines()
 
 
-def show_project_conf(apiurl: str, prj: str, rev=None, blame=None):
+def show_project_conf(apiurl: str, prj: str, rev: Optional[int] = None, blame=None):
     query = {}
     url = None
     if not revision_is_empty(rev):
@@ -4196,7 +4196,7 @@ def show_files_meta(
     apiurl: str,
     prj: str,
     pac: str,
-    revision=None,
+    revision: Optional[int] = None,
     expand=False,
     linkrev=None,
     linkrepair=False,
@@ -4843,7 +4843,7 @@ def get_request_collection(
     package=None,
     states=None,
     review_states=None,
-    types: List[str] = None,
+    types: Optional[List[str]] = None,
     ids=None,
     withfullhistory=False
 ):
@@ -5388,10 +5388,10 @@ def server_diff(
     apiurl: str,
     old_project: str,
     old_package: str,
-    old_revision: str,
+    old_revision: Optional[str],
     new_project: str,
     new_package: str,
-    new_revision: str,
+    new_revision: Optional[str],
     unified=False,
     missingok=False,
     meta=False,
@@ -5399,7 +5399,7 @@ def server_diff(
     onlyissues=False,
     full=True,
     xml=False,
-    files: list = None,
+    files: Optional[list] = None,
 ):
     query: Dict[str, Union[str, int]] = {"cmd": "diff"}
     if expand:
@@ -5454,17 +5454,17 @@ def server_diff_noex(
     apiurl: str,
     old_project: str,
     old_package: str,
-    old_revision: str,
+    old_revision: Optional[str],
     new_project: str,
     new_package: str,
-    new_revision: str,
+    new_revision: Optional[str],
     unified=False,
     missingok=False,
     meta=False,
     expand=True,
     onlyissues=False,
     xml=False,
-    files: list = None,
+    files: Optional[list] = None,
 ):
     try:
         return server_diff(apiurl,
@@ -7709,7 +7709,7 @@ def owner(
     return res
 
 
-def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: str=None):
+def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: Optional[str] = None):
     url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
