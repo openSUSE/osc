@@ -1381,7 +1381,7 @@ class Osc(cmdln.Cmdln):
                     if li.haserror():
                         raise oscerr.LinkExpandError(project, package, li.error)
                     project, package, rev = li.project, li.package, li.rev
-                    if rev:
+                    if not revision_is_empty(rev):
                         print('# -> %s %s (%s)' % (project, package, rev))
                     else:
                         print('# -> %s %s (latest)' % (project, package))
@@ -5274,10 +5274,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('-D | --deleted can only be used with a package')
 
         rev, dummy = parseRevisionOption(opts.revision)
-        if rev is None:
+        if revision_is_empty(rev):
             rev = "latest"
 
-        if rev and rev != "latest" and not checkRevision(project, package, rev):
+        if not revision_is_empty(rev) and rev != "latest" and not checkRevision(project, package, rev):
             print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
@@ -7607,7 +7607,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         )
 
         rev, rev_upper = parseRevisionOption(opts.revision)
-        if rev and not checkRevision(project, package, rev, apiurl, opts.meta):
+        if not revision_is_empty(rev) and not checkRevision(project, package, rev, apiurl, opts.meta):
             print('Revision \'%s\' does not exist' % rev, file=sys.stderr)
             sys.exit(1)
 
