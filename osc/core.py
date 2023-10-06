@@ -255,6 +255,10 @@ def os_path_samefile(path1, path2):
         return os.path.realpath(path1) == os.path.realpath(path2)
 
 
+def revision_is_empty(rev: Union[None, str, int]):
+    return rev in (None, "")
+
+
 @total_ordering
 class File:
     """represent a file, including its metadata"""
@@ -2186,7 +2190,7 @@ class Package:
             if add:
                 diff.append(b'--- %s\t(revision 0)\n' % fname.encode())
                 rev = 'revision 0'
-                if revision and fname not in self.to_be_added:
+                if not revision_is_empty(revision) and fname not in self.to_be_added:
                     rev = 'working copy'
                 diff.append(b'+++ %s\t(%s)\n' % (fname.encode(), rev.encode()))
                 fname = os.path.join(self.absdir, fname)
@@ -2194,7 +2198,7 @@ class Package:
                     raise oscerr.OscIOError(None, 'file \'%s\' is marked as \'A\' but does not exist\n'
                                             '(either add the missing file or revert it)' % fname)
             else:
-                if revision:
+                if not revision_is_empty(revision):
                     b_revision = str(revision).encode()
                 else:
                     b_revision = self.rev.encode()
@@ -2205,7 +2209,7 @@ class Package:
             fd = None
             tmpfile = None
             try:
-                if revision is not None and not add:
+                if not revision_is_empty(revision) and not add:
                     (fd, tmpfile) = tempfile.mkstemp(prefix='osc_diff')
                     get_source_file(self.apiurl, self.prjname, self.name, origname, tmpfile, revision)
                     fname = tmpfile
@@ -2270,7 +2274,7 @@ class Package:
                 continue
             elif state == ' ' and revision is None:
                 continue
-            elif revision and self.findfilebyname(f.name).md5 == f.md5 and state != 'M':
+            elif not revision_is_empty(revision) and self.findfilebyname(f.name).md5 == f.md5 and state != 'M':
                 continue
             yield [diff_hdr % f.name.encode()]
             if revision is None:
@@ -3698,7 +3702,7 @@ def meta_get_filelist(
         query['expand'] = 1
     if meta:
         query['meta'] = 1
-    if revision:
+    if not revision_is_empty(revision):
         query['rev'] = revision
     else:
         query['rev'] = 'latest'
@@ -3739,7 +3743,7 @@ def show_project_meta(apiurl: str, prj: str, rev=None, blame=None):
     query = {}
     if blame:
         query['view'] = "blame"
-    if rev:
+    if not revision_is_empty(rev):
         query['rev'] = rev
         url = makeurl(apiurl, ['source', prj, '_project', '_meta'], query)
         try:
@@ -3765,7 +3769,7 @@ def show_project_meta(apiurl: str, prj: str, rev=None, blame=None):
 def show_project_conf(apiurl: str, prj: str, rev=None, blame=None):
     query = {}
     url = None
-    if rev:
+    if not revision_is_empty(rev):
         query['rev'] = rev
     if blame:
         query['view'] = "blame"
@@ -4200,11 +4204,11 @@ def show_files_meta(
     deleted=False,
 ):
     query = {}
-    if revision:
+    if not revision_is_empty(revision):
         query['rev'] = revision
     else:
         query['rev'] = 'latest'
-    if linkrev:
+    if not revision_is_empty(linkrev):
         query['linkrev'] = linkrev
     elif conf.config['linkcontrol']:
         query['linkrev'] = 'base'
@@ -4303,7 +4307,9 @@ def get_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *package
 def show_upstream_rev_vrev(apiurl: str, prj, pac, revision=None, expand=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, meta=meta)
     et = ET.fromstring(m)
-    return et.get('rev'), et.get('vrev')
+    rev = et.get("rev") or None
+    vrev = et.get("vrev") or None
+    return rev, vrev
 
 
 def show_upstream_rev(
@@ -5232,7 +5238,7 @@ def get_source_file(
     query = {}
     if meta:
         query['meta'] = 1
-    if revision:
+    if not revision_is_empty(revision):
         query['rev'] = revision
     u = makeurl(
         apiurl,
@@ -5404,9 +5410,9 @@ def server_diff(
         query['oproject'] = old_project
     if old_package:
         query['opackage'] = old_package
-    if old_revision:
+    if not revision_is_empty(old_revision):
         query['orev'] = old_revision
-    if new_revision:
+    if not revision_is_empty(new_revision):
         query['rev'] = new_revision
     if unified:
         query['unified'] = 1
@@ -5779,7 +5785,7 @@ def link_pac(
     if src_project == dst_project and src_package == dst_package:
         raise oscerr.OscValueError("Cannot link package. Source and target are the same.")
 
-    if rev and not checkRevision(src_project, src_package, rev):
+    if not revision_is_empty(rev) and not checkRevision(src_project, src_package, rev):
         raise oscerr.OscValueError(f"Revision doesn't exist: {rev}")
 
     meta_change = False
@@ -5839,7 +5845,7 @@ def link_pac(
             print('_link file already exists...! Aborting', file=sys.stderr)
             sys.exit(1)
 
-    if rev:
+    if not revision_is_empty(rev):
         rev = ' rev="%s"' % rev
     else:
         rev = ''
@@ -6124,9 +6130,9 @@ def branch_pkg(
         query['newinstance'] = "1"
     if extend_package_names:
         query['extend_package_names'] = "1"
-    if rev:
+    if not revision_is_empty(rev):
         query['rev'] = rev
-    if linkrev:
+    if not revision_is_empty(linkrev):
         query['linkrev'] = linkrev
     if target_project:
         query['target_project'] = target_project
@@ -6232,7 +6238,7 @@ def copy_pac(
             query['expand'] = '1'
         if keep_link:
             query['keeplink'] = '1'
-        if revision:
+        if not revision_is_empty(revision):
             query['orev'] = revision
         if comment:
             query['comment'] = comment
@@ -7113,7 +7119,7 @@ def get_source_rev(apiurl: str, project: str, package: str, revision=None):
     # but not rev=current,rev=latest,rev=top, or anything like this.
     # CAUTION: We have to loop through all rev and find the highest one, if none given.
 
-    if revision:
+    if not revision_is_empty(revision):
         url = makeurl(apiurl, ['source', project, package, '_history'], {'rev': revision})
     else:
         url = makeurl(apiurl, ['source', project, package, '_history'])
@@ -7200,10 +7206,10 @@ def get_commitlog(
             rev = int(node.get('rev'))
             # vrev = int(node.get('vrev')) # what is the meaning of vrev?
             try:
-                if revision is not None and revision_upper is not None:
+                if not revision_is_empty(revision) and revision_upper is not None:
                     if rev > int(revision_upper) or rev < int(revision):
                         continue
-                elif revision is not None and rev != int(revision):
+                elif not revision_is_empty(revision) and rev != int(revision):
                     continue
             except ValueError:
                 if revision != srcmd5:
@@ -7753,7 +7759,7 @@ def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", ex
     if revision:
         root.set('rev', revision)
     # add vrev when revision is a srcmd5
-    if vrev is not None and revision is not None and len(revision) >= 32:
+    if not revision_is_empty(vrev) and not revision_is_empty(revision) and len(revision) >= 32:
         root.set('vrev', vrev)
     return revision
 
