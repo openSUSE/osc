@@ -15,10 +15,6 @@
 # need to override python_sitelib because it is not set as we would expect on many distros
 %define python_sitelib %(RPM_BUILD_ROOT= %{use_python} -Ic "import sysconfig; print(sysconfig.get_path('purelib'))")
 
-%if 0%{?is_opensuse}
-%define completion_dir_bash %{_sysconfdir}/bash_completion.d
-%endif
-
 # generate manpages on distros where argparse-manpage >= 3 is available
 %if 0%{?suse_version} > 1500 || 0%{?fedora} >= 37
 %bcond_without man
