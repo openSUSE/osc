@@ -195,7 +195,8 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %{_bindir}/*
 
 # python modules
-%{python_sitelib}/*
+%{python_sitelib}/osc
+%{python_sitelib}/osc-*-info
 
 # rpm macros
 %{_rpmmacrodir}/*
