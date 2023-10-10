@@ -1,3 +1,19 @@
+- 1.4.1
+  - Configuration:
+    - Always display apiurl when asking for credentials
+    - Ask for new credentials when user is missing from an apiurl section in the config file
+  - Library:
+    - Fix testing revision for being empty
+    - Fix core.change_request_state_template() to always return a string
+  - Tests:
+    - Replace 'git init -b' with 'git init' and 'git checkout -b'
+  - Spec:
+    - Run fdupes after install
+    - List the python sitelib paths explicitly
+    - Mark csh completion files as configs
+    - Own zsh completion dirs to mute rpmlint errors
+    - Move bash completion from /etc to /usr/share
+
 - 1.4.0
   - Command-line:
     - Add rootless build support to 'build' command for 'kvm' and 'podman' vm types
