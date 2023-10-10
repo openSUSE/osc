@@ -210,6 +210,9 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %{completion_dir_bash}/*
 %{completion_dir_csh}/*
 %{completion_dir_fish}/*
+%dir %{_datadir}/zsh
+%dir %{_datadir}/zsh/functions
+%dir %{_datadir}/zsh/functions/Completion
 %{completion_dir_zsh}/*
 
 # osc owns the dirs to avoid the "directories not owned by a package" build error
