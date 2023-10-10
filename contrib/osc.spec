@@ -26,6 +26,13 @@
 %bcond_with man
 %endif
 
+# whether to use fdupes to deduplicate python bytecode
+%if 0%{?suse_version} || 0%{?fedora}
+%bcond_without fdupes
+%else
+%bcond_with fdupes
+%endif
+
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
 %define sphinx_pkg %{use_python_pkg}-Sphinx
 
@@ -62,6 +69,9 @@ BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
 BuildRequires:  %{use_python_pkg}-urllib3
 BuildRequires:  diffstat
+%if %{with fdupes}
+BuildRequires:  fdupes
+%endif
 # needed for git scm tests
 BuildRequires:  git-core
 
@@ -166,6 +176,10 @@ install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
 %if %{with man}
 install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
+%endif
+
+%if %{with fdupes}
+%fdupes %buildroot
 %endif
 
 %check
