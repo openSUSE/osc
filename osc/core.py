@@ -4753,7 +4753,7 @@ def change_request_state_template(req, newstate):
         return ''
     action = req.actions[0]
     tmpl_name = '%srequest_%s_template' % (action.type, newstate)
-    tmpl = conf.config.get(tmpl_name, '')
+    tmpl = conf.config.get(tmpl_name, "") or ""
     tmpl = tmpl.replace('\\t', '\t').replace('\\n', '\n')
     data = {'reqid': req.reqid, 'type': action.type, 'who': req.creator}
     if req.actions[0].type == 'submit':
