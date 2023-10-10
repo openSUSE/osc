@@ -1833,7 +1833,9 @@ def get_config(override_conffile=None,
     urls = [i for i in cp.sections() if i != "general"]
     for url in urls:
         apiurl = sanitize_apiurl(url)
-        username = cp[url]["user"]
+        username = cp[url].get("user", None)
+        if username is None:
+            raise oscerr.ConfigMissingCredentialsError(f"No user found in section {url}", conffile, url)
 
         host_options = HostOptions(apiurl=apiurl, username=username, _parent=config)
         for name, field in host_options.__fields__.items():
@@ -1941,7 +1943,7 @@ def interactive_config_setup(conffile, apiurl, initial=True):
             raise oscerr.UserAbort()
         print()
 
-    apiurl_no_scheme = urlsplit(apiurl)[1]
+    apiurl_no_scheme = urlsplit(apiurl)[1] or apiurl
     user_prompt = f"Username [{apiurl_no_scheme}]: "
     user = raw_input(user_prompt)
     pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "

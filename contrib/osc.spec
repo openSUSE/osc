@@ -15,15 +15,18 @@
 # need to override python_sitelib because it is not set as we would expect on many distros
 %define python_sitelib %(RPM_BUILD_ROOT= %{use_python} -Ic "import sysconfig; print(sysconfig.get_path('purelib'))")
 
-%if 0%{?is_opensuse}
-%define completion_dir_bash %{_sysconfdir}/bash_completion.d
-%endif
-
 # generate manpages on distros where argparse-manpage >= 3 is available
 %if 0%{?suse_version} > 1500 || 0%{?fedora} >= 37
 %bcond_without man
 %else
 %bcond_with man
+%endif
+
+# whether to use fdupes to deduplicate python bytecode
+%if 0%{?suse_version} || 0%{?fedora}
+%bcond_without fdupes
+%else
+%bcond_with fdupes
 %endif
 
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
@@ -62,6 +65,9 @@ BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
 BuildRequires:  %{use_python_pkg}-urllib3
 BuildRequires:  diffstat
+%if %{with fdupes}
+BuildRequires:  fdupes
+%endif
 # needed for git scm tests
 BuildRequires:  git-core
 
@@ -168,6 +174,10 @@ install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %endif
 
+%if %{with fdupes}
+%fdupes %buildroot
+%endif
+
 %check
 %{use_python} setup.py test
 
@@ -185,7 +195,8 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %{_bindir}/*
 
 # python modules
-%{python_sitelib}/*
+%{python_sitelib}/osc
+%{python_sitelib}/osc-*-info
 
 # rpm macros
 %{_rpmmacrodir}/*
@@ -198,8 +209,11 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %dir %{_datadir}/osc
 %{_datadir}/osc/complete
 %{completion_dir_bash}/*
-%{completion_dir_csh}/*
+%config %{completion_dir_csh}/*
 %{completion_dir_fish}/*
+%dir %{_datadir}/zsh
+%dir %{_datadir}/zsh/functions
+%dir %{_datadir}/zsh/functions/Completion
 %{completion_dir_zsh}/*
 
 # osc owns the dirs to avoid the "directories not owned by a package" build error

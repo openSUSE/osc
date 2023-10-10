@@ -11,7 +11,9 @@ class TestGitStore(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix="osc_test")
         os.chdir(self.tmpdir)
-        subprocess.check_output(["git", "init", "-b", "factory"])
+        # 'git init -b <initial-branch>' is not supported on older distros
+        subprocess.check_output(["git", "init", "-q"])
+        subprocess.check_output(["git", "checkout", "-b", "factory", "-q"])
         subprocess.check_output(["git", "remote", "add", "origin", "https://example.com/packages/my-package.git"])
 
     def tearDown(self):
