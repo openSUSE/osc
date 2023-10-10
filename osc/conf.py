@@ -1943,7 +1943,7 @@ def interactive_config_setup(conffile, apiurl, initial=True):
             raise oscerr.UserAbort()
         print()
 
-    apiurl_no_scheme = urlsplit(apiurl)[1]
+    apiurl_no_scheme = urlsplit(apiurl)[1] or apiurl
     user_prompt = f"Username [{apiurl_no_scheme}]: "
     user = raw_input(user_prompt)
     pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "
