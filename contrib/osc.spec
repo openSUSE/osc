@@ -209,7 +209,7 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %dir %{_datadir}/osc
 %{_datadir}/osc/complete
 %{completion_dir_bash}/*
-%{completion_dir_csh}/*
+%config %{completion_dir_csh}/*
 %{completion_dir_fish}/*
 %dir %{_datadir}/zsh
 %dir %{_datadir}/zsh/functions
