@@ -41,13 +41,8 @@ class PBTextMeter:
 
 
 class NoPBTextMeter:
-    _complained = False
-
     def start(self, basename, size=None):
-        if not self._complained:
-            print('Please install the progressbar module')
-            NoPBTextMeter._complained = True
-        print('Processing: %s' % basename)
+        pass
 
     def update(self, *args, **kwargs):
         pass
