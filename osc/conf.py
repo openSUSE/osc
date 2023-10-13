@@ -104,6 +104,11 @@ class Password(collections.UserString):
             # we use the password only from time to time to make a session cookie
             # and there's no need to keep the password in program memory longer than necessary
             result = self._data()
+
+            # the function can also return a function, let's evaluate them recursively
+            while callable(result):
+                result = result()
+
             if result is None:
                 raise oscerr.OscIOError(None, "Unable to retrieve password")
             return result
