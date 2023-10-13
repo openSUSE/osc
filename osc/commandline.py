@@ -9113,12 +9113,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         Show fullname and email of a buildservice user
         """
-        usernames = opts.user
         apiurl = self.get_api_url()
-        if len(usernames) < 1:
-            if 'user' not in conf.config['api_host_options'][apiurl]:
-                raise oscerr.WrongArgs('your oscrc does not have your user name.')
-            usernames = (conf.config['api_host_options'][apiurl]['user'],)
+        usernames = opts.user
+
+        if not usernames:
+            usernames = [conf.config["api_host_options"][apiurl]["user"]]
+
         for name in usernames:
             user = get_user_data(apiurl, name, 'login', 'realname', 'email')
             if len(user) == 3:
