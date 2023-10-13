@@ -8905,7 +8905,7 @@ def vc_export_env(apiurl: str, quiet=False):
 
     for (tag, envs) in tag2envs.items():
         env_present = [env for env in envs if env in os.environ]
-        config_present = tag in conf.config['api_host_options'][apiurl]
+        config_present = bool(conf.config['api_host_options'][apiurl].get(tag, None))
         if not env_present and not config_present:
             missing_tags.append(tag)
         elif config_present:
