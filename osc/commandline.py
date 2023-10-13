@@ -40,6 +40,10 @@ from .util import cpio, rpmquery, safewriter
 from .util.helper import _html_escape, format_table
 
 
+# python3.6 requires reading sys.real_prefix to detect virtualenv
+IN_VENV = getattr(sys, "real_prefix", sys.base_prefix) != sys.prefix
+
+
 class Command:
     #: Name of the command as used in the argument parser.
     name: str = None
@@ -262,6 +266,9 @@ class MainCommand(Command):
         return cmd
 
     def load_commands(self):
+        if IN_VENV:
+            _private.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="stderr")
+
         for module_prefix, module_path in self.MODULES:
             module_path = os.path.expanduser(module_path)
 
@@ -317,11 +324,15 @@ class OscMainCommand(MainCommand):
 
     MODULES = (
         ("osc.commands", osc_commands.__path__[0]),
-        ("osc.commands.usr_lib", "/usr/lib/osc-plugins"),
-        ("osc.commands.usr_local_lib", "/usr/local/lib/osc-plugins"),
-        ("osc.commands.home_local_lib", "~/.local/lib/osc-plugins"),
-        ("osc.commands.home", "~/.osc-plugins"),
     )
+
+    if not IN_VENV:
+        MODULES += (
+            ("osc.commands.usr_lib", "/usr/lib/osc-plugins"),
+            ("osc.commands.usr_local_lib", "/usr/local/lib/osc-plugins"),
+            ("osc.commands.home_local_lib", "~/.local/lib/osc-plugins"),
+            ("osc.commands.home", "~/.osc-plugins"),
+        )
 
     def __init__(self):
         super().__init__()
@@ -10056,6 +10067,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(result)
 
     def _load_plugins(self):
+        if IN_VENV:
+            _private.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="stderr")
+            return
+
         plugin_dirs = [
             '/usr/lib/osc-plugins',
             '/usr/local/lib/osc-plugins',
