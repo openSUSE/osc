@@ -1747,6 +1747,8 @@ def _get_credentials_manager(url, cp):
         return creds_mgr
     if config['use_keyring'] and GENERIC_KEYRING:
         return credentials.get_keyring_credentials_manager(cp)
+    elif cp.get(url, "passx", fallback=None) is not None:
+        return credentials.ObfuscatedConfigFileCredentialsManager(cp, None)
     return credentials.PlaintextConfigFileCredentialsManager(cp, None)
 
 
