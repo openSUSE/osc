@@ -1,3 +1,12 @@
+- 1.4.2
+  - Command-line:
+    - Change NoPBTextMeter to display no output at all
+    - Fix retrieving the configured user in 'user' command
+  - Configuration:
+    - Restore 'passx' host option that contains an obfuscated password
+    - Fix retrieving a password in case a function returns another callable
+    - Fix retrieving config values in core.vc_export_env()
+
 - 1.4.1
   - Configuration:
     - Always display apiurl when asking for credentials
