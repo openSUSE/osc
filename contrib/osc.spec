@@ -30,11 +30,16 @@
 %endif
 
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
+%define obs_build_pkg obs-build
 %define sphinx_pkg %{use_python_pkg}-Sphinx
 
 %if 0%{?fedora}
 %define argparse_manpage_pkg argparse-manpage
 %define sphinx_pkg %{use_python_pkg}-sphinx
+%endif
+
+%if 0%{?suse_version}
+%define obs_build_pkg build
 %endif
 
 Name:           osc
@@ -85,7 +90,7 @@ Recommends:     %{use_python_pkg}-distro
 Recommends:     %{use_python_pkg}-keyring
 Recommends:     %{use_python_pkg}-keyring-keyutils
 
-Recommends:     build
+Recommends:     %{obs_build_pkg}
 Recommends:     ca-certificates
 Recommends:     diffstat
 Recommends:     powerpc32
