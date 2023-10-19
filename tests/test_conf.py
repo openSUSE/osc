@@ -78,6 +78,7 @@ maintained_update_project_attribute = OBS:UpdateProject
 show_download_progress = 0
 vc-cmd = /usr/lib/build/vc
 status_mtime_heuristic = 0
+plugin-option = plugin-general-option
 
 [https://api.opensuse.org]
 credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager
@@ -97,6 +98,7 @@ trusted_prj = openSUSE:* SUSE:*
 downloadurl = http://example.com/
 sshkey = ~/.ssh/id_rsa.pub
 disable_hdrmd5_check = 0
+plugin-option = plugin-host-option
 """
 
 
@@ -400,6 +402,22 @@ class TestExampleConfig(unittest.TestCase):
     def test_host_option_disable_hdrmd5_check(self):
         host_options = self.config["api_host_options"][self.config["apiurl"]]
         self.assertEqual(host_options["disable_hdrmd5_check"], False)
+
+    def test_extra_fields(self):
+        self.assertEqual(self.config["plugin-option"], "plugin-general-option")
+        self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option"})
+
+        self.config["new-option"] = "value"
+        self.assertEqual(self.config["new-option"], "value")
+        self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option", "new-option": "value"})
+
+        host_options = self.config["api_host_options"][self.config["apiurl"]]
+        self.assertEqual(host_options["plugin-option"], "plugin-host-option")
+        self.assertEqual(host_options.extra_fields, {"plugin-option": "plugin-host-option"})
+
+        host_options["new-option"] = "value"
+        self.assertEqual(host_options["new-option"], "value")
+        self.assertEqual(host_options.extra_fields, {"plugin-option": "plugin-host-option", "new-option": "value"})
 
 
 class TestFromParent(unittest.TestCase):
