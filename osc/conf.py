@@ -124,6 +124,10 @@ HttpHeader = NewType("HttpHeader", Tuple[str, str])
 
 
 class OscOptions(BaseModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.extra_fields = {}
+
     # compat function with the config dict
     def _get_field_name(self, name):
         if name in self.__fields__:
@@ -139,8 +143,10 @@ class OscOptions(BaseModel):
     # compat function with the config dict
     def __getitem__(self, name):
         field_name = self._get_field_name(name)
+
         if field_name is None:
-            field_name = name
+            return self.extra_fields[name]
+
         try:
             return getattr(self, field_name)
         except AttributeError:
@@ -149,8 +155,11 @@ class OscOptions(BaseModel):
     # compat function with the config dict
     def __setitem__(self, name, value):
         field_name = self._get_field_name(name)
+
         if field_name is None:
-            field_name = name
+            self.extra_fields[name] = value
+            return
+
         setattr(self, field_name, value)
 
     # compat function with the config dict
@@ -1836,6 +1845,17 @@ def get_config(override_conffile=None,
     config = Options()
     config.conffile = conffile
 
+    # read 'debug' value before it gets properly stored into Options for early debug messages
+    if override_debug:
+        debug_str = str(override_debug)
+    elif "OSC_DEBUG" in os.environ:
+        debug_str = os.environ["OSC_DEBUG"]
+    elif "debug" in cp["general"]:
+        debug_str = cp["general"]["debug"]
+    else:
+        debug_str = "0"
+    debug = True if debug_str.strip().lower() in ("1", "yes", "true", "on") else False
+
     # read host options first in order to populate apiurl aliases
     urls = [i for i in cp.sections() if i != "general"]
     for url in urls:
@@ -1845,8 +1865,10 @@ def get_config(override_conffile=None,
             raise oscerr.ConfigMissingCredentialsError(f"No user found in section {url}", conffile, url)
 
         host_options = HostOptions(apiurl=apiurl, username=username, _parent=config)
+        known_ini_keys = set()
         for name, field in host_options.__fields__.items():
             ini_key = field.extra.get("ini_key", name)
+            known_ini_keys.add(ini_key)
 
             if name == "password":
                 # we need to handle the password first because it may be stored in a keyring instead of a config file
@@ -1862,6 +1884,15 @@ def get_config(override_conffile=None,
 
             host_options.set_value_from_string(name, value)
 
+        for key, value in cp[url].items():
+            if key.startswith("_"):
+                continue
+            if key in known_ini_keys:
+                continue
+            if debug:
+                print(f"DEBUG: Config option '[{url}]/{key}' doesn't map to any HostOptions field", file=sys.stderr)
+            host_options[key] = value
+
         scheme = urlsplit(apiurl)[0]
         if scheme == "http" and not host_options.allow_http:
             msg = "The apiurl '{apiurl}' uses HTTP protocol without any encryption.\n"
@@ -1872,8 +1903,10 @@ def get_config(override_conffile=None,
         config.api_host_options[apiurl] = host_options
 
     # read the main options
+    known_ini_keys = set()
     for name, field in config.__fields__.items():
         ini_key = field.extra.get("ini_key", name)
+        known_ini_keys.add(ini_key)
         env_key = f"OSC_{name.upper()}"
 
         # priority: env, overrides, config
@@ -1899,6 +1932,15 @@ def get_config(override_conffile=None,
             value = apiurl
 
         config.set_value_from_string(name, value)
+
+    for key, value in cp["general"].items():
+        if key.startswith("_"):
+            continue
+        if key in known_ini_keys:
+            continue
+        if debug:
+            print(f"DEBUG: Config option '[general]/{key}' doesn't map to any Options field", file=sys.stderr)
+        config[key] = value
 
     if overrides:
         unused_overrides_str = ", ".join((f"'{i}'" for i in overrides))
