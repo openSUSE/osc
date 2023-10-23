@@ -4956,7 +4956,8 @@ def get_exact_request_list(
     xpath += " and action[source/@project='%s'" % src_project
     if src_package:
         xpath += " and source/@package='%s'" % src_package
-    xpath += " and target/@project='%s'" % dst_project
+    xpath += " and ((target/@project='%s' and action/@type='submit')"  % dst_project
+    xpath += "      or (target/@releaseproject='%s' and action/@type='maintenance_incident'))" % dst_project
     if dst_package:
         xpath += " and target/@package='%s'" % dst_package
     xpath += "]"
