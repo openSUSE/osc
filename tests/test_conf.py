@@ -1,3 +1,4 @@
+import importlib
 import os
 import shutil
 import tempfile
@@ -104,6 +105,7 @@ plugin-option = plugin-host-option
 
 class TestExampleConfig(unittest.TestCase):
     def setUp(self):
+        importlib.reload(osc.conf)
         self.tmpdir = tempfile.mkdtemp(prefix="osc_test_")
         self.oscrc = os.path.join(self.tmpdir, "oscrc")
         with open(self.oscrc, "w", encoding="utf-8") as f:
@@ -407,6 +409,13 @@ class TestExampleConfig(unittest.TestCase):
         self.assertEqual(self.config["plugin-option"], "plugin-general-option")
         self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option"})
 
+        # write to an existing attribute instead of extra_fields
+        self.config.attrib = 123
+        self.assertEqual(self.config["attrib"], 123)
+        self.config["attrib"] = 456
+        self.assertEqual(self.config["attrib"], 456)
+        self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option"})
+
         self.config["new-option"] = "value"
         self.assertEqual(self.config["new-option"], "value")
         self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option", "new-option": "value"})
@@ -418,6 +427,11 @@ class TestExampleConfig(unittest.TestCase):
         host_options["new-option"] = "value"
         self.assertEqual(host_options["new-option"], "value")
         self.assertEqual(host_options.extra_fields, {"plugin-option": "plugin-host-option", "new-option": "value"})
+
+    def test_apiurl_aliases(self):
+        expected = {"https://api.opensuse.org": "https://api.opensuse.org", "osc": "https://api.opensuse.org"}
+        self.assertEqual(self.config.apiurl_aliases, expected)
+        self.assertEqual(self.config["apiurl_aliases"], expected)
 
 
 class TestFromParent(unittest.TestCase):

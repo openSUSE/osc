@@ -144,9 +144,10 @@ class OscOptions(BaseModel):
     def __getitem__(self, name):
         field_name = self._get_field_name(name)
 
-        if field_name is None:
+        if field_name is None and not hasattr(self, name):
             return self.extra_fields[name]
 
+        field_name = field_name or name
         try:
             return getattr(self, field_name)
         except AttributeError:
@@ -156,10 +157,11 @@ class OscOptions(BaseModel):
     def __setitem__(self, name, value):
         field_name = self._get_field_name(name)
 
-        if field_name is None:
+        if field_name is None and not hasattr(self, name):
             self.extra_fields[name] = value
             return
 
+        field_name = field_name or name
         setattr(self, field_name, value)
 
     # compat function with the config dict
@@ -1617,7 +1619,7 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
     cp = get_configParser(config['conffile'])
 
     if section != 'general':
-        section = config['apiurl_aliases'].get(section, section)
+        section = config.apiurl_aliases.get(section, section)
         scheme, host, path = \
             parse_apisrv_url(config.get('scheme', 'https'), section)
         section = urljoin(scheme, host, path)
