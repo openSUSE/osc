@@ -4280,7 +4280,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
 
         apiopt = ''
-        if conf.get_configParser().get('general', 'apiurl') != apiurl:
+        if conf.get_configParser().get("general", "apiurl", fallback=None) != apiurl:
             apiopt = '-A %s ' % apiurl
         print('A working copy of the maintenance branch can be checked out with:\n\n'
               'osc %sco %s'
@@ -4451,7 +4451,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
         else:
             apiopt = ''
-            if conf.get_configParser().get('general', 'apiurl') != apiurl:
+            if conf.get_configParser().get("general", "apiurl", fallback=None) != apiurl:
                 apiopt = '-A %s ' % apiurl
             print('A working copy of the branched package can be checked out with:\n\n'
                   'osc %sco %s/%s'
