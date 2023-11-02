@@ -1,3 +1,12 @@
+- 1.4.4
+  - Command-line:
+    - Fix autocompletion for new locations
+  - Configuration:
+    - Fix apiurl_aliases handling in OscOptions.__getitem__
+    - Fix crash when there's no [general]/apiurl option in the config file
+  - Spec:
+    - Install bash completion with .bash suffix rather than .sh
+
 - 1.4.3
   - Configuration:
     - Allow undefined fields in Options and HostOptions
