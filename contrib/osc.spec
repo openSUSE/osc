@@ -161,7 +161,7 @@ install -d %{buildroot}%{_sharedstatedir}/osc-plugins
 # install completions
 install -Dm0755 contrib/osc.complete %{buildroot}%{_datadir}/osc/complete
 install -Dm0644 contrib/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
-install -Dm0644 contrib/complete.sh %{buildroot}%{completion_dir_bash}/osc.sh
+install -Dm0644 contrib/complete.sh %{buildroot}%{completion_dir_bash}/osc.bash
 install -Dm0644 contrib/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
 install -Dm0644 contrib/osc.zsh %{buildroot}%{completion_dir_zsh}/osc.zsh
 
