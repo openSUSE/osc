@@ -627,10 +627,12 @@ def calculate_build_root(apihost, prj, pac, repo, arch, user=None):
     return buildroot
 
 
-def build_as_user():
-    if conf.config["su-wrapper"]:
-        return False
-    return True
+def build_as_user(vm_type=None):
+    if not conf.config.su_wrapper:
+        return True
+    if calculate_build_root_user(vm_type):
+        return True
+    return False
 
 
 def su_wrapper(cmd):
@@ -1127,8 +1129,8 @@ def main(apiurl, store, opts, argv):
     imagefile = ''
     imagesource = ''
     imagebins = []
-    if build_as_user():
-        # preinstallimage extraction will fail
+    if build_as_user(vm_type):
+        # preinstallimage extraction will fail because unprivileged user cannot chroot or extract devices from the tarball
         bi.preinstallimage = None
     if build_type == 'preinstallimage':
         # preinstallimage would repackage just the previously built preinstallimage
