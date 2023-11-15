@@ -26,7 +26,8 @@ jobs:
         container:
 
           # Fedora
-          - 'registry.fedoraproject.org/fedora:36'
+          - 'registry.fedoraproject.org/fedora:38'
+          - 'registry.fedoraproject.org/fedora:39'
           - 'registry.fedoraproject.org/fedora:rawhide'
 
           # openSUSE
