@@ -1716,7 +1716,7 @@ def write_initial_config(conffile, entries, custom_template='', creds_mgr_descri
     config.update(entries)
     sio = StringIO(conf_template.strip() % config)
     cp = OscConfigParser.OscConfigParser()
-    cp.readfp(sio)
+    cp.read_file(sio)
     cp.set(config['apiurl'], 'user', config['user'])
     if creds_mgr_descriptor:
         creds_mgr = creds_mgr_descriptor.create(cp)
