@@ -469,5 +469,22 @@ class TestFromParent(unittest.TestCase):
         self.assertEqual(self.host_options.email, "another-user@example.com")
 
 
+class TestConf(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="osc_test_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def test_write_initial_config(self):
+        conffile = os.path.join(self.tmpdir, "oscrc")
+        entries = {
+            "user": "Admin",
+            "pass": "opensuse",
+            "apiurl": "https://example.com",
+        }
+        osc.conf.write_initial_config(conffile, entries)
+
+
 if __name__ == "__main__":
     unittest.main()
