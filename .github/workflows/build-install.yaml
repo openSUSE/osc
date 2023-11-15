@@ -121,3 +121,28 @@ jobs:
       - name: 'Run installed osc'
         run: |
             osc --help
+
+  virtualenv:
+    name: 'virtualenv install test'
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: 'Install packages'
+        run: |
+            sudo apt-get -y update
+            sudo apt-get -y --no-install-recommends install git python3-pip python3-rpm python3-virtualenv
+
+      - uses: actions/checkout@v3
+
+      - name: 'Initialize virtualenv'
+        run: |
+            python3 -m venv .env3
+            source .env3/bin/activate
+            pip3 install .
+
+      - name: 'Run installed osc'
+        run: |
+            source .env3/bin/activate
+            osc --help

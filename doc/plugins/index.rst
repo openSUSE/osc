@@ -5,6 +5,9 @@ Extending osc with plugins
 .. note::
     New in osc 1.1.0
 
+.. warning::
+    Plugins are currently NOT supported in virtualenv.
+
 
 This is a simple tutorial.
 More details can be found in the :py:class:`osc.commandline.OscCommand` reference.

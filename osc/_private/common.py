@@ -17,6 +17,9 @@ def print_msg(*args, print_to="debug"):
     elif print_to == "stdout":
         # print the message to stdout
         print(*args)
+    elif print_to == "stderr":
+        # print the message to stderr
+        print(*args, file=sys.stderr)
     else:
         raise ValueError(f"Invalid value of the 'print_to' option: {print_to}")
 
