@@ -450,6 +450,11 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'obsproduct':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OBSPRODUCT'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -703,10 +708,10 @@ def main(apiurl, store, opts, argv):
         build_type = 'flatpak'
     if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild',
                           'simpleimage', 'snapcraft', 'appimage', 'docker', 'helm',
-                          'podman', 'fissile', 'flatpak', 'preinstallimage']:
+                          'podman', 'fissile', 'flatpak', 'preinstallimage', 'obsproduct']:
         raise oscerr.WrongArgs(
             'Unknown build type: \'%s\'. '
-            'Build description should end in .spec, .dsc, .kiwi, or .livebuild. '
+            'Build description should end in .spec, .dsc, .kiwi, .obsproduct or .livebuild. '
             'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
             'Chart.yaml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, '
             'preinstallimage or Dockerfile' % build_type)
@@ -1224,7 +1229,7 @@ def main(apiurl, store, opts, argv):
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile
-    if build_type in ('kiwi', 'docker', 'podman', 'fissile'):
+    if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'obsproduct'):
         if os.path.exists('repos'):
             shutil.rmtree('repos')
         if os.path.exists('containers'):
