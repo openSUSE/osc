@@ -1409,7 +1409,7 @@ def main(apiurl, store, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type in ('kiwi', 'docker', 'podman', 'fissile'):
+    if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'obsproduct'):
         rpmlist = ['%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall]
     else:
         rpmlist = []
