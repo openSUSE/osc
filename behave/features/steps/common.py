@@ -1,5 +1,6 @@
 import errno
 import os
+import re
 import shutil
 import subprocess
 
@@ -86,14 +87,28 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
 def step_impl(context, text):
     if re.search(text.format(context=context), context.cmd_stdout):
         return
-    raise AssertionError("Stdout doesn't contain: %s" % text)
+    raise AssertionError("Stdout doesn't contain expected pattern: %s" % text)
+
+
+@behave.step("stdout doesn't contain \"{text}\"")
+def step_impl(context, text):
+    if not re.search(text.format(context=context), context.cmd_stdout):
+        return
+    raise AssertionError("Stdout is not supposed to contain pattern: %s" % text)
 
 
 @behave.step("stderr contains \"{text}\"")
 def step_impl(context, text):
     if re.search(text.format(context=context), context.cmd_stderr):
         return
-    raise AssertionError("Stderr doesn't contain: %s" % text)
+    raise AssertionError("Stderr doesn't contain expected pattern: %s" % text)
+
+
+@behave.step("stderr doesn't contain \"{text}\"")
+def step_impl(context, text):
+    if not re.search(text.format(context=context), context.cmd_stderr):
+        return
+    raise AssertionError("Stderr is not supposed to contain pattern: %s" % text)
 
 
 @behave.step("stdout is")
