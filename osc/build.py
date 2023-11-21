@@ -450,8 +450,8 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
-    elif buildtype == 'obsproduct':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OBSPRODUCT'),
+    elif buildtype == 'productcompose':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'PRODUCT'),
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
@@ -708,10 +708,10 @@ def main(apiurl, store, opts, argv):
         build_type = 'flatpak'
     if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild',
                           'simpleimage', 'snapcraft', 'appimage', 'docker', 'helm',
-                          'podman', 'fissile', 'flatpak', 'preinstallimage', 'obsproduct']:
+                          'podman', 'fissile', 'flatpak', 'preinstallimage', 'productcompose']:
         raise oscerr.WrongArgs(
             'Unknown build type: \'%s\'. '
-            'Build description should end in .spec, .dsc, .kiwi, .obsproduct or .livebuild. '
+            'Build description should end in .spec, .dsc, .kiwi, .productcompose or .livebuild. '
             'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
             'Chart.yaml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, '
             'preinstallimage or Dockerfile' % build_type)
@@ -1229,7 +1229,7 @@ def main(apiurl, store, opts, argv):
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile
-    if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'obsproduct'):
+    if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'productcompose'):
         if os.path.exists('repos'):
             shutil.rmtree('repos')
         if os.path.exists('containers'):
@@ -1409,7 +1409,7 @@ def main(apiurl, store, opts, argv):
 
     print('Writing build configuration')
 
-    if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'obsproduct'):
+    if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'productcompose'):
         rpmlist = ['%s %s\n' % (i.name, i.fullfilename) for i in bi.deps if not i.noinstall]
     else:
         rpmlist = []
