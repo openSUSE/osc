@@ -7632,9 +7632,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--local-package', action='store_true',
                   help='build a package which does not exist on the server')
     @cmdln.option('--stage', metavar='STAGE',
-                  help='runs a specific stage, default is "a" for all. Append a trailing "="'
-                       'to only run the specified stage. Append a trailing "+" to run'
-                       'the specified stage and all stages coming after it. With no'
+                  help='runs a specific stage, default is "a" for all. Append a trailing "=" '
+                       'to only run the specified stage. Append a trailing "+" to run '
+                       'the specified stage and all stages coming after it. With no '
                        'suffix, stages up to and included the specified stage are run.')
     @cmdln.option('--linksources', action='store_true',
                   help='use hard links instead of a deep copied source')
