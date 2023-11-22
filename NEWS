@@ -1,3 +1,15 @@
+- 1.5.0
+  - Command-line:
+    - Change 'rdiff' command to display diff for _project if no package is specified
+    - Update 'build' command with initial support for 'productcompose' build type
+    - Change 'build' command to disable preinstall images in rootless builds
+  - Configuration:
+    - Fix conf.write_initial_config() to use read_file() instead of deprecated readfp()
+  - Other:
+    - Support installing osc into virtualenv
+  - Spec:
+    - Recommend 'build' on openSUSE/SLE and 'obs-build' on all other distros
+
 - 1.4.4
   - Command-line:
     - Fix autocompletion for new locations

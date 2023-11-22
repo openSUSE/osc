@@ -43,7 +43,7 @@
 %endif
 
 Name:           osc
-Version:        1.4.4
+Version:        1.5.0
 Release:        0
 Summary:        Command-line client for the Open Build Service
 License:        GPL-2.0-or-later
