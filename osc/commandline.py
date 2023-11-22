@@ -4860,7 +4860,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         return (parent_project, parent_package)
 
     def _pdiff_get_exists_and_parent(self, apiurl, project, package):
-        link_url = makeurl(apiurl, ['public', 'source', project, package])
+        link_url = makeurl(apiurl, ['source', project, package])
         try:
             file = http_GET(link_url)
             root = ET.parse(file).getroot()
