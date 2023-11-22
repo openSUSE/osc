@@ -3938,7 +3938,7 @@ def show_pattern_meta(apiurl: str, prj: str, pattern: str):
 
 
 def show_configuration(apiurl):
-    u = makeurl(apiurl, ['public', 'configuration'])
+    u = makeurl(apiurl, ['configuration'])
     f = http_GET(u)
     return f.readlines()
 
