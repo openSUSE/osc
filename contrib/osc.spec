@@ -15,15 +15,16 @@
 # need to override python_sitelib because it is not set as we would expect on many distros
 %define python_sitelib %(RPM_BUILD_ROOT= %{use_python} -Ic "import sysconfig; print(sysconfig.get_path('purelib'))")
 
-# generate manpages on distros where argparse-manpage >= 3 is available
-%if 0%{?suse_version} > 1500 || 0%{?fedora} >= 37
+# generate manpages on distros where argparse-manpage >= 3 and python3-Sphinx are available
+# please note that RHEL build requires packages from CRB and EPEL repositories
+%if 0%{?suse_version} > 1500 || 0%{?fedora} >= 37 || 0%{?rhel} >= 9
 %bcond_without man
 %else
 %bcond_with man
 %endif
 
 # whether to use fdupes to deduplicate python bytecode
-%if 0%{?suse_version} || 0%{?fedora}
+%if 0%{?suse_version} || 0%{?fedora} || 0%{?rhel} >= 8
 %bcond_without fdupes
 %else
 %bcond_with fdupes
