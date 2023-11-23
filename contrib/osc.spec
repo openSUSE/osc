@@ -29,17 +29,16 @@
 %bcond_with fdupes
 %endif
 
-%define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
-%define obs_build_pkg obs-build
-%define sphinx_pkg %{use_python_pkg}-Sphinx
-
-%if 0%{?fedora}
 %define argparse_manpage_pkg argparse-manpage
+%define obs_build_pkg obs-build
+%define openssh_pkg openssh
 %define sphinx_pkg %{use_python_pkg}-sphinx
-%endif
 
 %if 0%{?suse_version}
+%define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
 %define obs_build_pkg build
+%define openssh_pkg openssh-common
+%define sphinx_pkg %{use_python_pkg}-Sphinx
 %endif
 
 Name:           osc
@@ -110,12 +109,8 @@ Recommends:     obs-service-source_validator
 Recommends:     obs-service-tar_scm
 Recommends:     obs-service-verify_file
 
-%if 0%{?fedora}
-Recommends:     openssh
-%endif
-%if 0%{?suse_version}
-Recommends:     openssh-common
-%endif
+# needed for ssh signature auth
+Recommends:     %{openssh_pkg}
 
 # needed for `osc browse` that calls xdg-open
 Recommends:     xdg-utils
