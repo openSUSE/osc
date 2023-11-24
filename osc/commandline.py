@@ -6972,7 +6972,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') + \
             glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + \
             glob.glob('fissile.yml') + glob.glob('appimage.yml') + glob.glob('Chart.yaml') + \
-            glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json')
+            glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json') + \
+            glob.glob('*.productcompose')
 
         # FIXME:
         # * request repos from server and select by build type.

@@ -74,6 +74,9 @@ class PackageQuery:
             from . import debquery
             pkgquery = debquery.DebQuery(f)
             extra_tags = extra_debtags
+        elif magic == b'<update':
+            f.close()
+            return None
         elif magic[:5] == b'<?xml':
             f.close()
             return None
