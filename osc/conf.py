@@ -974,7 +974,7 @@ class Options(OscOptions):
     )  # type: ignore[assignment]
 
     build_jobs: Optional[int] = Field(
-        default=os.cpu_count,
+        default=0,
         description=textwrap.dedent(
             """
             The number of parallel processes during the build.

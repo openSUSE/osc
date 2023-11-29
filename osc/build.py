@@ -737,6 +737,8 @@ def main(apiurl, store, opts, argv):
         buildargs.append('--threads=%s' % opts.threads)
     if opts.jobs:
         buildargs.append('--jobs=%s' % opts.jobs)
+    elif config['build-jobs'] == 0:
+        buildargs.append('--jobs=%s' % os.cpu_count)
     elif config['build-jobs'] > 1:
         buildargs.append('--jobs=%s' % config['build-jobs'])
     if opts.icecream or config['icecream'] != '0':
