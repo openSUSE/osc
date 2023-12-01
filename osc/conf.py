@@ -1324,6 +1324,10 @@ def _model_to_rst(cls, title=None, description=None, sections=None, output_file=
         if field.default is None:
             return None
 
+        if field.default_is_lazy:
+            # lazy default may return different results under different circumstances -> return nothing
+            return None
+
         ini_type = field.extra.get("ini_type", None)
         if ini_type:
             return None
