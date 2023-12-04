@@ -73,6 +73,9 @@ jobs:
       - name: 'Install build dependencies (Fedora/CentOS)'
         if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
         run: |
+            RHEL_VERSION=$(rpm --eval '%{?rhel}')
+            [ -n "${RHEL_VERSION}" ] && rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-${RHEL_VERSION}.noarch.rpm
+            [ -n "${RHEL_VERSION}" ] && /usr/bin/crb enable
             dnf -y builddep contrib/osc.spec
 
       - name: 'Build SRPM and RPMs'
