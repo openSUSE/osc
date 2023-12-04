@@ -37,6 +37,15 @@ which is easier if you develop on osc.
 When you use osc for the first time, it will ask you for your username and
 password, and store it in `~/.config/osc/oscrc`.
 
+Alternatively, you can set the environment variable to bypass the interactive input
+session with the OSC_USERNAME as the username, OSC_PASSWORD as the password and 
+OSC_CREDENTIALMGR as ['Kernel keyring', 'Secret Service', 'Transient', 'Obfuscated',
+'Config'] the credentials configuration like the following:
+
+    OSC_USERNAME='username'
+    OSC_PASSWORD='password'
+    OSC_CREDENTIALMGR='Kernel keyring'
+
 
 ## Keyrings
 

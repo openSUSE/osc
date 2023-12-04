@@ -1999,10 +1999,14 @@ def interactive_config_setup(conffile, apiurl, initial=True):
         print()
 
     apiurl_no_scheme = urlsplit(apiurl)[1] or apiurl
-    user_prompt = f"Username [{apiurl_no_scheme}]: "
-    user = raw_input(user_prompt)
-    pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "
-    passwd = getpass.getpass(pass_prompt)
+    user = os.environ.get("OSC_USERNAME", None)
+    if not user:
+        user_prompt = f"Username [{apiurl_no_scheme}]: "
+        user = raw_input(user_prompt)
+    passwd = os.environ.get("OSC_PASSWORD", None)
+    if not passwd:
+        pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "
+        passwd = getpass.getpass(pass_prompt)
     creds_mgr_descr = select_credentials_manager_descr()
     if initial:
         config = {'user': user, 'pass': passwd}
@@ -2020,9 +2024,13 @@ def select_credentials_manager_descr():
         print('To use keyrings please install python%d-keyring.' % sys.version_info.major)
     creds_mgr_descriptors = credentials.get_credentials_manager_descriptors()
 
+    cred = os.environ.get("OSC_CREDENTIALMGR", None)
+    cred_pick = None
     rows = []
     for i, creds_mgr_descr in enumerate(creds_mgr_descriptors, 1):
         rows += [str(i), creds_mgr_descr.name(), creds_mgr_descr.description()]
+        if creds_mgr_descr.name() == cred:
+            cred_pick = str(i)
 
     from .core import build_table
     headline = ('NUM', 'NAME', 'DESCRIPTION')
@@ -2031,7 +2039,10 @@ def select_credentials_manager_descr():
     for row in table:
         print(row)
 
-    i = raw_input('Select credentials manager [default=1]: ')
+    if cred_pick:
+        i = cred_pick
+    else:
+        i = raw_input('Select credentials manager [default=1]: ')
     if not i:
         i = "1"
     if not i.isdigit():
