@@ -60,6 +60,19 @@ class Test(unittest.TestCase):
 
         self.assertRaises(TypeError, TestModel)
 
+    def test_lazy_default(self):
+        class TestModel(BaseModel):
+            field: List[str] = Field(default=lambda: ["string"])
+
+        m = TestModel()
+        self.assertEqual(m.field, ["string"])
+
+    def test_lazy_default_invalid_type(self):
+        class TestModel(BaseModel):
+            field: List[str] = Field(default=lambda: None)
+
+        self.assertRaises(TypeError, TestModel)
+
     def test_is_set(self):
         class TestModel(BaseModel):
             field: Optional[str] = Field()

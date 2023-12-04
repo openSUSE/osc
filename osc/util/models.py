@@ -79,6 +79,9 @@ class Field(property):
         # model sets it to None if it equals to NotSet (for better usability)
         self.default = default
 
+        # a flag indicating, whether the default is a callable with lazy evalution
+        self.default_is_lazy = callable(self.default)
+
         # whether the field was set
         self.is_set = False
 
