@@ -1,3 +1,11 @@
+- 1.5.1
+  - Library:
+    - Avoid using '/public/' API routes
+    - Update 'osc.util.models' to avoid including lazy defaults in the rendered man pages
+  - Spec:
+    - Simplify distro-specific macros
+    - Use %{?rhel} macros
+
 - 1.5.0
   - Command-line:
     - Change 'rdiff' command to display diff for _project if no package is specified
