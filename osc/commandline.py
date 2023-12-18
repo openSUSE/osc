@@ -7087,6 +7087,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='use N parallel build jobs with icecream')
     @cmdln.option('--ccache', action='store_true',
                   help='use ccache to speed up rebuilds')
+    @cmdln.option('--ccache-maxsize', metavar='ccache_maxsize',
+                  help='maximum size of the ccache archive')
     @cmdln.option('--pkg-ccache', metavar='/path/to/_ccache.tar',
                   help='path to an existing uncompressed archive ccache. Using this option implies --ccache')
     @cmdln.option('--sccache', action='store_true',

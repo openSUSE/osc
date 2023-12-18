@@ -752,6 +752,10 @@ def main(apiurl, store, opts, argv):
     if opts.ccache or config['ccache']:
         buildargs.append('--ccache')
         xp.append('ccache')
+    if opts.ccache_maxsize:
+        buildargs.append('--ccache')
+        buildargs.append('--ccache-maxsize=%s' % opts.ccache_maxsize)
+        xp.append('ccache')
     if opts.pkg_ccache:
         buildargs.append('--pkg-ccache=%s' % opts.pkg_ccache)
         xp.append('ccache')
