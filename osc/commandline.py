@@ -8747,8 +8747,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print('Package \'%s\' imported successfully' % pac)
 
     @cmdln.option('-X', '-m', '--method', default='GET', metavar='HTTP_METHOD',
-                        choices=('GET', 'PUT', 'POST', 'DELETE'),
-                        help='specify HTTP method to use (GET|PUT|DELETE|POST)')
+                        choices=('HEAD', 'GET', 'PUT', 'POST', 'DELETE'),
+                        help='specify HTTP method to use (HEAD|GET|PUT|DELETE|POST)')
     @cmdln.option('-e', '--edit', default=None, action='store_true',
                         help='GET, edit and PUT the location')
     @cmdln.option('-d', '--data', default=None, metavar='STRING',
