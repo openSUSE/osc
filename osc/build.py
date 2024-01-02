@@ -275,7 +275,9 @@ class Pac:
         else:
             release = self.mp['release'].encode()
 
-        if self.mp['name'].startswith('container:'):
+        if self.mp['binary'] == 'updateinfo.xml':
+            canonname = 'updateinfo.xml'
+        elif self.mp['name'].startswith('container:'):
             canonname = self.mp['name'] + '.tar.xz'
         elif pacsuffix == 'deb':
             canonname = debquery.DebQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release, self.mp['arch'].encode())
@@ -1251,6 +1253,9 @@ def main(apiurl, store, opts, argv):
             # source fullfilename
             sffn = i.fullfilename
             filename = sffn.split("/")[-1]
+            if i.name == 'updateinfo.xml':
+                adir = 'updateinfo'
+                filename = i.package + ':' + i.repoarch + ':updateinfo.xml'
             # project/repo
             if i.name.startswith("container:"):
                 prdir = "containers/" + pdir + "/" + rdir
