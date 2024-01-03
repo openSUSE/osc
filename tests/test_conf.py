@@ -116,6 +116,9 @@ class TestExampleConfig(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
 
+    def test_invalid_attribute(self):
+        self.assertRaises(AttributeError, setattr, self.config, "new_attribute", "123")
+
     def test_apiurl(self):
         self.assertEqual(self.config["apiurl"], "https://api.opensuse.org")
 
@@ -407,26 +410,19 @@ class TestExampleConfig(unittest.TestCase):
 
     def test_extra_fields(self):
         self.assertEqual(self.config["plugin-option"], "plugin-general-option")
-        self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option"})
-
-        # write to an existing attribute instead of extra_fields
-        self.config.attrib = 123
-        self.assertEqual(self.config["attrib"], 123)
-        self.config["attrib"] = 456
-        self.assertEqual(self.config["attrib"], 456)
-        self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option"})
+        self.assertEqual(self.config._extra_fields, {"plugin-option": "plugin-general-option"})
 
         self.config["new-option"] = "value"
         self.assertEqual(self.config["new-option"], "value")
-        self.assertEqual(self.config.extra_fields, {"plugin-option": "plugin-general-option", "new-option": "value"})
+        self.assertEqual(self.config._extra_fields, {"plugin-option": "plugin-general-option", "new-option": "value"})
 
         host_options = self.config["api_host_options"][self.config["apiurl"]]
         self.assertEqual(host_options["plugin-option"], "plugin-host-option")
-        self.assertEqual(host_options.extra_fields, {"plugin-option": "plugin-host-option"})
+        self.assertEqual(host_options._extra_fields, {"plugin-option": "plugin-host-option"})
 
         host_options["new-option"] = "value"
         self.assertEqual(host_options["new-option"], "value")
-        self.assertEqual(host_options.extra_fields, {"plugin-option": "plugin-host-option", "new-option": "value"})
+        self.assertEqual(host_options._extra_fields, {"plugin-option": "plugin-host-option", "new-option": "value"})
 
     def test_apiurl_aliases(self):
         expected = {"https://api.opensuse.org": "https://api.opensuse.org", "osc": "https://api.opensuse.org"}

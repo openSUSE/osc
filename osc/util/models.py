@@ -280,6 +280,13 @@ class ModelMeta(type):
 class BaseModel(metaclass=ModelMeta):
     __fields__: Dict[str, Field]
 
+    def __setattr__(self, name, value):
+        if getattr(self, "_allow_new_attributes", True) or hasattr(self.__class__, name) or hasattr(self, name):
+            # allow setting properties - test if they exist in the class
+            # also allow setting existing attributes that were previously initialized via __dict__
+            return super().__setattr__(name, value)
+        raise AttributeError(f"Setting attribute '{self.__class__.__name__}.{name}' is not allowed")
+
     def __init__(self, **kwargs):
         self._values = {}
         self._parent = kwargs.pop("_parent", None)
@@ -306,6 +313,8 @@ class BaseModel(metaclass=ModelMeta):
 
         for name, field in self.__fields__.items():
             field.validate_type(getattr(self, name))
+
+        self._allow_new_attributes = False
 
     def dict(self, exclude_unset=False):
         result = {}
