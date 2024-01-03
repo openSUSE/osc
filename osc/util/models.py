@@ -205,8 +205,8 @@ class Field(property):
 
     def get(self, obj):
         try:
-            return getattr(obj, f"_{self.name}")
-        except AttributeError:
+            return obj._values[self.name]
+        except KeyError:
             pass
 
         if isinstance(self.default, FromParent):
@@ -239,7 +239,7 @@ class Field(property):
             value = new_value
 
         self.validate_type(value)
-        setattr(obj, f"_{self.name}", value)
+        obj._values[self.name] = value
         self.is_set = True
 
 
@@ -281,6 +281,7 @@ class BaseModel(metaclass=ModelMeta):
     __fields__: Dict[str, Field]
 
     def __init__(self, **kwargs):
+        self._values = {}
         self._parent = kwargs.pop("_parent", None)
 
         uninitialized_fields = []
