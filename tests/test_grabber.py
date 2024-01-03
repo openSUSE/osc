@@ -1,4 +1,3 @@
-import importlib
 import os
 import tempfile
 import unittest
@@ -13,14 +12,10 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "conf_fixtures")
 class TestMirrorGroup(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
-        # reset the global `config` in preparation for running the tests
-        importlib.reload(osc.conf)
         oscrc = os.path.join(self._get_fixtures_dir(), "oscrc")
         osc.conf.get_config(override_conffile=oscrc, override_no_keyring=True)
 
     def tearDown(self):
-        # reset the global `config` to avoid impacting tests from other classes
-        importlib.reload(osc.conf)
         try:
             shutil.rmtree(self.tmpdir)
         except:

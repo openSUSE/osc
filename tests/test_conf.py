@@ -1,4 +1,3 @@
-import importlib
 import os
 import shutil
 import tempfile
@@ -105,7 +104,6 @@ plugin-option = plugin-host-option
 
 class TestExampleConfig(unittest.TestCase):
     def setUp(self):
-        importlib.reload(osc.conf)
         self.tmpdir = tempfile.mkdtemp(prefix="osc_test_")
         self.oscrc = os.path.join(self.tmpdir, "oscrc")
         with open(self.oscrc, "w", encoding="utf-8") as f:
@@ -480,6 +478,15 @@ class TestConf(unittest.TestCase):
             "apiurl": "https://example.com",
         }
         osc.conf.write_initial_config(conffile, entries)
+
+    def test_api_host_options(self):
+        # test that instances do not share any references leaked from the defaults
+        conf1 = osc.conf.Options()
+        conf2 = osc.conf.Options()
+
+        self.assertNotEqual(conf1, conf2)
+        self.assertNotEqual(id(conf1), id(conf2))
+        self.assertNotEqual(id(conf1.api_host_options), id(conf2.api_host_options))
 
 
 if __name__ == "__main__":

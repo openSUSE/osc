@@ -79,11 +79,12 @@ class Test(unittest.TestCase):
 
         m = TestModel()
 
-        field = m.__fields__["field"]
-        self.assertEqual(field.is_set, False)
+        self.assertNotIn("field", m._values)
         self.assertEqual(m.field, None)
+
         m.field = "text"
-        self.assertEqual(field.is_set, True)
+
+        self.assertIn("field", m._values)
         self.assertEqual(m.field, "text")
 
     def test_str(self):
@@ -95,7 +96,6 @@ class Test(unittest.TestCase):
         field = m.__fields__["field"]
         self.assertEqual(field.is_model, False)
         self.assertEqual(field.is_optional, False)
-        self.assertEqual(field.is_set, False)
         self.assertEqual(field.origin_type, str)
 
         self.assertEqual(m.field, "default")
@@ -111,7 +111,6 @@ class Test(unittest.TestCase):
         field = m.__fields__["field"]
         self.assertEqual(field.is_model, False)
         self.assertEqual(field.is_optional, True)
-        self.assertEqual(field.is_set, False)
         self.assertEqual(field.origin_type, str)
 
         self.assertEqual(m.field, None)

@@ -1,4 +1,3 @@
-import importlib
 import os
 import unittest
 
@@ -11,7 +10,7 @@ from .common import patch
 
 class TestVC(unittest.TestCase):
     def setUp(self):
-        importlib.reload(osc.conf)
+        osc.conf.config = osc.conf.Options()
 
         config = osc.conf.config
         host_options = osc.conf.HostOptions(
@@ -21,8 +20,6 @@ class TestVC(unittest.TestCase):
         config["apiurl"] = host_options["apiurl"]
         self.host_options = host_options
 
-    def tearDown(self):
-        importlib.reload(osc.conf)
 
     @patch.dict(os.environ, {}, clear=True)
     def test_vc_export_env_conf(self):
