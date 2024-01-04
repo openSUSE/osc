@@ -24,16 +24,21 @@ class TestNotSet(unittest.TestCase):
 
 
 class Test(unittest.TestCase):
-    def test_modified(self):
+    def test_dict(self):
+        class TestSubmodel(BaseModel):
+            text: str = Field(default="default")
+
         class TestModel(BaseModel):
             a: str = Field(default="default")
             b: Optional[str] = Field(default=None)
+            sub: Optional[List[TestSubmodel]] = Field(default=None)
 
         m = TestModel()
-        self.assertEqual(m.dict(exclude_unset=True), {"a": "default"})
+        self.assertEqual(m.dict(), {"a": "default", "b": None, "sub": None})
 
-        m = TestModel(b=None)
-        self.assertEqual(m.dict(exclude_unset=True), {"a": "default", "b": None})
+        m.b = "B"
+        m.sub = [{"text": "one"}, {"text": "two"}]
+        self.assertEqual(m.dict(), {"a": "default", "b": "B", "sub": [{"text": "one"}, {"text": "two"}]})
 
     def test_unknown_fields(self):
         class TestModel(BaseModel):

@@ -324,16 +324,13 @@ class BaseModel(metaclass=ModelMeta):
 
         self._allow_new_attributes = False
 
-    def dict(self, exclude_unset=False):
+    def dict(self):
         result = {}
         for name, field in self.__fields__.items():
             if field.exclude:
                 continue
-            if exclude_unset and field.name not in self._values and field.is_optional:
-                # include only mandatory fields and optional fields that were set to an actual value
-                continue
             if field.is_model:
-                result[name] = getattr(self, name).dict(exclude_unset=exclude_unset)
+                result[name] = getattr(self, name).dict()
             else:
                 result[name] = getattr(self, name)
         return result
