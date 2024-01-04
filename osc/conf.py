@@ -1824,29 +1824,33 @@ def get_config(override_conffile=None,
     else:
         conffile = identify_conf()
 
-    conffile = os.path.expanduser(conffile)
-    if not os.path.exists(conffile):
-        raise oscerr.NoConfigfile(conffile, account_not_configured_text % conffile)
+    if conffile in ["", "/dev/null"]:
+        cp = OscConfigParser.OscConfigParser()
+        cp.add_section("general")
+    else:
+        conffile = os.path.expanduser(conffile)
+        if not os.path.exists(conffile):
+            raise oscerr.NoConfigfile(conffile, account_not_configured_text % conffile)
 
-    # make sure oscrc is not world readable, it may contain a password
-    conffile_stat = os.stat(conffile)
-    if conffile_stat.st_mode != 0o600:
-        try:
-            os.chmod(conffile, 0o600)
-        except OSError as e:
-            if e.errno in (errno.EROFS, errno.EPERM):
-                print(f"Warning: Configuration file '{conffile}' may have insecure file permissions.")
-            else:
-                raise e
+        # make sure oscrc is not world readable, it may contain a password
+        conffile_stat = os.stat(conffile)
+        if conffile_stat.st_mode != 0o600:
+            try:
+                os.chmod(conffile, 0o600)
+            except OSError as e:
+                if e.errno in (errno.EROFS, errno.EPERM):
+                    print(f"Warning: Configuration file '{conffile}' may have insecure file permissions.")
+                else:
+                    raise e
 
-    cp = get_configParser(conffile)
+        cp = get_configParser(conffile)
 
-    if not cp.has_section('general'):
-        # FIXME: it might be sufficient to just assume defaults?
-        msg = config_incomplete_text % conffile
-        defaults = Options().dict()
-        msg += new_conf_template % defaults
-        raise oscerr.ConfigError(msg, conffile)
+        if not cp.has_section("general"):
+            # FIXME: it might be sufficient to just assume defaults?
+            msg = config_incomplete_text % conffile
+            defaults = Options().dict()
+            msg += new_conf_template % defaults
+            raise oscerr.ConfigError(msg, conffile)
 
     global config
 
