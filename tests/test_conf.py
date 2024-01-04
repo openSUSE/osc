@@ -5,6 +5,8 @@ import unittest
 
 import osc.conf
 
+from .common import patch
+
 
 OSCRC = """
 [general]
@@ -85,7 +87,7 @@ credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager
 user = Admin
 pass = opensuse
 passx = unused
-aliases = osc
+aliases = obs
 http_headers = 
     Authorization: Basic QWRtaW46b3BlbnN1c2U=
     X-Foo: Bar
@@ -423,7 +425,7 @@ class TestExampleConfig(unittest.TestCase):
         self.assertEqual(host_options._extra_fields, {"plugin-option": "plugin-host-option", "new-option": "value"})
 
     def test_apiurl_aliases(self):
-        expected = {"https://api.opensuse.org": "https://api.opensuse.org", "osc": "https://api.opensuse.org"}
+        expected = {"https://api.opensuse.org": "https://api.opensuse.org", "obs": "https://api.opensuse.org"}
         self.assertEqual(self.config.apiurl_aliases, expected)
         self.assertEqual(self.config["apiurl_aliases"], expected)
 
@@ -487,6 +489,158 @@ class TestConf(unittest.TestCase):
         self.assertNotEqual(conf1, conf2)
         self.assertNotEqual(id(conf1), id(conf2))
         self.assertNotEqual(id(conf1.api_host_options), id(conf2.api_host_options))
+
+
+class TestCredentialsFromEnv(unittest.TestCase):
+    def setUp(self):
+        osc.conf.config = None
+        self.oscrc = ""
+
+    @patch.dict(os.environ, {"OSC_APIURL": "https://example.com"}, clear=True)
+    def test_new_apiurl(self):
+        # missing user
+        self.assertRaises(
+            osc.oscerr.ConfigMissingCredentialsError,
+            osc.conf.get_config,
+            override_conffile=self.oscrc,
+        )
+
+    @patch.dict(
+        os.environ,
+        {"OSC_APIURL": "https://example.com", "OSC_USERNAME": "user"},
+        clear=True,
+    )
+    def test_new_apiurl_username(self):
+        # missing password
+        self.assertRaises(
+            osc.oscerr.ConfigMissingCredentialsError,
+            osc.conf.get_config,
+            override_conffile=self.oscrc,
+        )
+
+    @patch.dict(
+        os.environ,
+        {
+            "OSC_APIURL": "https://example.com",
+            "OSC_USERNAME": "user",
+            "OSC_PASSWORD": "secret",
+        },
+        clear=True,
+    )
+    def test_new_apiurl_username_password(self):
+        # missing password
+        osc.conf.get_config(override_conffile=self.oscrc)
+        conf = osc.conf.config
+        host_options = conf["api_host_options"][conf["apiurl"]]
+        self.assertEqual(conf.apiurl, "https://example.com")
+        self.assertEqual(host_options.apiurl, "https://example.com")
+        self.assertEqual(host_options.username, "user")
+        self.assertEqual(host_options.password, "secret")
+        self.assertEqual(host_options.credentials_mgr_class, None)
+
+    @patch.dict(
+        os.environ,
+        {
+            "OSC_APIURL": "https://example.com",
+            "OSC_USERNAME": "user",
+            "OSC_PASSWORD": "secret",
+        },
+        clear=True,
+    )
+    def test_new_apiurl_username_password(self):
+        # missing password
+        osc.conf.get_config(override_conffile=self.oscrc)
+        conf = osc.conf.config
+        host_options = conf["api_host_options"][conf["apiurl"]]
+        self.assertEqual(conf.apiurl, "https://example.com")
+        self.assertEqual(host_options.apiurl, "https://example.com")
+        self.assertEqual(host_options.username, "user")
+        self.assertEqual(host_options.password, "secret")
+        self.assertEqual(host_options.credentials_mgr_class, None)
+
+    @patch.dict(
+        os.environ,
+        {
+            "OSC_APIURL": "https://example.com",
+            "OSC_USERNAME": "user",
+            "OSC_PASSWORD": "secret",
+            "OSC_CREDENTIALS_MGR_CLASS": "osc.credentials.PlaintextConfigFileCredentialsManager",
+        },
+        clear=True,
+    )
+    def test_new_apiurl_username_password_credmgr(self):
+        # missing password
+        osc.conf.get_config(override_conffile=self.oscrc)
+        conf = osc.conf.config
+        host_options = conf["api_host_options"][conf.apiurl]
+        self.assertEqual(conf.apiurl, "https://example.com")
+        self.assertEqual(host_options.apiurl, "https://example.com")
+        self.assertEqual(host_options.username, "user")
+        self.assertEqual(host_options.password, "secret")
+        self.assertEqual(host_options.credentials_mgr_class, "osc.credentials.PlaintextConfigFileCredentialsManager")
+
+
+class TestHostOptionsFromEnv(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="osc_test_")
+        self.oscrc = os.path.join(self.tmpdir, "oscrc")
+        with open(self.oscrc, "w", encoding="utf-8") as f:
+            f.write(OSCRC)
+        osc.conf.get_config(override_conffile=self.oscrc)
+        self.config = osc.conf.config
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    @patch.dict(
+        os.environ,
+        {
+            "OSC_HOST_OBS_USERNAME": "user",
+            "OSC_HOST_OBS_PASSWORD": "secret",
+            "OSC_HOST_OBS_CREDENTIALS_MGR_CLASS": "osc.credentials.PlaintextConfigFileCredentialsManager",
+            "OSC_HOST_OBS_REALNAME": "User",
+            "OSC_HOST_OBS_EMAIL": "user@example.com",
+        },
+        clear=True,
+    )
+    def test_host_options(self):
+        osc.conf.get_config(override_conffile=self.oscrc)
+        conf = osc.conf.config
+        host_options = conf["api_host_options"][conf["apiurl"]]
+        self.assertEqual(conf.apiurl, "https://api.opensuse.org")
+        self.assertEqual(host_options.apiurl, "https://api.opensuse.org")
+        self.assertEqual(host_options.username, "user")
+        self.assertEqual(host_options.password, "secret")
+        self.assertEqual(host_options.credentials_mgr_class, "osc.credentials.PlaintextConfigFileCredentialsManager")
+        self.assertEqual(host_options.realname, "User")
+        self.assertEqual(host_options.email, "user@example.com")
+
+    @patch.dict(
+        os.environ,
+        {
+            "OSC_HOST_OBS_USERNAME": "user",
+            "OSC_HOST_OBS_PASSWORD": "secret",
+            "OSC_HOST_OBS_CREDENTIALS_MGR_CLASS": "osc.credentials.PlaintextConfigFileCredentialsManager",
+            "OSC_HOST_OBS_REALNAME": "User",
+            "OSC_HOST_OBS_EMAIL": "user@example.com",
+            "OSC_USERNAME": "USER",
+            "OSC_PASSWORD": "SECRET",
+            "OSC_CREDENTIALS_MGR_CLASS": "osc.credentials.TransientCredentialsManager",
+        },
+        clear=True,
+    )
+    def test_host_options_overrides(self):
+        # thest if OSC_{USERNAME,PASSWORD,CREDENTIALS_MGR_CLASS} prevail over OSC_HOST_* options
+        osc.conf.get_config(override_conffile=self.oscrc)
+        conf = osc.conf.config
+        host_options = conf["api_host_options"][conf["apiurl"]]
+        self.assertEqual(conf.apiurl, "https://api.opensuse.org")
+        self.assertEqual(host_options.apiurl, "https://api.opensuse.org")
+        self.assertEqual(host_options.username, "USER")
+        self.assertEqual(host_options.password, "SECRET")
+        self.assertEqual(host_options.credentials_mgr_class, "osc.credentials.TransientCredentialsManager")
+        self.assertEqual(host_options.realname, "User")
+        self.assertEqual(host_options.email, "user@example.com")
 
 
 if __name__ == "__main__":
