@@ -1,4 +1,3 @@
-import importlib
 import unittest
 
 import osc.conf
@@ -8,12 +7,7 @@ from osc.oscerr import UserAbort
 
 class TestTrustedProjects(unittest.TestCase):
     def setUp(self):
-        # reset the global `config` in preparation for running the tests
-        importlib.reload(osc.conf)
-
-    def tearDown(self):
-        # reset the global `config` to avoid impacting tests from other classes
-        importlib.reload(osc.conf)
+        osc.conf.config = osc.conf.Options()
 
     def test_name(self):
         apiurl = "https://example.com"

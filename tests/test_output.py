@@ -1,5 +1,4 @@
 import contextlib
-import importlib
 import io
 import unittest
 
@@ -74,12 +73,7 @@ Key    : Value
 
 class TestPrintMsg(unittest.TestCase):
     def setUp(self):
-        # reset the global `config` in preparation for running the tests
-        importlib.reload(osc.conf)
-
-    def tearDown(self):
-        # reset the global `config` to avoid impacting tests from other classes
-        importlib.reload(osc.conf)
+        osc.conf.config = osc.conf.Options()
 
     def test_debug(self):
         osc.conf.config["debug"] = False

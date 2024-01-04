@@ -6,6 +6,7 @@ It works on python 3.6+.
 This module IS NOT a supported API, it is meant for osc internal use only.
 """
 
+import copy
 import inspect
 import sys
 import types
@@ -81,9 +82,6 @@ class Field(property):
 
         # a flag indicating, whether the default is a callable with lazy evalution
         self.default_is_lazy = callable(self.default)
-
-        # whether the field was set
-        self.is_set = False
 
         # the name of model's attribute associated with this field instance - set from the model
         self.name = None
@@ -205,8 +203,13 @@ class Field(property):
 
     def get(self, obj):
         try:
-            return getattr(obj, f"_{self.name}")
-        except AttributeError:
+            return obj._values[self.name]
+        except KeyError:
+            pass
+
+        try:
+            return obj._defaults[self.name]
+        except KeyError:
             pass
 
         if isinstance(self.default, FromParent):
@@ -217,18 +220,23 @@ class Field(property):
         if self.default is NotSet:
             raise RuntimeError(f"The field '{self.name}' has no default")
 
+        # make a deepcopy to avoid problems with mutable defaults
+        default = copy.deepcopy(self.default)
+
         # lazy evaluation of a factory function on first use
-        if callable(self.default):
-            self.default = self.default()
+        if callable(default):
+            default = default()
 
         # if this is a model field, convert dict to a model instance
-        if self.is_model and isinstance(self.default, dict):
-            new_value = self.origin_type()  # pylint: disable=not-callable
-            for k, v in self.default.items():
+        if self.is_model and isinstance(default, dict):
+            cls = self.origin_type
+            new_value = cls()  # pylint: disable=not-callable
+            for k, v in default.items():
                 setattr(new_value, k, v)
-            self.default = new_value
+            default = new_value
 
-        return self.default
+        obj._defaults[self.name] = default
+        return default
 
     def set(self, obj, value):
         # if this is a model field, convert dict to a model instance
@@ -239,8 +247,7 @@ class Field(property):
             value = new_value
 
         self.validate_type(value)
-        setattr(obj, f"_{self.name}", value)
-        self.is_set = True
+        obj._values[self.name] = value
 
 
 class ModelMeta(type):
@@ -280,7 +287,16 @@ class ModelMeta(type):
 class BaseModel(metaclass=ModelMeta):
     __fields__: Dict[str, Field]
 
+    def __setattr__(self, name, value):
+        if getattr(self, "_allow_new_attributes", True) or hasattr(self.__class__, name) or hasattr(self, name):
+            # allow setting properties - test if they exist in the class
+            # also allow setting existing attributes that were previously initialized via __dict__
+            return super().__setattr__(name, value)
+        raise AttributeError(f"Setting attribute '{self.__class__.__name__}.{name}' is not allowed")
+
     def __init__(self, **kwargs):
+        self._defaults = {}  # field defaults cached in field.get()
+        self._values = {}  # field values explicitly set after initializing the model
         self._parent = kwargs.pop("_parent", None)
 
         uninitialized_fields = []
@@ -306,16 +322,15 @@ class BaseModel(metaclass=ModelMeta):
         for name, field in self.__fields__.items():
             field.validate_type(getattr(self, name))
 
-    def dict(self, exclude_unset=False):
+        self._allow_new_attributes = False
+
+    def dict(self):
         result = {}
         for name, field in self.__fields__.items():
             if field.exclude:
                 continue
-            if exclude_unset and not field.is_set and field.is_optional:
-                # include only mandatory fields and optional fields that were set to an actual value
-                continue
             if field.is_model:
-                result[name] = getattr(self, name).dict(exclude_unset=exclude_unset)
+                result[name] = getattr(self, name).dict()
             else:
                 result[name] = getattr(self, name)
         return result

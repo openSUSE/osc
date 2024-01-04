@@ -126,7 +126,9 @@ HttpHeader = NewType("HttpHeader", Tuple[str, str])
 class OscOptions(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.extra_fields = {}
+        self._allow_new_attributes = True
+        self._extra_fields = {}
+        self._allow_new_attributes = False
 
     # compat function with the config dict
     def _get_field_name(self, name):
@@ -145,7 +147,7 @@ class OscOptions(BaseModel):
         field_name = self._get_field_name(name)
 
         if field_name is None and not hasattr(self, name):
-            return self.extra_fields[name]
+            return self._extra_fields[name]
 
         field_name = field_name or name
         try:
@@ -158,7 +160,7 @@ class OscOptions(BaseModel):
         field_name = self._get_field_name(name)
 
         if field_name is None and not hasattr(self, name):
-            self.extra_fields[name] = value
+            self._extra_fields[name] = value
             return
 
         field_name = field_name or name
