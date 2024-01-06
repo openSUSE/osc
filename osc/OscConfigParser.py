@@ -114,7 +114,7 @@ class SectionLine(Line):
             raise configparser.Error('value and line are mutually exclusive')
 
         if value is not None:
-            line = '%s%s%s' % (optname, sep, value)
+            line = f'{optname}{sep}{value}'
         opt = self._find(optname)
         if opt:
             opt.format(line)
@@ -253,10 +253,10 @@ class OscConfigParser(configparser.ConfigParser):
                     #cursect[optname] = "%s\n%s" % (cursect[optname], value)
                     #self.set(cursect, optname, "%s\n%s" % (self.get(cursect, optname), value))
                     if cursect == configparser.DEFAULTSECT:
-                        self._defaults[optname] = "%s\n%s" % (self._defaults[optname], value)
+                        self._defaults[optname] = f"{self._defaults[optname]}\n{value}"
                     else:
                         # use the raw value here (original version uses raw=False)
-                        self._sections[cursect]._find(optname).value = '%s\n%s' % (self.get(cursect, optname, raw=True), value)
+                        self._sections[cursect]._find(optname).value = f'{self.get(cursect, optname, raw=True)}\n{value}'
             # a section header or option header?
             else:
                 # is it a section header?
@@ -342,7 +342,7 @@ class OscConfigParser(configparser.ConfigParser):
                     first = False
                 else:
                     ret.append('')
-                ret.append('[%s]' % line.name)
+                ret.append(f'[{line.name}]')
                 for sline in line._lines:
                     if sline.name == '__name__':
                         continue

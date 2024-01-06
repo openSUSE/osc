@@ -45,23 +45,23 @@ class Fetcher:
         self.gr = OscFileGrabber(progress_obj=self.progress_obj)
 
     def __add_cpio(self, pac):
-        prpap = '%s/%s/%s/%s' % (pac.project, pac.repository, pac.repoarch, pac.repopackage)
+        prpap = f'{pac.project}/{pac.repository}/{pac.repoarch}/{pac.repopackage}'
         self.cpio.setdefault(prpap, {})[pac.repofilename] = pac
 
     def __download_cpio_archive(self, apiurl, project, repo, arch, package, **pkgs):
         if not pkgs:
             return
-        query = ['binary=%s' % quote_plus(i) for i in pkgs]
+        query = [f'binary={quote_plus(i)}' for i in pkgs]
         query.append('view=cpio')
         for module in self.modules:
-            query.append('module=' + module)
+            query.append(f"module={module}")
         try:
             url = makeurl(apiurl, ['build', project, repo, arch, package], query=query)
             sys.stdout.write("preparing download ...\r")
             sys.stdout.flush()
             with tempfile.NamedTemporaryFile(prefix='osc_build_cpio') as tmparchive:
                 self.gr.urlgrab(url, filename=tmparchive.name,
-                                text='fetching packages for \'%s\'' % project)
+                                text=f'fetching packages for \'{project}\'')
                 archive = cpio.CpioRead(tmparchive.name)
                 archive.read()
                 for hdr in archive:
@@ -133,7 +133,7 @@ class Fetcher:
         mg = OscMirrorGroup(self.gr, pac.urllist)
 
         if self.http_debug:
-            print('\nURLs to try for package \'%s\':' % pac, file=sys.stderr)
+            print(f'\nURLs to try for package \'{pac}\':', file=sys.stderr)
             print('\n'.join(pac.urllist), file=sys.stderr)
             print(file=sys.stderr)
 
@@ -141,7 +141,7 @@ class Fetcher:
             with tempfile.NamedTemporaryFile(prefix='osc_build',
                                              delete=False) as tmpfile:
                 mg_stat = mg.urlgrab(pac.filename, filename=tmpfile.name,
-                                     text='%s(%s) %s' % (prefix, pac.project, pac.filename))
+                                     text=f'{prefix}({pac.project}) {pac.filename}')
                 if mg_stat:
                     self.move_package(tmpfile.name, pac.localdir, pac)
 
@@ -198,7 +198,7 @@ class Fetcher:
         if self.download_api_only:
             return []
         urllist = self.urllist
-        key = '%s/%s' % (pac.project, pac.repository)
+        key = f'{pac.project}/{pac.repository}'
         project_repo_url = buildinfo.urls.get(key)
         if project_repo_url is not None:
             urllist = [project_repo_url]
@@ -290,7 +290,7 @@ class Fetcher:
 
         prjs = list(buildinfo.projects.keys())
         for i in prjs:
-            dest = "%s/%s" % (self.cachedir, i)
+            dest = f"{self.cachedir}/{i}"
             if not os.path.exists(dest):
                 os.makedirs(dest, mode=0o755)
             dest += '/_pubkey'
@@ -322,8 +322,8 @@ class Fetcher:
 
             if try_parent:
                 if self.http_debug:
-                    print("can't fetch key for %s" % (i), file=sys.stderr)
-                    print("url: %s" % url, file=sys.stderr)
+                    print(f"can't fetch key for {i}", file=sys.stderr)
+                    print(f"url: {url}", file=sys.stderr)
 
                 if os.path.exists(dest):
                     os.unlink(dest)

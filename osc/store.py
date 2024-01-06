@@ -137,7 +137,7 @@ class Store:
         if not isinstance(value, str):
             msg = f"The argument `value` should be str, not {type(value).__name__}"
             raise TypeError(msg)
-        self.write_file(fn, value + "\n", subdir=subdir)
+        self.write_file(fn, f"{value}\n", subdir=subdir)
 
     def read_int(self, fn):
         if not self.exists(fn):

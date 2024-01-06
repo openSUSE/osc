@@ -189,7 +189,7 @@ class OscInvalidRevision(OscValueError):
     """
 
     def __str__(self):
-        return "Invalid revision value: {}".format("".join(self.args))
+        return f"Invalid revision value: {''.join(self.args)}"
 
 
 class PackageNotInstalled(OscBaseError):
@@ -201,7 +201,7 @@ class PackageNotInstalled(OscBaseError):
         super().__init__((pkg,))
 
     def __str__(self):
-        return 'Package %s is required for this operation' % self.args
+        return f'Package {self.args} is required for this operation'
 
 
 class SignalInterrupt(Exception):
