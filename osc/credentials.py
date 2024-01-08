@@ -211,7 +211,7 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
     def set_password(self, url, user, password):
         self._load_backend()
         keyring.set_password(urlsplit(url)[1], user, password)
-        config_value = self._qualified_name() + ':' + self._backend_cls_name
+        config_value = f"{self._qualified_name()}:{self._backend_cls_name}"
         self._cp.set(url, self.config_entry, config_value)
 
     def delete_password(self, url, user):
@@ -317,7 +317,7 @@ def create_credentials_manager(url, cp):
 
 
 def qualified_name(obj):
-    return obj.__module__ + '.' + obj.__class__.__name__
+    return f"{obj.__module__}.{obj.__class__.__name__}"
 
 
 def has_keyring_support():

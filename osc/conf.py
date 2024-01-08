@@ -1383,10 +1383,10 @@ def _model_to_rst(cls, title=None, description=None, sections=None, output_file=
 
         ini_key = extra.get("ini_key", name)
 
-        x = bold(ini_key) + " : " + get_type(name, field)
+        x = f"{bold(ini_key)} : {get_type(name, field)}"
         default = get_default(name, field)
         if default:
-            x += " = " + italic(default)
+            x += f" = {italic(default)}"
         result.append(x)
         result.append("")
         desc = extra.get("ini_description", None) or field.description or ""
@@ -1499,13 +1499,13 @@ def parse_apisrv_url(scheme, apisrv):
     elif scheme is not None:
         url = scheme + apisrv
     else:
-        url = "https://" + apisrv
+        url = f"https://{apisrv}"
     scheme, url, path = urlsplit(url)[0:3]
     return scheme, url, path.rstrip('/')
 
 
 def urljoin(scheme, apisrv, path=''):
-    return '://'.join([scheme, apisrv]) + path
+    return f"{scheme}://{apisrv}" + path
 
 
 def is_known_apiurl(url):
@@ -1541,7 +1541,7 @@ def get_apiurl_api_host_options(apiurl):
     apiurl = sanitize_apiurl(apiurl)
     if is_known_apiurl(apiurl):
         return config['api_host_options'][apiurl]
-    raise oscerr.ConfigMissingApiurl('missing credentials for apiurl: \'%s\'' % apiurl,
+    raise oscerr.ConfigMissingApiurl(f'missing credentials for apiurl: \'{apiurl}\'',
                                      '', apiurl)
 
 
@@ -1602,14 +1602,14 @@ def write_config(fname, cp):
             if e.errno != errno.EEXIST:
                 raise
 
-    with open(fname + '.new', 'w') as f:
+    with open(f"{fname}.new", 'w') as f:
         cp.write(f, comments=True)
     try:
-        os.rename(fname + '.new', fname)
+        os.rename(f"{fname}.new", fname)
         os.chmod(fname, 0o600)
     except:
-        if os.path.exists(fname + '.new'):
-            os.unlink(fname + '.new')
+        if os.path.exists(f"{fname}.new"):
+            os.unlink(f"{fname}.new")
         raise
 
 
@@ -1642,10 +1642,10 @@ def config_set_option(section, opt, val=None, delete=False, update=True, creds_m
 
     section = sections.get(section.rstrip('/'), section)
     if section not in cp.sections():
-        raise oscerr.ConfigError('unknown section \'%s\'' % section, config['conffile'])
+        raise oscerr.ConfigError(f'unknown section \'{section}\'', config['conffile'])
     if section == 'general' and opt not in general_opts or \
        section != 'general' and opt not in api_host_options:
-        raise oscerr.ConfigError('unknown config option \'%s\'' % opt, config['conffile'])
+        raise oscerr.ConfigError(f'unknown config option \'{opt}\'', config['conffile'])
 
     if not val and not delete and opt == 'pass' and creds_mgr_descr is not None:
         # change password store
@@ -1758,7 +1758,7 @@ def _get_credentials_manager(url, cp):
     if cp.has_option(url, credentials.AbstractCredentialsManager.config_entry):
         creds_mgr = credentials.create_credentials_manager(url, cp)
         if creds_mgr is None:
-            msg = 'Unable to instantiate creds mgr (section: %s)' % url
+            msg = f'Unable to instantiate creds mgr (section: {url})'
             conffile = get_configParser.conffile
             raise oscerr.ConfigMissingCredentialsError(msg, conffile, url)
         return creds_mgr
@@ -1977,7 +1977,7 @@ def identify_conf():
         return '~/.oscrc'
 
     if os.environ.get('XDG_CONFIG_HOME', '') != '':
-        conffile = os.environ.get('XDG_CONFIG_HOME') + '/osc/oscrc'
+        conffile = f"{os.environ.get('XDG_CONFIG_HOME')}/osc/oscrc"
     else:
         conffile = '~/.config/osc/oscrc'
 

@@ -241,7 +241,7 @@ class Cmdln:
         self.options, self.args = self.argparser.parse_known_args(argv[1:])
         unrecognized = [i for i in self.args if i.startswith("-")]
         if unrecognized:
-            self.argparser.error(f"unrecognized arguments: " + " ".join(unrecognized))
+            self.argparser.error(f"unrecognized arguments: {' '.join(unrecognized)}")
 
         self.post_argparse()
 
@@ -257,7 +257,7 @@ class Cmdln:
         if arg_names == ["subcmd", "opts"]:
             # positional args specified manually via @cmdln.option
             if self.args:
-                self.argparser.error(f"unrecognized arguments: " + " ".join(self.args))
+                self.argparser.error(f"unrecognized arguments: {' '.join(self.args)}")
             cmd(self.options.command, self.options)
         elif arg_names == ["subcmd", "opts", "args"]:
             # positional args are the remaining (unrecognized) args

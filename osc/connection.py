@@ -488,7 +488,7 @@ class CookieJarAuthHandler(AuthHandlerBase):
             # doing expensive signature auth in multiple processes.
             # This usually happens when a user runs multiple osc instances
             # from the command-line in parallel.
-            self.cookiejar_lock_path = self.cookiejar_path + ".lock"
+            self.cookiejar_lock_path = f"{self.cookiejar_path}.lock"
         self.cookiejar_lock_fd = None
 
     @property
@@ -633,7 +633,7 @@ class SignatureAuthHandler(AuthHandlerBase):
             keyfile = self.guess_keyfile()
         else:
             if '/' not in keyfile:
-                keyfile = '~/.ssh/' + keyfile
+                keyfile = f"~/.ssh/{keyfile}"
             keyfile = os.path.expanduser(keyfile)
 
         cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
@@ -668,7 +668,7 @@ class SignatureAuthHandler(AuthHandlerBase):
         auth = self.get_authorization(chal)
         if not auth:
             return False
-        auth_val = 'Signature %s' % auth
+        auth_val = f'Signature {auth}'
         req.add('Authorization', auth_val)
         return True
 

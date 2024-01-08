@@ -11,7 +11,7 @@ class KeyError(Exception):
         self.key = key
 
     def __str__(self):
-        return '' + self.key + ' :' + ' '.join(self.args)
+        return f"{self.key} :{' '.join(self.args)}"
 
 
 class Checker:
