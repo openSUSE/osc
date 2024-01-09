@@ -32,13 +32,14 @@
 
 %define argparse_manpage_pkg argparse-manpage
 %define obs_build_pkg obs-build
-%define openssh_pkg openssh
+%define ssh_add_pkg openssh-clients
+%define ssh_keygen_pkg openssh
 %define sphinx_pkg %{use_python_pkg}-sphinx
 
 %if 0%{?suse_version}
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
 %define obs_build_pkg build
-%define openssh_pkg openssh-common
+%define ssh_keygen_pkg openssh-common
 %define sphinx_pkg %{use_python_pkg}-Sphinx
 %endif
 
@@ -111,7 +112,8 @@ Recommends:     obs-service-tar_scm
 Recommends:     obs-service-verify_file
 
 # needed for ssh signature auth
-Recommends:     %{openssh_pkg}
+Recommends:     %{ssh_add_pkg}
+Recommends:     %{ssh_keygen_pkg}
 
 # needed for `osc browse` that calls xdg-open
 Recommends:     xdg-utils
