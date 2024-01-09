@@ -76,7 +76,7 @@ class GitStore:
             if branch == "factory":
                 self._project = "openSUSE:Factory"
             else:
-                raise RuntimeError(f"Couldn't map git branch '{branch}' to a project")
+                raise oscerr.NoWorkingCopy(f"Couldn't map git branch '{branch}' to a project")
         return self._project
 
     @project.setter
