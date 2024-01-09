@@ -1996,7 +1996,7 @@ def get_config(override_conffile=None,
         if not host_options.username:
             raise oscerr.ConfigMissingCredentialsError(f"No user configured for apiurl {apiurl}", conffile, apiurl)
 
-        if not host_options.password:
+        if host_options.password is None:
             raise oscerr.ConfigMissingCredentialsError(f"No password configured for apiurl {apiurl}", conffile, apiurl)
 
     for key, value in cp["general"].items():
