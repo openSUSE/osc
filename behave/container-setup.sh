@@ -123,13 +123,19 @@ systemctl enable obsrepserver
 #systemctl enable obsdispatcher
 #systemctl enable obspublisher
 #systemctl enable obsscheduler
-#systemctl enable obsservice
+systemctl enable obsservice
 #systemctl enable obssignd
 #systemctl enable obssigner
 #systemctl enable obswarden
 #systemctl enable obsdodup
 #systemctl enable obsdeltastore
 #systemctl enable obsservicedispatch
+
+# modify WantedBy target, otherwise the service won't start even if it is enabled
+sed -i 's@^WantedBy *=.*@WantedBy = default.target@' /usr/lib/systemd/system/obs-delayedjob-queue-default.service
+
+# needed (not only) for generating diffs in requests
+systemctl enable obs-delayedjob-queue-default
 
 # OBS worker
 # systemctl enable obsworker
