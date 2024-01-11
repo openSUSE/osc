@@ -14,7 +14,6 @@ $ dnf install osc podman python3-behave
 
 Build a container with OBS
 --------------------------
-
 ```
 $ cd behave
 
@@ -25,16 +24,29 @@ $ podman pull opensuse/leap:15.5
 $ ./container-build.sh [--no-cache]
 ```
 
-We can also use the built container outside the test suite
+Use a prebuilt container with OBS
+---------------------------------
+```
+$ cd behave
+$ ./container-pull.sh
+```
+
+Use the container
+-----------------
 ```
 $ cd behave
 
 # run 'obs-server' container on port 1443
+# running this command again replaces the current container with a fresh one
 $ ./container-run.sh
 
 # shell into the started container
 $ ./container-shell.sh
+```
 
+Cleanup
+-------
+```
 # stop the started container
 $ podman stop|kill obs-server
 
@@ -63,6 +75,11 @@ $ cd behave
 behave -Dosc=../osc-wrapper.py --wip -k
 ```
 
+Run osc commands
+----------------
+```
+osc -A https://localhost:1443 ...
+```
 
 Filesystem layout
 -----------------
