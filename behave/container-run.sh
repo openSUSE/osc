@@ -6,6 +6,7 @@ podman run \
     --name obs-server \
     --hostname obs-server \
     --replace \
+    --rm \
     --detach \
     --interactive \
     --tty \
