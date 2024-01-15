@@ -1659,7 +1659,7 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Delete a token')
     @cmdln.option('-o', '--operation', metavar='OPERATION',
-                        help='Default is "runservice", but "branch", "release", "rebuild", or "workflow" can also be used')
+                        help="Operation associated with the token. Choices: runservice, branch, release, rebuild, workflow")
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     @cmdln.option('', '--scm-token', metavar='SCM_TOKEN',
@@ -1718,12 +1718,14 @@ class Osc(cmdln.Cmdln):
             http_DELETE(url)
         elif opts.trigger:
             print("Trigger token")
-            operation = opts.operation or "runservice"
             query = {}
             if len(args) > 1:
                 query['project'] = args[0]
                 query['package'] = args[1]
-            url = makeurl(apiurl, ['trigger', operation], query)
+            if opts.operation:
+                url = makeurl(apiurl, ["trigger", opts.operation], query)
+            else:
+                url = makeurl(apiurl, ["trigger"], query)
             headers = {
                 'Content-Type': 'application/octet-stream',
                 'Authorization': "Token " + opts.trigger,
