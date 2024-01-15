@@ -114,8 +114,8 @@ chown -R wwwrun:www /srv/www/obs/api/tmp/
 systemctl enable apache2
 systemctl enable mysql
 # starting obs-api-support.target incl. all dependencies is expensive
-# let's start it only when needed
-# systemctl enable obs-api-support.target
+# let's mask it and start individual services as needed
+systemctl mask obs-api-support.target
 
 # OBS backend
 systemctl enable obssrcserver
@@ -131,8 +131,8 @@ systemctl enable obsservice
 #systemctl enable obsdeltastore
 #systemctl enable obsservicedispatch
 
-# modify WantedBy target, otherwise the service won't start even if it is enabled
-sed -i 's@^WantedBy *=.*@WantedBy = default.target@' /usr/lib/systemd/system/obs-delayedjob-queue-default.service
+# decouple obs-* services from obs-api-support.target
+sed -i '/^BindsTo *=.*/d; s/^WantedBy *=.*/WantedBy = default.target/' /usr/lib/systemd/system/obs-*
 
 # needed (not only) for generating diffs in requests
 systemctl enable obs-delayedjob-queue-default
