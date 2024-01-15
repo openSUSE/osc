@@ -124,6 +124,28 @@ def step_impl(context):
     raise AssertionError(f"Stdout is not:\n{expected_str}\n\nActual stdout:\n{found_str}")
 
 
+@behave.step("stdout matches")
+def step_impl(context):
+    expected = context.text.format(context=context).rstrip()
+    found = context.cmd_stdout.rstrip()
+
+    if re.match(expected, found, re.MULTILINE):
+        return
+
+    raise AssertionError(f"Stdout doesn't match:\n{expected}\n\nActual stdout:\n{found}")
+
+
+@behave.step("I search '{pattern}' in stdout and store named groups in '{context_attribute}'")
+def step_impl(context, pattern, context_attribute):
+    pattern = r"{}".format(pattern)
+
+    result = []
+    for match in re.finditer(pattern, context.cmd_stdout):
+        result.append(match.groupdict())
+
+    setattr(context, context_attribute, result)
+
+
 @behave.step("stderr is")
 def step_impl(context):
     expected = context.text.format(context=context).rstrip().split("\n")
