@@ -1673,7 +1673,7 @@ class Osc(cmdln.Cmdln):
 
         usage:
             osc token
-            osc token --create [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
+            osc token --create --operation <OPERATION> [<PROJECT> <PACKAGE>]
             osc token --delete <TOKENID>
             osc token --trigger <TOKENSTRING> [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
         """
@@ -1688,6 +1688,8 @@ class Osc(cmdln.Cmdln):
         url_path = ['person', conf.get_apiurl_usr(apiurl), 'token']
 
         if opts.create:
+            if not opts.operation:
+                self.argparser.error("Please specify --operation")
             if opts.operation == 'workflow' and not opts.scm_token:
                 msg = 'The --operation=workflow option requires a --scm-token=<token> option'
                 raise oscerr.WrongOptions(msg)
