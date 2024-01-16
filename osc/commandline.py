@@ -4662,9 +4662,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.link:
             query = {'rev': 'latest'}
             if pacs:
-                u = makeurl(pacs[0].apiurl, ['source', pacs[0].prjname, pacs[0].name], query=query)
+                apiurl = pacs[0].apiurl
+                project = pacs[0].prjname
+                package = pacs[0].name
             else:
-                u = makeurl(self.get_api_url(), ['source', args[0], args[1]], query=query)
+                apiurl = self.get_api_url()
+                project = args[0]
+                package = args[1]
+
+            u = makeurl(apiurl, ['source', project, package], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
@@ -4672,26 +4678,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.APIError('package is not a source link')
             baserev = linkinfo.get('baserev')
             opts.revision = baserev
-            if pacs:
-                print("diff working copy against last committed version\n")
-            else:
-                print(f"diff committed package against linked revision {baserev}\n")
-                run_pager(
-                    highlight_diff(
-                        server_diff(
-                            self.get_api_url(),
-                            linkinfo.get("project"),
-                            linkinfo.get("package"),
-                            baserev,
-                            args[0],
-                            args[1],
-                            linkinfo.get("lsrcmd5"),
-                            not opts.plain,
-                            opts.missingok,
-                        )
+
+            print(f"diff committed package against linked revision {baserev}\n")
+            run_pager(
+                highlight_diff(
+                    server_diff(
+                        self.get_api_url(),
+                        linkinfo.get("project"),
+                        linkinfo.get("package"),
+                        baserev,
+                        project,
+                        package,
+                        linkinfo.get("lsrcmd5"),
+                        not opts.plain,
+                        opts.missingok,
                     )
                 )
-                return
+            )
+            return
 
         if opts.change:
             try:
