@@ -195,6 +195,26 @@ class Test(unittest.TestCase):
         self.assertNotEqual(m.field, None)
         self.assertEqual(m.field.text, "text")
 
+    def test_enum(self):
+        class Numbers(Enum):
+            one = "one"
+            two = "two"
+
+        class TestModel(BaseModel):
+            field: Optional[Numbers] = Field(default=None)
+
+        m = TestModel()
+        field = m.__fields__["field"]
+        self.assertEqual(field.is_model, False)
+        self.assertEqual(field.is_optional, True)
+        self.assertEqual(field.origin_type, Numbers)
+        self.assertEqual(m.field, None)
+
+        m.field = "one"
+        self.assertEqual(m.field, "one")
+
+        self.assertRaises(ValueError, setattr, m, "field", "does-not-exist")
+
     def test_parent(self):
         class ParentModel(BaseModel):
             field: str = Field(default="text")

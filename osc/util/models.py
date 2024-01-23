@@ -13,6 +13,7 @@ import types
 from typing import get_type_hints
 
 # supported types
+from enum import Enum
 from typing import Any
 from typing import Dict
 from typing import List
@@ -40,6 +41,7 @@ __all__ = (
     "Field",
     "NotSet",
     "FromParent",
+    "Enum",
     "Dict",
     "List",
     "NewType",
@@ -173,6 +175,15 @@ class Field(property):
                 and issubclass(expected_type, BaseModel)
                 and isinstance(value, (expected_type, dict))
             ):
+                valid_type = True
+                continue
+
+            if (
+                inspect.isclass(expected_type)
+                and issubclass(expected_type, Enum)
+            ):
+                # test if the value is part of the enum
+                expected_type(value)
                 valid_type = True
                 continue
 
