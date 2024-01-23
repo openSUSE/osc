@@ -125,7 +125,7 @@ class Field(property):
         origin_type = get_origin(self.type) or self.type
         if self.is_optional:
             types = [i for i in self.type.__args__ if i != type(None)]
-            return types[0]
+            return get_origin(types[0]) or types[0]
         return origin_type
 
     @property
