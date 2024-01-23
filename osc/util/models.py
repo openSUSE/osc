@@ -252,10 +252,9 @@ class Field(property):
     def set(self, obj, value):
         # if this is a model field, convert dict to a model instance
         if self.is_model and isinstance(value, dict):
-            new_value = self.origin_type()  # pylint: disable=not-callable
-            for k, v in value.items():
-                setattr(new_value, k, v)
-            value = new_value
+            # initialize a model instance from a dictionary
+            klass = self.origin_type
+            value = klass(**value)  # pylint: disable=not-callable
 
         self.validate_type(value)
         obj._values[self.name] = value
