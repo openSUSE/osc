@@ -339,8 +339,10 @@ class BaseModel(metaclass=ModelMeta):
         for name, field in self.__fields__.items():
             if field.exclude:
                 continue
-            if field.is_model:
-                result[name] = getattr(self, name).dict()
+            value = getattr(self, name)
+            if value is not None and field.is_model:
+                result[name] = value.dict()
             else:
-                result[name] = getattr(self, name)
+                result[name] = value
+
         return result

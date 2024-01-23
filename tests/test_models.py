@@ -186,14 +186,17 @@ class Test(unittest.TestCase):
         self.assertEqual(field.is_optional, True)
         self.assertEqual(field.origin_type, TestSubmodel)
         self.assertEqual(m.field, None)
+        m.dict()
 
         m = TestModel(field=TestSubmodel())
         self.assertIsInstance(m.field, TestSubmodel)
         self.assertEqual(m.field.text, "default")
+        m.dict()
 
         m = TestModel(field={"text": "text"})
         self.assertNotEqual(m.field, None)
         self.assertEqual(m.field.text, "text")
+        m.dict()
 
     def test_enum(self):
         class Numbers(Enum):
