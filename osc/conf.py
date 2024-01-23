@@ -119,6 +119,12 @@ class Password(collections.UserString):
             return f"{self.__str__():{format_spec}}"
         return super().__format__(format_spec)
 
+    def encode(self, *args, **kwargs):
+        if sys.version_info < (3, 8):
+            # avoid returning the Password object on python < 3.8
+            return str(self).encode(*args, **kwargs)
+        return super().encode(*args, **kwargs)
+
 
 HttpHeader = NewType("HttpHeader", Tuple[str, str])
 
