@@ -198,6 +198,60 @@ class Test(unittest.TestCase):
         self.assertEqual(m.field.text, "text")
         m.dict()
 
+    def test_list_submodels(self):
+        class TestSubmodel(BaseModel):
+            text: str = Field(default="default")
+
+        class TestModel(BaseModel):
+            field: List[TestSubmodel] = Field(default=[])
+
+        m = TestModel()
+
+        field = m.__fields__["field"]
+        self.assertEqual(field.is_model, False)
+        self.assertEqual(field.is_model_list, True)
+        self.assertEqual(field.is_optional, False)
+        self.assertEqual(field.origin_type, list)
+        m.dict()
+
+        m = TestModel(field=[TestSubmodel()])
+        self.assertEqual(m.field[0].text, "default")
+        m.dict()
+
+        m = TestModel(field=[{"text": "text"}])
+        self.assertEqual(m.field[0].text, "text")
+        m.dict()
+
+        self.assertRaises(TypeError, getattr(m, "field"))
+
+    def test_optional_list_submodels(self):
+        class TestSubmodel(BaseModel):
+            text: str = Field(default="default")
+
+        class TestModel(BaseModel):
+            field: Optional[List[TestSubmodel]] = Field(default=[])
+
+        m = TestModel()
+
+        field = m.__fields__["field"]
+        self.assertEqual(field.is_model, False)
+        self.assertEqual(field.is_model_list, True)
+        self.assertEqual(field.is_optional, True)
+        self.assertEqual(field.origin_type, list)
+        m.dict()
+
+        m = TestModel(field=[TestSubmodel()])
+        self.assertEqual(m.field[0].text, "default")
+        m.dict()
+
+        m = TestModel(field=[{"text": "text"}])
+        self.assertEqual(m.field[0].text, "text")
+        m.dict()
+
+        m.field = None
+        self.assertEqual(m.field, None)
+        m.dict()
+
     def test_enum(self):
         class Numbers(Enum):
             one = "one"

@@ -131,6 +131,23 @@ class Field(property):
         return origin_type
 
     @property
+    def inner_type(self):
+        if self.is_optional:
+            types = [i for i in self.type.__args__ if i != type(None)]
+            type_ = types[0]
+        else:
+            type_ = self.type
+
+        if get_origin(type_) != list:
+            return None
+
+        if not hasattr(type_, "__args__"):
+            return None
+
+        inner_type = [i for i in type_.__args__ if i != type(None)][0]
+        return inner_type
+
+    @property
     def is_optional(self):
         origin_type = get_origin(self.type) or self.type
         return origin_type == Union and len(self.type.__args__) == 2 and type(None) in self.type.__args__
@@ -138,6 +155,10 @@ class Field(property):
     @property
     def is_model(self):
         return inspect.isclass(self.origin_type) and issubclass(self.origin_type, BaseModel)
+
+    @property
+    def is_model_list(self):
+        return inspect.isclass(self.inner_type) and issubclass(self.inner_type, BaseModel)
 
     def validate_type(self, value, expected_types=None):
         if not expected_types and self.is_optional and value is None:
@@ -255,6 +276,15 @@ class Field(property):
             # initialize a model instance from a dictionary
             klass = self.origin_type
             value = klass(**value)  # pylint: disable=not-callable
+        elif self.is_model_list and isinstance(value, list):
+            new_value = []
+            for i in value:
+                if isinstance(i, dict):
+                    klass = self.inner_type
+                    new_value.append(klass(**i))
+                else:
+                    new_value.append(i)
+            value = new_value
 
         self.validate_type(value)
         obj._values[self.name] = value
@@ -342,6 +372,8 @@ class BaseModel(metaclass=ModelMeta):
             value = getattr(self, name)
             if value is not None and field.is_model:
                 result[name] = value.dict()
+            if value is not None and field.is_model_list:
+                result[name] = [i.dict() for i in value]
             else:
                 result[name] = value
 
