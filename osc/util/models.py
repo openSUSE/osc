@@ -321,12 +321,12 @@ class BaseModel(metaclass=ModelMeta):
 
         if kwargs:
             unknown_fields_str = ", ".join([f"'{i}'" for i in kwargs])
-            raise TypeError(f"The following kwargs do not match any field: {unknown_fields_str}")
+            raise TypeError(f"The following kwargs of '{self.__class__.__name__}.__init__()' do not match any field: {unknown_fields_str}")
 
         if uninitialized_fields:
             uninitialized_fields_str = ", ".join([f"'{i}'" for i in uninitialized_fields])
             raise TypeError(
-                f"The following fields are not initialized and have no default either: {uninitialized_fields_str}"
+                f"The following fields of '{self.__class__.__name__}' object are not initialized and have no default either: {uninitialized_fields_str}"
             )
 
         for name, field in self.__fields__.items():
