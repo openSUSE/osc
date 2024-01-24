@@ -10,6 +10,7 @@ import copy
 import inspect
 import sys
 import types
+from typing import Callable
 from typing import get_type_hints
 
 # supported types
@@ -76,6 +77,7 @@ class Field(property):
         default: Any = NotSet,
         description: Optional[str] = None,
         exclude: bool = False,
+        get_callback: Optional[Callable] = None,
         **extra,
     ):
         # the default value; it can be a factory function that is lazily evaluated on the first use
@@ -105,6 +107,10 @@ class Field(property):
 
         # whether to exclude this field from export
         self.exclude = exclude
+
+        # optional callback to postprocess returned field value
+        # it takes (model_instance, value) and returns modified value
+        self.get_callback = get_callback
 
         # extra fields
         self.extra = extra
@@ -235,12 +241,18 @@ class Field(property):
 
     def get(self, obj):
         try:
-            return obj._values[self.name]
+            result = obj._values[self.name]
+            if self.get_callback is not None:
+                result = self.get_callback(obj, result)
+            return result
         except KeyError:
             pass
 
         try:
-            return obj._defaults[self.name]
+            result = obj._defaults[self.name]
+            if self.get_callback is not None:
+                result = self.get_callback(obj, result)
+            return result
         except KeyError:
             pass
 
