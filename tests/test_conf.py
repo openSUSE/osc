@@ -434,6 +434,33 @@ class TestExampleConfig(unittest.TestCase):
         self.assertEqual(self.config["apiurl_aliases"], expected)
 
 
+class TestOverrides(unittest.TestCase):
+    def test_verbose(self):
+        self.options = osc.conf.Options()
+        self.assertEqual(self.options.quiet, False)
+        self.assertEqual(self.options.verbose, False)
+
+        self.options.quiet = True
+        self.options.verbose = True
+        self.assertEqual(self.options.quiet, True)
+        # ``verbose`` is forced to ``False`` by the ``quiet`` option
+        self.assertEqual(self.options.verbose, False)
+
+        self.options.quiet = False
+        self.assertEqual(self.options.quiet, False)
+        self.assertEqual(self.options.verbose, True)
+
+    def test_http_debug(self):
+        self.options = osc.conf.Options()
+        self.assertEqual(self.options.http_debug, False)
+        self.assertEqual(self.options.http_full_debug, False)
+
+        self.options.http_full_debug = True
+        # ``http_debug`` forced to ``True`` by the ``http_full_debug`` option
+        self.assertEqual(self.options.http_debug, True)
+        self.assertEqual(self.options.http_full_debug, True)
+
+
 class TestFromParent(unittest.TestCase):
     def setUp(self):
         self.options = osc.conf.Options()
