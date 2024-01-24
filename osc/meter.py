@@ -5,6 +5,7 @@
 
 
 import signal
+import sys
 from abc import ABC
 from abc import abstractmethod
 from typing import Optional
@@ -77,7 +78,7 @@ def create_text_meter(*args, **kwargs) -> TextMeterBase:
     kwargs.pop("use_pb_fallback", True)
 
     meter_class = PBTextMeter
-    if not have_pb_module or config.quiet or not config.show_download_progress:
+    if not have_pb_module or config.quiet or not config.show_download_progress or not sys.stdout.isatty():
         meter_class = NoPBTextMeter
 
     return meter_class(*args, **kwargs)
