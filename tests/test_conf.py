@@ -43,6 +43,7 @@ debug = 0
 http_debug = 0
 http_full_debug = 0
 http_retries = 3
+quiet = 0
 verbose = 0
 no_preinstallimage = 0
 traceback = 0
@@ -217,6 +218,9 @@ class TestExampleConfig(unittest.TestCase):
 
     def test_http_retries(self):
         self.assertEqual(self.config["http_retries"], 3)
+
+    def test_quiet(self):
+        self.assertEqual(self.config["quiet"], False)
 
     def test_verbose(self):
         self.assertEqual(self.config["verbose"], False)

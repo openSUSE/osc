@@ -559,6 +559,16 @@ class Options(OscOptions):
         section=True,
     )  # type: ignore[assignment]
 
+    quiet: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Reduce amount of printed information to bare minimum.
+            Takes priority over ``verbose``.
+            """
+        ),
+    )  # type: ignore[assignment]
+
     verbose: bool = Field(
         default=False,
         description=textwrap.dedent(
@@ -1782,6 +1792,7 @@ def get_config(override_conffile=None,
                override_http_full_debug=None,
                override_traceback=None,
                override_post_mortem=None,
+               override_quiet=None,
                override_no_keyring=None,
                override_verbose=None,
                overrides=None
@@ -1821,6 +1832,9 @@ def get_config(override_conffile=None,
 
     if override_no_keyring is not None:
         overrides["use_keyring"] = not override_no_keyring
+
+    if override_quiet is not None:
+        overrides["quiet"] = override_quiet
 
     if override_verbose is not None:
         overrides["verbose"] = override_verbose
