@@ -175,6 +175,10 @@ class Container:
         self.wait_on_systemd()
         self.port = self.get_port()
 
+    def exec(self, args, check=True):
+        args = ["exec", self.container_id] + args
+        return self._run(args, check=check)
+
     def kill(self):
         if not self.container_id:
             return
@@ -189,12 +193,7 @@ class Container:
         self.start()
 
     def wait_on_systemd(self):
-        args = [
-            "exec",
-            self.container_id,
-            "/usr/bin/systemctl", "is-system-running", "--wait"
-        ]
-        self._run(args, check=False)
+        self.exec(["/usr/bin/systemctl", "is-system-running", "--wait"], check=False)
 
     def get_port(self):
         args = ["port", self.container_id]

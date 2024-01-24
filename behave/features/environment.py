@@ -1,5 +1,7 @@
 import os
 
+from behave.model_core import Status
+
 from steps import common
 from steps import osc
 from steps import podman
@@ -14,10 +16,18 @@ def after_step(context, step):
 
 
 def before_scenario(context, scenario):
-    pass
+    # truncate the logs before running any commands
+    proc = context.podman.container.exec(["bash", "-c", "find /srv/www/obs/api/log/ /srv/obs/log/ -name '*.log' -exec truncate --size=0 {} \\;"])
 
 
 def after_scenario(context, scenario):
+    if scenario.status == Status.failed:
+        # the scenario has failed, dump server logs
+        print("===== BEGIN: server logs ======")
+        proc = context.podman.container.exec(["bash", "-c", "tail -n +1 /srv/www/obs/api/log/*.log /srv/obs/log/*.log"])
+        print(proc.stdout)
+        print("===== END: server logs ======")
+
     if "destructive" in scenario.tags:
         # start a new container after a destructive test
         # we must use an existing podman instance defined in `before_all` due to context attribute life-cycle:
