@@ -5,6 +5,10 @@
 
 
 import signal
+import sys
+from abc import ABC
+from abc import abstractmethod
+from typing import Optional
 
 try:
     import progressbar as pb
@@ -13,9 +17,25 @@ except ImportError:
     have_pb_module = False
 
 
-class PBTextMeter:
+class TextMeterBase(ABC):
+    @abstractmethod
+    def start(self, basename: str, size: Optional[int] = None):
+        pass
 
-    def start(self, basename, size=None):
+    @abstractmethod
+    def update(self, amount_read: int):
+        pass
+
+    @abstractmethod
+    def end(self):
+        pass
+
+
+class PBTextMeter(TextMeterBase):
+    def __init__(self):
+        self.bar: pb.ProgressBar
+
+    def start(self, basename: str, size: Optional[int] = None):
         if size is None:
             widgets = [f"{basename}: ", pb.AnimatedMarker(), ' ', pb.Timer()]
             self.bar = pb.ProgressBar(widgets=widgets, maxval=pb.UnknownLength)
@@ -33,7 +53,7 @@ class PBTextMeter:
         signal.siginterrupt(signal.SIGWINCH, False)
         self.bar.start()
 
-    def update(self, amount_read):
+    def update(self, amount_read: int):
         self.bar.update(amount_read)
 
     def end(self):
@@ -41,25 +61,27 @@ class PBTextMeter:
 
 
 class NoPBTextMeter:
-    def start(self, basename, size=None):
+    def start(self, basename: str, size: Optional[int] = None):
         pass
 
-    def update(self, *args, **kwargs):
+    def update(self, amount_read: int):
         pass
 
-    def end(self, *args, **kwargs):
+    def end(self):
         pass
 
 
-def create_text_meter(*args, **kwargs):
-    use_pb_fallback = kwargs.pop('use_pb_fallback', True)
-    if have_pb_module or use_pb_fallback:
-        return TextMeter(*args, **kwargs)
-    return None
+def create_text_meter(*args, **kwargs) -> TextMeterBase:
+    from .conf import config
+
+    # this option is no longer used
+    kwargs.pop("use_pb_fallback", True)
+
+    meter_class = PBTextMeter
+    if not have_pb_module or config.quiet or not config.show_download_progress or not sys.stdout.isatty():
+        meter_class = NoPBTextMeter
+
+    return meter_class(*args, **kwargs)
 
 
-if have_pb_module:
-    TextMeter = PBTextMeter
-else:
-    TextMeter = NoPBTextMeter
 # vim: sw=4 et

@@ -43,6 +43,7 @@ debug = 0
 http_debug = 0
 http_full_debug = 0
 http_retries = 3
+quiet = 0
 verbose = 0
 no_preinstallimage = 0
 traceback = 0
@@ -217,6 +218,9 @@ class TestExampleConfig(unittest.TestCase):
 
     def test_http_retries(self):
         self.assertEqual(self.config["http_retries"], 3)
+
+    def test_quiet(self):
+        self.assertEqual(self.config["quiet"], False)
 
     def test_verbose(self):
         self.assertEqual(self.config["verbose"], False)
@@ -428,6 +432,33 @@ class TestExampleConfig(unittest.TestCase):
         expected = {"https://api.opensuse.org": "https://api.opensuse.org", "obs": "https://api.opensuse.org"}
         self.assertEqual(self.config.apiurl_aliases, expected)
         self.assertEqual(self.config["apiurl_aliases"], expected)
+
+
+class TestOverrides(unittest.TestCase):
+    def test_verbose(self):
+        self.options = osc.conf.Options()
+        self.assertEqual(self.options.quiet, False)
+        self.assertEqual(self.options.verbose, False)
+
+        self.options.quiet = True
+        self.options.verbose = True
+        self.assertEqual(self.options.quiet, True)
+        # ``verbose`` is forced to ``False`` by the ``quiet`` option
+        self.assertEqual(self.options.verbose, False)
+
+        self.options.quiet = False
+        self.assertEqual(self.options.quiet, False)
+        self.assertEqual(self.options.verbose, True)
+
+    def test_http_debug(self):
+        self.options = osc.conf.Options()
+        self.assertEqual(self.options.http_debug, False)
+        self.assertEqual(self.options.http_full_debug, False)
+
+        self.options.http_full_debug = True
+        # ``http_debug`` forced to ``True`` by the ``http_full_debug`` option
+        self.assertEqual(self.options.http_debug, True)
+        self.assertEqual(self.options.http_full_debug, True)
 
 
 class TestFromParent(unittest.TestCase):

@@ -559,13 +559,25 @@ class Options(OscOptions):
         section=True,
     )  # type: ignore[assignment]
 
+    quiet: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Reduce amount of printed information to bare minimum.
+            If enabled, automatically sets ``verbose`` to ``False``.
+            """
+        ),
+    )  # type: ignore[assignment]
+
     verbose: bool = Field(
         default=False,
         description=textwrap.dedent(
             """
             Increase amount of printed information to stdout.
+            Automatically set to ``False`` when ``quiet`` is enabled.
             """
         ),
+        get_callback=lambda conf, value: False if conf.quiet else value,
     )  # type: ignore[assignment]
 
     debug: bool = Field(
@@ -582,8 +594,10 @@ class Options(OscOptions):
         description=textwrap.dedent(
             """
             Print HTTP traffic to stderr.
+            Automatically set to ``True`` when``http_full_debug`` is enabled.
             """
         ),
+        get_callback=lambda conf, value: True if conf.http_full_debug else value,
     )  # type: ignore[assignment]
 
     http_full_debug: bool = Field(
@@ -591,6 +605,7 @@ class Options(OscOptions):
         description=textwrap.dedent(
             """
             [CAUTION!] Print HTTP traffic incl. authentication data to stderr.
+            If enabled, automatically sets ``http_debug`` to ``True``.
             """
         ),
     )  # type: ignore[assignment]
@@ -1782,6 +1797,7 @@ def get_config(override_conffile=None,
                override_http_full_debug=None,
                override_traceback=None,
                override_post_mortem=None,
+               override_quiet=None,
                override_no_keyring=None,
                override_verbose=None,
                overrides=None
@@ -1810,7 +1826,6 @@ def get_config(override_conffile=None,
         overrides["http_debug"] = override_http_debug
 
     if override_http_full_debug is not None:
-        overrides["http_debug"] = override_http_full_debug or overrides["http_debug"]
         overrides["http_full_debug"] = override_http_full_debug
 
     if override_traceback is not None:
@@ -1821,6 +1836,9 @@ def get_config(override_conffile=None,
 
     if override_no_keyring is not None:
         overrides["use_keyring"] = not override_no_keyring
+
+    if override_quiet is not None:
+        overrides["quiet"] = override_quiet
 
     if override_verbose is not None:
         overrides["verbose"] = override_verbose

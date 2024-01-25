@@ -291,6 +291,31 @@ class Test(unittest.TestCase):
         self.assertEqual(c.field, "new-text")
         self.assertEqual(c.field2, "text")
 
+    def test_get_callback(self):
+        class Model(BaseModel):
+            quiet: bool = Field(
+                default=False,
+            )
+            verbose: bool = Field(
+                default=False,
+                # return False if ``quiet`` is True; return the actual value otherwise
+                get_callback=lambda obj, value: False if obj.quiet else value,
+            )
+
+        m = Model()
+        self.assertEqual(m.quiet, False)
+        self.assertEqual(m.verbose, False)
+
+        m.quiet = True
+        m.verbose = True
+        self.assertEqual(m.quiet, True)
+        self.assertEqual(m.verbose, False)
+
+        m.quiet = False
+        m.verbose = True
+        self.assertEqual(m.quiet, False)
+        self.assertEqual(m.verbose, True)
+
 
 if __name__ == "__main__":
     unittest.main()

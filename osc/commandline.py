@@ -344,13 +344,13 @@ class OscMainCommand(MainCommand):
             "-v",
             "--verbose",
             action="store_true",
-            help="increase verbosity",
+            help="increase verbosity (conflicts with --quiet)",
         )
         self.add_argument(
             "-q",
             "--quiet",
             action="store_true",
-            help="be quiet, not verbose",
+            help="be quiet, not verbose (conflicts with --verbose)",
         )
         self.add_argument(
             "--debug",
@@ -434,6 +434,7 @@ class OscMainCommand(MainCommand):
                 override_http_full_debug=args.http_full_debug,
                 override_no_keyring=args.no_keyring,
                 override_post_mortem=args.post_mortem,
+                override_quiet=args.quiet,
                 override_traceback=args.traceback,
                 override_verbose=args.verbose,
                 overrides=overrides,
