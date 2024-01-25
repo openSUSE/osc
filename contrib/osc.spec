@@ -24,7 +24,7 @@
 %endif
 
 # whether to use fdupes to deduplicate python bytecode
-%if 0%{?suse_version} || 0%{?fedora} || 0%{?rhel} >= 8
+%if 0%{?suse_version} || 0%{?fedora} || 0%{?rhel} >= 8 || 0%{?amzn}
 %bcond_without fdupes
 %else
 %bcond_with fdupes
