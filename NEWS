@@ -1,3 +1,39 @@
+- 1.6.0
+  - Command-line:
+    - The 'token --trigger' command no longer sets '--operation=runservice' by default.
+    - Change 'token --create' command to require '--operation'
+    - Fix 'linkdiff' command error 400: prj/pac/md5 not in repository
+    - Update 'build' command to support building 'productcompose' build type with updateinfo.xml data
+    - Don't show meter in terminals that are not interactive
+    - Fix traceback when running osc from an arbitrary git repo that fails to map branch to a project (boo#1218170)
+  - Configuration:
+    - Implement reading credentials from environmental variables
+    - Allow starting with an empty config if --configfile is either empty or points to /dev/null
+    - Implement 'quiet' conf option
+    - Password can be an empty string (commonly used with ssh auth)
+  - Connection:
+    - Allow -X HEAD on osc api requests as well
+  - Library:
+    - Fix credentials managers to consistently return Password
+    - Fix Password.encode() on python < 3.8
+    - Refactor 'meter' module, use config settings to pick the right class
+    - Convert to using f-strings
+    - Use Field.get_callback to handle quiet/verbose and http_debug/http_full_debug options
+    - Implement get_callback that allows modifying returned value to the Field class
+    - Add support for List[BaseModel] type to Field class
+    - Report class name when reporting an error during instantiating BaseModel object
+    - Fix exporting an empty model field in  BaseModel.dict()
+    - Fix initializing a sub-model instance from a dictionary
+    - Implement 'Enum' support in models
+    - Fix Field.origin_type for Optional types
+    - Drop unused 'exclude_unset' argument from BaseModel.dict() method
+    - Store cached model defaults in self._defaults, avoid sharing references to mutable defaults
+    - Limit model attributes to predefined fields by forbidding creating new attributes on fly
+    - Store model values in self._values dict instead of private attributes
+  - Spec:
+    - Recommend openssh-clients for ssh-add that is required during ssh auth
+    - Add 0%{?amzn} macro that wasn't usptreamed
+
 - 1.5.1
   - Library:
     - Avoid using '/public/' API routes
