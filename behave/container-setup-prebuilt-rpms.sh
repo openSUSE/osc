@@ -100,7 +100,7 @@ FILES="_buildenv _statistics rpmlint.log"
 for ARCH in $ARCHES; do
     for PACKAGE in $PACKAGES; do
         for FILE in $FILES; do
-            touch /srv/obs/build/test:factory/standard/$ARCH/$PACKAGE/$FILE
+            runuser -l obsrun -s /bin/bash -c "touch /srv/obs/build/test:factory/standard/$ARCH/$PACKAGE/$FILE"
         done
     done
 done
