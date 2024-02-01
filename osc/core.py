@@ -365,7 +365,7 @@ class Serviceinfo:
     def getProjectGlobalServices(self, apiurl: str, project: str, package: str):
         self.apiurl = apiurl
         # get all project wide services in one file, we don't store it yet
-        u = makeurl(apiurl, ['source', project, package], query='cmd=getprojectservices')
+        u = makeurl(apiurl, ["source", project, package], query={"cmd": "getprojectservices"})
         try:
             f = http_POST(u)
             root = ET.parse(f).getroot()
@@ -3851,11 +3851,9 @@ def show_attribute_meta(apiurl: str, prj: str, pac, subpac, attribute, with_defa
     path.append('_attribute')
     if attribute:
         path.append(attribute)
-    query = []
-    if with_defaults:
-        query.append("with_default=1")
-    if with_project:
-        query.append("with_project=1")
+    query = {}
+    query["with_default"] = with_defaults
+    query["with_project"] = with_project
     url = makeurl(apiurl, path, query)
     try:
         f = http_GET(url)
@@ -4302,11 +4300,10 @@ def show_upstream_xsrcmd5(
 
 
 def show_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages):
-    query = ['view=info']
-    if packages:
-        query.extend([f'package={quote_plus(p)}' for p in packages])
-    if nofilename:
-        query.append('nofilename=1')
+    query = {}
+    query["view"] = "info"
+    query["package"] = packages
+    query["nofilename"] = nofilename
     f = http_GET(makeurl(apiurl, ['source', project], query=query))
     return f.read()
 
@@ -4703,7 +4700,7 @@ def create_submit_request(
        options_block,
        _html_escape(message))
 
-    u = makeurl(apiurl, ['request'], query='cmd=create')
+    u = makeurl(apiurl, ["request"], query={"cmd": "create"})
     r = None
     try:
         f = http_POST(u, data=xml)
@@ -5789,7 +5786,7 @@ def link_to_branch(apiurl: str, project: str, package: str):
     """
 
     if '_link' in meta_get_filelist(apiurl, project, package):
-        u = makeurl(apiurl, ['source', project, package], 'cmd=linktobranch')
+        u = makeurl(apiurl, ["source", project, package], {"cmd": "linktobranch"})
         http_POST(u)
     else:
         raise oscerr.OscIOError(None, f'no _link file inside project \'{project}\' package \'{package}\'')
@@ -6534,23 +6531,15 @@ def show_results_meta(
 ):
     repository = repository or []
     arch = arch or []
-    query = []
-    if package:
-        query.append(f'package={quote_plus(package)}')
-    if oldstate:
-        query.append(f'oldstate={quote_plus(oldstate)}')
-    if lastbuild:
-        query.append('lastbuild=1')
-    if multibuild:
-        query.append('multibuild=1')
-    if locallink:
-        query.append('locallink=1')
-    if code:
-        query.append(f'code={quote_plus(code)}')
-    for repo in repository:
-        query.append(f'repository={quote_plus(repo)}')
-    for a in arch:
-        query.append(f'arch={quote_plus(a)}')
+    query = {}
+    query["package"] = package
+    query["oldstate"] = oldstate
+    query["lastbuild"] = lastbuild
+    query["multibuild"] = multibuild
+    query["locallink"] = locallink
+    query["code"] = code
+    query["repository"] = repository
+    query["arch"] = arch
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
@@ -7050,15 +7039,13 @@ def print_buildlog(
 
 
 def get_dependson(apiurl: str, project: str, repository: str, arch: str, packages=None, reverse=None):
-    query = []
-    if packages:
-        for i in packages:
-            query.append(f'package={quote_plus(i)}')
+    query = {}
+    query["package"] = packages
 
     if reverse:
-        query.append('view=revpkgnames')
+        query["view"] = "revpkgnames"
     else:
-        query.append('view=pkgnames')
+        query["view"] = "pkgnames"
 
     u = makeurl(apiurl, ['build', project, repository, arch, '_builddepinfo'], query=query)
     f = http_GET(u)
@@ -7068,12 +7055,9 @@ def get_dependson(apiurl: str, project: str, repository: str, arch: str, package
 def get_buildinfo(
     apiurl: str, prj: str, package: str, repository: str, arch: str, specfile=None, addlist=None, debug=None
 ):
-    query = []
-    if addlist:
-        for i in addlist:
-            query.append(f'add={quote_plus(i)}')
-    if debug:
-        query.append('debug=1')
+    query = {}
+    query["add"] = addlist
+    query["debug"] = debug
 
     u = makeurl(apiurl, ['build', prj, repository, arch, package, '_buildinfo'], query=query)
 
@@ -7085,10 +7069,8 @@ def get_buildinfo(
 
 
 def get_buildconfig(apiurl: str, prj: str, repository: str, path=None):
-    query = []
-    if path:
-        for prp in path:
-            query.append(f'path={quote_plus(prp)}')
+    query = {}
+    query["path"] = path
     u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'], query=query)
     f = http_GET(u)
     return f.read()
@@ -8854,7 +8836,7 @@ def which(name: str):
 
 
 def get_comments(apiurl: str, kind, *args):
-    url = makeurl(apiurl, ('comments', kind) + args)
+    url = makeurl(apiurl, ["comments", kind] + list(args))
     f = http_GET(url)
     return ET.parse(f).getroot()
 
@@ -8877,9 +8859,8 @@ def print_comments(apiurl: str, kind, *args):
 
 def create_comment(apiurl: str, kind, comment, *args, **kwargs) -> Optional[str]:
     query = {}
-    if kwargs.get('parent') is not None:
-        query = {'parent_id': kwargs['parent']}
-    u = makeurl(apiurl, ('comments', kind) + args, query=query)
+    query["parent_id"] = kwargs.get("parent", None)
+    u = makeurl(apiurl, ["comments", kind] + list(args), query=query)
     f = http_POST(u, data=comment)
     ret = ET.fromstring(f.read()).find('summary')
     if ret is None:

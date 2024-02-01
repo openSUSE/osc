@@ -6025,7 +6025,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise e
 
     @cmdln.alias('r')
-    @cmdln.option('-l', '--last-build', action='store_true',
+    @cmdln.option('-l', '--last-build', action='store_true', default=None,
                         help='show last build results (succeeded/failed/unknown)')
     @cmdln.option('-r', '--repo', action='append', default=[],
                         help='Show results only for specified repo(s)')
