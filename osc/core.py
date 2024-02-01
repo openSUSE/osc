@@ -30,12 +30,13 @@ import sys
 import tempfile
 import textwrap
 import time
+import warnings
 from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from typing import Optional, Dict, Union, List, Iterable
-from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+from urllib.parse import urlsplit, urlunsplit, urlparse, quote, quote_plus, urlencode, unquote
 from urllib.error import HTTPError
 from urllib.request import pathname2url
 from xml.etree import ElementTree as ET
@@ -3606,39 +3607,71 @@ def pathjoin(a, *p):
     return path
 
 
-def osc_urlencode(data):
+class UrlQueryArray(list):
     """
-    An urlencode wrapper that encodes dictionaries in OBS compatible way:
-    {"file": ["foo", "bar"]} -> &file[]=foo&file[]=bar
+    Passing values wrapped in this object causes ``makeurl()`` to encode the list
+    in Ruby on Rails compatible way (adding square brackets to the parameter names):
+    {"file": UrlQueryArray(["foo", "bar"])} -> &file[]=foo&file[]=bar
     """
-    data = copy.deepcopy(data)
-    if isinstance(data, dict):
-        for key, value in list(data.items()):
-            if isinstance(value, list):
-                del data[key]
-                data[f"{key}[]"] = value
-
-    return urlencode(data, doseq=True)
+    pass
 
 
-def makeurl(baseurl: str, l, query=None):
-    """Given a list of path compoments, construct a complete URL.
-
-    Optional parameters for a query string can be given as a list, as a
-    dictionary, or as an already assembled string.
-    In case of a dictionary, the parameters will be urlencoded by this
-    function. In case of a list not -- this is to be backwards compatible.
+def makeurl(apiurl: str, path: List[str], query: Optional[dict] = None):
     """
-    query = query or []
-    _private.print_msg("makeurl:", baseurl, l, query, print_to="debug")
+    Construct an URL based on the given arguments.
 
-    if isinstance(query, list):
-        query = '&'.join(query)
-    elif isinstance(query, dict):
-        query = osc_urlencode(query)
+    :param apiurl: URL to the API server.
+    :param path: List of URL path components.
+    :param query: Optional dictionary with URL query data.
+                  Values can be: ``str``, ``int``, ``bool``, ``[str]``, ``[int]``.
+                  Items with value equal to ``None`` will be skipped.
+    """
+    apiurl_scheme, apiurl_netloc, apiurl_path = urlsplit(apiurl)[0:3]
 
-    scheme, netloc, path = urlsplit(baseurl)[0:3]
-    return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
+    path = apiurl_path.split("/") + [i.strip("/") for i in path]
+    path = [quote(i, safe="/:") for i in path]
+    path_str = "/".join(path)
+
+    # DEPRECATED
+    if isinstance(query, (list, tuple)):
+        warnings.warn(
+            "makeurl() query taking a list or a tuple is deprecated. Use dict instead.",
+            DeprecationWarning
+        )
+        query_str = "&".join(query)
+        return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
+
+    # DEPRECATED
+    if isinstance(query, str):
+        warnings.warn(
+            "makeurl() query taking a string is deprecated. Use dict instead.",
+            DeprecationWarning
+        )
+        query_str = query
+        return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
+
+    if query is None:
+        query = {}
+    query = copy.deepcopy(query)
+
+    for key in list(query):
+        value = query[key]
+
+        if value in (None, [], ()):
+            # remove items with value equal to None or [] or ()
+            del query[key]
+        elif isinstance(value, bool):
+            # convert boolean values to "0" or "1"
+            query[key] = str(int(value))
+        elif isinstance(value, UrlQueryArray):
+            # encode lists in Ruby on Rails compatible way:
+            # {"file": ["foo", "bar"]} -> &file[]=foo&file[]=bar
+            del query[key]
+            query[f"{key}[]"] = value
+
+    query_str = urlencode(query, doseq=True)
+
+    return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
 
 
 def check_store_version(dir):
@@ -5426,7 +5459,7 @@ def server_diff(
         query['view'] = 'xml'
         query['unified'] = 0
     if files:
-        query["file"] = files
+        query["file"] = UrlQueryArray(files)
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
     f = http_POST(u, retry_on_400=False)
@@ -6495,8 +6528,8 @@ def show_results_meta(
     repository: Optional[List[str]] = None,
     arch: Optional[List[str]] = None,
     oldstate: Optional[str] = None,
-    multibuild=False,
-    locallink=False,
+    multibuild: Optional[bool] = None,
+    locallink: Optional[bool] = None,
     code: Optional[str] = None,
 ):
     repository = repository or []
