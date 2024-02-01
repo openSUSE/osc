@@ -36,9 +36,8 @@ from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from typing import Optional, Dict, Union, List, Iterable
-from urllib.parse import urlsplit, urlunsplit, urlparse, quote, quote_plus, urlencode, unquote
+from urllib.parse import urlsplit, urlunsplit, urlparse, quote, urlencode, unquote
 from urllib.error import HTTPError
-from urllib.request import pathname2url
 from xml.etree import ElementTree as ET
 
 try:
@@ -1116,7 +1115,7 @@ class Project:
         else:
             user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
-                      path_args=(quote_plus(self.name), quote_plus(pac)),
+                      path_args=(self.name, pac),
                       template_args=({
                           'name': pac,
                           'user': user}),
@@ -1171,11 +1170,11 @@ class Project:
         package = store_read_package(pac_path)
         apiurl = store.apiurl
         if not meta_exists(metatype='pkg',
-                           path_args=(quote_plus(project), quote_plus(package)),
+                           path_args=(project, package),
                            template_args=None, create_new=False, apiurl=apiurl):
             user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
-                      path_args=(quote_plus(project), quote_plus(package)),
+                      path_args=(project, package),
                       template_args=({'name': pac, 'user': user}), apiurl=apiurl)
         p = Package(pac_path)
         p.todo = files
@@ -1542,7 +1541,7 @@ class Package:
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
         query = 'rev=upload'
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, n], query=query)
         http_DELETE(u)
 
     def put_source_file(self, n, tdir, copy_only=False):
@@ -1552,7 +1551,7 @@ class Package:
         # escaping '+' in the URL path (note: not in the URL query string) is
         # only a workaround for ruby on rails, which swallows it otherwise
         if not copy_only:
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name, n], query=query)
             http_PUT(u, file=tfilename)
         if n in self.to_be_added:
             self.to_be_added.remove(n)
@@ -5179,7 +5178,7 @@ def get_group(apiurl: str, group: str):
 
 
 def get_group_meta(apiurl: str, group: str):
-    u = makeurl(apiurl, ['group', quote_plus(group)])
+    u = makeurl(apiurl, ['group', group])
     try:
         f = http_GET(u)
         return b''.join(f.readlines())
@@ -5189,7 +5188,7 @@ def get_group_meta(apiurl: str, group: str):
 
 
 def get_user_meta(apiurl: str, user: str):
-    u = makeurl(apiurl, ['person', quote_plus(user)])
+    u = makeurl(apiurl, ['person', user])
     try:
         f = http_GET(u)
         return b''.join(f.readlines())
@@ -5270,7 +5269,7 @@ def get_source_file(
         query['rev'] = revision
     u = makeurl(
         apiurl,
-        ["source", prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), "replace"))],
+        ["source", prj, package, filename],
         query=query,
     )
     download(u, targetfilename, progress_obj, mtime)
@@ -5701,7 +5700,7 @@ def checkout_package(
 
     # before we create directories and stuff, check if the package actually
     # exists
-    meta_data = b''.join(show_package_meta(apiurl, quote_plus(project), quote_plus(package)))
+    meta_data = b''.join(show_package_meta(apiurl, project, package))
     root = ET.fromstring(meta_data)
     scmsync_element = root.find("scmsync")
     if scmsync_element is not None and scmsync_element.text is not None:
@@ -5821,7 +5820,7 @@ def link_pac(
     apiurl = conf.config['apiurl']
     try:
         dst_meta = meta_exists(metatype='pkg',
-                               path_args=(quote_plus(dst_project), quote_plus(dst_package)),
+                               path_args=(dst_project, dst_package),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
         root = ET.fromstring(parse_meta_to_string(dst_meta))
@@ -5951,7 +5950,7 @@ def aggregate_pac(
 
     try:
         dst_meta = meta_exists(metatype='pkg',
-                               path_args=(quote_plus(dst_project), quote_plus(dst_package_meta)),
+                               path_args=(dst_project, dst_package_meta),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
         root = ET.fromstring(parse_meta_to_string(dst_meta))
@@ -6245,7 +6244,7 @@ def copy_pac(
         src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
                                     dst_userid, keep_develproject)
 
-        url = make_meta_url('pkg', (quote_plus(dst_project),) + (quote_plus(dst_package),), dst_apiurl)
+        url = make_meta_url('pkg', (dst_project, dst_package), dst_apiurl)
         found = None
         try:
             found = http_GET(url).readlines()
@@ -6294,7 +6293,7 @@ def copy_pac(
             with tempfile.NamedTemporaryFile(prefix='osc-copypac') as f:
                 get_source_file(src_apiurl, src_project, src_package, filename,
                                 targetfilename=f.name, revision=revision)
-                path = ['source', dst_project, dst_package, pathname2url(filename)]
+                path = ['source', dst_project, dst_package, filename]
                 u = makeurl(dst_apiurl, path, query={'rev': 'repository'})
                 http_PUT(u, file=f.name)
         tfilelist = Package.commit_filelist(dst_apiurl, dst_project, dst_package,
@@ -7874,10 +7873,10 @@ def addMaintainer(apiurl: str, prj: str, pac: str, user: str):
 
 def addPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
     """ add a new person to a package or project """
-    path = quote_plus(prj),
+    path = (prj, )
     kind = 'prj'
     if pac:
-        path = path + (quote_plus(pac),)
+        path = path + (pac ,)
         kind = 'pkg'
     data = meta_exists(metatype=kind,
                        path_args=path,
@@ -7910,10 +7909,10 @@ def delMaintainer(apiurl: str, prj: str, pac: str, user: str):
 
 def delPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
     """ delete a person from a package or project """
-    path = quote_plus(prj),
+    path = (prj, )
     kind = 'prj'
     if pac:
-        path = path + (quote_plus(pac), )
+        path = path + (pac, )
         kind = 'pkg'
     data = meta_exists(metatype=kind,
                        path_args=path,
@@ -7939,10 +7938,10 @@ def delPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
 
 def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
     """ delete all bugowners (user and group entries) and set one new one in a package or project """
-    path = quote_plus(prj),
+    path = (prj, )
     kind = 'prj'
     if pac:
-        path = path + (quote_plus(pac), )
+        path = path + (pac, )
         kind = 'pkg'
     data = meta_exists(metatype=kind,
                        path_args=path,
@@ -7972,7 +7971,7 @@ def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
 
 def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
     """ set the <devel project="..."> element to package metadata"""
-    path = (quote_plus(prj),) + (quote_plus(pac),)
+    path = (prj, pac)
     data = meta_exists(metatype='pkg',
                        path_args=path,
                        template_args=None,
