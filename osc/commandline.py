@@ -36,6 +36,7 @@ from . import store as osc_store
 from .core import *
 from .grabber import OscFileGrabber
 from .meter import create_text_meter
+from .output import get_user_input
 from .util import cpio, rpmquery, safewriter
 from .util.helper import _html_escape, format_table
 
@@ -7307,11 +7308,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
             if opts.wipe and not opts.force:
                 # Confirm delete
-                print(f"Really wipe '{build_root}'? [y/N]: ", end="")
-                choice = raw_input().lower()
-                if choice != 'y':
-                    print('Aborting')
-                    sys.exit(0)
+                reply = get_user_input(
+                    f"Really wipe '{build_root}'?",
+                    answers={"y": "yes", "n": "no"},
+                    default_answer="n",
+                )
+                if reply != "y":
+                    raise oscerr.UserAbort()
             build_args = ['--root=' + build_root, '--noinit', '--shell']
             if opts.wipe:
                 build_args.append('--wipe')
