@@ -193,8 +193,8 @@ class TestUpdate(OscTestCase):
 
     @GET('http://localhost/source/osctest/services?rev=latest', file='testUpdateServiceFilesAddDelete_filesremote')
     @GET('http://localhost/source/osctest/services/bigfile?rev=2', file='testUpdateServiceFilesAddDelete_bigfile')
-    @GET('http://localhost/source/osctest/services/_service%3Abar?rev=2', file='testUpdateServiceFilesAddDelete__service:bar')
-    @GET('http://localhost/source/osctest/services/_service%3Afoo?rev=2', file='testUpdateServiceFilesAddDelete__service:foo')
+    @GET('http://localhost/source/osctest/services/_service:bar?rev=2', file='testUpdateServiceFilesAddDelete__service:bar')
+    @GET('http://localhost/source/osctest/services/_service:foo?rev=2', file='testUpdateServiceFilesAddDelete__service:foo')
     @GET('http://localhost/source/osctest/services/_meta', file='meta.xml')
     def testUpdateAddDeleteServiceFiles(self):
         """update package with _service:* files"""

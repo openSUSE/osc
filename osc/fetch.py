@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from urllib.parse import quote_plus
 from urllib.request import HTTPError
 
 from . import checker as osc_checker
@@ -51,10 +50,10 @@ class Fetcher:
     def __download_cpio_archive(self, apiurl, project, repo, arch, package, **pkgs):
         if not pkgs:
             return
-        query = [f'binary={quote_plus(i)}' for i in pkgs]
-        query.append('view=cpio')
-        for module in self.modules:
-            query.append(f"module={module}")
+        query = {}
+        query["binary"] = pkgs
+        query["view"] = "cpio"
+        query["module"] = self.modules
         try:
             url = makeurl(apiurl, ['build', project, repo, arch, package], query=query)
             sys.stdout.write("preparing download ...\r")

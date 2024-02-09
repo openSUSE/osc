@@ -21,7 +21,7 @@ from . import conf
 from . import connection
 from . import core
 from . import oscerr
-from .core import get_buildinfo, meta_exists, quote_plus, get_buildconfig, dgst
+from .core import get_buildinfo, meta_exists, get_buildconfig, dgst
 from .core import get_binarylist, get_binary_file, run_external, return_external, raw_input
 from .fetch import Fetcher, OscFileGrabber, verify_pacs
 from .meter import create_text_meter
@@ -1021,13 +1021,13 @@ def main(apiurl, store, opts, argv):
     except HTTPError as e:
         if e.code == 404:
             # check what caused the 404
-            if meta_exists(metatype='prj', path_args=(quote_plus(prj), ),
+            if meta_exists(metatype='prj', path_args=(prj, ),
                            template_args=None, create_new=False, apiurl=apiurl):
                 pkg_meta_e = None
                 try:
                     # take care, not to run into double trouble.
-                    pkg_meta_e = meta_exists(metatype='pkg', path_args=(quote_plus(prj),
-                                                                        quote_plus(pac)), template_args=None, create_new=False,
+                    pkg_meta_e = meta_exists(metatype='pkg', path_args=(prj, pac),
+                                             template_args=None, create_new=False,
                                              apiurl=apiurl)
                 except:
                     pass

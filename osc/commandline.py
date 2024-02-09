@@ -1950,7 +1950,7 @@ class Osc(cmdln.Cmdln):
                           edit=True,
                           force=opts.force,
                           remove_linking_repositories=opts.remove_linking_repositories,
-                          path_args=quote_plus(project),
+                          path_args=(project, ),
                           apiurl=apiurl,
                           msg=opts.message,
                           template_args=({
@@ -1959,7 +1959,7 @@ class Osc(cmdln.Cmdln):
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg',
                           edit=True,
-                          path_args=(quote_plus(project), quote_plus(package)),
+                          path_args=(project, package),
                           apiurl=apiurl,
                           template_args=({
                               'name': package,
@@ -1967,20 +1967,20 @@ class Osc(cmdln.Cmdln):
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf',
                           edit=True,
-                          path_args=quote_plus(project),
+                          path_args=(project, ),
                           apiurl=apiurl,
                           msg=opts.message,
                           template_args=None)
             elif cmd == 'user':
                 edit_meta(metatype='user',
                           edit=True,
-                          path_args=(quote_plus(user)),
+                          path_args=(user, ),
                           apiurl=apiurl,
                           template_args=({'user': user}))
             elif cmd == 'group':
                 edit_meta(metatype='group',
                           edit=True,
-                          path_args=(quote_plus(group)),
+                          path_args=(group, ),
                           apiurl=apiurl,
                           template_args=({'group': group}))
             elif cmd == 'pattern':
@@ -1993,7 +1993,7 @@ class Osc(cmdln.Cmdln):
                 edit_meta(
                     metatype='attribute',
                     edit=True,
-                    path_args=(quote_plus(project), quote_plus(opts.attribute)),
+                    path_args=(project, opts.attribute),
                     apiurl=apiurl,
                     # PUT is not supported
                     method="POST",
@@ -2062,32 +2062,32 @@ class Osc(cmdln.Cmdln):
                           remove_linking_repositories=opts.remove_linking_repositories,
                           apiurl=apiurl,
                           msg=opts.message,
-                          path_args=quote_plus(project))
+                          path_args=(project, ))
             elif cmd == 'pkg':
                 edit_meta(metatype='pkg',
                           data=f,
                           edit=opts.edit,
                           apiurl=apiurl,
-                          path_args=(quote_plus(project), quote_plus(package)))
+                          path_args=(project, package))
             elif cmd == 'prjconf':
                 edit_meta(metatype='prjconf',
                           data=f,
                           edit=opts.edit,
                           apiurl=apiurl,
                           msg=opts.message,
-                          path_args=quote_plus(project))
+                          path_args=(project, ))
             elif cmd == 'user':
                 edit_meta(metatype='user',
                           data=f,
                           edit=opts.edit,
                           apiurl=apiurl,
-                          path_args=(quote_plus(user)))
+                          path_args=(user, ))
             elif cmd == 'group':
                 edit_meta(metatype='group',
                           data=f,
                           edit=opts.edit,
                           apiurl=apiurl,
-                          path_args=(quote_plus(group)))
+                          path_args=(group, ))
             elif cmd == 'pattern':
                 edit_meta(metatype='pattern',
                           data=f,
@@ -6026,7 +6026,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise e
 
     @cmdln.alias('r')
-    @cmdln.option('-l', '--last-build', action='store_true',
+    @cmdln.option('-l', '--last-build', action='store_true', default=None,
                         help='show last build results (succeeded/failed/unknown)')
     @cmdln.option('-r', '--repo', action='append', default=[],
                         help='Show results only for specified repo(s)')
@@ -6277,7 +6277,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 query['last'] = 1
             if opts.lastsucceeded:
                 query['lastsucceeded'] = 1
-            u = makeurl(self.get_api_url(), ['build', quote_plus(project), quote_plus(repository), quote_plus(arch), quote_plus(package), '_log'], query=query)
+            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
             offset = int(root.find('entry').get('size'))
@@ -6290,7 +6290,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last, opts.lastsucceeded)
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
 
     def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments', project=None):
         wd = Path.cwd()
@@ -6371,7 +6371,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 query['last'] = 1
             if opts.lastsucceeded:
                 query['lastsucceeded'] = 1
-            u = makeurl(self.get_api_url(), ['build', quote_plus(project), quote_plus(repository), quote_plus(arch), quote_plus(package), '_log'], query=query)
+            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
             f = http_GET(u)
             root = ET.parse(f).getroot()
             offset = int(root.find('entry').get('size'))
@@ -6384,7 +6384,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         elif opts.offset:
             offset = int(opts.offset)
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, quote_plus(project), quote_plus(package), quote_plus(repository), quote_plus(arch), offset, strip_time, opts.last, opts.lastsucceeded)
+        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
 
     def _find_last_repo_arch(self, repo=None, fatal=True):
         files = glob.glob(os.path.join(Path.cwd(), store, "_buildinfo-*"))
@@ -8712,7 +8712,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 apiurl = osc_store.Store(project_dir).apiurl
                 user = conf.get_apiurl_usr(apiurl)
                 data = meta_exists(metatype='pkg',
-                                   path_args=(quote_plus(project), quote_plus(pac)),
+                                   path_args=(project, pac),
                                    template_args=({
                                        'name': pac,
                                        'user': user}), apiurl=apiurl)
@@ -8726,7 +8726,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print('error - cannot get meta data', file=sys.stderr)
                     sys.exit(1)
                 edit_meta(metatype='pkg',
-                          path_args=(quote_plus(project), quote_plus(pac)),
+                          path_args=(project, pac),
                           data=data, apiurl=apiurl)
                 Package.init_package(apiurl, project, pac, os.path.join(project_dir, pac))
             else:
@@ -9257,7 +9257,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         o = open(destfile, 'wb')
         if md5 != '':
             query = {'rev': dir['srcmd5']}
-            u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], pathname2url(name)], query=query)
+            u = makeurl(dir['apiurl'], ['source', dir['project'], dir['package'], name], query=query)
             for buf in streamfile(u, http_GET, BUFSIZE):
                 o.write(buf)
         o.close()

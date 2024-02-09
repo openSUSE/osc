@@ -30,14 +30,14 @@ import sys
 import tempfile
 import textwrap
 import time
+import warnings
 from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from typing import Optional, Dict, Union, List, Iterable
-from urllib.parse import urlsplit, urlunsplit, urlparse, quote_plus, urlencode, unquote
+from urllib.parse import urlsplit, urlunsplit, urlparse, quote, urlencode, unquote
 from urllib.error import HTTPError
-from urllib.request import pathname2url
 from xml.etree import ElementTree as ET
 
 try:
@@ -364,7 +364,7 @@ class Serviceinfo:
     def getProjectGlobalServices(self, apiurl: str, project: str, package: str):
         self.apiurl = apiurl
         # get all project wide services in one file, we don't store it yet
-        u = makeurl(apiurl, ['source', project, package], query='cmd=getprojectservices')
+        u = makeurl(apiurl, ["source", project, package], query={"cmd": "getprojectservices"})
         try:
             f = http_POST(u)
             root = ET.parse(f).getroot()
@@ -1115,7 +1115,7 @@ class Project:
         else:
             user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
-                      path_args=(quote_plus(self.name), quote_plus(pac)),
+                      path_args=(self.name, pac),
                       template_args=({
                           'name': pac,
                           'user': user}),
@@ -1170,11 +1170,11 @@ class Project:
         package = store_read_package(pac_path)
         apiurl = store.apiurl
         if not meta_exists(metatype='pkg',
-                           path_args=(quote_plus(project), quote_plus(package)),
+                           path_args=(project, package),
                            template_args=None, create_new=False, apiurl=apiurl):
             user = conf.get_apiurl_usr(self.apiurl)
             edit_meta(metatype='pkg',
-                      path_args=(quote_plus(project), quote_plus(package)),
+                      path_args=(project, package),
                       template_args=({'name': pac, 'user': user}), apiurl=apiurl)
         p = Package(pac_path)
         p.todo = files
@@ -1541,7 +1541,7 @@ class Package:
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
         query = 'rev=upload'
-        u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
+        u = makeurl(self.apiurl, ['source', self.prjname, self.name, n], query=query)
         http_DELETE(u)
 
     def put_source_file(self, n, tdir, copy_only=False):
@@ -1551,7 +1551,7 @@ class Package:
         # escaping '+' in the URL path (note: not in the URL query string) is
         # only a workaround for ruby on rails, which swallows it otherwise
         if not copy_only:
-            u = makeurl(self.apiurl, ['source', self.prjname, self.name, pathname2url(n)], query=query)
+            u = makeurl(self.apiurl, ['source', self.prjname, self.name, n], query=query)
             http_PUT(u, file=tfilename)
         if n in self.to_be_added:
             self.to_be_added.remove(n)
@@ -3606,39 +3606,71 @@ def pathjoin(a, *p):
     return path
 
 
-def osc_urlencode(data):
+class UrlQueryArray(list):
     """
-    An urlencode wrapper that encodes dictionaries in OBS compatible way:
-    {"file": ["foo", "bar"]} -> &file[]=foo&file[]=bar
+    Passing values wrapped in this object causes ``makeurl()`` to encode the list
+    in Ruby on Rails compatible way (adding square brackets to the parameter names):
+    {"file": UrlQueryArray(["foo", "bar"])} -> &file[]=foo&file[]=bar
     """
-    data = copy.deepcopy(data)
-    if isinstance(data, dict):
-        for key, value in list(data.items()):
-            if isinstance(value, list):
-                del data[key]
-                data[f"{key}[]"] = value
-
-    return urlencode(data, doseq=True)
+    pass
 
 
-def makeurl(baseurl: str, l, query=None):
-    """Given a list of path compoments, construct a complete URL.
-
-    Optional parameters for a query string can be given as a list, as a
-    dictionary, or as an already assembled string.
-    In case of a dictionary, the parameters will be urlencoded by this
-    function. In case of a list not -- this is to be backwards compatible.
+def makeurl(apiurl: str, path: List[str], query: Optional[dict] = None):
     """
-    query = query or []
-    _private.print_msg("makeurl:", baseurl, l, query, print_to="debug")
+    Construct an URL based on the given arguments.
 
-    if isinstance(query, list):
-        query = '&'.join(query)
-    elif isinstance(query, dict):
-        query = osc_urlencode(query)
+    :param apiurl: URL to the API server.
+    :param path: List of URL path components.
+    :param query: Optional dictionary with URL query data.
+                  Values can be: ``str``, ``int``, ``bool``, ``[str]``, ``[int]``.
+                  Items with value equal to ``None`` will be skipped.
+    """
+    apiurl_scheme, apiurl_netloc, apiurl_path = urlsplit(apiurl)[0:3]
 
-    scheme, netloc, path = urlsplit(baseurl)[0:3]
-    return urlunsplit((scheme, netloc, '/'.join([path] + list(l)), query, ''))
+    path = apiurl_path.split("/") + [i.strip("/") for i in path]
+    path = [quote(i, safe="/:") for i in path]
+    path_str = "/".join(path)
+
+    # DEPRECATED
+    if isinstance(query, (list, tuple)):
+        warnings.warn(
+            "makeurl() query taking a list or a tuple is deprecated. Use dict instead.",
+            DeprecationWarning
+        )
+        query_str = "&".join(query)
+        return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
+
+    # DEPRECATED
+    if isinstance(query, str):
+        warnings.warn(
+            "makeurl() query taking a string is deprecated. Use dict instead.",
+            DeprecationWarning
+        )
+        query_str = query
+        return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
+
+    if query is None:
+        query = {}
+    query = copy.deepcopy(query)
+
+    for key in list(query):
+        value = query[key]
+
+        if value in (None, [], ()):
+            # remove items with value equal to None or [] or ()
+            del query[key]
+        elif isinstance(value, bool):
+            # convert boolean values to "0" or "1"
+            query[key] = str(int(value))
+        elif isinstance(value, UrlQueryArray):
+            # encode lists in Ruby on Rails compatible way:
+            # {"file": ["foo", "bar"]} -> &file[]=foo&file[]=bar
+            del query[key]
+            query[f"{key}[]"] = value
+
+    query_str = urlencode(query, doseq=True)
+
+    return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
 
 
 def check_store_version(dir):
@@ -3818,11 +3850,9 @@ def show_attribute_meta(apiurl: str, prj: str, pac, subpac, attribute, with_defa
     path.append('_attribute')
     if attribute:
         path.append(attribute)
-    query = []
-    if with_defaults:
-        query.append("with_default=1")
-    if with_project:
-        query.append("with_project=1")
+    query = {}
+    query["with_default"] = with_defaults
+    query["with_project"] = with_project
     url = makeurl(apiurl, path, query)
     try:
         f = http_GET(url)
@@ -4269,11 +4299,10 @@ def show_upstream_xsrcmd5(
 
 
 def show_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages):
-    query = ['view=info']
-    if packages:
-        query.extend([f'package={quote_plus(p)}' for p in packages])
-    if nofilename:
-        query.append('nofilename=1')
+    query = {}
+    query["view"] = "info"
+    query["package"] = packages
+    query["nofilename"] = nofilename
     f = http_GET(makeurl(apiurl, ['source', project], query=query))
     return f.read()
 
@@ -4670,7 +4699,7 @@ def create_submit_request(
        options_block,
        _html_escape(message))
 
-    u = makeurl(apiurl, ['request'], query='cmd=create')
+    u = makeurl(apiurl, ["request"], query={"cmd": "create"})
     r = None
     try:
         f = http_POST(u, data=xml)
@@ -5149,7 +5178,7 @@ def get_group(apiurl: str, group: str):
 
 
 def get_group_meta(apiurl: str, group: str):
-    u = makeurl(apiurl, ['group', quote_plus(group)])
+    u = makeurl(apiurl, ['group', group])
     try:
         f = http_GET(u)
         return b''.join(f.readlines())
@@ -5159,7 +5188,7 @@ def get_group_meta(apiurl: str, group: str):
 
 
 def get_user_meta(apiurl: str, user: str):
-    u = makeurl(apiurl, ['person', quote_plus(user)])
+    u = makeurl(apiurl, ['person', user])
     try:
         f = http_GET(u)
         return b''.join(f.readlines())
@@ -5240,7 +5269,7 @@ def get_source_file(
         query['rev'] = revision
     u = makeurl(
         apiurl,
-        ["source", prj, package, pathname2url(filename.encode(locale.getpreferredencoding(), "replace"))],
+        ["source", prj, package, filename],
         query=query,
     )
     download(u, targetfilename, progress_obj, mtime)
@@ -5426,7 +5455,7 @@ def server_diff(
         query['view'] = 'xml'
         query['unified'] = 0
     if files:
-        query["file"] = files
+        query["file"] = UrlQueryArray(files)
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
     f = http_POST(u, retry_on_400=False)
@@ -5671,7 +5700,7 @@ def checkout_package(
 
     # before we create directories and stuff, check if the package actually
     # exists
-    meta_data = b''.join(show_package_meta(apiurl, quote_plus(project), quote_plus(package)))
+    meta_data = b''.join(show_package_meta(apiurl, project, package))
     root = ET.fromstring(meta_data)
     scmsync_element = root.find("scmsync")
     if scmsync_element is not None and scmsync_element.text is not None:
@@ -5756,7 +5785,7 @@ def link_to_branch(apiurl: str, project: str, package: str):
     """
 
     if '_link' in meta_get_filelist(apiurl, project, package):
-        u = makeurl(apiurl, ['source', project, package], 'cmd=linktobranch')
+        u = makeurl(apiurl, ["source", project, package], {"cmd": "linktobranch"})
         http_POST(u)
     else:
         raise oscerr.OscIOError(None, f'no _link file inside project \'{project}\' package \'{package}\'')
@@ -5791,7 +5820,7 @@ def link_pac(
     apiurl = conf.config['apiurl']
     try:
         dst_meta = meta_exists(metatype='pkg',
-                               path_args=(quote_plus(dst_project), quote_plus(dst_package)),
+                               path_args=(dst_project, dst_package),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
         root = ET.fromstring(parse_meta_to_string(dst_meta))
@@ -5921,7 +5950,7 @@ def aggregate_pac(
 
     try:
         dst_meta = meta_exists(metatype='pkg',
-                               path_args=(quote_plus(dst_project), quote_plus(dst_package_meta)),
+                               path_args=(dst_project, dst_package_meta),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
         root = ET.fromstring(parse_meta_to_string(dst_meta))
@@ -6215,7 +6244,7 @@ def copy_pac(
         src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
                                     dst_userid, keep_develproject)
 
-        url = make_meta_url('pkg', (quote_plus(dst_project),) + (quote_plus(dst_package),), dst_apiurl)
+        url = make_meta_url('pkg', (dst_project, dst_package), dst_apiurl)
         found = None
         try:
             found = http_GET(url).readlines()
@@ -6264,7 +6293,7 @@ def copy_pac(
             with tempfile.NamedTemporaryFile(prefix='osc-copypac') as f:
                 get_source_file(src_apiurl, src_project, src_package, filename,
                                 targetfilename=f.name, revision=revision)
-                path = ['source', dst_project, dst_package, pathname2url(filename)]
+                path = ['source', dst_project, dst_package, filename]
                 u = makeurl(dst_apiurl, path, query={'rev': 'repository'})
                 http_PUT(u, file=f.name)
         tfilelist = Package.commit_filelist(dst_apiurl, dst_project, dst_package,
@@ -6495,29 +6524,21 @@ def show_results_meta(
     repository: Optional[List[str]] = None,
     arch: Optional[List[str]] = None,
     oldstate: Optional[str] = None,
-    multibuild=False,
-    locallink=False,
+    multibuild: Optional[bool] = None,
+    locallink: Optional[bool] = None,
     code: Optional[str] = None,
 ):
     repository = repository or []
     arch = arch or []
-    query = []
-    if package:
-        query.append(f'package={quote_plus(package)}')
-    if oldstate:
-        query.append(f'oldstate={quote_plus(oldstate)}')
-    if lastbuild:
-        query.append('lastbuild=1')
-    if multibuild:
-        query.append('multibuild=1')
-    if locallink:
-        query.append('locallink=1')
-    if code:
-        query.append(f'code={quote_plus(code)}')
-    for repo in repository:
-        query.append(f'repository={quote_plus(repo)}')
-    for a in arch:
-        query.append(f'arch={quote_plus(a)}')
+    query = {}
+    query["package"] = package
+    query["oldstate"] = oldstate
+    query["lastbuild"] = lastbuild
+    query["multibuild"] = multibuild
+    query["locallink"] = locallink
+    query["code"] = code
+    query["repository"] = repository
+    query["arch"] = arch
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
     f = http_GET(u)
     return f.readlines()
@@ -7017,15 +7038,13 @@ def print_buildlog(
 
 
 def get_dependson(apiurl: str, project: str, repository: str, arch: str, packages=None, reverse=None):
-    query = []
-    if packages:
-        for i in packages:
-            query.append(f'package={quote_plus(i)}')
+    query = {}
+    query["package"] = packages
 
     if reverse:
-        query.append('view=revpkgnames')
+        query["view"] = "revpkgnames"
     else:
-        query.append('view=pkgnames')
+        query["view"] = "pkgnames"
 
     u = makeurl(apiurl, ['build', project, repository, arch, '_builddepinfo'], query=query)
     f = http_GET(u)
@@ -7035,12 +7054,9 @@ def get_dependson(apiurl: str, project: str, repository: str, arch: str, package
 def get_buildinfo(
     apiurl: str, prj: str, package: str, repository: str, arch: str, specfile=None, addlist=None, debug=None
 ):
-    query = []
-    if addlist:
-        for i in addlist:
-            query.append(f'add={quote_plus(i)}')
-    if debug:
-        query.append('debug=1')
+    query = {}
+    query["add"] = addlist
+    query["debug"] = debug
 
     u = makeurl(apiurl, ['build', prj, repository, arch, package, '_buildinfo'], query=query)
 
@@ -7052,10 +7068,8 @@ def get_buildinfo(
 
 
 def get_buildconfig(apiurl: str, prj: str, repository: str, path=None):
-    query = []
-    if path:
-        for prp in path:
-            query.append(f'path={quote_plus(prp)}')
+    query = {}
+    query["path"] = path
     u = makeurl(apiurl, ['build', prj, repository, '_buildconfig'], query=query)
     f = http_GET(u)
     return f.read()
@@ -7859,10 +7873,10 @@ def addMaintainer(apiurl: str, prj: str, pac: str, user: str):
 
 def addPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
     """ add a new person to a package or project """
-    path = quote_plus(prj),
+    path = (prj, )
     kind = 'prj'
     if pac:
-        path = path + (quote_plus(pac),)
+        path = path + (pac ,)
         kind = 'pkg'
     data = meta_exists(metatype=kind,
                        path_args=path,
@@ -7895,10 +7909,10 @@ def delMaintainer(apiurl: str, prj: str, pac: str, user: str):
 
 def delPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
     """ delete a person from a package or project """
-    path = quote_plus(prj),
+    path = (prj, )
     kind = 'prj'
     if pac:
-        path = path + (quote_plus(pac), )
+        path = path + (pac, )
         kind = 'pkg'
     data = meta_exists(metatype=kind,
                        path_args=path,
@@ -7924,10 +7938,10 @@ def delPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
 
 def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
     """ delete all bugowners (user and group entries) and set one new one in a package or project """
-    path = quote_plus(prj),
+    path = (prj, )
     kind = 'prj'
     if pac:
-        path = path + (quote_plus(pac), )
+        path = path + (pac, )
         kind = 'pkg'
     data = meta_exists(metatype=kind,
                        path_args=path,
@@ -7957,7 +7971,7 @@ def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
 
 def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
     """ set the <devel project="..."> element to package metadata"""
-    path = (quote_plus(prj),) + (quote_plus(pac),)
+    path = (prj, pac)
     data = meta_exists(metatype='pkg',
                        path_args=path,
                        template_args=None,
@@ -8821,7 +8835,7 @@ def which(name: str):
 
 
 def get_comments(apiurl: str, kind, *args):
-    url = makeurl(apiurl, ('comments', kind) + args)
+    url = makeurl(apiurl, ["comments", kind] + list(args))
     f = http_GET(url)
     return ET.parse(f).getroot()
 
@@ -8844,9 +8858,8 @@ def print_comments(apiurl: str, kind, *args):
 
 def create_comment(apiurl: str, kind, comment, *args, **kwargs) -> Optional[str]:
     query = {}
-    if kwargs.get('parent') is not None:
-        query = {'parent_id': kwargs['parent']}
-    u = makeurl(apiurl, ('comments', kind) + args, query=query)
+    query["parent_id"] = kwargs.get("parent", None)
+    u = makeurl(apiurl, ["comments", kind] + list(args), query=query)
     f = http_POST(u, data=comment)
     ret = ET.fromstring(f.read()).find('summary')
     if ret is None:
