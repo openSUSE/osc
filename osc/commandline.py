@@ -10251,8 +10251,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             comment = opts.comment
 
         if args[0] == 'list':
+            if args[1] == 'package' or args[1] == 'project':
+                args[2] = self._process_project_name(args[2])
             print_comments(apiurl, args[1], *args[2:])
         elif args[0] == 'create':
+            if args[1] == 'package' or args[1] == 'project':
+                args[2] = self._process_project_name(args[2])
             result = create_comment(apiurl, args[1], comment,
                                     *args[2:], parent=opts.parent)
             print(result)
