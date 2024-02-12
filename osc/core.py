@@ -3864,12 +3864,15 @@ def show_scmsync(apiurl, prj, pac=None):
 
 
 def show_devel_project(apiurl, prj, pac):
-    m = show_package_meta(apiurl, prj, pac)
-    node = ET.fromstring(b''.join(m)).find('devel')
-    if node is None:
+    from . import obs_api
+
+    package_obj = obs_api.Package.from_api(apiurl, prj, pac)
+    if package_obj.devel is None:
         return None, None
-    else:
-        return node.get('project'), node.get('package', None)
+
+    # mute a false-positive: Instance of 'dict' has no 'project' member (no-member)
+    # pylint: disable=no-member
+    return package_obj.devel.project, package_obj.devel.package
 
 
 def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debug"):
