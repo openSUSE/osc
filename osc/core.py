@@ -1521,12 +1521,12 @@ class Package:
 
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
-        query = 'rev=upload'
+        query = {"rev": "upload"}
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, n], query=query)
         http_DELETE(u)
 
     def put_source_file(self, n, tdir, copy_only=False):
-        query = 'rev=repository'
+        query = {"rev": "repository"}
         tfilename = os.path.join(tdir, n)
         shutil.copyfile(os.path.join(self.dir, n), tfilename)
         # escaping '+' in the URL path (note: not in the URL query string) is

@@ -1529,9 +1529,9 @@ class Osc(cmdln.Cmdln):
 
         if opts.force or not filelist or '_patchinfo' not in filelist:
             print("Creating new patchinfo...")
-            query = 'cmd=createpatchinfo&name=' + patchinfo
+            query = {"cmd": "createpatchinfo", "name": patchinfo}
             if opts.force:
-                query += "&force=1"
+                query["force"] = 1
             url = makeurl(apiurl, ['source', project], query=query)
             f = http_POST(url)
             for p in meta_get_packagelist(apiurl, project):
@@ -1539,7 +1539,7 @@ class Osc(cmdln.Cmdln):
                     patchinfo = p
         else:
             print("Update existing _patchinfo file...")
-            query = 'cmd=updatepatchinfo'
+            query = {"cmd": "updatepatchinfo"}
             url = makeurl(apiurl, ['source', project, patchinfo], query=query)
             f = http_POST(url)
 
