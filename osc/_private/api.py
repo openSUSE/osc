@@ -7,6 +7,10 @@ and work with related XML data.
 import xml.sax.saxutils
 from xml.etree import ElementTree as ET
 
+from ..util.xml import xml_escape
+from ..util.xml import xml_indent
+from ..util.xml import xml_unescape
+
 
 def get(apiurl, path, query=None):
     """
@@ -205,41 +209,3 @@ def write_xml_node_to_file(node, path, indent=True):
     if indent:
         xml_indent(node)
     ET.ElementTree(node).write(path)
-
-
-def xml_escape(string):
-    """
-    Escape the string so it's safe to use in XML and xpath.
-    """
-    entities = {
-        "\"": "&quot;",
-        "'": "&apos;",
-    }
-    if isinstance(string, bytes):
-        return xml.sax.saxutils.escape(string.decode("utf-8"), entities=entities).encode("utf-8")
-    return xml.sax.saxutils.escape(string, entities=entities)
-
-
-def xml_unescape(string):
-    """
-    Decode XML entities in the string.
-    """
-    entities = {
-        "&quot;": "\"",
-        "&apos;": "'",
-    }
-    if isinstance(string, bytes):
-        return xml.sax.saxutils.unescape(string.decode("utf-8"), entities=entities).encode("utf-8")
-    return xml.sax.saxutils.unescape(string, entities=entities)
-
-
-def xml_indent(root):
-    """
-    Indent XML so it looks pretty after printing or saving to file.
-    """
-    if hasattr(ET, "indent"):
-        # ElementTree supports indent() in Python 3.9 and newer
-        ET.indent(root)
-    else:
-        from .. import core as osc_core
-        osc_core.xmlindent(root)

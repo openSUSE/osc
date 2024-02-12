@@ -54,6 +54,7 @@ from . import store as osc_store
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
 from .store import Store
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
+from .util.xml import xml_indent_compat as xmlindent
 
 
 ET_ENCODING = "unicode"
@@ -635,26 +636,6 @@ class DirectoryServiceinfo:
 
     def haserror(self):
         return self.error is not None
-
-# http://effbot.org/zone/element-lib.htm#prettyprint
-
-
-def xmlindent(elem, level=0):
-    i = "\n" + level * "  "
-    if isinstance(elem, ET.ElementTree):
-        elem = elem.getroot()
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = i + "  "
-        for e in elem:
-            xmlindent(e, level + 1)
-            if not e.tail or not e.tail.strip():
-                e.tail = i + "  "
-        if not e.tail or not e.tail.strip():
-            e.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
 
 
 class Project:
