@@ -6481,13 +6481,13 @@ class Repo:
                 f.write(f'{repo.name} {repo.arch}\n')
 
 
-def get_repos_of_project(apiurl, prj):
-    f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(b''.join(f))
+def get_repos_of_project(apiurl: str, prj: str):
+    from . import obs_api
 
-    for node in root.findall('repository'):
-        for node2 in node.findall('arch'):
-            yield Repo(node.get('name'), node2.text)
+    project_obj = obs_api.Project.from_api(apiurl, prj)
+    for repo in project_obj.repository_list or []:
+        for arch in repo.arch_list:
+            yield Repo(repo.name, arch)
 
 
 def get_binarylist(
