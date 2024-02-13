@@ -385,7 +385,15 @@ class BaseModel(metaclass=ModelMeta):
         for name, field in self.__fields__.items():
             field.validate_type(getattr(self, name))
 
+        self._snapshot = {}  # copy of ``self.dict()`` so we can determine if the object has changed later on
+        self.do_snapshot()
+
         self._allow_new_attributes = False
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+        return self.dict() == other.dict()
 
     def dict(self):
         result = {}
@@ -401,6 +409,18 @@ class BaseModel(metaclass=ModelMeta):
                 result[name] = value
 
         return result
+
+    def do_snapshot(self):
+        """
+        Save ``self.dict()`` result as a new starting point for detecting changes in the object data.
+        """
+        self._snapshot = self.dict()
+
+    def has_changed(self):
+        """
+        Determine if the object data has changed since its creation or the last snapshot.
+        """
+        return self.dict() != self._snapshot
 
 
 class XmlModel(BaseModel):

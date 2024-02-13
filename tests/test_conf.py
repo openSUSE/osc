@@ -517,7 +517,7 @@ class TestConf(unittest.TestCase):
         conf1 = osc.conf.Options()
         conf2 = osc.conf.Options()
 
-        self.assertNotEqual(conf1, conf2)
+        self.assertEqual(conf1, conf2)  # models are compared by their contents now
         self.assertNotEqual(id(conf1), id(conf2))
         self.assertNotEqual(id(conf1.api_host_options), id(conf2.api_host_options))
 
