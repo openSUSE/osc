@@ -13,8 +13,6 @@ Scenario: Run `osc setdevelproject <project> <package> <devel_project>`
      And stdout is
         """
         Setting devel project of package 'test:factory/test-pkgA' to package 'test:devel/test-pkgA'
-        Sending meta data...
-        Done.
         """
 
 
@@ -25,8 +23,6 @@ Scenario: Run `osc setdevelproject <project> <package> <devel_project> <devel_pa
      And stdout is
         """
         Setting devel project of package 'test:factory/test-pkgB' to package 'test:devel/test-pkgA'
-        Sending meta data...
-        Done.
         """
 
 
@@ -37,8 +33,6 @@ Scenario: Run `osc setdevelproject  <project>/<package> <devel_project>/<devel_p
      And stdout is
         """
         Setting devel project of package 'test:factory/test-pkgB' to package 'test:devel/test-pkgA'
-        Sending meta data...
-        Done.
         """
 
 
@@ -49,6 +43,4 @@ Scenario: Run `osc setdevelproject <project> <package> --unset`
      And stdout is
         """
         Unsetting devel project from package 'test:factory/test-pkgA'
-        Sending meta data...
-        Done.
         """

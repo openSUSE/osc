@@ -3876,6 +3876,8 @@ def show_devel_project(apiurl, prj, pac):
 
 
 def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debug"):
+    from . import obs_api
+
     if devprj:
         msg = "Setting devel project of"
     else:
@@ -3890,26 +3892,18 @@ def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debu
     )
     _private.print_msg(msg, print_to=print_to)
 
-    meta = show_package_meta(apiurl, prj, pac)
-    root = ET.fromstring(b''.join(meta))
-    node = root.find('devel')
-    if node is None:
-        if devprj is None:
-            return
-        node = ET.Element('devel')
-        root.append(node)
+    package_obj = obs_api.Package.from_api(apiurl, prj, pac)
+
+    if devprj is None:
+        package_obj.devel = None
     else:
-        if devprj is None:
-            root.remove(node)
-        else:
-            node.clear()
-    if devprj:
-        node.set('project', devprj)
-        if devpac:
-            node.set('package', devpac)
-    url = makeurl(apiurl, ['source', prj, pac, '_meta'])
-    mf = metafile(url, ET.tostring(root, encoding=ET_ENCODING))
-    mf.sync()
+        package_obj.devel = {"project": devprj, "package": devpac}
+
+    if package_obj.has_changed():
+        return package_obj.to_api(apiurl)
+
+    # TODO: debug log that we have skipped the API call
+    return None
 
 
 def show_package_disabled_repos(apiurl: str, prj: str, pac: str):
