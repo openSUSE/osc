@@ -6440,11 +6440,10 @@ def get_platforms_of_project(apiurl: str, prj: str):
 
 
 def get_repositories_of_project(apiurl: str, prj: str):
-    f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(b''.join(f))
+    from . import obs_api
 
-    r = [node.get('name') for node in root.findall('repository')]
-    return r
+    project_obj = obs_api.Project.from_api(apiurl, prj)
+    return [i.name for i in project_obj.repository_list or []]
 
 
 class Repo:
