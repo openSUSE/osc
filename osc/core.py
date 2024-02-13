@@ -3853,15 +3853,14 @@ def download_assets(directory):
 
 
 def show_scmsync(apiurl, prj, pac=None):
+    from . import obs_api
+
     if pac:
-        m = show_package_meta(apiurl, prj, pac)
-    else:
-        m = show_project_meta(apiurl, prj)
-    node = ET.fromstring(b''.join(m)).find('scmsync')
-    if node is None:
-        return None
-    else:
-        return node.text
+        package_obj = obs_api.Package.from_api(apiurl, prj, pac)
+        return package_obj.scmsync
+
+    project_obj = obs_api.Project.from_api(apiurl, prj)
+    return project_obj.scmsync
 
 
 def show_devel_project(apiurl, prj, pac):
