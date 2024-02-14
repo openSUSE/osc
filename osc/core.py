@@ -2335,39 +2335,42 @@ rev: %s
         for the updatepacmetafromspec subcommand
             argument force supress the confirm question
         """
+        from . import obs_api
+        from .output import get_user_input
 
-        m = b''.join(show_package_meta(self.apiurl, self.prjname, self.name))
+        package_obj = obs_api.Package.from_api(self.apiurl, self.prjname, self.name)
+        old = package_obj.to_string()
+        package_obj.title = self.summary.strip()
+        package_obj.description = "".join(self.descr).strip()
+        package_obj.url = self.url.strip()
+        new = package_obj.to_string()
 
-        root = ET.fromstring(m)
-        root.find('title').text = self.summary
-        root.find('description').text = ''.join(self.descr)
-        url = root.find('url')
-        if url is None:
-            url = ET.SubElement(root, 'url')
-        url.text = self.url
+        if not package_obj.has_changed():
+            return
 
-        def delegate(force=False): return make_meta_url('pkg',
-                                                        (self.prjname, self.name),
-                                                        self.apiurl, force=force)
-        url_factory = metafile._URLFactory(delegate)
-        mf = metafile(url_factory, ET.tostring(root, encoding=ET_ENCODING))
-
-        if not force:
-            print('*' * 36, 'old', '*' * 36)
-            print(decode_it(m))
-            print('*' * 36, 'new', '*' * 36)
-            print(ET.tostring(root, encoding=ET_ENCODING))
-            print('*' * 72)
-            repl = raw_input('Write? (y/N/e) ')
+        if force:
+            reply = "y"
         else:
-            repl = 'y'
+            while True:
+                print("\n".join(difflib.unified_diff(old.splitlines(), new.splitlines(), fromfile="old", tofile="new")))
+                print()
 
-        if repl == 'y':
-            mf.sync()
-        elif repl == 'e':
-            mf.edit()
+                reply = get_user_input(
+                    "Write?",
+                    answers={"y": "yes", "n": "no", "e": "edit"},
+                )
+                if reply == "y":
+                    break
+                if reply == "n":
+                    break
+                if reply == "e":
+                    _, _, edited_obj = package_obj.do_edit()
+                    package_obj.do_update(edited_obj)
+                    new = package_obj.to_string()
+                    continue
 
-        mf.discard()
+        if reply == "y":
+            package_obj.to_api(self.apiurl)
 
     def mark_frozen(self):
         store_write_string(self.absdir, '_frozenlink', '')
