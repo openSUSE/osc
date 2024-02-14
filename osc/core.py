@@ -3433,18 +3433,18 @@ def parse_buildlogurl(buildlogurl: str):
     return (m.group('apiurl'), m.group('project'), m.group('package'), m.group('repository'), m.group('arch'))
 
 
-def slash_split(l):
+def slash_split(args):
     """Split command line arguments like 'foo/bar' into 'foo' 'bar'.
     This is handy to allow copy/paste a project/package combination in this form.
 
-    Trailing slashes are removed before the split, because the split would
-    otherwise give an additional empty string.
+    Leading and trailing slashes are removed before the split, because the split
+    could otherwise give additional empty strings.
     """
-    r = []
-    for i in l:
-        i = i.rstrip('/')
-        r += i.split('/')
-    return r
+    result = []
+    for arg in args:
+        arg = arg.strip("/")
+        result += arg.split("/")
+    return result
 
 
 def expand_proj_pack(args, idx=0, howmany=0):
