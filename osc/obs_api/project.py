@@ -8,6 +8,7 @@ from .project_link import ProjectLink
 from .project_maintenance_maintains import ProjectMaintenanceMaintains
 from .repository import Repository
 from .simple_flag import SimpleFlag
+from .status import Status
 
 
 class Project(XmlModel):
@@ -112,3 +113,10 @@ class Project(XmlModel):
         url_query = {}
         response = cls.xml_request("GET", apiurl, url_path, url_query)
         return cls.from_file(response)
+
+    def to_api(self, apiurl, *, project=None):
+        project = project or self.name
+        url_path = ["source", project, "_meta"]
+        url_query = {}
+        response = self.xml_request("PUT", apiurl, url_path, url_query, data=self.to_string())
+        return Status.from_file(response)
