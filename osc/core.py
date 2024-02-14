@@ -3910,20 +3910,15 @@ def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debu
 
 
 def show_package_disabled_repos(apiurl: str, prj: str, pac: str):
-    m = show_package_meta(apiurl, prj, pac)
+    from . import obs_api
+
     # FIXME: don't work if all repos of a project are disabled and only some are enabled since <disable/> is empty
-    try:
-        root = ET.fromstring(''.join(m))
-        elm = root.find('build')
-        r = []
-        for node in elm.findall('disable'):
-            repo = node.get('repository')
-            arch = node.get('arch')
-            dis_r = {'repo': repo, 'arch': arch}
-            r.append(dis_r)
-        return r
-    except:
-        return None
+    package_obj = obs_api.Package.from_api(apiurl, prj, pac)
+    result = []
+    for i in package_obj.build_list or []:
+        if i.flag == "disable":
+            result.append({"repo": i.repository, "arch": i.arch})
+    return result
 
 
 def show_pattern_metalist(apiurl: str, prj: str):
