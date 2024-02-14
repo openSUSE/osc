@@ -7974,36 +7974,6 @@ def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
                   data=ET.tostring(root, encoding=ET_ENCODING))
 
 
-def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
-    """ set the <devel project="..."> element to package metadata"""
-    path = (prj, pac)
-    data = meta_exists(metatype='pkg',
-                       path_args=path,
-                       template_args=None,
-                       create_new=False)
-
-    if data and show_project_meta(apiurl, dprj) is not None:
-        root = ET.fromstring(parse_meta_to_string(data))
-        if not root.find('devel') is not None:
-            ET.SubElement(root, 'devel')
-        elem = root.find('devel')
-        if dprj:
-            elem.set('project', dprj)
-        else:
-            if 'project' in elem.keys():
-                del elem.attrib['project']
-        if dpkg:
-            elem.set('package', dpkg)
-        else:
-            if 'package' in elem.keys():
-                del elem.attrib['package']
-        edit_meta(metatype='pkg',
-                  path_args=path,
-                  data=ET.tostring(root, encoding=ET_ENCODING))
-    else:
-        print("osc: an error occured")
-
-
 def createPackageDir(pathname, prj_obj=None):
     """
     create and initialize a new package dir in the given project.

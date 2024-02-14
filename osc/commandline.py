@@ -9032,7 +9032,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     delPerson(apiurl, prj, pac, opts.delete, role)
         elif opts.devel_project:
             # XXX: does it really belong to this command?
-            setDevelProject(apiurl, prj, pac, opts.devel_project)
+            set_devel_project(apiurl, prj, pac, opts.devel_project)
         else:
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
