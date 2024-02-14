@@ -257,6 +257,10 @@ class Field(property):
 
         try:
             result = obj._defaults[self.name]
+            if isinstance(result, (dict, list)):
+                # make a deepcopy to avoid problems with mutable defaults
+                result = copy.deepcopy(result)
+                obj._values[self.name] = result
             if self.get_callback is not None:
                 result = self.get_callback(obj, result)
             return result
