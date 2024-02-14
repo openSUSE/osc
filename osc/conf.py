@@ -2055,13 +2055,11 @@ def identify_conf():
     # needed for compat reasons(users may have their oscrc still in ~
     if 'OSC_CONFIG' in os.environ:
         return os.environ.get('OSC_CONFIG')
+
     if os.path.exists(os.path.expanduser('~/.oscrc')):
         return '~/.oscrc'
 
-    if os.environ.get('XDG_CONFIG_HOME', '') != '':
-        conffile = f"{os.environ.get('XDG_CONFIG_HOME')}/osc/oscrc"
-    else:
-        conffile = '~/.config/osc/oscrc'
+    conffile = os.path.join(xdg.XDG_CONFIG_HOME, "osc", "oscrc")
 
     return conffile
 
