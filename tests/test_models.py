@@ -339,6 +339,19 @@ class Test(unittest.TestCase):
         m.field = [{"text": "one"}, {"text": "two"}]
         self.assertFalse(m.has_changed())
 
+    def test_append_dict(self):
+        class TestSubmodel(BaseModel):
+            text: str = Field(default="default")
+
+        class TestModel(BaseModel):
+            field: Optional[List[TestSubmodel]] = Field(default=[])
+
+        m = TestModel()
+        m.field.append({"text": "value"})
+        # dict is converted to object next time the field is retrieved
+        self.assertIsInstance(m.field[0], BaseModel)
+        self.assertEqual(m.field[0].text, "value")
+
 
 if __name__ == "__main__":
     unittest.main()
