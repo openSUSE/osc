@@ -32,6 +32,7 @@ import textwrap
 import time
 import warnings
 from functools import cmp_to_key, total_ordering
+from html import unescape
 from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
@@ -7263,9 +7264,12 @@ def get_commitlog(
         else:
             if requestid:
                 requestid = decode_it(b"rq" + requestid)
-            s = '-' * 76 + \
-                f'\nr{rev} | {user} | {t} | {srcmd5} | {version} | {requestid}\n' + \
-                '\n' + decode_it(comment)
+            s = (
+                "-" * 76
+                + f"\nr{rev} | {user} | {t} | {srcmd5} | {version} | {requestid}\n"
+                + "\n"
+                + unescape(decode_it(comment))
+            )
             r.append(s)
 
     if format not in ['csv', 'xml']:
