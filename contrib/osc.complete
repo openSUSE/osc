@@ -152,12 +152,12 @@ fi
 update_projects_list ()
 {
     if test -s "${projects}" ; then
-        typeset -i ctime=$(command date -d "$(command stat -c '%z' ${projects})" +'%s')
-        typeset -i   now=$(command date -d now +'%s')
+        typeset -i ctime=$(command stat -c '%Z' ${projects})
+        typeset -i   now=$(command date +'%s')
         if ((now - ctime > 86400)) ; then
             if tmp=$(mktemp ${projects}.XXXXXX) ; then
                 command ${command} ls / >| $tmp
-	        mv -uf $tmp ${projects}
+	        mv -f $tmp ${projects}
 	    fi
         fi
     else
