@@ -1744,9 +1744,9 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
-    @cmdln.option('--attribute-defaults', action='store_true',
+    @cmdln.option('--attribute-defaults', action='store_true', default=None,
                   help='include defined attribute defaults')
-    @cmdln.option('--attribute-project', action='store_true',
+    @cmdln.option('--attribute-project', action='store_true', default=None,
                   help='include project values, if missing in packages ')
     @cmdln.option('--blame', action='store_true',
                   help='show author and time of each line')
@@ -4446,7 +4446,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not exists and (srcprj != self._process_project_name(args[0]) or srcpkg != args[1]):
             try:
                 root = ET.fromstring(b''.join(show_attribute_meta(apiurl, args[0], None, None,
-                                                                  conf.config['maintained_update_project_attribute'], False, False)))
+                                                                  conf.config['maintained_update_project_attribute'], None, None)))
                 # this might raise an AttributeError
                 uproject = root.find('attribute').find('value').text
                 print('\nNote: The branch has been created from the configured update project: %s'
