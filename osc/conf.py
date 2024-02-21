@@ -65,6 +65,7 @@ from urllib.parse import urlsplit
 from . import credentials
 from . import OscConfigParser
 from . import oscerr
+from .output import tty
 from .util import xdg
 from .util.helper import raw_input
 from .util.models import *
@@ -2056,10 +2057,16 @@ def identify_conf():
     if 'OSC_CONFIG' in os.environ:
         return os.environ.get('OSC_CONFIG')
 
-    if os.path.exists(os.path.expanduser('~/.oscrc')):
-        return '~/.oscrc'
-
     conffile = os.path.join(xdg.XDG_CONFIG_HOME, "osc", "oscrc")
+
+    if os.path.exists(os.path.expanduser("~/.oscrc")) or os.path.islink(os.path.expanduser("~/.oscrc")):
+        if "XDG_CONFIG_HOME" in os.environ:
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Ignoring XDG_CONFIG_HOME env, loading an existing config from '~/.oscrc' instead", file=sys.stderr)
+            print("         To fix this, move the existing '~/.oscrc' to XDG location such as '~/.config/osc/oscrc'", file=sys.stderr)
+        elif os.path.exists(os.path.expanduser(conffile)):
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Ignoring config '{conffile}' in XDG location, loading an existing config from ~/.oscrc instead", file=sys.stderr)
+            print("         To fix this, remove '~/.oscrc'", file=sys.stderr)
+        return '~/.oscrc'
 
     return conffile
 
