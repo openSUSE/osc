@@ -1606,14 +1606,14 @@ def get_configParser(conffile=None, force_read=False):
 
 def write_config(fname, cp):
     """write new configfile in a safe way"""
-    if os.path.exists(fname) and not os.path.isfile(fname):
-        # only write to a regular file
-        return
-
     # config file is behind a symlink
     # resolve the symlink and continue writing the config as usual
     if os.path.islink(fname):
-        fname = os.readlink(fname)
+        fname = os.path.realpath(fname)
+
+    if os.path.exists(fname) and not os.path.isfile(fname):
+        # only write to a regular file
+        return
 
     # create directories to the config file (if they don't exist already)
     fdir = os.path.dirname(fname)
