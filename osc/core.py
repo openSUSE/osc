@@ -5838,12 +5838,17 @@ def link_pac(
             elm.clear()
             ET.SubElement(elm, 'disable')
 
+        root.remove('scmsync')
+
         dst_meta = ET.tostring(root, encoding=ET_ENCODING)
 
     if meta_change:
+        root = ET.fromstring(''.join(dst_meta))
+        for scmsync in root.findall('scmsync'):
+            root.remove(scmsync)
         edit_meta('pkg',
                   path_args=(dst_project, dst_package),
-                  data=dst_meta)
+                  data=ET.tostring(root, encoding=ET_ENCODING))
     # create the _link file
     # but first, make sure not to overwrite an existing one
     if '_link' in meta_get_filelist(apiurl, dst_project, dst_package):
