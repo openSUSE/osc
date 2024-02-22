@@ -53,6 +53,7 @@ from . import oscerr
 from . import store as osc_store
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
 from .store import Store
+from .util import xdg
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
 from .util.xml import xml_indent_compat as xmlindent
 
@@ -4512,7 +4513,7 @@ def _edit_message_open_editor(filename, data, orig_mtime):
     if os.stat(filename).st_mtime != orig_mtime:
         # file has changed
 
-        cache_dir = os.path.expanduser("~/.cache/osc/edited-messages")
+        cache_dir = os.path.expanduser(os.path.join(xdg.XDG_CACHE_HOME, "osc", "edited-messages"))
         try:
             os.makedirs(cache_dir, mode=0o700)
         except FileExistsError:

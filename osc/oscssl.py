@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives import serialization
 from urllib3.util.ssl_ import create_urllib3_context
 
 from . import oscerr
+from .util import xdg
 
 
 # based on openssl's include/openssl/x509_vfy.h.in
@@ -55,7 +56,7 @@ class TrustedCertStore:
         if not self.host:
             raise ValueError("Empty `host`")
 
-        self.dir_path = os.path.expanduser("~/.config/osc/trusted-certs")
+        self.dir_path = os.path.expanduser(os.path.join(xdg.XDG_CONFIG_HOME, "osc", "trusted-certs"))
         if not os.path.isdir(self.dir_path):
             try:
                 os.makedirs(self.dir_path, mode=0o700)
@@ -103,7 +104,7 @@ class TrustedCertStore:
         Temporarily trust the certificate.
         """
         self.cert = cert
-        tmp_dir = os.path.expanduser("~/.config/osc")
+        tmp_dir = os.path.expanduser(os.path.join(xdg.XDG_CONFIG_HOME, "osc"))
         data = self.cert.public_bytes(serialization.Encoding.PEM)
         with tempfile.NamedTemporaryFile(mode="wb+", dir=tmp_dir, prefix="temp_trusted_cert_") as f:
             f.write(data)

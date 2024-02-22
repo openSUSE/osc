@@ -65,6 +65,7 @@ from urllib.parse import urlsplit
 from . import credentials
 from . import OscConfigParser
 from . import oscerr
+from .output import tty
 from .util import xdg
 from .util.helper import raw_input
 from .util.models import *
@@ -1605,14 +1606,14 @@ def get_configParser(conffile=None, force_read=False):
 
 def write_config(fname, cp):
     """write new configfile in a safe way"""
-    if os.path.exists(fname) and not os.path.isfile(fname):
-        # only write to a regular file
-        return
-
     # config file is behind a symlink
     # resolve the symlink and continue writing the config as usual
     if os.path.islink(fname):
-        fname = os.readlink(fname)
+        fname = os.path.realpath(fname)
+
+    if os.path.exists(fname) and not os.path.isfile(fname):
+        # only write to a regular file
+        return
 
     # create directories to the config file (if they don't exist already)
     fdir = os.path.dirname(fname)
@@ -2055,13 +2056,17 @@ def identify_conf():
     # needed for compat reasons(users may have their oscrc still in ~
     if 'OSC_CONFIG' in os.environ:
         return os.environ.get('OSC_CONFIG')
-    if os.path.exists(os.path.expanduser('~/.oscrc')):
-        return '~/.oscrc'
 
-    if os.environ.get('XDG_CONFIG_HOME', '') != '':
-        conffile = f"{os.environ.get('XDG_CONFIG_HOME')}/osc/oscrc"
-    else:
-        conffile = '~/.config/osc/oscrc'
+    conffile = os.path.join(xdg.XDG_CONFIG_HOME, "osc", "oscrc")
+
+    if os.path.exists(os.path.expanduser("~/.oscrc")) or os.path.islink(os.path.expanduser("~/.oscrc")):
+        if "XDG_CONFIG_HOME" in os.environ:
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Ignoring XDG_CONFIG_HOME env, loading an existing config from '~/.oscrc' instead", file=sys.stderr)
+            print("         To fix this, move the existing '~/.oscrc' to XDG location such as '~/.config/osc/oscrc'", file=sys.stderr)
+        elif os.path.exists(os.path.expanduser(conffile)):
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Ignoring config '{conffile}' in XDG location, loading an existing config from ~/.oscrc instead", file=sys.stderr)
+            print("         To fix this, remove '~/.oscrc'", file=sys.stderr)
+        return '~/.oscrc'
 
     return conffile
 
