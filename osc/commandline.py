@@ -6206,7 +6206,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
         args = slash_split(args)
 
-        if len(args) == 4:
+        if len(args) <= 3:
+            project = store_read_project(Path.cwd())
+            package = store_read_package(Path.cwd())
+            if len(args) == 1:
+                repository, arch = self._find_last_repo_arch(args[0], fatal=False)
+                if repository is None:
+                    # no local build with this repo was done
+                    print('failed to guess arch, using hostarch')
+                    repository = args[0]
+                    arch = osc_build.hostarch
+            elif len(args) == 2:
+                repository, arch = args
+            elif len(args) == 3:
+                raise oscerr.WrongArgs('Too many arguments.')
+            else:  # len(args) = 0 case
+                self.print_repos()
+        elif len(args) == 4:
             project, package, repository, arch = args
         else:
             raise oscerr.WrongArgs('please provide project package repository arch.')
