@@ -316,6 +316,29 @@ class Test(unittest.TestCase):
         self.assertEqual(m.quiet, False)
         self.assertEqual(m.verbose, True)
 
+    def test_has_changed(self):
+        class TestSubmodel(BaseModel):
+            text: str = Field(default="default")
+
+        class TestModel(BaseModel):
+            field: Optional[List[TestSubmodel]] = Field(default=[])
+
+        m = TestModel()
+        self.assertFalse(m.has_changed())
+
+        # a new instance of empty list
+        m.field = []
+        self.assertFalse(m.has_changed())
+
+        m.field = [{"text": "one"}, {"text": "two"}]
+        self.assertTrue(m.has_changed())
+
+        m.do_snapshot()
+
+        # a new instance of list with new instances of objects with the same data
+        m.field = [{"text": "one"}, {"text": "two"}]
+        self.assertFalse(m.has_changed())
+
 
 if __name__ == "__main__":
     unittest.main()
