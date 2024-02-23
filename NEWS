@@ -1,3 +1,21 @@
+- 1.6.1
+  - Command-line:
+    - Use busybox compatible commands for completion
+    - Change 'wipe' command to use the new get_user_input() function
+    - Fix error 500 in running 'meta attribute <prj>'
+  - Configuration:
+    - Fix resolving config symlink to the actual config file
+    - Honor XDG_CONFIG_HOME and XDG_CACHE_HOME env vars
+    - Warn about ignoring XDG_CONFIG_HOME and ~/.config/osc/oscrc if ~/.oscrc exists
+  - Library:
+    - Error out when branching a scmsync package
+    - New get_user_input() function for consistent handling of user input
+    - Move xml_indent, xml_quote and xml_unquote to osc.util.xml module
+    - Refactor makeurl(), deprecate query taking string or list arguments, drop osc_urlencode()
+    - Remove all path quoting, rely on makeurl()
+    - Always use dict query in makeurl()
+    - Fix core.slash_split() to strip both leading and trailing slashes
+
 - 1.6.0
   - Command-line:
     - The 'token --trigger' command no longer sets '--operation=runservice' by default.
