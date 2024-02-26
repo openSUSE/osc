@@ -2335,39 +2335,42 @@ rev: %s
         for the updatepacmetafromspec subcommand
             argument force supress the confirm question
         """
+        from . import obs_api
+        from .output import get_user_input
 
-        m = b''.join(show_package_meta(self.apiurl, self.prjname, self.name))
+        package_obj = obs_api.Package.from_api(self.apiurl, self.prjname, self.name)
+        old = package_obj.to_string()
+        package_obj.title = self.summary.strip()
+        package_obj.description = "".join(self.descr).strip()
+        package_obj.url = self.url.strip()
+        new = package_obj.to_string()
 
-        root = ET.fromstring(m)
-        root.find('title').text = self.summary
-        root.find('description').text = ''.join(self.descr)
-        url = root.find('url')
-        if url is None:
-            url = ET.SubElement(root, 'url')
-        url.text = self.url
+        if not package_obj.has_changed():
+            return
 
-        def delegate(force=False): return make_meta_url('pkg',
-                                                        (self.prjname, self.name),
-                                                        self.apiurl, force=force)
-        url_factory = metafile._URLFactory(delegate)
-        mf = metafile(url_factory, ET.tostring(root, encoding=ET_ENCODING))
-
-        if not force:
-            print('*' * 36, 'old', '*' * 36)
-            print(decode_it(m))
-            print('*' * 36, 'new', '*' * 36)
-            print(ET.tostring(root, encoding=ET_ENCODING))
-            print('*' * 72)
-            repl = raw_input('Write? (y/N/e) ')
+        if force:
+            reply = "y"
         else:
-            repl = 'y'
+            while True:
+                print("\n".join(difflib.unified_diff(old.splitlines(), new.splitlines(), fromfile="old", tofile="new")))
+                print()
 
-        if repl == 'y':
-            mf.sync()
-        elif repl == 'e':
-            mf.edit()
+                reply = get_user_input(
+                    "Write?",
+                    answers={"y": "yes", "n": "no", "e": "edit"},
+                )
+                if reply == "y":
+                    break
+                if reply == "n":
+                    break
+                if reply == "e":
+                    _, _, edited_obj = package_obj.do_edit()
+                    package_obj.do_update(edited_obj)
+                    new = package_obj.to_string()
+                    continue
 
-        mf.discard()
+        if reply == "y":
+            package_obj.to_api(self.apiurl)
 
     def mark_frozen(self):
         store_write_string(self.absdir, '_frozenlink', '')
@@ -3853,15 +3856,14 @@ def download_assets(directory):
 
 
 def show_scmsync(apiurl, prj, pac=None):
+    from . import obs_api
+
     if pac:
-        m = show_package_meta(apiurl, prj, pac)
-    else:
-        m = show_project_meta(apiurl, prj)
-    node = ET.fromstring(b''.join(m)).find('scmsync')
-    if node is None:
-        return None
-    else:
-        return node.text
+        package_obj = obs_api.Package.from_api(apiurl, prj, pac)
+        return package_obj.scmsync
+
+    project_obj = obs_api.Project.from_api(apiurl, prj)
+    return project_obj.scmsync
 
 
 def show_devel_project(apiurl, prj, pac):
@@ -3908,20 +3910,15 @@ def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debu
 
 
 def show_package_disabled_repos(apiurl: str, prj: str, pac: str):
-    m = show_package_meta(apiurl, prj, pac)
+    from . import obs_api
+
     # FIXME: don't work if all repos of a project are disabled and only some are enabled since <disable/> is empty
-    try:
-        root = ET.fromstring(''.join(m))
-        elm = root.find('build')
-        r = []
-        for node in elm.findall('disable'):
-            repo = node.get('repository')
-            arch = node.get('arch')
-            dis_r = {'repo': repo, 'arch': arch}
-            r.append(dis_r)
-        return r
-    except:
-        return None
+    package_obj = obs_api.Package.from_api(apiurl, prj, pac)
+    result = []
+    for i in package_obj.build_list or []:
+        if i.flag == "disable":
+            result.append({"repo": i.repository, "arch": i.arch})
+    return result
 
 
 def show_pattern_metalist(apiurl: str, prj: str):
@@ -6446,11 +6443,10 @@ def get_platforms_of_project(apiurl: str, prj: str):
 
 
 def get_repositories_of_project(apiurl: str, prj: str):
-    f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(b''.join(f))
+    from . import obs_api
 
-    r = [node.get('name') for node in root.findall('repository')]
-    return r
+    project_obj = obs_api.Project.from_api(apiurl, prj)
+    return [i.name for i in project_obj.repository_list or []]
 
 
 class Repo:
@@ -6488,13 +6484,13 @@ class Repo:
                 f.write(f'{repo.name} {repo.arch}\n')
 
 
-def get_repos_of_project(apiurl, prj):
-    f = show_project_meta(apiurl, prj)
-    root = ET.fromstring(b''.join(f))
+def get_repos_of_project(apiurl: str, prj: str):
+    from . import obs_api
 
-    for node in root.findall('repository'):
-        for node2 in node.findall('arch'):
-            yield Repo(node.get('name'), node2.text)
+    project_obj = obs_api.Project.from_api(apiurl, prj)
+    for repo in project_obj.repository_list or []:
+        for arch in repo.arch_list:
+            yield Repo(repo.name, arch)
 
 
 def get_binarylist(
@@ -7979,36 +7975,6 @@ def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
         edit_meta(metatype=kind,
                   path_args=path,
                   data=ET.tostring(root, encoding=ET_ENCODING))
-
-
-def setDevelProject(apiurl, prj, pac, dprj, dpkg=None):
-    """ set the <devel project="..."> element to package metadata"""
-    path = (prj, pac)
-    data = meta_exists(metatype='pkg',
-                       path_args=path,
-                       template_args=None,
-                       create_new=False)
-
-    if data and show_project_meta(apiurl, dprj) is not None:
-        root = ET.fromstring(parse_meta_to_string(data))
-        if not root.find('devel') is not None:
-            ET.SubElement(root, 'devel')
-        elem = root.find('devel')
-        if dprj:
-            elem.set('project', dprj)
-        else:
-            if 'project' in elem.keys():
-                del elem.attrib['project']
-        if dpkg:
-            elem.set('package', dpkg)
-        else:
-            if 'package' in elem.keys():
-                del elem.attrib['package']
-        edit_meta(metatype='pkg',
-                  path_args=path,
-                  data=ET.tostring(root, encoding=ET_ENCODING))
-    else:
-        print("osc: an error occured")
 
 
 def createPackageDir(pathname, prj_obj=None):

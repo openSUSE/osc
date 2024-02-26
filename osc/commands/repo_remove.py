@@ -1,9 +1,9 @@
 import difflib
 
 import osc.commandline
+from .. import obs_api
 from .. import oscerr
-from .._private.project import ProjectMeta
-from ..core import raw_input
+from ..output import get_user_input
 
 
 class RepoRemoveCommand(osc.commandline.OscCommand):
@@ -34,22 +34,35 @@ class RepoRemoveCommand(osc.commandline.OscCommand):
         )
 
     def run(self, args):
-        meta = ProjectMeta.from_api(args.apiurl, args.project)
-        old_meta = meta.to_string().splitlines()
+        project_obj = obs_api.Project.from_api(args.apiurl, args.project)
+        old = project_obj.to_string()
 
         for repo in args.repo:
-            meta.repository_remove(repo)
-            meta.publish_remove_disable_repository(repo)
+            if project_obj.repository_list is not None:
+                project_obj.repository_list = [i for i in project_obj.repository_list if i.name != repo]
+            if project_obj.publish_list is not None:
+                project_obj.publish_list = [
+                    i for i in project_obj.publish_list if i.flag != "disable" or i.repository != repo
+                ]
 
-        new_meta = meta.to_string().splitlines()
-        diff = difflib.unified_diff(old_meta, new_meta, fromfile="old", tofile="new")
-        print("\n".join(diff))
+        if not project_obj.has_changed():
+            return
 
         if not args.yes:
+            new = project_obj.to_string()
+            diff = difflib.unified_diff(old.splitlines(), new.splitlines(), fromfile="old", tofile="new")
+            print("\n".join(diff))
             print()
-            print(f"You're changing meta of project '{args.project}'")
-            reply = raw_input("Do you want to apply the changes? [y/N] ").lower()
-            if reply != "y":
+
+            reply = get_user_input(
+                f"""
+                You're changing meta of project '{args.project}'
+                Do you want to apply the changes?
+                """,
+                answers={"y": "yes", "n": "no"},
+            )
+
+            if reply == "n":
                 raise oscerr.UserAbort()
 
-        meta.to_api(args.apiurl, args.project)
+        project_obj.to_api(args.apiurl)

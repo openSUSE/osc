@@ -249,14 +249,28 @@ class Field(property):
     def get(self, obj):
         try:
             result = obj._values[self.name]
+
+            # convert dictionaries into objects
+            # we can't do it earlier because list is a standalone object that is not under our control
+            if result is not None and self.is_model_list:
+                for num, i in enumerate(result):
+                    if isinstance(i, dict):
+                        klass = self.inner_type
+                        result[num] = klass(**i)
+
             if self.get_callback is not None:
                 result = self.get_callback(obj, result)
+
             return result
         except KeyError:
             pass
 
         try:
             result = obj._defaults[self.name]
+            if isinstance(result, (dict, list)):
+                # make a deepcopy to avoid problems with mutable defaults
+                result = copy.deepcopy(result)
+                obj._values[self.name] = result
             if self.get_callback is not None:
                 result = self.get_callback(obj, result)
             return result

@@ -1,9 +1,9 @@
 import difflib
 
 import osc.commandline
+from .. import obs_api
 from .. import oscerr
-from .._private.project import ProjectMeta
-from ..core import raw_input
+from ..output import get_user_input
 
 
 class RepoAddCommand(osc.commandline.OscCommand):
@@ -61,22 +61,50 @@ class RepoAddCommand(osc.commandline.OscCommand):
             project, repo = path.split("/")
             paths.append({"project": project, "repository": repo})
 
-        meta = ProjectMeta.from_api(args.apiurl, args.project)
-        old_meta = meta.to_string().splitlines()
+        project_obj = obs_api.Project.from_api(args.apiurl, args.project)
+        old = project_obj.to_string()
 
-        meta.repository_add(args.repo, args.arches, paths)
+        matching_repos = [i for i in project_obj.repository_list or [] if i.name == args.repo]
+        if matching_repos:
+            raise oscerr.OscValueError(f"Repository '{args.repo}' already exists in project meta")
+
+        project_obj.repository_list.append(
+            {
+                "name": args.repo,
+                "arch_list": args.arches,
+                "path_list": paths,
+            }
+        )
+
         if args.disable_publish:
-            meta.publish_add_disable_repository(args.repo)
-
-        new_meta = meta.to_string().splitlines()
-        diff = difflib.unified_diff(old_meta, new_meta, fromfile="old", tofile="new")
-        print("\n".join(diff))
+            matching_publish_disable_repos = [
+                i for i in project_obj.publish_list or [] if i.flag == "disable" and i.repository == args.repo
+            ]
+            if not matching_publish_disable_repos:
+                if project_obj.publish_list is None:
+                    project_obj.publish_list = []
+                project_obj.publish_list.append(
+                    {
+                        "flag": "disable",
+                        "repository": args.repo,
+                    }
+                )
 
         if not args.yes:
+            new = project_obj.to_string()
+            diff = difflib.unified_diff(old.splitlines(), new.splitlines(), fromfile="old", tofile="new")
+            print("\n".join(diff))
             print()
-            print(f"You're changing meta of project '{args.project}'")
-            reply = raw_input("Do you want to apply the changes? [y/N] ").lower()
-            if reply != "y":
+
+            reply = get_user_input(
+                f"""
+                You're changing meta of project '{args.project}'
+                Do you want to apply the changes?
+                """,
+                answers={"y": "yes", "n": "no"},
+            )
+
+            if reply == "n":
                 raise oscerr.UserAbort()
 
-        meta.to_api(args.apiurl, args.project)
+        project_obj.to_api(args.apiurl)
