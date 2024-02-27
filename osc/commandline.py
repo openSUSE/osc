@@ -6685,19 +6685,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        build_descr_data = None
-        if build_descr is not None:
-            build_descr_data = open(build_descr, 'rb').read()
-        if opts.prefer_pkgs and build_descr_data is None:
-            raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
-        elif opts.prefer_pkgs:
-            print(f"Scanning the following dirs for local packages: {', '.join(opts.prefer_pkgs)}")
-            cpiodata = cpio.CpioWrite()
-            prefer_pkgs = osc_build.get_prefer_pkgs(opts.prefer_pkgs, arch,
-                                                    os.path.splitext(build_descr)[1],
-                                                    cpiodata)
-            cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
-            build_descr_data = cpiodata.get()
+        # TODO: refactor retrieving build type in build.py and use it here or directly in create_build_descr_data()
+        if build_descr:
+            build_type = os.path.splitext(build_descr)[1]
+        else:
+            build_type = None
+
+        build_descr_data, prefer_pkgs = osc_build.create_build_descr_data(
+            build_descr,
+            build_type=build_type,
+            repo=repository,
+            arch=arch,
+            prefer_pkgs=opts.prefer_pkgs,
+            # define=,
+            # define_with=,
+            # define_without=,
+        )
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
