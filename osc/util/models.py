@@ -707,12 +707,12 @@ class XmlModel(BaseModel):
                 continue
             value = cls.value_from_string(field, node.text)
             node.text = None
+            cls._remove_processed_node(root, node)
             if value is None:
                 if field.is_optional:
                     continue
                 value = ""
             kwargs[field_name] = value
-            cls._remove_processed_node(root, node)
 
         cls._remove_processed_node(None, root)
 
