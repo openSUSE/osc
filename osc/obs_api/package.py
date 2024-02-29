@@ -75,7 +75,7 @@ class Package(XmlModel):
             "rev": rev,
         }
         response = cls.xml_request("GET", apiurl, url_path, url_query)
-        return cls.from_file(response)
+        return cls.from_file(response, apiurl=apiurl)
 
     def to_api(self, apiurl, *, project=None, package=None):
         project = project or self.project
@@ -83,7 +83,7 @@ class Package(XmlModel):
         url_path = ["source", project, package, "_meta"]
         url_query = {}
         response = self.xml_request("PUT", apiurl, url_path, url_query, data=self.to_string())
-        return Status.from_file(response)
+        return Status.from_file(response, apiurl=apiurl)
 
     @classmethod
     def cmd_release(
@@ -125,4 +125,4 @@ class Package(XmlModel):
             "nodelay": nodelay,
         }
         response = cls.xml_request("POST", apiurl, url_path, url_query)
-        return Status.from_string(response.read())
+        return Status.from_file(response, apiurl=apiurl)
