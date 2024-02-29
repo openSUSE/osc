@@ -69,6 +69,7 @@ class Package(XmlModel):
 
     @classmethod
     def from_api(cls, apiurl, project, package, *, rev=None):
+        # ``rev`` is metadata revision, not revision of the source code
         url_path = ["source", project, package, "_meta"]
         url_query = {
             "rev": rev,
