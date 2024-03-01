@@ -4634,53 +4634,37 @@ def create_submit_request(
     src_package: Optional[str] = None,
     dst_project: Optional[str] = None,
     dst_package: Optional[str] = None,
-    message="",
-    orev=None,
-    src_update=None,
-    dst_updatelink=None,
+    message: str = "",
+    orev: Optional[str] = None,
+    src_update: Optional[str] = None,
+    dst_updatelink: Optional[bool] = None,
 ):
-    options_block = ""
-    package = ""
-    if src_package:
-        package = f"""package="{src_package}" """
-    options_block = "<options>"
-    if src_update:
-        options_block += f"""<sourceupdate>{src_update}</sourceupdate>"""
-    if dst_updatelink:
-        options_block += """<updatelink>true</updatelink>"""
-    options_block += "</options>"
+    from . import obs_api
 
-    # Yes, this kind of xml construction is horrible
-    targetxml = ""
-    if dst_project:
-        packagexml = ""
-        if dst_package:
-            packagexml = f"""package="{dst_package}" """
-        targetxml = f"""<target project="{dst_project}" {packagexml} /> """
-    # XXX: keep the old template for now in order to work with old obs instances
-    xml = """\
-<request>
-    <action type="submit">
-        <source project="%s" %s rev="%s"/>
-        %s
-        %s
-    </action>
-    <state name="new"/>
-    <description>%s</description>
-</request>
-""" % (src_project,
-       package,
-       orev or show_upstream_rev(apiurl, src_project, src_package),
-       targetxml,
-       options_block,
-       _html_escape(message))
+    req = obs_api.Request(
+        action_list=[
+            {
+                "type": "submit",
+                "source": {
+                    "project": src_project,
+                    "package": src_package,
+                    "rev": orev or show_upstream_rev(apiurl, src_project, src_package),
+                },
+                "target": {
+                    "project": dst_project,
+                    "package": dst_package,
+                },
+                "options": {
+                    "sourceupdate": src_update,
+                    "updatelink": "true" if dst_updatelink else None,
+                }
+            },
+        ],
+        description=message,
+    )
 
-    u = makeurl(apiurl, ["request"], query={"cmd": "create"})
-    r = None
     try:
-        f = http_POST(u, data=xml)
-        root = ET.parse(f).getroot()
-        r = root.get('id')
+        new_req = req.cmd_create(apiurl)
     except HTTPError as e:
         if e.hdrs.get('X-Opensuse-Errorcode') == "submit_request_rejected":
             print('WARNING: As the project is in maintenance, a maintenance incident request is')
@@ -4700,11 +4684,11 @@ def create_submit_request(
                 raise oscerr.APIError("Server did not define a default maintenance project, can't submit.")
             tproject = project.get('name')
             r = create_maintenance_request(apiurl, src_project, [src_package], tproject, dst_project, src_update, message, rev=orev)
-            r = r.reqid
+            return r.reqid
         else:
             raise
 
-    return r
+    return new_req.id
 
 
 def get_request(apiurl: str, reqid):

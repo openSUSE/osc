@@ -116,3 +116,25 @@ class Request(XmlModel):
             for issue in action.sourcediff.issue_list or []:
                 result.append(issue)
         return result
+
+    def cmd_create(self,
+        apiurl: str,
+        *,
+        add_revision: Optional[bool] = None,
+        enforce_branching: Optional[bool] = None,
+        ignore_build_state: Optional[bool] = None,
+        ignore_delegate: Optional[bool] = None,
+    ):
+        """
+        :param add_revision: Ask the server to add revisions of the current sources to the request.
+        :param ignore_build_state: Skip the build state check.
+        :param ignore_delegate: Enforce a new package instance in a project which has OBS:DelegateRequestTarget set.
+        """
+        url_path = ["request"]
+        url_query = {
+            "cmd": "create",
+            "addrevision": add_revision,
+            "ignore_delegate": ignore_delegate,
+        }
+        response = self.xml_request("POST", apiurl, url_path, url_query, data=self.to_string())
+        return Request.from_file(response, apiurl=apiurl)
