@@ -291,6 +291,49 @@ class Test(unittest.TestCase):
         self.assertEqual(c.field, "new-text")
         self.assertEqual(c.field2, "text")
 
+    def test_parent_fallback(self):
+        class SubModel(BaseModel):
+            field: str = Field(default=FromParent("field", fallback="submodel-fallback"))
+
+        class Model(BaseModel):
+            field: str = Field(default=FromParent("field", fallback="model-fallback"))
+            sub: Optional[SubModel] = Field()
+            sub_list: Optional[List[SubModel]] = Field()
+
+        m = Model()
+        s = SubModel(_parent=m)
+        m.sub = s
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub.field, "model-fallback")
+
+        m = Model(sub={})
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub.field, "model-fallback")
+
+        m = Model(sub=SubModel())
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub.field, "model-fallback")
+
+        m = Model()
+        s = SubModel(_parent=m)
+        m.sub_list = [s]
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
+        m = Model(sub_list=[{}])
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
+        m = Model(sub_list=[SubModel()])
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
+        m = Model()
+        m.sub_list = []
+        m.sub_list.append({})
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
     def test_get_callback(self):
         class Model(BaseModel):
             quiet: bool = Field(
