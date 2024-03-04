@@ -67,6 +67,13 @@ class LocalRole(str, Enum):
     READER = "reader"
 
 
+class ObsRatings(str, Enum):
+    LOW = "low"
+    MODERATE = "moderate"
+    IMPORTANT = "important"
+    CRITICAL = "critical"
+
+
 class RebuildModes(str, Enum):
     TRANSITIVE = "transitive"
     DIRECT = "direct"
@@ -77,3 +84,13 @@ class ReleaseTriggers(str, Enum):
     MANUAL = "manual"
     MAINTENANCE = "maintenance"
     OBSGENDIFF = "obsgendiff"
+
+
+class RequestStates(str, Enum):
+    REVIEW = "review"
+    NEW = "new"
+    ACCEPTED = "accepted"
+    DECLINED = "declined"
+    REVOKED = "revoked"
+    SUPERSEDED = "superseded"
+    DELETED = "deleted"

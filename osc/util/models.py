@@ -7,6 +7,7 @@ This module IS NOT a supported API, it is meant for osc internal use only.
 """
 
 import copy
+import functools
 import inspect
 import sys
 import tempfile
@@ -71,8 +72,9 @@ NotSet = NotSetClass()
 
 
 class FromParent(NotSetClass):
-    def __init__(self, field_name):
+    def __init__(self, field_name, *, fallback=NotSet):
         self.field_name = field_name
+        self.fallback = fallback
 
     def __repr__(self):
         return f"FromParent(field_name={self.field_name})"
@@ -256,7 +258,7 @@ class Field(property):
                 for num, i in enumerate(result):
                     if isinstance(i, dict):
                         klass = self.inner_type
-                        result[num] = klass(**i)
+                        result[num] = klass(**i, _parent=obj)
 
             if self.get_callback is not None:
                 result = self.get_callback(obj, result)
@@ -279,7 +281,10 @@ class Field(property):
 
         if isinstance(self.default, FromParent):
             if obj._parent is None:
-                raise RuntimeError(f"The field '{self.name}' has default {self.default} but the model has no parent set")
+                if self.default.fallback is not NotSet:
+                    return self.default.fallback
+                else:
+                    raise RuntimeError(f"The field '{self.name}' has default {self.default} but the model has no parent set")
             return getattr(obj._parent, self.default.field_name or self.name)
 
         if self.default is NotSet:
@@ -308,20 +313,23 @@ class Field(property):
         if self.is_model and isinstance(value, dict):
             # initialize a model instance from a dictionary
             klass = self.origin_type
-            value = klass(**value)  # pylint: disable=not-callable
+            value = klass(**value, _parent=obj)  # pylint: disable=not-callable
         elif self.is_model_list and isinstance(value, list):
             new_value = []
             for i in value:
                 if isinstance(i, dict):
                     klass = self.inner_type
-                    new_value.append(klass(**i))
+                    new_value.append(klass(**i, _parent=obj))
                 else:
+                    i._parent = obj
                     new_value.append(i)
             value = new_value
         elif self.is_model and isinstance(value, str) and hasattr(self.origin_type, "XML_TAG_FIELD"):
             klass = self.origin_type
             key = getattr(self.origin_type, "XML_TAG_FIELD")
-            value = klass(**{key: value})
+            value = klass(**{key: value}, _parent=obj)
+        elif self.is_model and value is not None:
+            value._parent = obj
 
         self.validate_type(value)
         obj._values[self.name] = value
@@ -361,6 +369,7 @@ class ModelMeta(type):
         return new_cls
 
 
+@functools.total_ordering
 class BaseModel(metaclass=ModelMeta):
     __fields__: Dict[str, Field]
 
@@ -372,6 +381,7 @@ class BaseModel(metaclass=ModelMeta):
         raise AttributeError(f"Setting attribute '{self.__class__.__name__}.{name}' is not allowed")
 
     def __init__(self, **kwargs):
+        self._allow_new_attributes = True
         self._defaults = {}  # field defaults cached in field.get()
         self._values = {}  # field values explicitly set after initializing the model
         self._parent = kwargs.pop("_parent", None)
@@ -404,10 +414,28 @@ class BaseModel(metaclass=ModelMeta):
 
         self._allow_new_attributes = False
 
+    def _get_cmp_data(self):
+        result = []
+        for name, field in self.__fields__.items():
+            if field.exclude:
+                continue
+            value = getattr(self, name)
+            if isinstance(value, dict):
+                value = sorted(list(value.items()))
+            result.append((name, value))
+        return result
+
     def __eq__(self, other):
         if type(self) != type(other):
             return False
-        return self.dict() == other.dict()
+        if self._get_cmp_data() != other._get_cmp_data():
+            print(self._get_cmp_data(), other._get_cmp_data())
+        return self._get_cmp_data() == other._get_cmp_data()
+
+    def __lt__(self, other):
+        if type(self) != type(other):
+            return False
+        return self._get_cmp_data() < other._get_cmp_data()
 
     def dict(self):
         result = {}
@@ -440,6 +468,11 @@ class BaseModel(metaclass=ModelMeta):
 class XmlModel(BaseModel):
     XML_TAG = None
 
+    _apiurl: Optional[str] = Field(
+        exclude=True,
+        default=FromParent("_apiurl", fallback=None),
+    )
+
     def to_xml(self) -> ET.Element:
         xml_tag = None
 
@@ -459,6 +492,8 @@ class XmlModel(BaseModel):
         root = ET.Element(xml_tag)
 
         for field_name, field in self.__fields__.items():
+            if field.exclude:
+                continue
             xml_attribute = field.extra.get("xml_attribute", False)
             xml_set_tag = field.extra.get("xml_set_tag", False)
             xml_set_text = field.extra.get("xml_set_text", False)
@@ -510,20 +545,20 @@ class XmlModel(BaseModel):
         return root
 
     @classmethod
-    def from_string(cls, string: str) -> "XmlModel":
+    def from_string(cls, string: str, *, apiurl: Optional[str] = None) -> "XmlModel":
         """
         Instantiate model from string.
         """
         root = ET.fromstring(string)
-        return cls.from_xml(root)
+        return cls.from_xml(root, apiurl=apiurl)
 
     @classmethod
-    def from_file(cls, file: Union[str, typing.IO]) -> "XmlModel":
+    def from_file(cls, file: Union[str, typing.IO], *, apiurl: Optional[str] = None) -> "XmlModel":
         """
         Instantiate model from file.
         """
         root = ET.parse(file).getroot()
-        return cls.from_xml(root)
+        return cls.from_xml(root, apiurl=apiurl)
 
     def to_bytes(self) -> bytes:
         """
@@ -581,7 +616,7 @@ class XmlModel(BaseModel):
             parent.remove(node)
 
     @classmethod
-    def from_xml(cls, root: ET.Element):
+    def from_xml(cls, root: ET.Element, *, apiurl: Optional[str] = None):
         """
         Instantiate model from a XML root.
         """
@@ -661,7 +696,7 @@ class XmlModel(BaseModel):
                 for node in nodes:
                     if field.is_model_list:
                         klass = field.inner_type
-                        entry = klass.from_xml(node)
+                        entry = klass.from_xml(node, apiurl=apiurl)
 
                         # clear node as it was checked in from_xml() already
                         node.text = None
@@ -691,7 +726,7 @@ class XmlModel(BaseModel):
                 if node is None:
                     continue
                 klass = field.origin_type
-                kwargs[field_name] = klass.from_xml(node)
+                kwargs[field_name] = klass.from_xml(node, apiurl=apiurl)
 
                 # clear node as it was checked in from_xml() already
                 node.text = None
@@ -707,16 +742,16 @@ class XmlModel(BaseModel):
                 continue
             value = cls.value_from_string(field, node.text)
             node.text = None
+            cls._remove_processed_node(root, node)
             if value is None:
                 if field.is_optional:
                     continue
                 value = ""
             kwargs[field_name] = value
-            cls._remove_processed_node(root, node)
 
         cls._remove_processed_node(None, root)
 
-        obj = cls(**kwargs)
+        obj = cls(**kwargs, _apiurl=apiurl)
         obj.__dict__["_root"] = orig_root
         return obj
 
@@ -760,7 +795,7 @@ class XmlModel(BaseModel):
             while True:
                 run_editor(f.name)
                 try:
-                    edited_obj = self.__class__.from_file(f.name)
+                    edited_obj = self.__class__.from_file(f.name, apiurl=self._apiurl)
                     f.seek(0)
                     edited_data = f.read()
                     break

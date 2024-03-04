@@ -112,14 +112,14 @@ class Project(XmlModel):
         url_path = ["source", project, "_meta"]
         url_query = {}
         response = cls.xml_request("GET", apiurl, url_path, url_query)
-        return cls.from_file(response)
+        return cls.from_file(response, apiurl=apiurl)
 
     def to_api(self, apiurl, *, project=None):
         project = project or self.name
         url_path = ["source", project, "_meta"]
         url_query = {}
         response = self.xml_request("PUT", apiurl, url_path, url_query, data=self.to_string())
-        return Status.from_file(response)
+        return Status.from_file(response, apiurl=apiurl)
 
     def resolve_repository_flags(self, package_obj=None):
         """

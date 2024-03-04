@@ -291,6 +291,49 @@ class Test(unittest.TestCase):
         self.assertEqual(c.field, "new-text")
         self.assertEqual(c.field2, "text")
 
+    def test_parent_fallback(self):
+        class SubModel(BaseModel):
+            field: str = Field(default=FromParent("field", fallback="submodel-fallback"))
+
+        class Model(BaseModel):
+            field: str = Field(default=FromParent("field", fallback="model-fallback"))
+            sub: Optional[SubModel] = Field()
+            sub_list: Optional[List[SubModel]] = Field()
+
+        m = Model()
+        s = SubModel(_parent=m)
+        m.sub = s
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub.field, "model-fallback")
+
+        m = Model(sub={})
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub.field, "model-fallback")
+
+        m = Model(sub=SubModel())
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub.field, "model-fallback")
+
+        m = Model()
+        s = SubModel(_parent=m)
+        m.sub_list = [s]
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
+        m = Model(sub_list=[{}])
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
+        m = Model(sub_list=[SubModel()])
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
+        m = Model()
+        m.sub_list = []
+        m.sub_list.append({})
+        self.assertEqual(m.field, "model-fallback")
+        self.assertEqual(m.sub_list[0].field, "model-fallback")
+
     def test_get_callback(self):
         class Model(BaseModel):
             quiet: bool = Field(
@@ -351,6 +394,57 @@ class Test(unittest.TestCase):
         # dict is converted to object next time the field is retrieved
         self.assertIsInstance(m.field[0], BaseModel)
         self.assertEqual(m.field[0].text, "value")
+
+    def test_ordering(self):
+        class TestSubmodel(BaseModel):
+            txt: Optional[str] = Field()
+
+        class TestModel(BaseModel):
+            num: Optional[int] = Field()
+            txt: Optional[str] = Field()
+            sub: Optional[TestSubmodel] = Field()
+            dct: Optional[Dict[str, TestSubmodel]] = Field()
+
+        m1 = TestModel()
+        m2 = TestModel()
+        self.assertEqual(m1, m2)
+
+        m1 = TestModel(num=1)
+        m2 = TestModel(num=2)
+        self.assertNotEqual(m1, m2)
+        self.assertLess(m1, m2)
+        self.assertGreater(m2, m1)
+
+        m1 = TestModel(txt="a")
+        m2 = TestModel(txt="b")
+        self.assertNotEqual(m1, m2)
+        self.assertLess(m1, m2)
+        self.assertGreater(m2, m1)
+
+        m1 = TestModel(sub={})
+        m2 = TestModel(sub={})
+        self.assertEqual(m1, m2)
+
+        m1 = TestModel(sub={"txt": "a"})
+        m2 = TestModel(sub={"txt": "b"})
+        self.assertNotEqual(m1, m2)
+        self.assertLess(m1, m2)
+        self.assertGreater(m2, m1)
+
+        m1 = TestModel(dct={})
+        m2 = TestModel(dct={})
+        self.assertEqual(m1, m2)
+
+        m1 = TestModel(dct={"a": TestSubmodel()})
+        m2 = TestModel(dct={"b": TestSubmodel()})
+        self.assertNotEqual(m1, m2)
+        self.assertLess(m1, m2)
+        self.assertGreater(m2, m1)
+
+        # dict ordering doesn't matter
+        m1 = TestModel(dct={"a": TestSubmodel(), "b": TestSubmodel()})
+        m2 = TestModel(dct={"b": TestSubmodel(), "a": TestSubmodel()})
+        self.assertEqual(m1, m2)
 
 
 if __name__ == "__main__":
