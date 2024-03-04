@@ -21,6 +21,7 @@ import traceback
 from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import List
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
@@ -6642,6 +6643,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
+    @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
+                  help='Skip installation of additional debug packages for CLI builds (specified in obs:cli_debug_packages in project metadata)')
     def do_buildinfo(self, subcmd, opts, *args):
         """
         Shows the build info
@@ -6701,28 +6704,50 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        build_descr_data = None
-        if build_descr is not None:
-            build_descr_data = open(build_descr, 'rb').read()
-        if opts.prefer_pkgs and build_descr_data is None:
-            raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
-        elif opts.prefer_pkgs:
-            print(f"Scanning the following dirs for local packages: {', '.join(opts.prefer_pkgs)}")
-            cpiodata = cpio.CpioWrite()
-            prefer_pkgs = osc_build.get_prefer_pkgs(opts.prefer_pkgs, arch,
-                                                    os.path.splitext(build_descr)[1],
-                                                    cpiodata)
-            cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
-            build_descr_data = cpiodata.get()
+        # TODO: refactor retrieving build type in build.py and use it here or directly in create_build_descr_data()
+        if build_descr:
+            build_type = os.path.splitext(build_descr)[1]
+        else:
+            build_type = None
+
+        build_descr_data, prefer_pkgs = osc_build.create_build_descr_data(
+            build_descr,
+            build_type=build_type,
+            repo=repository,
+            arch=arch,
+            prefer_pkgs=opts.prefer_pkgs,
+            # define=,
+            # define_with=,
+            # define_without=,
+        )
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        print(decode_it(get_buildinfo(apiurl,
-                                      project, package, repository, arch,
-                                      specfile=build_descr_data,
-                                      debug=opts.debug_dependencies,
-                                      addlist=opts.extra_pkgs)))
+        extra_pkgs = opts.extra_pkgs.copy() if opts.extra_pkgs else []
+
+        if os.path.exists("/usr/lib/build/queryconfig") and not opts.nodebugpackages:
+            with NamedTemporaryFile(mode="w+b", prefix="obs_buildconfig_") as bc_file:
+                # print('Getting buildconfig from server and store to %s' % bc_filename)
+                bc = get_buildconfig(apiurl, project, repository)
+                bc_file.write(bc)
+                bc_file.flush()
+
+                debug_pkgs = decode_it(return_external("/usr/lib/build/queryconfig", "--dist", bc_file.name, "substitute", "obs:cli_debug_packages"))
+                if debug_pkgs:
+                    extra_pkgs.extend(debug_pkgs.strip().split(" "))
+
+        buildinfo = get_buildinfo(
+            apiurl,
+            project,
+            package,
+            repository,
+            arch,
+            specfile=build_descr_data,
+            debug=opts.debug_dependencies,
+            addlist=extra_pkgs,
+        )
+        print(decode_it(buildinfo))
 
     def do_buildconfig(self, subcmd, opts, *args):
         """
@@ -7091,7 +7116,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--no-verify', '--noverify', action='store_true',
                   help='Skip signature verification (via pgp keys) of packages used for build. (Global config in oscrc: no_verify)')
     @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
-                  help='Skip installation of additional debug packages for CLI builds')
+                  help='Skip installation of additional debug packages for CLI builds (specified in obs:cli_debug_packages in project metadata)')
     @cmdln.option("--skip-local-service-run", "--noservice", "--no-service", default=False, action="store_true",
                   help="Skip run of local source services as specified in _service file.")
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
