@@ -7,6 +7,7 @@ This module IS NOT a supported API, it is meant for osc internal use only.
 """
 
 import copy
+import functools
 import inspect
 import sys
 import tempfile
@@ -368,6 +369,7 @@ class ModelMeta(type):
         return new_cls
 
 
+@functools.total_ordering
 class BaseModel(metaclass=ModelMeta):
     __fields__: Dict[str, Field]
 
@@ -412,10 +414,28 @@ class BaseModel(metaclass=ModelMeta):
 
         self._allow_new_attributes = False
 
+    def _get_cmp_data(self):
+        result = []
+        for name, field in self.__fields__.items():
+            if field.exclude:
+                continue
+            value = getattr(self, name)
+            if isinstance(value, dict):
+                value = sorted(list(value.items()))
+            result.append((name, value))
+        return result
+
     def __eq__(self, other):
         if type(self) != type(other):
             return False
-        return self.dict() == other.dict()
+        if self._get_cmp_data() != other._get_cmp_data():
+            print(self._get_cmp_data(), other._get_cmp_data())
+        return self._get_cmp_data() == other._get_cmp_data()
+
+    def __lt__(self, other):
+        if type(self) != type(other):
+            return False
+        return self._get_cmp_data() < other._get_cmp_data()
 
     def dict(self):
         result = {}
