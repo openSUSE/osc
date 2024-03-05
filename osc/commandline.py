@@ -8888,7 +8888,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-S', '--set-bugowner-request', metavar='user',
                   help='Set the bugowner to specified person via a request (or group via group: prefix)')
     @cmdln.option('-U', '--user', metavar='USER',
-                        help='All official maintained instances for the specified USER')
+                        help='All official maintained instances for the specified USER (specified by the username or email)')
     @cmdln.option('-G', '--group', metavar='GROUP',
                         help='All official maintained instances for the specified GROUP')
     @cmdln.option('-d', '--delete', metavar='user',
@@ -9012,6 +9012,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             if repl.lower() != 'y':
                                 searchresult = None
             elif opts.user:
+                if "@" in opts.user:
+                    # resolve email address to login
+                    from . import obs_api
+                    users = obs_api.Person.search(apiurl, email=opts.user)
+                    if users:
+                        opts.user = users[0].login
                 searchresult = owner(apiurl, opts.user, "user", usefilter=filterroles, devel=None)
             elif opts.group:
                 searchresult = owner(apiurl, opts.group, "group", usefilter=filterroles, devel=None)
