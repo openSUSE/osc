@@ -50,6 +50,7 @@ from . import _private
 from . import conf
 from . import meter
 from . import oscerr
+from . import output
 from . import store as osc_store
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
 from .store import Store
@@ -524,7 +525,7 @@ class Serviceinfo:
                     raise oscerr.PackageNotInstalled(f"obs-service-{cmd[0]}")
                 cmd[0] = "/usr/lib/obs/service/" + cmd[0]
                 cmd = cmd + ["--outdir", temp_dir]
-                _private.print_msg("Run source service:", " ".join(cmd), print_to="verbose")
+                output.print_msg("Run source service:", " ".join(cmd), print_to="verbose")
                 r = run_external(*cmd)
 
                 if r != 0:
@@ -3893,7 +3894,7 @@ def set_devel_project(apiurl, prj, pac, devprj=None, devpac=None, print_to="debu
         devprj,
         devpac,
     )
-    _private.print_msg(msg, print_to=print_to)
+    output.print_msg(msg, print_to=print_to)
 
     package_obj = obs_api.Package.from_api(apiurl, prj, pac)
 
@@ -4811,7 +4812,7 @@ def get_review_list(
             xpath_base = xpath_join(xpath_base, 'action/source/@%(kind)s=\'%(val)s\'', op='or', inner=True)
         xpath = xpath_join(xpath, xpath_base % {'kind': kind, 'val': val}, op='and', nexpr_parentheses=True)
 
-    _private.print_msg(f"[ {xpath} ]", print_to="debug")
+    output.print_msg(f"[ {xpath} ]", print_to="debug")
     res = search(apiurl, request=xpath)
     collection = res['request']
     requests = []
@@ -4952,7 +4953,7 @@ def get_exact_request_list(
     if req_type:
         xpath += f" and action/@type='{req_type}'"
 
-    _private.print_msg(f"[ {xpath} ]", print_to="debug")
+    output.print_msg(f"[ {xpath} ]", print_to="debug")
 
     res = search(apiurl, request=xpath)
     collection = res['request']
@@ -5625,7 +5626,7 @@ def checkout_package(
     oldproj = None
     if conf.config['checkout_rooted']:
         if prj_dir.stem == '/':
-            _private.print_msg(f"checkout_rooted ignored for {prj_dir}", print_to="verbose")
+            output.print_msg(f"checkout_rooted ignored for {prj_dir}", print_to="verbose")
             # ?? should we complain if not is_project_dir(prj_dir) ??
         else:
             # if we are inside a project or package dir, ascend to parent
@@ -5652,7 +5653,7 @@ def checkout_package(
                 root_dots = root_dots / ("../" * n)
 
     if str(root_dots) != '.':
-        _private.print_msg(f"{prj_dir} is project dir of {oldproj}. Root found at {os.path.abspath(root_dots)}", print_to="verbose")
+        output.print_msg(f"{prj_dir} is project dir of {oldproj}. Root found at {os.path.abspath(root_dots)}", print_to="verbose")
         prj_dir = root_dots / prj_dir
 
     if not pathname:

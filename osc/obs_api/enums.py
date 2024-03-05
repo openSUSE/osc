@@ -7,6 +7,11 @@ class BlockModes(str, Enum):
     NEVER = "never"
 
 
+class BoolString(str, Enum):
+    TRUE = "true"
+    FALSE = "false"
+
+
 class BuildArch(str, Enum):
     NOARCH = "noarch"
     AARCH64 = "aarch64"

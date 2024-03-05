@@ -33,6 +33,7 @@ from . import commands as osc_commands
 from . import conf
 from . import git_scm
 from . import oscerr
+from . import output
 from . import store as osc_store
 from .core import *
 from .grabber import OscFileGrabber
@@ -269,7 +270,7 @@ class MainCommand(Command):
 
     def load_commands(self):
         if IN_VENV:
-            _private.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="stderr")
+            output.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="stderr")
 
         for module_prefix, module_path in self.MODULES:
             module_path = os.path.expanduser(module_path)
@@ -4315,7 +4316,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 except:
                     print('Error while checkout package:\n', package, file=sys.stderr)
 
-            _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
+            output.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
 
     @cmdln.alias('branchco')
     @cmdln.alias('bco')
@@ -4466,7 +4467,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.checkout:
             checkout_package(apiurl, targetprj, package, server_service_files=False,
                              expand_link=True, prj_dir=Path(targetprj))
-            _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
+            output.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
         else:
             apiopt = ''
             if conf.get_configParser().get("general", "apiurl", fallback=None) != apiurl:
@@ -8888,7 +8889,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-S', '--set-bugowner-request', metavar='user',
                   help='Set the bugowner to specified person via a request (or group via group: prefix)')
     @cmdln.option('-U', '--user', metavar='USER',
-                        help='All official maintained instances for the specified USER')
+                        help='All official maintained instances for the specified USER (specified by the username or email)')
     @cmdln.option('-G', '--group', metavar='GROUP',
                         help='All official maintained instances for the specified GROUP')
     @cmdln.option('-d', '--delete', metavar='user',
@@ -9012,6 +9013,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             if repl.lower() != 'y':
                                 searchresult = None
             elif opts.user:
+                if "@" in opts.user:
+                    # resolve email address to login
+                    from . import obs_api
+                    users = obs_api.Person.search(apiurl, email=opts.user)
+                    if users:
+                        opts.user = users[0].login
                 searchresult = owner(apiurl, opts.user, "user", usefilter=filterroles, devel=None)
             elif opts.group:
                 searchresult = owner(apiurl, opts.group, "group", usefilter=filterroles, devel=None)
@@ -9175,16 +9182,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         Show fullname and email of a buildservice user
         """
+        from . import obs_api
+        from .output import print_msg
+
         apiurl = self.get_api_url()
         usernames = opts.user
 
         if not usernames:
             usernames = [conf.config["api_host_options"][apiurl]["user"]]
 
-        for name in usernames:
-            user = get_user_data(apiurl, name, 'login', 'realname', 'email')
-            if len(user) == 3:
-                print(f"{user[0]}: \"{user[1]}\" <{user[2]}>")
+        # remove duplicates
+        usernames = list(set(usernames))
+
+        users = obs_api.Person.search(apiurl, login=usernames)
+        users_by_login = {i.login: i for i in users}
+        for username in usernames:
+            user = users_by_login.get(username, None)
+            if not user:
+                print_msg(f"User '{username}' does not exist", print_to="warning")
+                continue
+            print(f'{user.login}: "{user.realname}" <{user.email}>')
 
     @cmdln.name("create-pbuild-config")
     @cmdln.alias('cpc')
@@ -10119,7 +10136,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _load_plugins(self):
         if IN_VENV:
-            _private.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="stderr")
+            output.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="stderr")
             return
 
         plugin_dirs = [

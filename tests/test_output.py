@@ -3,8 +3,9 @@ import io
 import unittest
 
 import osc.conf
-from osc._private import print_msg
 from osc.output import KeyValueTable
+from osc.output import print_msg
+from osc.output import tty
 
 
 class TestKeyValueTable(unittest.TestCase):
@@ -118,6 +119,22 @@ class TestPrintMsg(unittest.TestCase):
         self.assertEqual("foo bar\n", stdout.getvalue())
         self.assertEqual("", stderr.getvalue())
 
+    def test_error(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="error")
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual(f"{tty.colorize('ERROR:', 'red,bold')} foo bar\n", stderr.getvalue())
+
+    def test_warning(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="warning")
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual(f"{tty.colorize('WARNING:', 'yellow,bold')} foo bar\n", stderr.getvalue())
+
     def test_none(self):
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -133,6 +150,14 @@ class TestPrintMsg(unittest.TestCase):
             print_msg("foo", "bar", print_to="stdout")
         self.assertEqual("foo bar\n", stdout.getvalue())
         self.assertEqual("", stderr.getvalue())
+
+    def test_stderr(self):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            print_msg("foo", "bar", print_to="stderr")
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual("foo bar\n", stderr.getvalue())
 
 
 if __name__ == "__main__":

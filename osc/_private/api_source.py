@@ -1,7 +1,7 @@
 from . import api
 from .common import format_msg_project_package_options
-from .common import print_msg
 from .. import oscerr
+from ..output import print_msg
 
 
 def add_channels(apiurl, project, package=None, enable_all=False, skip_disabled=False, print_to="debug"):
