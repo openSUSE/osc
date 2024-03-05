@@ -9182,16 +9182,26 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         Show fullname and email of a buildservice user
         """
+        from . import obs_api
+        from .output import print_msg
+
         apiurl = self.get_api_url()
         usernames = opts.user
 
         if not usernames:
             usernames = [conf.config["api_host_options"][apiurl]["user"]]
 
-        for name in usernames:
-            user = get_user_data(apiurl, name, 'login', 'realname', 'email')
-            if len(user) == 3:
-                print(f"{user[0]}: \"{user[1]}\" <{user[2]}>")
+        # remove duplicates
+        usernames = list(set(usernames))
+
+        users = obs_api.Person.search(apiurl, login=usernames)
+        users_by_login = {i.login: i for i in users}
+        for username in usernames:
+            user = users_by_login.get(username, None)
+            if not user:
+                print_msg(f"User '{username}' does not exist", print_to="warning")
+                continue
+            print(f'{user.login}: "{user.realname}" <{user.email}>')
 
     @cmdln.name("create-pbuild-config")
     @cmdln.alias('cpc')
