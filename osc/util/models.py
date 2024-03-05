@@ -384,7 +384,7 @@ class BaseModel(metaclass=ModelMeta):
             value = getattr(self, name)
             if value is not None and field.is_model:
                 result[name] = value.dict()
-            if value is not None and field.is_model_list:
+            elif value is not None and field.is_model_list:
                 result[name] = [i.dict() for i in value]
             else:
                 result[name] = value
