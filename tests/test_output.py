@@ -3,8 +3,8 @@ import io
 import unittest
 
 import osc.conf
-from osc._private import print_msg
 from osc.output import KeyValueTable
+from osc.output import print_msg
 
 
 class TestKeyValueTable(unittest.TestCase):

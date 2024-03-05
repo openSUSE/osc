@@ -21,10 +21,10 @@ import urllib3.response
 import urllib3.util
 
 from . import __version__
-from . import _private
 from . import conf
 from . import oscerr
 from . import oscssl
+from . import output
 from .util.helper import decode_it
 
 
@@ -690,7 +690,7 @@ class SignatureAuthHandler(AuthHandlerBase):
             return False
 
         if not self.ssh_keygen_path:
-            _private.print_msg("Skipping signature auth because ssh-keygen is not available", print_to="debug")
+            output.print_msg("Skipping signature auth because ssh-keygen is not available", print_to="debug")
             return False
 
         if not self.sshkey_known():

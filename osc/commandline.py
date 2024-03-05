@@ -33,6 +33,7 @@ from . import commands as osc_commands
 from . import conf
 from . import git_scm
 from . import oscerr
+from . import output
 from . import store as osc_store
 from .core import *
 from .grabber import OscFileGrabber
@@ -269,7 +270,7 @@ class MainCommand(Command):
 
     def load_commands(self):
         if IN_VENV:
-            _private.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="stderr")
+            output.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="stderr")
 
         for module_prefix, module_path in self.MODULES:
             module_path = os.path.expanduser(module_path)
@@ -4315,7 +4316,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 except:
                     print('Error while checkout package:\n', package, file=sys.stderr)
 
-            _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
+            output.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
 
     @cmdln.alias('branchco')
     @cmdln.alias('bco')
@@ -4466,7 +4467,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.checkout:
             checkout_package(apiurl, targetprj, package, server_service_files=False,
                              expand_link=True, prj_dir=Path(targetprj))
-            _private.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
+            output.print_msg('Note: You can use "osc delete" or "osc submitpac" when done.\n', print_to="verbose")
         else:
             apiopt = ''
             if conf.get_configParser().get("general", "apiurl", fallback=None) != apiurl:
@@ -10125,7 +10126,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _load_plugins(self):
         if IN_VENV:
-            _private.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="stderr")
+            output.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="stderr")
             return
 
         plugin_dirs = [

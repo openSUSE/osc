@@ -21,6 +21,7 @@ from . import commandline
 from . import conf as osc_conf
 from . import core as osc_core
 from . import oscerr
+from . import output
 from .OscConfigParser import configparser
 from .oscssl import CertVerificationError
 from .util.cpio import CpioError
@@ -108,8 +109,8 @@ def run(prg, argv=None):
         except AttributeError:
             body = ''
 
-        _private.print_msg(e.hdrs, print_to="debug")
-        _private.print_msg(body, print_to="debug")
+        output.print_msg(e.hdrs, print_to="debug")
+        output.print_msg(body, print_to="debug")
 
         if e.code in [400, 403, 404, 500]:
             if b'<summary>' in body:
@@ -153,7 +154,7 @@ def run(prg, argv=None):
         print(e.message, file=sys.stderr)
     except oscerr.OscIOError as e:
         print(e.msg, file=sys.stderr)
-        _private.print_msg(e.e, print_to="debug")
+        output.print_msg(e.e, print_to="debug")
     except (oscerr.WrongOptions, oscerr.WrongArgs) as e:
         print(e, file=sys.stderr)
         return 2
