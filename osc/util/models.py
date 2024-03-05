@@ -428,8 +428,6 @@ class BaseModel(metaclass=ModelMeta):
     def __eq__(self, other):
         if type(self) != type(other):
             return False
-        if self._get_cmp_data() != other._get_cmp_data():
-            print(self._get_cmp_data(), other._get_cmp_data())
         return self._get_cmp_data() == other._get_cmp_data()
 
     def __lt__(self, other):
