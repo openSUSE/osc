@@ -4375,8 +4375,10 @@ def read_meta_from_spec(specfile, *args):
     section_pat = r'^%s\s*?$'
     for section in sections:
         m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
-        if m:
-            start = lines.index(m.group() + '\n') + 1
+        if m is None:
+            spec_data[section] = ""
+            continue
+        start = lines.index(m.group() + '\n') + 1
         data = []
         for line in lines[start:]:
             if line.startswith('%'):
