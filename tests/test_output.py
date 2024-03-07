@@ -5,6 +5,7 @@ import unittest
 import osc.conf
 from osc.output import KeyValueTable
 from osc.output import print_msg
+from osc.output import sanitize_text
 from osc.output import tty
 
 
@@ -158,6 +159,83 @@ class TestPrintMsg(unittest.TestCase):
             print_msg("foo", "bar", print_to="stderr")
         self.assertEqual("", stdout.getvalue())
         self.assertEqual("foo bar\n", stderr.getvalue())
+
+
+class TestSanitization(unittest.TestCase):
+    def test_control_chars_bytes(self):
+        original = b"".join([i.to_bytes(1, byteorder="big") for i in range(32)])
+        sanitized = sanitize_text(original)
+        self.assertEqual(sanitized, b"\t\n\r")
+
+    def test_control_chars_str(self):
+        original = "".join([chr(i) for i in range(32)])
+        sanitized = sanitize_text(original)
+        self.assertEqual(sanitized, "\t\n\r")
+
+    def test_csi_escape_sequences_str(self):
+        # allowed CSI escape sequences
+        originals = [">\033[0m<", ">\033[1;31;47m]<"]
+        for original in originals:
+            sanitized = sanitize_text(original)
+            self.assertEqual(sanitized, original)
+
+        # not allowed CSI escape sequences
+        originals = [">\033[8m<"]
+        for original in originals:
+            sanitized = sanitize_text(original)
+            self.assertEqual(sanitized, "><")
+
+    def test_csi_escape_sequences_bytes(self):
+        # allowed CSI escape sequences
+        originals = [b">\033[0m<", b">\033[1;31;47m]<"]
+        for original in originals:
+            sanitized = sanitize_text(original)
+            self.assertEqual(sanitized, original)
+
+        # not allowed CSI escape sequences
+        originals = [b">\033[8m<"]
+        for original in originals:
+            sanitized = sanitize_text(original)
+            self.assertEqual(sanitized, b"><")
+
+    def test_standalone_escape_str(self):
+        original = ">\033<"
+        sanitized = sanitize_text(original)
+        self.assertEqual(sanitized, "><")
+
+    def test_standalone_escape_bytes(self):
+        # standalone escape
+        original = b">\033<"
+        sanitized = sanitize_text(original)
+        self.assertEqual(sanitized, b"><")
+
+    def test_fe_escape_sequences_str(self):
+        for i in range(0x40, 0x5F + 1):
+            char = chr(i)
+            original = f">\033{char}<"
+            sanitized = sanitize_text(original)
+            self.assertEqual(sanitized, "><")
+
+    def test_fe_escape_sequences_bytes(self):
+        for i in range(0x40, 0x5F + 1):
+            byte = i.to_bytes(1, byteorder="big")
+            original = b">\033" + byte + b"<"
+            sanitized = sanitize_text(original)
+            self.assertEqual(sanitized, b"><")
+
+    def test_osc_escape_sequences_str(self):
+        # OSC (Operating System Command) sequences
+        original = "\033]0;this is the window title\007"
+        sanitized = sanitize_text(original)
+        # \033] is removed with the Fe sequences
+        self.assertEqual(sanitized, "0;this is the window title")
+
+    def test_osc_escape_sequences_bytes(self):
+        #  OSC (Operating System Command) sequences
+        original = b"\033]0;this is the window title\007"
+        sanitized = sanitize_text(original)
+        # \033] is removed with the Fe sequences
+        self.assertEqual(sanitized, b"0;this is the window title")
 
 
 if __name__ == "__main__":
