@@ -2,7 +2,10 @@ import os
 import sys
 
 
-IS_INTERACTIVE = os.isatty(sys.stdout.fileno())
+try:
+    IS_INTERACTIVE = os.isatty(sys.stdout.fileno())
+except OSError:
+    IS_INTERACTIVE = False
 
 
 ESCAPE_CODES = {
