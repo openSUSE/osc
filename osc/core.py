@@ -53,6 +53,7 @@ from . import oscerr
 from . import output
 from . import store as osc_store
 from .connection import http_request, http_GET, http_POST, http_PUT, http_DELETE
+from .output import sanitize_text
 from .store import Store
 from .util import xdg
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
@@ -6998,11 +6999,9 @@ def print_buildlog(
     def print_data(data, strip_time=False):
         if strip_time:
             data = buildlog_strip_time(data)
-        output_buffer.write(data.translate(all_bytes, remove_bytes))
+        # to protect us against control characters (CVE-2012-1095)
+        output_buffer.write(sanitize_text(data))
 
-    # to protect us against control characters (CVE-2012-1095)
-    all_bytes = bytes.maketrans(b'', b'')
-    remove_bytes = all_bytes[:8] + all_bytes[14:32]  # accept tabs and newlines
     query = {'nostream': '1', 'start': f'{offset}'}
     if last:
         query['last'] = 1
