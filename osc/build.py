@@ -614,7 +614,7 @@ def calculate_prj_pac(store, opts, descr):
 
 
 def calculate_build_root_user(vm_type):
-    if vm_type in ("kvm", "podman"):
+    if vm_type in ("kvm", "podman", "qemu"):
         return getpass.getuser()
     return None
 
