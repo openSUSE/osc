@@ -5,6 +5,10 @@
 
   <person userid="Admin" role="maintainer"/>
 
+  <lock>
+    <disable/>
+  </lock>
+
   <build>
     <disable/>
   </build>
