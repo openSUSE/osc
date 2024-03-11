@@ -5,8 +5,8 @@ class SimpleFlag(XmlModel):
     XML_TAG = None
     XML_TAG_FIELD = "flag"
 
-    def __init__(self, flag):
-        super().__init__(flag=flag)
+    def __init__(self, flag, **kwargs):
+        super().__init__(flag=flag, **kwargs)
 
     class SimpleFlagChoices(Enum):
         ENABLE = "enable"
