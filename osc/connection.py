@@ -237,7 +237,6 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
             total=int(conf.config["http_retries"]),
             backoff_factor=2,
             status_forcelist=(
-                400,  # Bad Request; retry on 400: service in progress
                 500,  # Internal Server Error
                 502,  # Bad Gateway
                 503,  # Service Unavailable
