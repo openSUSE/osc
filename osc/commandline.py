@@ -6545,6 +6545,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     # FIXME: the new osc syntax should allow to specify multiple packages
     # FIXME: the command should optionally use buildinfo data to show all dependencies
 
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     def do_dependson(self, subcmd, opts, *args):
         """
         Dependson shows the build dependencies inside of a project, valid for a given repository and architecture
@@ -6565,10 +6567,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc dependson REPOSITORY ARCH
 
         usage:
-            osc dependson PROJECT [PACKAGE] REPOSITORY ARCH
+            osc dependson PROJECT [PACKAGE[:FLAVOR]] REPOSITORY ARCH
         """
-        self._dependson(False, *args)
+        self._dependson(False, opts, *args)
 
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     def do_whatdependson(self, subcmd, opts, *args):
         """
         Show the packages that require the specified package during the build
@@ -6587,11 +6591,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc whatdependson REPOSITORY ARCH
 
         usage:
-            osc whatdependson PROJECT [PACKAGE] REPOSITORY ARCH
+            osc whatdependson PROJECT [PACKAGE[:FLAVOR]] REPOSITORY ARCH
         """
-        self._dependson(True, *args)
+        self._dependson(True, opts, *args)
 
-    def _dependson(self, reverse, *args):
+    def _dependson(self, reverse, opts, *args):
         wd = Path.cwd()
         args = slash_split(args)
         project = packages = repository = arch = None
@@ -6623,6 +6627,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             packages = [args[1]]
             repository = args[2]
             arch = args[3]
+
+        if packages is not None and opts.multibuild_package:
+            packages = [packages[0] + ":" + opts.multibuild_package]
 
         project_packages = meta_get_packagelist(apiurl, project, deleted=False, expand=False)
         xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
