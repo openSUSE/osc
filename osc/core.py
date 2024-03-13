@@ -5422,7 +5422,7 @@ def server_diff(
         query["file"] = UrlQueryArray(files)
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
-    f = http_POST(u, retry_on_400=False)
+    f = http_POST(u)
     if onlyissues and not xml:
         del_issue_list = []
         add_issue_list = []

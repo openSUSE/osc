@@ -759,7 +759,7 @@ class XmlModel(BaseModel):
         from ..core import makeurl
         url = makeurl(apiurl, path, query)
         # TODO: catch HTTPError and return the wrapped response as XmlModel instance
-        return http_request(method, url, data=data, retry_on_400=False)
+        return http_request(method, url, data=data)
 
     def do_update(self, other: "XmlModel") -> None:
         """
