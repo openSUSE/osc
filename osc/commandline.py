@@ -9710,30 +9710,37 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
             f = http_DELETE(url)
         else:
+            from . import obs_api
             try:
                 # use current api, supporting fallback to higher project and server side scripts
-                query = {}
+                keyinfo = obs_api.Keyinfo.from_api(apiurl, prj)
+
                 if opts.sslcert:
-                    query['withsslcert'] = 1
-                url = makeurl(apiurl, ['source', prj, '_keyinfo'], query)
-                f = http_GET(url)
+                    for sslcert in keyinfo.sslcert_list or []:
+                        print(sslcert.to_human_readable_string())
+                        print()
+                else:
+                    for pubkey in keyinfo.pubkey_list or []:
+                        print(pubkey.to_human_readable_string())
+                        print()
+
+                return
+
             except HTTPError as e:
-                # old way to do it
-                while True:
-                    try:
-                        url = makeurl(apiurl, ['source', prj, '_pubkey'])
-                        if opts.sslcert:
-                            url = makeurl(apiurl, ['source', prj, '_project', '_sslcert'], 'meta=1')
-                        f = http_GET(url)
-                        break
-                    except HTTPError as e:
-                        l = prj.rsplit(':', 1)
-                        # try key from parent project
-                        if not opts.notraverse and len(l) > 1 and l[0] and l[1] and e.code == 404:
-                            print(f'{prj} has no key, trying {l[0]}')
-                            prj = l[0]
-                        else:
-                            raise
+                if e.code != 404:
+                    raise
+
+                # the _keyinfo endpoint doesn't exist, use the old _pubkey/_sslcert instead
+
+                if opts.sslcert:
+                    result = obs_api.Keyinfo.get_sslcert_deprecated(apiurl, prj, traverse=not(opts.notraverse))
+                else:
+                    result = obs_api.Keyinfo.get_pubkey_deprecated(apiurl, prj, traverse=not(opts.notraverse))
+                if result:
+                    _, key = result
+                    print(key)
+
+                return
 
         while True:
             data = f.read(16384)
