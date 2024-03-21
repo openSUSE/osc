@@ -3656,6 +3656,7 @@ def makeurl(apiurl: str, path: List[str], query: Optional[dict] = None):
             query[f"{key}[]"] = value
 
     query_str = urlencode(query, doseq=True)
+    _private.print_msg("makeurl:", path_str+"?"+query_str, print_to="debug")
 
     return urlunsplit((apiurl_scheme, apiurl_netloc, path_str, query_str, ""))
 
