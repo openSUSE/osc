@@ -3601,6 +3601,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Do not expand revision the specified or latest rev')
     @cmdln.option('-u', '--unset', action='store_true',
                   help='remove revision in link, it will point always to latest revision')
+    @cmdln.option('--vrev', metavar='vrev',
+                  help='Enforce a given vrev')
     def do_setlinkrev(self, subcmd, opts, *args):
         """
         Updates a revision number in a source link
@@ -3643,7 +3645,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for p in packages:
             try:
-                rev = set_link_rev(apiurl, project, p, revision=rev, expand=not opts.use_plain_revision)
+                rev = set_link_rev(apiurl, project, p, revision=rev, expand=not opts.use_plain_revision, vrev=opts.vrev)
             except HTTPError as e:
                 if e.code != 404:
                     raise
