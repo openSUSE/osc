@@ -7749,12 +7749,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(f"WARNING: Command '{command}' is obsolete,\n"
                    "please convert your _service to use 'manual' and then 'manualrun/mr' instead.", file=sys.stderr)
 
-        if len(args) == 1:
-            singleservice = args.pop(0)
-        elif len(args) in (0, 2) and command in remote_commands:
+        if command in remote_commands:
             project, package = pop_project_package_from_args(
                 args, default_project=".", default_package=".", package_is_optional=False
             )
+        elif len(args) == 1:
+            singleservice = args.pop(0)
 
         ensure_no_remaining_args(args)
 
