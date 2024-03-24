@@ -4,6 +4,7 @@
 # either version 2, or (at your option) any later version.
 
 
+import glob
 import os
 import re
 import shutil
@@ -288,49 +289,47 @@ class Fetcher:
         self.__fetch_cpio(buildinfo.apiurl)
 
         prjs = list(buildinfo.projects.keys())
-        for i in prjs:
-            dest = f"{self.cachedir}/{i}"
-            if not os.path.exists(dest):
-                os.makedirs(dest, mode=0o755)
-            dest += '/_pubkey'
+        for prj in prjs:
+            dest = os.path.join(self.cachedir, prj)
+            pubkey_path_base = os.path.join(dest, "_pubkey")
+            pubkey_paths = glob.glob(f"{pubkey_path_base}*")
 
-            url = makeurl(buildinfo.apiurl, ['source', i, '_pubkey'])
-            try_parent = False
+            if self.offline:
+                # we're offline, only index the keys found on disk
+                if pubkey_paths:
+                    for pubkey_path in pubkey_paths:
+                        buildinfo.keys.append(pubkey_path)
+                    buildinfo.prjkeys.append(prj)
+                continue
+
+            from . import obs_api
+
+            os.makedirs(dest, mode=0o755, exist_ok=True)
+            pubkeys = []
+
             try:
-                if self.offline and not os.path.exists(dest):
-                    # may need to try parent
-                    try_parent = True
-                elif not self.offline:
-                    OscFileGrabber().urlgrab(url, dest)
-                # not that many keys usually
-                if i not in buildinfo.prjkeys and not try_parent:
-                    buildinfo.keys.append(dest)
-                    buildinfo.prjkeys.append(i)
-            except KeyboardInterrupt:
-                print('Cancelled by user (ctrl-c)')
-                print('Exiting.')
-                if os.path.exists(dest):
-                    os.unlink(dest)
-                sys.exit(0)
+                keyinfo = obs_api.Keyinfo.from_api(buildinfo.apiurl, prj)
+                for pubkey in keyinfo.pubkey_list or []:
+                    pubkeys.append(pubkey.value)
             except HTTPError as e:
-                # Not found is okay, let's go to the next project
-                if e.code != 404:
-                    print("Invalid answer from server", e, file=sys.stderr)
-                    sys.exit(1)
-                try_parent = True
+                result = obs_api.Keyinfo.get_pubkey_deprecated(buildinfo.apiurl, prj, traverse=True)
+                if result:
+                    # overwrite ``prj`` with the project that contains the key we're using
+                    prj, pubkey = result
+                    pubkeys.append(pubkey)
 
-            if try_parent:
-                if self.http_debug:
-                    print(f"can't fetch key for {i}", file=sys.stderr)
-                    print(f"url: {url}", file=sys.stderr)
+            # remove the existing files, we'll create new files with new contents
+            for pubkey_path in pubkey_paths:
+                os.unlink(pubkey_path)
 
-                if os.path.exists(dest):
-                    os.unlink(dest)
-
-                l = i.rsplit(':', 1)
-                # try key from parent project
-                if len(l) > 1 and l[1] and not l[0] in buildinfo.projects:
-                    prjs.append(l[0])
+            if pubkeys:
+                for num, pubkey in enumerate(pubkeys):
+                    pubkey_path = f"{pubkey_path_base}-{num}"
+                    with open(pubkey_path, "w") as f:
+                        f.write(pubkey)
+                    buildinfo.keys.append(pubkey_path)
+                if prj not in buildinfo.prjkeys:
+                    buildinfo.prjkeys.append(prj)
 
 
 def verify_pacs_old(pac_list):
