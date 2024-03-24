@@ -7718,7 +7718,7 @@ def owner(
     return res
 
 
-def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: str=None):
+def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: str=None, vrev: str=None):
     url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
@@ -7726,7 +7726,7 @@ def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=Fa
     except HTTPError as e:
         e.osc_msg = f'Unable to get _link file in package \'{package}\' for project \'{project}\''
         raise
-    revision = _set_link_rev(apiurl, project, package, root, revision, expand=expand)
+    revision = _set_link_rev(apiurl, project, package, root, revision, expand=expand, setvrev=vrev)
     l = ET.tostring(root, encoding=ET_ENCODING)
 
     if not msg:
@@ -7739,7 +7739,7 @@ def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=Fa
     return revision
 
 
-def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", expand=False):
+def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", expand=False, setvrev: str=None):
     """
     Updates the rev attribute of the _link xml. If revision is set to None
     the rev and vrev attributes are removed from the _link xml.
@@ -7763,7 +7763,9 @@ def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", ex
     if revision:
         root.set('rev', revision)
     # add vrev when revision is a srcmd5
-    if not revision_is_empty(vrev) and not revision_is_empty(revision) and len(revision) >= 32:
+    if setvrev:
+        root.set('vrev', setvrev)
+    elif not revision_is_empty(vrev) and not revision_is_empty(revision) and len(revision) >= 32:
         root.set('vrev', vrev)
     return revision
 
