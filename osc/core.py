@@ -6106,27 +6106,28 @@ def branch_pkg(
     # BEGIN: Error out on branching scmsync packages; this should be properly handled in the API
 
     # read src_package meta
-    m = b"".join(show_package_meta(apiurl, src_project, src_package))
-    root = ET.fromstring(m)
-
     devel_project = None
     devel_package = None
-    if not nodevelproject:
-        devel_node = root.find("devel")
-        if devel_node is not None:
-            devel_project = devel_node.get("project")
-            devel_package = devel_node.get("package", src_package)
-        if devel_project:
-            # replace src_package meta with devel_package meta because we're about branch from devel
-            m = b"".join(show_package_meta(apiurl, devel_project, devel_package))
-            root = ET.fromstring(m)
+    if not missingok:
+        m = b"".join(show_package_meta(apiurl, src_project, src_package))
+        root = ET.fromstring(m)
 
-    # error out if we're branching a scmsync package (we'd end up with garbage anyway)
-    if root.find("scmsync") is not None:
-        msg = "Cannot branch a package with <scmsync> set."
-        if devel_project:
-            raise oscerr.PackageError(devel_project, devel_package, msg)
-        raise oscerr.PackageError(src_project, src_package, msg)
+        if not nodevelproject:
+            devel_node = root.find("devel")
+            if devel_node is not None:
+                devel_project = devel_node.get("project")
+                devel_package = devel_node.get("package", src_package)
+            if devel_project:
+                # replace src_package meta with devel_package meta because we're about branch from devel
+                m = b"".join(show_package_meta(apiurl, devel_project, devel_package))
+                root = ET.fromstring(m)
+
+        # error out if we're branching a scmsync package (we'd end up with garbage anyway)
+        if root.find("scmsync") is not None:
+            msg = "Cannot branch a package with <scmsync> set."
+            if devel_project:
+                raise oscerr.PackageError(devel_project, devel_package, msg)
+            raise oscerr.PackageError(src_project, src_package, msg)
 
     # END: Error out on branching scmsync packages; this should be properly handled in the API
 
