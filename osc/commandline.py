@@ -412,6 +412,10 @@ class OscMainCommand(MainCommand):
         )
 
     def post_parse_args(self, args):
+        if args.command == "help":
+            # HACK: never ask for credentials when displaying help
+            return
+
         # apiurl hasn't been specified by the user
         # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
         if args.apiurl is None:
