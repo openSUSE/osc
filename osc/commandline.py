@@ -5781,6 +5781,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(arg, progress_obj=self.download_progress)
                 if prj.scm_url:
                     print("Please use git to update project", prj.name)
+                    print("This git repository is hosted at", prj.scm_url)
                     continue
 
                 if conf.config['do_package_tracking']:
@@ -5845,6 +5846,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 #                    sys.exit(1)
             if p.scm_url:
                 print("Please use git to update package", p.name)
+                print("This git repository is hosted at", p.scm_url)
                 continue
 
             if not rev:
