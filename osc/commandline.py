@@ -2827,7 +2827,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for srid in supersede:
             change_request_state(apiurl, srid, 'superseded',
                                  f'superseded by {rid}', rid)
-        return rid
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
