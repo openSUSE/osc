@@ -1,0 +1,5 @@
+<services>
+  <service name="set_version" mode="manual">
+    <param name="fromfile">invalid</param>
+  </service>
+</services>

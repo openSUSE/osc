@@ -87,28 +87,36 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
 def step_impl(context, text):
     if re.search(text.format(context=context), context.cmd_stdout):
         return
-    raise AssertionError("Stdout doesn't contain expected pattern: %s" % text)
+    found = context.cmd_stdout.rstrip().split("\n")
+    found_str = "\n".join(found)
+    raise AssertionError(f"Stdout doesn't contain the expected pattern: {text}\n\nActual stdout:\n{found_str}")
 
 
 @behave.step("stdout doesn't contain \"{text}\"")
 def step_impl(context, text):
     if not re.search(text.format(context=context), context.cmd_stdout):
         return
-    raise AssertionError("Stdout is not supposed to contain pattern: %s" % text)
+    found = context.cmd_stdout.rstrip().split("\n")
+    found_str = "\n".join(found)
+    raise AssertionError(f"Stdout is not supposed to contain pattern: {text}\n\nActual stdout:\n{found_str}")
 
 
 @behave.step("stderr contains \"{text}\"")
 def step_impl(context, text):
     if re.search(text.format(context=context), context.cmd_stderr):
         return
-    raise AssertionError("Stderr doesn't contain expected pattern: %s" % text)
+    found = context.cmd_stderr.rstrip().split("\n")
+    found_str = "\n".join(found)
+    raise AssertionError(f"Stderr doesn't contain the expected pattern: {text}\n\nActual stderr:\n{found_str}")
 
 
 @behave.step("stderr doesn't contain \"{text}\"")
 def step_impl(context, text):
     if not re.search(text.format(context=context), context.cmd_stderr):
         return
-    raise AssertionError("Stderr is not supposed to contain pattern: %s" % text)
+    found = context.cmd_stderr.rstrip().split("\n")
+    found_str = "\n".join(found)
+    raise AssertionError(f"Stderr is not supposed to contain pattern: {text}\n\nActual stderr:\n{found_str}")
 
 
 @behave.step("stdout is")

@@ -245,7 +245,7 @@ class MainCommand(Command):
         if not cmd:
             self.parser.error("Please specify a command")
         self.post_parse_args(args)
-        cmd.run(args)
+        return cmd.run(args)
 
     def load_command(self, cls, module_prefix):
         mod_cls_name = f"{module_prefix}.{cls.__name__}"
@@ -502,10 +502,10 @@ class OscMainCommand(MainCommand):
                     # handler doesn't take positional args via *args
                     if args.positional_args:
                         self.parser.error(f"unrecognized arguments: " + " ".join(args.positional_args))
-                    self.func(args.command, args)
+                    return self.func(args.command, args)
                 else:
                     # handler takes positional args via *args
-                    self.func(args.command, args, *args.positional_args)
+                    return self.func(args.command, args, *args.positional_args)
 
         return LegacyCommandWrapper
 
@@ -561,7 +561,8 @@ class OscMainCommand(MainCommand):
         cmd.load_legacy_commands()
         if run:
             args = cmd.parse_args(args=argv)
-            cmd.run(args)
+            exit_code = cmd.run(args)
+            sys.exit(exit_code)
         else:
             args = None
         return cmd, args
@@ -2827,7 +2828,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for srid in supersede:
             change_request_state(apiurl, srid, 'superseded',
                                  f'superseded by {rid}', rid)
-        return rid
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
