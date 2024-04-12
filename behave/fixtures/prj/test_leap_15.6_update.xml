@@ -1,0 +1,25 @@
+<project name="test:leap:15.6:update">
+
+  <title/>
+  <description/>
+
+  <link project="test:leap:15.6"/>
+
+  <person userid="Admin" role="maintainer"/>
+
+  <lock>
+    <disable/>
+  </lock>
+
+  <build>
+    <disable/>
+  </build>
+
+  <repository name="standard">
+    <path project="test:leap:15.6" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+
+</project>
+
