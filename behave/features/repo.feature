@@ -43,8 +43,8 @@ Scenario: Run `osc repo add` on a project
 
 @destructive
 Scenario: Run `osc repo remove` on a project
-   When I execute osc with args "repo remove --yes test:factory --repo=standard --repo=does-not-exist"
-    And I execute osc with args "repo list test:factory"
+   When I execute osc with args "repo remove --yes test:factory:update --repo=standard --repo=does-not-exist"
+    And I execute osc with args "repo list test:factory:update"
    Then stdout is
         """
         """

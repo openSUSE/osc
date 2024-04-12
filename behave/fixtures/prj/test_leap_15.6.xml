@@ -1,0 +1,24 @@
+<project name="test:leap:15.6">
+
+  <title/>
+  <description/>
+
+  <person userid="Admin" role="maintainer"/>
+
+  <lock>
+    <disable/>
+  </lock>
+
+  <build>
+    <disable/>
+  </build>
+
+  <repository name="standard">
+    <!-- it's only for test purposes, let's use the same repo as test:factory -->
+    <path project="openSUSE.org:openSUSE:Tumbleweed" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+
+</project>
+
