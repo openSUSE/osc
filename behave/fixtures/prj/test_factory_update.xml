@@ -1,0 +1,25 @@
+<project name="test:factory:update">
+
+  <title/>
+  <description/>
+
+  <link project="test:factory"/>
+
+  <person userid="Admin" role="maintainer"/>
+
+  <lock>
+    <disable/>
+  </lock>
+
+  <build>
+    <disable/>
+  </build>
+
+  <repository name="standard">
+    <path project="test:factory" repository="standard"/>
+    <arch>x86_64</arch>
+    <arch>i586</arch>
+  </repository>
+
+</project>
+

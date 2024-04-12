@@ -15,6 +15,7 @@ Scenario: Run `osc undelete <project>/<package>`
 
 @destructive
 Scenario: Run `osc undelete <project>`
-   Given I execute osc with args "rdelete test:factory --recursive -m 'why:delete'"
-    When I execute osc with args "undelete test:factory -m 'why:undelete'"
+   Given I execute osc with args "rdelete test:factory:update --recursive -m 'why:delete'"
+     And the exit code is 0
+    When I execute osc with args "undelete test:factory:update -m 'why:undelete'"
     Then the exit code is 0

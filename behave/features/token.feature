@@ -9,6 +9,7 @@ Scenario: Run `osc token` with no arguments
         """
 
 
+@destructive
 Scenario: Run `osc token --operation rebuild`
    When I execute osc with args "token --create --operation rebuild test:factory test-pkgA"
    Then stdout matches

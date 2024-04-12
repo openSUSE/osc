@@ -6107,12 +6107,18 @@ def branch_pkg(
     # BEGIN: Error out on branching scmsync packages; this should be properly handled in the API
 
     # read src_package meta
-    m = b"".join(show_package_meta(apiurl, src_project, src_package))
-    root = ET.fromstring(m)
+    try:
+        m = b"".join(show_package_meta(apiurl, src_project, src_package))
+        root = ET.fromstring(m)
+    except HTTPError as e:
+        if e.code == 404 and missingok:
+            root = None
+        else:
+            raise
 
     devel_project = None
     devel_package = None
-    if not nodevelproject:
+    if root is not None and not nodevelproject:
         devel_node = root.find("devel")
         if devel_node is not None:
             devel_project = devel_node.get("project")
@@ -6123,7 +6129,7 @@ def branch_pkg(
             root = ET.fromstring(m)
 
     # error out if we're branching a scmsync package (we'd end up with garbage anyway)
-    if root.find("scmsync") is not None:
+    if root is not None and root.find("scmsync") is not None:
         msg = "Cannot branch a package with <scmsync> set."
         if devel_project:
             raise oscerr.PackageError(devel_project, devel_package, msg)
