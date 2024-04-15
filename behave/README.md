@@ -54,6 +54,12 @@ $ podman stop|kill obs-server
 $ podman rmi obs-server
 ```
 
+Install test dependencies
+-------------------------
+```
+$ zypper install python3-behave diffstat diffutils obs-service-replace_using_env python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3 build obs-service-set_version
+```
+
 Run tests
 ---------
 

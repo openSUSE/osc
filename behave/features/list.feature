@@ -9,6 +9,9 @@ Scenario: Run `osc list` with no arguments to display all projects
         openSUSE.org
         test:devel
         test:factory
+        test:factory:update
+        test:leap:15.6
+        test:leap:15.6:update
         test:release
         """
 

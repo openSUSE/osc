@@ -11,8 +11,9 @@ import re
 import shutil
 import subprocess
 import sys
-
 from tempfile import NamedTemporaryFile, mkdtemp
+from typing import List
+from typing import Optional
 from urllib.parse import urlsplit
 from urllib.request import URLError, HTTPError
 from xml.etree import ElementTree as ET
@@ -481,7 +482,6 @@ def get_repo(path):
     return None
 
 
-
 def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     paths = []
     repositories = []
@@ -668,6 +668,76 @@ def run_build(opts, *args):
     if not opts.userootforbuild:
         cmd.append('--norootforbuild')
     return run_external(cmd[0], *cmd[1:])
+
+
+def create_build_descr_data(
+    build_descr_path: Optional[str],
+    *,
+    build_type: Optional[str],
+    repo: Optional[str] = None,
+    arch: Optional[str] = None,
+    prefer_pkgs: Optional[List[str]] = None,
+    define: Optional[List[str]] = None,
+    define_with: Optional[List[str]] = None,
+    define_without: Optional[List[str]] = None,
+):
+    if build_descr_path:
+        build_descr_path = os.path.abspath(build_descr_path)
+        topdir = os.path.dirname(build_descr_path)
+    else:
+        topdir = None
+    result_data = []
+
+    if build_descr_path:
+        print(f"Using local file: {os.path.basename(build_descr_path)}", file=sys.stderr)
+        with open(build_descr_path, "rb") as f:
+            build_descr_data = f.read()
+
+        # HACK: there's no api to provide custom defines
+        # TODO: check if we're working with a spec?
+        defines: List[bytes] = []
+        for i in define or []:
+            defines.append(f"%define {i}".encode("utf-8"))
+        for i in define_with or []:
+            defines.append(f"%define _with_{i} 1".encode("utf-8"))
+        for i in define_without or []:
+            defines.append(f"%define _without_{i} 1".encode("utf-8"))
+        if defines:
+            build_descr_data = b"\n".join(defines) + b"\n\n" + build_descr_data
+
+        # build recipe must go first for compatibility with the older OBS versions
+        result_data.append((os.path.basename(build_descr_path).encode("utf-8"), build_descr_data))
+
+    if topdir:
+        buildenv_file = os.path.join(topdir, f"_buildenv.{repo}.{arch}")
+        if not os.path.isfile(buildenv_file):
+            buildenv_file = os.path.join(topdir, f"_buildenv")
+        if os.path.isfile(buildenv_file):
+            print(f"Using local file: {os.path.basename(buildenv_file)}", file=sys.stderr)
+            with open(buildenv_file, "rb") as f:
+                result_data.append((b"buildenv", f.read()))
+
+    if topdir:
+        service_file = os.path.join(topdir, "_service")
+        if os.path.isfile(service_file):
+            print("Using local file: _service", file=sys.stderr)
+            with open(service_file, "rb") as f:
+                result_data.append((b"_service", f.read()))
+
+    if not result_data and not prefer_pkgs:
+        return None, None
+
+    cpio_data = cpio.CpioWrite()
+    for key, value in result_data:
+        cpio_data.add(key, value)
+
+    if prefer_pkgs:
+        print("Scanning the following dirs for local preferred packages: {', '.join(dirs)}", file=sys.stderr)
+        prefer_pkgs_result = get_prefer_pkgs(prefer_pkgs, arch, build_type, cpio_data)
+    else:
+        prefer_pkgs_result = {}
+
+    return cpio_data.get(), prefer_pkgs_result
 
 
 def main(apiurl, store, opts, argv):
@@ -898,59 +968,16 @@ def main(apiurl, store, opts, argv):
     if xp:
         extra_pkgs += xp
 
-    prefer_pkgs = {}
-    build_descr_data = open(build_descr, 'rb').read()
-
-    # XXX: dirty hack but there's no api to provide custom defines
-    if opts.without:
-        s = ''
-        for i in opts.without:
-            s += "%%define _without_%s 1\n" % i
-        build_descr_data = s.encode() + build_descr_data
-    if opts._with:
-        s = ''
-        for i in opts._with:
-            s += "%%define _with_%s 1\n" % i
-        build_descr_data = s.encode() + build_descr_data
-    if opts.define:
-        s = ''
-        for i in opts.define:
-            s += "%%define %s\n" % i
-        build_descr_data = s.encode() + build_descr_data
-
-    cpiodata = None
-    servicefile = os.path.join(os.path.dirname(build_descr), "_service")
-    if not os.path.isfile(servicefile):
-        servicefile = os.path.join(os.path.dirname(build_descr), "_service")
-        if not os.path.isfile(servicefile):
-            servicefile = None
-        else:
-            print('Using local _service file')
-    buildenvfile = os.path.join(os.path.dirname(build_descr), "_buildenv." + repo + "." + arch)
-    if not os.path.isfile(buildenvfile):
-        buildenvfile = os.path.join(os.path.dirname(build_descr), "_buildenv")
-        if not os.path.isfile(buildenvfile):
-            buildenvfile = None
-        else:
-            print('Using local buildenv file: %s' % os.path.basename(buildenvfile))
-    if buildenvfile or servicefile:
-        if not cpiodata:
-            cpiodata = cpio.CpioWrite()
-
-    if opts.prefer_pkgs:
-        print('Scanning the following dirs for local packages: %s' % ', '.join(opts.prefer_pkgs))
-        if not cpiodata:
-            cpiodata = cpio.CpioWrite()
-        prefer_pkgs = get_prefer_pkgs(opts.prefer_pkgs, arch, build_type, cpiodata)
-
-    if cpiodata:
-        cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
-        # buildenv must come last for compatibility reasons...
-        if buildenvfile:
-            cpiodata.add(b"buildenv", open(buildenvfile, 'rb').read())
-        if servicefile:
-            cpiodata.add(b"_service", open(servicefile, 'rb').read())
-        build_descr_data = cpiodata.get()
+    build_descr_data, prefer_pkgs = create_build_descr_data(
+        build_descr,
+        build_type=build_type,
+        repo=repo,
+        arch=arch,
+        prefer_pkgs=opts.prefer_pkgs,
+        define=opts.define,
+        define_with=opts._with,
+        define_without=opts.without,
+    )
 
     # special handling for overlay and rsync-src/dest
     specialcmdopts = []

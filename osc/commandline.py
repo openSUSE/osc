@@ -21,6 +21,7 @@ import traceback
 from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import List
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
@@ -243,7 +244,7 @@ class MainCommand(Command):
         if not cmd:
             self.parser.error("Please specify a command")
         self.post_parse_args(args)
-        cmd.run(args)
+        return cmd.run(args)
 
     def load_command(self, cls, module_prefix):
         mod_cls_name = f"{module_prefix}.{cls.__name__}"
@@ -410,6 +411,10 @@ class OscMainCommand(MainCommand):
         )
 
     def post_parse_args(self, args):
+        if args.command == "help":
+            # HACK: never ask for credentials when displaying help
+            return
+
         # apiurl hasn't been specified by the user
         # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
         if args.apiurl is None:
@@ -496,10 +501,10 @@ class OscMainCommand(MainCommand):
                     # handler doesn't take positional args via *args
                     if args.positional_args:
                         self.parser.error(f"unrecognized arguments: " + " ".join(args.positional_args))
-                    self.func(args.command, args)
+                    return self.func(args.command, args)
                 else:
                     # handler takes positional args via *args
-                    self.func(args.command, args, *args.positional_args)
+                    return self.func(args.command, args, *args.positional_args)
 
         return LegacyCommandWrapper
 
@@ -555,7 +560,8 @@ class OscMainCommand(MainCommand):
         cmd.load_legacy_commands()
         if run:
             args = cmd.parse_args(args=argv)
-            cmd.run(args)
+            exit_code = cmd.run(args)
+            sys.exit(exit_code)
         else:
             args = None
         return cmd, args
@@ -2821,7 +2827,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for srid in supersede:
             change_request_state(apiurl, srid, 'superseded',
                                  f'superseded by {rid}', rid)
-        return rid
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
@@ -5777,6 +5782,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 prj = Project(arg, progress_obj=self.download_progress)
                 if prj.scm_url:
                     print("Please use git to update project", prj.name)
+                    print("This git repository is hosted at", prj.scm_url)
                     continue
 
                 if conf.config['do_package_tracking']:
@@ -5841,6 +5847,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 #                    sys.exit(1)
             if p.scm_url:
                 print("Please use git to update package", p.name)
+                print("This git repository is hosted at", p.scm_url)
                 continue
 
             if not rev:
@@ -6206,7 +6213,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurl = self.get_api_url()
         args = slash_split(args)
 
-        if len(args) == 4:
+        if len(args) <= 3:
+            project = store_read_project(Path.cwd())
+            package = store_read_package(Path.cwd())
+            if len(args) == 1:
+                repository, arch = self._find_last_repo_arch(args[0], fatal=False)
+                if repository is None:
+                    # no local build with this repo was done
+                    print('failed to guess arch, using hostarch')
+                    repository = args[0]
+                    arch = osc_build.hostarch
+            elif len(args) == 2:
+                repository, arch = args
+            elif len(args) == 3:
+                raise oscerr.WrongArgs('Too many arguments.')
+            else:  # len(args) = 0 case
+                self.print_repos()
+        elif len(args) == 4:
             project, package, repository, arch = args
         else:
             raise oscerr.WrongArgs('please provide project package repository arch.')
@@ -6626,6 +6649,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Add this package when computing the buildinfo')
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',
                   help='Prefer packages from this directory when installing the build-root')
+    @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
+                  help='Skip installation of additional debug packages for CLI builds (specified in obs:cli_debug_packages in project metadata)')
     def do_buildinfo(self, subcmd, opts, *args):
         """
         Shows the build info
@@ -6685,28 +6710,50 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         apiurl = self.get_api_url()
 
-        build_descr_data = None
-        if build_descr is not None:
-            build_descr_data = open(build_descr, 'rb').read()
-        if opts.prefer_pkgs and build_descr_data is None:
-            raise oscerr.WrongArgs('error: a build description is needed if \'--prefer-pkgs\' is used')
-        elif opts.prefer_pkgs:
-            print(f"Scanning the following dirs for local packages: {', '.join(opts.prefer_pkgs)}")
-            cpiodata = cpio.CpioWrite()
-            prefer_pkgs = osc_build.get_prefer_pkgs(opts.prefer_pkgs, arch,
-                                                    os.path.splitext(build_descr)[1],
-                                                    cpiodata)
-            cpiodata.add(os.path.basename(build_descr.encode()), build_descr_data)
-            build_descr_data = cpiodata.get()
+        # TODO: refactor retrieving build type in build.py and use it here or directly in create_build_descr_data()
+        if build_descr:
+            build_type = os.path.splitext(build_descr)[1]
+        else:
+            build_type = None
+
+        build_descr_data, prefer_pkgs = osc_build.create_build_descr_data(
+            build_descr,
+            build_type=build_type,
+            repo=repository,
+            arch=arch,
+            prefer_pkgs=opts.prefer_pkgs,
+            # define=,
+            # define_with=,
+            # define_without=,
+        )
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
-        print(decode_it(get_buildinfo(apiurl,
-                                      project, package, repository, arch,
-                                      specfile=build_descr_data,
-                                      debug=opts.debug_dependencies,
-                                      addlist=opts.extra_pkgs)))
+        extra_pkgs = opts.extra_pkgs.copy() if opts.extra_pkgs else []
+
+        if os.path.exists("/usr/lib/build/queryconfig") and not opts.nodebugpackages:
+            with NamedTemporaryFile(mode="w+b", prefix="obs_buildconfig_") as bc_file:
+                # print('Getting buildconfig from server and store to %s' % bc_filename)
+                bc = get_buildconfig(apiurl, project, repository)
+                bc_file.write(bc)
+                bc_file.flush()
+
+                debug_pkgs = decode_it(return_external("/usr/lib/build/queryconfig", "--dist", bc_file.name, "substitute", "obs:cli_debug_packages"))
+                if debug_pkgs:
+                    extra_pkgs.extend(debug_pkgs.strip().split(" "))
+
+        buildinfo = get_buildinfo(
+            apiurl,
+            project,
+            package,
+            repository,
+            arch,
+            specfile=build_descr_data,
+            debug=opts.debug_dependencies,
+            addlist=extra_pkgs,
+        )
+        print(decode_it(buildinfo))
 
     def do_buildconfig(self, subcmd, opts, *args):
         """
@@ -7075,7 +7122,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--no-verify', '--noverify', action='store_true',
                   help='Skip signature verification (via pgp keys) of packages used for build. (Global config in oscrc: no_verify)')
     @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
-                  help='Skip installation of additional debug packages for CLI builds')
+                  help='Skip installation of additional debug packages for CLI builds (specified in obs:cli_debug_packages in project metadata)')
     @cmdln.option("--skip-local-service-run", "--noservice", "--no-service", default=False, action="store_true",
                   help="Skip run of local source services as specified in _service file.")
     @cmdln.option('-p', '--prefer-pkgs', metavar='DIR', action='append',

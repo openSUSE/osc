@@ -4375,8 +4375,10 @@ def read_meta_from_spec(specfile, *args):
     section_pat = r'^%s\s*?$'
     for section in sections:
         m = re.compile(section_pat % section, re.I | re.M).search(''.join(lines))
-        if m:
-            start = lines.index(m.group() + '\n') + 1
+        if m is None:
+            spec_data[section] = ""
+            continue
+        start = lines.index(m.group() + '\n') + 1
         data = []
         for line in lines[start:]:
             if line.startswith('%'):
@@ -5838,12 +5840,17 @@ def link_pac(
             elm.clear()
             ET.SubElement(elm, 'disable')
 
+        root.remove('scmsync')
+
         dst_meta = ET.tostring(root, encoding=ET_ENCODING)
 
     if meta_change:
+        root = ET.fromstring(''.join(dst_meta))
+        for scmsync in root.findall('scmsync'):
+            root.remove(scmsync)
         edit_meta('pkg',
                   path_args=(dst_project, dst_package),
-                  data=dst_meta)
+                  data=ET.tostring(root, encoding=ET_ENCODING))
     # create the _link file
     # but first, make sure not to overwrite an existing one
     if '_link' in meta_get_filelist(apiurl, dst_project, dst_package):
@@ -6119,12 +6126,18 @@ def branch_pkg(
     # BEGIN: Error out on branching scmsync packages; this should be properly handled in the API
 
     # read src_package meta
-    m = b"".join(show_package_meta(apiurl, src_project, src_package))
-    root = ET.fromstring(m)
+    try:
+        m = b"".join(show_package_meta(apiurl, src_project, src_package))
+        root = ET.fromstring(m)
+    except HTTPError as e:
+        if e.code == 404 and missingok:
+            root = None
+        else:
+            raise
 
     devel_project = None
     devel_package = None
-    if not nodevelproject:
+    if root is not None and not nodevelproject:
         devel_node = root.find("devel")
         if devel_node is not None:
             devel_project = devel_node.get("project")
@@ -6135,7 +6148,7 @@ def branch_pkg(
             root = ET.fromstring(m)
 
     # error out if we're branching a scmsync package (we'd end up with garbage anyway)
-    if root.find("scmsync") is not None:
+    if root is not None and root.find("scmsync") is not None:
         msg = "Cannot branch a package with <scmsync> set."
         if devel_project:
             raise oscerr.PackageError(devel_project, devel_package, msg)

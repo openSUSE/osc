@@ -189,6 +189,10 @@ class TransientDescriptor(AbstractCredentialsManagerDescriptor):
 
 
 class KeyringCredentialsManager(AbstractCredentialsManager):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._password = None
+
     def _process_options(self, options):
         if options is None:
             raise RuntimeError('options may not be None')
@@ -209,14 +213,19 @@ class KeyringCredentialsManager(AbstractCredentialsManager):
         return super().create(cp, options)
 
     def _get_password(self, url, user, apiurl=None):
-        self._load_backend()
-        return keyring.get_password(urlsplit(url)[1], user)
+        if self._password is None:
+            self._load_backend()
+            self._password = keyring.get_password(urlsplit(url)[1], user)
+            # TODO: this works fine on the command-line but a long-running process using osc library would start failing after changing the password in the keyring
+            # TODO: implement retrieving the password again after basic auth fails; sufficiently inform user about what's being done
+        return self._password
 
     def set_password(self, url, user, password):
         self._load_backend()
         keyring.set_password(urlsplit(url)[1], user, password)
         config_value = f"{self._qualified_name()}:{self._backend_cls_name}"
         self._cp.set(url, self.config_entry, config_value)
+        self._password = password
 
     def delete_password(self, url, user):
         self._load_backend()
