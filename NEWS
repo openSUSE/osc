@@ -1,3 +1,21 @@
+- 1.6.2
+  - Command-line:
+    - Fix 'branch' command to allow using '--new-package' option on packages that do not exist
+    - Fix 'buildinfo' command to include obs:cli_debug_packages by default
+    - Fix 'buildinfo' command to send complete local build environment as the 'build' command does
+    - Allow `osc rpmlint` to infer prj/pkg from CWD
+    - Propagate exit code from the run() and do_() commandline methods
+    - Give a hint where a scmsync git is hosted
+    - Fix crash in 'updatepacmetafromspec' command when working with an incomplete spec
+  - Authentication:
+    - Cache password from SecretService to avoid spamming user with an accept dialog
+    - Never ask for credentials when displaying help
+  - Library:
+    - Support package linking of packages from scmsync projects
+    - Fix do_createrequest() function to return None instead of request id
+    - Replace invalid 'if' with 'elif' in BaseModel.dict()
+    - Fix crash when no prefered packages are defined
+
 - 1.6.1
   - Command-line:
     - Use busybox compatible commands for completion
