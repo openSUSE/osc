@@ -77,6 +77,8 @@ from .obs_scm.store import store_write_initial_packages
 from .obs_scm.store import store_write_last_buildroot
 from .obs_scm.store import store_write_project
 from .obs_scm.store import store_write_string
+from .output import get_default_pager
+from .output import run_pager
 from .output import sanitize_text
 from .util import xdg
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
@@ -1915,16 +1917,6 @@ def get_default_editor():
     return 'vi'
 
 
-def get_default_pager():
-    system = platform.system()
-    if system == 'Linux':
-        dist = _get_linux_distro()
-        if dist == 'debian':
-            return 'pager'
-        return 'less'
-    return 'more'
-
-
 def format_diff_line(line):
     if line.startswith(b"+++") or line.startswith(b"---") or line.startswith(b"Index:"):
         line = b"\x1b[1m" + line + b"\x1b[0m"
@@ -1941,41 +1933,6 @@ def highlight_diff(diff):
     if sys.stdout.isatty():
         diff = b"\n".join((format_diff_line(line) for line in diff.split(b"\n")))
     return diff
-
-
-def run_pager(message, tmp_suffix=''):
-    if not message:
-        return
-
-    if not sys.stdout.isatty():
-        if isinstance(message, str):
-            print(message)
-        else:
-            sys.stdout.buffer.write(message)
-    else:
-        tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
-        if isinstance(message, str):
-            tmpfile.write(bytes(message, 'utf-8'))
-        else:
-            tmpfile.write(message)
-        tmpfile.flush()
-
-        env = os.environ.copy()
-
-        pager = os.getenv("PAGER", default="").strip()
-        pager = pager or get_default_pager()
-
-        # LESS env is not always set and we need -R to display escape sequences properly
-        less_opts = os.getenv("LESS", default="")
-        if "-R" not in less_opts:
-            less_opts += " -R"
-        env["LESS"] = less_opts
-
-        cmd = shlex.split(pager) + [tmpfile.name]
-        try:
-            run_external(*cmd, env=env)
-        finally:
-            tmpfile.close()
 
 
 def run_editor(filename):

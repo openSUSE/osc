@@ -1,6 +1,9 @@
 import os
+import platform
 import re
+import shlex
 import sys
+import tempfile
 from typing import Dict
 from typing import Optional
 from typing import TextIO
@@ -147,3 +150,52 @@ def safe_write(file: TextIO, text: Union[str, bytes], *, add_newline: bool = Fal
         file.write(text)
         if add_newline:
             file.write(os.linesep)
+
+
+def get_default_pager():
+    from ..core import _get_linux_distro
+
+    system = platform.system()
+    if system == 'Linux':
+        dist = _get_linux_distro()
+        if dist == 'debian':
+            return 'pager'
+        return 'less'
+    return 'more'
+
+
+def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
+    from ..core import run_external
+
+    if not message:
+        return
+
+    if not sys.stdout.isatty():
+        if isinstance(message, str):
+            print(message)
+        else:
+            sys.stdout.buffer.write(message)
+    else:
+        tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
+        if isinstance(message, str):
+            tmpfile.write(bytes(message, 'utf-8'))
+        else:
+            tmpfile.write(message)
+        tmpfile.flush()
+
+        env = os.environ.copy()
+
+        pager = os.getenv("PAGER", default="").strip()
+        pager = pager or get_default_pager()
+
+        # LESS env is not always set and we need -R to display escape sequences properly
+        less_opts = os.getenv("LESS", default="")
+        if "-R" not in less_opts:
+            less_opts += " -R"
+        env["LESS"] = less_opts
+
+        cmd = shlex.split(pager) + [tmpfile.name]
+        try:
+            run_external(*cmd, env=env)
+        finally:
+            tmpfile.close()
