@@ -170,17 +170,12 @@ def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
     if not message:
         return
 
-    if not sys.stdout.isatty():
-        if isinstance(message, str):
-            print(message)
-        else:
-            sys.stdout.buffer.write(message)
-    else:
-        tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
-        if isinstance(message, str):
-            tmpfile.write(bytes(message, 'utf-8'))
-        else:
-            tmpfile.write(message)
+    if not tty.IS_INTERACTIVE:
+        safe_write(sys.stdout, message)
+        return
+
+    with tempfile.NamedTemporaryFile(suffix=tmp_suffix) as tmpfile:
+        safe_write(tmpfile, message)
         tmpfile.flush()
 
         env = os.environ.copy()
@@ -195,7 +190,4 @@ def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
         env["LESS"] = less_opts
 
         cmd = shlex.split(pager) + [tmpfile.name]
-        try:
-            run_external(*cmd, env=env)
-        finally:
-            tmpfile.close()
+        run_external(*cmd, env=env)
