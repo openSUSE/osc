@@ -143,9 +143,15 @@ def safe_write(file: TextIO, text: Union[str, bytes], *, add_newline: bool = Fal
     """
     text = sanitize_text(text)
     if isinstance(text, bytes):
-        file.buffer.write(text)
-        if add_newline:
-            file.buffer.write(os.linesep.encode("utf-8"))
+        if hasattr(file, "buffer"):
+            file.buffer.write(text)
+            if add_newline:
+                file.buffer.write(os.linesep.encode("utf-8"))
+        else:
+            # file has no "buffer" attribute, let's try to write the bytes directly
+            file.write(text)
+            if add_newline:
+                file.write(os.linesep.encode("utf-8"))
     else:
         file.write(text)
         if add_newline:
@@ -174,7 +180,8 @@ def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
         safe_write(sys.stdout, message)
         return
 
-    with tempfile.NamedTemporaryFile(suffix=tmp_suffix) as tmpfile:
+    mode = "w+b" if isinstance(message, bytes) else "w+"
+    with tempfile.NamedTemporaryFile(mode=mode, suffix=tmp_suffix) as tmpfile:
         safe_write(tmpfile, message)
         tmpfile.flush()
 
