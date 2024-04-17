@@ -185,6 +185,38 @@ class TestXmlModel(unittest.TestCase):
         self.assertEqual(m.child[1]._apiurl, apiurl)
         self.assertEqual(m.child[2]._apiurl, apiurl)
 
+    def test_empty_int_optional(self):
+        class TestModel(XmlModel):
+            XML_TAG = "model"
+            num_attr: Optional[int] = Field(xml_attribute=True)
+            num_elem: Optional[int] = Field()
+
+        data = textwrap.dedent(
+            """
+            <model num_attr="">
+              <num_elem> </num_elem>
+            </model>
+            """
+        ).strip()
+        m = TestModel.from_string(data)
+        self.assertEqual(m.num_attr, None)
+        self.assertEqual(m.num_elem, None)
+
+    def test_empty_int(self):
+        class TestModel(XmlModel):
+            XML_TAG = "model"
+            num_attr: int = Field(xml_attribute=True)
+            num_elem: int = Field()
+
+        data = textwrap.dedent(
+            """
+            <model num_attr="">
+              <num_elem> </num_elem>
+            </model>
+            """
+        ).strip()
+        self.assertRaises(TypeError, TestModel.from_string, data)
+
 
 if __name__ == "__main__":
     unittest.main()

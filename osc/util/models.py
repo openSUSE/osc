@@ -594,6 +594,8 @@ class XmlModel(BaseModel):
                 return value
 
         if field.origin_type is int:
+            if not value or not value.strip():
+                return None
             value = int(value)
             return value
 
