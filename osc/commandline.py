@@ -39,6 +39,7 @@ from .core import *
 from .grabber import OscFileGrabber
 from .meter import create_text_meter
 from .output import get_user_input
+from .output import pipe_to_pager
 from .util import cpio, rpmquery, safewriter
 from .util.helper import _html_escape, format_table
 
@@ -7661,13 +7662,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('-r', '--revision', metavar='rev',
                         help='show log of the specified revision')
+    @cmdln.option("-p", "--patch", action="store_true",
+                        help='show patch for each revision; NOTE: use this option carefully because it loads patches on demand in a pager')
     @cmdln.option('', '--csv', action='store_true',
-                  help='generate output in CSV (separated by |)')
+                  help='generate output in CSV')
     @cmdln.option('', '--xml', action='store_true',
                   help='generate output in XML')
-    @cmdln.option('-D', '--deleted', action='store_true',
+    @cmdln.option('-D', '--deleted', action='store_true', default=None,
                         help='work on deleted package')
-    @cmdln.option('-M', '--meta', action='store_true',
+    @cmdln.option('-M', '--meta', action='store_true', default=None,
                         help='checkout out meta data instead of sources')
     def do_log(self, subcmd, opts, *args):
         """
@@ -7695,8 +7698,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.xml:
             format = 'xml'
 
-        log = '\n'.join(get_commitlog(apiurl, project, package, rev, format, opts.meta, opts.deleted, rev_upper))
-        run_pager(log)
+        lines = get_commitlog(apiurl, project, package, rev, format, opts.meta, opts.deleted, rev_upper, patch=opts.patch)
+        pipe_to_pager(lines, add_newlines=True)
 
     @cmdln.option('-v', '--verbose', action='store_true',
                   help='verbose run of local services for debugging purposes')
