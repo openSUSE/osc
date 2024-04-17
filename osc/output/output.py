@@ -1,7 +1,12 @@
 import os
+import platform
 import re
+import shlex
+import subprocess
 import sys
+import tempfile
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import TextIO
 from typing import Union
@@ -140,10 +145,90 @@ def safe_write(file: TextIO, text: Union[str, bytes], *, add_newline: bool = Fal
     """
     text = sanitize_text(text)
     if isinstance(text, bytes):
-        file.buffer.write(text)
-        if add_newline:
-            file.buffer.write(os.linesep.encode("utf-8"))
+        if hasattr(file, "buffer"):
+            file.buffer.write(text)
+            if add_newline:
+                file.buffer.write(os.linesep.encode("utf-8"))
+        else:
+            # file has no "buffer" attribute, let's try to write the bytes directly
+            file.write(text)
+            if add_newline:
+                file.write(os.linesep.encode("utf-8"))
     else:
         file.write(text)
         if add_newline:
             file.write(os.linesep)
+
+
+def get_default_pager():
+    from ..core import _get_linux_distro
+
+    system = platform.system()
+    if system == 'Linux':
+        dist = _get_linux_distro()
+        if dist == 'debian':
+            return 'pager'
+        return 'less'
+    return 'more'
+
+
+def get_pager():
+    """
+    Return (pager, env) where
+        ``pager`` is a list with parsed pager command
+        ``env`` is copy of os.environ() with added variables specific to the pager
+    """
+    env = os.environ.copy()
+    pager = os.getenv("PAGER", default="").strip()
+    pager = pager or get_default_pager()
+
+    # LESS env is not always set and we need -R to display escape sequences properly
+    less_opts = os.getenv("LESS", default="")
+    if "-R" not in less_opts:
+        less_opts += " -R"
+    env["LESS"] = less_opts
+
+    return shlex.split(pager), env
+
+
+def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
+    from ..core import run_external
+
+    if not message:
+        return
+
+    if not tty.IS_INTERACTIVE:
+        safe_write(sys.stdout, message)
+        return
+
+    mode = "w+b" if isinstance(message, bytes) else "w+"
+    with tempfile.NamedTemporaryFile(mode=mode, suffix=tmp_suffix) as tmpfile:
+        safe_write(tmpfile, message)
+        tmpfile.flush()
+
+        pager, env = get_pager()
+        cmd = pager + [tmpfile.name]
+        run_external(*cmd, env=env)
+
+
+def pipe_to_pager(lines: Union[List[bytes], List[str]], *, add_newlines=False):
+    """
+    Pipe ``lines`` to the pager.
+    If running in a non-interactive terminal, print the data instead.
+    Add a newline after each line if ``add_newlines`` is ``True``.
+    """
+    if not tty.IS_INTERACTIVE:
+        for line in lines:
+            safe_write(sys.stdout, line, add_newline=add_newlines)
+        return
+
+    pager, env = get_pager()
+    with subprocess.Popen(pager, stdin=subprocess.PIPE, encoding="utf-8", env=env) as proc:
+        try:
+            for line in lines:
+                safe_write(proc.stdin, line, add_newline=add_newlines)
+                proc.stdin.flush()
+            proc.stdin.close()
+        except BrokenPipeError:
+            pass
+        proc.wait()

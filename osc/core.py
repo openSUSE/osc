@@ -6,6 +6,7 @@
 
 import codecs
 import copy
+import csv
 import datetime
 import difflib
 import errno
@@ -77,6 +78,8 @@ from .obs_scm.store import store_write_initial_packages
 from .obs_scm.store import store_write_last_buildroot
 from .obs_scm.store import store_write_project
 from .obs_scm.store import store_write_string
+from .output import get_default_pager
+from .output import run_pager
 from .output import sanitize_text
 from .util import xdg
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
@@ -1915,16 +1918,6 @@ def get_default_editor():
     return 'vi'
 
 
-def get_default_pager():
-    system = platform.system()
-    if system == 'Linux':
-        dist = _get_linux_distro()
-        if dist == 'debian':
-            return 'pager'
-        return 'less'
-    return 'more'
-
-
 def format_diff_line(line):
     if line.startswith(b"+++") or line.startswith(b"---") or line.startswith(b"Index:"):
         line = b"\x1b[1m" + line + b"\x1b[0m"
@@ -1941,41 +1934,6 @@ def highlight_diff(diff):
     if sys.stdout.isatty():
         diff = b"\n".join((format_diff_line(line) for line in diff.split(b"\n")))
     return diff
-
-
-def run_pager(message, tmp_suffix=''):
-    if not message:
-        return
-
-    if not sys.stdout.isatty():
-        if isinstance(message, str):
-            print(message)
-        else:
-            sys.stdout.buffer.write(message)
-    else:
-        tmpfile = tempfile.NamedTemporaryFile(suffix=tmp_suffix)
-        if isinstance(message, str):
-            tmpfile.write(bytes(message, 'utf-8'))
-        else:
-            tmpfile.write(message)
-        tmpfile.flush()
-
-        env = os.environ.copy()
-
-        pager = os.getenv("PAGER", default="").strip()
-        pager = pager or get_default_pager()
-
-        # LESS env is not always set and we need -R to display escape sequences properly
-        less_opts = os.getenv("LESS", default="")
-        if "-R" not in less_opts:
-            less_opts += " -R"
-        env["LESS"] = less_opts
-
-        cmd = shlex.split(pager) + [tmpfile.name]
-        try:
-            run_external(*cmd, env=env)
-        finally:
-            tmpfile.close()
 
 
 def run_editor(filename):
@@ -4700,82 +4658,97 @@ def print_jobhistory(apiurl: str, prj: str, current_package: str, repository: st
 
 
 def get_commitlog(
-    apiurl: str, prj: str, package: str, revision, format="text", meta=False, deleted=False, revision_upper=None
+    apiurl: str,
+    prj: str,
+    package: str,
+    revision: Optional[str],
+    format: str = "text",
+    meta: Optional[bool] = None,
+    deleted: Optional[bool] = None,
+    revision_upper: Optional[str] = None,
+    patch: Optional[bool] = None,
 ):
     if package is None:
         package = "_project"
 
-    query = {}
-    if deleted:
-        query['deleted'] = 1
-    if meta:
-        query['meta'] = 1
+    from . import obs_api
+    revision_list = obs_api.Package.get_revision_list(apiurl, prj, package, deleted=deleted, meta=meta)
 
-    u = makeurl(apiurl, ['source', prj, package, '_history'], query)
-    f = http_GET(u)
-    root = ET.parse(f).getroot()
-
-    r = []
-    if format == 'xml':
-        r.append('<?xml version="1.0"?>')
-        r.append('<log>')
-    revisions = root.findall('revision')
-    revisions.reverse()
-    for node in revisions:
-        srcmd5 = node.find('srcmd5').text
-        try:
-            rev = int(node.get('rev'))
-            # vrev = int(node.get('vrev')) # what is the meaning of vrev?
-            try:
-                if not revision_is_empty(revision) and revision_upper is not None:
-                    if rev > int(revision_upper) or rev < int(revision):
-                        continue
-                elif not revision_is_empty(revision) and rev != int(revision):
-                    continue
-            except ValueError:
-                if revision != srcmd5:
-                    continue
-        except ValueError:
-            # this part should _never_ be reached but...
-            return ['an unexpected error occured - please file a bug']
-        version = node.find('version').text
-        user = node.find('user').text
-        try:
-            comment = node.find('comment').text.encode(locale.getpreferredencoding(), 'replace')
-        except:
-            comment = b'<no message>'
-        try:
-            requestid = node.find('requestid').text.encode(locale.getpreferredencoding(), 'replace')
-        except:
-            requestid = ""
-        t = time.gmtime(int(node.find('time').text))
-        t = time.strftime('%Y-%m-%d %H:%M:%S', t)
-
-        if format == 'csv':
-            s = '%s|%s|%s|%s|%s|%s|%s' % (rev, user, t, srcmd5, version,
-                                          decode_it(comment).replace('\\', '\\\\').replace('\n', '\\n').replace('|', '\\|'), requestid)
-            r.append(s)
-        elif format == 'xml':
-            r.append('<logentry')
-            r.append(f'   revision="{rev}" srcmd5="{srcmd5}">')
-            r.append(f'<author>{user}</author>')
-            r.append(f'<date>{t}</date>')
-            r.append(f'<requestid>{requestid}</requestid>')
-            r.append(f'<msg>{_private.api.xml_escape(decode_it(comment))}</msg>')
-            r.append('</logentry>')
+    # TODO: consider moving the following block to Package.get_revision_list()
+    # keep only entries matching the specified revision
+    if not revision_is_empty(revision):
+        if isinstance(revision, str) and len(revision) == 32:
+            # revision is srcmd5
+            revision_list = [i for i in revision_list if i.srcmd5 == revision]
         else:
-            if requestid:
-                requestid = decode_it(b"rq" + requestid)
-            s = '-' * 76 + \
-                f'\nr{rev} | {user} | {t} | {srcmd5} | {version} | {requestid}\n' + \
-                '\n' + decode_it(comment)
-            r.append(s)
+            revision = int(revision)
+            if revision_is_empty(revision_upper):
+                revision_list = [i for i in revision_list if i.rev == revision]
+            else:
+                revision_upper = int(revision_upper)
+                revision_list = [i for i in revision_list if i.rev <= revision_upper and i.rev >= revision]
 
-    if format not in ['csv', 'xml']:
-        r.append('-' * 76)
-    if format == 'xml':
-        r.append('</log>')
-    return r
+    if format == "csv":
+        f = io.StringIO()
+        writer = csv.writer(f, dialect="unix")
+        for revision in reversed(revision_list):
+            writer.writerow(
+                (
+                    revision.rev,
+                    revision.user,
+                    revision.get_time_str(),
+                    revision.srcmd5,
+                    revision.comment,
+                    revision.requestid,
+                )
+            )
+        f.seek(0)
+        yield from f.read().splitlines()
+        return
+
+    if format == "xml":
+        root = ET.Element("log")
+        for revision in reversed(revision_list):
+            entry = ET.SubElement(root, "logentry")
+            entry.attrib["revision"] = str(revision.rev)
+            entry.attrib["srcmd5"] = revision.srcmd5
+            ET.SubElement(entry, "author").text = revision.user
+            ET.SubElement(entry, "date").text = revision.get_time_str()
+            ET.SubElement(entry, "requestid").text = str(revision.requestid) if revision.requestid else ""
+            ET.SubElement(entry, "msg").text = revision.comment or ""
+        xmlindent(root)
+        yield from ET.tostring(root, encoding="utf-8").decode("utf-8").splitlines()
+        return
+
+    if format == "text":
+        for revision in reversed(revision_list):
+            entry = (
+                f"r{revision.rev}",
+                revision.user,
+                revision.get_time_str(),
+                revision.srcmd5,
+                revision.version,
+                f"rq{revision.requestid}" if revision.requestid else ""
+            )
+            yield 76 * "-"
+            yield " | ".join(entry)
+            yield ""
+            yield revision.comment or "<no message>"
+            yield ""
+            if patch:
+                rdiff = server_diff_noex(
+                    apiurl,
+                    prj,
+                    package,
+                    revision.rev,
+                    prj,
+                    package,
+                    revision.rev - 1,
+                )
+                yield highlight_diff(rdiff).decode("utf-8", errors="replace")
+        return
+
+    raise ValueError(f"Invalid format: {format}")
 
 
 def runservice(apiurl: str, prj: str, package: str):

@@ -1,10 +1,12 @@
 import contextlib
 import io
+import tempfile
 import unittest
 
 import osc.conf
 from osc.output import KeyValueTable
 from osc.output import print_msg
+from osc.output import safe_write
 from osc.output import sanitize_text
 from osc.output import tty
 
@@ -236,6 +238,24 @@ class TestSanitization(unittest.TestCase):
         sanitized = sanitize_text(original)
         # \033] is removed with the Fe sequences
         self.assertEqual(sanitized, b"0;this is the window title")
+
+
+class TestSafeWrite(unittest.TestCase):
+    def test_string_to_file(self):
+        with tempfile.NamedTemporaryFile(mode="w+") as f:
+            safe_write(f, "string")
+
+    def test_bytes_to_file(self):
+        with tempfile.NamedTemporaryFile(mode="wb+") as f:
+            safe_write(f, b"bytes")
+
+    def test_string_to_stringio(self):
+        with io.StringIO() as f:
+            safe_write(f, "string")
+
+    def test_bytes_to_bytesio(self):
+        with io.BytesIO() as f:
+            safe_write(f, b"bytes")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-i
 from .flag import Flag
 from .group_role import GroupRole
 from .package_devel import PackageDevel
+from .package_revision import PackageRevision
 from .person_role import PersonRole
 from .simple_flag import SimpleFlag
 from .status import Status
@@ -126,3 +127,20 @@ class Package(XmlModel):
         }
         response = cls.xml_request("POST", apiurl, url_path, url_query)
         return Status.from_file(response, apiurl=apiurl)
+
+    @classmethod
+    def get_revision_list(cls, apiurl: str, project: str, package: str, deleted: Optional[bool] = None, meta: Optional[bool] = None):
+        from xml.etree import ElementTree as ET
+
+        url_path = ["source", project, package, "_history"]
+        url_query = {
+            "meta": meta,
+            "deleted": deleted,
+        }
+        response = cls.xml_request("GET", apiurl, url_path, url_query)
+        root = ET.parse(response).getroot()
+        assert root.tag == "revisionlist"
+        result = []
+        for node in root:
+            result.append(PackageRevision.from_xml(node, apiurl=apiurl))
+        return result
