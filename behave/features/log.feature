@@ -68,11 +68,11 @@ Scenario: Run `osc log --patch` on revision range of a package
         --- test-pkgA.changes
         \+\+\+ test-pkgA.changes
         @@ -2 \+2 @@
-        -Tue Jan  4 11:22:33 UTC 2022 - Geeko Packager <email@example.com>
-        \+Mon Jan  3 11:22:33 UTC 2022 - Geeko Packager <email@example.com>
+        -Mon Jan  3 11:22:33 UTC 2022 - Geeko Packager <email@example.com>
+        \+Tue Jan  4 11:22:33 UTC 2022 - Geeko Packager <email@example.com>
         @@ -4 \+4 @@
-        -- Release upstream version 2
-        \+- Release upstream version 1
+        -- Release upstream version 1
+        \+- Release upstream version 2
 
         spec files:
         -----------
@@ -80,8 +80,8 @@ Scenario: Run `osc log --patch` on revision range of a package
         \+\+\+ test-pkgA.spec
         @@ -1,5 \+1,5 @@
          Name:           test-pkgA
-        -Version:        2
-        \+Version:        1
+        -Version:        1
+        \+Version:        2
          Release:        1
          License:        GPL-2.0
          Summary:        Test package
@@ -95,10 +95,16 @@ Scenario: Run `osc log --patch` on revision range of a package
         changes files:
         --------------
 
-        \+\+\+\+\+\+ deleted changes files:
+        \+\+\+\+\+\+ new changes file:
         --- test-pkgA.changes
+        \+\+\+ test-pkgA.changes
+        @@ -0,0 \+1,4 @@
+        \+-------------------------------------------------------------------
+        \+Mon Jan  3 11:22:33 UTC 2022 - Geeko Packager <email@example.com>
+        \+
+        \+- Release upstream version 1
 
-        old:
+        new:
         ----
           test-pkgA.changes
           test-pkgA.spec
@@ -106,8 +112,34 @@ Scenario: Run `osc log --patch` on revision range of a package
         spec files:
         -----------
 
-        \+\+\+\+\+\+ deleted spec files:
+        \+\+\+\+\+\+ new spec file:
         --- test-pkgA.spec
-
+        \+\+\+ test-pkgA.spec
+        @@ -0,0 \+1,25 @@
+        \+Name:           test-pkgA
+        \+Version:        1
+        \+Release:        1
+        \+License:        GPL-2.0
+        \+Summary:        Test package
+        \+URL:            https://example.com/test-package/
+        \+
+        \+
+        \+BuildArch:      noarch
+        \+
+        \+
+        \+%description
+        \+desc
+        \+
+        \+
+        \+%prep
+        \+
+        \+
+        \+%install
+        \+
+        \+
+        \+%files
+        \+
+        \+
+        \+%changelog
 
         """
