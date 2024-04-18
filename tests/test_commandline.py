@@ -236,7 +236,7 @@ class TestPopProjectPackageFromArgs(unittest.TestCase):
             args, package_is_optional=True, default_package="default-package",
         )
         self.assertEqual(project, "project")
-        self.assertEqual(package, "default-package")
+        self.assertEqual(package, None)
         self.assertEqual(args, [])
 
     def test_default_project_package(self):
@@ -402,10 +402,7 @@ class TestPopRepositoryArchFromArgs(unittest.TestCase):
 
     def test_default_arch(self):
         args = ["repo"]
-        repo, arch = pop_repository_arch_from_args(args, default_arch="arch")
-        self.assertEqual(repo, "repo")
-        self.assertEqual(arch, "arch")
-        self.assertEqual(args, [])
+        self.assertRaises(OscValueError, pop_repository_arch_from_args, args, default_arch="arch")
 
 
 class TestPopProjectPackageRepositoryArchFromArgs(unittest.TestCase):
@@ -498,14 +495,12 @@ class TestPopProjectPackageRepositoryArchFromArgs(unittest.TestCase):
 
     def test_default_package(self):
         args = ["project"]
-        project, package, repo, arch = pop_project_package_repository_arch_from_args(
-            args, default_package="package", repository_is_optional=True
+        self.assertRaises(
+            OscValueError,
+            pop_project_package_repository_arch_from_args,
+            args, default_package="package",
+            repository_is_optional=True,
         )
-        self.assertEqual(project, "project")
-        self.assertEqual(package, "package")
-        self.assertEqual(repo, None)
-        self.assertEqual(arch, None)
-        self.assertEqual(args, [])
 
     def test_missing_repository(self):
         args = ["project", "package"]
@@ -554,14 +549,12 @@ class TestPopProjectPackageRepositoryArchFromArgs(unittest.TestCase):
 
     def test_default_arch(self):
         args = ["project", "package", "repository"]
-        project, package, repo, arch = pop_project_package_repository_arch_from_args(
-            args, default_arch="arch"
+        self.assertRaises(
+            OscValueError,
+            pop_project_package_repository_arch_from_args,
+            args,
+            default_arch="arch",
         )
-        self.assertEqual(project, "project")
-        self.assertEqual(package, "package")
-        self.assertEqual(repo, "repository")
-        self.assertEqual(arch, "arch")
-        self.assertEqual(args, [])
 
     def test_no_working_copy(self):
         args = ["repo", "arch"]
@@ -703,14 +696,12 @@ class TestPopProjectPackageTargetProjectTargetPackageFromArgs(unittest.TestCase)
 
     def test_default_package(self):
         args = ["project"]
-        project, package, target_project, target_package = pop_project_package_targetproject_targetpackage_from_args(
-            args, default_package="package", target_project_is_optional=True
+        self.assertRaises(
+            OscValueError,
+            pop_project_package_targetproject_targetpackage_from_args,
+            args, default_package="package",
+            target_project_is_optional=True,
         )
-        self.assertEqual(project, "project")
-        self.assertEqual(package, "package")
-        self.assertEqual(target_project, None)
-        self.assertEqual(target_package, None)
-        self.assertEqual(args, [])
 
     def test_missing_target_project(self):
         args = ["project", "package"]
@@ -769,14 +760,13 @@ class TestPopProjectPackageTargetProjectTargetPackageFromArgs(unittest.TestCase)
 
     def test_default_target_package(self):
         args = ["project", "package", "target-project"]
-        project, package, target_project, target_package = pop_project_package_targetproject_targetpackage_from_args(
-            args, default_target_package="target-package"
+
+        self.assertRaises(
+            OscValueError,
+            pop_project_package_targetproject_targetpackage_from_args,
+            args,
+            default_target_package="target-package",
         )
-        self.assertEqual(project, "project")
-        self.assertEqual(package, "package")
-        self.assertEqual(target_project, "target-project")
-        self.assertEqual(target_package, "target-package")
-        self.assertEqual(args, [])
 
     def test_no_working_copy(self):
         args = ["target-project", "target-package"]

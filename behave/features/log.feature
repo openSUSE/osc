@@ -52,7 +52,6 @@ Scenario: Run `osc log` on revision range of a package
         """
 
 
-@wip
 Scenario: Run `osc log --patch` on revision range of a package
    Given I execute osc with args "log test:factory/test-pkgA --revision=1:2 --patch"
     Then the exit code is 0

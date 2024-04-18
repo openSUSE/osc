@@ -634,10 +634,10 @@ def pop_args(
     try:
         arg1 = args.pop(0)
     except IndexError:
-        if not arg1_is_optional and not arg1_default:
-            raise oscerr.OscValueError(f"Please specify a {arg1_name}") from None
         arg1 = arg1_default
         used_arg1_default = True
+        if arg1 is None and not arg1_is_optional:
+            raise oscerr.OscValueError(f"Please specify a {arg1_name}") from None
 
     if not isinstance(arg1, (str, type(None))):
         raise TypeError(f"{arg1_name.capitalize()} should be 'str', found: {type(arg1).__name__}")
@@ -654,10 +654,11 @@ def pop_args(
         try:
             arg2  = args.pop(0)
         except IndexError:
-            if not arg2_is_optional and not arg2_default and not used_arg1_default:
-                # arg2 is not optional and it wasn't specified together with arg1
+            if used_arg1_default:
+                # we use arg2_default only after arg1_default was used
+                arg2 = arg2_default
+            if arg2 is None and not arg2_is_optional:
                 raise oscerr.OscValueError(f"Please specify a {arg2_name}") from None
-            arg2 = arg2_default
 
         if not isinstance(arg2, (str, type(None))):
             raise TypeError(f"{arg2_name.capitalize()} should be 'str', found: {type(arg2).__name__}")

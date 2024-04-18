@@ -14,7 +14,7 @@ Scenario: Run `osc setdevelproject <devel_project>`
     Then the exit code is 0
      And stdout is
         """
-        Setting devel project of package 'test:factory/test-pkgA' to package 'test:devel/test-pkgA'
+        Setting devel project of package 'test:factory/test-pkgA' to project 'test:devel'
         """
 
 
