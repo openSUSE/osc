@@ -732,7 +732,7 @@ def create_build_descr_data(
         cpio_data.add(key, value)
 
     if prefer_pkgs:
-        print(f"Scanning the following dirs for local preferred packages: {', '.join(dirs)}", file=sys.stderr)
+        print(f"Scanning the following dirs for local preferred packages: {', '.join(prefer_pkgs)}", file=sys.stderr)
         prefer_pkgs_result = get_prefer_pkgs(prefer_pkgs, arch, build_type, cpio_data)
     else:
         prefer_pkgs_result = {}
