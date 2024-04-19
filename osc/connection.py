@@ -568,6 +568,12 @@ class SignatureAuthHandler(AuthHandlerBase):
         self.user = user
         self.sshkey = sshkey
 
+        if self.sshkey:
+            # if only a file name is provided, prepend ~/.ssh
+            if "/" not in self.sshkey:
+                self.sshkey = os.path.join("~", ".ssh", self.sshkey)
+                self.sshkey = os.path.expanduser(self.sshkey)
+
         self.ssh_keygen_path = shutil.which("ssh-keygen")
         self.ssh_add_path = shutil.which("ssh-add")
 
@@ -612,11 +618,6 @@ class SignatureAuthHandler(AuthHandlerBase):
     def ssh_sign(self, data, namespace, keyfile=None):
         if not keyfile:
             keyfile = self.guess_keyfile()
-        else:
-            if '/' not in keyfile:
-                keyfile = f"~/.ssh/{keyfile}"
-            keyfile = os.path.expanduser(keyfile)
-
         cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
         proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8")
         signature, _ = proc.communicate(data)
