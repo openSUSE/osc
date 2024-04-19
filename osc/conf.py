@@ -306,6 +306,7 @@ class HostOptions(OscOptions):
              - keep empty for auto detection
              - path to the public SSH key
              - public SSH key filename (must be placed in ~/.ssh)
+             - fingerprint of a SSH key (2nd column of ``ssh-add -l``)
 
             NOTE: The private key may not be available on disk because it could be in a GPG keyring, on YubiKey or forwarded through SSH agent.
 

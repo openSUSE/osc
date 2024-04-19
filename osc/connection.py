@@ -566,7 +566,14 @@ class SignatureAuthHandler(AuthHandlerBase):
     def __init__(self, apiurl, user, sshkey, basic_auth_password=None):
         super().__init__(apiurl)
         self.user = user
-        self.sshkey = sshkey
+        self.sshkey = None
+        self.sshkey_fingerprint = None
+
+        if sshkey and re.match("^[A-Z0-9]+:.*", sshkey):
+            # if it starts with a prefix such as 'SHA256:' then it's a fingerprint
+            self.sshkey_fingerprint = sshkey
+        else:
+            self.sshkey = sshkey
 
         if self.sshkey:
             # if only a file name is provided, prepend ~/.ssh
@@ -598,6 +605,18 @@ class SignatureAuthHandler(AuthHandlerBase):
         else:
             return []
 
+    def list_ssh_agent_fingerprints(self):
+        if not self.ssh_add_path:
+            return []
+        cmd = [self.ssh_add_path, '-l']
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
+        stdout, _ = proc.communicate()
+        if proc.returncode == 0 and stdout.strip():
+            lines = stdout.strip().splitlines()
+            return [i.split(" ")[1] for i in lines]
+        else:
+            return []
+
     def guess_keyfile(self):
         # `ssh-keygen -Y sign` requires a file with a key which is not available during ssh agent forwarding
         # that's why we need to list ssh-agent's keys and store the first one into a temp file
@@ -605,15 +624,28 @@ class SignatureAuthHandler(AuthHandlerBase):
         if keys_in_agent:
             selected_key = None
 
-            apiurl_hostname = urllib.parse.urlparse(self.apiurl).hostname
-            for key in keys_in_agent:
-                comments = key.strip().split(" ")[2:]
-                pattern = f"obs={apiurl_hostname}"
-                if pattern in comments:
-                    selected_key = key
-                    output.print_msg(f"Using ssh key from ssh agent that has comment '{pattern}' which matches apiurl '{self.apiurl}': {selected_key}", print_to="debug")
-                    break
+            # use ssh key from ssh agent by the specified fingerprint
+            if self.sshkey_fingerprint:
+                fingerprints_in_agent = self.list_ssh_agent_fingerprints()
+                try:
+                    indx = fingerprints_in_agent.index(self.sshkey_fingerprint)
+                    selected_key = keys_in_agent[indx]
+                    output.print_msg(f"Using ssh key from ssh agent that matches fingerprint '{self.sshkey_fingerprint}': {selected_key}", print_to="debug")
+                except ValueError:
+                    pass
 
+            # use ssh key from ssh agent by key's comment obs=<hostname> matching the hostname of apiurl
+            if selected_key is None:
+                apiurl_hostname = urllib.parse.urlparse(self.apiurl).hostname
+                for key in keys_in_agent:
+                    comments = key.strip().split(" ")[2:]
+                    pattern = f"obs={apiurl_hostname}"
+                    if pattern in comments:
+                        selected_key = key
+                        output.print_msg(f"Using ssh key from ssh agent that has comment '{pattern}' which matches apiurl '{self.apiurl}': {selected_key}", print_to="debug")
+                        break
+
+            # use the first ssh key from ssh agent
             if selected_key is None:
                 selected_key = keys_in_agent[0]
                 output.print_msg(f"Using the first ssh key from ssh agent (see `ssh-add -L`): {selected_key}", print_to="debug")
