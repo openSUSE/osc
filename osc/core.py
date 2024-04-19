@@ -3303,7 +3303,9 @@ def link_pac(
             elm.clear()
             ET.SubElement(elm, 'disable')
 
-        root.remove('scmsync')
+        elm = root.find("scmsync")
+        if elm is not None:
+            root.remove(elm)
 
         dst_meta = ET.tostring(root, encoding=ET_ENCODING)
 
