@@ -303,10 +303,19 @@ class HostOptions(OscOptions):
             """
             A pointer to public SSH key that corresponds with a private SSH used for authentication:
 
+             - keep empty for auto detection
              - path to the public SSH key
              - public SSH key filename (must be placed in ~/.ssh)
 
             NOTE: The private key may not be available on disk because it could be in a GPG keyring, on YubiKey or forwarded through SSH agent.
+
+            TIP: To give osc a hint which ssh key from the agent to use during auto detection,
+            append ``obs=<apiurl-hostname>`` to the **private** key's comment.
+            This will also work nicely during SSH agent forwarding, because the comments get forwarded too.
+
+             - To edit the key, run: ``ssh-keygen -c -f ~/.ssh/<private-key>``
+             - To query the key, run: ``ssh-keygen -y -f ~/.ssh/<private-key>``
+             - Example comment: ``<username@host> obs=api.example.com obs=api-test.example.com``
             """
         ),
     )  # type: ignore[assignment]

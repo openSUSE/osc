@@ -573,6 +573,7 @@ class SignatureAuthHandler(AuthHandlerBase):
             if "/" not in self.sshkey:
                 self.sshkey = os.path.join("~", ".ssh", self.sshkey)
                 self.sshkey = os.path.expanduser(self.sshkey)
+            output.print_msg(f"Using ssh key file configured in oscrc: {self.sshkey}", print_to="debug")
 
         self.ssh_keygen_path = shutil.which("ssh-keygen")
         self.ssh_add_path = shutil.which("ssh-add")
@@ -602,6 +603,21 @@ class SignatureAuthHandler(AuthHandlerBase):
         # that's why we need to list ssh-agent's keys and store the first one into a temp file
         keys_in_agent = self.list_ssh_agent_keys()
         if keys_in_agent:
+            selected_key = None
+
+            apiurl_hostname = urllib.parse.urlparse(self.apiurl).hostname
+            for key in keys_in_agent:
+                comments = key.strip().split(" ")[2:]
+                pattern = f"obs={apiurl_hostname}"
+                if pattern in comments:
+                    selected_key = key
+                    output.print_msg(f"Using ssh key from ssh agent that has comment '{pattern}' which matches apiurl '{self.apiurl}': {selected_key}", print_to="debug")
+                    break
+
+            if selected_key is None:
+                selected_key = keys_in_agent[0]
+                output.print_msg(f"Using the first ssh key from ssh agent (see `ssh-add -L`): {selected_key}", print_to="debug")
+
             self.temp_pubkey = tempfile.NamedTemporaryFile(mode="w+")
             self.temp_pubkey.write(keys_in_agent[0])
             self.temp_pubkey.flush()
@@ -609,9 +625,11 @@ class SignatureAuthHandler(AuthHandlerBase):
 
         sshdir = os.path.expanduser('~/.ssh')
         keyfiles = ('id_ed25519', 'id_ed25519_sk', 'id_rsa', 'id_ecdsa', 'id_ecdsa_sk', 'id_dsa')
+        output.print_msg(f"Searching ssh keys in '{sshdir}' in the following order: {', '.join(keyfiles)}", print_to="debug")
         for keyfile in keyfiles:
             keyfile_path = os.path.join(sshdir, keyfile)
             if os.path.isfile(keyfile_path):
+                output.print_msg(f"Using ssh key from file: {keyfile_path}", print_to="debug")
                 return keyfile_path
         return None
 
