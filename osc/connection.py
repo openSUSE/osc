@@ -584,7 +584,7 @@ class SignatureAuthHandler(AuthHandlerBase):
         if not self.ssh_add_path:
             return []
         cmd = [self.ssh_add_path, '-L']
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
         stdout, _ = proc.communicate()
         if proc.returncode == 0 and stdout.strip():
             return stdout.strip().splitlines()
@@ -596,7 +596,7 @@ class SignatureAuthHandler(AuthHandlerBase):
         # that's why we need to list ssh-agent's keys and store the first one into a temp file
         keys_in_agent = self.list_ssh_agent_keys()
         if keys_in_agent:
-            self.temp_pubkey = tempfile.NamedTemporaryFile()
+            self.temp_pubkey = tempfile.NamedTemporaryFile(mode="w+")
             self.temp_pubkey.write(keys_in_agent[0])
             self.temp_pubkey.flush()
             return self.temp_pubkey.name
@@ -610,10 +610,6 @@ class SignatureAuthHandler(AuthHandlerBase):
         return None
 
     def ssh_sign(self, data, namespace, keyfile=None):
-        try:
-            data = bytes(data, 'utf-8')
-        except:
-            pass
         if not keyfile:
             keyfile = self.guess_keyfile()
         else:
@@ -622,8 +618,8 @@ class SignatureAuthHandler(AuthHandlerBase):
             keyfile = os.path.expanduser(keyfile)
 
         cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        stdout, _ = proc.communicate(data)
+        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8")
+        signature, _ = proc.communicate(data)
 
         if self.temp_pubkey:
             self.temp_pubkey.close()
@@ -632,7 +628,6 @@ class SignatureAuthHandler(AuthHandlerBase):
         if proc.returncode:
             raise oscerr.OscIOError(None, 'ssh-keygen signature creation failed: %d' % proc.returncode)
 
-        signature = decode_it(stdout)
         match = re.match(r"\A-----BEGIN SSH SIGNATURE-----\n(.*)\n-----END SSH SIGNATURE-----", signature, re.S)
         if not match:
             raise oscerr.OscIOError(None, 'could not extract ssh signature')
