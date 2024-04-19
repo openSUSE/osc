@@ -591,13 +591,6 @@ class SignatureAuthHandler(AuthHandlerBase):
         else:
             return []
 
-    @staticmethod
-    def get_fingerprint(line):
-        parts = line.strip().split(b" ")
-        if len(parts) < 2:
-            raise ValueError(f"Unable to retrieve ssh key fingerprint from line: {line}")
-        return parts[1]
-
     def guess_keyfile(self):
         # `ssh-keygen -Y sign` requires a file with a key which is not available during ssh agent forwarding
         # that's why we need to list ssh-agent's keys and store the first one into a temp file
