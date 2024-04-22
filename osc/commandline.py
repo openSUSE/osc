@@ -9099,6 +9099,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     delPerson(apiurl, prj, pac, opts.delete, role)
         elif opts.devel_project:
             # XXX: does it really belong to this command?
+            if not prj:
+                path = os.getcwd()
+                msg = f"Directory '{path}' is not a working copy"
+                raise oscerr.NoWorkingCopy(msg)
             set_devel_project(apiurl, prj, pac, opts.devel_project)
         else:
             if pac:
