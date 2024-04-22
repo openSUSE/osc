@@ -3287,7 +3287,7 @@ def link_pac(
 
     if disable_build or disable_publish:
         meta_change = True
-        root = ET.fromstring(''.join(dst_meta))
+        root = ET.fromstring(b"".join(dst_meta))
 
         if disable_build:
             elm = root.find('build')
@@ -3303,7 +3303,9 @@ def link_pac(
             elm.clear()
             ET.SubElement(elm, 'disable')
 
-        root.remove('scmsync')
+        elm = root.find("scmsync")
+        if elm is not None:
+            root.remove(elm)
 
         dst_meta = ET.tostring(root, encoding=ET_ENCODING)
 
