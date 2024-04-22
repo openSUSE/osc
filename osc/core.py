@@ -4755,10 +4755,10 @@ def get_commitlog(
                     apiurl,
                     prj,
                     package,
-                    revision.rev,
+                    revision.rev - 1,
                     prj,
                     package,
-                    revision.rev - 1,
+                    revision.rev,
                 )
                 yield highlight_diff(rdiff).decode("utf-8", errors="replace")
         return
