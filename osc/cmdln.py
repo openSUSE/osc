@@ -6,6 +6,7 @@ A modern, lightweight alternative to cmdln.py from https://github.com/trentm/cmd
 import argparse
 import inspect
 import sys
+import textwrap
 
 
 def option(*args, **kwargs):
@@ -78,6 +79,19 @@ def hide(value=True):
 
 
 class HelpFormatter(argparse.RawDescriptionHelpFormatter):
+    def _split_lines(self, text, width):
+        # remove the leading and trailing whitespaces to avoid printing unwanted blank lines
+        text = text.strip()
+
+        result = []
+        for line in text.splitlines():
+            if not line.strip():
+                # textwrap normally returns [] on a string that contains only whitespaces; we want [""] to print a blank line
+                result.append("")
+            else:
+                result.extend(textwrap.wrap(line, width))
+        return result
+
     def _format_action(self, action):
         if isinstance(action, argparse._SubParsersAction):
             parts = []

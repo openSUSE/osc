@@ -7172,7 +7172,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--build-opt', metavar='OPT', action='append',
                   help='pass option OPT to the build command')
     @cmdln.option('--buildtool-opt', metavar='OPT', action='append',
-                  help='pass option OPT to the build tool command (rpmbuild)')
+                    help=textwrap.dedent(
+                        """
+                        pass option OPT to the build tool command (rpmbuild), for example:
+                          * don't clean build environment after a successful build:
+                            --buildtool-opt=--noclean
+                        """
+                    ),
+                 )
     @cmdln.option('--userootforbuild', '--login-as-root', action='store_true',
                   help='Run build or shell as root. The default is to build as '
                   'unprivileged user. Note that a line "# norootforbuild" '
