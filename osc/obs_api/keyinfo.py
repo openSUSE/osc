@@ -8,7 +8,7 @@ from .keyinfo_sslcert import KeyinfoSslcert
 class Keyinfo(XmlModel):
     XML_TAG = "keyinfo"
 
-    project: str = Field(
+    project: Optional[str] = Field(
         xml_attribute=True,
         description=textwrap.dedent(
             """
