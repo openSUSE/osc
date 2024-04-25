@@ -471,7 +471,7 @@ class XmlModel(BaseModel):
         default=FromParent("_apiurl", fallback=None),
     )
 
-    def to_xml(self) -> ET.Element:
+    def to_xml(self, *, with_comments: bool = False) -> ET.Element:
         xml_tag = None
 
         # check if there's a special field that sets the tag
@@ -489,6 +489,17 @@ class XmlModel(BaseModel):
         assert xml_tag is not None
         root = ET.Element(xml_tag)
 
+        if with_comments:
+            comment = [
+                "",
+                "The commented attributes and elements only provide hints on the XML structure.",
+                "See OBS documentation such as XML schema files for more details:",
+                "https://github.com/openSUSE/open-build-service/tree/master/docs/api/api",
+                "",
+            ]
+            comment_node = ET.Comment(text="\n".join(comment))
+            root.append(comment_node)
+
         for field_name, field in self.__fields__.items():
             if field.exclude:
                 continue
@@ -502,6 +513,15 @@ class XmlModel(BaseModel):
             if xml_set_tag:
                 # a special case when the field determines the top-level tag name
                 continue
+
+            if with_comments:
+                if xml_attribute:
+                    comment = f'{xml_name}=""'
+                else:
+                    comment = f"<{xml_name}></{xml_name}>"
+
+                comment_node = ET.Comment(text=f" {comment} ")
+                root.append(comment_node)
 
             value = getattr(self, field_name)
             if value is None:
@@ -558,25 +578,25 @@ class XmlModel(BaseModel):
         root = ET.parse(file).getroot()
         return cls.from_xml(root, apiurl=apiurl)
 
-    def to_bytes(self) -> bytes:
+    def to_bytes(self, *, with_comments: bool = False) -> bytes:
         """
         Serialize the object as XML and return it as utf-8 encoded bytes.
         """
-        root = self.to_xml()
+        root = self.to_xml(with_comments=with_comments)
         xml.xml_indent(root)
         return ET.tostring(root, encoding="utf-8")
 
-    def to_string(self) -> str:
+    def to_string(self, *, with_comments: bool = False) -> str:
         """
         Serialize the object as XML and return it as a string.
         """
-        return self.to_bytes().decode("utf-8")
+        return self.to_bytes(with_comments=with_comments).decode("utf-8")
 
-    def to_file(self, file: Union[str, typing.IO]) -> None:
+    def to_file(self, file: Union[str, typing.IO], *, with_comments: bool = False) -> None:
         """
         Serialize the object as XML and save it to an utf-8 encoded file.
         """
-        root = self.to_xml()
+        root = self.to_xml(with_comments=with_comments)
         xml.xml_indent(root)
         return ET.ElementTree(root).write(file, encoding="utf-8")
 
@@ -790,7 +810,8 @@ class XmlModel(BaseModel):
 
         with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8", prefix="obs_xml_", suffix=".xml") as f:
             original_data = self.to_string()
-            write_file(f, original_data)
+            original_data_with_comments = self.to_string(with_comments=True)
+            write_file(f, original_data_with_comments)
 
             while True:
                 run_editor(f.name)
@@ -813,7 +834,10 @@ class XmlModel(BaseModel):
                     elif reply == "e":
                         continue
                     elif reply == "u":
-                        write_file(f, original_data)
+                        write_file(f, original_data_with_comments)
                         continue
+
+        # strip comments, we don't need to increase traffic to the server
+        edited_data = edited_obj.to_string()
 
         return original_data, edited_data, edited_obj
