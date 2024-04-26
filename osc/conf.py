@@ -1869,7 +1869,8 @@ def get_config(override_conffile=None,
 
         # make sure oscrc is not world readable, it may contain a password
         conffile_stat = os.stat(conffile)
-        if conffile_stat.st_mode != 0o600:
+        # applying 0o7777 mask because we want to ignore the file type bits
+        if conffile_stat.st_mode & 0o7777 != 0o600:
             try:
                 os.chmod(conffile, 0o600)
             except OSError as e:
@@ -1974,6 +1975,9 @@ def get_config(override_conffile=None,
         # priority: env, overrides, config
         if env_key in os.environ:
             value = os.environ[env_key]
+            # remove any matching records from overrides because they are checked for emptiness later
+            overrides.pop(name, None)
+            overrides.pop(ini_key, None)
         elif name in overrides:
             value = overrides.pop(name)
         elif ini_key in overrides:
