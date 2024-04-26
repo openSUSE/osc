@@ -1688,6 +1688,7 @@ class Osc(cmdln.Cmdln):
             osc token --delete <TOKENID>
             osc token --trigger <TOKENSTRING> [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
         """
+        from . import obs_api
 
         args = slash_split(args)
 
@@ -1696,60 +1697,51 @@ class Osc(cmdln.Cmdln):
             raise oscerr.WrongOptions(msg)
 
         apiurl = self.get_api_url()
-        url_path = ['person', conf.get_apiurl_usr(apiurl), 'token']
+        user = conf.get_apiurl_usr(apiurl)
+
+        if len(args) > 1:
+            project = args[0]
+            package = args[1]
+        else:
+            project = None
+            package = None
 
         if opts.create:
             if not opts.operation:
                 self.argparser.error("Please specify --operation")
+
             if opts.operation == 'workflow' and not opts.scm_token:
                 msg = 'The --operation=workflow option requires a --scm-token=<token> option'
                 raise oscerr.WrongOptions(msg)
-            print("Create a new token")
-            query = {'cmd': 'create'}
-            if opts.operation:
-                query['operation'] = opts.operation
-            if opts.scm_token:
-                query['scm_token'] = opts.scm_token
-            if len(args) > 1:
-                query['project'] = args[0]
-                query['package'] = args[1]
 
-            url = makeurl(apiurl, url_path, query)
-            f = http_POST(url)
-            while True:
-                data = f.read(16384)
-                if not data:
-                    break
-                sys.stdout.buffer.write(data)
+            print("Create a new token")
+            status = obs_api.Token.cmd_create(
+                apiurl,
+                user,
+                operation=opts.operation,
+                project=project,
+                package=package,
+                scm_token=opts.scm_token,
+            )
+            print(status.to_string())
 
         elif opts.delete:
             print("Delete token")
-            url_path.append(opts.delete)
-            url = makeurl(apiurl, url_path)
-            http_DELETE(url)
+            status = obs_api.Token.do_delete(apiurl, user, token=opts.delete)
+            print(status.to_string())
         elif opts.trigger:
             print("Trigger token")
-            query = {}
-            if len(args) > 1:
-                query['project'] = args[0]
-                query['package'] = args[1]
-            if opts.operation:
-                url = makeurl(apiurl, ["trigger", opts.operation], query)
-            else:
-                url = makeurl(apiurl, ["trigger"], query)
-            headers = {
-                'Content-Type': 'application/octet-stream',
-                'Authorization': "Token " + opts.trigger,
-            }
-            fd = http_POST(url, headers=headers)
-            print(decode_it(fd.read()))
+            status = obs_api.Token.do_trigger(apiurl, token=opts.trigger, project=project, package=package)
+            print(status.to_string())
         else:
             if args and args[0] in ['create', 'delete', 'trigger']:
                 raise oscerr.WrongArgs("Did you mean --" + args[0] + "?")
-            # just list token
-            url = makeurl(apiurl, url_path)
-            for data in streamfile(url, http_GET):
-                sys.stdout.buffer.write(data)
+
+            # just list tokens
+            token_list = obs_api.Token.do_list(apiurl, user)
+            for obj in token_list:
+                print(obj.to_human_readable_string())
+                print()
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='affect only a given attribute')
