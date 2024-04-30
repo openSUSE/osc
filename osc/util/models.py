@@ -756,12 +756,20 @@ class XmlModel(BaseModel):
         return obj
 
     @classmethod
-    def xml_request(cls, method: str, apiurl: str, path: List[str], query: Optional[dict] = None, data: Optional[str] = None) -> urllib3.response.HTTPResponse:
+    def xml_request(
+        cls,
+        method: str,
+        apiurl: str,
+        path: List[str],
+        query: Optional[dict] = None,
+        headers: Optional[str] = None,
+        data: Optional[str] = None,
+    ) -> urllib3.response.HTTPResponse:
         from ..connection import http_request
         from ..core import makeurl
         url = makeurl(apiurl, path, query)
         # TODO: catch HTTPError and return the wrapped response as XmlModel instance
-        return http_request(method, url, data=data)
+        return http_request(method, url, headers=headers, data=data)
 
     def do_update(self, other: "XmlModel") -> None:
         """

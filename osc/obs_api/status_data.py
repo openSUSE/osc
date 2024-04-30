@@ -11,6 +11,8 @@ class StatusData(XmlModel):
         SOURCEPACKAGE = "sourcepackage"
         TARGETPROJECT = "targetproject"
         TARGETPACKAGE = "targetpackage"
+        TOKEN = "token"
+        ID = "id"
 
     name: NameEnum = Field(
         xml_attribute=True,
