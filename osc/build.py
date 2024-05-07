@@ -709,6 +709,13 @@ def create_build_descr_data(
         result_data.append((os.path.basename(build_descr_path).encode("utf-8"), build_descr_data))
 
     if topdir:
+        for include_file in glob.glob(os.path.join(topdir, "*.inc")):
+            fn = os.path.basename(include_file)
+            print(f"Using local file: {fn}", file=sys.stderr)
+            with open(include_file, "rb") as f:
+                result_data.append((fn.encode("utf-8"), f.read()))
+
+    if topdir:
         buildenv_file = os.path.join(topdir, f"_buildenv.{repo}.{arch}")
         if not os.path.isfile(buildenv_file):
             buildenv_file = os.path.join(topdir, f"_buildenv")
