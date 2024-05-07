@@ -71,6 +71,11 @@ osc.conf._model_to_rst(
     description=textwrap.dedent(
         """
         The configuration file path is ``$XDG_CONFIG_HOME/osc/oscrc``, which usually translates into ``~/.config/osc/oscrc``.
+
+        The configuration options are loaded with the following priority:
+            1. environment variables: ``OSC_<uppercase_option>`` or ``OSC_<uppercase_host_alias>_<uppercase_host_option>``
+            2. command-line options
+            3. oscrc config file
         """
     ),
     sections={
