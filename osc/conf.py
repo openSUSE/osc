@@ -1817,8 +1817,8 @@ def get_config(override_conffile=None,
     Configure osc.
 
     The configuration options are loaded with the following priority:
-        1. environment variables: OSC_<uppercase_option>
-        2. override arguments provided to get_config()
+        1. environment variables: ``OSC_<uppercase_option>`` or ``OSC_<uppercase_host_alias>_<uppercase_host_option>``
+        2. override arguments provided to ``get_config()``
         3. oscrc config file
     """
 
