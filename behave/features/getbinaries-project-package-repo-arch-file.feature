@@ -32,6 +32,7 @@ Scenario: Run `osc getbinaries <project> <package> <repo> <arch> <file>` where f
     When I execute osc with args "getbinaries test:factory multibuild-pkg standard x86_64 multibuild-pkg-1-1.src.rpm"
     Then directory listing of "{context.osc.temp}/binaries/" is
         """
+        multibuild-pkg-1-1.src.rpm
         """
 
 
@@ -47,6 +48,7 @@ Scenario: Run `osc getbinaries <project> <package> <repo> <arch> <file>` where f
     When I execute osc with args "getbinaries test:factory multibuild-pkg standard x86_64 multibuild-pkg-debuginfo-1-1.x86_64.rpm"
     Then directory listing of "{context.osc.temp}/binaries/" is
         """
+        multibuild-pkg-debuginfo-1-1.x86_64.rpm
         """
 
 
