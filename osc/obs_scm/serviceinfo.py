@@ -229,6 +229,7 @@ class Serviceinfo:
                     raise oscerr.PackageNotInstalled(f"obs-service-{cmd[0]}")
                 cmd[0] = "/usr/lib/obs/service/" + cmd[0]
                 cmd = cmd + ["--outdir", temp_dir]
+                output.print_msg(f"Running source_service '{service['name']}' ...", print_to="stdout")
                 output.print_msg("Run source service:", " ".join(cmd), print_to="verbose")
                 r = run_external(*cmd)
 
