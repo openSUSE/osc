@@ -8151,6 +8151,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 package = [package]
 
+        if binary is not None:
+            output.print_msg("Binary filename was specified, ignoring source and debuginfo filters", print_to="debug")
+            opts.sources = True
+            opts.debuginfo = True
+
         # Set binary target directory and create if not existing
         target_dir = os.path.normpath(opts.destdir)
         if not os.path.isdir(target_dir):
