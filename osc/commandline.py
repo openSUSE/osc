@@ -1237,7 +1237,7 @@ class Osc(cmdln.Cmdln):
            LL PROJECT PACKAGE          # verbosely list source files of expanded link
 
         With --verbose, the following fields will be shown for each item:
-           MD5 hash of file
+           MD5 hash of file (doesn't apply to binaries)
            Revision number of the last commit
            Size (in bytes)
            Date and time of the last commit
