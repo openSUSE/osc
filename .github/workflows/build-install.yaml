@@ -59,7 +59,9 @@ jobs:
         run: |
             dnf -y makecache
             dnf -y distro-sync
-            dnf -y install git-lfs rpm-build dnf-plugins-core
+            dnf -y install git-lfs rpm-build
+            rpm -q dnf5 >/dev/null || dnf -y install dnf-plugins-core || :
+            rpm -q dnf5 >/dev/null && dnf -y install dnf5-plugins || :
 
       - uses: actions/checkout@v3
         with:
