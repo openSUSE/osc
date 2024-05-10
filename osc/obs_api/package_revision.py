@@ -8,7 +8,7 @@ class PackageRevision(XmlModel):
         xml_attribute=True,
     )
 
-    vrev: Optional[int] = Field(
+    vrev: Optional[str] = Field(
         xml_attribute=True,
     )
 
