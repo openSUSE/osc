@@ -1014,7 +1014,7 @@ class Options(OscOptions):
             The number of parallel processes during the build.
             Defaults to the number of available CPU threads.
 
-            Passed as ``--jobs`` to the build tool.
+            If the value is greater than ``0`` then it is passed as ``--jobs`` to the build tool.
             """
         ),
         ini_key="build-jobs",
