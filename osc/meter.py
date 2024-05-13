@@ -102,7 +102,6 @@ def create_text_meter(*args, **kwargs) -> TextMeterBase:
 
     use_pb_fallback = kwargs.pop("use_pb_fallback", False)
 
-    meter_class: TextMeterBase
     if config.quiet:
         meter_class = NoTextMeter
     elif not have_pb_module or not config.show_download_progress or not sys.stdout.isatty() or use_pb_fallback:

@@ -4990,6 +4990,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     rev2 = -rev - 1
                 else:
                     return
+                rev1 = str(rev1)
+                rev2 = str(rev2)
             except:
                 print(f'Revision \'{opts.change}\' not an integer', file=sys.stderr)
                 return
