@@ -60,7 +60,7 @@ class PBTextMeter(TextMeterBase):
         self.bar.finish()
 
 
-class NoPBTextMeter:
+class NoPBTextMeter(TextMeterBase):
     def start(self, basename: str, size: Optional[int] = None):
         pass
 
