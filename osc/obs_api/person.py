@@ -2,6 +2,7 @@ from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-i
 from .enums import BoolString
 from .person_owner import PersonOwner
 from .person_watchlist import PersonWatchlist
+from .status import Status
 
 
 class Person(XmlModel):
@@ -69,3 +70,45 @@ class Person(XmlModel):
         for node in root:
             result.append(cls.from_xml(node, apiurl=apiurl))
         return result
+
+    @classmethod
+    def cmd_register(
+        cls,
+        apiurl: str,
+        *,
+        login: str,
+        realname: str,
+        email: str,
+        password: str,
+        note: Optional[str] = None,
+        state: Optional[str] = "confirmed",
+    ):
+        person = UnregisteredPerson(login=login, realname=realname, email=email, password=password, note=note, state=state)
+        url_path = ["person"]
+        url_query = {
+            "cmd": "register",
+        }
+        response = cls.xml_request("POST", apiurl, url_path, url_query, data=person.to_string())
+        return Status.from_file(response, apiurl=apiurl)
+
+
+class UnregisteredPerson(XmlModel):
+    XML_TAG = "unregisteredperson"
+
+    login: str = Field(
+    )
+
+    realname: str = Field(
+    )
+
+    email: str = Field(
+    )
+
+    password: str = Field(
+    )
+
+    note: Optional[str] = Field(
+    )
+
+    state: Optional[str] = Field(
+    )
