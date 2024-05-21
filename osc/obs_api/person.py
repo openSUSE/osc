@@ -33,6 +33,19 @@ class Person(XmlModel):
     ignore_auth_services: Optional[BoolString] = Field(
     )
 
+    def to_human_readable_string(self) -> str:
+        """
+        Render the object as a human readable string.
+        """
+        from ..output import KeyValueTable
+
+        table = KeyValueTable()
+        table.add("Login", self.login, color="bold")
+        table.add("Real name", self.realname)
+        table.add("Email", self.email)
+        table.add("State", self.state)
+        return f"{table}"
+
     @classmethod
     def from_api(cls, apiurl: str, username: str):
         url_path = ["person", username]
