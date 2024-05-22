@@ -1,3 +1,108 @@
+- 1.7.0
+  - Command-line:
+    - Add 'person search' command
+    - Add 'person register' command
+    - Add '-M/--multibuild-package' option to '[what]dependson' commands
+    - Update '-U/--user' option in 'maintainer' command to accept also an email address
+    - Fix 'branch' command to allow using '--new-package' option on packages that do not exist
+    - Fix 'buildinfo' command to include obs:cli_debug_packages by default
+    - Fix 'buildinfo' command to send complete local build environment as the 'build' command does
+    - Fix 'maintainer --devel-project' to raise an error if running outside a working copy without any arguments
+    - Fix handling arguments in 'service remoterun prj/pac'
+    - Fix 'rebuild' command so the '--all' option conflicts with the 'package' argument
+    - Fix crash when removing 'scmsync' element from dst package meta in 'linkpac' command
+    - Fix crash when reading dst package meta in 'linkpac' command
+    - Allow `osc rpmlint` to infer prj/pkg from CWD
+    - Propagate exit code from the run() and do_() commandline methods
+    - Give a hint where a scmsync git is hosted
+    - Fix crash in 'updatepacmetafromspec' command when working with an incomplete spec
+    - Improve 'updatepacmetafromspec' command to expand rpm spec macros by calling rpmspec to query the data
+    - Improve 'build' and 'buildinfo' commands by uploading *.inc files to OBS for parsing BuildRequires (boo#1221340)
+    - Improve 'service' command by printing names of running services
+    - Improve 'getbinaries' command by ignoring source and debuginfo filters when a binary name is specified
+    - Change 'build' command to pass '--jobs' option to 'build' tool only if 'build_jobs' > 0
+    - Clarify 'list' command's help that that listing binaries doesn't contain md5 checksums
+    - Improve 'log' command: produce proper CSV and XML outputs, add -p/--patch option for the text output
+    - Allow setlinkrev to set a specific vrev
+    - Document '--buildtool-opt=--noclean' example in 'build' command's help
+    - Fix handling the default package argument on the command-line
+  - Configuration:
+    - Document loading configuration from env variables
+  - Connection:
+    - Don't retry on error 400
+    - Remove now unused 'retry_on_400' http_request() option from XmlModel
+    - Revert "Don't retry on 400 HTTP status code in core.server_diff()"
+    - Revert "connection: Allow disabling retry on 400 HTTP status code"
+  - Authentication:
+    - Update SignatureAuthHandler to support specifying ssh key by its fingerprint
+    - Use ssh key from ssh agent that contains comment 'obs=<apiurl-hostname>'
+    - Use strings instead of bytes in SignatureAuthHandler
+    - Cache password from SecretService to avoid spamming user with an accept dialog
+    - Never ask for credentials when displaying help
+    - Remove unused SignatureAuthHandler.get_fingerprint()
+  - Library:
+    - Add rootless build support for 'qemu' VM type
+    - Support package linking of packages from scmsync projects
+    - Fix do_createrequest() function to return None instead of request id
+    - Replace invalid 'if' with 'elif' in BaseModel.dict()
+    - Fix crash when no prefered packages are defined
+    - Add XmlModel class that encapsulates manipulation with XML
+    - Add obs_api.Person.cmd_register() for registering new users
+    - Fix conf.get_config() to ignore file type bits when comparing oscrc perms
+    - Fix conf.get_config() to correctly handle overrides when env variables are set
+    - Fix output.tty.IS_INTERACTIVE when os.isatty() throws OSError
+    - Improve cmdln.HelpFormatter to obey newline characters
+    - Update list of color codes in 'output.tty' module
+    - Remove core.setDevelProject() in favor of core.set_devel_project()
+    - Move removing control characters to output.sanitize_text()
+    - Improve sanitize_text() to keep selected CSI escape sequences
+    - Add output.pipe_to_pager() that pipes lines to a pager without creating an intermediate temporary file
+    - Fix output.safe_write() in connection with NamedTemporaryFile
+    - Modernize output.run_pager()
+    - Extend output.print_msg() to accept 'error' and 'warning' values of 'to_print' argument
+    - Add XPathQuery class for translating keyword arguments to an xpath query
+    - Add obs_api.Keyinfo class
+    - Add obs_api.Package class
+    - Add Package.get_revision_list() for listing commit log
+    - Add obs_api.PackageSources class for handling OBS SCM sources
+    - Add obs_api.Person class
+    - Add obs_api.Project class
+    - Add obs_api.Request class
+    - Add obs_api.Token class
+    - Allow storing apiurl in the XmlModel instances
+    - Allow retrieving default field value from top-level model
+    - Fix BaseModel to convert dictionaries to objects on retrieving a model list
+    - Fix BaseModel to always deepcopy mutable defaults on first use
+    - Implement do_snapshot() and has_changed() methods to determine changes in BaseModel
+    - Implement total ordering on BaseModel
+    - Add comments with available attributes/elements to edited XML
+  - Refactoring:
+    - Migrate repo {list,add,remove} commands to obs_api.Project
+    - Migrate core.show_package_disabled_repos() to obs_api.Package
+    - Migrate core.Package.update_package_meta() to obs_api.Package
+    - Migrate core.get_repos_of_project() to obs_api.Project
+    - Migrate core.get_repositories_of_project() to obs_api.Project
+    - Migrate core.show_scmsync() to obs_api.{Package,Project}
+    - Migrate core.set_devel_project() to obs_api.Package
+    - Migrate core.show_devel_project() to obs_api.Package
+    - Migrate Fetcher.run() to obs_api.Keyinfo
+    - Migrate core.create_submit_request() to obs_api.Request
+    - Migrate 'token' command to obs_api.Token
+    - Migrate 'whois/user' command to obs_api.Person
+    - Migrate 'signkey' command to obs_api.Keyinfo
+    - Move print_msg() to the 'osc.output' module
+    - Move run_pager() and get_default_pager() from 'core' to 'output' module
+    - Move core.Package to obs_scm.Package
+    - Move core.Project to obs_scm.Project
+    - Move functions manipulating store from core to obs_scm.store
+    - Move store.Store to obs_scm.Store
+    - Move core.Linkinfo to obs_scm.Linkinfo
+    - Move core.Serviceinfo to obs_scm.Serviceinfo
+    - Move core.File to obs_scm.File
+    - Merge _private.project.ProjectMeta into obs_api.Project
+  - Spec:
+    - Remove dependency on /usr/bin/python3 using %python3_fix_shebang macro (bsc#1212476)
+
 - 1.6.1
   - Command-line:
     - Use busybox compatible commands for completion
