@@ -30,6 +30,11 @@
 %bcond_with fdupes
 %endif
 
+# the macro exists only on openSUSE based distros
+%if %{undefined python3_fix_shebang}
+%define python3_fix_shebang %nil
+%endif
+
 %define argparse_manpage_pkg argparse-manpage
 %define obs_build_pkg obs-build
 %define ssh_add_pkg openssh-clients
@@ -183,6 +188,8 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %if %{with fdupes}
 %fdupes %buildroot
 %endif
+
+%python3_fix_shebang
 
 %check
 %{use_python} setup.py test
