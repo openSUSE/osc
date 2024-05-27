@@ -9887,6 +9887,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         except oscerr.PackageFileConflict:
             # file is already tracked
             pass
+
+        # instantiate src_pkg *again* to load fresh state from .osc that was written on deleting a file in tgt_pkg
+        # it would be way better to use a single Package instance where possible
+        src_pkg = Package(source)
         src_pkg.delete_file(os.path.basename(source), force=opts.force)
 
     @cmdln.option('-d', '--delete', action='store_true',
