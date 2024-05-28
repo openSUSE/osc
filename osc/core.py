@@ -5181,8 +5181,6 @@ def unpack_srcrpm(srpm, dir, *files):
         with open(os.devnull, 'w') as devnull:
             rpm2cpio_proc = subprocess.Popen(['rpm2cpio'], stdin=fsrpm,
                                              stdout=subprocess.PIPE)
-            # XXX: shell injection is possible via the files parameter, but the
-            #      current osc code does not use the files parameter.
             cpio_proc = subprocess.Popen(['cpio', '-i'] + list(files),
                                          stdin=rpm2cpio_proc.stdout,
                                          stderr=devnull)
