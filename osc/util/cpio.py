@@ -20,10 +20,6 @@ import struct
 import sys
 
 
-# workaround for python24
-if not hasattr(os, 'SEEK_SET'):
-    os.SEEK_SET = 0
-
 # format implementation is based on src/copyin.c and src/util.c (see cpio sources)
 
 
@@ -129,7 +125,16 @@ class CpioRead:
             msg = '\'%s\' is no regular file - only regular files are supported atm' % hdr.filename
             raise NotImplementedError(msg)
         self.__file.seek(hdr.dataoff, os.SEEK_SET)
+
+        if fn.startswith(b"/"):
+            raise CpioError(fn, "Extracting files with absolute paths is not supported for security reasons")
+
         fn = os.path.join(dest, fn)
+
+        dir_path, _ = os.path.split(fn)
+        if dir_path:
+            os.makedirs(dir_path, exist_ok=True)
+
         with open(fn, 'wb') as f:
             f.write(self.__file.read(hdr.filesize))
         os.chmod(fn, hdr.mode)
@@ -183,12 +188,22 @@ class CpioRead:
         to a dir the file will be stored in dest/filename. In case new_fn is specified
         the file will be stored as new_fn.
         """
+
+        # accept str for better user experience
+        if isinstance(filename, str):
+            filename = filename.encode("utf-8")
+        if isinstance(dest, str):
+            dest = dest.encode("utf-8")
+        if isinstance(new_fn, str):
+            new_fn = new_fn.encode("utf-8")
+
         hdr = self._get_hdr(filename)
         if not hdr:
             raise CpioError(filename, '\'%s\' does not exist in archive' % filename)
         dest = dest or os.getcwdb()
         fn = new_fn or filename
         self._copyin_file(hdr, dest, fn)
+        return os.path.join(dest, fn).decode("utf-8")
 
     def copyin(self, dest=None):
         """

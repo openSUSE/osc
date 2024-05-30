@@ -26,3 +26,10 @@ Create archive.ar
 ar qP archive.ar /tmp/foo /123 very-long-long-long-long-name very-long-long-long-long-name2 'very-long-name
 -with-newline' 'a
 b' dir/file
+
+
+Create archive.cpio
+-------------------
+
+printf "/tmp/foo\0/123\0very-long-long-long-long-name\0very-long-long-long-long-name2\0very-long-name
+-with-newline\0a\nb\0dir/file\0" | cpio -ocv0 --owner=root:root > archive.cpio
