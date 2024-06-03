@@ -263,7 +263,9 @@ class OscConfigParser(configparser.ConfigParser):
                 mo = self.SECTCRE.match(line)
                 if mo:
                     sectname = mo.group('header')
-                    if sectname in self._sections:
+                    if self._strict and sectname in self._sections:
+                        raise configparser.DuplicateSectionError(sectname, fpname, lineno)
+                    elif sectname in self._sections:
                         cursect = self._sections[sectname]
                     elif sectname == configparser.DEFAULTSECT:
                         cursect = self._defaults
@@ -294,7 +296,9 @@ class OscConfigParser(configparser.ConfigParser):
                         if optval == '""':
                             optval = ''
                         optname = self.optionxform(optname.rstrip())
-                        if cursect == configparser.DEFAULTSECT:
+                        if self._strict and optname in self._sections[cursect]:
+                            raise configparser.DuplicateOptionError(sectname, optname, fpname, lineno)
+                        elif cursect == configparser.DEFAULTSECT:
                             self._defaults[optname] = optval
                         else:
                             self._sections[cursect]._add_option(optname, line=line)
