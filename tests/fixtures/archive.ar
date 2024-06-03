@@ -1,0 +1,25 @@
+!<arch>
+//                                              94        `
+very-long-long-long-long-name/
+very-long-long-long-long-name2/
+very-long-name
+-with-newline/
+
+/tmp/foo/       1716888536  1000  1000  100644  7         `
+foobar
+
+/123/           1716883776  0     0     100644  8         `
+numbers
+/0              1716882802  1000  1000  100644  7         `
+qwerty
+
+/31             1716882988  1000  1000  100644  7         `
+asdfgh
+
+/63             1716884767  1000  1000  100644  8         `
+newline
+a
+b/            1716884876  1000  1000  100644  8         `
+newline
+dir/file/       1716992150  1000  1000  100644  14        `
+file-in-a-dir
