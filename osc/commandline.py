@@ -7868,9 +7868,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         args = parseargs(args)
-        pacs = Package.from_paths(args)
-
-        for p in pacs:
+        for pdir in args:
+            store = osc_store.get_store(pdir)
+            if store.is_package:
+                p = Package(pdir)
+            else:
+                p = Project(pdir, getPackageList=False, wc_check=False)
             print(p.info())
 
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append',

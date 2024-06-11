@@ -235,6 +235,13 @@ Revision: %s
 Link info: %s
 """
 
+project_info_templ = """\
+Project name: %s
+Path: %s
+API URL: %s
+Source URL: %s
+"""
+
 new_pattern_template = """\
 <!-- See https://github.com/openSUSE/libzypp/tree/master/zypp/parser/yum/schema/patterns.rng -->
 
