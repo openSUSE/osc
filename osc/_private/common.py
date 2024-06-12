@@ -8,6 +8,7 @@ def format_msg_project_package_options(
     dest_project=None,
     dest_package=None,
     repository=None,
+    architecture=None,
     dest_repository=None,
     **options,
 ):
@@ -33,6 +34,9 @@ def format_msg_project_package_options(
 
     if dest_repository:
         msg += f" repository '{dest_repository}'"
+
+    if architecture:
+        msg += f" architecture '{architecture}'"
 
     msg_options = [key.replace("_", "-") for key, value in options.items() if value]
     if msg_options:

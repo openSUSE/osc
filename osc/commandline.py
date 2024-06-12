@@ -3922,6 +3922,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      keep_link=opts.keep_link)
         print(decode_it(r))
 
+    @cmdln.option('-a', '--arch', metavar='ARCH',
+                        help='Release only binaries from the specified architecture')
     @cmdln.option('-r', '--repo', metavar='REPO',
                         help='Release only binaries from the specified repository')
     @cmdln.option('--target-project', metavar='TARGETPROJECT',
@@ -3954,6 +3956,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project=project,
             package=package,
             repository=opts.repo,
+            architecture=opts.arch,
             target_project=opts.target_project,
             target_repository=opts.target_repository,
             set_release_to=opts.set_release,

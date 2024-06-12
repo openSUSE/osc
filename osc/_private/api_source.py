@@ -89,6 +89,7 @@ def release(
     project,
     package,
     repository,
+    architecture,
     target_project,
     target_repository,
     set_release_to=None,
@@ -102,6 +103,7 @@ def release(
         target_project,
         target_package=None,
         repository=repository,
+        architecture=architecture,
         dest_repository=target_repository,
         delayed=delayed,
     )
@@ -114,6 +116,8 @@ def release(
     url_query = {"cmd": "release"}
     if repository:
         url_query["repository"] = repository
+    if architecture:
+        url_query["arch"] = architecture
     if target_project:
         url_query["target_project"] = target_project
     if target_repository:
