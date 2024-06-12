@@ -87,6 +87,33 @@ class Package(XmlModel):
         return Status.from_file(response, apiurl=apiurl)
 
     @classmethod
+    def cmd_fork(
+        cls,
+        apiurl: str,
+        project: str,
+        package: str,
+        *,
+        scmsync: str,
+    ):
+        """
+        POST /source/{project}/{package}?cmd=fork&scmsync={scmsync}
+        For a package managed in Git.
+
+        :param apiurl: Full apiurl or its alias.
+        :param project: Project name.
+        :param package: Package name.
+        :param scmsync: Checkout Git URL. Example: https://src.example.com/owner/repo#branch
+        """
+
+        url_path = ["source", project, package]
+        url_query = {
+            "cmd": "fork",
+            "scmsync": scmsync,
+        }
+        response = cls.xml_request("POST", apiurl, url_path, url_query)
+        return Status.from_file(response, apiurl=apiurl)
+
+    @classmethod
     def cmd_release(
         cls,
         apiurl: str,
