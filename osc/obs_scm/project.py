@@ -242,6 +242,14 @@ class Project:
         else:
             return None
 
+    def info(self):
+        from ..core import project_info_templ
+        from ..core import makeurl
+
+        source_url = makeurl(self.apiurl, ['source', self.name])
+        r = project_info_templ % (self.name, self.absdir, self.apiurl, source_url)
+        return r
+
     def new_package_entry(self, name, state):
         ET.SubElement(self.pac_root, 'package', name=name, state=state)
 
