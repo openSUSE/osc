@@ -4101,8 +4101,13 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
     # hmm the function name is a bit too generic - something like
     # get_package_results_human would be better, but this would break the existing
     # api (unless we keep get_results around as well)...
-    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
-    result_line_mb_templ = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
+    format = kwargs.pop('format')
+    if format is None:
+        result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
+        result_line_mb_templ = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
+    else:
+        result_line_templ = format
+        result_line_mb_templ = format
     r = []
     printed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])

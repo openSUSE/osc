@@ -6055,7 +6055,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--csv', action='store_true', default=False,
                   help='generate output in CSV format')
     @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
-                  help='format string for csv output')
+                  help='format string for default or csv output (not supported for xml)')
     @cmdln.option('--show-excluded', action='store_true',
                   help='show repos that are excluded for this package')
     def do_results(self, subcmd, opts, *args):
@@ -6129,6 +6129,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             kwargs['verbose'] = opts.verbose
             kwargs['wait'] = opts.watch
             kwargs['printJoin'] = '\n'
+            kwargs['format'] = opts.format
             get_results(**kwargs)
 
     # WARNING: this function is also called by do_results. You need to set a default there
