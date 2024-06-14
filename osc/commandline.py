@@ -6054,7 +6054,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
                   help='generate output in CSV format')
-    @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
+    @cmdln.option('', '--format', default=None,
                   help='format string for default or csv output (not supported for xml)')
     @cmdln.option('--show-excluded', action='store_true',
                   help='show repos that are excluded for this package')
@@ -6123,6 +6123,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(decode_it(xml), end='')
                 else:
                     # csv formatting
+                    if opts.format is None:
+                        opts.format='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s'
                     results = [r for r, _ in result_xml_to_dicts(xml)]
                     print('\n'.join(format_results(results, opts.format)))
         else:
