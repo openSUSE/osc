@@ -6124,7 +6124,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     # csv formatting
                     if opts.format is None:
-                        opts.format='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s'
+                        opts.format = '%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s'
                     results = [r for r, _ in result_xml_to_dicts(xml)]
                     print('\n'.join(format_results(results, opts.format)))
         else:
