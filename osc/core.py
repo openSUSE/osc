@@ -4164,9 +4164,9 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
     return r
 
 
-def get_package_results(apiurl: str, project: str, package: Optional[str] = None, wait=False, *args, **kwargs):
+def get_package_results(apiurl: str, project: str, package: Optional[str] = None, wait=False, multibuild_packages: Optional[List[str]] = None, *args, **kwargs):
     """generator that returns a the package results as an xml structure"""
-    xml = ''
+    xml = b''
     waiting_states = ('blocked', 'scheduled', 'dispatching', 'building',
                       'signing', 'finished')
     while True:
@@ -4198,6 +4198,33 @@ def get_package_results(apiurl: str, project: str, package: Optional[str] = None
                 if pkg is not None and pkg.get('code') in waiting_states:
                     waiting = True
                     break
+
+        # filter the result according to the specified multibuild_packages (flavors)
+        if multibuild_packages:
+            for result in list(root):
+                for status in list(result):
+                    package = status.attrib["package"]
+                    package_flavor = package.rsplit(":", 1)
+
+                    # package has flavor, check if the flavor is in multibuild_packages
+                    flavor_match = len(package_flavor) == 2 and package_flavor[1] in multibuild_packages
+
+                    # package nas no flavor, check if "" is in multibuild_packages
+                    no_flavor_match = len(package_flavor) == 1 and "" in multibuild_packages
+
+                    if not flavor_match and not no_flavor_match:
+                        # package doesn't match multibuild_packages, remove the corresponding <status> from <result>
+                        result.remove(status)
+
+                # remove empty <result> from <resultlist>
+                if len(result) == 0:
+                    root.remove(result)
+
+            if len(root) == 0:
+                break
+
+            xmlindent(root)
+            xml = ET.tostring(root)
 
         if not wait or not waiting:
             break
