@@ -4103,11 +4103,7 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
     # api (unless we keep get_results around as well)...
     format = kwargs.pop('format')
     if format is None:
-        result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
-        result_line_mb_templ = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
-    else:
-        result_line_templ = format
-        result_line_mb_templ = format
+        format = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
     r = []
     printed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])
@@ -4150,10 +4146,7 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
             # of the repository if the result is already prefiltered by the backend. So we need
             # to filter out the repository states.
             if code_filter is None or code_filter == res['code']:
-                if is_multi:
-                    r.append(result_line_mb_templ % res)
-                else:
-                    r.append(result_line_templ % res)
+                r.append(format % res)
 
         if printJoin:
             if printed:
