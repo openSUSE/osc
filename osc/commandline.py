@@ -6090,6 +6090,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.failed and opts.status_filter:
             raise oscerr.WrongArgs('-s and -f cannot be used together')
 
+        if opts.multibuild_package and opts.no_multibuild:
+            self.argparser.error("-M/--multibuild-package and --no-multibuild are mutually exclusive")
+
+        if opts.xml and opts.format:
+            self.argparser.error("--xml and --format are mutually exclusive")
+
         if opts.failed:
             opts.status_filter = 'failed'
             opts.brief = True
