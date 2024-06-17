@@ -6130,9 +6130,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 else:
                     # csv formatting
                     if opts.format is None:
-                        opts.format = '%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s'
-                    results = [r for r, _ in result_xml_to_dicts(xml)]
-                    print('\n'.join(format_results(results, opts.format)))
+                        columns = ["repository", "arch", "package", "state", "dirty", "code", "details"]
+                    else:
+                        # split columns by colon, semicolon or pipe
+                        columns = opts.format.split(",")
+
+                    supported_columns = ["project", "package", "repository", "arch", "state", "dirty", "code", "details"]
+                    unknown_columns = sorted(set(columns) - set(supported_columns))
+
+                    if unknown_columns:
+                        self.argparser.error(f"Unknown format fields: {''.join(unknown_columns)}")
+
+                    f = io.StringIO()
+                    writer = csv.writer(f, dialect="unix")
+
+                    rows = [r for r, _ in result_xml_to_dicts(xml)]
+                    for row in rows:
+                        writer.writerow([row[i] for i in columns])
+
+                    f.seek(0)
+                    print(f.read(), end="")
+
         else:
             kwargs['verbose'] = opts.verbose
             kwargs['wait'] = opts.watch
