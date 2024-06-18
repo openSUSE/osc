@@ -6055,7 +6055,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--csv', action='store_true', default=False,
                   help='generate output in CSV format')
     @cmdln.option('', '--format', default=None,
-                  help='format string for default or csv output (not supported for xml)')
+                  help="Change the format of the text (default) or csv output. Not supported for xml output.\n"
+                       "Supported fields: project, package, repository, arch, state, dirty, code, details.\n"
+                       "Text output format requires using the field names in form of named fields for string interpolation: ``%%(field)s``.\n"
+                       "CSV output format requires field names separated with commas.")
     @cmdln.option('--show-excluded', action='store_true',
                   help='show repos that are excluded for this package')
     def do_results(self, subcmd, opts, *args):
