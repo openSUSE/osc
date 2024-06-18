@@ -4101,8 +4101,9 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
     # hmm the function name is a bit too generic - something like
     # get_package_results_human would be better, but this would break the existing
     # api (unless we keep get_results around as well)...
-    result_line_templ = '%(rep)-20s %(arch)-10s %(status)s'
-    result_line_mb_templ = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
+    format = kwargs.pop('format')
+    if format is None:
+        format = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
     r = []
     printed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])
@@ -4145,10 +4146,7 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
             # of the repository if the result is already prefiltered by the backend. So we need
             # to filter out the repository states.
             if code_filter is None or code_filter == res['code']:
-                if is_multi:
-                    r.append(result_line_mb_templ % res)
-                else:
-                    r.append(result_line_templ % res)
+                r.append(format % res)
 
         if printJoin:
             if printed:
@@ -4159,9 +4157,9 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
     return r
 
 
-def get_package_results(apiurl: str, project: str, package: Optional[str] = None, wait=False, *args, **kwargs):
+def get_package_results(apiurl: str, project: str, package: Optional[str] = None, wait=False, multibuild_packages: Optional[List[str]] = None, *args, **kwargs):
     """generator that returns a the package results as an xml structure"""
-    xml = ''
+    xml = b''
     waiting_states = ('blocked', 'scheduled', 'dispatching', 'building',
                       'signing', 'finished')
     while True:
@@ -4193,6 +4191,33 @@ def get_package_results(apiurl: str, project: str, package: Optional[str] = None
                 if pkg is not None and pkg.get('code') in waiting_states:
                     waiting = True
                     break
+
+        # filter the result according to the specified multibuild_packages (flavors)
+        if multibuild_packages:
+            for result in list(root):
+                for status in list(result):
+                    package = status.attrib["package"]
+                    package_flavor = package.rsplit(":", 1)
+
+                    # package has flavor, check if the flavor is in multibuild_packages
+                    flavor_match = len(package_flavor) == 2 and package_flavor[1] in multibuild_packages
+
+                    # package nas no flavor, check if "" is in multibuild_packages
+                    no_flavor_match = len(package_flavor) == 1 and "" in multibuild_packages
+
+                    if not flavor_match and not no_flavor_match:
+                        # package doesn't match multibuild_packages, remove the corresponding <status> from <result>
+                        result.remove(status)
+
+                # remove empty <result> from <resultlist>
+                if len(result) == 0:
+                    root.remove(result)
+
+            if len(root) == 0:
+                break
+
+            xmlindent(root)
+            xml = ET.tostring(root)
 
         if not wait or not waiting:
             break

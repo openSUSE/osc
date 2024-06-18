@@ -6057,8 +6057,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='generate output in XML (former results_meta)')
     @cmdln.option('', '--csv', action='store_true', default=False,
                   help='generate output in CSV format')
-    @cmdln.option('', '--format', default='%(repository)s|%(arch)s|%(state)s|%(dirty)s|%(code)s|%(details)s',
-                  help='format string for csv output')
+    @cmdln.option('', '--format', default=None,
+                  help="Change the format of the text (default) or csv output. Not supported for xml output.\n"
+                       "Supported fields: project, package, repository, arch, state, dirty, code, details.\n"
+                       "Text output format requires using the field names in form of named fields for string interpolation: ``%%(field)s``.\n"
+                       "CSV output format requires field names separated with commas.")
     @cmdln.option('--show-excluded', action='store_true',
                   help='show repos that are excluded for this package')
     def do_results(self, subcmd, opts, *args):
@@ -6093,6 +6096,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if opts.failed and opts.status_filter:
             raise oscerr.WrongArgs('-s and -f cannot be used together')
 
+        if opts.multibuild_package and opts.no_multibuild:
+            self.argparser.error("-M/--multibuild-package and --no-multibuild are mutually exclusive")
+
+        if opts.xml and opts.format:
+            self.argparser.error("--xml and --format are mutually exclusive")
+
         if opts.failed:
             opts.status_filter = 'failed'
             opts.brief = True
@@ -6126,12 +6135,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(decode_it(xml), end='')
                 else:
                     # csv formatting
-                    results = [r for r, _ in result_xml_to_dicts(xml)]
-                    print('\n'.join(format_results(results, opts.format)))
+                    if opts.format is None:
+                        columns = ["repository", "arch", "package", "state", "dirty", "code", "details"]
+                    else:
+                        # split columns by colon, semicolon or pipe
+                        columns = opts.format.split(",")
+
+                    supported_columns = ["project", "package", "repository", "arch", "state", "dirty", "code", "details"]
+                    unknown_columns = sorted(set(columns) - set(supported_columns))
+
+                    if unknown_columns:
+                        self.argparser.error(f"Unknown format fields: {''.join(unknown_columns)}")
+
+                    f = io.StringIO()
+                    writer = csv.writer(f, dialect="unix")
+
+                    rows = [r for r, _ in result_xml_to_dicts(xml)]
+                    for row in rows:
+                        writer.writerow([row[i] for i in columns])
+
+                    f.seek(0)
+                    print(f.read(), end="")
+
         else:
             kwargs['verbose'] = opts.verbose
             kwargs['wait'] = opts.watch
             kwargs['printJoin'] = '\n'
+            kwargs['format'] = opts.format
             get_results(**kwargs)
 
     # WARNING: this function is also called by do_results. You need to set a default there
