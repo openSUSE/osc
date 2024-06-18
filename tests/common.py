@@ -73,7 +73,7 @@ class RequestWrongOrder(Exception):
         self.exp_method = exp_method
 
     def __str__(self):
-        return '%s, %s, %s, %s' % (self.url, self.exp_url, self.method, self.exp_method)
+        return f'{self.url}, {self.exp_url}, {self.method}, {self.exp_method}'
 
 
 class RequestDataMismatch(Exception):
@@ -85,7 +85,7 @@ class RequestDataMismatch(Exception):
         self.exp = exp
 
     def __str__(self):
-        return '%s, %s, %s' % (self.url, self.got, self.exp)
+        return f'{self.url}, {self.got}, {self.exp}'
 
 
 EXPECTED_REQUESTS = []

@@ -25,7 +25,7 @@ class TestRepairWC(OscTestCase):
         try:
             meth(*args, **kwargs)
         except exception:
-            self.fail('%s raised' % exception.__name__)
+            self.fail(f'{exception.__name__} raised')
 
     def test_working_empty(self):
         """consistent, empty working copy"""
