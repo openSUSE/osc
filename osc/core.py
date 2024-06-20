@@ -4096,7 +4096,16 @@ def format_results(results, format):
     return [format % r for r in results]
 
 
-def get_results(apiurl: str, project: str, package: str, verbose=False, printJoin="", *args, **kwargs):
+def get_results(
+    apiurl: str,
+    project: str,
+    package: str,
+    verbose=False,
+    printJoin="",
+    out: Optional[dict] = None,
+    *args,
+    **kwargs
+):
     """returns list of/or prints a human readable status for the specified package"""
     # hmm the function name is a bit too generic - something like
     # get_package_results_human would be better, but this would break the existing
@@ -4106,6 +4115,7 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
         format = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
     r = []
     printed = False
+    failed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])
     show_excluded = kwargs.pop('showexcl', False)
     code_filter = kwargs.get('code')
@@ -4148,12 +4158,21 @@ def get_results(apiurl: str, project: str, package: str, verbose=False, printJoi
             if code_filter is None or code_filter == res['code']:
                 r.append(format % res)
 
+            if res['code'] in ('failed', 'broken', 'unresolvable'):
+                failed = True
+
         if printJoin:
             if printed:
                 # will print a newline if already a result was printed (improves readability)
                 print()
             print(printJoin.join(r))
             printed = True
+
+    if out is None:
+        out = {}
+
+    out["failed"] = failed
+
     return r
 
 
