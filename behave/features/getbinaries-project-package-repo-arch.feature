@@ -19,8 +19,13 @@ Scenario: Run `osc getbinaries <project> <package> <repo> <arch>`
 
 Scenario: Run `osc getbinaries <project> <package> <repo> <arch> --multibuild-package=<flavor>`
     When I execute osc with args "getbinaries test:factory multibuild-pkg standard x86_64 --multibuild-package=flavor1"
-    # the option is allowed only in a package checkout
-    Then the exit code is 2
+    Then directory listing of "{context.osc.temp}/binaries/" is
+        """
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        _buildenv
+        _statistics
+        rpmlint.log
+        """
 
 
 Scenario: Run `osc getbinaries <project> <package>:<flavor> <repo> <arch>`
