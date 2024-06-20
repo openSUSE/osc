@@ -37,8 +37,13 @@ Scenario: Run `osc getbinaries <repo> <arch>` from a project checkout
 
 Scenario: Run `osc getbinaries <repo> <arch> --multibuild-package=<flavor>` from a project checkout
     When I execute osc with args "getbinaries standard x86_64 --multibuild-package=flavor1"
-    # the option is allowed only in a package checkout
-    Then the exit code is 2
+    Then directory tree in "{context.osc.temp}/test:factory/binaries/" is
+        """
+        multibuild-pkg-flavor1-1-1.x86_64.rpm
+        multibuild-pkg:flavor1/_buildenv
+        multibuild-pkg:flavor1/_statistics
+        multibuild-pkg:flavor1/rpmlint.log
+        """
 
 
 Scenario: Run `osc getbinaries <repo> <arch> --sources` from a project checkout

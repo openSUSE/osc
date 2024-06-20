@@ -8135,9 +8135,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         package = None
         binary = None
 
-        if opts.multibuild_package and ((len(args) > 2) or (len(args) <= 2 and is_project_dir(Path.cwd()))):
-            self.argparse_error("The -M/--multibuild-package option can be only used from a package checkout.")
-
         if len(args) < 1 and is_package_dir('.'):
             self.print_repos()
 
@@ -8177,13 +8174,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if package is None:
             package_specified = False
             package = meta_get_packagelist(apiurl, project, deleted=0)
+            if opts.multibuild_package:
+                # remove packages that do not have matching flavor
+                for i in package.copy():
+                    package_flavor = i.rsplit(":", 1)
+                    # package has flavor, check if the flavor is in opts.multibuild_packages
+                    flavor_match = len(package_flavor) == 2 and package_flavor[1] in opts.multibuild_package
+                    # package nas no flavor, check if "" is in opts.multibuild_package
+                    no_flavor_match = len(package_flavor) == 1 and "" in opts.multibuild_package
+                    if not flavor_match and not no_flavor_match:
+                        package.remove(i)
         else:
             package_specified = True
             if opts.multibuild_package:
-                packages = []
-                for subpackage in opts.multibuild_package:
-                    packages.append(package + ":" + subpackage)
-                package = packages
+                resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+                package = resolver.resolve_as_packages(opts.multibuild_package)
             else:
                 package = [package]
 
