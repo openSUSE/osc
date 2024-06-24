@@ -42,6 +42,9 @@ class Store:
         self.path = path
         self.abspath = os.path.abspath(self.path)
 
+        if check:
+            check_store_version(self.abspath)
+
         self.is_project = self.exists("_project") and not self.exists("_package")
         self.is_package = self.exists("_project") and self.exists("_package")
 

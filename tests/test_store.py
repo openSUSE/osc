@@ -11,6 +11,8 @@ class TestStore(unittest.TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
         self.store = Store(self.tmpdir, check=False)
+        self.store.write_string("_osclib_version", Store.STORE_VERSION)
+        self.store.apiurl = "http://localhost"
         self.store.is_package = True
         self.store.project = "project name"
         self.store.package = "package name"
@@ -87,9 +89,9 @@ class TestStore(unittest.TestCase):
         self.assertFalse("_foo" in self.store)
 
     def test_iter(self):
-        self.assertEqual(len(list(self.store)), 2)
+        self.assertEqual(len(list(self.store)), 4)
         for fn in self.store:
-            self.assertIn(fn, ["_project", "_package"])
+            self.assertIn(fn, ["_osclib_version", "_apiurl", "_project", "_package"])
 
     def test_apiurl(self):
         self.store.apiurl = "https://example.com"
@@ -159,7 +161,7 @@ class TestStore(unittest.TestCase):
         self.store.write_string("_osclib_version", "123")
         self.fileEquals("_osclib_version", "123\n")
 
-        store2 = Store(self.tmpdir)
+        store2 = Store(self.tmpdir, check=False)
         self.assertEqual(store2.osclib_version, "123")
 
     def test_files(self):
