@@ -1875,7 +1875,7 @@ def get_config(override_conffile=None,
                 os.chmod(conffile, 0o600)
             except OSError as e:
                 if e.errno in (errno.EROFS, errno.EPERM):
-                    print(f"Warning: Configuration file '{conffile}' may have insecure file permissions.")
+                    print(f"Warning: Configuration file '{conffile}' may have insecure file permissions.", file=sys.stderr)
                 else:
                     raise e
 
