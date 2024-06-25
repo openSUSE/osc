@@ -1,6 +1,8 @@
 import os
 import re
+import shutil
 import sys
+import tempfile
 import unittest
 
 import osc.commandline
@@ -50,6 +52,18 @@ def suite():
 class TestProjectDiff(OscTestCase):
     diff_hdr = 'Index: %s\n==================================================================='
 
+    def setUp(self, copytree=True):
+        super().setUp(copytree=copytree)
+        self.tmpdir_fixtures = tempfile.mkdtemp(prefix='osc_test')
+        shutil.copytree(self._get_fixtures_dir(), os.path.join(self.tmpdir_fixtures, "fixtures"))
+
+    def tearDown(self):
+        try:
+            shutil.rmtree(self.tmpdir_fixtures)
+        except:
+            pass
+        super().tearDown()
+
     def _get_fixtures_dir(self):
         return FIXTURES_DIR
 
@@ -85,10 +99,10 @@ identical: only-in-new
         os.chdir('/tmp')
         self.assertRaises(osc.oscerr.WrongArgs, runner)
 
-        self._change_to_tmpdir(FIXTURES_DIR, UPSTREAM)
+        self._change_to_tmpdir(self.tmpdir_fixtures, "fixtures", UPSTREAM)
         self.assertRaises(osc.oscerr.WrongArgs, runner)
 
-        self._change_to_tmpdir(FIXTURES_DIR, BRANCH)
+        self._change_to_tmpdir(self.tmpdir_fixtures, "fixtures", BRANCH)
         out = self._run_prdiff()
         self.assertEqualMultiline(out, exp)
 

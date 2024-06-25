@@ -14,8 +14,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  unit-ro:
+    name: "unit - read only fixtures"
+    runs-on: 'ubuntu-latest'
+    strategy:
+      fail-fast: false
+
+    steps:
+      - name: 'Install packages'
+        run: |
+            sudo apt-get -y update
+            sudo apt-get -y --no-install-recommends install git-lfs
+            sudo apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
+
+      - uses: actions/checkout@v3
+
+      - name: 'Change owner to root:root'
+        run: |
+          sudo chown -R root:root tests
+
+      - name: 'Run unit tests'
+        run: |
+          pip3 config set global.break-system-packages 1
+          pip3 install -e .
+          python3 setup.py test
+
   unit:
     name: "unit"
+    needs: unit-ro
     runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false

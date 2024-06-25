@@ -16,15 +16,10 @@ def suite():
 
 class TestInitPackage(OscTestCase):
     def _get_fixtures_dir(self):
-        # workaround for git because it doesn't allow empty dirs
-        if not os.path.exists(os.path.join(FIXTURES_DIR, 'osctest')):
-            os.mkdir(os.path.join(FIXTURES_DIR, 'osctest'))
         return FIXTURES_DIR
 
-    def tearDown(self):
-        if os.path.exists(os.path.join(FIXTURES_DIR, 'osctest')):
-            os.rmdir(os.path.join(FIXTURES_DIR, 'osctest'))
-        super().tearDown()
+    def setUp(self):
+        super().setUp(copytree=False)
 
     def test_simple(self):
         """initialize a package dir"""
