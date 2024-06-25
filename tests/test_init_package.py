@@ -56,7 +56,7 @@ class TestInitPackage(OscTestCase):
         osc.core.Package.init_package('http://localhost', 'osctest', 'testpkg', pac_dir, meta=True)
         storedir = os.path.join(pac_dir, osc.core.store)
         self.assertFalse(os.path.exists(os.path.join(storedir, '_size_limit')))
-        self._check_list(os.path.join(storedir, '_meta_mode'), '')
+        self._check_list(os.path.join(storedir, '_meta_mode'), '\n')
         self._check_list(os.path.join(storedir, '_project'), 'osctest\n')
         self._check_list(os.path.join(storedir, '_package'), 'testpkg\n')
         self._check_list(os.path.join(storedir, '_files'), '<directory />\n')

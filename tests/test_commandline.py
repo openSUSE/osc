@@ -143,6 +143,8 @@ class TestCommandClasses(unittest.TestCase):
 class TestPopProjectPackageFromArgs(unittest.TestCase):
     def _write_store(self, project=None, package=None):
         store = Store(self.tmpdir, check=False)
+        store.write_string("_osclib_version", Store.STORE_VERSION)
+        store.apiurl = "http://localhost"
         if project:
             store.project = project
             store.is_project = True
@@ -408,6 +410,8 @@ class TestPopRepositoryArchFromArgs(unittest.TestCase):
 class TestPopProjectPackageRepositoryArchFromArgs(unittest.TestCase):
     def _write_store(self, project=None, package=None):
         store = Store(self.tmpdir, check=False)
+        store.write_string("_osclib_version", Store.STORE_VERSION)
+        store.apiurl = "http://localhost"
         if project:
             store.project = project
             store.is_project = True
@@ -609,6 +613,8 @@ class TestPopProjectPackageRepositoryArchFromArgs(unittest.TestCase):
 class TestPopProjectPackageTargetProjectTargetPackageFromArgs(unittest.TestCase):
     def _write_store(self, project=None, package=None):
         store = Store(self.tmpdir, check=False)
+        store.write_string("_osclib_version", Store.STORE_VERSION)
+        store.apiurl = "http://localhost"
         if project:
             store.project = project
             store.is_project = True

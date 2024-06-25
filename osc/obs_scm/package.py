@@ -1573,16 +1573,18 @@ rev: %s
             raise oscerr.OscIOError(None, f'error: \'{dir}\' is already an initialized osc working copy')
         else:
             os.mkdir(os.path.join(dir, store))
-        store_write_project(dir, project)
-        store_write_string(dir, '_package', package + '\n')
-        Store(dir).apiurl = apiurl
+
+        s = Store(dir, check=False)
+        s.write_string("_osclib_version", Store.STORE_VERSION)
+        s.apiurl = apiurl
+        s.project = project
+        s.package = package
         if meta:
-            store_write_string(dir, '_meta_mode', '')
+            s.write_string("_meta_mode", "")
         if size_limit:
-            store_write_string(dir, '_size_limit', str(size_limit) + '\n')
+            s.size_limit = int(size_limit)
         if scm_url:
-            Store(dir).scmurl = scm_url
+            s.scmurl = scm_url
         else:
-            store_write_string(dir, '_files', '<directory />' + '\n')
-        store_write_string(dir, '_osclib_version', __store_version__ + '\n')
+            s.write_string("_files", "<directory />")
         return Package(dir, progress_obj=progress_obj, size_limit=size_limit)

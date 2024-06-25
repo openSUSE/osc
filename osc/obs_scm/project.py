@@ -624,10 +624,12 @@ class Project:
         else:
             os.mkdir(os.path.join(dir, store))
 
-        store_write_project(dir, project)
-        Store(dir).apiurl = apiurl
+        s = Store(dir, check=False)
+        s.write_string("_osclib_version", Store.STORE_VERSION)
+        s.apiurl = apiurl
+        s.project = project
         if scm_url:
-            Store(dir).scmurl = scm_url
+            s.scmurl = scm_url
             package_tracking = None
         if package_tracking:
             store_write_initial_packages(dir, project, [])
