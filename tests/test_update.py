@@ -57,7 +57,7 @@ class TestUpdate(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_digests('testUpdateDeletedFile_files')
         self.assertFalse(os.path.exists('foo'))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
 
     @GET('http://localhost/source/osctest/simple?rev=2', file='testUpdateUpstreamModifiedFile_files')
     @GET('http://localhost/source/osctest/simple/foo?rev=2', file='testUpdateUpstreamModifiedFile_foo')
@@ -117,7 +117,7 @@ class TestUpdate(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self._check_deletelist('foo\n')
         self._check_conflictlist('merge\n')
-        self.assertFilesEqual('foo', os.path.join('.osc', 'foo'))
+        self.assertFilesEqual('foo', os.path.join('.osc', 'sources', 'foo'))
         self._check_digests('testUpdateLocalDeletions_files')
 
     @GET('http://localhost/source/osctest/restore?rev=latest', file='testUpdateRestore_files')
@@ -142,7 +142,7 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(size_limit=50)
         exp = 'D    bigfile\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'bigfile')))
         self.assertFalse(os.path.exists('bigfile'))
         self._check_digests('testUpdateLimitSizeNoChange_files', 'bigfile')
 
@@ -158,8 +158,8 @@ class TestUpdate(OscTestCase):
         p.update()
         exp = 'D    bigfile\nD    merge\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'merge')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'bigfile')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'merge')))
         self.assertFalse(os.path.exists('bigfile'))
         self._check_digests('testUpdateLocalLimitSizeNoChange_files', 'bigfile', 'merge')
         self._check_status(p, 'bigfile', 'S')
@@ -180,11 +180,11 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(size_limit=10)
         exp = 'A    exists\nD    bigfile\nD    foo\nD    merge\nD    nochange\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'bigfile')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'bigfile')))
         self.assertFalse(os.path.exists('bigfile'))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self.assertFalse(os.path.exists('foo'))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'merge')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'merge')))
         self.assertFalse(os.path.exists('merge'))
         # exists because local version is modified
         self.assertTrue(os.path.exists('nochange'))
@@ -202,9 +202,9 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update(service_files=True)
         exp = 'A    bigfile\nD    _service:exists\nA    _service:bar\nA    _service:foo\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:bar')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', '_service:bar')))
         self.assertFileContentEqual('_service:bar', 'another service\n')
-        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:foo')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', '_service:foo')))
         self.assertFileContentEqual('_service:foo', 'small\n')
         self.assertTrue(os.path.exists('_service:exists'))
         self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
@@ -218,9 +218,9 @@ class TestUpdate(OscTestCase):
         osc.core.Package('.').update()
         exp = 'A    bigfile\nD    _service:exists\nAt revision 2.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:bar')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', '_service:bar')))
         self.assertFalse(os.path.exists('_service:bar'))
-        self.assertFalse(os.path.exists(os.path.join('.osc', '_service:foo')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', '_service:foo')))
         self.assertFalse(os.path.exists('_service:foo'))
         self.assertTrue(os.path.exists('_service:exists'))
         self._check_digests('testUpdateServiceFilesAddDelete_files', '_service:foo', '_service:bar')
@@ -284,7 +284,7 @@ class TestUpdate(OscTestCase):
         self.assertEqual(sys.stdout.getvalue(), exp)
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_update')))
         self.assertFalse(os.path.exists('added'))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'added')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'added')))
         self._check_digests('testUpdateResumeDeletedFile_files')
 
 

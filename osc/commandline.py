@@ -9535,14 +9535,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)
 
-        storedir = os.path.join(destdir, store)
-
         for name in sorted(entries.keys()):
             md5_old = entries_old.get(name, '')
             md5_new = entries_new.get(name, '')
             md5_oldpatched = entries_oldpatched.get(name, '')
             if md5_new != '':
-                self.download(name, md5_new, dir_new, os.path.join(storedir, name))
+                self.download(name, md5_new, dir_new, pac.store.sources_get_path(name))
             if md5_old == md5_new:
                 if md5_oldpatched == '':
                     pac.put_on_deletelist(name)
@@ -9554,17 +9552,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if md5_new == '':
                     continue
                 print(statfrmt('U', name))
-                shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
+                shutil.copy2(pac.store.sources_get_path(name), os.path.join(destdir, name))
                 continue
             if md5_new == md5_oldpatched:
                 if md5_new == '':
                     continue
                 print(statfrmt('G', name))
-                shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name))
+                shutil.copy2(pac.store.sources_get_path(name), os.path.join(destdir, name))
                 continue
             self.download(name, md5_oldpatched, dir_oldpatched, os.path.join(destdir, name + '.mine'))
             if md5_new != '':
-                shutil.copy2(os.path.join(storedir, name), os.path.join(destdir, name + '.new'))
+                shutil.copy2(pac.store.sources_get_path(name), os.path.join(destdir, name + '.new'))
             else:
                 self.download(name, md5_new, dir_new, os.path.join(destdir, name + '.new'))
             self.download(name, md5_old, dir_old, os.path.join(destdir, name + '.old'))

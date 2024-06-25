@@ -11,16 +11,17 @@ from .. import oscerr
 from .._private import api
 from ..util.xml import ET
 
+from typing import List
 
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
-__store_version__ = '1.0'
+__store_version__ = '2.0'
 
 
 class Store:
     STORE_DIR = ".osc"
-    STORE_VERSION = "1.0"
+    STORE_VERSION = "2.0"
 
     @classmethod
     def is_project_dir(cls, path):
@@ -57,7 +58,11 @@ class Store:
 
     def __iter__(self):
         path = os.path.join(self.abspath, self.STORE_DIR)
-        yield from os.listdir(path)
+        for fn in os.listdir(path):
+            full_path = os.path.join(path, fn)
+            if os.path.isdir(full_path):
+                continue
+            yield fn
 
     def assert_is_project(self):
         if not self.is_project:
@@ -327,6 +332,43 @@ class Store:
             root = self.read_xml_node("_meta", "project").getroot()
         return root
 
+    def sources_get_path(self, file_name: str) -> str:
+        if "/" in file_name:
+            raise ValueError(f"Plain file name expected: {file_name}")
+        result = os.path.join(self.abspath, self.STORE_DIR, "sources", file_name)
+        os.makedirs(os.path.dirname(result), exist_ok=True)
+        return result
+
+    def sources_list_files(self) -> List[str]:
+        result = []
+        invalid = []
+
+        topdir = os.path.join(self.abspath, self.STORE_DIR, "sources")
+
+        if not os.path.isdir(topdir):
+            return []
+
+        for fn in os.listdir(topdir):
+            if self.sources_is_file(fn):
+                result.append(fn)
+            else:
+                invalid.append(fn)
+
+        if invalid:
+            msg = ".osc/sources contains entries other than regular files"
+            raise oscerr.WorkingCopyInconsistent(self.project, self.package, invalid, msg)
+
+        return result
+
+    def sources_is_file(self, file_name: str) -> bool:
+        return os.path.isfile(self.sources_get_path(file_name))
+
+    def sources_delete_file(self, file_name: str):
+        try:
+            os.unlink(self.sources_get_path(file_name))
+        except:
+            pass
+
 
 store = '.osc'
 
@@ -351,12 +393,46 @@ def check_store_version(dir):
         raise oscerr.NoWorkingCopy(msg)
 
     if v != __store_version__:
+        migrated = False
+
         if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96', '0.97', '0.98', '0.99']:
-            # version is fine, no migration needed
-            f = open(versionfile, 'w')
-            f.write(__store_version__ + '\n')
-            f.close()
+            # no migration needed, only change metadata version to 1.0
+            s = Store(dir, check=False)
+            v = "1.0"
+            s.write_string("_osclib_version", v)
+            migrated = True
+
+        if v == "1.0":
+            store_dir = os.path.join(dir, store)
+            sources_dir = os.path.join(dir, store, "sources")
+            os.makedirs(sources_dir, exist_ok=True)
+
+            s = Store(dir, check=False)
+            if s.is_package and not s.scmurl:
+                from .package import Package
+                from .project import Project
+
+                scm_files = [i.name for i in s.files]
+
+                for fn in os.listdir(store_dir):
+                    old_path = os.path.join(store_dir, fn)
+                    new_path = os.path.join(sources_dir, fn)
+                    if not os.path.isfile(old_path):
+                        continue
+                    if fn in Package.REQ_STOREFILES or fn in Package.OPT_STOREFILES:
+                        continue
+                    if fn.startswith("_") and fn not in scm_files:
+                        continue
+                    if os.path.isfile(old_path):
+                        os.rename(old_path, new_path)
+
+            v = "2.0"
+            s.write_string("_osclib_version", v)
+            migrated = True
+
+        if migrated:
             return
+
         msg = f'The osc metadata of your working copy "{dir}"'
         msg += f'\nhas __store_version__ = {v}, but it should be {__store_version__}'
         msg += '\nPlease do a fresh checkout or update your client. Sorry about the inconvenience.'

@@ -25,7 +25,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('foo')
         self.__check_ret(ret, True, ' ')
         self.assertFalse(os.path.exists('foo'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
 
@@ -36,7 +36,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('nochange')
         self.__check_ret(ret, False, 'M')
         self.assertTrue(os.path.exists('nochange'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'nochange')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'nochange')))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self._check_status(p, 'nochange', 'M')
 
@@ -78,7 +78,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('foo')
         self.__check_ret(ret, False, 'C')
         self.assertTrue(os.path.exists('foo'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self._check_conflictlist('foo\n')
         self._check_status(p, 'foo', 'C')
@@ -90,7 +90,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('nochange', force=True)
         self.__check_ret(ret, True, 'M')
         self.assertFalse(os.path.exists('nochange'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'nochange')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'nochange')))
         self._check_deletelist('nochange\n')
         self._check_status(p, 'nochange', 'D')
 
@@ -122,7 +122,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('merge', force=True)
         self.__check_ret(ret, True, 'R')
         self.assertFalse(os.path.exists('merge'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'merge')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'merge')))
         self._check_deletelist('merge\n')
         self._check_addlist('toadd1\n')
         self._check_status(p, 'merge', 'D')
@@ -136,7 +136,7 @@ class TestDeleteFiles(OscTestCase):
         self.assertFalse(os.path.exists('foo'))
         self.assertTrue(os.path.exists('foo.r2'))
         self.assertTrue(os.path.exists('foo.mine'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self._check_deletelist('foo\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_in_conflict')))
         self._check_status(p, 'foo', 'D')
@@ -151,8 +151,8 @@ class TestDeleteFiles(OscTestCase):
         self.__check_ret(ret, True, ' ')
         self.assertFalse(os.path.exists('foo'))
         self.assertFalse(os.path.exists('merge'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'merge')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'merge')))
         self._check_deletelist('foo\nmerge\n')
 
     def testDeleteAlreadyDeleted(self):
@@ -162,7 +162,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('foo')
         self.__check_ret(ret, True, 'D')
         self.assertFalse(os.path.exists('foo'))
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
 
@@ -176,7 +176,7 @@ class TestDeleteFiles(OscTestCase):
         ret = p.delete_file('toadd1')
         self.__check_ret(ret, True, '!')
         self.assertFalse(os.path.exists('toadd1'))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'toadd1')))
         self._check_deletelist('foo\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_added')))
 

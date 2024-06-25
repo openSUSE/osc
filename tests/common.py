@@ -73,7 +73,7 @@ class RequestWrongOrder(Exception):
         self.exp_method = exp_method
 
     def __str__(self):
-        return f'{self.url}, {self.exp_url}, {self.method}, {self.exp_method}'
+        return '%s, %s, %s, %s' % (self.url, self.exp_url, self.method, self.exp_method)
 
 
 class RequestDataMismatch(Exception):
@@ -85,7 +85,7 @@ class RequestDataMismatch(Exception):
         self.exp = exp
 
     def __str__(self):
-        return f'{self.url}, {self.got}, {self.exp}'
+        return '%s, %s, %s' % (self.url, self.got, self.exp)
 
 
 EXPECTED_REQUESTS = []
@@ -261,8 +261,8 @@ class OscTestCase(unittest.TestCase):
         for i in root.findall('entry'):
             if i.get('name') in skipfiles:
                 continue
-            self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
-            self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+            self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', i.get('name'))))
+            self.assertEqual(osc.core.dgst(os.path.join('.osc', 'sources', i.get('name'))), i.get('md5'))
 
     def assertFilesEqual(self, first, second):
         self.assertTrue(os.path.exists(first))

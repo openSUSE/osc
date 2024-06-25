@@ -26,7 +26,7 @@ class TestAddFiles(OscTestCase):
         p.addfile('toadd1')
         exp = 'A    toadd1\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'toadd1')))
         self._check_status(p, 'toadd1', 'A')
         self._check_addlist('toadd1\n')
 
@@ -38,8 +38,8 @@ class TestAddFiles(OscTestCase):
         p.addfile('toadd2')
         exp = 'A    toadd1\nA    toadd2\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd2')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'toadd1')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'toadd2')))
         self._check_status(p, 'toadd1', 'A')
         self._check_status(p, 'toadd2', 'A')
         self._check_addlist('toadd1\ntoadd2\n')
@@ -60,7 +60,7 @@ class TestAddFiles(OscTestCase):
         self.assertRaises(osc.oscerr.PackageFileConflict, p.addfile, 'toadd1')
         exp = 'A    toadd1\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'toadd1')))
         self._check_status(p, 'toadd1', 'A')
         self._check_addlist('toadd1\n')
 
@@ -73,7 +73,7 @@ class TestAddFiles(OscTestCase):
         p.addfile('foo')
         exp = 'A    foo\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
-        self.assertFileContentNotEqual(os.path.join('.osc', 'foo'), 'replaced file\n')
+        self.assertFileContentNotEqual(os.path.join('.osc', 'sources', 'foo'), 'replaced file\n')
         self.assertFalse(os.path.exists(os.path.join('.osc', '_to_be_deleted')))
         self._check_status(p, 'foo', 'R')
         self._check_addlist('foo\n')

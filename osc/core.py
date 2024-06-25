@@ -2820,7 +2820,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename=None, olddir=None, orig
         oldfilename = filename
 
     if not olddir:
-        olddir = os.path.join(dir, store)
+        olddir = os.path.join(dir, store, "sources")
 
     if not origfilename:
         origfilename = filename

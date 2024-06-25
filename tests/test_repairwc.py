@@ -25,7 +25,7 @@ class TestRepairWC(OscTestCase):
         try:
             meth(*args, **kwargs)
         except exception:
-            self.fail(f'{exception.__name__} raised')
+            self.fail('%s raised' % exception.__name__)
 
     def test_working_empty(self):
         """consistent, empty working copy"""
@@ -54,7 +54,7 @@ class TestRepairWC(OscTestCase):
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair()
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
         self._check_status(p, 'nochange', 'M')
@@ -69,7 +69,7 @@ class TestRepairWC(OscTestCase):
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair()
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'somefile')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'somefile')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
         self._check_status(p, 'nochange', 'M')
@@ -79,12 +79,12 @@ class TestRepairWC(OscTestCase):
         self.__assertNotRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
 
     def test_simple3(self):
-        """toadd1 has state 'A' and a file .osc/toadd1 exists"""
+        """toadd1 has state 'A' and a file .osc/sources/toadd1 exists"""
         self._change_to_pkg('simple3')
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair()
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'toadd1')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'toadd1')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
         self._check_status(p, 'nochange', 'M')
@@ -133,7 +133,7 @@ class TestRepairWC(OscTestCase):
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair()
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
         self._check_status(p, 'nochange', 'M')
@@ -155,7 +155,7 @@ class TestRepairWC(OscTestCase):
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair()
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'skipped')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'skipped')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
         self._check_status(p, 'nochange', 'M')
@@ -178,8 +178,8 @@ class TestRepairWC(OscTestCase):
         self.assertRaises(osc.oscerr.WorkingCopyInconsistent, osc.core.Package, '.')
         p = osc.core.Package('.', wc_check=False)
         p.wc_repair()
-        self.assertTrue(os.path.exists(os.path.join('.osc', 'foo')))
-        self.assertFalse(os.path.exists(os.path.join('.osc', 'unknown_file')))
+        self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', 'foo')))
+        self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'unknown_file')))
         self._check_deletelist('foo\n')
         self._check_status(p, 'foo', 'D')
         self._check_status(p, 'nochange', 'C')

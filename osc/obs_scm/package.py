@@ -16,6 +16,7 @@ from .linkinfo import Linkinfo
 from .serviceinfo import Serviceinfo
 from .store import __store_version__
 from .store import Store
+from .store import check_store_version
 from .store import read_inconflict
 from .store import read_filemeta
 from .store import read_sizelimit
@@ -154,16 +155,13 @@ class Package:
         if self.scm_url:
             return dirty_files
         for fname in self.filenamelist:
-            if not os.path.exists(os.path.join(self.storedir, fname)) and fname not in self.skipped:
+            if not self.store.sources_is_file(fname) and fname not in self.skipped:
                 dirty_files.append(fname)
         for fname in Package.REQ_STOREFILES:
             if not os.path.isfile(os.path.join(self.storedir, fname)):
                 dirty_files.append(fname)
-        for fname in os.listdir(self.storedir):
-            if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
-                    fname.startswith('_build'):
-                continue
-            elif fname in self.filenamelist and fname in self.skipped:
+        for fname in self.store.sources_list_files():
+            if fname in self.filenamelist and fname in self.skipped:
                 dirty_files.append(fname)
             elif fname not in self.filenamelist:
                 dirty_files.append(fname)
@@ -182,6 +180,8 @@ class Package:
 
         store = Store(self.dir, check=False)
         store.assert_is_package()
+        # check_store_version() does the metadata migration that was disabled due to Store(..., check=False)
+        check_store_version(self.absdir)
 
         # there was a time when osc did not write _osclib_version file; let's assume these checkouts have version 1.0
         if not store.exists("_osclib_version"):
@@ -202,10 +202,10 @@ class Package:
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
             # XXX: should we also check the md5?
-            if not os.path.exists(os.path.join(self.storedir, f.name)) and f.name not in self.skipped:
+            if not self.store.sources_is_file(f.name) and f.name not in self.skipped:
                 # if get_source_file fails we're screwed up...
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
-                                targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
+                                targetfilename=self.store.sources_get_path(f.name), revision=self.rev,
                                 mtime=f.mtime)
                 repaired = True
 
@@ -213,9 +213,11 @@ class Package:
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
                     fname.startswith('_build'):
                 continue
-            elif fname not in self.filenamelist or fname in self.skipped:
+
+        for fname in self.store.sources_list_files():
+            if fname not in self.filenamelist or fname in self.skipped:
                 # this file does not belong to the storedir so remove it
-                store.unlink(fname)
+                os.unlink(self.store.sources_get_path(fname))
                 repaired = True
 
         for fname in self.to_be_deleted[:]:
@@ -247,11 +249,9 @@ class Package:
             raise oscerr.OscIOError(None, f'error: file \'{n}\' does not exist')
         if n in self.to_be_deleted:
             self.to_be_deleted.remove(n)
-#            self.delete_storefile(n)
             self.write_deletelist()
         elif n in self.filenamelist or n in self.to_be_added:
             raise oscerr.PackageFileConflict(self.prjname, self.name, n, f'osc: warning: \'{n}\' is already under version control')
-#        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
         if self.dir != '.':
             pathname = os.path.join(self.dir, n)
         else:
@@ -291,12 +291,6 @@ class Package:
             self.write_deletelist()
         return (True, state)
 
-    def delete_storefile(self, n):
-        try:
-            os.unlink(os.path.join(self.storedir, n))
-        except:
-            pass
-
     def delete_localfile(self, n):
         try:
             os.unlink(os.path.join(self.dir, n))
@@ -320,7 +314,7 @@ class Package:
         if n in self.in_conflict:
 
             filename = os.path.join(self.dir, n)
-            storefilename = os.path.join(self.storedir, n)
+            storefilename = self.store.sources_get_path(n)
             myfilename = os.path.join(self.dir, n + '.mine')
             upfilename = os.path.join(self.dir, n + '.new')
 
@@ -364,7 +358,7 @@ class Package:
     def delete_source_file(self, n):
         """delete local a source file"""
         self.delete_localfile(n)
-        self.delete_storefile(n)
+        self.store.sources_delete_file(n)
 
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
@@ -393,7 +387,7 @@ class Package:
     def __commit_update_store(self, tdir):
         """move files from transaction directory into the store"""
         for filename in os.listdir(tdir):
-            os.rename(os.path.join(tdir, filename), os.path.join(self.storedir, filename))
+            os.rename(os.path.join(tdir, filename), self.store.sources_get_path(filename))
 
     def __generate_commitlist(self, todo_send):
         root = ET.Element('directory')
@@ -543,7 +537,7 @@ class Package:
                 # in sha256sums.
                 # The storefile is guaranteed to exist (since we have a
                 # pulled/linkrepair wc, the file cannot have state 'S')
-                storefile = os.path.join(self.storedir, filename)
+                storefile = self.store.sources_get_path(filename)
                 sha256sums[filename] = sha256_dgst(storefile)
 
         if not force and not real_send and not todo_delete and not self.islinkrepair() and not self.ispulled():
@@ -623,7 +617,7 @@ class Package:
         store_write_string(self.absdir, '_files', ET.tostring(sfilelist, encoding=ET_ENCODING) + '\n')
         for filename in todo_delete:
             self.to_be_deleted.remove(filename)
-            self.delete_storefile(filename)
+            self.store.sources_delete_file(filename)
         self.write_deletelist()
         self.write_addlist()
         self.update_datastructs()
@@ -667,7 +661,7 @@ class Package:
         from ..core import utime
 
         filename = os.path.join(self.dir, n)
-        storefilename = os.path.join(self.storedir, n)
+        storefilename = self.store.sources_get_path(n)
         origfile_tmp = os.path.join(self.storedir, '_in_update', f'{n}.copy')
         origfile = os.path.join(self.storedir, '_in_update', n)
         if os.path.isfile(filename):
@@ -691,7 +685,7 @@ class Package:
         from ..core import run_external
 
         filename = os.path.join(self.dir, n)
-        storefilename = os.path.join(self.storedir, n)
+        storefilename = self.store.sources_get_path(n)
         myfilename = os.path.join(self.dir, n + '.mine')
         upfilename = os.path.join(self.dir, n + '.new')
         origfile_tmp = os.path.join(self.storedir, '_in_update', f'{n}.copy')
@@ -996,7 +990,7 @@ class Package:
             known_by_meta = True
         if os.path.exists(localfile):
             exists = True
-        if os.path.exists(os.path.join(self.storedir, n)):
+        if self.store.sources_is_file(n):
             exists_in_store = True
 
         if n in self.to_be_deleted:
@@ -1074,7 +1068,7 @@ class Package:
                     b_revision = self.rev.encode()
                 diff.append(b'--- %s\t(revision %s)\n' % (fname.encode(), b_revision))
                 diff.append(b'+++ %s\t(working copy)\n' % fname.encode())
-                fname = os.path.join(self.storedir, fname)
+                fname = self.store.sources_get_path(fname)
 
             fd = None
             tmpfile = None
@@ -1427,8 +1421,8 @@ rev: %s
                 raise oscerr.PackageInternalError(self.prjname, self.name, 'too many files in \'_in_update\' dir')
             tmp = rfiles[:]
             for f in tmp:
-                if os.path.exists(os.path.join(self.storedir, f.name)):
-                    if dgst(os.path.join(self.storedir, f.name)) == f.md5:
+                if self.store.sources_is_file(f.name):
+                    if dgst(self.store.sources_get_path(f.name)) == f.md5:
                         if f in kept:
                             kept.remove(f)
                         elif f in added:
@@ -1474,10 +1468,10 @@ rev: %s
             # if the storefile doesn't exist we're resuming an aborted update:
             # the file was already deleted but we cannot know this
             # OR we're processing a _service: file (simply keep the file)
-            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) not in ('M', 'C'):
+            if self.store.sources_is_file(f.name) and self.status(f.name) not in ('M', 'C'):
                 # if self.status(f.name) != 'M':
                 self.delete_localfile(f.name)
-            self.delete_storefile(f.name)
+            self.store.sources_delete_file(f.name)
             print(statfrmt('D', os.path.join(pathn, f.name)))
             if f.name in self.to_be_deleted:
                 self.to_be_deleted.remove(f.name)
@@ -1501,7 +1495,7 @@ rev: %s
                 print(f'Restored \'{os.path.join(pathn, f.name)}\'')
             elif state == 'C':
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
-                                targetfilename=os.path.join(self.storedir, f.name), revision=rev,
+                                targetfilename=self.store.sources_get_path(f.name), revision=rev,
                                 progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
                 print(f'skipping \'{f.name}\' (this is due to conflicts)')
             elif state == 'D' and self.findfilebyname(f.name).md5 != f.md5:
@@ -1560,12 +1554,12 @@ rev: %s
             raise oscerr.OscIOError(None, f'file \'{filename}\' is not under version control')
         elif filename in self.skipped:
             raise oscerr.OscIOError(None, f'file \'{filename}\' is marked as skipped and cannot be reverted')
-        if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
+        if filename in self.filenamelist and not self.store.sources_is_file(filename):
             msg = f"file '{filename}' is listed in filenamelist but no storefile exists"
             raise oscerr.PackageInternalError(self.prjname, self.name, msg)
         state = self.status(filename)
         if not (state == 'A' or state == '!' and filename in self.to_be_added):
-            shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
+            shutil.copyfile(self.store.sources_get_path(filename), os.path.join(self.absdir, filename))
         if state == 'D':
             self.to_be_deleted.remove(filename)
             self.write_deletelist()
