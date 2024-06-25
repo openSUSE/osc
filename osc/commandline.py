@@ -2418,6 +2418,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                                  dst_project, None,
                                                                                  not opts.yes)
         if not opts.message:
+            msg = ""
+            if opts.supersede:
+                from .obs_api import Request
+                req = Request.from_api(apiurl, opts.supersede)
+                msg = req.description + "\n"
+
             difflines = []
             doappend = False
             changes_re = re.compile(r'^--- .*\.changes ')
@@ -2429,7 +2435,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         doappend = False
                 if doappend:
                     difflines.append(line)
-            opts.message = edit_message(footer=rdiff, template='\n'.join(parse_diff_for_commit_message('\n'.join(difflines))))
+
+            diff = "\n".join(parse_diff_for_commit_message("\n".join(difflines)))
+            opts.message = edit_message(footer=rdiff, template=f"{msg}{diff}")
 
         result = create_submit_request(apiurl,
                                        src_project, src_package,
