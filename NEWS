@@ -1,3 +1,32 @@
+- 1.8.0
+  - Command-line:
+    - Improve 'submitrequest' command to inherit description from superseded request
+    - Fix 'mv' command when renaming a file multiple times
+    - Improve 'info' command to support projects
+    - Improve 'getbinaries' command by accepting '-M' / '--multibuild-package' option outside checkouts
+    - Add architecture filtering to 'release' command
+    - Change 'results' command so the normal and multibuild packages have the same output
+    - Change 'results' command to use csv writer instead of formatting csv as string
+    - Add couple mutually exclusive options errors to 'results' command
+    - Set a default value for 'results --format' only for the csv output
+    - Add support for 'results --format' for the default text mode
+    - Update help text for '--format' option in 'results' command
+    - Add 'results --fail-on-error/-F' flag
+    - Redirect venv warnings from stderr to debug output
+  - Configuration:
+    - Fix config parser to throw an exception on duplicate sections or options
+    - Modify conf.get_config() to print permissions warning to stderr rather than stdout
+  - Library:
+    - Run check_store_version() in obs_scm.Store and fix related code in Project and Package
+    - Forbid extracting files with absolute path from 'cpio' archives (boo#1122683)
+    - Forbid extracting files with absolute path from 'ar' archives (boo#1122683)
+    - Remove no longer valid warning from core.unpack_srcrpm()
+    - Make obs_api.KeyinfoSslcert keyid and fingerprint fields optional
+    - Fix return value in build build.create_build_descr_data()
+    - Fix core.get_package_results() to obey 'multibuild_packages' argument
+  - Tests:
+    - Fix tests so they don't modify fixtures
+
 - 1.7.0
   - Command-line:
     - Add 'person search' command
