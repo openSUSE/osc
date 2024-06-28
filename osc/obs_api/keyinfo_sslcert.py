@@ -4,7 +4,7 @@ from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-i
 class KeyinfoSslcert(XmlModel):
     XML_TAG = "sslcert"
 
-    keyid: str = Field(
+    keyid: Optional[str] = Field(
         xml_attribute=True,
     )
 
@@ -36,7 +36,7 @@ class KeyinfoSslcert(XmlModel):
         xml_attribute=True,
     )
 
-    fingerprint: str = Field(
+    fingerprint: Optional[str] = Field(
         xml_attribute=True,
     )
 
