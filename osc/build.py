@@ -732,7 +732,7 @@ def create_build_descr_data(
                 result_data.append((b"_service", f.read()))
 
     if not result_data and not prefer_pkgs:
-        return None, None
+        return None, {}
 
     cpio_data = cpio.CpioWrite()
     for key, value in result_data:
