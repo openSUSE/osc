@@ -271,7 +271,7 @@ class MainCommand(Command):
 
     def load_commands(self):
         if IN_VENV:
-            output.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="stderr")
+            output.print_msg("Running in virtual environment, skipping loading plugins installed outside the virtual environment.", print_to="debug")
 
         for module_prefix, module_path in self.MODULES:
             module_path = os.path.expanduser(module_path)
@@ -10231,7 +10231,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _load_plugins(self):
         if IN_VENV:
-            output.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="stderr")
+            output.print_msg("Running in virtual environment, skipping loading legacy plugins.", print_to="debug")
             return
 
         plugin_dirs = [
