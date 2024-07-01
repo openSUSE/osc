@@ -1,3 +1,7 @@
+- 1.8.1
+  - Command-line:
+    - Fix 'linkpac' command crash when used with '--disable-build' or '--disable-publish' option
+
 - 1.8.0
   - Command-line:
     - Improve 'submitrequest' command to inherit description from superseded request
