@@ -3294,7 +3294,7 @@ def link_pac(
 
     if disable_build or disable_publish:
         meta_change = True
-        root = ET.fromstring(b"".join(dst_meta))
+        root = ET.fromstring("".join(dst_meta))
 
         if disable_build:
             elm = root.find('build')
