@@ -87,7 +87,7 @@ class Project:
 
         self.dir = Path(dir)
         self.absdir = os.path.abspath(dir)
-        self.store = Store(dir)
+        self.store = Store(dir, check=wc_check)
         self.progress_obj = progress_obj
 
         self.name = store_read_project(self.dir)
@@ -140,8 +140,13 @@ class Project:
         return dirty_files
 
     def wc_repair(self, apiurl: Optional[str] = None):
-        store = Store(self.dir)
+        store = Store(self.dir, check=False)
         store.assert_is_project()
+
+        # there was a time when osc did not write _osclib_version file; let's assume these checkouts have version 1.0
+        if not store.exists("_osclib_version"):
+            store.write_string("_osclib_version", "1.0")
+
         if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \

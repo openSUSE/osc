@@ -10102,8 +10102,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if is_project_dir(i):
                 try:
                     prj = Project(i, getPackageList=False)
-                except oscerr.WorkingCopyInconsistent as e:
-                    if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
+                except (oscerr.WorkingCopyInconsistent, oscerr.NoWorkingCopy) as e:
+                    dirty_files = getattr(e, "dirty_files", [])
+                    if '_apiurl' in dirty_files and (not apiurl or not opts.force_apiurl):
                         apiurl = get_apiurl(apiurls)
                     prj = Project(i, getPackageList=False, wc_check=False)
                     prj.wc_repair(apiurl)
@@ -10122,8 +10123,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for pdir in pacs:
             try:
                 p = Package(pdir)
-            except oscerr.WorkingCopyInconsistent as e:
-                if '_apiurl' in e.dirty_files and (not apiurl or not opts.force_apiurl):
+            except (oscerr.WorkingCopyInconsistent, oscerr.NoWorkingCopy) as e:
+                dirty_files = getattr(e, "dirty_files", [])
+                if '_apiurl' in dirty_files and (not apiurl or not opts.force_apiurl):
                     apiurl = get_apiurl(apiurls)
                 p = Package(pdir, wc_check=False)
                 p.wc_repair(apiurl)

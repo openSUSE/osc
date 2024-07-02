@@ -51,7 +51,7 @@ class Package:
 
         self.dir = workingdir or "."
         self.absdir = os.path.abspath(self.dir)
-        self.store = osc_store.get_store(self.dir)
+        self.store = osc_store.get_store(self.dir, check=wc_check)
         self.store.assert_is_package()
         self.storedir = os.path.join(self.absdir, store)
         self.progress_obj = progress_obj
@@ -178,8 +178,13 @@ class Package:
     def wc_repair(self, apiurl: Optional[str] = None):
         from ..core import get_source_file
 
-        store = Store(self.dir)
+        store = Store(self.dir, check=False)
         store.assert_is_package()
+
+        # there was a time when osc did not write _osclib_version file; let's assume these checkouts have version 1.0
+        if not store.exists("_osclib_version"):
+            store.write_string("_osclib_version", "1.0")
+
         if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
                 msg = 'cannot repair wc: the \'_apiurl\' file is missing but ' \
