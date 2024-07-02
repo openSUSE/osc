@@ -339,7 +339,10 @@ def check_store_version(dir):
         with open(versionfile) as f:
             v = f.read().strip()
     except:
-        v = ''
+        if is_project_dir(dir):
+            v = '1.0'
+        else:
+            v = ''
 
     if v == '':
         msg = f'Error: "{os.path.abspath(dir)}" is not an osc package working copy.'
