@@ -1,3 +1,9 @@
+- 1.8.2
+  - Library:
+    - Change 'repairwc' command to fix missing .osc/_osclib_version
+    - Make error message in check_store_version() more generic to work for both projects and packages
+    - Fix check_store_version in project store
+
 - 1.8.1
   - Command-line:
     - Fix 'linkpac' command crash when used with '--disable-build' or '--disable-publish' option
