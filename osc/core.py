@@ -4110,7 +4110,7 @@ def get_results(
     # hmm the function name is a bit too generic - something like
     # get_package_results_human would be better, but this would break the existing
     # api (unless we keep get_results around as well)...
-    format = kwargs.pop('format')
+    format = kwargs.pop('format', None)
     if format is None:
         format = '%(rep)-20s %(arch)-10s %(pkg)-30s %(status)s'
     r = []
@@ -4118,7 +4118,7 @@ def get_results(
     failed = False
     multibuild_packages = kwargs.pop('multibuild_packages', [])
     show_excluded = kwargs.pop('showexcl', False)
-    code_filter = kwargs.get('code')
+    code_filter = kwargs.get('code', None)
     for results in get_package_results(apiurl, project, package, **kwargs):
         r = []
         for res, is_multi in result_xml_to_dicts(results):
