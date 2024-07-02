@@ -194,6 +194,13 @@ def step_impl(context, source, destination):
     shutil.copyfile(source, destination)
 
 
+@behave.step('I remove file "{path}"')
+def step_impl(context, path):
+    # substitutions
+    path = path.format(context=context)
+    os.remove(path)
+
+
 @behave.step('file "{path}" exists')
 def step_impl(context, path):
     path = path.format(context=context)
