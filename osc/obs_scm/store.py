@@ -342,7 +342,7 @@ def check_store_version(dir):
         v = ''
 
     if v == '':
-        msg = f'Error: "{os.path.abspath(dir)}" is not an osc package working copy.'
+        msg = f'Error: "{os.path.abspath(dir)}" is not an osc working copy.'
         if os.path.exists(os.path.join(dir, '.svn')):
             msg = msg + '\nTry svn instead of osc.'
         raise oscerr.NoWorkingCopy(msg)
