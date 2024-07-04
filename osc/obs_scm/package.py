@@ -175,8 +175,10 @@ class Package:
                 dirty_files.append(fname)
         return dirty_files
 
-    def wc_repair(self, apiurl: Optional[str] = None):
+    def wc_repair(self, apiurl: Optional[str] = None) -> bool:
         from ..core import get_source_file
+
+        repaired: bool = False
 
         store = Store(self.dir, check=False)
         store.assert_is_package()
@@ -195,6 +197,7 @@ class Package:
             conf.parse_apisrv_url(None, apiurl)
             store.apiurl = apiurl
             self.apiurl = apiurl
+            repaired = True
 
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
@@ -204,6 +207,7 @@ class Package:
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
                                 targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
                                 mtime=f.mtime)
+                repaired = True
 
         for fname in store:
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
@@ -212,16 +216,21 @@ class Package:
             elif fname not in self.filenamelist or fname in self.skipped:
                 # this file does not belong to the storedir so remove it
                 store.unlink(fname)
+                repaired = True
 
         for fname in self.to_be_deleted[:]:
             if fname not in self.filenamelist:
                 self.to_be_deleted.remove(fname)
                 self.write_deletelist()
+                repaired = True
 
         for fname in self.in_conflict[:]:
             if fname not in self.filenamelist:
                 self.in_conflict.remove(fname)
                 self.write_conflictlist()
+                repaired = True
+
+        return repaired
 
     def info(self):
         from ..core import info_templ
