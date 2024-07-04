@@ -8,7 +8,7 @@ class KeyinfoSslcert(XmlModel):
         xml_attribute=True,
     )
 
-    serial: str = Field(
+    serial: Optional[str] = Field(
         xml_attribute=True,
     )
 
@@ -16,23 +16,23 @@ class KeyinfoSslcert(XmlModel):
         xml_attribute=True,
     )
 
-    subject: str = Field(
+    subject: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    algo: str = Field(
+    algo: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    keysize: str = Field(
+    keysize: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    begins: int = Field(
+    begins: Optional[int] = Field(
         xml_attribute=True,
     )
 
-    expires: int = Field(
+    expires: Optional[int] = Field(
         xml_attribute=True,
     )
 
@@ -46,10 +46,18 @@ class KeyinfoSslcert(XmlModel):
 
     def get_begins_str(self) -> str:
         import datetime
+
+        if self.begins is None:
+            return ""
+
         return datetime.datetime.fromtimestamp(self.begins).strftime("%Y-%m-%d %H:%M:%S")
 
     def get_expires_str(self) -> str:
         import datetime
+
+        if self.expires is None:
+            return ""
+
         return datetime.datetime.fromtimestamp(self.expires).strftime("%Y-%m-%d %H:%M:%S")
 
     def to_human_readable_string(self) -> str:
