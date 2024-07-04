@@ -44,6 +44,9 @@ def colorize(text, color):
     if not color:
         return text
 
+    if not text:
+        return text
+
     result = ""
     for i in color.split(","):
         result += ESCAPE_CODES[i]

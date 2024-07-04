@@ -4,27 +4,27 @@ from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-i
 class KeyinfoPubkey(XmlModel):
     XML_TAG = "pubkey"
 
-    keyid: str = Field(
+    keyid: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    userid: str = Field(
+    userid: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    algo: str = Field(
+    algo: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    keysize: str = Field(
+    keysize: Optional[str] = Field(
         xml_attribute=True,
     )
 
-    expires: int = Field(
+    expires: Optional[int] = Field(
         xml_attribute=True,
     )
 
-    fingerprint: str = Field(
+    fingerprint: Optional[str] = Field(
         xml_attribute=True,
     )
 
@@ -34,6 +34,10 @@ class KeyinfoPubkey(XmlModel):
 
     def get_expires_str(self) -> str:
         import datetime
+
+        if self.expires is None:
+            return ""
+
         return datetime.datetime.fromtimestamp(self.expires).strftime("%Y-%m-%d %H:%M:%S")
 
     def to_human_readable_string(self) -> str:

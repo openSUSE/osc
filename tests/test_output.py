@@ -74,6 +74,13 @@ Key    : Value
 """.strip()
         self.assertEqual(str(t), expected)
 
+    def test_empty_value_no_color(self):
+        t = KeyValueTable()
+        t.add("Key", "", color="bold")
+
+        expected = "Key : "
+        self.assertEqual(str(t), expected)
+
 
 class TestPrintMsg(unittest.TestCase):
     def setUp(self):
