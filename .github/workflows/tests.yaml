@@ -25,7 +25,7 @@ jobs:
         run: |
             sudo apt-get -y update
             sudo apt-get -y --no-install-recommends install git-lfs
-            sudo apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
+            sudo apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
       - uses: actions/checkout@v3
 
@@ -85,7 +85,7 @@ jobs:
             zypper -n lr --details
             grep -qi tumbleweed /etc/os-release && zypper -n dist-upgrade || zypper -n patch || zypper -n patch
             zypper -n install git-lfs
-            zypper -n install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
+            zypper -n install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
       - name: 'Install packages (Fedora/CentOS)'
         if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
@@ -93,7 +93,7 @@ jobs:
             dnf -y makecache
             dnf -y distro-sync
             dnf -y install git-lfs
-            dnf -y install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
+            dnf -y install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel-yaml python3-setuptools python3-urllib3
 
       - name: 'Install packages (Debian/Ubuntu)'
         if: ${{ contains(matrix.container, '/debian:') || contains(matrix.container, '/ubuntu:') }}
@@ -101,7 +101,7 @@ jobs:
             apt-get -y update
             apt-get -y upgrade
             apt-get -y --no-install-recommends install git-lfs
-            apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3
+            apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
       - uses: actions/checkout@v3
 
@@ -131,7 +131,7 @@ jobs:
         run: |
             sudo sh -c '. /etc/os-release; echo "deb [trusted=yes] http://download.opensuse.org/repositories/openSUSE:Tools/xUbuntu_${VERSION_ID} ./" > /etc/apt/sources.list.d/openSUSE-Tools.list'
             sudo apt-get -y update
-            sudo apt-get -y --no-install-recommends install python3-behave diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-setuptools python3-urllib3 obs-build obs-service-set-version
+            sudo apt-get -y --no-install-recommends install python3-behave diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3 obs-build obs-service-set-version
 
       - name: "Checkout sources"
         uses: actions/checkout@v3

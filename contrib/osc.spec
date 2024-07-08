@@ -40,12 +40,14 @@
 %define ssh_add_pkg openssh-clients
 %define ssh_keygen_pkg openssh
 %define sphinx_pkg %{use_python_pkg}-sphinx
+%define ruamel_yaml_pkg %{use_python_pkg}-ruamel-yaml
 
 %if 0%{?suse_version}
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
 %define obs_build_pkg build
 %define ssh_keygen_pkg openssh-common
 %define sphinx_pkg %{use_python_pkg}-Sphinx
+%define ruamel_yaml_pkg %{use_python_pkg}-ruamel.yaml
 %endif
 
 Name:           osc
@@ -85,6 +87,7 @@ BuildRequires:  git-core
 Requires:       %{use_python_pkg}-cryptography
 Requires:       %{use_python_pkg}-rpm
 Requires:       %{use_python_pkg}-urllib3
+Requires:       %{ruamel_yaml_pkg}
 
 # needed for showing download progressbars
 Recommends:     %{use_python_pkg}-progressbar
