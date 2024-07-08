@@ -49,7 +49,7 @@
 %endif
 
 Name:           osc
-Version:        1.8.2
+Version:        1.8.3
 Release:        0
 Summary:        Command-line client for the Open Build Service
 License:        GPL-2.0-or-later

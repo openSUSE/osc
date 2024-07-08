@@ -1,3 +1,11 @@
+- 1.8.3
+  - Command-line:
+    - Change 'repairwc' command to always run all repair steps
+  - Library:
+    - Make most of the fields in KeyinfoPubkey and KeyinfoSslcert models optional
+    - Fix colorize() to avoid wrapping empty string into color escape sequences
+    - Provide default values for kwargs.get/pop in get_results() function
+
 - 1.8.2
   - Library:
     - Change 'repairwc' command to fix missing .osc/_osclib_version
