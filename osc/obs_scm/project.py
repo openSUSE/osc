@@ -139,13 +139,16 @@ class Project:
                 dirty_files.append(fname)
         return dirty_files
 
-    def wc_repair(self, apiurl: Optional[str] = None):
+    def wc_repair(self, apiurl: Optional[str] = None) -> bool:
+        repaired: bool = False
+
         store = Store(self.dir, check=False)
         store.assert_is_project()
 
         # there was a time when osc did not write _osclib_version file; let's assume these checkouts have version 1.0
         if not store.exists("_osclib_version"):
             store.write_string("_osclib_version", "1.0")
+            repaired = True
 
         if not store.exists("_apiurl") or apiurl:
             if apiurl is None:
@@ -157,6 +160,9 @@ class Project:
             conf.parse_apisrv_url(None, apiurl)
             store.apiurl = apiurl
             self.apiurl = apiurl
+            repaired = True
+
+        return repaired
 
     def checkout_missing_pacs(self, sinfos, expand_link=False, unexpand_link=False):
         from ..core import checkout_package

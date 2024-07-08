@@ -10106,8 +10106,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     dirty_files = getattr(e, "dirty_files", [])
                     if '_apiurl' in dirty_files and (not apiurl or not opts.force_apiurl):
                         apiurl = get_apiurl(apiurls)
-                    prj = Project(i, getPackageList=False, wc_check=False)
-                    prj.wc_repair(apiurl)
+
+                prj = Project(i, getPackageList=False, wc_check=False)
+                prj.wc_repair(apiurl)
+
                 for p in prj.pacs_have:
                     if p in prj.pacs_broken:
                         continue
@@ -10127,8 +10129,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 dirty_files = getattr(e, "dirty_files", [])
                 if '_apiurl' in dirty_files and (not apiurl or not opts.force_apiurl):
                     apiurl = get_apiurl(apiurls)
-                p = Package(pdir, wc_check=False)
-                p.wc_repair(apiurl)
+
+            p = Package(pdir, wc_check=False)
+            repaired = p.wc_repair(apiurl)
+
+            if repaired:
                 print(f'done. Please check the state of the wc (via \'osc status {i}\').')
             else:
                 print(f'osc: working copy \'{i}\' is not inconsistent', file=sys.stderr)
