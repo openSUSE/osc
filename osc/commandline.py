@@ -7170,6 +7170,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Copy overlay filesystem to buildroot after installing all RPMs .')
     @cmdln.option('--noinit', '--no-init', action='store_true',
                   help='Skip initialization of build root and start with build immediately.')
+    @cmdln.option('--checks', action='store_true',
+                  help='Run checks even if disabled in the build config')
     @cmdln.option('--nochecks', '--no-checks', action='store_true',
                   help='Do not run build checks on the resulting packages.')
     @cmdln.option('--no-verify', '--noverify', action='store_true',
