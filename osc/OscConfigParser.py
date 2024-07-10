@@ -270,10 +270,7 @@ class OscConfigParser(configparser.ConfigParser):
                     elif sectname == configparser.DEFAULTSECT:
                         cursect = self._defaults
                     else:
-                        #cursect = {'__name__': sectname}
-                        #self._sections[sectname] = cursect
                         self.add_section(sectname)
-                        self.set(sectname, '__name__', sectname)
                     # So sections can't start with a continuation line
                     cursect = sectname
                     optname = None
@@ -348,8 +345,6 @@ class OscConfigParser(configparser.ConfigParser):
                     ret.append('')
                 ret.append(f'[{line.name}]')
                 for sline in line._lines:
-                    if sline.name == '__name__':
-                        continue
                     if sline.type == 'option':
                         # special handling for continuation lines
                         val = '\n '.join(sline.value.split('\n'))
