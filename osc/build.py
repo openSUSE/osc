@@ -804,6 +804,8 @@ def main(apiurl, store, opts, argv):
         buildargs.append('--norootforbuild')
     if opts.clean:
         buildargs.append('--clean')
+    if opts.checks:
+        buildargs.append('--checks')
     if opts.nochecks:
         buildargs.append('--no-checks')
     if not opts.no_changelog:
