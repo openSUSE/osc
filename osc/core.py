@@ -13,7 +13,7 @@ __version__ = git_version.get_version('0.182.1')
 # __store_version__ is to be incremented when the format of the working copy
 # "store" changes in an incompatible way. Please add any needed migration
 # functionality to check_store_version().
-__store_version__ = '1.0'
+__store_version__ = '2.0'
 
 import locale
 import os
@@ -1213,16 +1213,13 @@ class Package:
         if self.scm_url:
             return dirty_files
         for fname in self.filenamelist:
-            if not os.path.exists(os.path.join(self.storedir, fname)) and not fname in self.skipped:
+            if not store_sources_is_file(self.absdir, fname) and fname not in self.skipped:
                 dirty_files.append(fname)
         for fname in Package.REQ_STOREFILES:
             if not os.path.isfile(os.path.join(self.storedir, fname)):
                 dirty_files.append(fname)
-        for fname in os.listdir(self.storedir):
-            if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
-                fname.startswith('_build'):
-                continue
-            elif fname in self.filenamelist and fname in self.skipped:
+        for fname in store_sources_list_files(self.absdir):
+            if fname in self.filenamelist and fname in self.skipped:
                 dirty_files.append(fname)
             elif not fname in self.filenamelist:
                 dirty_files.append(fname)
@@ -1248,18 +1245,20 @@ class Package:
         # all files which are present in the filelist have to exist in the storedir
         for f in self.filelist:
             # XXX: should we also check the md5?
-            if not os.path.exists(os.path.join(self.storedir, f.name)) and not f.name in self.skipped:
+            if not store_sources_is_file(self.absdir, f.name) and f.name not in self.skipped:
                 # if get_source_file fails we're screwed up...
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
-                    targetfilename=os.path.join(self.storedir, f.name), revision=self.rev,
+                    targetfilename=store_sources_get_path(self.absdir, f.name), revision=self.rev,
                     mtime=f.mtime)
         for fname in os.listdir(self.storedir):
             if fname in Package.REQ_STOREFILES or fname in Package.OPT_STOREFILES or \
                 fname.startswith('_build'):
                 continue
-            elif not fname in self.filenamelist or fname in self.skipped:
+
+        for fname in store_sources_list_files(self.absdir):
+            if fname not in self.filenamelist or fname in self.skipped:
                 # this file does not belong to the storedir so remove it
-                os.unlink(os.path.join(self.storedir, fname))
+                os.unlink(store_sources_get_path(self.absdir, fname))
         for fname in self.to_be_deleted[:]:
             if not fname in self.filenamelist:
                 self.to_be_deleted.remove(fname)
@@ -1279,11 +1278,9 @@ class Package:
             raise oscerr.OscIOError(None, 'error: file \'%s\' does not exist' % n)
         if n in self.to_be_deleted:
             self.to_be_deleted.remove(n)
-#            self.delete_storefile(n)
             self.write_deletelist()
         elif n in self.filenamelist or n in self.to_be_added:
             raise oscerr.PackageFileConflict(self.prjname, self.name, n, 'osc: warning: \'%s\' is already under version control' % n)
-#        shutil.copyfile(os.path.join(self.dir, n), os.path.join(self.storedir, n))
         if self.dir != '.':
             pathname = os.path.join(self.dir, n)
         else:
@@ -1348,7 +1345,7 @@ class Package:
         if n in self.in_conflict:
 
             filename = os.path.join(self.dir, n)
-            storefilename = os.path.join(self.storedir, n)
+            storefilename = store_sources_get_path(self.absdir, n)
             myfilename = os.path.join(self.dir, n + '.mine')
             upfilename = os.path.join(self.dir, n + '.new')
 
@@ -1392,7 +1389,7 @@ class Package:
     def delete_source_file(self, n):
         """delete local a source file"""
         self.delete_localfile(n)
-        self.delete_storefile(n)
+        store_sources_delete_file(self.absdir, n)
 
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
@@ -1415,7 +1412,7 @@ class Package:
     def __commit_update_store(self, tdir):
         """move files from transaction directory into the store"""
         for filename in os.listdir(tdir):
-            os.rename(os.path.join(tdir, filename), os.path.join(self.storedir, filename))
+            os.rename(os.path.join(tdir, filename), store_sources_get_path(self.absdir, filename))
 
     def __generate_commitlist(self, todo_send):
         root = ET.Element('directory')
@@ -1549,7 +1546,7 @@ class Package:
                 # in sha256sums.
                 # The storefile is guaranteed to exist (since we have a
                 # pulled/linkrepair wc, the file cannot have state 'S')
-                storefile = os.path.join(self.storedir, filename)
+                storefile = store_sources_get_path(self.absdir, filename)
                 sha256sums[filename] = sha256_dgst(storefile)
 
         if not force and not real_send and not todo_delete and not self.islinkrepair() and not self.ispulled():
@@ -1629,7 +1626,7 @@ class Package:
         store_write_string(self.absdir, '_files', ET.tostring(sfilelist, encoding=ET_ENCODING) + '\n')
         for filename in todo_delete:
             self.to_be_deleted.remove(filename)
-            self.delete_storefile(filename)
+            store_sources_delete_file(self.absdir, filename)
         self.write_deletelist()
         self.write_addlist()
         self.update_datastructs()
@@ -1670,7 +1667,7 @@ class Package:
 
     def updatefile(self, n, revision, mtime=None):
         filename = os.path.join(self.dir, n)
-        storefilename = os.path.join(self.storedir, n)
+        storefilename = store_sources_get_path(self.absdir, n)
         origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
         origfile = os.path.join(self.storedir, '_in_update', n)
         if os.path.isfile(filename):
@@ -1690,7 +1687,7 @@ class Package:
 
     def mergefile(self, n, revision, mtime=None):
         filename = os.path.join(self.dir, n)
-        storefilename = os.path.join(self.storedir, n)
+        storefilename = store_sources_get_path(self.absdir, n)
         myfilename = os.path.join(self.dir, n + '.mine')
         upfilename = os.path.join(self.dir, n + '.new')
         origfile_tmp = os.path.join(self.storedir, '_in_update', '%s.copy' % n)
@@ -1966,7 +1963,7 @@ class Package:
             known_by_meta = True
         if os.path.exists(localfile):
             exists = True
-        if os.path.exists(os.path.join(self.storedir, n)):
+        if store_sources_is_file(self.absdir, n):
             exists_in_store = True
 
         if n in self.to_be_deleted:
@@ -2040,7 +2037,7 @@ class Package:
                     b_revision = self.rev.encode()
                 diff.append(b'--- %s\t(revision %s)\n' % (fname.encode(), b_revision))
                 diff.append(b'+++ %s\t(working copy)\n' % fname.encode())
-                fname = os.path.join(self.storedir, fname)
+                fname = store_sources_get_path(self.absdir, fname)
                
             try:
                 if revision is not None and not add:
@@ -2376,8 +2373,8 @@ rev: %s
                 raise oscerr.PackageInternalError(self.prjname, self.name, 'too many files in \'_in_update\' dir')
             tmp = rfiles[:]
             for f in tmp:
-                if os.path.exists(os.path.join(self.storedir, f.name)):
-                    if dgst(os.path.join(self.storedir, f.name)) == f.md5:
+                if store_sources_is_file(self.absdir, f.name):
+                    if dgst(store_sources_get_path(self.absdir, f.name)) == f.md5:
                         if f in kept:
                             kept.remove(f)
                         elif f in added:
@@ -2419,10 +2416,10 @@ rev: %s
             # if the storefile doesn't exist we're resuming an aborted update:
             # the file was already deleted but we cannot know this
             # OR we're processing a _service: file (simply keep the file)
-            if os.path.isfile(os.path.join(self.storedir, f.name)) and self.status(f.name) not in ('M', 'C'):
+            if store_sources_is_file(self.absdir, f.name) and self.status(f.name) not in ('M', 'C'):
                 # if self.status(f.name) != 'M':
                 self.delete_localfile(f.name)
-            self.delete_storefile(f.name)
+            store_sources_delete_file(self.absdir, f.name)
             print(statfrmt('D', os.path.join(pathn, f.name)))
             if f.name in self.to_be_deleted:
                 self.to_be_deleted.remove(f.name)
@@ -2446,7 +2443,7 @@ rev: %s
                 print('Restored \'%s\'' % os.path.join(pathn, f.name))
             elif state == 'C':
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
-                    targetfilename=os.path.join(self.storedir, f.name), revision=rev,
+                    targetfilename=store_sources_get_path(self.absdir, f.name), revision=rev,
                     progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
                 print('skipping \'%s\' (this is due to conflicts)' % f.name)
             elif state == 'D' and self.findfilebyname(f.name).md5 != f.md5:
@@ -2506,11 +2503,11 @@ rev: %s
             raise oscerr.OscIOError(None, 'file \'%s\' is not under version control' % filename)
         elif filename in self.skipped:
             raise oscerr.OscIOError(None, 'file \'%s\' is marked as skipped and cannot be reverted' % filename)
-        if filename in self.filenamelist and not os.path.exists(os.path.join(self.storedir, filename)):
+        if filename in self.filenamelist and not store_sources_is_file(self.absdir, filename):
             raise oscerr.PackageInternalError('file \'%s\' is listed in filenamelist but no storefile exists' % filename)
         state = self.status(filename)
         if not (state == 'A' or state == '!' and filename in self.to_be_added):
-            shutil.copyfile(os.path.join(self.storedir, filename), os.path.join(self.absdir, filename))
+            shutil.copyfile(store_sources_get_path(self.absdir, filename), os.path.join(self.absdir, filename))
         if state == 'D':
             self.to_be_deleted.remove(filename)
             self.write_deletelist()
@@ -3483,12 +3480,43 @@ def check_store_version(dir):
         raise oscerr.NoWorkingCopy(msg)
 
     if v != __store_version__:
+        migrated = False
+
         if v in ['0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '0.8', '0.9', '0.95', '0.96', '0.97', '0.98', '0.99']:
-            # version is fine, no migration needed
-            f = open(versionfile, 'w')
-            f.write(__store_version__ + '\n')
-            f.close()
+            # no migration needed, only change metadata version to 1.0
+            v = "1.0"
+            with open(versionfile, 'w') as f:
+                f.write(v + '\n')
+            migrated = True
+
+        if v == "1.0":
+            store_dir = os.path.join(dir, store)
+            sources_dir = os.path.join(dir, store, "sources")
+            os.makedirs(sources_dir, exist_ok=True)
+
+            if is_package_dir(dir) and not store_read_scmurl(dir):
+                scm_files = [i.name for i in store_read_files(dir)]
+
+                for fn in os.listdir(store_dir):
+                    old_path = os.path.join(store_dir, fn)
+                    new_path = os.path.join(sources_dir, fn)
+                    if not os.path.isfile(old_path):
+                        continue
+                    if fn in Package.REQ_STOREFILES or fn in Package.OPT_STOREFILES:
+                        continue
+                    if fn.startswith("_") and fn not in scm_files:
+                        continue
+                    if os.path.isfile(old_path):
+                        os.rename(old_path, new_path)
+
+            v = "2.0"
+            with open(versionfile, 'w') as f:
+                f.write(v + '\n')
+            migrated = True
+
+        if migrated:
             return
+
         msg = 'The osc metadata of your working copy "%s"' % dir
         msg += '\nhas __store_version__ = %s, but it should be %s' % (v, __store_version__)
         msg += '\nPlease do a fresh checkout or update your client. Sorry about the inconvenience.'
@@ -4889,7 +4917,7 @@ def get_source_file_diff(dir, filename, rev, oldfilename = None, olddir = None, 
         oldfilename = filename
 
     if not olddir:
-        olddir = os.path.join(dir, store)
+        olddir = os.path.join(dir, store, "sources")
 
     if not origfilename:
         origfilename = filename
@@ -6795,6 +6823,70 @@ def store_write_initial_packages(dir, project, subelements):
     for elem in subelements:
         root.append(elem)
     ET.ElementTree(root).write(fname)
+
+
+def store_read_files(dir):
+    files_tree = read_filemeta(dir)
+    files_tree_root = files_tree.getroot()
+    result = []
+    for node in files_tree_root.findall('entry'):
+        f = File(
+            node.get('name'),
+            node.get('md5'),
+            int(node.get('size')),
+            int(node.get('mtime')),
+        )
+        if node.get('skipped'):
+            f.skipped = True
+        result.append(f)
+    return result
+
+
+def store_sources_get_path(dir, file_name):
+    if "/" in file_name:
+        raise ValueError("Plain file name expected: %s" % file_name)
+    result = os.path.join(dir, store, "sources", file_name)
+    try:
+        os.makedirs(os.path.dirname(result))
+    except FileExistsError:
+        pass
+    return result
+
+
+def store_sources_list_files(dir):
+    result = []
+    invalid = []
+
+    topdir = os.path.join(dir, store, "sources")
+
+    if not os.path.isdir(topdir):
+        return []
+
+    for fn in os.listdir(topdir):
+        if store_sources_is_file(dir, fn):
+            result.append(fn)
+        else:
+            invalid.append(fn)
+
+    if invalid:
+        msg = ".osc/sources contains entries other than regular files"
+        project = store_read_project(dir)
+        package = store_read_package(dir)
+        raise oscerr.WorkingCopyInconsistent(project, package, invalid, msg)
+
+    return result
+
+
+def store_sources_is_file(dir, file_name):
+    return os.path.isfile(store_sources_get_path(dir, file_name))
+
+
+def store_sources_delete_file(dir, file_name):
+    try:
+        os.unlink(store_sources_get_path(dir, file_name))
+    except:
+        pass
+
 
 def get_osc_version():
     return __version__

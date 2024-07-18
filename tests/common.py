@@ -239,8 +239,8 @@ class OscTestCase(unittest.TestCase):
         for i in root.findall('entry'):
             if i.get('name') in skipfiles:
                 continue
-            self.assertTrue(os.path.exists(os.path.join('.osc', i.get('name'))))
-            self.assertEqual(osc.core.dgst(os.path.join('.osc', i.get('name'))), i.get('md5'))
+            self.assertTrue(os.path.exists(os.path.join('.osc', 'sources', i.get('name'))))
+            self.assertEqual(osc.core.dgst(os.path.join('.osc', 'sources', i.get('name'))), i.get('md5'))
 
     def assertXMLEqual(self, act, exp):
         if xml_equal(act, exp):

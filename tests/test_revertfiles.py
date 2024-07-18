@@ -87,7 +87,7 @@ class TestRevertFiles(OscTestCase):
         self.assertRaises(osc.oscerr.OscIOError, p.revert, 'skipped')
 
     def __check_file(self, fname):
-        storefile = os.path.join('.osc', fname)
+        storefile = os.path.join('.osc', 'sources', fname)
         self.assertTrue(os.path.exists(fname))
         self.assertTrue(os.path.exists(storefile))
         self.assertEqual(open(fname, 'r').read(), open(storefile, 'r').read())
