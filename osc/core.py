@@ -7,7 +7,7 @@ from __future__ import print_function
 
 
 from .util import git_version
-__version__ = git_version.get_version('0.182.1')
+__version__ = git_version.get_version('0.183.0')
 
 
 # __store_version__ is to be incremented when the format of the working copy

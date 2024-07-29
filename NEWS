@@ -1,3 +1,9 @@
+0.183.0
+  - Fix possibility to overwrite special files in .osc (CVE-2024-22034 boo#1225911)
+    Source files are now stored in the 'sources' subdirectory which prevents
+    name collisons. This requires changing version of '.osc' store to 2.0.
+  - Fix errorneous double quotes in core.py
+
 0.182.1
   - Fix crash due to list having no copy attribute on python2
   - Fix crash in ssh auth when .ssh directory is missing
