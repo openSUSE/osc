@@ -1,3 +1,13 @@
+- 1.9.0
+  - Security:
+    - Fix possibility to overwrite special files in .osc (CVE-2024-22034 boo#1225911)
+      Source files are now stored in the 'sources' subdirectory which prevents
+      name collisons. This requires changing version of '.osc' store to 2.0.
+  - Command-line:
+    - Introduce build --checks parameter
+  - Library:
+    - OscConfigParser: Remove automatic __name__ option
+
 - 1.8.3
   - Command-line:
     - Change 'repairwc' command to always run all repair steps
