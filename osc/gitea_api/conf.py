@@ -128,11 +128,15 @@ class Config:
 
     def add_login(self, login: Login):
         data = self._read()
-        #        print("DDD", data)
         data.setdefault("logins", [])
-        for i in data["logins"]:
-            if i.get("name", None) == login.name:
+
+        for entry in data["logins"]:
+            if entry.get("name", None) == login.name:
                 raise Login.AlreadyExists(login.name)
+            else:
+                if login.default:
+                    entry.pop("default", None)
+
         data["logins"].append(login.dict())
         self._write(data)
 
@@ -169,15 +173,19 @@ class Config:
             login.token = new_token
         if new_ssh_key is not None:
             login.ssh_key = new_ssh_key
+        if set_as_default:
+            login.default = True
 
         if not login.has_changed():
             return login
 
         data = self._read()
-        for num, entry in enumerate(data["logins"]):
+        for entry in data["logins"]:
             if entry.get("name", None) == name:
-                data["logins"][num].update(login.dict())
-                self._write(data)
+                entry.update(login.dict())
+            else:
+                if set_as_default:
+                    entry.pop("default", None)
+        self._write(data)
 
         return login
-        # TODO: set_as_default

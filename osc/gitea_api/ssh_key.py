@@ -32,6 +32,32 @@ class SSHKey:
         return re.split(" +", key, maxsplit=2)
 
     @classmethod
+    def _validate_key_format(cls, key):
+        """
+        Check that the public ssh key has the correct format:
+            - must be a single line of text
+            - it is possible to split it into <type> <key> <comment> parts
+            - the <key> part is base64 encoded
+        """
+        import base64
+        import binascii
+        from .exceptions import InvalidSshPublicKey
+
+        key = key.strip()
+        if len(key.splitlines()) != 1:
+            raise InvalidSshPublicKey()
+
+        try:
+            key_type, key_base64, key_comment = cls._split_key(key)
+        except ValueError:
+            raise InvalidSshPublicKey()
+
+        try:
+            base64.b64decode(key_base64)
+        except binascii.Error:
+            raise InvalidSshPublicKey()
+
+    @classmethod
     def create(cls, conn: Connection, key: str, title: Optional[str] = None) -> GiteaHTTPResponse:
         """
         Create a public key.
@@ -42,7 +68,7 @@ class SSHKey:
         """
         url = conn.makeurl("user", "keys")
 
-        # TODO: validate that we're sending a public ssh key
+        cls._validate_key_format(key)
 
         if not title:
             title = cls._split_key(key)[2]

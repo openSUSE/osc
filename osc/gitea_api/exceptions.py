@@ -62,3 +62,8 @@ class ForkExists(GiteaException):
     def __str__(self):
         result = f"Repo '{self.owner}/{self.repo}' is already forked as '{self.fork_owner}/{self.fork_repo}'"
         return result
+
+
+class InvalidSshPublicKey(oscerr.OscBaseError):
+    def __str__(self):
+        return "Invalid public ssh key"

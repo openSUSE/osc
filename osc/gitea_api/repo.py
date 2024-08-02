@@ -4,10 +4,6 @@ from typing import Optional
 
 from .connection import Connection
 from .connection import GiteaHTTPResponse
-from .exceptions import BranchDoesNotExist
-from .exceptions import BranchExists
-from .exceptions import ForkExists
-from .exceptions import GiteaException
 from .user import User
 
 
