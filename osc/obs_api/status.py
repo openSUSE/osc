@@ -40,3 +40,12 @@ class Status(XmlModel):
             """
         ),
     )
+
+    @property
+    def data(self):
+        result = {}
+        for entry in self.data_list or []:
+            key = entry.name
+            value = entry.value
+            result[key] = value
+        return result
