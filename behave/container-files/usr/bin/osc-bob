@@ -1,0 +1,3 @@
+#!/bin/sh
+export OSC_CONFIG=/root/.config/osc/oscrc-bob
+osc "$@"
