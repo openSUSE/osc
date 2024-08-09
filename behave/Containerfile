@@ -1,6 +1,6 @@
-FROM opensuse/leap:15.5
+FROM opensuse/leap:15.6
 
-RUN zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.5/OBS:Server:Unstable.repo
+RUN zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.6/OBS:Server:Unstable.repo
 RUN zypper -n --gpg-auto-import-keys refresh
 RUN zypper -n install \
     bash \
@@ -30,5 +30,5 @@ RUN /bin/bash /opt/setup/setup.sh \
     && rm -rf /srv/obs/service/log/* \
     && rm -rf /srv/www/obs/api/log/*
 
-# /sbin/init doesn't exist on Leap 15.5
+# /sbin/init doesn't exist on Leap 15.6
 ENTRYPOINT ["/usr/lib/systemd/systemd"]
