@@ -26,8 +26,11 @@ sed -i -E 's!^(\s*)PassengerRuby .*!\1PassengerRuby "/usr/bin/ruby.ruby3.1"!' /e
 # enable apache SSL server flag
 sed -i 's!^APACHE_SERVER_FLAGS=.*!APACHE_SERVER_FLAGS="SSL"!' /etc/sysconfig/apache2
 
-# also listen on the port that is exported to an unprivileged user
+# also listen on the ports that are published outside the container
+# so the included oscrc files are valid from both outside and inside of the container
 sed -i 's!^<VirtualHost \*:82>!<VirtualHost *:82 *:1082>!' /etc/apache2/vhosts.d/obs.conf
+sed -i 's!^<VirtualHost \*:443>!<VirtualHost *:443 *:1443>!' /etc/apache2/vhosts.d/obs.conf
+sed -i 's!^Listen 82$!Listen 82\nListen 1082\nListen 1443!' /etc/apache2/vhosts.d/obs.conf
 
 
 # enable apache mods
