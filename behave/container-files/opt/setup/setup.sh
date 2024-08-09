@@ -3,7 +3,7 @@ set -e
 
 
 TOPDIR=$(dirname $(readlink -f "$0"))
-source "$TOPDIR/container-setup-common.sh"
+source "$TOPDIR/common.sh"
 
 
 # tweak configuration
@@ -103,7 +103,9 @@ RAILS_ENV=production SAFETY_ASSURED=1 bin/rails db:setup writeconfiguration
 
 
 # update configuration and write it to disk
+echo "update configurations set admin_email='admin@example.com';" | su -s /bin/sh - mysql -c "mysql api_production"
 echo "update configurations set download_url='http://localhost:1082';" | su -s /bin/sh - mysql -c "mysql api_production"
+echo "update configurations set obs_url='https://localhost:1443';" | su -s /bin/sh - mysql -c "mysql api_production"
 cd /srv/www/obs/api; RAILS_ENV=production SAFETY_ASSURED=1 bin/rails writeconfiguration
 
 

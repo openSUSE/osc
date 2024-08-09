@@ -1,4 +1,1 @@
-<multibuild>
-  <flavor>flavor1</flavor>
-  <flavor>flavor2</flavor>
-</multibuild>
+../../container-files/opt/setup/fixtures/pac/multibuild-pkg-1._multibuild
