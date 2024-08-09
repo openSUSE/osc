@@ -3,7 +3,7 @@ set -e
 
 
 TOPDIR=$(dirname $(readlink -f "$0"))
-source "$TOPDIR/container-setup-common.sh"
+source "$TOPDIR/common.sh"
 
 
 start_mysql

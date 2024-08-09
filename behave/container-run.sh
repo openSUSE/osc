@@ -10,7 +10,7 @@ podman run \
     --detach \
     --interactive \
     --tty \
-    --volume="$TOPDIR":/opt/obs \
+    --volume="$TOPDIR":/opt/workdir \
     --cap-add SYS_PTRACE \
     -p 1443:443 \
     -p 1082:82 \

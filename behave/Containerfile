@@ -20,13 +20,15 @@ RUN zypper -n install \
     vim \
     && rm -rf /var/cache/zypp/*
 
-# increase the number if we need to run the following setup steps again (for debugging purposes)
-ENV BUILD_NUMBER 1
-
 COPY container-files/ /
-RUN /bin/bash /opt/obs/container-setup.sh
-RUN /bin/bash /opt/obs/container-setup-initial-data.sh
-RUN /bin/bash /opt/obs/container-setup-prebuilt-rpms.sh
+
+RUN /bin/bash /opt/setup/setup.sh \
+    && /bin/bash /opt/setup/initial-data.sh \
+    && /bin/bash /opt/setup/prebuilt-rpms.sh \
+    && rm -rf /var/log/apache2/* \
+    && rm -rf /srv/obs/log/* \
+    && rm -rf /srv/obs/service/log/* \
+    && rm -rf /srv/www/obs/api/log/*
 
 # /sbin/init doesn't exist on Leap 15.5
 ENTRYPOINT ["/usr/lib/systemd/systemd"]
