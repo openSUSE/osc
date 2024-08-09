@@ -1,0 +1,8 @@
+[general]
+apiurl = https://localhost
+cookiejar = ~/.local/state/osc/cookiejar
+
+[https://localhost]
+user = Admin
+pass = opensuse
+credentials_mgr_class = osc.credentials.PlaintextConfigFileCredentialsManager

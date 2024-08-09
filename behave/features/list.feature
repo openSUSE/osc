@@ -6,6 +6,8 @@ Scenario: Run `osc list` with no arguments to display all projects
    Then stdout is
         """
         home:Admin
+        home:alice
+        home:bob
         openSUSE.org
         test:devel
         test:factory

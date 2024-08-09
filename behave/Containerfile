@@ -23,8 +23,8 @@ RUN zypper -n install \
 # increase the number if we need to run the following setup steps again (for debugging purposes)
 ENV BUILD_NUMBER 1
 
+COPY container-files/ /
 RUN /bin/bash /opt/obs/container-setup.sh
-COPY container-oscrc /root/.config/osc/oscrc
 RUN /bin/bash /opt/obs/container-setup-initial-data.sh
 RUN /bin/bash /opt/obs/container-setup-prebuilt-rpms.sh
 
