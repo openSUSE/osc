@@ -2632,6 +2632,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         return actionxml
 
+    def _release_request(self, args, opts):
+        if len(args) != 4:
+            raise oscerr.WrongArgs('Wrong number of arguments for release' + str(len(args)))
+
+        project = self._process_project_name(args[0])
+        package = args[1]
+        target_project = args[2]
+        target_repository = args[3]
+
+        actionxml = """ <action type="release"> <source project="%s" package="%s" /> <target project="%s" repository="%s" /> </action> """ % \
+            (project, package, target_project, target_repository)
+
+        return actionxml
+
     def _add_me(self, args, opts):
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -2754,7 +2768,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("creq")
     def do_createrequest(self, subcmd, opts, *args):
         """
-        Create multiple requests with a single command
+        Create a request with multiple actions
 
         usage:
             osc creq [OPTIONS] [
@@ -2765,9 +2779,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 -a add_group GROUP ROLE PROJECT [PACKAGE]
                 -a add_role USER ROLE PROJECT [PACKAGE]
                 -a set_bugowner USER PROJECT [PACKAGE]
+                -a release PROJECT PACKAGE TARGET_PROJECT TARGET_REPOSITORY
                 ]
 
-            Option -m works for all types of request, the rest work only for submit.
+            Option -m works for all types of request actions, the rest work only for submit.
 
         Example:
             osc creq -a submit -a delete home:someone:branches:openSUSE:Tools -a change_devel openSUSE:Tools osc home:someone:branches:openSUSE:Tools -m ok
@@ -2804,6 +2819,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 actionsxml += self._delete_request(args, opts)
             elif action == 'change_devel':
                 actionsxml += self._changedevel_request(args, opts)
+            elif action == 'release':
+                actionsxml += self._release_request(args, opts)
             elif action == 'add_me':
                 actionsxml += self._add_me(args, opts)
             elif action == 'add_group':
@@ -2827,6 +2844,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         root = ET.parse(f).getroot()
         rid = root.get('id')
+        print(f"Request {rid} created")
         for srid in supersede:
             change_request_state(apiurl, srid, 'superseded',
                                  f'superseded by {rid}', rid)
