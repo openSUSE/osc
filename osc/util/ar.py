@@ -161,6 +161,9 @@ class Ar:
                 h.file = h.file[:-1]
                 continue
 
+            if not h.file.startswith(b'/'):
+                continue
+
             # long file name
             assert h.file[0:1] == b"/"
             assert ext_fnhdr_data is not None
