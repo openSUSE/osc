@@ -3676,7 +3676,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
         apiurl = self.get_api_url()
 
-        # assume we're in a working copy if no args were specfied
+        # assume we're in a working copy if no args were specified
         update_working_copy = not args
 
         args = list(args)
@@ -4379,7 +4379,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         With getpac or bco, the branched package will come from one of
             %(getpac_default_project)s
         (list of projects from oscrc:getpac_default_project)
-        if nothing else is specfied on the command line.
+        if nothing else is specified on the command line.
 
         In case of branch errors, where the source has currently merge
         conflicts use --linkrev=base option.
@@ -5581,7 +5581,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-F', '--file', metavar='FILE',
                   help='read log message from FILE, \'-\' denotes standard input.')
     @cmdln.option('-f', '--force', default=False, action="store_true",
-                  help='Allow empty commit with no changes. When commiting a project, allow removing packages even if other packages depend on them.')
+                  help='Allow empty commit with no changes. When committing a project, allow removing packages even if other packages depend on them.')
     @cmdln.option("--skip-local-service-run", "--noservice", "--no-service", default=False, action="store_true",
                   help="Skip run of local source services as specified in _service file.")
     def do_commit(self, subcmd, opts, *args):
@@ -7320,7 +7320,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc build [OPTS] --alternative-project openSUSE:10.3 standard i586 BUILD_DESCR
 
         usage:
-            osc build [OPTS]                      # will try to guess a build environement
+            osc build [OPTS]                      # will try to guess a build environment
             osc build [OPTS] REPOSITORY ARCH BUILD_DESCR
             osc build [OPTS] REPOSITORY ARCH
             osc build [OPTS] REPOSITORY (ARCH = hostarch, BUILD_DESCR is detected automatically)
