@@ -66,9 +66,9 @@ class PackageBase:
         raise NotImplementedError()
 
     def get_meta_value(self, option):
-        if not self._meta_node:
+        if self._meta_node is None or len(self._meta_node) == 0:
             self._meta_node = self._get_meta_node()
-        if not self._meta_node:
+        if self._meta_node is None or len(self._meta_node) == 0:
             return None
         node = api.find_node(self._meta_node, "package", option)
         if node is None or not node.text:
