@@ -33,3 +33,9 @@ Create archive.cpio
 
 printf "/tmp/foo\0/123\0very-long-long-long-long-name\0very-long-long-long-long-name2\0very-long-name
 -with-newline\0a\nb\0dir/file\0" | cpio -ocv0 --owner=root:root > archive.cpio
+
+
+Create archive-no-ext_fnhdr.ar
+------------------------------
+
+ar qP archive-no-ext_fnhdr.ar dir/file

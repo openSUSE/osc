@@ -81,6 +81,12 @@ class TestAr(unittest.TestCase):
         # this is supposed to throw an error, extracting files with absolute paths might overwrite system files
         self.assertRaises(ArError, f.saveTo, self.tmpdir)
 
+    def test_no_exthdr(self):
+        self.archive = os.path.join(FIXTURES_DIR, "archive-no-ext_fnhdr.ar")
+        self.ar = Ar(self.archive)
+        self.ar.read()
+        self.test_saveTo_subdir()
+
 
 if __name__ == "__main__":
     unittest.main()
