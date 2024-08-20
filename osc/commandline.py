@@ -7388,22 +7388,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) > 3:
             raise oscerr.WrongArgs('Too many arguments')
 
-        store = osc_store.get_store(Path.cwd(), print_warnings=True)
-        store.assert_is_package()
+        if not opts.local_package:
+            store = osc_store.get_store(Path.cwd(), print_warnings=True)
+            store.assert_is_package()
 
-        try:
-            if opts.alternative_project and opts.alternative_project == store.project:
-                opts.alternative_project = None
-        except RuntimeError:
+            try:
+                if opts.alternative_project and opts.alternative_project == store.project:
+                    opts.alternative_project = None
+            except RuntimeError:
             # ignore the following exception: Couldn't map git branch '<BRANCH>' to a project
-            pass
+                pass
+        else:
+            try:
+                store = osc_store.get_store(os.path.dirname(Path.cwd()), print_warnings=True)
+            except oscerr.NoWorkingCopy:
+                store = None
 
         # HACK: avoid calling some underlying store_*() functions from parse_repoarchdescr() method
         # We'll fix parse_repoarchdescr() later because it requires a larger change
         if not opts.alternative_project and isinstance(store, git_scm.GitStore):
             opts.alternative_project = store.project
 
-        if len(args) == 0 and store.is_package and store.last_buildroot:
+        if len(args) == 0 and store and store.is_package and store.last_buildroot:
             # build env not specified, just read from last build attempt
             args = [store.last_buildroot[0], store.last_buildroot[1]]
             if not opts.vm_type:

@@ -925,7 +925,7 @@ def main(apiurl, store, opts, argv):
     bc_file = None
     bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
     bc_filename = '_buildconfig-%s-%s' % (repo, arch)
-    if store.is_package and os.access(core.store, os.W_OK):
+    if not opts.local_package and store.is_package and os.access(core.store, os.W_OK):
         bi_filename = os.path.join(os.getcwd(), core.store, bi_filename)
         bc_filename = os.path.join(os.getcwd(), core.store, bc_filename)
     elif not os.access('.', os.W_OK):
@@ -950,7 +950,7 @@ def main(apiurl, store, opts, argv):
     if opts.noinit:
         buildargs.append('--noinit')
 
-    if not store.is_package:
+    if opts.local_package or not store.is_package:
         opts.skip_local_service_run = True
 
     # check for source services
@@ -1551,7 +1551,7 @@ def main(apiurl, store, opts, argv):
         cmd = [change_personality[bi.buildarch]] + cmd
 
     # record our settings for later builds
-    if store.is_package:
+    if not opts.local_package and store.is_package:
         store.last_buildroot = repo, arch, vm_type
 
     try:
