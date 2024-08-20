@@ -28,8 +28,8 @@ jobs:
         container:
 
           # Fedora
-          - 'registry.fedoraproject.org/fedora:38'
           - 'registry.fedoraproject.org/fedora:39'
+          - 'registry.fedoraproject.org/fedora:40'
           - 'registry.fedoraproject.org/fedora:rawhide'
 
           # OpenSUSE
@@ -37,6 +37,7 @@ jobs:
           - 'registry.opensuse.org/opensuse/leap:15.3'
           - 'registry.opensuse.org/opensuse/leap:15.4'
           - 'registry.opensuse.org/opensuse/leap:15.5'
+          - 'registry.opensuse.org/opensuse/leap:15.6'
           - 'registry.opensuse.org/opensuse/tumbleweed'
 
           # CentOS Stream
