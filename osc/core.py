@@ -3975,7 +3975,7 @@ def get_repos_of_project(apiurl: str, prj: str):
 
     project_obj = obs_api.Project.from_api(apiurl, prj)
     for repo in project_obj.repository_list or []:
-        for arch in repo.arch_list:
+        for arch in repo.arch_list or []:
             yield Repo(repo.name, arch)
 
 
