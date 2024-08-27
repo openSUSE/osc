@@ -147,8 +147,10 @@ class Ar:
         """
 
         # read extended header with long file names and then only seek into the right offsets
-        self.__file.seek(self.ext_fnhdr.dataoff, os.SEEK_SET)
-        ext_fnhdr_data = self.__file.read(self.ext_fnhdr.size)
+        ext_fnhdr_data = None
+        if self.ext_fnhdr:
+            self.__file.seek(self.ext_fnhdr.dataoff, os.SEEK_SET)
+            ext_fnhdr_data = self.__file.read(self.ext_fnhdr.size)
 
         for h in self.hdrs:
             if h.file == b'/':
@@ -159,8 +161,12 @@ class Ar:
                 h.file = h.file[:-1]
                 continue
 
+            if not h.file.startswith(b'/'):
+                continue
+
             # long file name
             assert h.file[0:1] == b"/"
+            assert ext_fnhdr_data is not None
             start = int(h.file[1:])
             end = ext_fnhdr_data.find(b'/', start)
 
