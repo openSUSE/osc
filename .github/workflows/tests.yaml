@@ -37,7 +37,7 @@ jobs:
         run: |
           pip3 config set global.break-system-packages 1
           pip3 install -e .
-          python3 setup.py test
+          python3 -m unittest
 
   unit:
     name: "unit"
@@ -109,7 +109,7 @@ jobs:
         run: |
           pip3 config set global.break-system-packages 1
           pip3 install -e .
-          python3 setup.py test
+          python3 -m unittest
 
       - name: 'Generate coverage reports (openSUSE Tumbleweed)'
         if: ${{ contains(matrix.container, '/opensuse/tumbleweed') }}
