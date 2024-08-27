@@ -192,7 +192,7 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %python3_fix_shebang
 
 %check
-%{use_python} setup.py test
+%{use_python} -m unittest
 
 %files
 %defattr(-,root,root,-)
