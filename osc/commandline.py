@@ -7390,7 +7390,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.local_package:
             store = osc_store.get_store(Path.cwd(), print_warnings=True)
-            store.assert_is_package()
+            if isinstance(store, git_scm.store.GitStore):
+                opts.local_package = True
+            else:
+                store.assert_is_package()
 
             try:
                 if opts.alternative_project and opts.alternative_project == store.project:
@@ -7403,6 +7406,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 store = osc_store.get_store(os.path.dirname(Path.cwd()), print_warnings=True)
             except oscerr.NoWorkingCopy:
                 store = None
+
 
         # HACK: avoid calling some underlying store_*() functions from parse_repoarchdescr() method
         # We'll fix parse_repoarchdescr() later because it requires a larger change
