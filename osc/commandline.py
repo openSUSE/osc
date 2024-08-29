@@ -7269,6 +7269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('repos')
     @cmdln.alias('platforms')
     def do_repositories(self, subcmd, opts, *args):
+        from . import store as osc_store
         from .core import build_table
         from .core import get_repos_of_project
         from .core import get_repositories_of_project
@@ -7299,11 +7300,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = self._process_project_name(args[0])
             package = args[1]
         elif len(args) == 0:
-            if is_package_dir('.'):
-                package = store_read_package('.')
-                project = store_read_project('.')
-            elif is_project_dir('.'):
-                project = store_read_project('.')
+            store = osc_store.get_store(".")
+            if store.is_package:
+                package = store.package
+                project = store.project
+            elif store.is_project:
+                project = store.project
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
@@ -7731,7 +7733,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.local_package:
             store = osc_store.get_store(Path.cwd(), print_warnings=True)
-            store.assert_is_package()
+            if isinstance(store, git_scm.store.GitStore):
+                opts.local_package = True
+            else:
+                store.assert_is_package()
 
             try:
                 if opts.alternative_project and opts.alternative_project == store.project:
