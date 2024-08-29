@@ -6,6 +6,7 @@ and shouldn't be used in any code outside osc.
 
 
 import os
+import subprocess
 from xml.etree import ElementTree as ET
 
 from . import oscerr
@@ -29,6 +30,17 @@ def get_store(path, check=True, print_warnings=False):
             git_scm.warn_experimental()
     else:
         store = None
+        try:
+            toplevel = subprocess.check_output(["git", "rev-parse", "--show-toplevel"],
+                                               encoding="utf-8",
+                                               stderr=subprocess.DEVNULL).strip()
+            if toplevel:
+                store = git_scm.GitStore(toplevel, check)
+                if print_warnings:
+                    git_scm.warn_experimental()
+        except:
+            # we should distinguish between git cli fails or git is not installed
+            pass
 
     if not store:
         msg = f"Directory '{path}' is not a working copy"
