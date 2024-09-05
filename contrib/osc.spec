@@ -96,6 +96,9 @@ Recommends:     %{use_python_pkg}-distro
 Recommends:     %{use_python_pkg}-keyring
 Recommends:     %{use_python_pkg}-keyring-keyutils
 
+# needed for opening control.tar.zst in debquery
+Recommends:     %{use_python_pkg}-zstandard
+
 Recommends:     %{obs_build_pkg}
 Recommends:     ca-certificates
 Recommends:     diffstat
