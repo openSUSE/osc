@@ -60,7 +60,18 @@ class PBTextMeter(TextMeterBase):
         self.bar.finish()
 
 
-class NoPBTextMeter:
+class SimpleTextMeter(TextMeterBase):
+    def start(self, basename: str, size: Optional[int] = None):
+        print(basename, file=sys.stderr)
+
+    def update(self, amount_read: int):
+        pass
+
+    def end(self):
+        pass
+
+
+class NoTextMeter(TextMeterBase):
     def start(self, basename: str, size: Optional[int] = None):
         pass
 
@@ -74,12 +85,15 @@ class NoPBTextMeter:
 def create_text_meter(*args, **kwargs) -> TextMeterBase:
     from .conf import config
 
-    # this option is no longer used
-    kwargs.pop("use_pb_fallback", True)
+    use_pb_fallback = kwargs.pop("use_pb_fallback", True)
 
-    meter_class = PBTextMeter
-    if not have_pb_module or config.quiet or not config.show_download_progress or not sys.stdout.isatty():
-        meter_class = NoPBTextMeter
+    meter_class: TextMeterBase
+    if config.quiet:
+        meter_class = NoTextMeter
+    elif not have_pb_module or not config.show_download_progress or not sys.stdout.isatty() or use_pb_fallback:
+        meter_class = SimpleTextMeter
+    else:
+        meter_class = PBTextMeter
 
     return meter_class(*args, **kwargs)
 
