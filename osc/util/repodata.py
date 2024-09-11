@@ -136,11 +136,11 @@ class RepoDataQueryResult(packagequery.PackageQueryResult):
 
     @_to_bytes_or_None
     def arch(self):
-        return self.__element.find(namespace("common") + "arch").text
+        return self.__element.findtext(namespace("common") + "arch")
 
     @_to_bytes_or_None
     def description(self):
-        return self.__element.find(namespace("common") + "description").text
+        return self.__element.findtext(namespace("common") + "description")
 
     def distribution(self):
         return None
@@ -151,7 +151,7 @@ class RepoDataQueryResult(packagequery.PackageQueryResult):
 
     @_to_bytes_or_None
     def name(self):
-        return self.__element.find(namespace("common") + "name").text
+        return self.__element.findtext(namespace("common") + "name")
 
     def path(self):
         locationElement = self.__element.find(namespace("common") + "location")
