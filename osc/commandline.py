@@ -5007,6 +5007,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Use server side generated sources instead of local generation.')
     @cmdln.option('-l', '--limit-size', metavar='limit_size',
                         help='Skip all files with a given size')
+    @cmdln.option('--native-obs-package', action='store_true',
+                        help='Do not clone native scm repositories: Different representation and you will not be able to submit changes!')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
         """
@@ -5103,7 +5105,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  prj_dir=project_dir, service_files=opts.source_service_files,
                                  server_service_files=opts.server_side_source_service_files,
                                  progress_obj=self.download_progress, size_limit=opts.limit_size,
-                                 meta=opts.meta, outdir=opts.output_dir)
+                                 meta=opts.meta, outdir=opts.output_dir, native_obs_package=opts.native_obs_package)
                 if os.isatty(sys.stdout.fileno()):
                     print_request_list(apiurl, project, package)
 
@@ -5118,7 +5120,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             show_project_meta(apiurl, project)
 
             scm_url = show_scmsync(apiurl, project)
-            if scm_url is not None:
+            if scm_url is not None and opts.native_obs_package is False:
                 if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
                     raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
                 os.putenv("OSC_VERSION", get_osc_version())
@@ -5156,7 +5158,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      prj_dir=prj_dir, service_files=opts.source_service_files,
                                      server_service_files=opts.server_side_source_service_files,
                                      progress_obj=self.download_progress, size_limit=opts.limit_size,
-                                     meta=opts.meta)
+                                     meta=opts.meta, native_obs_package=opts.native_obs_package)
                 except oscerr.LinkExpandError as e:
                     print('Link cannot be expanded:\n', e, file=sys.stderr)
                     print('Use "osc repairlink" for fixing merge conflicts:\n', file=sys.stderr)
@@ -5165,7 +5167,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      prj_dir=prj_dir, service_files=opts.source_service_files,
                                      server_service_files=opts.server_side_source_service_files,
                                      progress_obj=self.download_progress, size_limit=opts.limit_size,
-                                     meta=opts.meta)
+                                     meta=opts.meta, native_obs_package=opts.native_obs_package)
             if os.isatty(sys.stdout.fileno()):
                 print_request_list(apiurl, project)
 

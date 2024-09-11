@@ -3091,6 +3091,7 @@ def checkout_package(
     prj_dir: Path=None,
     server_service_files=None,
     service_files=None,
+    native_obs_package=False,
     progress_obj=None,
     size_limit=None,
     meta=False,
@@ -3151,7 +3152,7 @@ def checkout_package(
     meta_data = b''.join(show_package_meta(apiurl, project, package))
     root = ET.fromstring(meta_data)
     scmsync_element = root.find("scmsync")
-    if scmsync_element is not None and scmsync_element.text is not None:
+    if native_obs_package is False and scmsync_element is not None and scmsync_element.text is not None:
         if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
             raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
         scm_url = scmsync_element.text
