@@ -203,6 +203,8 @@ class Buildinfo:
         else:
             self.preinstallimage = None
 
+        self.containerannotation = root.findtext("containerannotation")
+
     def has_dep(self, name):
         for i in self.deps:
             if i.name == name:
@@ -1319,6 +1321,12 @@ def main(apiurl, store, opts, argv):
                     if name == filename:
                         print("Using prefered package: " + path + "/" + filename)
                         os.unlink(tffn)
+
+        if bi.containerannotation:
+            if not os.path.exists("containers"):
+                os.makedirs("containers")
+            with open("containers/annotation", "wb") as f:
+                f.write(bi.containerannotation.encode())
 
         if prefer_pkgs:
             localpkgdir = "repos/_local/"
