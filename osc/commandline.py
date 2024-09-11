@@ -3946,7 +3946,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                      revision=rev,
                      comment=comment,
                      keep_link=opts.keep_link)
-        print(decode_it(r))
+        if r is not None:
+            print(decode_it(r))
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
                         help='Release only binaries from the specified architecture')
