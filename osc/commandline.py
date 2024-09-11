@@ -5120,7 +5120,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             show_project_meta(apiurl, project)
 
             scm_url = show_scmsync(apiurl, project)
-            if scm_url is not None and opts.native_obs_package is False:
+            if scm_url is not None and not opts.native_obs_package:
                 if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
                     raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
                 os.putenv("OSC_VERSION", get_osc_version())
