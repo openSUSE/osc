@@ -6489,7 +6489,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 cfg = f
         root = ET.parse(cfg).getroot()
         repo = root.get("repository")
-        arch = root.find("arch").text
+        arch = root.findtext("arch")
         return repo, arch
 
     @cmdln.alias('lbl')
