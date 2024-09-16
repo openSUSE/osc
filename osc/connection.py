@@ -220,6 +220,14 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
 
     options = conf.config["api_host_options"][apiurl]
 
+    if options.http_headers:
+        new_headers = urllib3.response.HTTPHeaderDict()
+        # user-defined headers from the config file
+        new_headers.update(options.http_headers)
+        # original ``headers`` (Content-Length, User-Agent) must prevail over user-defined headers
+        new_headers.update(headers)
+        headers = new_headers
+
     global CONNECTION_POOLS
     pool = CONNECTION_POOLS.get(apiurl, None)
     if not pool:
