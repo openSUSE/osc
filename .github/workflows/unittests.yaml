@@ -55,10 +55,11 @@ jobs:
       - name: 'Install packages (OpenSUSE)'
         if: ${{ startsWith(matrix.container, 'opensuse/') }}
         run: |
-            zypper --non-interactive --gpg-auto-import-keys refresh
-            zypper --non-interactive dist-upgrade
-            zypper --non-interactive install git-lfs
-            zypper --non-interactive install diffstat diffutils python3 python3-M2Crypto python3-pip python3-rpm python3-setuptools
+            zypper -n modifyrepo --disable repo-openh264 || :
+            zypper -n --gpg-auto-import-keys refresh
+            zypper -n dist-upgrade
+            zypper -n install git-lfs
+            zypper -n install diffstat diffutils python3 python3-M2Crypto python3-pip python3-rpm python3-setuptools
 
       - name: 'Install packages (Fedora/CentOS)'
         if: ${{ startsWith(matrix.container, 'fedora:') || contains(matrix.container, 'centos:')  }}
@@ -80,6 +81,7 @@ jobs:
 
       - name: 'Run unit tests'
         run: |
+          pip3 config set global.break-system-packages 1
           pip3 install -e .
           python3 setup.py test
 
@@ -113,15 +115,17 @@ jobs:
       - name: 'Install packages (OpenSUSE)'
         if: ${{ startsWith(matrix.container, 'opensuse/') }}
         run: |
-            zypper --non-interactive --gpg-auto-import-keys refresh
-            zypper --non-interactive dist-upgrade
-            zypper --non-interactive install git-lfs
-            zypper --non-interactive install diffstat diffutils python python2-M2Crypto python2-pip python2-rpm python2-setuptools
+            zypper -n modifyrepo --disable repo-openh264 || :
+            zypper -n --gpg-auto-import-keys refresh
+            zypper -n dist-upgrade
+            zypper -n install git-lfs
+            zypper -n install diffstat diffutils python python2-M2Crypto python2-pip python2-rpm python2-setuptools
 
       - uses: actions/checkout@v3
 
       - name: 'Run unit tests'
         run: |
           mkdir -p /usr/local/lib/python2.7/site-packages/
+          pip2 config set global.break-system-packages 1
           pip2 install -e .
           python2 setup.py test

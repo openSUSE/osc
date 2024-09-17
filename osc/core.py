@@ -4478,7 +4478,7 @@ def change_request_state_template(req, newstate):
         return ''
 
 def get_review_list(apiurl, project='', package='', byuser='', bygroup='', byproject='', bypackage='', states=(),
-                    req_type=''):
+                    req_type='', req_states=("review",)):
     # this is so ugly...
     def build_by(xpath, val):
         if 'all' in states:
@@ -4495,9 +4495,14 @@ def get_review_list(apiurl, project='', package='', byuser='', bygroup='', bypro
         return ''
 
     xpath = ''
+
+    # By default we're interested only in reviews of requests that are in state review.
+    for req_state in req_states:
+        xpath = xpath_join(xpath, "state/@name='%s'" % req_state, inner=True)
+
+    xpath = "(%s)" % xpath
+
     if states == ():
-        # default: requests which are still open and have reviews in "new" state
-        xpath = xpath_join('', 'state/@name=\'review\'', op='and')
         xpath = xpath_join(xpath, 'review/@state=\'new\'', op='and')
     if byuser:
         xpath = build_by(xpath, '@by_user=\'%s\'' % byuser)
