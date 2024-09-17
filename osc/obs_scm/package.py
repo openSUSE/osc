@@ -89,12 +89,15 @@ class Package:
         return (self.name, self.prjname, self.apiurl) < (other.name, other.prjname, other.apiurl)
 
     @classmethod
-    def from_paths(cls, paths, progress_obj=None):
+    def from_paths(cls, paths, progress_obj=None, *, skip_dirs=False):
         """
         Return a list of Package objects from working copies in given paths.
         """
         packages = []
         for path in paths:
+            if skip_dirs and os.path.isdir(path):
+                continue
+
             package = cls(path, progress_obj)
             seen_package = None
             try:
@@ -116,7 +119,7 @@ class Package:
         return packages
 
     @classmethod
-    def from_paths_nofail(cls, paths, progress_obj=None):
+    def from_paths_nofail(cls, paths, progress_obj=None, *, skip_dirs=False):
         """
         Return a list of Package objects from working copies in given paths
         and a list of strings with paths that do not contain Package working copies.
@@ -124,6 +127,9 @@ class Package:
         packages = []
         failed_to_load = []
         for path in paths:
+            if skip_dirs and os.path.isdir(path):
+                continue
+
             try:
                 package = cls(path, progress_obj)
             except oscerr.NoWorkingCopy:
