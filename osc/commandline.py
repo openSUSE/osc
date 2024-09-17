@@ -5990,7 +5990,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             self.argparse_error("Incorrect number of arguments.")
 
         args = parseargs(args)
-        pacs = Package.from_paths(args)
+        pacs = Package.from_paths(args, skip_dirs=True)
 
         for p in pacs:
             for filename in p.todo:
