@@ -36,7 +36,11 @@ Use the container
 ```
 $ cd behave
 
-# run 'obs-server' container on port 1443
+# run 'obs-server' container on ports:
+#     1443 - api+web, https
+#     1082 - repos, http
+#     3000 - gitea, http
+#     3022 - gitea, ssh
 # running this command again replaces the current container with a fresh one
 $ ./container-run.sh
 
