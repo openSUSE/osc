@@ -140,7 +140,7 @@ systemctl enable obsservice
 sed -i '/^BindsTo *=.*/d; s/^WantedBy *=.*/WantedBy = default.target/' /usr/lib/systemd/system/obs-*
 
 # needed (not only) for generating diffs in requests
-systemctl enable obs-delayedjob-queue-default
+# systemctl enable obs-delayedjob-queue-default
 
 # OBS worker
 # systemctl enable obsworker
