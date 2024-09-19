@@ -86,7 +86,6 @@ class Command:
             self.parser.set_defaults(_selected_command=self)
         else:
             self.parser = argparse.ArgumentParser(
-                prog=self.name,
                 description=self.get_description(),
                 formatter_class=cmdln.HelpFormatter,
                 usage="%(prog)s [global opts] <command> [--help] [opts] [args]",
