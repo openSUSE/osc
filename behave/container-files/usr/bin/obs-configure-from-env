@@ -1,0 +1,13 @@
+#!/bin/sh
+
+CONF='/srv/www/obs/api/config/options.yml'
+
+if [ "${OBS_PROXY_AUTH}" -eq 1 ]; then
+    # enable proxy auth in OBS if $OBS_PROXY_AUTH is set to 1
+    sed -i 's@^[ #]*proxy_auth_mode: .*@  proxy_auth_mode: :on@' "${CONF}"
+    sed -i 's@^[ #]*proxy_auth_login_page: .*@  proxy_auth_login_page: https://my-idp.example.com/login@' "${CONF}"
+    sed -i 's@^[ #]*proxy_auth_logout_page: .*@  proxy_auth_logout_page: https://my-idp.example.com/logout@' "${CONF}"
+
+    # if this is not set, any changes to the tokens fail
+    sed -i 's@^[ #]*proxy_auth_account_page: .*@  proxy_auth_account_page: https://my-idp.example.com/myaccount@' "${CONF}"
+fi

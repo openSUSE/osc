@@ -1,0 +1,13 @@
+[Unit]
+Description=Configure /etc/gitea/conf/app.ini from environmental variables
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+PassEnvironment=GITEA_SERVER_HTTP_PORT
+PassEnvironment=GITEA_SERVER_SSH_PORT
+ExecStart=bash -c /usr/bin/gitea-configure-from-env
+
+[Install]
+RequiredBy=gitea.service

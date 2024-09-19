@@ -1,0 +1,11 @@
+#!/bin/sh
+
+CONF='/etc/gitea/conf/app.ini'
+
+if [ -n "${GITEA_SERVER_HTTP_PORT}" ]; then
+    sed -i "s@^HTTP_PORT =.*@HTTP_PORT = ${GITEA_SERVER_HTTP_PORT}@" "${CONF}"
+fi
+
+if [ -n "${GITEA_SERVER_SSH_PORT}" ]; then
+    sed -i "s@^SSH_PORT =.*@SSH_PORT = ${GITEA_SERVER_SSH_PORT}@" "${CONF}"
+fi

@@ -5,18 +5,21 @@ import tempfile
 import time
 
 import behave
+import ruamel.yaml
 
 from steps.common import debug
 from steps.common import run_in_context
 
 
-class Osc:
+class CommandBase:
+    CONFIG_NAME: str
+
     def __init__(self, context):
         if not hasattr(context, "podman"):
             raise RuntimeError("context doesn't have 'podman' object set")
 
         self.context = context
-        debug(self.context, "Osc.__init__()")
+        debug(self.context, f"{self.__class__.__name__}.__init__()")
         self.temp = None
         self.clear()
 
@@ -27,33 +30,84 @@ class Osc:
             pass
 
     def clear(self):
-        debug(self.context, "Osc.clear()")
+        debug(self.context, f"{self.__class__.__name__}.clear()")
         if self.temp:
             shutil.rmtree(self.temp)
         self.temp = tempfile.mkdtemp(prefix="osc_behave_")
-        self.oscrc = os.path.join(self.temp, "oscrc")
-        self.write_oscrc()
+        self.config = os.path.join(self.temp, self.CONFIG_NAME)
+        self.write_config()
 
-    def write_oscrc(self, username=None, password=None):
-        with open(self.oscrc, "w") as f:
+    def write_config(self, **kwargs):
+        raise NotImplementedError()
+
+
+class Osc(CommandBase):
+    CONFIG_NAME = "oscrc"
+
+    def write_config(self, username=None, password=None):
+        with open(self.config, "w") as f:
             f.write("[general]\n")
             f.write("\n")
-            f.write(f"[https://localhost:{self.context.podman.container.port}]\n")
+            f.write(f"[https://localhost:{self.context.podman.container.ports['obs_https']}]\n")
             f.write(f"user={username or 'Admin'}\n")
             f.write(f"pass={password or 'opensuse'}\n")
             f.write("credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager\n")
             f.write("sslcertck=0\n")
             if not any((username, password)):
                 f.write("http_headers =\n")
-                # avoid the initial 401 response by setting auth to Admin:opensuse directly
-                # write the header only when the default user/pass are used
-                f.write("    authorization: Basic QWRtaW46b3BlbnN1c2U=\n")
+                # avoid the initial 401 response by using proxy auth
+                f.write("    X-Username: Admin\n")
 
     def get_cmd(self):
         osc_cmd = self.context.config.userdata.get("osc", "osc")
         cmd = [osc_cmd]
-        cmd += ["--config", self.oscrc]
-        cmd += ["-A", f"https://localhost:{self.context.podman.container.port}"]
+        cmd += ["--config", self.config]
+        cmd += ["-A", f"https://localhost:{self.context.podman.container.ports['obs_https']}"]
+        return cmd
+
+
+class GitObs(CommandBase):
+    CONFIG_NAME = "config.yml"
+
+    def write_config(self):
+        data = {
+            "logins": [
+                {
+                    "name": "admin",
+                    "url": f"http://localhost:{self.context.podman.container.ports['gitea_http']}",
+                    "user": "Admin",
+                    "token": 40 * "1",
+                    "ssh_key": f"{self.context.fixtures}/ssh-keys/admin",
+                    "default": True,
+                },
+                {
+                    "name": "alice",
+                    "url": f"http://localhost:{self.context.podman.container.ports['gitea_http']}",
+                    "user": "Alice",
+                    "token": 40 * "a",
+                    "ssh_key": f"{self.context.fixtures}/ssh-keys/alice",
+                    "default": False,
+                },
+                {
+                    "name": "bob",
+                    "url": f"http://localhost:{self.context.podman.container.ports['gitea_http']}",
+                    "user": "Bob",
+                    "token": 40 * "b",
+                    "ssh_key": f"{self.context.fixtures}/ssh-keys/bob",
+                    "default": False,
+                },
+            ],
+        }
+        with open(self.config, "w") as f:
+            yaml = ruamel.yaml.YAML()
+            yaml.default_flow_style = False
+            yaml.dump(data, f)
+
+    def get_cmd(self):
+        git_obs_cmd = self.context.config.userdata.get("git-obs", "git-obs")
+        cmd = [git_obs_cmd]
+        cmd += ["--gitea-config", self.config]
+        cmd += ["-G", f"admin"]
         return cmd
 
 
@@ -67,9 +121,19 @@ def step_impl(context, args):
     context.cmd_stderr = re.sub(r"^.*InsecureRequestWarning.*\n  warnings.warn\(\n", "", context.cmd_stderr)
 
 
+@behave.step("I execute git-obs with args \"{args}\"")
+def step_impl(context, args):
+    args = args.format(context=context)
+    cmd = context.git_obs.get_cmd() + [args]
+    cmd = " ".join(cmd)
+    run_in_context(context, cmd, can_fail=True)
+    # remove InsecureRequestWarning that is irrelevant to the tests
+    context.cmd_stderr = re.sub(r"^.*InsecureRequestWarning.*\n  warnings.warn\(\n", "", context.cmd_stderr)
+
+
 @behave.step("I configure osc user \"{username}\" with password \"{password}\"")
 def step_impl(context, username, password):
-    context.osc.write_oscrc(username=username, password=password)
+    context.osc.write_config(username=username, password=password)
 
 
 @behave.step('I wait for osc results for "{project}" "{package}"')

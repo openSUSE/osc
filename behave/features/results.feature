@@ -12,14 +12,14 @@ Scenario: Run `osc results` with no arguments
 
 Scenario: Run `osc results <project>/<package>`
    When I execute osc with args "results test:factory/multibuild-pkg"
-   Then stdout is
+   Then stdout matches
         """
-        standard             x86_64     multibuild-pkg                 disabled
-        standard             x86_64     multibuild-pkg:flavor1         disabled
-        standard             x86_64     multibuild-pkg:flavor2         disabled
-        standard             i586       multibuild-pkg                 disabled
-        standard             i586       multibuild-pkg:flavor1         disabled
-        standard             i586       multibuild-pkg:flavor2         disabled
+        standard             x86_64     multibuild-pkg                 disabled\*?
+        standard             x86_64     multibuild-pkg:flavor1         disabled\*?
+        standard             x86_64     multibuild-pkg:flavor2         disabled\*?
+        standard             i586       multibuild-pkg                 disabled\*?
+        standard             i586       multibuild-pkg:flavor1         disabled\*?
+        standard             i586       multibuild-pkg:flavor2         disabled\*?
         """
 
 
@@ -28,23 +28,23 @@ Scenario: Run `osc results` from a package checkout
      And I execute osc with args "checkout test:factory/multibuild-pkg"
      And I set working directory to "{context.osc.temp}/test:factory/multibuild-pkg"
    When I execute osc with args "results"
-   Then stdout is
+   Then stdout matches
         """
-        standard             x86_64     multibuild-pkg                 disabled
-        standard             x86_64     multibuild-pkg:flavor1         disabled
-        standard             x86_64     multibuild-pkg:flavor2         disabled
-        standard             i586       multibuild-pkg                 disabled
-        standard             i586       multibuild-pkg:flavor1         disabled
-        standard             i586       multibuild-pkg:flavor2         disabled
+        standard             x86_64     multibuild-pkg                 disabled\*?
+        standard             x86_64     multibuild-pkg:flavor1         disabled\*?
+        standard             x86_64     multibuild-pkg:flavor2         disabled\*?
+        standard             i586       multibuild-pkg                 disabled\*?
+        standard             i586       multibuild-pkg:flavor1         disabled\*?
+        standard             i586       multibuild-pkg:flavor2         disabled\*?
         """
 
 
 Scenario: Run `osc results <project>/<package>`, no multibuild flavors
    When I execute osc with args "results test:factory/multibuild-pkg --no-multibuild"
-   Then stdout is
+   Then stdout matches
         """
-        standard             x86_64     multibuild-pkg                 disabled
-        standard             i586       multibuild-pkg                 disabled
+        standard             x86_64     multibuild-pkg                 disabled\*?
+        standard             i586       multibuild-pkg                 disabled\*?
         """
 
 
@@ -53,10 +53,10 @@ Scenario: Run `osc results` from a package checkout, multibuild flavor specified
      And I execute osc with args "checkout test:factory/multibuild-pkg"
      And I set working directory to "{context.osc.temp}/test:factory/multibuild-pkg"
    When I execute osc with args "results -M flavor1"
-   Then stdout is
+   Then stdout matches
         """
-        standard             x86_64     multibuild-pkg:flavor1         disabled
-        standard             i586       multibuild-pkg:flavor1         disabled
+        standard             x86_64     multibuild-pkg:flavor1         disabled\*?
+        standard             i586       multibuild-pkg:flavor1         disabled\*?
         """
 
 Scenario: Run `osc results <project>/<package>`, specified output format
@@ -76,12 +76,12 @@ Scenario: Run `osc results <project>/<package>`, csv output
    When I execute osc with args "results test:factory/multibuild-pkg --csv"
    Then stdout matches
         """
-        "standard","x86_64","multibuild-pkg","publish.*","False","disabled",""
-        "standard","x86_64","multibuild-pkg:flavor1","publish.*","False","disabled",""
-        "standard","x86_64","multibuild-pkg:flavor2","publish.*","False","disabled",""
-        "standard","i586","multibuild-pkg","publish.*","False","disabled",""
-        "standard","i586","multibuild-pkg:flavor1","publish.*","False","disabled",""
-        "standard","i586","multibuild-pkg:flavor2","publish.*","False","disabled",""
+        "standard","x86_64","multibuild-pkg","publish.*",".*","disabled",""
+        "standard","x86_64","multibuild-pkg:flavor1","publish.*",".*","disabled",""
+        "standard","x86_64","multibuild-pkg:flavor2","publish.*",".*","disabled",""
+        "standard","i586","multibuild-pkg","publish.*",".*","disabled",""
+        "standard","i586","multibuild-pkg:flavor1","publish.*",".*","disabled",""
+        "standard","i586","multibuild-pkg:flavor2","publish.*",".*","disabled",""
         """
 
 
@@ -89,8 +89,8 @@ Scenario: Run `osc results <project>/<package>`, csv output, multibuild flavor s
    When I execute osc with args "results test:factory/multibuild-pkg --csv -M flavor1"
    Then stdout matches
         """
-        "standard","x86_64","multibuild-pkg:flavor1","publish.*","False","disabled",""
-        "standard","i586","multibuild-pkg:flavor1","publish.*","False","disabled",""
+        "standard","x86_64","multibuild-pkg:flavor1","publish.*",".*","disabled",""
+        "standard","i586","multibuild-pkg:flavor1","publish.*",".*","disabled",""
         """
 
 

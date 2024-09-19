@@ -1,0 +1,11 @@
+[Unit]
+Description=Fix /var/lib/gitea/data by copying it back and forth to the same overlayfs layer
+
+[Service]
+Type=oneshot
+User=gitea
+Group=gitea
+ExecStart=/bin/bash -c 'mv /var/lib/gitea/data /var/lib/gitea/data.backup && mkdir -p /var/lib/gitea/data && cp -a /var/lib/gitea/data.backup/* /var/lib/gitea/data/'
+
+[Install]
+RequiredBy=gitea.service
