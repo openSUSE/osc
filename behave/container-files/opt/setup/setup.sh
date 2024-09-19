@@ -32,6 +32,9 @@ sed -i 's!^<VirtualHost \*:82>!<VirtualHost *:82 *:1082>!' /etc/apache2/vhosts.d
 sed -i 's!^<VirtualHost \*:443>!<VirtualHost *:443 *:1443>!' /etc/apache2/vhosts.d/obs.conf
 sed -i 's!^Listen 82$!Listen 82\nListen 1082\nListen 1443!' /etc/apache2/vhosts.d/obs.conf
 
+# forward X-Username HTTP header to HTTP_X_USERNAME variable that is needed for OBS proxy auth
+sed -i 's@^\(.*SSLEngine.*\)@        # the variable is used when OBS proxy auth is on\n        SetEnvIf X-Username "(.*)" HTTP_X_USERNAME=$1\n\n\1@' /etc/apache2/vhosts.d/obs.conf
+
 
 # enable apache mods
 APACHE_MODS="passenger rewrite proxy proxy_http xforward headers ssl socache_shmcb"
@@ -144,3 +147,5 @@ sed -i '/^BindsTo *=.*/d; s/^WantedBy *=.*/WantedBy = default.target/' /usr/lib/
 
 # OBS worker
 # systemctl enable obsworker
+
+systemctl enable obs-configure-from-env

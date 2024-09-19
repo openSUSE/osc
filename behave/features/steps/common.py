@@ -167,6 +167,17 @@ def step_impl(context):
     raise AssertionError(f"Stderr is not:\n{expected_str}\n\nActual stderr:\n{found_str}")
 
 
+@behave.step("stderr matches")
+def step_impl(context):
+    expected = context.text.format(context=context).rstrip()
+    found = context.cmd_stderr.rstrip()
+
+    if re.match(expected, found, re.MULTILINE):
+        return
+
+    raise AssertionError(f"Stderr doesn't match:\n{expected}\n\nActual stderr:\n{found}")
+
+
 @behave.step('I set working directory to "{path}"')
 def step_impl(context, path):
     path = path.format(context=context)

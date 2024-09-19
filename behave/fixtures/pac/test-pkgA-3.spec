@@ -1,1 +1,0 @@
-../../container-files/opt/setup/fixtures/pac/test-pkgA-3.spec

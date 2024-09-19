@@ -1,0 +1,12 @@
+[Unit]
+Description=Configure OBS from environmental variables
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+PassEnvironment=OBS_PROXY_AUTH
+ExecStart=bash -c /usr/bin/obs-configure-from-env
+
+[Install]
+RequiredBy=apache2.service

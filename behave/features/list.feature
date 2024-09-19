@@ -25,6 +25,7 @@ Scenario: Run `osc list` on a project to display project packages
         multibuild-pkg
         multibuild-pkg:flavor1
         multibuild-pkg:flavor2
+        test-GitPkgA
         test-pkgA
         test-pkgB
         """
