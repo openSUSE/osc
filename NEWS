@@ -1,3 +1,16 @@
+- 1.9.2
+  - Command-line:
+    - Fix 'resolved' command to skip subdirectories in package checkouts
+    - Fix 'comment' command to resolve project name
+    - Implement meter.SimpleTextMeter that prints what's being downloaded
+  - Connection:
+    - Use configured 'http_headers' in HTTP requests
+  - Library:
+    - Fix storing _buildinfo and _buildconfig files in .osc rather than among the source files
+    - Use findtext() instead of find().text
+  - Spec:
+    - Recommend python3-zstandard to support opening control.tar.zst
+
 - 1.9.1
   - Command-line:
     - Add 'createrequest release' subcommand
