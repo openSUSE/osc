@@ -2633,16 +2633,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         return actionxml
 
     def _release_request(self, args, opts):
-        if len(args) != 4:
+        if len(args) < 3 or len(args) > 5:
             raise oscerr.WrongArgs('Wrong number of arguments for release' + str(len(args)))
 
         project = self._process_project_name(args[0])
         package = args[1]
         target_project = args[2]
-        target_repository = args[3]
+        source_repository = target_repository = ""
+        if len(args) == 5:
+            source_repository = """ repository="%s" """ % args[3]
+            target_repository = """ repository="%s" """ % args[4]
+        elif len(args) == 4:
+            target_repository = """ repository="%s" """ % args[3]
 
-        actionxml = """ <action type="release"> <source project="%s" package="%s" /> <target project="%s" repository="%s" /> </action> """ % \
-            (project, package, target_project, target_repository)
+        actionxml = """ <action type="release"> <source project="%s" package="%s" %s/> <target project="%s" %s/> </action> """ % \
+            (project, package, source_repository, target_project, target_repository)
 
         return actionxml
 
@@ -2779,7 +2784,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 -a add_group GROUP ROLE PROJECT [PACKAGE]
                 -a add_role USER ROLE PROJECT [PACKAGE]
                 -a set_bugowner USER PROJECT [PACKAGE]
-                -a release PROJECT PACKAGE TARGET_PROJECT TARGET_REPOSITORY
+                -a release PROJECT PACKAGE TARGET_PROJECT [[SOURCE_REPOSITORY] TARGET_REPOSITORY]
                 ]
 
             Option -m works for all types of request actions, the rest work only for submit.
