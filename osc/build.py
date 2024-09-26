@@ -767,7 +767,9 @@ def main(apiurl, store, opts, argv):
         build_type = 'snapcraft'
     if os.path.basename(build_descr) == 'simpleimage':
         build_type = 'simpleimage'
-    if os.path.basename(build_descr) == 'Dockerfile':
+    if os.path.basename(build_descr) == 'Containerfile' or os.path.basename(build_descr).startswith('Containerfile.'):
+        build_type = 'docker'
+    if os.path.basename(build_descr) == 'Dockerfile' or os.path.basename(build_descr).startswith('Dockerfile.'):
         build_type = 'docker'
     if os.path.basename(build_descr) == 'fissile.yml':
         build_type = 'fissile'
