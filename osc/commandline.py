@@ -7029,8 +7029,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if (arg.endswith('.spec') or arg.endswith('.dsc') or
                     arg.endswith('.kiwi') or arg.endswith('.livebuild') or
                     arg.endswith('flatpak.yaml') or arg.endswith('flatpak.yml') or
-                    arg.endswith('flatpak.json') or
-                    arg in ('PKGBUILD', 'build.collax', 'Chart.yaml', 'Dockerfile',
+                    arg.endswith('flatpak.json') or arg.startswith('Dockerfile.') or
+                    arg.startswith('Containerfile.') or
+                    arg in ('PKGBUILD', 'build.collax', 'Chart.yaml', 'Containerfile', 'Dockerfile',
                             'fissile.yml', 'appimage.yml', '_preinstallimage')):
                     arg_descr = arg
                 else:
@@ -7099,6 +7100,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # but be a bit more readable :)
         descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') + \
             glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + \
+            glob.glob('Dockerfile.*') + glob.glob('Containerfile') + glob.glob('Containerfile.*') + \
             glob.glob('fissile.yml') + glob.glob('appimage.yml') + glob.glob('Chart.yaml') + \
             glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json') + \
             glob.glob('*.productcompose')
