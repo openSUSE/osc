@@ -1,14 +1,13 @@
 import os
 import sys
 
-import osc.commandline
+import osc.commandline_common
 import osc.commands_git
-from . import gitea_api
 from . import oscerr
 from .output import print_msg
 
 
-class GitObsCommand(osc.commandline.Command):
+class GitObsCommand(osc.commandline_common.Command):
     @property
     def gitea_conf(self):
         return self.main_command.gitea_conf
@@ -48,7 +47,7 @@ class GitObsCommand(osc.commandline.Command):
         )
 
 
-class GitObsMainCommand(osc.commandline.MainCommand):
+class GitObsMainCommand(osc.commandline_common.MainCommand):
     name = "git-obs"
 
     MODULES = (
@@ -105,6 +104,8 @@ class GitObsMainCommand(osc.commandline.MainCommand):
 
     @property
     def gitea_conf(self):
+        from . import gitea_api
+
         if self._gitea_conf is None:
             self._gitea_conf = gitea_api.Config(self._args.gitea_config)
         return self._gitea_conf
@@ -117,6 +118,8 @@ class GitObsMainCommand(osc.commandline.MainCommand):
 
     @property
     def gitea_conn(self):
+        from . import gitea_api
+
         if self._gitea_conn is None:
             self._gitea_conn = gitea_api.Connection(self.gitea_login)
             assert self._gitea_login is not None
