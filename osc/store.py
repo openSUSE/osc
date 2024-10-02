@@ -38,7 +38,7 @@ def get_store(path, check=True, print_warnings=False):
                 store = git_scm.GitStore(toplevel, check)
                 if print_warnings:
                     git_scm.warn_experimental()
-        except:
+        except subprocess.CalledProcessError:
             # we should distinguish between git cli fails or git is not installed
             pass
 
