@@ -3200,7 +3200,7 @@ def checkout_package(
 
 def replace_pkg_meta(
     pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False,
-    keep_lock: bool = False,
+    keep_lock: bool = False, keep_scmsync: bool = True,
 ):
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
@@ -3223,6 +3223,9 @@ def replace_pkg_meta(
             root.remove(dp)
     if not keep_lock:
         for node in root.findall("lock"):
+            root.remove(node)
+    if not keep_scmsync:
+        for node in root.findall("scmsync"):
             root.remove(node)
     return ET.tostring(root, encoding=ET_ENCODING)
 
@@ -3726,12 +3729,13 @@ def copy_pac(
         if not any([expand, revision]):
             raise oscerr.OscValueError("Cannot copy package. Source and target are the same.")
 
+    meta = None
     if not (src_apiurl == dst_apiurl and src_project == dst_project
             and src_package == dst_package):
         src_meta = show_package_meta(src_apiurl, src_project, src_package)
         dst_userid = conf.get_apiurl_usr(dst_apiurl)
-        src_meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
-                                    dst_userid, keep_develproject)
+        meta = replace_pkg_meta(src_meta, dst_package, dst_project, keep_maintainers,
+                                dst_userid, keep_develproject, keep_scmsync=(not client_side_copy))
 
         url = make_meta_url('pkg', (dst_project, dst_package), dst_apiurl)
         found = None
@@ -3742,7 +3746,15 @@ def copy_pac(
         if force_meta_update or not found:
             print('Sending meta data...')
             u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
-            http_PUT(u, data=src_meta)
+            http_PUT(u, data=meta)
+
+    if meta is None:
+        meta = show_files_meta(dst_apiurl, dst_project, dst_package)
+
+    root = ET.fromstring(meta)
+    if root.find("scmsync") is not None:
+        print("Note: package source is managed via SCM")
+        return
 
     print('Copying files...')
     if not client_side_copy:
