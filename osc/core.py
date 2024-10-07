@@ -3160,17 +3160,9 @@ def checkout_package(
         if revision is not None:
             # search for the git sha sum based on the OBS DISTURL package source revision
             # we need also take into account that the url was different at that point of time
-            url = shasum = None
-            u = makeurl(apiurl, ['source', project, package, '_scmsync.obsinfo'], {'rev': revision})
-            f = http_GET(u)
-            for line in f.readlines():
-                if line.startswith(b"revision: "):
-                    shasum = line[10:].rstrip()
-                if line.startswith(b"url: "):
-                    url = line[5:].rstrip()
-            if shasum is None:
-                raise oscerr.OscIOError(None, 'Unable to find git shasum for given revision')
-            scm_url = url + b'#' + shasum
+            from .obs_api.scmsync_obsinfo import ScmsyncObsinfo
+            scmsync_obsinfo = ScmsyncObsinfo.from_api(apiurl, project, package, rev=revision)
+            scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
 
         os.putenv("OSC_VERSION", get_osc_version())
         run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
