@@ -1,8 +1,21 @@
+import contextlib
 import queue
+import socket
 import subprocess
 import threading
 
+import behave
+
 from steps.common import debug
+
+
+@contextlib.contextmanager
+def get_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("0.0.0.0", 0))
+        s.listen()
+        port = s.getsockname()[1]
+        yield port
 
 
 class Podman:
@@ -33,6 +46,8 @@ class Podman:
         # no need to stop the running container
         # becuse the new container replaces an old container with the identical name
         self.container = Container(self.context, name=self.container_name)
+        self.container.wait_on_systemd()
+        debug(self.context, f"> {self.container}")
 
 
 class ThreadedPodman:
@@ -96,6 +111,7 @@ class ThreadedPodman:
             else:
                 container_name = None
             container = Container(self.context, name=container_name)
+            debug(self.context, f"ThreadedPodman.container_producer() - container created: {self.container_name_num}")
             self.container_producer_queue.put(container, block=True)
         self.container_producer_queue_is_stopped.set()
 
@@ -111,6 +127,7 @@ class ThreadedPodman:
         if getattr(self, "container", None):
             self.container_consumer_queue.put(self.container)
         self.container = self.container_producer_queue.get(block=True)
+        self.container.wait_on_systemd()
         debug(self.context, f"> {self.container}")
 
 
@@ -120,7 +137,7 @@ class Container:
         debug(self.context, "Container.__init__()")
         self.container_name = name
         self.container_id = None
-        self.port = None
+        self.ports = {}
         self.start()
 
     def __del__(self):
@@ -131,7 +148,7 @@ class Container:
 
     def __repr__(self):
         result = super().__repr__()
-        result += f"(port:{self.port}, id:{self.container_id}, name:{self.container_name})"
+        result += f"(id:{self.container_id}, name:{self.container_name})"
         return result
 
     def _run(self, args, check=True):
@@ -149,7 +166,7 @@ class Container:
         debug(self.context, "> stderr:", proc.stderr)
         return proc
 
-    def start(self):
+    def start(self, use_proxy_auth: bool = True):
         debug(self.context, "Container.start()")
         args = [
             "run",
@@ -166,18 +183,49 @@ class Container:
             "--detach",
             "--interactive",
             "--tty",
-            "-p", "443",
+        ]
+
+        with get_free_port() as obs_https, get_free_port() as gitea_http, get_free_port() as gitea_ssh:
+            # we're using all context managers to reserve all ports at once
+            # and close the gap between releasing them and using again in podman
+            self.ports = {
+                "obs_https": obs_https,
+                "gitea_http": gitea_http,
+                "gitea_ssh": gitea_ssh,
+            }
+
+            if use_proxy_auth:
+                args += [
+                    # enable proxy auth to bypass http auth that is slow
+                    "--env", "OBS_PROXY_AUTH=1",
+                ]
+
+            args += [
+                # obs runs always on 443 in the container
+                "-p", f"{obs_https}:443",
+
+                # gitea runs on random free ports
+                # it is configured via env variables and running gitea-configure-from-env.service inside the container
+                "-p", f"{gitea_http}:{gitea_http}",
+                "--env", f"GITEA_SERVER_HTTP_PORT={gitea_http}",
+                "-p", f"{gitea_ssh}:{gitea_ssh}",
+                "--env", f"GITEA_SERVER_SSH_PORT={gitea_ssh}",
+            ]
+
+        args += [
             "obs-server"
         ]
         proc = self._run(args)
         lines = proc.stdout.strip().splitlines()
         self.container_id = lines[-1]
-        self.wait_on_systemd()
-        self.port = self.get_port()
 
-    def exec(self, args, check=True):
-        args = ["exec", self.container_id] + args
-        return self._run(args, check=check)
+    def exec(self, args, check=True, interactive=False):
+        podman_args = ["exec"]
+        if interactive:
+            podman_args += ["-it"]
+        podman_args += [self.container_id]
+        podman_args += args
+        return self._run(podman_args, check=check)
 
     def kill(self):
         if not self.container_id:
@@ -193,14 +241,17 @@ class Container:
         self.start()
 
     def wait_on_systemd(self):
+        debug(self.context, "Container.wait_on_systemd() - start")
         self.exec(["/usr/bin/systemctl", "is-system-running", "--wait"], check=False)
+        debug(self.context, "Container.wait_on_systemd() - done")
 
-    def get_port(self):
-        args = ["port", self.container_id]
-        proc = self._run(args)
-        lines = proc.stdout.strip().splitlines()
-        for line in lines:
-            if line.startswith("443/tcp"):
-                # return <port> from: "443/tcp -> 0.0.0.0:<port>"
-                return line.split(":")[-1]
-        raise RuntimeError(f"Could not determine port of container {self.container_id}")
+
+@behave.step("I start a new container without proxy auth")
+def step_impl(context):
+    context.podman.container.kill()
+    context.podman.container.container_id = None
+    context.podman.container.ports = {}
+    context.podman.container.start(use_proxy_auth=False)
+    context.podman.container.wait_on_systemd()
+    context.osc.write_config()
+    context.git_obs.write_config()

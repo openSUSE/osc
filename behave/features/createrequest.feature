@@ -12,7 +12,9 @@ Background:
 
 @destructive
 Scenario: Run `osc createrequest`
-   When I copy file "{context.fixtures}/pac/test-pkgA-1.spec" to "{context.osc.temp}/home:Admin:branches:test:devel/test-pkgA/new_file"
+   When I create file "{context.osc.temp}/home:Admin:branches:test:devel/test-pkgA/new_file" with perms "0644"
+        """
+        """
     And I execute osc with args "add new_file"
     And I execute osc with args "ci -m 'commit description'"
     And I execute osc with args "createrequest -a submit -m 'request description'"
@@ -21,14 +23,18 @@ Scenario: Run `osc createrequest`
 
 @destructive
 Scenario: Run `osc createrequest --supersede`
-  Given I copy file "{context.fixtures}/pac/test-pkgA-1.spec" to "{context.osc.temp}/home:Admin:branches:test:devel/test-pkgA/new_file"
+  Given I create file "{context.osc.temp}/home:Admin:branches:test:devel/test-pkgA/new_file" with perms "0644"
+        """
+        """
     And I execute osc with args "add new_file"
     And I execute osc with args "ci -m 'commit description'"
     And I execute osc with args "createrequest -a submit -m 'request description'"
     And the exit code is 0
     And I execute osc with args "api /request/1"
     And stdout doesn't contain "<state name=\"superseded\">"
-   When I copy file "{context.fixtures}/pac/test-pkgA-1.spec" to "{context.osc.temp}/home:Admin:branches:test:devel/test-pkgA/another_file"
+   When I create file "{context.osc.temp}/home:Admin:branches:test:devel/test-pkgA/another_file" with perms "0644"
+        """
+        """
     And I execute osc with args "add new_file"
     And I execute osc with args "ci -m 'commit description'"
     And I execute osc with args "createrequest -a submit -m 'request description' --supersede 1"

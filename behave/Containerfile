@@ -1,13 +1,18 @@
-FROM opensuse/leap:15.5
+FROM opensuse/leap:15.6
 
-RUN zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.5/OBS:Server:Unstable.repo
-RUN zypper -n --gpg-auto-import-keys refresh
+RUN zypper -n modifyrepo --disable repo-openh264 || : \
+    && zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.6/OBS:Server:Unstable.repo \
+    && zypper ar --repo http://download.opensuse.org/repositories/devel:/tools:/scm/15.6/devel:tools:scm.repo \
+    && zypper -n --gpg-auto-import-keys refresh
+
 RUN zypper -n install \
     bash \
     bash-completion \
     git \
+    gitea \
     less \
     obs-api \
+    obs-gitea-bridge \
     obs-server \
     obs-signd \
     obs-worker \
@@ -16,17 +21,21 @@ RUN zypper -n install \
     openssl \
     perl-XML-SAX \
     rpm-build \
+    sqlite3 \
     systemd \
     vim \
     && rm -rf /var/cache/zypp/*
 
-# increase the number if we need to run the following setup steps again (for debugging purposes)
-ENV BUILD_NUMBER 1
+COPY container-files/ /
 
-RUN /bin/bash /opt/obs/container-setup.sh
-COPY container-oscrc /root/.config/osc/oscrc
-RUN /bin/bash /opt/obs/container-setup-initial-data.sh
-RUN /bin/bash /opt/obs/container-setup-prebuilt-rpms.sh
+RUN /bin/bash /opt/setup/setup.sh \
+    && /bin/bash /opt/setup/initial-data.sh \
+    && /bin/bash /opt/setup/prebuilt-rpms.sh \
+    && /bin/bash /opt/setup/gitea.sh \
+    && rm -rf /var/log/apache2/* \
+    && rm -rf /srv/obs/log/* \
+    && rm -rf /srv/obs/service/log/* \
+    && rm -rf /srv/www/obs/api/log/*
 
-# /sbin/init doesn't exist on Leap 15.5
+# /sbin/init doesn't exist on Leap 15.6
 ENTRYPOINT ["/usr/lib/systemd/systemd"]
