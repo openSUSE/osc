@@ -85,7 +85,7 @@ class NoTextMeter(TextMeterBase):
 def create_text_meter(*args, **kwargs) -> TextMeterBase:
     from .conf import config
 
-    use_pb_fallback = kwargs.pop("use_pb_fallback", True)
+    use_pb_fallback = kwargs.pop("use_pb_fallback", False)
 
     meter_class: TextMeterBase
     if config.quiet:
