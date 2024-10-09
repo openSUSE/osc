@@ -7313,6 +7313,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Do not use preinstall images for creating the build root.')
     @cmdln.option("--just-print-buildroot", action="store_true",
                   help="Print build root path and exit.")
+    @cmdln.option('--no-timestamps', '-s', '--strip-time', action='store_true',
+                  help='Hide the time prefix in output.')
     @cmdln.alias('chroot')
     @cmdln.alias('shell')
     @cmdln.alias('wipe')
