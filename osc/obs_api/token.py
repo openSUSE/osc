@@ -159,6 +159,11 @@ class Token(XmlModel):
         operation: Optional[str] = None,
         project: Optional[str] = None,
         package: Optional[str] = None,
+        repository: Optional[str] = None,
+        architecture: Optional[str] = None,
+        target_project: Optional[str] = None,
+        target_repository: Optional[str] = None,
+        set_release: Optional[str] = None,
     ):
         if operation:
             url_path = ["trigger", operation]
@@ -169,6 +174,17 @@ class Token(XmlModel):
             "project": project,
             "package": package,
         }
+
+        if repository is not None:
+            url_query["filter_source_repository"] = repository
+        if architecture is not None:
+            url_query["arch"] = architecture
+        if target_project is not None:
+            url_query["targetproject"] = target_project
+        if target_repository is not None:
+            url_query["targetrepository"] = target_repository
+        if set_release is not None:
+            url_query["setrelease"] = set_release
 
         headers = {
             "Content-Type": "application/octet-stream",
