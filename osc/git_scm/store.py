@@ -31,8 +31,15 @@ class GitStore:
         self.abspath = os.path.abspath(self.path)
 
         # TODO: how to determine if the current git repo contains a project or a package?
-        self.is_project = False
-        self.is_package = os.path.exists(os.path.join(self.abspath, ".git"))
+
+        # NOTE: we have only one store in project-git for all packages
+        self._toplevel = self._run_git(["rev-parse", "--show-toplevel"])
+        if self._toplevel == self.abspath:
+            self.is_project = True
+            self.is_package = False
+        else:
+            self.is_project = False
+            self.is_package = True
 
         self._package = None
         self._project = None
@@ -69,10 +76,16 @@ class GitStore:
     @property
     def project(self):
         if self._project is None:
+            if self._toplevel:
+                with open(os.path.join(self._toplevel, '.osc/_project')) as f:
+                    self._project = f.readline().strip()
+
+        if self._project is None:
             # get project from the branch name
             branch = self._run_git(["branch", "--show-current"])
 
             # HACK: replace hard-coded mapping with metadata from git or the build service
+            # NOTE: you never know which git repo is supposed to be used in which project
             if branch == "factory":
                 self._project = "openSUSE:Factory"
             else:
