@@ -159,6 +159,11 @@ class Token(XmlModel):
         operation: Optional[str] = None,
         project: Optional[str] = None,
         package: Optional[str] = None,
+        repo: Optional[str] = None,
+        arch: Optional[str] = None,
+        target_project: Optional[str] = None,
+        target_repo: Optional[str] = None,
+        set_release: Optional[str] = None,
     ):
         if operation:
             url_path = ["trigger", operation]
@@ -168,6 +173,11 @@ class Token(XmlModel):
         url_query = {
             "project": project,
             "package": package,
+            "repository": repo,
+            "architecture": arch,
+            "targetproject": target_project,
+            "targetrepository": target_repo,
+            "setrelease": set_release,
         }
 
         headers = {
