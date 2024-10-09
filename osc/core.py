@@ -3156,8 +3156,17 @@ def checkout_package(
             raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
         scm_url = scmsync_element.text
         directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
+
+        if revision is not None:
+            # search for the git sha sum based on the OBS DISTURL package source revision
+            # we need also take into account that the url was different at that point of time
+            from .obs_api.scmsync_obsinfo import ScmsyncObsinfo
+            scmsync_obsinfo = ScmsyncObsinfo.from_api(apiurl, project, package, rev=revision)
+            scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
+
         os.putenv("OSC_VERSION", get_osc_version())
         run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
+
         Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
 
         # add package to <prj>/.obs/_packages
