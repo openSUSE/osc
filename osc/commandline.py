@@ -7109,7 +7109,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             glob.glob('Dockerfile.*') + glob.glob('Containerfile') + glob.glob('Containerfile.*') + \
             glob.glob('fissile.yml') + glob.glob('appimage.yml') + glob.glob('Chart.yaml') + \
             glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json') + \
-            glob.glob('*.productcompose')
+            glob.glob('*.productcompose') + glob.glob('mkosi.*')
 
         # FIXME:
         # * request repos from server and select by build type.
@@ -7153,6 +7153,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     pac = multibuild_package
                 if recipe == 'PKGBUILD':
                     cands = [d for d in descr if d.startswith(recipe)]
+                elif recipe == 'mkosi':
+                    cands = [d for d in descr if d.startswith('mkosi.')]
                 else:
                     cands = [d for d in descr if d.endswith('.' + recipe)]
                 if len(cands) > 1:
