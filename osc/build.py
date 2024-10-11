@@ -880,6 +880,8 @@ def main(apiurl, store, opts, argv):
         pac = pac + ":" + opts.multibuild_package
     if opts.verbose_mode:
         buildargs.append('--verbose=%s' % opts.verbose_mode)
+    if opts.no_timestamps:
+        buildargs.append('--no-timestamps')
     if opts.wipe:
         buildargs.append("--wipe")
 
