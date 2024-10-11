@@ -3,7 +3,7 @@ set -e
 
 
 TOPDIR=$(dirname $(readlink -f "$0"))
-source "$TOPDIR/container-setup-common.sh"
+source "$TOPDIR/common.sh"
 
 
 start_mysql
@@ -15,6 +15,9 @@ sleep 1
 FIXTURES_DIR="$TOPDIR/fixtures"
 OSC="osc -A https://localhost"
 
+# create additional users
+$OSC person register --login=alice --realname='' --email='alice@example.com' --password='opensuse'
+$OSC person register --login=bob --realname='' --email='bob@example.com' --password='opensuse'
 
 # create projects
 $OSC api -X PUT '/source/openSUSE.org/_meta' --file "$FIXTURES_DIR/prj/openSUSE.org.xml"

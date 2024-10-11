@@ -10,10 +10,13 @@ podman run \
     --detach \
     --interactive \
     --tty \
-    --volume="$TOPDIR":/opt/obs \
+    --volume="$TOPDIR":/opt/workdir \
     --cap-add SYS_PTRACE \
     -p 1443:443 \
     -p 1082:82 \
+    -p 3000:3000 \
+    -p 3001:3000 \
+    -p 3022:3022 \
     obs-server
 
 sleep 0.5

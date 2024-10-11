@@ -1,7 +1,0 @@
-[general]
-apiurl = https://localhost
-
-[https://localhost]
-user=Admin
-pass=opensuse
-credentials_mgr_class=osc.credentials.PlaintextConfigFileCredentialsManager

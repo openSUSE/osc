@@ -3,7 +3,7 @@ set -e
 
 
 TOPDIR=$(dirname $(readlink -f "$0"))
-source "$TOPDIR/container-setup-common.sh"
+source "$TOPDIR/common.sh"
 
 
 # tweak configuration
@@ -26,8 +26,14 @@ sed -i -E 's!^(\s*)PassengerRuby .*!\1PassengerRuby "/usr/bin/ruby.ruby3.1"!' /e
 # enable apache SSL server flag
 sed -i 's!^APACHE_SERVER_FLAGS=.*!APACHE_SERVER_FLAGS="SSL"!' /etc/sysconfig/apache2
 
-# also listen on the port that is exported to an unprivileged user
+# also listen on the ports that are published outside the container
+# so the included oscrc files are valid from both outside and inside of the container
 sed -i 's!^<VirtualHost \*:82>!<VirtualHost *:82 *:1082>!' /etc/apache2/vhosts.d/obs.conf
+sed -i 's!^<VirtualHost \*:443>!<VirtualHost *:443 *:1443>!' /etc/apache2/vhosts.d/obs.conf
+sed -i 's!^Listen 82$!Listen 82\nListen 1082\nListen 1443!' /etc/apache2/vhosts.d/obs.conf
+
+# forward X-Username HTTP header to HTTP_X_USERNAME variable that is needed for OBS proxy auth
+sed -i 's@^\(.*SSLEngine.*\)@        # the variable is used when OBS proxy auth is on\n        SetEnvIf X-Username "(.*)" HTTP_X_USERNAME=$1\n\n\1@' /etc/apache2/vhosts.d/obs.conf
 
 
 # enable apache mods
@@ -100,7 +106,9 @@ RAILS_ENV=production SAFETY_ASSURED=1 bin/rails db:setup writeconfiguration
 
 
 # update configuration and write it to disk
+echo "update configurations set admin_email='admin@example.com';" | su -s /bin/sh - mysql -c "mysql api_production"
 echo "update configurations set download_url='http://localhost:1082';" | su -s /bin/sh - mysql -c "mysql api_production"
+echo "update configurations set obs_url='https://localhost:1443';" | su -s /bin/sh - mysql -c "mysql api_production"
 cd /srv/www/obs/api; RAILS_ENV=production SAFETY_ASSURED=1 bin/rails writeconfiguration
 
 
@@ -135,7 +143,9 @@ systemctl enable obsservice
 sed -i '/^BindsTo *=.*/d; s/^WantedBy *=.*/WantedBy = default.target/' /usr/lib/systemd/system/obs-*
 
 # needed (not only) for generating diffs in requests
-systemctl enable obs-delayedjob-queue-default
+# systemctl enable obs-delayedjob-queue-default
 
 # OBS worker
 # systemctl enable obsworker
+
+systemctl enable obs-configure-from-env

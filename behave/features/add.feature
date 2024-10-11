@@ -5,7 +5,9 @@ Scenario: Run `osc add` on a new file in a package
    Given I set working directory to "{context.osc.temp}"
      And I execute osc with args "checkout test:factory test-pkgA"
      And I set working directory to "{context.osc.temp}/test:factory/test-pkgA"
-     And I copy file "{context.fixtures}/pac/test-pkgA-1.spec" to "{context.osc.temp}/test:factory/test-pkgA/new_file"
+     And I create file "{context.osc.temp}/test:factory/test-pkgA/new_file" with perms "0644"
+        """
+        """
      And I execute osc with args "status --verbose"
      And stdout is
         """

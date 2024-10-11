@@ -6,6 +6,8 @@ Scenario: Run `osc list` with no arguments to display all projects
    Then stdout is
         """
         home:Admin
+        home:alice
+        home:bob
         openSUSE.org
         test:devel
         test:factory
@@ -23,6 +25,7 @@ Scenario: Run `osc list` on a project to display project packages
         multibuild-pkg
         multibuild-pkg:flavor1
         multibuild-pkg:flavor2
+        test-GitPkgA
         test-pkgA
         test-pkgB
         """
