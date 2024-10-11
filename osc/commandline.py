@@ -1675,6 +1675,16 @@ class Osc(cmdln.Cmdln):
                         help='Trigger the action of a token')
     @cmdln.option('', '--scm-token', metavar='SCM_TOKEN',
                   help='The scm\'s access token (only in combination with a --operation=workflow option)')
+    @cmdln.option('-a', '--arch',
+                        help='Release/Rebuild only binaries from the specified architecture')
+    @cmdln.option('-r', '--repo',
+                        help='Release/Rebuild only binaries from the specified repository')
+    @cmdln.option('--target-project', metavar='PROJECT',
+                  help='Release only to specified project')
+    @cmdln.option('--target-repo', metavar='REPO',
+                  help='Release only to specified repository')
+    @cmdln.option('--set-release', metavar='RELEASE_TAG',
+                  help='Rename binaries during release using this release tag')
     def do_token(self, subcmd, opts, *args):
         """
         Show and manage authentication token
@@ -1731,7 +1741,17 @@ class Osc(cmdln.Cmdln):
             print(status.to_string())
         elif opts.trigger:
             print("Trigger token")
-            status = obs_api.Token.do_trigger(apiurl, token=opts.trigger, project=project, package=package)
+            status = obs_api.Token.do_trigger(
+                apiurl,
+                token=opts.trigger,
+                project=project,
+                package=package,
+                repo=opts.repo,
+                arch=opts.arch,
+                target_project=opts.target_project,
+                target_repo=opts.target_repo,
+                set_release=opts.set_release,
+            )
             print(status.to_string())
         else:
             if args and args[0] in ['create', 'delete', 'trigger']:
