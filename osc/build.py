@@ -919,7 +919,7 @@ def main(apiurl, store, opts, argv):
     bc_file = None
     bi_filename = '_buildinfo-%s-%s.xml' % (repo, arch)
     bc_filename = '_buildconfig-%s-%s' % (repo, arch)
-    if store.is_package and os.access(core.store, os.W_OK):
+    if store is not None and store.is_package and os.access(core.store, os.W_OK):
         bi_filename = os.path.join(os.getcwd(), core.store, bi_filename)
         bc_filename = os.path.join(os.getcwd(), core.store, bc_filename)
     elif not os.access('.', os.W_OK):

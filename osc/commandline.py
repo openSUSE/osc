@@ -7410,9 +7410,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pass
         else:
             try:
-                store = osc_store.get_store(os.path.dirname(Path.cwd()), print_warnings=True)
+                store = osc_store.get_store(Path.cwd(), print_warnings=True)
             except oscerr.NoWorkingCopy:
                 store = None
+
+            if store is None:
+                try:
+                    # if opts.local_package is set, build.main() reads project from the store and sets package to "_project"
+                    # that's why we're ok with store from the parent directory that holds information about the project
+                    # FIXME: the parent directory may contain a git repo that doesn't contain a project; we have no way of recognizing that!
+                    store = osc_store.get_store(os.path.dirname(Path.cwd()), print_warnings=True)
+                except oscerr.NoWorkingCopy:
+                    store = None
 
         # HACK: avoid calling some underlying store_*() functions from parse_repoarchdescr() method
         # We'll fix parse_repoarchdescr() later because it requires a larger change
