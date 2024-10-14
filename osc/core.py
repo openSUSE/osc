@@ -4292,7 +4292,7 @@ def get_prj_results(
     if root.find('result') is None:
         return []
     for results in root.findall('result'):
-        for node in results:
+        for node in results.findall('status'):
             pacs.append(node.get('package'))
     pacs = sorted(list(set(pacs)))
     for node in root.findall('result'):
