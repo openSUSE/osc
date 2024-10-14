@@ -269,6 +269,17 @@ class MainCommand(Command):
                         continue
                     self.load_command(cls, module_prefix)
 
+    def enable_autocomplete(self):
+        """
+        The method must be called *after* the parser is populated with options and subcommands.
+        """
+        try:
+            import argcomplete
+
+            argcomplete.autocomplete(self.parser)
+        except ImportError:
+            pass
+
     def parse_args(self, *args, **kwargs):
         namespace, unknown_args = self.parser.parse_known_args(*args, **kwargs)
 

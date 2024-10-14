@@ -154,6 +154,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         """
         cmd = cls()
         cmd.load_commands()
+        cmd.enable_autocomplete()
         if run:
             args = cmd.parse_args(args=argv)
             exit_code = cmd.run(args)
