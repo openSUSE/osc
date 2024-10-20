@@ -158,7 +158,7 @@ Locally build a package (see 'osc help build' for more info)
 
     osc build <repo> <arch> specfile [--clean|--noinit]
 
-Update a package to a different sources (directory foo_package_source)
+Update a package to a different sources (directory foo_package_source).
 
     cp -a foo_package_source foo
     cd foo
