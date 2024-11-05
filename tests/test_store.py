@@ -236,6 +236,21 @@ class TestStore(unittest.TestCase):
         pkg = LocalPackage(self.tmpdir)
         self.assertEqual(pkg.get_meta_value("releasename"), "name")
 
+    def test_migrate_10_20_sources_file(self):
+        self.store = Store(self.tmpdir, check=False)
+        self.store.write_string("_osclib_version", "1.0")
+        self.store.apiurl = "http://localhost"
+        self.store.is_package = True
+        self.store.project = "project name"
+        self.store.package = "package name"
+        self.store.write_string("sources", "")
+        self.store.files = [
+            osc_core.File(name="sources", md5="aabbcc", size=0, mtime=0),
+        ]
+
+        Store(self.tmpdir, check=True)
+        self.assertTrue(os.path.exists(os.path.join(self.tmpdir, ".osc", "sources", "sources")))
+
 
 if __name__ == "__main__":
     unittest.main()
