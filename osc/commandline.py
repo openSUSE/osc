@@ -7221,7 +7221,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             build_args = ['--root=' + build_root, '--noinit', '--shell']
             if opts.wipe:
                 build_args.append('--wipe')
-            sys.exit(osc_build.run_build(opts, *build_args))
+            ret = osc_build.run_build(opts, *build_args)
+            print(f"The buildroot was: {build_root}")
+            sys.exit(ret)
         elif subcmd in ('shell', 'chroot') or opts.shell:
             print(f'--shell in combination with build-type {vm_chroot} is experimental.')
             print('The semantics may change at any time!')
@@ -7270,7 +7272,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print(f'Building {args[2]} for {args[0]}/{args[1]}')
         if not opts.host:
-            return osc_build.main(self.get_api_url(), store, opts, args)
+            ret = osc_build.main(self.get_api_url(), store, opts, args)
+            print(f"The buildroot was: {build_root}")
+            return ret
         else:
             return self._do_rbuild(subcmd, opts, *args)
 
