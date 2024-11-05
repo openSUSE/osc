@@ -70,7 +70,7 @@ Run tests
 Run all tests
 ```
 $ cd behave
-$ behave -Dosc=../osc-wrapper.py
+$ behave -Dosc=../osc-wrapper.py -Dgit-obs=../git-obs.py
 ```
 
 Run selected tests

@@ -20,7 +20,7 @@ jobs:
       - run: pip config set global.break-system-packages 1
       - run: pip install mypy
       - run: pip install types-cryptography types-urllib3
-      - run: pip install distro keyring progressbar zstandard
+      - run: pip install distro keyring progressbar ruamel.yaml zstandard
       - run: mypy osc
 
   darker:
@@ -42,7 +42,7 @@ jobs:
       - name: 'Install packages'
         run: |
             sudo apt-get -y update
-            sudo apt-get -y --no-install-recommends install pylint python3-rpm
+            sudo apt-get -y --no-install-recommends install pylint python3-rpm python3-ruamel.yaml
 
       - uses: actions/checkout@v3
 
@@ -68,7 +68,7 @@ jobs:
       - name: 'Install packages'
         run: |
             sudo apt-get -y update
-            sudo apt-get -y --no-install-recommends install diffutils pylint python3-pip
+            sudo apt-get -y --no-install-recommends install diffutils pylint python3-pip python3-rpm python3-ruamel.yaml
 
       - uses: actions/checkout@v3
         with:

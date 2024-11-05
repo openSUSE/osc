@@ -405,7 +405,13 @@ def check_store_version(dir):
         if v == "1.0":
             store_dir = os.path.join(dir, store)
             sources_dir = os.path.join(dir, store, "sources")
-            os.makedirs(sources_dir, exist_ok=True)
+            sources_dir_mv = sources_dir
+
+            if os.path.isfile(sources_dir):
+                # there is a conflict with an existing "sources" file
+                sources_dir_mv = os.path.join(dir, store, "_sources")
+
+            os.makedirs(sources_dir_mv, exist_ok=True)
 
             s = Store(dir, check=False)
             if s.is_package and not s.scmurl:
@@ -416,7 +422,7 @@ def check_store_version(dir):
 
                 for fn in os.listdir(store_dir):
                     old_path = os.path.join(store_dir, fn)
-                    new_path = os.path.join(sources_dir, fn)
+                    new_path = os.path.join(sources_dir_mv, fn)
                     if not os.path.isfile(old_path):
                         continue
                     if fn in Package.REQ_STOREFILES or fn in Package.OPT_STOREFILES:
@@ -425,6 +431,9 @@ def check_store_version(dir):
                         continue
                     if os.path.isfile(old_path):
                         os.rename(old_path, new_path)
+
+            if sources_dir != sources_dir_mv:
+                os.rename(sources_dir_mv, sources_dir)
 
             v = "2.0"
             s.write_string("_osclib_version", v)
