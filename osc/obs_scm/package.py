@@ -1387,7 +1387,9 @@ rev: %s
         old_size_limit = self.size_limit
         if size_limit is not None:
             self.size_limit = int(size_limit)
-        if os.path.isfile(os.path.join(self.storedir, '_in_update', '_files')):
+
+        in_update_files_path = os.path.join(self.storedir, "_in_update", "_files")
+        if os.path.isfile(in_update_files_path) and os.path.getsize(in_update_files_path) != 0:
             print('resuming broken update...')
             root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
             rfiles = self.__get_files(root)
