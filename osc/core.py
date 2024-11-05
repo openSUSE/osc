@@ -4291,10 +4291,13 @@ def get_prj_results(
     status = {}
     if root.find('result') is None:
         return []
-    for results in root.findall('result'):
-        for node in results:
-            pacs.append(node.get('package'))
+
+    for results in root.findall("result"):
+        for result in results:
+            for status in result.findall("status"):
+                pacs.append(status.get("package"))
     pacs = sorted(list(set(pacs)))
+
     for node in root.findall('result'):
         # filter architecture and repository
         if arch and node.get('arch') not in arch:
