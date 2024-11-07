@@ -63,6 +63,7 @@ class Token(XmlModel):
         REBUILD = "rebuild"
         RELEASE = "release"
         RUNSERVICE = "runservice"
+        WIPE = "wipe"
         WORKFLOW = "workflow"
 
     kind: Kind = Field(
@@ -74,6 +75,7 @@ class Token(XmlModel):
             - rebuild: trigger rebuilds of packages
             - release: trigger project releases
             - runservice: run a service via the POST /trigger/runservice route
+            - wipe: trigger wipe of binary artifacts
             - workflow: trigger SCM/CI workflows, see https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.scm_ci_workflow_integration.html
             """
         ),
