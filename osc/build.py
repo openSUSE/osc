@@ -450,6 +450,11 @@ def get_built_files(pacdir, buildtype):
                                     '-type', 'f'],
                                    stdout=subprocess.PIPE).stdout.read().strip()
         s_built = ''
+    elif buildtype == 'mkosi':
+        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
+                                    '-type', 'f'],
+                                   stdout=subprocess.PIPE).stdout.read().strip()
+        s_built = ''
     else:
         print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
         b_built = ''
@@ -757,37 +762,40 @@ def main(apiurl, store, opts, argv):
 
     build_descr = os.path.abspath(build_descr)
     build_type = os.path.splitext(build_descr)[1][1:]
-    if os.path.basename(build_descr) == 'PKGBUILD':
+    if build_type in ['spec', 'dsc', 'kiwi', 'productcompose', 'livebuild']:
+        # File extension works
+        pass
+    elif os.path.basename(build_descr) == 'PKGBUILD':
         build_type = 'arch'
-    if os.path.basename(build_descr) == 'build.collax':
+    elif os.path.basename(build_descr) == 'build.collax':
         build_type = 'collax'
-    if os.path.basename(build_descr) == 'appimage.yml':
+    elif os.path.basename(build_descr) == 'appimage.yml':
         build_type = 'appimage'
-    if os.path.basename(build_descr) == 'Chart.yaml':
+    elif os.path.basename(build_descr) == 'Chart.yaml':
         build_type = 'helm'
-    if os.path.basename(build_descr) == 'snapcraft.yaml':
+    elif os.path.basename(build_descr) == 'snapcraft.yaml':
         build_type = 'snapcraft'
-    if os.path.basename(build_descr) == 'simpleimage':
+    elif os.path.basename(build_descr) == 'simpleimage':
         build_type = 'simpleimage'
-    if os.path.basename(build_descr) == 'Containerfile' or os.path.basename(build_descr).startswith('Containerfile.'):
+    elif os.path.basename(build_descr) == 'Containerfile' or os.path.basename(build_descr).startswith('Containerfile.'):
         build_type = 'docker'
-    if os.path.basename(build_descr) == 'Dockerfile' or os.path.basename(build_descr).startswith('Dockerfile.'):
+    elif os.path.basename(build_descr) == 'Dockerfile' or os.path.basename(build_descr).startswith('Dockerfile.'):
         build_type = 'docker'
-    if os.path.basename(build_descr) == 'fissile.yml':
+    elif os.path.basename(build_descr) == 'fissile.yml':
         build_type = 'fissile'
-    if os.path.basename(build_descr) == '_preinstallimage':
+    elif os.path.basename(build_descr) == '_preinstallimage':
         build_type = 'preinstallimage'
-    if build_descr.endswith('flatpak.yaml') or build_descr.endswith('flatpak.yml') or build_descr.endswith('flatpak.json'):
+    elif build_descr.endswith('flatpak.yaml') or build_descr.endswith('flatpak.yml') or build_descr.endswith('flatpak.json'):
         build_type = 'flatpak'
-    if build_type not in ['spec', 'dsc', 'kiwi', 'arch', 'collax', 'livebuild',
-                          'simpleimage', 'snapcraft', 'appimage', 'docker', 'helm',
-                          'podman', 'fissile', 'flatpak', 'preinstallimage', 'productcompose']:
+    elif os.path.basename(build_descr).startswith('mkosi.'):
+        build_type = 'mkosi'
+    else:
         raise oscerr.WrongArgs(
             'Unknown build type: \'%s\'. '
             'Build description should end in .spec, .dsc, .kiwi, .productcompose or .livebuild. '
             'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
             'Chart.yaml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, '
-            'preinstallimage or Dockerfile' % build_type)
+            'preinstallimage, Dockerfile.*, Containerfile.* or mkosi.*' % build_type)
 
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
