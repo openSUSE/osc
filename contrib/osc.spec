@@ -77,6 +77,7 @@ BuildRequires:  %{use_python_pkg}-devel >= 3.6
 BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
 BuildRequires:  %{use_python_pkg}-urllib3
+BuildRequires:  %{ruamel_yaml_pkg}
 BuildRequires:  diffstat
 %if %{with fdupes}
 BuildRequires:  fdupes
