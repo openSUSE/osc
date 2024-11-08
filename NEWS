@@ -1,3 +1,31 @@
+- 1.10.0
+  - Command-line:
+    - New git-obs executable with several subcommands
+    - Support parameters on token triggers
+    - Change 'update' command to treat empty '.osc/_in_update/_files' as missing
+    - Change 'checkout' command to allow checkout obs imported sources of scmsync sources
+    - Change 'creq' command to allow specifying source and target repository
+    - Change the help output to determine executable name from the command-line arguments
+    - Add '--no-timestamps' parameter to 'build' command
+    - Fix 'token' command to avoid crash  when a wipe token exists
+    - Fix crash in 'results' command by skipping non-status elements in project results
+    - Fix crash in 'build' command when building with --local-package --alternative-project from a locally initialized .osc package
+    - Print buildroot directory when build or chroot finishes
+  - Library:
+    - Add 'gitea_api' module
+    - Support the mkosi build type
+    - Support copy of scmsync packages
+    - Support Dockerfile.* in _multibuild packages
+    - Implement obs_api.Status.data property that returns status data as a dictionary
+    - Implement obs_api.Package.cmd_fork()
+    - Fix meter by setting default of use_pb_fallback to False
+    - Fix store migration from 1.0 to 2.0 when there is a 'sources' file that would conflict with 'sources' directory
+    - Fix revision'd checkout of scmsync package
+    - Refactor code handling _scmsync.obsinfo to obs_api.scmsync_obsinfo.ScmsyncObsinfo class
+    - Store the container annotation in the "containers" directory
+  - Spec:
+    - Install symlink /usr/bin/git-obs to /usr/libexec/git/obs to make git-obs available as a git sub-command
+
 - 1.9.2
   - Command-line:
     - Fix 'resolved' command to skip subdirectories in package checkouts
