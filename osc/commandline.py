@@ -7277,7 +7277,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print(f'Building {args[2]} for {args[0]}/{args[1]}')
         if not opts.host:
             ret = osc_build.main(self.get_api_url(), store, opts, args)
-            print(f"The buildroot was: {build_root}")
+            if (subcmd in ('shell', 'chroot') or opts.shell or opts.wipe) and not vm_chroot:
+                print(f"The buildroot was: {build_root}")
             return ret
         else:
             return self._do_rbuild(subcmd, opts, *args)
