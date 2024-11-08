@@ -1,3 +1,10 @@
+- 1.10.1
+  - Command-line:
+    - Fix crash in 'build' command due to undefined 'build_root' variable
+  - Spec:
+    - Add missing python3-ruamel.yaml BuildRequires
+    - Fix rpmlint error about creating the /usr/libexec/git/obs symlink
+
 - 1.10.0
   - Command-line:
     - New git-obs executable with several subcommands
