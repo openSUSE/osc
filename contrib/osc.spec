@@ -148,10 +148,6 @@ for a general introduction.
 %build
 %{use_python} setup.py build
 
-# symlink /usr/bin/git-obs to /usr/libexec/git/obs
-mkdir -p %{buildroot}%{_libexecdir}/git
-ln -s %{_bindir}/git-obs %{buildroot}%{_libexecdir}/git/obs
-
 # write rpm macros
 cat << EOF > macros.osc
 %%osc_plugin_dir %{osc_plugin_dir}
@@ -176,8 +172,9 @@ sphinx-build -b man doc .
 %install
 %{use_python} setup.py install -O1 --skip-build --force --root %{buildroot} --prefix %{_prefix}
 
-# copy git obs sub-command symlink
-install -d %{buildroot}%{_libexecdir}/git/obs
+# symlink /usr/bin/git-obs to /usr/libexec/git/obs
+mkdir -p %{buildroot}%{_libexecdir}/git
+ln -s %{_bindir}/git-obs %{buildroot}%{_libexecdir}/git/obs
 
 # create plugin dirs
 install -d %{buildroot}%{osc_plugin_dir}
