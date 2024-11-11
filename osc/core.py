@@ -2680,7 +2680,7 @@ def download(url: str, filename, progress_obj=None, mtime=None):
         os.fchmod(fd, 0o644)
         try:
             o = os.fdopen(fd, 'wb')
-            for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj):
+            for buf in streamfile(url, http_GET, BUFSIZE, progress_obj=progress_obj, text=filename):
                 if isinstance(buf, str):
                     o.write(bytes(buf, "utf-8"))
                 else:
