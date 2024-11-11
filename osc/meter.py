@@ -37,14 +37,14 @@ class PBTextMeter(TextMeterBase):
 
     def start(self, basename: str, size: Optional[int] = None):
         if size is None:
-            widgets = [f"{basename}: ", pb.AnimatedMarker(), ' ', pb.Timer()]
+            widgets = [f"{basename} ", pb.AnimatedMarker(), ' ', pb.Timer()]
             self.bar = pb.ProgressBar(widgets=widgets, maxval=pb.UnknownLength)
         else:
-            widgets = [f"{basename}: ", pb.Bar(), ' ', pb.ETA()]
+            widgets = [f"{basename} ", pb.Bar(), ' ', pb.ETA()]
             if size:
                 # if size is 0, using pb.Percentage will result in
                 # a ZeroDivisionException
-                widgets.insert(1, pb.Percentage())
+                widgets[3:3] = [pb.Percentage(), " "]
             self.bar = pb.ProgressBar(widgets=widgets, maxval=size)
         # When a signal handler is set, it resets SA_RESTART flag
         # - see signal.siginterrupt() python docs.
@@ -57,6 +57,15 @@ class PBTextMeter(TextMeterBase):
         self.bar.update(amount_read)
 
     def end(self):
+        # replace marker (ticks) and left+right borders of the bar with spaces
+        # to hide it from output after completion
+        for i in self.bar.widgets:
+            if not isinstance(i, pb.Bar):
+                continue
+            i.marker = " "
+            i.left = " "
+            i.right = " "
+
         self.bar.finish()
 
 
