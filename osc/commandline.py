@@ -5187,7 +5187,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         The first column in the output specifies the status and is one of the
         following characters:
-          ' ' no modifications
+          ' ' no modifications (shown only in verbose output)
           'A' Added
           'C' Conflicted
           'D' Deleted
