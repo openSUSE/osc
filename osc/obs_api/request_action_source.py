@@ -15,3 +15,7 @@ class RequestActionSource(XmlModel):
     rev: Optional[str] = Field(
         xml_attribute=True,
     )
+
+    repository: Optional[str] = Field(
+        xml_attribute=True,
+    )
