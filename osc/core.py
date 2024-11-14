@@ -4826,6 +4826,7 @@ def get_commitlog(
                     prj,
                     package,
                     revision.rev,
+                    meta=meta,
                 )
                 yield highlight_diff(rdiff).decode("utf-8", errors="replace")
         return
