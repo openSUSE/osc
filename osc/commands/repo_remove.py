@@ -1,9 +1,7 @@
 import difflib
 
 import osc.commandline
-from .. import obs_api
 from .. import oscerr
-from ..output import get_user_input
 
 
 class RepoRemoveCommand(osc.commandline.OscCommand):
@@ -34,6 +32,9 @@ class RepoRemoveCommand(osc.commandline.OscCommand):
         )
 
     def run(self, args):
+        from .. import obs_api
+        from ..output import get_user_input
+
         project_obj = obs_api.Project.from_api(args.apiurl, args.project)
         old = project_obj.to_string()
 

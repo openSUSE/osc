@@ -1,9 +1,7 @@
 import difflib
 
 import osc.commandline
-from .. import obs_api
 from .. import oscerr
-from ..output import get_user_input
 
 
 class RepoAddCommand(osc.commandline.OscCommand):
@@ -54,6 +52,9 @@ class RepoAddCommand(osc.commandline.OscCommand):
         )
 
     def run(self, args):
+        from .. import obs_api
+        from ..output import get_user_input
+
         paths = []
         for path in args.paths:
             if "/" not in path:

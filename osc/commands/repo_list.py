@@ -1,6 +1,4 @@
 import osc.commandline
-from .. import obs_api
-from ..output import KeyValueTable
 
 
 class RepoListCommand(osc.commandline.OscCommand):
@@ -19,6 +17,9 @@ class RepoListCommand(osc.commandline.OscCommand):
         )
 
     def run(self, args):
+        from .. import obs_api
+        from ..output import KeyValueTable
+
         project_obj = obs_api.Project.from_api(args.apiurl, args.project)
         repo_flags = project_obj.resolve_repository_flags()
 
