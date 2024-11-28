@@ -20,9 +20,9 @@ class Package(XmlModel):
         xml_attribute=True,
     )
 
-    title: str = Field()
+    title: Optional[str] = Field()
 
-    description: str = Field()
+    description: Optional[str] = Field()
 
     devel: Optional[PackageDevel] = Field()
 
