@@ -1308,6 +1308,18 @@ class Options(OscOptions):
         ini_key="download-assets-cmd",
     )  # type: ignore[assignment]
 
+    obs_scm_bridge_cmd: str = Field(
+        default=
+            shutil.which("obs_scm_bridge", path="/usr/lib/obs/service")
+            or "/usr/lib/obs/service/obs_scm_bridge",
+        description=textwrap.dedent(
+            """
+            Path to the 'obs_scm_bridge' tool used for cloning scmsync projects and packages.
+            """
+        ),
+        ini_key="obs-scm-bridge-cmd",
+    )  # type: ignore[assignment]
+
     vc_cmd: str = Field(
         default=shutil.which("vc", path="/usr/lib/build:/usr/lib/obs-build") or "/usr/lib/build/vc",
         description=textwrap.dedent(

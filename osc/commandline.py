@@ -5387,7 +5387,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parseRevisionOption
         from .core import print_request_list
         from .core import revision_is_empty
-        from .core import run_external
+        from .core import run_obs_scm_bridge
         from .core import show_files_meta
         from .core import show_project_meta
         from .core import show_scmsync
@@ -5506,10 +5506,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             scm_url = show_scmsync(apiurl, project)
             if scm_url is not None and not opts.native_obs_package:
-                if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
-                    raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
-                os.putenv("OSC_VERSION", get_osc_version())
-                run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', str(prj_dir), '--url', scm_url])
+                run_obs_scm_bridge(url=scm_url, target_dir=str(prj_dir))
 
             Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'], scm_url=scm_url)
             print(statfrmt('A', prj_dir))
