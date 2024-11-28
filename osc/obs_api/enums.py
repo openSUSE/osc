@@ -34,6 +34,7 @@ class BuildArch(str, Enum):
     ATHLON = "athlon"
     IA64 = "ia64"
     K1OM = "k1om"
+    LOONGARCH64 = "loongarch64"
     MIPS = "mips"
     MIPSEL = "mipsel"
     MIPS32 = "mips32"
