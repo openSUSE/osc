@@ -1,4 +1,5 @@
 import argparse
+import copy
 import importlib
 import inspect
 import os
@@ -12,6 +13,21 @@ from . import cmdln
 
 # python3.6 requires reading sys.real_prefix to detect virtualenv
 IN_VENV = getattr(sys, "real_prefix", sys.base_prefix) != sys.prefix
+
+
+class OscArgumentParser(argparse.ArgumentParser):
+    def _get_formatter(self):
+        # cache formatter to speed things a little bit up
+        if not hasattr(self, "_formatter"):
+            self._formatter = self.formatter_class(prog=self.prog)
+        return self._formatter
+
+    def add_argument(self, *args, **kwargs):
+        # remember added arguments so we can add them to subcommands easily
+        if not hasattr(self, "_added_arguments"):
+            self._added_arguments = []
+        self._added_arguments.append((args, kwargs))
+        super().add_argument(*args, **kwargs)
 
 
 class Command:
@@ -51,21 +67,27 @@ class Command:
             )
             self.parser.set_defaults(_selected_command=self)
         else:
-            self.parser = argparse.ArgumentParser(
+            self.parser = OscArgumentParser(
                 description=self.get_description(),
                 formatter_class=cmdln.HelpFormatter,
                 usage="%(prog)s [global opts] <command> [--help] [opts] [args]",
             )
 
-        # traverse the parent commands and add their options to the current command
-        commands = []
-        cmd = self
-        while cmd:
-            commands.append(cmd)
-            cmd = cmd.parent
-        # iterating backwards to give the command's options a priority over parent/global options
-        for cmd in reversed(commands):
-            cmd.init_arguments()
+        if self.parent:
+            for arg_args, arg_kwargs in self.parent.parser._added_arguments:
+                if not arg_args:
+                    continue
+                if not arg_args[0].startswith("-"):
+                    continue
+                if "--help" in arg_args:
+                    continue
+
+                arg_kwargs = arg_kwargs.copy()
+                arg_kwargs["help"] = argparse.SUPPRESS
+                arg_kwargs["default"] = argparse.SUPPRESS
+                self.parser.add_argument(*arg_args, **arg_kwargs)
+
+        self.init_arguments()
 
     def __repr__(self):
         return f"<osc plugin {self.full_name} at {self.__hash__():#x}>"
@@ -127,30 +149,7 @@ class Command:
         Add a new argument to the command's argument parser.
         See `argparse <https://docs.python.org/3/library/argparse.html>`_ documentation for allowed parameters.
         """
-        cmd = self
-
-        # Let's inspect if the caller was init_arguments() method.
-        # In such case use the "parser" argument if specified.
-        frame_1 = inspect.currentframe().f_back
-        frame_1_info = inspect.getframeinfo(frame_1)
-        frame_2 = frame_1.f_back
-        frame_2_info = inspect.getframeinfo(frame_2)
-        if (frame_1_info.function, frame_2_info.function) == ("init_arguments", "__init__"):
-            # this method was called from init_arguments() that was called from __init__
-            # let's extract the command class from the 2nd frame and ad arguments there
-            cmd = frame_2.f_locals["self"]
-
-            # suppress global options from command help
-            if cmd != self and not self.parent:
-                kwargs["help"] = argparse.SUPPRESS
-
-            # We're adding hidden options from parent commands to their subcommands to allow
-            # option intermixing. For all such added hidden options we need to suppress their
-            # defaults because they would override any option set in the parent command.
-            if cmd != self:
-                kwargs["default"] = argparse.SUPPRESS
-
-        cmd.parser.add_argument(*args, **kwargs)
+        self.parser.add_argument(*args, **kwargs)
 
     def init_arguments(self):
         """
