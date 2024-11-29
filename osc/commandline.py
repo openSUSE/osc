@@ -5387,7 +5387,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parseRevisionOption
         from .core import print_request_list
         from .core import revision_is_empty
-        from .core import run_external
+        from .core import run_obs_scm_bridge
         from .core import show_files_meta
         from .core import show_project_meta
         from .core import show_scmsync
@@ -5506,10 +5506,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             scm_url = show_scmsync(apiurl, project)
             if scm_url is not None and not opts.native_obs_package:
-                if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
-                    raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
-                os.putenv("OSC_VERSION", get_osc_version())
-                run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', str(prj_dir), '--url', scm_url])
+                run_obs_scm_bridge(url=scm_url, target_dir=str(prj_dir))
 
             Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'], scm_url=scm_url)
             print(statfrmt('A', prj_dir))
@@ -7272,6 +7269,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('repos')
     @cmdln.alias('platforms')
     def do_repositories(self, subcmd, opts, *args):
+        from . import store as osc_store
         from .core import build_table
         from .core import get_repos_of_project
         from .core import get_repositories_of_project
@@ -7302,11 +7300,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             project = self._process_project_name(args[0])
             package = args[1]
         elif len(args) == 0:
-            if is_package_dir('.'):
-                package = store_read_package('.')
-                project = store_read_project('.')
-            elif is_project_dir('.'):
-                project = store_read_project('.')
+            store = osc_store.get_store(".")
+            if store.is_package:
+                package = store.package
+                project = store.project
+            elif store.is_project:
+                project = store.project
         else:
             raise oscerr.WrongArgs('Wrong number of arguments')
 
@@ -7734,7 +7733,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not opts.local_package:
             store = osc_store.get_store(Path.cwd(), print_warnings=True)
-            store.assert_is_package()
+            if isinstance(store, git_scm.store.GitStore):
+                opts.local_package = True
+            else:
+                store.assert_is_package()
 
             try:
                 if opts.alternative_project and opts.alternative_project == store.project:

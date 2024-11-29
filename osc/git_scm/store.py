@@ -29,10 +29,26 @@ class GitStore:
     def __init__(self, path, check=True):
         self.path = path
         self.abspath = os.path.abspath(self.path)
+        try:
+            self.toplevel = self._run_git(["rev-parse", "--show-toplevel"])
+            self.toplevel = os.path.abspath(self.toplevel)
+        except subprocess.CalledProcessError:
+            self.toplevel = None
 
         # TODO: how to determine if the current git repo contains a project or a package?
         self.is_project = False
-        self.is_package = os.path.exists(os.path.join(self.abspath, ".git"))
+        self.is_package = False
+
+        if self.toplevel:
+            # NOTE: we have only one store in project-git for all packages
+            config_path = os.path.join(self.toplevel, "_config")
+            pbuild_path = os.path.join(self.toplevel, "_pbuild")
+            if self.toplevel == self.abspath and (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
+                self.is_project = True
+                self.is_package = False
+            else:
+                self.is_project = False
+                self.is_package = True
 
         self._package = None
         self._project = None
@@ -69,10 +85,20 @@ class GitStore:
     @property
     def project(self):
         if self._project is None:
+            try:
+                # NOTE: this never triggers if a store is retrieved from osc.store.get_store(),
+                # because obs_scm store takes precedence as .osc is present
+                with open(os.path.join(self.toplevel, ".osc/_project")) as f:
+                    self._project = f.readline().strip()
+            except FileNotFoundError:
+                pass
+
+        if self._project is None:
             # get project from the branch name
             branch = self._run_git(["branch", "--show-current"])
 
             # HACK: replace hard-coded mapping with metadata from git or the build service
+            # NOTE: you never know which git repo is supposed to be used in which project
             if branch == "factory":
                 self._project = "openSUSE:Factory"
             else:

@@ -3080,6 +3080,14 @@ def make_dir(
     return pkg_path
 
 
+def run_obs_scm_bridge(url: str, target_dir: str):
+    if not os.path.isfile(conf.config.obs_scm_bridge_cmd):
+        raise oscerr.OscIOError(None, "Install the obs-scm-bridge package to work on packages managed in scm (git)!")
+    env = os.environ.copy()
+    env["OSC_VERSION"] = get_osc_version()
+    run_external([conf.config.obs_scm_bridge_cmd, "--outdir", target_dir, "--url", url], env=env)
+
+
 def checkout_package(
     apiurl: str,
     project: str,
@@ -3153,9 +3161,6 @@ def checkout_package(
     root = ET.fromstring(meta_data)
     scmsync_element = root.find("scmsync")
     if not native_obs_package and scmsync_element is not None and scmsync_element.text is not None:
-        if not os.path.isfile('/usr/lib/obs/service/obs_scm_bridge'):
-            raise oscerr.OscIOError(None, 'Install the obs-scm-bridge package to work on packages managed in scm (git)!')
-        scm_url = scmsync_element.text
         directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
 
         if revision is not None:
@@ -3165,8 +3170,8 @@ def checkout_package(
             scmsync_obsinfo = ScmsyncObsinfo.from_api(apiurl, project, package, rev=revision)
             scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
 
-        os.putenv("OSC_VERSION", get_osc_version())
-        run_external(['/usr/lib/obs/service/obs_scm_bridge', '--outdir', directory, '--url', scm_url])
+        scm_url = scmsync_element.text
+        run_obs_scm_bridge(url=scm_url, target_dir=directory)
 
         Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
 
