@@ -36,7 +36,9 @@ class Package(XmlModel):
         xml_name="group",
     )
 
-    lock: Optional[SimpleFlag] = Field()
+    lock: Optional[SimpleFlag] = Field(
+        xml_wrapped=True,
+    )
 
     build_list: Optional[List[Flag]] = Field(
         xml_name="build",

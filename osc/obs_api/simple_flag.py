@@ -1,9 +1,9 @@
 from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from xml.etree import ElementTree as ET
 
 
 class SimpleFlag(XmlModel):
     XML_TAG = None
-    XML_TAG_FIELD = "flag"
 
     def __init__(self, flag, **kwargs):
         super().__init__(flag=flag, **kwargs)
@@ -13,7 +13,6 @@ class SimpleFlag(XmlModel):
         DISABLE = "disable"
 
     flag: SimpleFlagChoices = Field(
-        xml_wrapped=True,
         xml_set_tag=True,
     )
 
@@ -22,3 +21,7 @@ class SimpleFlag(XmlModel):
             return self.flag == other.flag
         # allow comparing with a string
         return self.flag == other
+
+    @classmethod
+    def from_xml(cls, root: ET.Element, *, apiurl: Optional[str] = None):
+        return cls(flag=root[0].tag)

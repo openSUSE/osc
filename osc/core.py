@@ -1434,8 +1434,8 @@ def show_package_disabled_repos(apiurl: str, prj: str, pac: str):
     package_obj = obs_api.Package.from_api(apiurl, prj, pac)
     result = []
     for i in package_obj.build_list or []:
-        if i.flag == "disable":
-            result.append({"repo": i.repository, "arch": i.arch})
+        if i.flag == "disable":  # pylint: disable=no-member
+            result.append({"repo": i.repository, "arch": i.arch})  # pylint: disable=no-member
     return result
 
 
@@ -3270,66 +3270,51 @@ def link_pac(
      - "src" is the original package
      - "dst" is the "link" package that we are creating here
     """
+    from . import obs_api
+
     if src_project == dst_project and src_package == dst_package:
         raise oscerr.OscValueError("Cannot link package. Source and target are the same.")
 
     if not revision_is_empty(rev) and not checkRevision(src_project, src_package, rev):
         raise oscerr.OscValueError(f"Revision doesn't exist: {rev}")
 
-    meta_change = False
-    dst_meta = ''
-    apiurl = conf.config['apiurl']
+    apiurl = conf.config["apiurl"]
+
+    src_package_obj = obs_api.Package.from_api(apiurl, src_project, src_package)
     try:
-        dst_meta = meta_exists(metatype='pkg',
-                               path_args=(dst_project, dst_package),
-                               template_args=None,
-                               create_new=False, apiurl=apiurl)
-        root = ET.fromstring(parse_meta_to_string(dst_meta))
-        if root.get('project') != dst_project:
-            # The source comes from a different project via a project link, we need to create this instance
-            meta_change = True
+        dst_package_obj = obs_api.Package.from_api(apiurl, dst_project, dst_package)
     except HTTPError as e:
         if e.code != 404:
             raise
-        meta_change = True
-    if meta_change:
         if missing_target:
-            dst_meta = f'<package name="{dst_package}"><title/><description/></package>'
+            # we start with empty values because we want has_changed() to return True
+            dst_package_obj = obs_api.Package(project="", name="")
         else:
-            src_meta = show_package_meta(apiurl, src_project, src_package)
-            dst_meta = replace_pkg_meta(src_meta, dst_package, dst_project)
+            dst_package_obj = copy.deepcopy(src_package_obj)
 
-    if disable_build or disable_publish:
-        meta_change = True
-        root = ET.fromstring(b"".join(dst_meta))
+            # purging unwanted fields; see also replace_pkg_meta()
+            # TODO: create Package.clone() or .copy() method instead of this
+            dst_package_obj.devel = None
+            dst_package_obj.group_list = []
+            dst_package_obj.lock = None
+            dst_package_obj.person_list = []
+            dst_package_obj.releasename = None
+            dst_package_obj.scmsync = None
 
-        if disable_build:
-            elm = root.find('build')
-            if not elm:
-                elm = ET.SubElement(root, 'build')
-            elm.clear()
-            ET.SubElement(elm, 'disable')
+        dst_package_obj.project = dst_project
+        dst_package_obj.name = dst_package
 
-        if disable_publish:
-            elm = root.find('publish')
-            if not elm:
-                elm = ET.SubElement(root, 'publish')
-            elm.clear()
-            ET.SubElement(elm, 'disable')
+    if disable_build:
+        dst_package_obj.build_list = [{"flag": "disable"}]
 
-        elm = root.find("scmsync")
-        if elm is not None:
-            root.remove(elm)
+    if disable_publish:
+        dst_package_obj.publish_list = [{"flag": "disable"}]
 
-        dst_meta = ET.tostring(root, encoding=ET_ENCODING)
+    if dst_package_obj.has_changed():
+        dst_package_obj.to_api(apiurl)
 
-    if meta_change:
-        root = ET.fromstring(''.join(dst_meta))
-        for scmsync in root.findall('scmsync'):
-            root.remove(scmsync)
-        edit_meta('pkg',
-                  path_args=(dst_project, dst_package),
-                  data=ET.tostring(root, encoding=ET_ENCODING))
+    dst_package_obj.scmsync = None
+
     # create the _link file
     # but first, make sure not to overwrite an existing one
     if '_link' in meta_get_filelist(apiurl, dst_project, dst_package):

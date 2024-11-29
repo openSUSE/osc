@@ -3,6 +3,7 @@ import textwrap
 import unittest
 
 from osc.util.models import *
+from osc.obs_api.simple_flag import SimpleFlag
 
 
 class TestXmlModel(unittest.TestCase):
@@ -216,6 +217,27 @@ class TestXmlModel(unittest.TestCase):
             """
         ).strip()
         self.assertRaises(TypeError, TestModel.from_string, data)
+
+    def test_simple_flag(self):
+        class TestModel(XmlModel):
+            XML_TAG = "model"
+            simple_flag: Optional[SimpleFlag] = Field(
+                xml_wrapped=True,
+            )
+
+        data = textwrap.dedent(
+            """
+            <model>
+              <simple_flag>
+                <enable />
+              </simple_flag>
+            </model>
+            """
+        ).strip()
+
+        m = TestModel.from_string(data)
+        self.assertEqual(m.simple_flag, "enable")
+        self.assertEqual(data, m.to_string())
 
 
 if __name__ == "__main__":

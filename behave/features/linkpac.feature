@@ -39,3 +39,5 @@ Scenario: Run `osc linkpac on a locked package`
    Given I execute osc with args "lock test:factory/test-pkgA"
     When I execute osc with args "linkpac test:factory/test-pkgA home:Admin/test-pkgA"
     Then the exit code is 0
+     And I execute osc with args "api /source/home:Admin/test-pkgA/_meta"
+     And stdout doesn't contain "<lock>\s*<enable/>\s*</lock>"
