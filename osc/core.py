@@ -1434,8 +1434,8 @@ def show_package_disabled_repos(apiurl: str, prj: str, pac: str):
     package_obj = obs_api.Package.from_api(apiurl, prj, pac)
     result = []
     for i in package_obj.build_list or []:
-        if i.flag == "disable":
-            result.append({"repo": i.repository, "arch": i.arch})
+        if i.flag == "disable":  # pylint: disable=no-member
+            result.append({"repo": i.repository, "arch": i.arch})  # pylint: disable=no-member
     return result
 
 
