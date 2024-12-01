@@ -4242,7 +4242,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(f'Using target project \'{target_project}\'{release_in}')
 
         if not opts.message:
-            opts.message = edit_message()
+            try:
+                rdiff = b'old: %s/%s\nnew: %s/%s\n' % (target_project.encode(), source_package.encode(), release_project.encode(), source_package.encode())
+                rdiff += server_diff(apiurl,
+                                release_project, source_package, None,
+                                source_project, source_package, None, True)
+            except:
+                rdiff = b''
+            if rdiff is not None:
+                rdiff = decode_it(rdiff)
+            difflines = []
+            doappend = False
+            changes_re = re.compile(r'^--- .*\.changes ')
+            for line in rdiff.split('\n'):
+                if line.startswith('--- '):
+                    if changes_re.match(line):
+                        doappend = True
+                    else:
+                        doappend = False
+                if doappend:
+                    difflines.append(line)
+            opts.message = edit_message(footer=rdiff, template='\n'.join(parse_diff_for_commit_message('\n'.join(difflines))))
 
         supersede_existing = False
         reqs = []
