@@ -12,6 +12,7 @@ class ScmsyncObsinfo(BaseModel):
     commit: str = Field()
     url: str = Field()
     revision: str = Field()
+    projectscmsync: str = Field()
 
     @classmethod
     def from_string(cls, data: str) -> "ScmsyncObsinfo":
