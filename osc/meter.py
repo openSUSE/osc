@@ -13,6 +13,7 @@ from typing import Optional
 try:
     import progressbar as pb
     have_pb_module = True
+    using_pb_progressbar2 = tuple(map(int, pb.__version__.split('.'))) >= (3, 1)
 except ImportError:
     have_pb_module = False
 
@@ -62,9 +63,14 @@ class PBTextMeter(TextMeterBase):
         for i in self.bar.widgets:
             if not isinstance(i, pb.Bar):
                 continue
-            i.marker = " "
-            i.left = " "
-            i.right = " "
+            if using_pb_progressbar2:
+                i.marker = lambda _progress, _data, _width: " "
+                i.left = lambda _progress, _data, _width: " "
+                i.right = lambda _progress, _data, _width: " "
+            else:
+                i.marker = " "
+                i.left = " "
+                i.right = " "
 
         self.bar.finish()
 
