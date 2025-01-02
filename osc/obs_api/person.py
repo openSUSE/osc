@@ -63,7 +63,7 @@ class Person(XmlModel):
         state: Optional[str] = None,
         **kwargs,
     ) -> List["Person"]:
-        from xml.etree import ElementTree as ET
+        from ..util.xml import xml_parse
         from ..util.xpath import XPathQuery as Q
 
         url_path = ["search", "person"]
@@ -77,7 +77,7 @@ class Person(XmlModel):
             ),
         }
         response = cls.xml_request("GET", apiurl, url_path, url_query)
-        root = ET.parse(response).getroot()
+        root = xml_parse(response).getroot()
         assert root.tag == "collection"
         result = []
         for node in root:

@@ -567,7 +567,7 @@ class XmlModel(BaseModel):
         """
         Instantiate model from string.
         """
-        root = ET.fromstring(string)
+        root = xml.xml_fromstring(string)
         return cls.from_xml(root, apiurl=apiurl)
 
     @classmethod
@@ -575,7 +575,7 @@ class XmlModel(BaseModel):
         """
         Instantiate model from file.
         """
-        root = ET.parse(file).getroot()
+        root = xml.xml_parse(file).getroot()
         return cls.from_xml(root, apiurl=apiurl)
 
     def to_bytes(self, *, with_comments: bool = False) -> bytes:

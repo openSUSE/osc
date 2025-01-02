@@ -11,6 +11,8 @@ from typing import Optional
 from .. import conf
 from .. import oscerr
 from ..util.xml import ET
+from ..util.xml import xml_fromstring
+from ..util.xml import xml_parse
 from .file import File
 from .linkinfo import Linkinfo
 from .serviceinfo import Serviceinfo
@@ -413,7 +415,7 @@ class Package:
         query.update({'cmd': 'commitfilelist', 'user': user, 'comment': msg})
         u = makeurl(apiurl, ['source', project, package], query=query)
         f = http_POST(u, data=ET.tostring(filelist, encoding=ET_ENCODING))
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
         return root
 
     @staticmethod
@@ -616,7 +618,7 @@ class Package:
             li.read(sfilelist.find('linkinfo'))
             if li.xsrcmd5 is None:
                 raise oscerr.APIError(f'linkinfo has no xsrcmd5 attr:\n{ET.tostring(sfilelist, encoding=ET_ENCODING)}\n')
-            sfilelist = ET.fromstring(self.get_files_meta(revision=li.xsrcmd5))
+            sfilelist = xml_fromstring(self.get_files_meta(revision=li.xsrcmd5))
         for i in sfilelist.findall('entry'):
             if i.get('name') in self.skipped:
                 i.set('skipped', 'true')
@@ -639,7 +641,7 @@ class Package:
                 sys.stdout.write('.')
                 sys.stdout.flush()
                 # does it make sense to add some delay?
-                sfilelist = ET.fromstring(http_GET(u).read())
+                sfilelist = xml_fromstring(http_GET(u).read())
                 # if sinfo is None another commit might have occured in the "meantime"
                 sinfo = sfilelist.find('serviceinfo')
             print('')
@@ -754,7 +756,7 @@ class Package:
 
         fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta)
         # look for "too large" files according to size limit and mark them
-        root = ET.fromstring(fm)
+        root = xml_fromstring(fm)
         for e in root.findall('entry'):
             size = e.get('size')
             if size and self.size_limit and int(size) > self.size_limit \
@@ -797,7 +799,7 @@ class Package:
         meta = self.get_local_meta()
         if meta is None:
             return self.prjname
-        root = ET.fromstring(meta)
+        root = xml_fromstring(meta)
         return root.get('project')
 
     def is_link_to_different_project(self):
@@ -1125,7 +1127,7 @@ class Package:
                     raise oscerr.OscIOError(None, f'file \'{fname}\' is not under version control')
         else:
             fm = self.get_files_meta(revision=revision)
-            root = ET.fromstring(fm)
+            root = xml_fromstring(fm)
             rfiles = self.__get_files(root)
             # swap added and deleted
             kept, deleted, added, services = self.__get_rev_changes(rfiles)
@@ -1391,7 +1393,7 @@ rev: %s
         in_update_files_path = os.path.join(self.storedir, "_in_update", "_files")
         if os.path.isfile(in_update_files_path) and os.path.getsize(in_update_files_path) != 0:
             print('resuming broken update...')
-            root = ET.parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
+            root = xml_parse(os.path.join(self.storedir, '_in_update', '_files')).getroot()
             rfiles = self.__get_files(root)
             kept, added, deleted, services = self.__get_rev_changes(rfiles)
             # check if we aborted in the middle of a file update
@@ -1445,7 +1447,7 @@ rev: %s
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         # ok everything is ok (hopefully)...
         fm = self.get_files_meta(revision=rev)
-        root = ET.fromstring(fm)
+        root = xml_fromstring(fm)
         rfiles = self.__get_files(root)
         store_write_string(self.absdir, '_files', fm + '\n', subdir='_in_update')
         kept, added, deleted, services = self.__get_rev_changes(rfiles)
@@ -1546,7 +1548,7 @@ rev: %s
         si = Serviceinfo()
         if os.path.exists('_service'):
             try:
-                service = ET.parse(os.path.join(self.absdir, '_service')).getroot()
+                service = xml_parse(os.path.join(self.absdir, '_service')).getroot()
             except ET.ParseError as v:
                 line, column = v.position
                 print(f'XML error in _service file on line {line}, column {column}')

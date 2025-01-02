@@ -172,9 +172,11 @@ class Store:
         self.write_string(fn, value, subdir=subdir)
 
     def read_xml_node(self, fn, node_name, subdir=None):
+        from ..util.xml import xml_parse
+
         path = self.get_path(fn, subdir=subdir)
         try:
-            tree = ET.parse(path)
+            tree = xml_parse(path)
         except SyntaxError as e:
             msg = f"Unable to parse '{path}': {e}"
             raise oscerr.NoWorkingCopy(msg)
@@ -463,6 +465,8 @@ def is_package_dir(d):
 
 
 def read_filemeta(dir):
+    from ..util.xml import xml_parse
+
     global store
 
     msg = f'\'{dir}\' is not a valid working copy.'
@@ -475,7 +479,7 @@ def read_filemeta(dir):
         raise oscerr.NoWorkingCopy(f'{msg} ({filesmeta} does not exist)')
 
     try:
-        r = ET.parse(filesmeta)
+        r = xml_parse(filesmeta)
     except SyntaxError as e:
         raise oscerr.NoWorkingCopy(f'{msg}\nWhen parsing .osc/_files, the following error was encountered:\n{e}')
     return r

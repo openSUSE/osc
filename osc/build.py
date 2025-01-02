@@ -30,6 +30,7 @@ from .util import cpio
 from .util import archquery, debquery, packagequery, rpmquery
 from .util import repodata
 from .util.helper import decode_it
+from .util.xml import xml_parse
 
 
 change_personality = {
@@ -79,7 +80,7 @@ class Buildinfo:
     def __init__(self, filename, apiurl, buildtype='spec', localpkgs=None, binarytype='rpm'):
         localpkgs = localpkgs or []
         try:
-            tree = ET.parse(filename)
+            tree = xml_parse(filename)
         except ET.ParseError:
             print('could not parse the buildinfo:', file=sys.stderr)
             print(open(filename).read(), file=sys.stderr)
@@ -1351,7 +1352,7 @@ def main(apiurl, store, opts, argv):
     if build_type == 'kiwi':
         # Is a obsrepositories tag used?
         try:
-            tree = ET.parse(build_descr)
+            tree = xml_parse(build_descr)
         except:
             print('could not parse the kiwi file:', file=sys.stderr)
             print(open(build_descr).read(), file=sys.stderr)

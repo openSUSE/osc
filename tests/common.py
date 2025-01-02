@@ -13,6 +13,7 @@ import urllib3.response
 
 import osc.conf
 import osc.core
+from osc.util.xml import xml_fromstring
 
 
 def urlcompare(url, *args):
@@ -41,8 +42,8 @@ def urlcompare(url, *args):
 
 def xml_equal(actual, exp):
     try:
-        actual_xml = ET.fromstring(actual)
-        exp_xml = ET.fromstring(exp)
+        actual_xml = xml_fromstring(actual)
+        exp_xml = xml_fromstring(exp)
     except ET.ParseError:
         return False
     todo = [(actual_xml, exp_xml)]
@@ -257,7 +258,7 @@ class OscTestCase(unittest.TestCase):
         with open(fname) as f:
             files_exp = f.read()
         self.assertXMLEqual(files_act, files_exp)
-        root = ET.fromstring(files_act)
+        root = xml_fromstring(files_act)
         for i in root.findall('entry'):
             if i.get('name') in skipfiles:
                 continue

@@ -4,6 +4,7 @@ from xml.etree import ElementTree as ET
 
 import osc.core
 import osc.oscerr
+from osc.util.xml import xml_fromstring
 
 from .common import OscTestCase
 
@@ -263,7 +264,7 @@ class TestRequest(OscTestCase):
   <person name="user" role="reader" />
   <group name="group" role="reviewer" />
 </action>"""
-        action = osc.core.Action.from_xml(ET.fromstring(xml))
+        action = osc.core.Action.from_xml(xml_fromstring(xml))
         self.assertEqual(action.type, 'add_role')
         self.assertEqual(action.tgt_project, 'foo')
         self.assertEqual(action.tgt_package, 'bar')
@@ -283,7 +284,7 @@ class TestRequest(OscTestCase):
     <updatelink>1</updatelink>
   </options>
 </action>"""
-        action = osc.core.Action.from_xml(ET.fromstring(xml))
+        action = osc.core.Action.from_xml(xml_fromstring(xml))
         self.assertEqual(action.type, 'submit')
         self.assertEqual(action.src_project, 'foo')
         self.assertEqual(action.src_package, 'bar')
@@ -301,7 +302,7 @@ class TestRequest(OscTestCase):
   <target package="baz" project="foobar" />
   <acceptinfo rev="5" srcmd5="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" xsrcmd5="ffffffffffffffffffffffffffffffff" />
 </action>"""
-        action = osc.core.Action.from_xml(ET.fromstring(xml))
+        action = osc.core.Action.from_xml(xml_fromstring(xml))
         self.assertEqual(action.type, 'submit')
         self.assertEqual(action.src_project, 'testprj')
         self.assertEqual(action.src_package, 'bar')
@@ -320,13 +321,13 @@ class TestRequest(OscTestCase):
     def test_action_from_xml_unknown_type(self):
         """try to create action from xml with unknown type"""
         xml = '<action type="foo"><source package="bar" project="foo" /></action>'
-        self.assertRaises(osc.oscerr.WrongArgs, osc.core.Action.from_xml, ET.fromstring(xml))
+        self.assertRaises(osc.oscerr.WrongArgs, osc.core.Action.from_xml, xml_fromstring(xml))
 
     def test_read_request1(self):
         """read in a request"""
         xml = self._get_fixture('test_read_request1.xml')
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(r.reqid, '42')
         self.assertEqual(r.actions[0].type, 'submit')
         self.assertEqual(r.actions[0].src_project, 'foo')
@@ -357,7 +358,7 @@ class TestRequest(OscTestCase):
         """read in a request (with reviews)"""
         xml = self._get_fixture('test_read_request2.xml')
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(r.reqid, '123')
         self.assertEqual(r.actions[0].type, 'submit')
         self.assertEqual(r.actions[0].src_project, 'xyz')
@@ -404,7 +405,7 @@ class TestRequest(OscTestCase):
   <description></description>
 </request>"""
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(r.reqid, '2')
         self.assertEqual(r.actions[0].type, 'set_bugowner')
         self.assertEqual(r.actions[0].tgt_project, 'foo')
@@ -442,14 +443,14 @@ class TestRequest(OscTestCase):
         delete:                                                             deleteme
         delete:                                                             foo/bar\n"""
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(exp, r.list_view())
 
     def test_request_list_view2(self):
         """test the list_view method (with history elements and description)"""
         xml = self._get_fixture('test_request_list_view2.xml')
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         exp = """\
     21  State:accepted   By:foobar       When:2010-12-29T16:37:45
         Created by: foobar
@@ -465,7 +466,7 @@ class TestRequest(OscTestCase):
         xml = self._get_fixture('test_request_str1.xml')
         r = osc.core.Request()
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(r.creator, 'creator')
         exp = """\
 Request:    123
@@ -510,7 +511,7 @@ History:
   <state name="new" when="2010-12-29T00:11:22" who="creator" />
 </request>"""
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(r.creator, 'creator')
         exp = """\
 Request:    98765
@@ -538,7 +539,7 @@ State:
   <state name="new" when="2010-12-30T02:11:22" who="olduser" />
 </request>"""
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         self.assertEqual(r.reqid, '1234')
         self.assertEqual(r.actions[0].type, 'submit')
         self.assertEqual(r.actions[0].src_project, 'foobar')
@@ -566,7 +567,7 @@ State:
         """test get_actions method"""
         xml = self._get_fixture('test_request_list_view1.xml')
         r = osc.core.Request()
-        r.read(ET.fromstring(xml))
+        r.read(xml_fromstring(xml))
         sr_actions = r.get_actions('submit')
         self.assertTrue(len(sr_actions) == 2)
         for i in sr_actions:
