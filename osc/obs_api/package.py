@@ -159,7 +159,7 @@ class Package(XmlModel):
 
     @classmethod
     def get_revision_list(cls, apiurl: str, project: str, package: str, deleted: Optional[bool] = None, meta: Optional[bool] = None):
-        from xml.etree import ElementTree as ET
+        from ..util.xml import xml_parse
 
         url_path = ["source", project, package, "_history"]
         url_query = {
@@ -167,7 +167,7 @@ class Package(XmlModel):
             "deleted": deleted,
         }
         response = cls.xml_request("GET", apiurl, url_path, url_query)
-        root = ET.parse(response).getroot()
+        root = xml_parse(response).getroot()
         assert root.tag == "revisionlist"
         result = []
         for node in root:

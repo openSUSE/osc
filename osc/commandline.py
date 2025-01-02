@@ -30,6 +30,8 @@ from urllib.error import HTTPError
 from . import commands as osc_commands
 from . import oscerr
 from .commandline_common import *
+from .util.xml import xml_fromstring
+from .util.xml import xml_parse
 
 
 class OscCommand(Command):
@@ -1165,7 +1167,7 @@ class Osc(cmdln.Cmdln):
                         break
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
-                    root = ET.fromstring(m)
+                    root = xml_fromstring(m)
                     li.read(root.find('linkinfo'))
                     if li.haserror():
                         raise oscerr.LinkExpandError(project, package, li.error)
@@ -2095,7 +2097,7 @@ class Osc(cmdln.Cmdln):
                     # get _link info from server, that knows about the local state ...
                     u = makeurl(apiurl, ['source', project, p])
                     f = http_GET(u)
-                    root = ET.parse(f).getroot()
+                    root = xml_parse(f).getroot()
                     _check_service(root)
                     linkinfo = root.find('linkinfo')
                     if linkinfo is None:
@@ -2140,7 +2142,7 @@ class Osc(cmdln.Cmdln):
                 u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
                 f = http_POST(u, data=xml)
 
-                root = ET.parse(f).getroot()
+                root = xml_parse(f).getroot()
                 sr_ids.append(root.get('id'))
 
             print("Request(s) created: ", end=' ')
@@ -2150,7 +2152,7 @@ class Osc(cmdln.Cmdln):
             # was this project created by clone request ?
             u = makeurl(apiurl, ['source', project, '_attribute', 'OBS:RequestCloned'])
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             value = root.findtext('attribute/value')
             if value and not opts.yes:
                 repl = ''
@@ -2214,7 +2216,7 @@ class Osc(cmdln.Cmdln):
         # check for failed source service
         u = makeurl(apiurl, ['source', src_project, src_package])
         f = http_GET(u)
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
         _check_service(root)
 
         if not opts.nodevelproject:
@@ -2242,7 +2244,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             # get _link info from server, that knows about the local state ...
             u = makeurl(apiurl, ['source', src_project, src_package], query="expand=1")
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             linkinfo = root.find('linkinfo')
             if linkinfo is None:
                 rev = root.get('rev')
@@ -2358,7 +2360,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     # get _link info from server, that knows about the local state ...
                     u = makeurl(apiurl, ['source', project, p])
                     f = http_GET(u)
-                    root = ET.parse(f).getroot()
+                    root = xml_parse(f).getroot()
                     linkinfo = root.find('linkinfo')
                     if linkinfo is None:
                         print("Package ", p, " is not a source link.")
@@ -2751,7 +2753,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(apiurl, ['request'], query='cmd=create')
         f = http_POST(u, data=xml)
 
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
         rid = root.get('id')
         print(f"Request {rid} created")
         for srid in supersede:
@@ -3249,21 +3251,21 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = {'cmd': cmd}
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
-            print(ET.parse(r).getroot().get('code'))
+            print(xml_parse(r).getroot().get('code'))
 
         # change incidents
         elif cmd == 'setincident':
             query = {'cmd': 'setincident', 'incident': incident}
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
-            print(ET.parse(r).getroot().get('code'))
+            print(xml_parse(r).getroot().get('code'))
 
         # change priority
         elif cmd in ['prioritize', 'priorize']:
             query = {'cmd': 'setpriority', 'priority': priority}
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
-            print(ET.parse(r).getroot().get('code'))
+            print(xml_parse(r).getroot().get('code'))
 
         # add new reviewer to existing request
         elif cmd in ['add'] and subcmd == 'review':
@@ -3280,7 +3282,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.message:
                 opts.message = edit_message()
             r = http_POST(url, data=opts.message)
-            print(ET.parse(r).getroot().get('code'))
+            print(xml_parse(r).getroot().get('code'))
 
         # list and approvenew
         elif cmd == 'list' or cmd == 'approvenew':
@@ -3436,7 +3438,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 except HTTPError as e:
                     if e.code == 404:
                         # Any referenced object does not exist, eg. the superseded request
-                        root = ET.fromstring(e.read())
+                        root = xml_fromstring(e.read())
                         summary = root.find('summary')
                         print(summary.text, file=sys.stderr)
                         raise oscerr.WrongOptions("Object does not exist")
@@ -3521,7 +3523,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     details = e.hdrs.get('X-Opensuse-Errorcode')
                     if details:
                         print(details, file=sys.stderr)
-                    root = ET.fromstring(e.read())
+                    root = xml_fromstring(e.read())
                     summary = root.find('summary')
                     if summary is not None:
                         print(summary.text)
@@ -3544,7 +3546,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                     'match': f"([devel[@project='{action.tgt_project}' and @package='{action.tgt_package}']])"
                                     })
                         f = http_GET(u)
-                        root = ET.parse(f).getroot()
+                        root = xml_parse(f).getroot()
                         if root.findall('package') and not opts.no_devel:
                             for node in root.findall('package'):
                                 project = node.get('project')
@@ -3554,7 +3556,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 links_to_project = links_to_package = None
                                 try:
                                     file = http_GET(link_url)
-                                    root = ET.parse(file).getroot()
+                                    root = xml_parse(file).getroot()
                                     link_node = root.find('linkinfo')
                                     if link_node is not None:
                                         links_to_project = link_node.get('project') or project
@@ -3713,7 +3715,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         try:
             copy_pac(apiurl, project, package, apiurl, project, package, expand=True, comment=opts.message)
         except HTTPError as e:
-            root = ET.fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
+            root = xml_fromstring(show_files_meta(apiurl, project, package, 'latest', expand=False))
             li = Linkinfo()
             li.read(root.find('linkinfo'))
             if li.islink() and li.haserror():
@@ -4040,7 +4042,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             source_project = self._process_project_name(args[0])
 
         f = show_project_meta(apiurl, source_project)
-        root = ET.fromstring(b''.join(f))
+        root = xml_fromstring(b''.join(f))
 
         if not opts.message:
             opts.message = edit_message()
@@ -4116,14 +4118,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         url = makeurl(apiurl, ['source', target_project], query=query)
         r = http_POST(url, data=opts.message)
         project = None
-        for i in ET.fromstring(r.read()).findall('data'):
+        for i in xml_fromstring(r.read()).findall('data'):
             if i.get('name') == 'targetproject':
                 project = i.text.strip()
         if project:
             print("Incident project created: ", project)
         else:
-            print(ET.parse(r).getroot().get('code'))
-            print(ET.parse(r).getroot().get('error'))
+            print(xml_parse(r).getroot().get('code'))
+            print(xml_parse(r).getroot().get('error'))
 
     @cmdln.option('-a', '--attribute', metavar='ATTRIBUTE',
                         help='Use this attribute to find default maintenance project (default is OBS:MaintenanceProject)')
@@ -4524,7 +4526,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         devloc = None
         if not exists and (srcprj != self._process_project_name(args[0]) or srcpkg != args[1]):
             try:
-                root = ET.fromstring(b''.join(show_attribute_meta(apiurl, args[0], None, None,
+                root = xml_fromstring(b''.join(show_attribute_meta(apiurl, args[0], None, None,
                                                                   conf.config['maintained_update_project_attribute'], None, None)))
                 # this might raise an AttributeError
                 uproject = root.find('attribute').find('value').text
@@ -4781,7 +4783,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             u = makeurl(apiurl, ['source', project, package], query=query)
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             linkinfo = root.find('linkinfo')
             if linkinfo is None:
                 raise oscerr.APIError('package is not a source link')
@@ -4973,7 +4975,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         try:
             file = http_GET(link_url)
-            root = ET.parse(file).getroot()
+            root = xml_parse(file).getroot()
         except HTTPError as e:
             return (None, None)
         except SyntaxError as e:
@@ -4996,7 +4998,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         link_url = makeurl(apiurl, ['source', project, package])
         try:
             file = http_GET(link_url)
-            root = ET.parse(file).getroot()
+            root = xml_parse(file).getroot()
         except HTTPError as e:
             if e.code != 404:
                 print(f'Cannot get list of files for {project}/{package}: {e}', file=sys.stderr)
@@ -5527,7 +5529,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 try:
                     m = show_files_meta(apiurl, project, package)
                     li = Linkinfo()
-                    li.read(ET.fromstring(''.join(m)).find('linkinfo'))
+                    li.read(xml_fromstring(''.join(m)).find('linkinfo'))
                     if not li.haserror():
                         if li.project == project:
                             print(statfrmt('S', package + " link to package " + li.package))
@@ -6028,7 +6030,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        pacs[0].name, revision=rev,
                                        linkrev=opts.linkrev,
                                        expand=opts.server_side_source_service_files)
-                directory = ET.fromstring(meta)
+                directory = xml_fromstring(meta)
                 li_node = directory.find('linkinfo')
                 if li_node is None:
                     print(f'Revision \'{rev}\' is no link', file=sys.stderr)
@@ -6609,7 +6611,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 query['lastsucceeded'] = 1
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             offset = int(root.find('entry').get('size'))
             if opts.offset:
                 offset = offset - int(opts.offset)
@@ -6714,7 +6716,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 query['lastsucceeded'] = 1
             u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             offset = int(root.find('entry').get('size'))
             if opts.offset:
                 offset = offset - int(opts.offset)
@@ -6744,7 +6746,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         for f in files[1:]:
             if os.stat(f).st_atime > os.stat(cfg).st_atime:
                 cfg = f
-        root = ET.parse(cfg).getroot()
+        root = xml_parse(cfg).getroot()
         repo = root.get("repository")
         arch = root.findtext("arch")
         return repo, arch
@@ -6870,7 +6872,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         print(apiurl, project, package, repository, arch)
         xml = show_package_trigger_reason(apiurl, project, package, repository, arch)
-        root = ET.fromstring(xml)
+        root = xml_fromstring(xml)
         if root.find('explain') is None:
             reason = "No triggerreason found"
             print(reason)
@@ -6984,7 +6986,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project_packages = meta_get_packagelist(apiurl, project, deleted=False, expand=False)
         xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
 
-        root = ET.fromstring(xml)
+        root = xml_fromstring(xml)
         for package in root.findall('package'):
             print(package.get('name'), ":")
             for dep in package.findall('pkgdep'):
@@ -8829,7 +8831,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 'match': f"([kind='patchinfo' and issue[@state='OPEN' and owner/@login='{user}']])"
             })
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             if root.findall('package'):
                 print("Patchinfos with open bugs assigned to you:\n")
                 for node in root.findall('package'):
@@ -8838,7 +8840,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(project, "/", package, '\n')
                     p = makeurl(apiurl, ['source', project, package], {'view': 'issues'})
                     fp = http_GET(p)
-                    issues = ET.parse(fp).findall('issue')
+                    issues = xml_parse(fp).findall('issue')
                     for issue in issues:
                         if issue.find('state') is None or issue.find('state').text != "OPEN":
                             continue
@@ -8865,7 +8867,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     'user': user,
                 })
                 f = http_GET(u)
-                root = ET.parse(f).getroot()
+                root = xml_parse(f).getroot()
                 if root.findall('request'):
                     print("Requests which request a review by you:\n")
                     for node in root.findall('request'):
@@ -8881,7 +8883,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     'user': user,
                 })
                 f = http_GET(u)
-                root = ET.parse(f).getroot()
+                root = xml_parse(f).getroot()
                 if root.findall('request'):
                     print("Requests for your packages:\n")
                     for node in root.findall('request'):
@@ -8897,7 +8899,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     'user': user,
                 })
                 f = http_GET(u)
-                root = ET.parse(f).getroot()
+                root = xml_parse(f).getroot()
                 if root.findall('request'):
                     print("Declined requests created by you (revoke, reopen or supersede):\n")
                     for node in root.findall('request'):
@@ -9326,7 +9328,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                        'name': pac,
                                        'user': user}), apiurl=apiurl)
                 if data:
-                    data = ET.fromstring(parse_meta_to_string(data))
+                    data = xml_fromstring(parse_meta_to_string(data))
                     data.find('title').text = ''.join(title)
                     data.find('description').text = ''.join(descr)
                     data.find('url').text = url
@@ -9657,7 +9659,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 u = makeurl(apiurl, ['request'], query='cmd=create')
                 f = http_POST(u, data=xml)
 
-                root = ET.parse(f).getroot()
+                root = xml_parse(f).getroot()
                 print("Request ID:", root.get('id'))
 
         elif opts.delete:
@@ -9678,7 +9680,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
-                metaroot = ET.fromstring(b''.join(m))
+                metaroot = xml_fromstring(b''.join(m))
                 if not opts.nodevelproject:
                     while metaroot.findall('devel'):
                         d = metaroot.find('devel')
@@ -9687,18 +9689,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         if opts.verbose:
                             print(f"Following to the development space: {prj}/{pac}")
                         m = show_package_meta(apiurl, prj, pac)
-                        metaroot = ET.fromstring(b''.join(m))
+                        metaroot = xml_fromstring(b''.join(m))
                     if not metaroot.findall('person') and not metaroot.findall('group'):
                         if opts.verbose:
                             print("No dedicated persons in package defined, showing the project persons.")
                         pac = None
                         m = show_project_meta(apiurl, prj)
-                        metaroot = ET.fromstring(b''.join(m))
+                        metaroot = xml_fromstring(b''.join(m))
             else:
                 # fallback to project lookup for old servers
                 if prj and not searchresult:
                     m = show_project_meta(apiurl, prj)
-                    metaroot = ET.fromstring(b''.join(m))
+                    metaroot = xml_fromstring(b''.join(m))
 
             # extract the maintainers
             projects = []
@@ -9993,7 +9995,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         query = {'rev': 'latest'}
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
         linkinfo = root.find('linkinfo')
         if linkinfo is None:
             raise oscerr.APIError('package is not a source link')
@@ -10005,7 +10007,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = {'rev': 'latest', 'linkrev': 'base'}
             u = makeurl(apiurl, ['source', prj, package], query=query)
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             linkinfo = root.find('linkinfo')
             if linkinfo.get('error') is None:
                 workingrev = linkinfo.get('xsrcmd5')
@@ -10014,7 +10016,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             query = {'lastworking': 1}
             u = makeurl(apiurl, ['source', prj, package], query=query)
             f = http_GET(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             linkinfo = root.find('linkinfo')
             if linkinfo is None:
                 raise oscerr.APIError('package is not a source link')
@@ -10031,7 +10033,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
         meta = f.readlines()
-        root_new = ET.fromstring(b''.join(meta))
+        root_new = xml_fromstring(b''.join(meta))
         dir_new = {'apiurl': apiurl, 'project': prj, 'package': package}
         dir_new['srcmd5'] = root_new.get('srcmd5')
         dir_new['entries'] = [[n.get('name'), n.get('md5')] for n in root_new.findall('entry')]
@@ -10039,7 +10041,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         query = {'rev': workingrev}
         u = makeurl(apiurl, ['source', prj, package], query=query)
         f = http_GET(u)
-        root_oldpatched = ET.parse(f).getroot()
+        root_oldpatched = xml_parse(f).getroot()
         linkinfo_oldpatched = root_oldpatched.find('linkinfo')
         if linkinfo_oldpatched is None:
             raise oscerr.APIError('working rev is not a source link?')
@@ -10053,7 +10055,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         query['rev'] = linkinfo_oldpatched.get('srcmd5')
         u = makeurl(apiurl, ['source', linkinfo_oldpatched.get('project'), linkinfo_oldpatched.get('package')], query=query)
         f = http_GET(u)
-        root_old = ET.parse(f).getroot()
+        root_old = xml_parse(f).getroot()
         dir_old = {'apiurl': apiurl}
         dir_old['project'] = linkinfo_oldpatched.get('project')
         dir_old['package'] = linkinfo_oldpatched.get('package')
@@ -10187,7 +10189,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         u = makeurl(p.apiurl, ['source', p.prjname, p.name], query=query)
         f = http_GET(u)
         meta = f.readlines()
-        root_new = ET.fromstring(b''.join(meta))
+        root_new = xml_fromstring(b''.join(meta))
         linkinfo_new = root_new.find('linkinfo')
         if linkinfo_new is None:
             raise oscerr.APIError('link is not a really a link?')
@@ -10207,7 +10209,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         query = {'rev': linkinfo.srcmd5}
         u = makeurl(p.apiurl, ['source', linkinfo.project, linkinfo.package], query=query)
         f = http_GET(u)
-        root_old = ET.parse(f).getroot()
+        root_old = xml_parse(f).getroot()
         dir_old = {'apiurl': p.apiurl, 'project': linkinfo.project, 'package': linkinfo.package, 'srcmd5': linkinfo.srcmd5}
         dir_old['entries'] = [[n.get('name'), n.get('md5')] for n in root_old.findall('entry')]
 

@@ -10,6 +10,7 @@ from xml.etree import ElementTree as ET
 from ..util.xml import xml_escape
 from ..util.xml import xml_indent
 from ..util.xml import xml_unescape
+from ..util.xml import xml_parse
 
 
 def get(apiurl, path, query=None):
@@ -36,7 +37,7 @@ def get(apiurl, path, query=None):
 
     url = osc_core.makeurl(apiurl, path, query)
     with osc_connection.http_GET(url) as f:
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
     return root
 
 
@@ -64,7 +65,7 @@ def post(apiurl, path, query=None):
 
     url = osc_core.makeurl(apiurl, path, query)
     with osc_connection.http_POST(url) as f:
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
     return root
 
 
@@ -92,7 +93,7 @@ def put(apiurl, path, query=None, data=None):
 
     url = osc_core.makeurl(apiurl, path, query)
     with osc_connection.http_PUT(url, data=data) as f:
-        root = osc_core.ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
     return root
 
 
