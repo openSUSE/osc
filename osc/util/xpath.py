@@ -10,7 +10,16 @@ class XPathQuery:
     https://docs.djangoproject.com/en/dev/topics/db/queries/#complex-lookups-with-q-objects
     """
 
-    VALID_OPS = ["eq", "contains"]
+    VALID_OPS = [
+        "eq",
+        "gt",
+        "gteq",
+        "lt",
+        "lteq",
+        "contains",
+        "ends_with",
+        "starts_with",
+    ]
 
     def __init__(self, **kwargs):
         self.xpath = ""
