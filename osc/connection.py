@@ -390,11 +390,12 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
             data.seek(0)
         response = pool.urlopen(method, urlopen_url, body=data, headers=headers, preload_content=False)
 
-    if response.status / 100 != 2:
-        raise urllib.error.HTTPError(url, response.status, response.reason, response.headers, response)
-
+    # we want to save a session cookie before an exception is raised on failed requests
     for handler in auth_handlers:
         handler.process_response(url, headers, response)
+
+    if response.status / 100 != 2:
+        raise urllib.error.HTTPError(url, response.status, response.reason, response.headers, response)
 
     return response
 
