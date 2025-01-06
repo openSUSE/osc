@@ -1879,18 +1879,6 @@ def get_config(override_conffile=None,
         if not os.path.exists(conffile):
             raise oscerr.NoConfigfile(conffile, account_not_configured_text % conffile)
 
-        # make sure oscrc is not world readable, it may contain a password
-        conffile_stat = os.stat(conffile)
-        # applying 0o7777 mask because we want to ignore the file type bits
-        if conffile_stat.st_mode & 0o7777 != 0o600:
-            try:
-                os.chmod(conffile, 0o600)
-            except OSError as e:
-                if e.errno in (errno.EROFS, errno.EPERM):
-                    print(f"Warning: Configuration file '{conffile}' may have insecure file permissions.", file=sys.stderr)
-                else:
-                    raise e
-
         cp = get_configParser(conffile)
 
         if not cp.has_section("general"):
@@ -1899,6 +1887,29 @@ def get_config(override_conffile=None,
             defaults = Options().dict()
             msg += new_conf_template % defaults
             raise oscerr.ConfigError(msg, conffile)
+
+        has_password = False
+        for section in cp.sections():
+            keys = ["pass", "passx"]
+            for key in keys:
+                value = cp.get(section, key, fallback="").strip()
+                if value:
+                    has_password = True
+                    break
+
+        # make sure oscrc is not world readable, it may contain a password
+        conffile_stat = os.stat(conffile)
+        # applying 0o7777 mask because we want to ignore the file type bits
+        if conffile_stat.st_mode & 0o7777 != 0o600:
+            try:
+                os.chmod(conffile, 0o600)
+            except OSError as e:
+                if e.errno in (errno.EROFS, errno.EPERM):
+                    if has_password:
+                        print(f"Warning: Configuration file '{conffile}' may have insecure file permissions.", file=sys.stderr)
+                else:
+                    raise e
+
 
     global config
 
