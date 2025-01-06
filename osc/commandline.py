@@ -2137,7 +2137,7 @@ class Osc(cmdln.Cmdln):
                 actionxml += s
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
                     (actionxml, _html_escape(opts.message or ""))
-                u = makeurl(apiurl, ['request'], query='cmd=create&addrevision=1')
+                u = makeurl(apiurl, ['request'], query={"cmd": "create", "addrevision": "1"})
                 f = http_POST(u, data=xml)
 
                 root = ET.parse(f).getroot()
@@ -2240,7 +2240,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev = opts.revision
         if not rev:
             # get _link info from server, that knows about the local state ...
-            u = makeurl(apiurl, ['source', src_project, src_package], query="expand=1")
+            u = makeurl(apiurl, ['source', src_project, src_package], query={"expand": "1"})
             f = http_GET(u)
             root = ET.parse(f).getroot()
             linkinfo = root.find('linkinfo')
@@ -2748,7 +2748,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
               (actionsxml, _html_escape(opts.message or ""))
-        u = makeurl(apiurl, ['request'], query='cmd=create')
+        u = makeurl(apiurl, ['request'], query={"cmd": "create"})
         f = http_POST(u, data=xml)
 
         root = ET.parse(f).getroot()
@@ -9654,7 +9654,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 xml = """<request> %s <state name="new"/> <description>%s</description> </request> """ % \
                       (requestactionsxml, _html_escape(message or ""))
-                u = makeurl(apiurl, ['request'], query='cmd=create')
+                u = makeurl(apiurl, ['request'], query={"cmd": "create"})
                 f = http_POST(u, data=xml)
 
                 root = ET.parse(f).getroot()
@@ -10338,10 +10338,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Please specify just the project')
 
         if opts.create:
-            url = makeurl(apiurl, ['source', prj], query='cmd=createkey')
+            url = makeurl(apiurl, ['source', prj], query={"cmd": "createkey"})
             f = http_POST(url)
         elif opts.extend:
-            url = makeurl(apiurl, ['source', prj], query='cmd=extendkey')
+            url = makeurl(apiurl, ['source', prj], query={"cmd": "extendkey"})
             f = http_POST(url)
         elif opts.delete:
             url = makeurl(apiurl, ['source', prj, "_pubkey"])
