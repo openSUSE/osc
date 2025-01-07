@@ -8,11 +8,14 @@ class ScmsyncObsinfo(BaseModel):
     Class for handling _scmsync.obsinfo files
     """
 
+    # the fields are defined in obs_scm_bridge in ObsGit.write_obsinfo()
+    # https://github.com/openSUSE/obs-scm-bridge/blob/main/obs_scm_bridge
     mtime: int = Field()
     commit: str = Field()
-    url: str = Field()
-    revision: str = Field()
-    projectscmsync: str = Field()
+    url: Optional[str] = Field()
+    revision: Optional[str] = Field()
+    subdir: Optional[str] = Field()
+    projectscmsync: Optional[str] = Field()
 
     @classmethod
     def from_string(cls, data: str) -> "ScmsyncObsinfo":
