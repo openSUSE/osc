@@ -64,13 +64,14 @@ class Serviceinfo:
     def getProjectGlobalServices(self, apiurl: str, project: str, package: str):
         from ..core import http_POST
         from ..core import makeurl
+        from ..util.xml import xml_parse
 
         self.apiurl = apiurl
         # get all project wide services in one file, we don't store it yet
         u = makeurl(apiurl, ["source", project, package], query={"cmd": "getprojectservices"})
         try:
             f = http_POST(u)
-            root = ET.parse(f).getroot()
+            root = xml_parse(f).getroot()
             self.read(root, True)
             self.project = project
             self.package = package

@@ -31,8 +31,10 @@ def primaryPath(directory):
     :rtype: str
     :raise IOError: if repomd.xml contains no primary location
     """
+    from .xml import xml_parse
+
     metaDataPath = os.path.join(directory, "repodata", "repomd.xml")
-    elementTree = ET.parse(metaDataPath)
+    elementTree = xml_parse(metaDataPath)
     root = elementTree.getroot()
 
     for dataElement in root:
@@ -56,10 +58,12 @@ def queries(directory):
     :return: list of RepoDataQueryResult instances
     :raise IOError: if repomd.xml contains no primary location
     """
+    from .xml import xml_parse
+
     path = primaryPath(directory)
 
     gunzippedPrimary = gzip.GzipFile(path)
-    elementTree = ET.parse(gunzippedPrimary)
+    elementTree = xml_parse(gunzippedPrimary)
     root = elementTree.getroot()
 
     packageQueries = []

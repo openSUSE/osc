@@ -83,7 +83,9 @@ from .output import run_pager
 from .output import sanitize_text
 from .util import xdg
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
+from .util.xml import xml_fromstring
 from .util.xml import xml_indent_compat as xmlindent
+from .util.xml import xml_parse
 
 
 ET_ENCODING = "unicode"
@@ -993,7 +995,7 @@ class Request:
             query['enforce_branching'] = "1"
         u = makeurl(apiurl, ['request'], query=query)
         f = http_POST(u, data=self.to_str())
-        root = ET.fromstring(f.read())
+        root = xml_fromstring(f.read())
         self.read(root)
 
 
@@ -1220,7 +1222,7 @@ def meta_get_packagelist(apiurl: str, prj, deleted=None, expand=False):
 
     u = makeurl(apiurl, ['source', prj], query)
     f = http_GET(u)
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return [node.get('name') for node in root.findall('entry')]
 
 
@@ -1244,7 +1246,7 @@ def meta_get_filelist(
 
     u = makeurl(apiurl, ['source', prj, package], query=query)
     f = http_GET(u)
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
 
     if not verbose:
         return [node.get('name') for node in root.findall('entry')]
@@ -1270,7 +1272,7 @@ def meta_get_project_list(apiurl: str, deleted=False):
 
     u = makeurl(apiurl, ['source'], query)
     f = http_GET(u)
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return sorted(node.get('name') for node in root if node.get('name'))
 
 
@@ -1443,7 +1445,7 @@ def show_pattern_metalist(apiurl: str, prj: str):
     url = makeurl(apiurl, ['source', prj, '_pattern'])
     try:
         f = http_GET(url)
-        tree = ET.parse(f)
+        tree = xml_parse(f)
     except HTTPError as e:
         e.osc_msg = f'show_pattern_metalist: Error getting pattern list for project \'{prj}\''
         raise
@@ -1543,7 +1545,7 @@ class metafile:
                     print('BuildService API error:', error_help, file=sys.stderr)
                     # examine the error - we can't raise an exception because we might want
                     # to try again
-                    root = ET.fromstring(e.read())
+                    root = xml_fromstring(e.read())
                     summary = root.find('summary')
                     if summary is not None:
                         print(summary.text, file=sys.stderr)
@@ -1695,7 +1697,7 @@ def edit_meta(
     if metatype == 'pkg':
         # check if the package is a link to a different project
         project, package = path_args
-        orgprj = ET.fromstring(parse_meta_to_string(data)).get('project')
+        orgprj = xml_fromstring(parse_meta_to_string(data)).get('project')
 
         if orgprj is not None and unquote(project) != orgprj:
             print('The package is linked from a different project.')
@@ -1752,7 +1754,7 @@ def show_upstream_srcmd5(
     apiurl: str, prj: str, pac: str, expand=False, revision=None, meta=False, include_service_files=False, deleted=False
 ):
     m = show_files_meta(apiurl, prj, pac, expand=expand, revision=revision, meta=meta, deleted=deleted)
-    et = ET.fromstring(m)
+    et = xml_fromstring(m)
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
@@ -1776,7 +1778,7 @@ def show_upstream_xsrcmd5(
         meta=meta,
         expand=include_service_files,
     )
-    et = ET.fromstring(m)
+    et = xml_fromstring(m)
     if include_service_files:
         return et.get('srcmd5')
 
@@ -1820,7 +1822,7 @@ def get_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *package
         pkgs = packages[n:]
         res.update(get_project_sourceinfo(apiurl, project, nofilename, *pkgs))
         return res
-    root = ET.fromstring(si)
+    root = xml_fromstring(si)
     res = {}
     for sinfo in root.findall('sourceinfo'):
         res[sinfo.get('package')] = sinfo
@@ -1829,7 +1831,7 @@ def get_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *package
 
 def show_upstream_rev_vrev(apiurl: str, prj, pac, revision=None, expand=False, meta=False):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, meta=meta)
-    et = ET.fromstring(m)
+    et = xml_fromstring(m)
     rev = et.get("rev") or None
     vrev = et.get("vrev") or None
     return rev, vrev
@@ -1839,7 +1841,7 @@ def show_upstream_rev(
     apiurl: str, prj, pac, revision=None, expand=False, linkrev=None, meta=False, include_service_files=False
 ):
     m = show_files_meta(apiurl, prj, pac, revision=revision, expand=expand, linkrev=linkrev, meta=meta)
-    et = ET.fromstring(m)
+    et = xml_fromstring(m)
     if include_service_files:
         try:
             sinfo = et.find('serviceinfo')
@@ -2071,7 +2073,7 @@ def clone_request(apiurl: str, reqid, msg=None):
     query = {'cmd': 'branch', 'request': reqid}
     url = makeurl(apiurl, ['source'], query)
     r = http_POST(url, data=msg)
-    root = ET.fromstring(r.read())
+    root = xml_fromstring(r.read())
     project = None
     for i in root.findall('data'):
         if i.get('name') == 'targetproject':
@@ -2182,7 +2184,7 @@ def create_submit_request(
 def get_request(apiurl: str, reqid):
     u = makeurl(apiurl, ['request', reqid], {'withfullhistory': '1'})
     f = http_GET(u)
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
 
     r = Request()
     r.read(root, apiurl=apiurl)
@@ -2205,7 +2207,7 @@ def change_review_state(
         query['superseded_by'] = supersed
     u = makeurl(apiurl, ['request', reqid], query=query)
     f = http_POST(u, data=message)
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code')
 
 
@@ -2221,7 +2223,7 @@ def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None
                 ['request', reqid], query=query)
     f = http_POST(u, data=message)
 
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code', 'unknown')
 
 
@@ -2370,7 +2372,7 @@ def get_request_collection(
 
     u = makeurl(apiurl, ['request'], query)
     f = http_GET(u)
-    res = ET.parse(f).getroot()
+    res = xml_parse(f).getroot()
 
     requests = []
     for root in res.findall('request'):
@@ -2648,7 +2650,7 @@ def get_user_meta(apiurl: str, user: str):
 def _get_xml_data(meta, *tags):
     data = []
     if meta is not None:
-        root = ET.fromstring(meta)
+        root = xml_fromstring(meta)
         for tag in tags:
             elm = root.find(tag)
             if elm is None or elm.text is None:
@@ -2911,7 +2913,7 @@ def server_diff(
         del_issue_list = []
         add_issue_list = []
         chn_issue_list = []
-        root = ET.fromstring(f.read())
+        root = xml_fromstring(f.read())
         node = root.find('issues')
         for issuenode in node.findall('issue'):
             if issuenode.get('state') == 'deleted':
@@ -2966,7 +2968,7 @@ def server_diff_noex(
                                           new_project, new_package, new_revision,
                                           unified, missingok, meta, False, files=files)
             except:
-                elm = ET.fromstring(body).find('summary')
+                elm = xml_fromstring(body).find('summary')
                 summary = ''
                 if elm is not None and elm.text is not None:
                     summary = elm.text
@@ -2992,14 +2994,14 @@ def get_request_issues(apiurl: str, reqid):
     """
     u = makeurl(apiurl, ['request', reqid], query={'cmd': 'diff', 'view': 'xml', 'withissues': '1'})
     f = http_POST(u)
-    request_tree = ET.parse(f).getroot()
+    request_tree = xml_parse(f).getroot()
     issue_list = []
     for elem in request_tree.iterfind('action/sourcediff/issues/issue'):
         issue_id = elem.get('name')
         encode_search = f'@name=\'{issue_id}\''
         u = makeurl(apiurl, ['search/issue'], query={'match': encode_search})
         f = http_GET(u)
-        collection = ET.parse(f).getroot()
+        collection = xml_parse(f).getroot()
         for cissue in collection:
             issue = {}
             for issue_detail in cissue.iter():
@@ -3023,10 +3025,10 @@ def submit_action_diff(apiurl: str, action: Action):
             except HTTPError as e:
                 if e.code != 404:
                     raise e
-                root = ET.fromstring(e.read())
+                root = xml_fromstring(e.read())
                 return b'error: \'%s\' does not exist' % root.findtext("summary").encode()
         elif e.code == 404:
-            root = ET.fromstring(e.read())
+            root = xml_fromstring(e.read())
             return b'error: \'%s\' does not exist' % root.findtext("summary").encode()
         raise e
 
@@ -3158,7 +3160,7 @@ def checkout_package(
     # before we create directories and stuff, check if the package actually
     # exists
     meta_data = b''.join(show_package_meta(apiurl, project, package))
-    root = ET.fromstring(meta_data)
+    root = xml_fromstring(meta_data)
     scmsync_element = root.find("scmsync")
     if not native_obs_package and scmsync_element is not None and scmsync_element.text is not None:
         directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
@@ -3222,7 +3224,7 @@ def replace_pkg_meta(
     only maintainer (unless keep_maintainers is set). Additionally remove the
     develproject entry (<devel />) unless keep_develproject is true.
     """
-    root = ET.fromstring(b''.join(pkgmeta))
+    root = xml_fromstring(b''.join(pkgmeta))
     root.set('name', new_name)
     root.set('project', new_prj)
     # never take releasename, it needs to be explicit
@@ -3411,7 +3413,7 @@ def aggregate_pac(
                                path_args=(dst_project, dst_package_meta),
                                template_args=None,
                                create_new=False, apiurl=apiurl)
-        root = ET.fromstring(parse_meta_to_string(dst_meta))
+        root = xml_fromstring(parse_meta_to_string(dst_meta))
         if root.get('project') != dst_project:
             # The source comes from a different project via a project link, we need to create this instance
             meta_change = True
@@ -3455,7 +3457,7 @@ def aggregate_pac(
 
     if disable_publish:
         meta_change = True
-        root = ET.fromstring(''.join(dst_meta))
+        root = xml_fromstring(''.join(dst_meta))
         elm = root.find('publish')
         if not elm:
             elm = ET.SubElement(root, 'publish')
@@ -3543,7 +3545,7 @@ def attribute_branch_pkg(
     try:
         f = http_POST(u)
     except HTTPError as e:
-        root = ET.fromstring(e.read())
+        root = xml_fromstring(e.read())
         summary = root.find('summary')
         if summary is not None and summary.text is not None:
             raise oscerr.APIError(summary.text)
@@ -3552,7 +3554,7 @@ def attribute_branch_pkg(
 
     r = None
 
-    root = ET.fromstring(f.read())
+    root = xml_fromstring(f.read())
     if dryrun:
         return root
     # TODO: change api here and return parsed XML as class
@@ -3597,7 +3599,7 @@ def branch_pkg(
     # read src_package meta
     try:
         m = b"".join(show_package_meta(apiurl, src_project, src_package))
-        root = ET.fromstring(m)
+        root = xml_fromstring(m)
     except HTTPError as e:
         if e.code == 404 and missingok:
             root = None
@@ -3614,7 +3616,7 @@ def branch_pkg(
         if devel_project:
             # replace src_package meta with devel_package meta because we're about branch from devel
             m = b"".join(show_package_meta(apiurl, devel_project, devel_package))
-            root = ET.fromstring(m)
+            root = xml_fromstring(m)
 
     # error out if we're branching a scmsync package (we'd end up with garbage anyway)
     if root is not None and root.find("scmsync") is not None:
@@ -3663,7 +3665,7 @@ def branch_pkg(
     try:
         f = http_POST(u)
     except HTTPError as e:
-        root = ET.fromstring(e.read())
+        root = xml_fromstring(e.read())
         if missingok:
             if root and root.get('code') == "not_missing":
                 raise oscerr.NotMissing("Package exists already via project link, but link will point to given project")
@@ -3678,7 +3680,7 @@ def branch_pkg(
             raise
         return (True, m.group(1), m.group(2), None, None)
 
-    root = ET.fromstring(f.read())
+    root = xml_fromstring(f.read())
     if conf.config['http_debug']:
         print(ET.tostring(root, encoding=ET_ENCODING), file=sys.stderr)
     data = {}
@@ -3687,7 +3689,7 @@ def branch_pkg(
 
     if disable_build:
         target_meta = show_package_meta(apiurl, data["targetproject"], data["targetpackage"])
-        root = ET.fromstring(b''.join(target_meta))
+        root = xml_fromstring(b''.join(target_meta))
 
         elm = root.find('build')
         if not elm:
@@ -3754,7 +3756,7 @@ def copy_pac(
     if meta is None:
         meta = show_files_meta(dst_apiurl, dst_project, dst_package)
 
-    root = ET.fromstring(meta)
+    root = xml_fromstring(meta)
     if root.find("scmsync") is not None:
         print("Note: package source is managed via SCM")
         return
@@ -3779,7 +3781,7 @@ def copy_pac(
         query = {'rev': 'upload'}
         xml = show_files_meta(src_apiurl, src_project, src_package,
                               expand=expand, revision=revision)
-        filelist = ET.fromstring(xml)
+        filelist = xml_fromstring(xml)
         revision = filelist.get('srcmd5')
         # filter out _service: files
         for entry in filelist.findall('entry'):
@@ -3908,7 +3910,7 @@ def get_platforms(apiurl: str):
 
 def get_repositories(apiurl: str):
     f = http_GET(makeurl(apiurl, ['platform']))
-    tree = ET.parse(f)
+    tree = xml_parse(f)
     r = sorted(node.get('name') for node in tree.getroot())
     return r
 
@@ -3918,7 +3920,7 @@ def get_distributions(apiurl: str):
       'distribution', 'project', 'repository', 'reponame'"""
 
     f = http_GET(makeurl(apiurl, ['distributions']))
-    root = ET.fromstring(b''.join(f))
+    root = xml_fromstring(b''.join(f))
 
     distlist = []
     for node in root.findall('distribution'):
@@ -3997,7 +3999,7 @@ def get_binarylist(
         query['withccache'] = 1
     u = makeurl(apiurl, ['build', prj, repo, arch, what], query=query)
     f = http_GET(u)
-    tree = ET.parse(f)
+    tree = xml_parse(f)
     if not verbose:
         return [node.get('filename') for node in tree.findall('binary')]
     else:
@@ -4014,7 +4016,7 @@ def get_binarylist(
 def get_binarylist_published(apiurl: str, prj: str, repo: str, arch: str):
     u = makeurl(apiurl, ['published', prj, repo, arch])
     f = http_GET(u)
-    tree = ET.parse(f)
+    tree = xml_parse(f)
     r = [node.get('name') for node in tree.findall('entry')]
     return r
 
@@ -4061,7 +4063,7 @@ def show_prj_results_meta(
 def result_xml_to_dicts(xml):
     # assumption: xml contains at most one status element (maybe we should
     # generalize this to arbitrary status element)
-    root = ET.fromstring(xml)
+    root = xml_fromstring(xml)
     for node in root.findall('result'):
         rmap = {}
         rmap['project'] = rmap['prj'] = node.get('project')
@@ -4199,13 +4201,13 @@ def get_package_results(apiurl: str, project: str, package: Optional[str] = None
             if e.code == 502 or e.code == 504:
                 # re-try result request
                 continue
-            root = ET.fromstring(e.read())
+            root = xml_fromstring(e.read())
             if e.code == 400 and kwargs.get('multibuild') and re.search('multibuild', getattr(root.find('summary'), 'text', '')):
                 kwargs['multibuild'] = None
                 kwargs['locallink'] = None
                 continue
             raise
-        root = ET.fromstring(xml)
+        root = xml_fromstring(xml)
         kwargs['oldstate'] = root.get('state')
         for result in root.findall('result'):
             if result.get('dirty') is not None:
@@ -4273,7 +4275,7 @@ def get_prj_results(
     r = []
 
     f = show_prj_results_meta(apiurl, prj)
-    root = ET.fromstring(b''.join(f))
+    root = xml_fromstring(b''.join(f))
 
     if name_filter is not None:
         name_filter = re.compile(name_filter)
@@ -4635,11 +4637,11 @@ def create_pbuild_config(apiurl: str, project: str, repository: str, arch: str, 
         f.write(decode_it(bc))
 
     # create the _pbuild file based on expanded repository path informations
-    pb = ET.fromstring('<pbuild></pbuild>')
+    pb = xml_fromstring('<pbuild></pbuild>')
     tree = ET.ElementTree(pb)
     preset = ET.SubElement(pb, 'preset', name=repository, default="")  # default should be empty, but ET crashes
     bi_text = decode_it(get_buildinfo(apiurl, project, '_repository', repository, arch, specfile="Name: dummy"))
-    root = ET.fromstring(bi_text)
+    root = xml_fromstring(bi_text)
 
 # cross compile setups are not yet supported
 #    for path in root.findall('hostsystem'):
@@ -4664,7 +4666,7 @@ def check_constraints(apiurl: str, prj: str, repository: str, arch: str, package
     query = {"cmd": "checkconstraints", "project": prj, "package": package, "repository": repository, "arch": arch}
     u = makeurl(apiurl, ["worker"], query)
     f = http_POST(u, data=constraintsfile)
-    root = ET.fromstring(b''.join(f))
+    root = xml_fromstring(b''.join(f))
     return [node.get('name') for node in root.findall('entry')]
 
 
@@ -4678,7 +4680,7 @@ def get_source_rev(apiurl: str, project: str, package: str, revision=None):
     else:
         url = makeurl(apiurl, ['source', project, package, '_history'])
     f = http_GET(url)
-    xml = ET.parse(f)
+    xml = xml_parse(f)
     ent = None
     for new in xml.findall('revision'):
         # remember the newest one.
@@ -4704,7 +4706,7 @@ def print_jobhistory(apiurl: str, prj: str, current_package: str, repository: st
         query['limit'] = int(limit)
     u = makeurl(apiurl, ['build', prj, repository, arch, '_jobhistory'], query)
     f = http_GET(u)
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
 
     if format == 'text':
         print("time                 package                                            reason           code              build time      worker")
@@ -4836,7 +4838,7 @@ def runservice(apiurl: str, prj: str, package: str):
         e.osc_msg = f'could not trigger service run for project \'{prj}\' package \'{package}\''
         raise
 
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code')
 
 
@@ -4849,7 +4851,7 @@ def waitservice(apiurl: str, prj: str, package: str):
         e.osc_msg = f'The service for project \'{prj}\' package \'{package}\' failed'
         raise
 
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code')
 
 
@@ -4866,7 +4868,7 @@ def mergeservice(apiurl: str, prj: str, package: str):
         e.osc_msg = f'could not merge service files in project \'{prj}\' package \'{package}\''
         raise
 
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code')
 
 
@@ -4888,7 +4890,7 @@ def rebuild(apiurl: str, prj: str, package: str, repo: str, arch: str, code=None
         e.osc_msg = f'could not trigger rebuild for project \'{prj}\' package \'{package}\''
         raise
 
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code')
 
 
@@ -4944,7 +4946,7 @@ def cmdbuild(
             e.osc_msg += f' sysrq={code}'
         raise
 
-    root = ET.parse(f).getroot()
+    root = xml_parse(f).getroot()
     return root.get('code')
 
 
@@ -5109,7 +5111,7 @@ def search(apiurl: str, queries=None, **kwargs):
         query['match'] = xpath
         u = makeurl(apiurl, path, query)
         f = http_GET(u)
-        res[urlpath] = ET.parse(f).getroot()
+        res[urlpath] = xml_parse(f).getroot()
     return res
 
 
@@ -5151,7 +5153,7 @@ def owner(
     res = None
     try:
         f = http_GET(u)
-        res = ET.parse(f).getroot()
+        res = xml_parse(f).getroot()
     except HTTPError as e:
         # old server not supporting this search
         pass
@@ -5162,7 +5164,7 @@ def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=Fa
     url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
-        root = ET.parse(f).getroot()
+        root = xml_parse(f).getroot()
     except HTTPError as e:
         e.osc_msg = f'Unable to get _link file in package \'{package}\' for project \'{project}\''
         raise
@@ -5310,7 +5312,7 @@ def addPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
                        create_new=False)
 
     if data and get_user_meta(apiurl, user) is not None:
-        root = ET.fromstring(parse_meta_to_string(data))
+        root = xml_fromstring(parse_meta_to_string(data))
         found = False
         for person in root.iter('person'):
             if person.get('userid') == user and person.get('role') == role:
@@ -5345,7 +5347,7 @@ def delPerson(apiurl: str, prj: str, pac: str, user: str, role="maintainer"):
                        template_args=None,
                        create_new=False)
     if data and get_user_meta(apiurl, user) is not None:
-        root = ET.fromstring(parse_meta_to_string(data))
+        root = xml_fromstring(parse_meta_to_string(data))
         found = False
         for person in root.iter('person'):
             if person.get('userid') == user and person.get('role') == role:
@@ -5377,7 +5379,7 @@ def setBugowner(apiurl: str, prj: str, pac: str, user=None, group=None):
         group = user.replace('group:', '')
         user = None
     if data:
-        root = ET.fromstring(parse_meta_to_string(data))
+        root = xml_fromstring(parse_meta_to_string(data))
         for group_element in root.iter('group'):
             if group_element.get('role') == "bugowner":
                 root.remove(group_element)
@@ -5429,9 +5431,9 @@ def addGitSource(url):
     service_file = os.path.join(os.getcwd(), '_service')
     addfile = False
     if os.path.exists(service_file):
-        services = ET.parse(os.path.join(os.getcwd(), '_service')).getroot()
+        services = xml_parse(os.path.join(os.getcwd(), '_service')).getroot()
     else:
-        services = ET.fromstring("<services />")
+        services = xml_fromstring("<services />")
         addfile = True
     stripETxml(services)
     si = Serviceinfo()
@@ -5454,9 +5456,9 @@ def addDownloadUrlService(url):
     service_file = os.path.join(os.getcwd(), '_service')
     addfile = False
     if os.path.exists(service_file):
-        services = ET.parse(os.path.join(os.getcwd(), '_service')).getroot()
+        services = xml_parse(os.path.join(os.getcwd(), '_service')).getroot()
     else:
-        services = ET.fromstring("<services />")
+        services = xml_fromstring("<services />")
         addfile = True
     stripETxml(services)
     si = Serviceinfo()
@@ -5711,7 +5713,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
             details = e.hdrs.get('X-Opensuse-Errorcode')
             if details:
                 print(details, file=sys.stderr)
-            root = ET.fromstring(e.read())
+            root = xml_fromstring(e.read())
             summary = root.find('summary')
             if summary is not None:
                 print(summary.text, file=sys.stderr)
@@ -6233,7 +6235,7 @@ def which(name: str):
 def get_comments(apiurl: str, kind, *args):
     url = makeurl(apiurl, ["comments", kind] + list(args))
     f = http_GET(url)
-    return ET.parse(f).getroot()
+    return xml_parse(f).getroot()
 
 
 def print_comments(apiurl: str, kind, *args):
@@ -6257,7 +6259,7 @@ def create_comment(apiurl: str, kind, comment, *args, **kwargs) -> Optional[str]
     query["parent_id"] = kwargs.get("parent", None)
     u = makeurl(apiurl, ["comments", kind] + list(args), query=query)
     f = http_POST(u, data=comment)
-    ret = ET.fromstring(f.read()).find('summary')
+    ret = xml_fromstring(f.read()).find('summary')
     if ret is None:
         return None
     return ret.text
@@ -6266,7 +6268,7 @@ def create_comment(apiurl: str, kind, comment, *args, **kwargs) -> Optional[str]
 def delete_comment(apiurl: str, cid: str) -> Optional[str]:
     u = makeurl(apiurl, ['comment', cid])
     f = http_DELETE(u)
-    ret = ET.fromstring(f.read()).find('summary')
+    ret = xml_fromstring(f.read()).find('summary')
     if ret is None:
         return None
     return ret.text
@@ -6381,7 +6383,7 @@ class MultibuildFlavorResolver:
         if not s:
             return result
 
-        root = ET.fromstring(s)
+        root = xml_fromstring(s)
         for node in root.findall("flavor"):
             result.add(node.text)
         return result

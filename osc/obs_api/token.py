@@ -108,12 +108,12 @@ class Token(XmlModel):
 
     @classmethod
     def do_list(cls, apiurl: str, user: str):
-        from ..util.xml import ET
+        from ..util.xml import xml_parse
 
         url_path = ["person", user, "token"]
         url_query = {}
         response = cls.xml_request("GET", apiurl, url_path, url_query)
-        root = ET.parse(response).getroot()
+        root = xml_parse(response).getroot()
         assert root.tag == "directory"
         result = []
         for node in root:

@@ -6,6 +6,7 @@ from typing import Optional
 from .. import conf
 from .. import oscerr
 from ..util.xml import ET
+from ..util.xml import xml_parse
 from .store import Store
 from .store import delete_storedir
 from .store import store
@@ -277,7 +278,7 @@ class Project:
         packages_file = os.path.join(self.absdir, store, '_packages')
         if os.path.isfile(packages_file) and os.path.getsize(packages_file):
             try:
-                result = ET.parse(packages_file)
+                result = xml_parse(packages_file)
             except:
                 msg = f'Cannot read package file \'{packages_file}\'. '
                 msg += 'You can try to remove it and then run osc repairwc.'
@@ -294,7 +295,7 @@ class Project:
                    and Package(pac_dir).name == data:
                     cur_pacs.append(ET.Element('package', name=data, state=' '))
             store_write_initial_packages(self.absdir, self.name, cur_pacs)
-            return ET.parse(os.path.join(self.absdir, store, '_packages'))
+            return xml_parse(os.path.join(self.absdir, store, '_packages'))
 
     def write_packages(self):
         from ..core import ET_ENCODING
