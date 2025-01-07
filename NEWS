@@ -1,3 +1,35 @@
+- 1.11.0
+  - Command-line:
+    - Add hint how to deal with scmsync-nobranch scenarios
+    - Speed loading commands up
+    - Fix 'log' command to work correctly with --meta --patch options
+    - Document that 'status' command prints unmodified files in verbose output
+    - Hide progressbar.Bar widget after ProgressBar has completed
+    - Avoid printing urlquoted file names in 'getbinaries' command
+  - Configuration:
+    - Mute oscrc permissions warning when there's no password set
+  - Connection:
+    - Save session cookie even if a request fails
+  - Library:
+    - Fix local building in git projects
+    - Extend xml.etree.ElementTree.ParseError output with a snippet of broken XML
+    - Sync ScmsyncObsinfo with obs-scm-bridge
+    - Move running obs_scm_bridge into run_obs_scm_bridge() function
+    - Convert remaining makeurl() query parameters from deprecated string to dict
+    - Add more operators to XPathQuery
+    - Make 'title' and 'description' fields optional in the Package model
+    - Fix progress bar code to support progressbar2
+    - Support LoongArch64 architecture
+    - Mute pylint errors in show_package_disabled_repos() that are false-positives
+    - Fix another bytes/unicode issues in core.link_pac() by replacing ElementTree code with XML models
+    - Fix handling 'lock' field in 'Package' model
+    - Fix handling SimpleFlag model
+    - Extend RequestActionSource with 'repository' attribute
+    - Load most of the modules in commandline.py on-demand
+    - Fix traceback in 'linkpac --disable-build'
+  - Spec:
+    - Add conflict with older versions of obs-service-source_validator to ensure that version compatible with .osc store 2.0 is installed
+
 - 1.10.1
   - Command-line:
     - Fix crash in 'build' command due to undefined 'build_root' variable
